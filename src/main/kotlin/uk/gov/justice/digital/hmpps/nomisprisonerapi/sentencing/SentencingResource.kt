@@ -343,7 +343,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): SentenceResponse = sentencingService.getOffenderSentence(sequence, bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PostMapping("/prisoners/{offenderNo}/sentences")
+  @PostMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Sentence",
@@ -407,12 +407,15 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender number", example = "AB1234K", required = true)
     @PathVariable
     offenderNo: String,
+    @Schema(description = "Case Id", example = "4565456", required = true)
+    @PathVariable
+    caseId: Long,
     @RequestBody @Valid
     request: CreateSentenceRequest,
-  ): CreateSentenceResponse = sentencingService.createSentence(offenderNo, request)
+  ): CreateSentenceResponse = sentencingService.createSentence(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PutMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @PutMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Sentence",
@@ -483,15 +486,18 @@ class SentencingResource(private val sentencingService: SentencingService) {
     ],
   )
   fun updateSentence(
-    @Schema(description = "Booking Id", example = "4565456", required = true)
+    @Schema(description = "Offender no", example = "AA668EC", required = true)
     @PathVariable
-    bookingId: Long,
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "4565456", required = true)
+    @PathVariable
+    caseId: Long,
     @Schema(description = "Sentence sequence", example = "1", required = true)
     @PathVariable
     sequence: Long,
     @RequestBody @Valid
     request: CreateSentenceRequest,
-  ) = sentencingService.updateSentence(sentenceSequence = sequence, bookingId = bookingId, request = request)
+  ) = sentencingService.updateSentence(sentenceSequence = sequence, caseId = caseId, offenderNo = offenderNo, request = request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -1666,8 +1672,7 @@ data class CreateSentenceRequest(
   val sentenceLevel: String,
   val fine: BigDecimal? = null,
   // can receive multiple terms from DPS with a maximum of 1 custodial per sentence
-  val sentenceTerm: List<SentenceTermRequest>,
-  val caseId: Long,
+  val sentenceTerms: List<SentenceTermRequest>,
   val offenderChargeIds: List<Long>,
 )
 

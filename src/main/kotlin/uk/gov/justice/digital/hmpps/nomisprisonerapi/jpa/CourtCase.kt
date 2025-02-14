@@ -110,6 +110,9 @@ class CourtCase(
   var courtEvents: MutableList<CourtEvent> = mutableListOf(),
 
   @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
+  var sentences: MutableList<OffenderSentence> = mutableListOf(),
+
+  @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderCharges: MutableList<OffenderCharge> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)

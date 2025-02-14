@@ -53,21 +53,21 @@ data class OffenderSentenceTerm(
   val offenderSentence: OffenderSentence,
 
   @Column(name = "START_DATE")
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
   @Column(name = "END_DATE")
-  val endDate: LocalDate? = null,
+  var endDate: LocalDate? = null,
 
-  val years: Int? = null,
-  val months: Int? = null,
-  val weeks: Int? = null,
-  val days: Int? = null,
+  var years: Int? = null,
+  var months: Int? = null,
+  var weeks: Int? = null,
+  var days: Int? = null,
   // all time portions used in prod
-  val hours: Int? = null,
+  var hours: Int? = null,
 
   // defaults to 'N' used in prod
   @Convert(converter = YesNoConverter::class)
-  val lifeSentenceFlag: Boolean = false,
+  var lifeSentenceFlag: Boolean = false,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -81,7 +81,7 @@ data class OffenderSentenceTerm(
       JoinColumnOrFormula(column = JoinColumn(name = "SENTENCE_TERM_CODE", referencedColumnName = "code")),
     ],
   )
-  val sentenceTermType: SentenceTermType,
+  var sentenceTermType: SentenceTermType,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
@@ -99,4 +99,5 @@ data class OffenderSentenceTerm(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+  override fun toString(): String = "OffenderSentenceTerm(id=$id, startDate=$startDate, endDate=$endDate, years=$years, months=$months, weeks=$weeks, days=$days, hours=$hours, lifeSentenceFlag=$lifeSentenceFlag, sentenceTermType=$sentenceTermType)"
 }
