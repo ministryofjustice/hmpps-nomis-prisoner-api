@@ -647,6 +647,11 @@ class SentencingService(
             "\nwith terms: $requestTermTypes " +
             "\noriginal terms: ${sentence.offenderSentenceTerms.map { it.sentenceTermType.code }}",
         )
+        log.info(
+          "\nUpdating sentence charges for sentence $sentenceSequence, booking ${case.offenderBooking.bookingId} and offender $offenderNo " +
+            "\nwith charges: ${request.offenderChargeIds} " +
+            "\noriginal charges: ${sentence.offenderSentenceCharges.map { it.offenderCharge.id }}",
+        )
         request.sentenceTerms.forEachIndexed { index, termRequest ->
           sentence.offenderSentenceTerms.getOrNull(index)
             ?.let { term ->
@@ -692,6 +697,23 @@ class SentencingService(
           }
         }
 
+        if (sentence.offenderSentenceCharges.map { it.offenderCharge.id }.toSet() != request.offenderChargeIds.toSet()) {
+          sentence.offenderSentenceCharges.clear()
+          sentence.offenderSentenceCharges.addAll(
+            request.offenderChargeIds.map { chargeId ->
+              OffenderSentenceCharge(
+                id = OffenderSentenceChargeId(
+                  offenderBooking = case.offenderBooking,
+                  sequence = sentence.id.sequence,
+                  offenderChargeId = chargeId,
+                ),
+                offenderSentence = sentence,
+                offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId),
+              )
+            },
+          )
+        }
+
         offenderSentenceRepository.saveAndFlush(sentence).also {
           storedProcedureRepository.imprisonmentStatusUpdate(
             bookingId = case.offenderBooking.bookingId,
@@ -706,6 +728,7 @@ class SentencingService(
             "sentenceSequence" to sentenceSequence.toString(),
             "caseId" to caseId.toString(),
             "terms" to requestTermTypes.toString(),
+            "charges" to request.offenderChargeIds.toString(),
           ),
           null,
         )

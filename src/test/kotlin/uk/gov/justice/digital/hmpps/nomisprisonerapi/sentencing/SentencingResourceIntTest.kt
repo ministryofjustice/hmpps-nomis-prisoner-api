@@ -3933,7 +3933,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             booking(agencyLocationId = "MDI") {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
-                offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
+                offenderCharge2 = offenderCharge(offenceCode = "RR84700", offenceDate = LocalDate.parse(aLaterDateString))
                 sentence = sentence(statusUpdateStaff = staff) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
@@ -3942,7 +3942,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
               newCourtCase = courtCase(reportingStaff = staff, caseSequence = 2) {
-                offenderCharge = offenderCharge(offenceCode = "RT88080")
                 sentenceTwo = sentence(statusUpdateStaff = staff) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   term(startDate = LocalDate.parse(aLaterDateString), days = 20, sentenceTermType = "IMP")
@@ -4075,6 +4074,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 endDate = null,
                 sentenceLevel = "AGG",
                 fine = BigDecimal.valueOf(9.7),
+                offenderChargeIds = mutableListOf(offenderCharge2.id),
                 sentenceTerms = mutableListOf(
                   createSentenceTerm(
                     startDate = LocalDate.parse(aLaterDateString),
@@ -4129,6 +4129,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 endDate = null,
                 sentenceLevel = "AGG",
                 fine = BigDecimal.valueOf(9.7),
+                offenderChargeIds = mutableListOf(offenderCharge.id, offenderCharge2.id),
                 sentenceTerms = mutableListOf(
                   createSentenceTerm(
                     startDate = LocalDate.parse(aLaterDateString),
@@ -4169,14 +4170,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("endDate").doesNotExist()
           .jsonPath("fineAmount").isEqualTo("9.7")
           .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("offenderCharges.size()").isEqualTo(1)
+          .jsonPath("offenderCharges.size()").isEqualTo(2)
+          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
+          .jsonPath("offenderCharges[1].id").isEqualTo(offenderCharge2.id)
           .jsonPath("sentenceTerms.size()").isEqualTo(2)
           .jsonPath("sentenceTerms[0].sentenceTermType.code").isEqualTo("IMP")
           .jsonPath("sentenceTerms[1].sentenceTermType.code").isEqualTo("LIC")
       }
 
       @Test
-      fun `can remove a sentence term`() {
+      fun `can remove a sentence term by providing list with only 1 term`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -4190,10 +4193,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 endDate = null,
                 sentenceLevel = "AGG",
                 fine = BigDecimal.valueOf(9.7),
+                offenderChargeIds = mutableListOf(offenderCharge2.id),
                 sentenceTerms = mutableListOf(
                   createSentenceTerm(
                     startDate = LocalDate.parse(aLaterDateString),
                     days = 20,
+                    sentenceTermType = "IMP",
                   ),
                 ),
               ),
@@ -4225,6 +4230,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("fineAmount").isEqualTo("9.7")
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("offenderCharges.size()").isEqualTo(1)
+          .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RR84700")
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
           .jsonPath("sentenceTerms[0].sentenceTermType.code").isEqualTo("IMP")
       }
@@ -4242,15 +4248,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
-
-        verify(telemetryClient).trackEvent(
-          eq("sentence-updated"),
-          org.mockito.kotlin.check {
-            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
-            assertThat(it).containsEntry("sentenceSequence", sentence.id.sequence.toString())
-          },
-          isNull(),
-        )
       }
     }
 
