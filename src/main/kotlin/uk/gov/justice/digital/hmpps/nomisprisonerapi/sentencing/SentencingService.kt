@@ -590,32 +590,35 @@ class SentencingService(
   }
 
   @Audit
-  fun deleteSentence(bookingId: Long, sentenceSequence: Long) {
-    offenderSentenceRepository.findByIdOrNull(
-      SentenceId(
-        offenderBooking = findOffenderBooking(bookingId),
-        sequence = sentenceSequence,
-      ),
-    )?.also {
-      offenderSentenceRepository.delete(it)
-      telemetryClient.trackEvent(
-        "sentence-deleted",
-        mapOf(
-          "bookingId" to it.id.offenderBooking.bookingId.toString(),
-          "offenderNo" to it.id.offenderBooking.offender.nomsId,
-          "sentenceSequence" to it.id.sequence.toString(),
+  fun deleteSentence(offenderNo: String, caseId: Long, sentenceSequence: Long) {
+    findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
+      val offenderBooking = case.offenderBooking
+      offenderSentenceRepository.findByIdOrNull(
+        SentenceId(
+          offenderBooking = offenderBooking,
+          sequence = sentenceSequence,
         ),
-        null,
-      )
+      )?.also {
+        offenderSentenceRepository.delete(it)
+        telemetryClient.trackEvent(
+          "sentence-deleted",
+          mapOf(
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "sentenceSequence" to it.id.sequence.toString(),
+          ),
+          null,
+        )
+      }
+        ?: telemetryClient.trackEvent(
+          "sentence-delete-not-found",
+          mapOf(
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "sentenceSequence" to sentenceSequence.toString(),
+          ),
+          null,
+        )
     }
-      ?: telemetryClient.trackEvent(
-        "sentence-delete-not-found",
-        mapOf(
-          "bookingId" to bookingId.toString(),
-          "sentenceSequence" to sentenceSequence.toString(),
-        ),
-        null,
-      )
   }
 
   @Audit
@@ -847,8 +850,8 @@ class SentencingService(
     )
   }
 
-  fun getOffenderSentence(sentenceSequence: Long, bookingId: Long): SentenceResponse {
-    val offenderBooking = findOffenderBooking(bookingId)
+  fun getOffenderSentence(offenderNo: String, caseId: Long, sentenceSequence: Long): SentenceResponse = findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
+    val offenderBooking = case.offenderBooking
 
     return offenderSentenceRepository.findByIdOrNull(
       SentenceId(

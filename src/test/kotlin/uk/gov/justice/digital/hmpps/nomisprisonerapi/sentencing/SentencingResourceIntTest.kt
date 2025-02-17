@@ -979,7 +979,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{seq}")
+  @DisplayName("GET /prisoners/{offenderNo}/court-cases/{caseId}/sentences/{seq}")
   @Nested
   inner class GetOffenderSentence {
     private lateinit var staff: Staff
@@ -1022,7 +1022,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -1031,7 +1031,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -1040,7 +1040,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -1048,7 +1048,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -1059,7 +1059,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if sentence not found`() {
-        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/11")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/11")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
@@ -1069,13 +1069,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return 404 if offender booking not found`() {
-        webTestClient.get().uri("/prisoners/booking-id/123/sentencing/sentence-sequence/${sentence.id.sequence}")
+      fun `will return 404 if case not found`() {
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/54321/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Offender booking 123 not found")
+          .jsonPath("developerMessage").isEqualTo("Court case 54321 for A1234AB not found")
       }
     }
 
@@ -1084,7 +1084,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the offender sentence`() {
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -3547,7 +3547,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("POST /prisoners/{offenderNo}/sentences")
+  @DisplayName("POST /prisoners/{offenderNo}/court-cases/{caseId}/sentences")
   inner class CreateSentence {
     private lateinit var staff: Staff
     private lateinit var prisonerAtMoorland: Offender
@@ -3745,7 +3745,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
 
-        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/$sentenceSeq")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -3825,7 +3825,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
           .returnResult().responseBody!!.sentenceSeq
 
-        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/$sentenceSeq")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -3909,7 +3909,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("PUT /prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @DisplayName("PUT /prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   inner class UpdateSentence {
     private lateinit var staff: Staff
     private lateinit var prisonerAtMoorland: Offender
@@ -4093,7 +4093,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         )
 
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentenceTwo.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -4154,7 +4154,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         )
 
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentenceTwo.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -4213,7 +4213,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         )
 
         webTestClient.get()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -4259,7 +4259,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("DELETE /prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @DisplayName("DELETE /prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   inner class DeleteSentence {
     private lateinit var staff: Staff
     private lateinit var prisonerAtMoorland: Offender
@@ -4301,7 +4301,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden when no role`() {
         webTestClient.delete()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -4310,7 +4310,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access forbidden with wrong role`() {
         webTestClient.delete()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -4319,7 +4319,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.delete()
-          .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -4327,12 +4327,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Test
     internal fun `204 even when sentence does not exist`() {
-      webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/9999")
+      webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/9999 ")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNotFound
 
-      webTestClient.delete().uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/9999")
+      webTestClient.delete().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/9999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
@@ -4350,19 +4350,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `204 when sentence does exist`() {
       webTestClient.get()
-        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete()
-        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent
 
       webTestClient.get()
-        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNotFound
@@ -4371,7 +4371,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will track telemetry for the delete`() {
       webTestClient.delete()
-        .uri("/prisoners/booking-id/$latestBookingId/sentencing/sentence-sequence/${sentence.id.sequence}")
+        .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
         .exchange()
         .expectStatus().isNoContent

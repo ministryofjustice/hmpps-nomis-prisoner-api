@@ -282,9 +282,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ) = sentencingService.deleteCourtCase(caseId = id, offenderNo = offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @GetMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @GetMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   @Operation(
-    summary = "get sentences for an offender using the given booking id and sentence sequence",
+    summary = "get sentences for an offender using the given case.booking id and sentence sequence",
     description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
     responses = [
       ApiResponse(
@@ -334,13 +334,20 @@ class SentencingResource(private val sentencingService: SentencingService) {
     ],
   )
   fun getOffenderSentence(
-    @Schema(description = "Sentence sequence", example = "1")
+    @Schema(description = "Offender no", example = "AA668EC", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "4565456", required = true)
+    @PathVariable
+    caseId: Long,
+    @Schema(description = "Sentence sequence", example = "1", required = true)
     @PathVariable
     sequence: Long,
-    @Schema(description = "Offender Booking Id", example = "12345")
-    @PathVariable
-    bookingId: Long,
-  ): SentenceResponse = sentencingService.getOffenderSentence(sequence, bookingId)
+  ): SentenceResponse = sentencingService.getOffenderSentence(
+    offenderNo = offenderNo,
+    caseId = caseId,
+    sentenceSequence = sequence,
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences")
@@ -501,10 +508,10 @@ class SentencingResource(private val sentencingService: SentencingService) {
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  @DeleteMapping("/prisoners/booking-id/{bookingId}/sentencing/sentence-sequence/{sequence}")
+  @DeleteMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   @Operation(
     summary = "deletes a specific sentence",
-    description = "Requires role NOMIS_SENTENCING. Deletes a sentence by booking and sentence sequence",
+    description = "Requires role NOMIS_SENTENCING. Deletes a sentence by case.booking and sentence sequence",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -533,13 +540,16 @@ class SentencingResource(private val sentencingService: SentencingService) {
     ],
   )
   fun deleteSentence(
-    @Schema(description = "Sentence sequence", example = "1")
+    @Schema(description = "Offender no", example = "AA668EC", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "4565456", required = true)
+    @PathVariable
+    caseId: Long,
+    @Schema(description = "Sentence sequence", example = "1", required = true)
     @PathVariable
     sequence: Long,
-    @Schema(description = "Offender Booking Id", example = "12345")
-    @PathVariable
-    bookingId: Long,
-  ): Unit = sentencingService.deleteSentence(bookingId, sequence)
+  ): Unit = sentencingService.deleteSentence(offenderNo, caseId, sequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases")
