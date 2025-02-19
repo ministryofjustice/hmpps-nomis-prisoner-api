@@ -1684,6 +1684,7 @@ data class CreateSentenceRequest(
   // can receive multiple terms from DPS with a maximum of 1 custodial per sentence
   val sentenceTerms: List<SentenceTermRequest>,
   val offenderChargeIds: List<Long>,
+  val consecutiveToSentenceSeq: Long? = null,
 )
 
 @Schema(description = "Sentence term request")
