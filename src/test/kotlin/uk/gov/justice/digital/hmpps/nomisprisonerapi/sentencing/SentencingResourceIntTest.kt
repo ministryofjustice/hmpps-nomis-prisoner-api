@@ -3948,6 +3948,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
           .returnResult().responseBody!!.sentenceSeq
 
+        val sentence1 = webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBody(SentenceResponse::class.java)
+          .returnResult().responseBody!!
+
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq2")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
@@ -3955,7 +3961,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("bookingId").isEqualTo(latestBookingId)
           .jsonPath("sentenceSeq").isEqualTo(sentenceSeq2)
-          .jsonPath("consecSequence").isEqualTo(sentenceSeq1)
+          .jsonPath("consecSequence").isEqualTo(sentence1.lineSequence)
           .jsonPath("lineSequence").isNotEmpty()
       }
     }
