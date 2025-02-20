@@ -3720,6 +3720,22 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("developerMessage").isEqualTo("Offender Charge 123 for ${prisonerAtMoorland.nomsId} not found")
       }
+
+      @Test
+      internal fun `404 when consecutive sequence doesn't exist`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(offenderChargeIds = mutableListOf(123), consecSentenceSeq = 234),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Consecutive sentence for booking ${courtCase.offenderBooking.bookingId} and sentence sequence 234 not found")
+      }
     }
 
     @Nested
@@ -3898,6 +3914,55 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         // don't update if sentence exists
         verify(telemetryClient, never()).trackEvent(eq("court-order-updated"), any(), isNull())
+      }
+
+      @Test
+      fun `can create consecutive sentences`() {
+        // create first sentence
+        val sentenceSeq1 = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+          .returnResult().responseBody!!.sentenceSeq
+
+        // create second sentence consecutive to first
+        val sentenceSeq2 = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                consecSentenceSeq = sentenceSeq1,
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+          .returnResult().responseBody!!.sentenceSeq
+
+        val sentence1 = webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBody(SentenceResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(sentenceSeq2)
+          .jsonPath("consecSequence").isEqualTo(sentence1.lineSequence)
+          .jsonPath("lineSequence").isNotEmpty()
       }
     }
 
@@ -4448,6 +4513,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     sentenceTerms: MutableList<SentenceTermRequest> = mutableListOf(
       createSentenceTerm(),
     ),
+    consecSentenceSeq: Long? = null,
   ) = CreateSentenceRequest(
     startDate = startDate,
     status = status,
@@ -4458,6 +4524,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     fine = fine,
     sentenceTerms = sentenceTerms,
     offenderChargeIds = offenderChargeIds,
+    consecutiveToSentenceSeq = consecSentenceSeq,
   )
 
   private fun createSentenceTerm(

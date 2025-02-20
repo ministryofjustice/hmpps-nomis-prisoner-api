@@ -353,7 +353,7 @@ class CourtCaseBuilder(
         offenderBooking = courtCase.offenderBooking,
         sequence = courtCase.offenderBooking.sentences.size.toLong() + 1,
         sentenceLevel = sentenceLevel,
-        consecSequence = consecSequence,
+        consecLineSequence = consecSequence,
         // todo
         courtOrder = null,
         endDate = endDate,

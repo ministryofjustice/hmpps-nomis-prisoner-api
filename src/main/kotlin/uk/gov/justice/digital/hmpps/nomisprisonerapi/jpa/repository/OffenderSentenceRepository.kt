@@ -17,4 +17,7 @@ interface OffenderSentenceRepository :
 
   @Query("select coalesce(max(id.sequence), 0) + 1 from OffenderSentence where id.offenderBooking = :offenderBooking")
   fun getNextSequence(offenderBooking: OffenderBooking): Long
+
+  @Query("select coalesce(max(lineSequence), 0) + 1 from OffenderSentence where id.offenderBooking = :offenderBooking")
+  fun getNextLineSequence(offenderBooking: OffenderBooking): Long
 }
