@@ -99,5 +99,5 @@ data class OffenderSentenceTerm(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
-  override fun toString(): String = "OffenderSentenceTerm(id=$id, startDate=$startDate, endDate=$endDate, years=$years, months=$months, weeks=$weeks, days=$days, hours=$hours, lifeSentenceFlag=$lifeSentenceFlag, sentenceTermType=$sentenceTermType)"
+  override fun toString(): String = "OffenderSentenceTerm(termSequence=${id.termSequence}, sentenceSeq=${id.sentenceSequence}, bookingId=${id.offenderBooking.bookingId} startDate=$startDate, endDate=$endDate, years=$years, months=$months, weeks=$weeks, days=$days, hours=$hours, lifeSentenceFlag=$lifeSentenceFlag, sentenceTermType=$sentenceTermType)"
 }
