@@ -532,16 +532,17 @@ class SentencingService(
       lineSequence = offenderSentenceRepository.getNextLineSequence(offenderBooking).toInt(),
     )
 
+    var termSequence = offenderSentenceTermRepository.getNextTermSequence(
+      offenderBookId = offenderBooking.bookingId,
+      sentenceSeq = sentence.id.sequence,
+    )
     request.sentenceTerms.map { termRequest ->
       sentence.offenderSentenceTerms.add(
         OffenderSentenceTerm(
           id = OffenderSentenceTermId(
             offenderBooking = offenderBooking,
             sentenceSequence = sentence.id.sequence,
-            termSequence = offenderSentenceTermRepository.getNextTermSequence(
-              offenderBookId = offenderBooking.bookingId,
-              sentenceSeq = sentence.id.sequence,
-            ),
+            termSequence = termSequence++,
           ),
           years = termRequest.years,
           months = termRequest.months,

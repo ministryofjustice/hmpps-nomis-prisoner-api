@@ -3941,6 +3941,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createSentence(
                 consecSentenceSeq = sentenceSeq1,
+                sentenceTerms = mutableListOf(
+                  createSentenceTerm(
+                    startDate = LocalDate.parse(aLaterDateString),
+                    days = 20,
+                    sentenceTermType = "IMP",
+                  ),
+                  createSentenceTerm(
+                    startDate = LocalDate.parse(aLaterDateString),
+                    days = 10,
+                    sentenceTermType = "LIC",
+                  ),
+                ),
               ),
             ),
           )
