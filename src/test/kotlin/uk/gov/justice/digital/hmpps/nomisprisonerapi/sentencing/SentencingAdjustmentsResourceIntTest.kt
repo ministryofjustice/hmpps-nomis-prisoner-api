@@ -370,6 +370,49 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `Adjustment with 0 days is made inactive and as no TO date`() {
+        val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+              {
+              "adjustmentDays": 0,
+              "adjustmentTypeCode": "LAL",
+              "adjustmentDate": "2023-01-16",
+              "adjustmentFromDate": "2023-01-01",
+              "active": true
+              }
+              """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(adjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("adjustmentType.code").isEqualTo("LAL")
+          .jsonPath("adjustmentType.description").isEqualTo("Lawfully at Large")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
+          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("adjustmentDays").isEqualTo("0")
+          .jsonPath("active").isEqualTo(false)
+
+        verify(spRepository).postKeyDateAdjustmentUpsert(
+          eq(adjustmentId),
+          eq(bookingId),
+        )
+      }
+
+      @Test
       fun `will track telemetry for the create`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -652,6 +695,42 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentDays").isEqualTo(12)
           .jsonPath("comment").isEqualTo("12 days")
           .jsonPath("active").isEqualTo(true)
+      }
+
+      @Test
+      fun `updating an adjustment to zero days removed the to date and makes it inactive`() {
+        webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+              {
+              "adjustmentDays": 0,
+              "adjustmentTypeCode": "ADA",
+              "adjustmentDate": "2023-01-18",
+              "adjustmentFromDate": "2023-01-02"
+              }
+              """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(adjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("adjustmentType.code").isEqualTo("ADA")
+          .jsonPath("adjustmentType.description").isEqualTo("Additional Days Awarded")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-18")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
+          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("adjustmentDays").isEqualTo(0)
+          .jsonPath("active").isEqualTo(false)
       }
 
       @Test
@@ -1231,6 +1310,82 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `can create an adjustment with just 1 day`() {
+        val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+              {
+              "adjustmentDays": 1,
+              "adjustmentTypeCode": "RX",
+              "adjustmentDate": "2023-01-16",
+              "adjustmentFromDate": "2023-01-01"
+              }
+              """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("sentenceSequence").isEqualTo(1)
+          .jsonPath("adjustmentType.code").isEqualTo("RX")
+          .jsonPath("adjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
+          .jsonPath("adjustmentToDate").isEqualTo("2023-01-01")
+          .jsonPath("adjustmentDays").isEqualTo(1)
+          .jsonPath("active").isEqualTo(true)
+      }
+
+      @Test
+      fun `Adjustment with 0 days is made inactive and as no TO date`() {
+        val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+              {
+              "adjustmentDays": 0,
+              "adjustmentTypeCode": "RX",
+              "adjustmentDate": "2023-01-16",
+              "adjustmentFromDate": "2023-01-01"
+              }
+              """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateAdjustmentResponse::class.java)
+          .returnResult().responseBody!!.id
+
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("sentenceSequence").isEqualTo(1)
+          .jsonPath("adjustmentType.code").isEqualTo("RX")
+          .jsonPath("adjustmentType.description").isEqualTo("Remand")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-16")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
+          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("adjustmentDays").isEqualTo(0)
+          .jsonPath("active").isEqualTo(false)
+      }
+
+      @Test
       fun `will track telemetry for the create`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -1662,6 +1817,45 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentDays").isEqualTo(12)
           .jsonPath("comment").isEqualTo("12 days")
           .jsonPath("active").isEqualTo(true)
+      }
+
+      @Test
+      fun `updating an adjustment to zero days removes the to date and makes it inactive`() {
+        webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              """
+              {
+              "sentenceSequence": $anotherSentenceSequence,
+              "adjustmentDays": 0,
+              "adjustmentTypeCode": "RST",
+              "adjustmentDate": "2023-01-18",
+              "adjustmentFromDate": "2023-01-02",
+              "active": true
+              }
+              """,
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(sentenceAdjustmentId)
+          .jsonPath("bookingId").isEqualTo(bookingId)
+          .jsonPath("sentenceSequence").isEqualTo(anotherSentenceSequence)
+          .jsonPath("adjustmentType.code").isEqualTo("RST")
+          .jsonPath("adjustmentType.description").isEqualTo("Recall Sentence Tagged Bail")
+          .jsonPath("adjustmentDate").isEqualTo("2023-01-18")
+          .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
+          .jsonPath("adjustmentToDate").doesNotExist()
+          .jsonPath("adjustmentDays").isEqualTo("0")
+          .jsonPath("active").isEqualTo(false)
       }
 
       @Test
