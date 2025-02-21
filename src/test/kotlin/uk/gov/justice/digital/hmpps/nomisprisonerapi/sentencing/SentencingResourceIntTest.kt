@@ -3933,6 +3933,23 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
           .returnResult().responseBody!!.sentenceSeq
 
+        // create an aggregate sentence in between (although this will have a line seq, unlike when generated in nomis so not totally accurate)
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                offenderChargeIds = mutableListOf(),
+                sentenceLevel = "AGG",
+                calcType = "AGG_IND_ORA",
+                category = "1991",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated
+
         // create second sentence consecutive to first
         val sentenceSeq2 = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -3973,7 +3990,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("bookingId").isEqualTo(latestBookingId)
           .jsonPath("sentenceSeq").isEqualTo(sentenceSeq2)
-          .jsonPath("consecSequence").isEqualTo(sentence1.lineSequence)
+          .jsonPath("consecSequence").isEqualTo(sentence1.sentenceSeq)
           .jsonPath("lineSequence").isNotEmpty()
       }
     }
