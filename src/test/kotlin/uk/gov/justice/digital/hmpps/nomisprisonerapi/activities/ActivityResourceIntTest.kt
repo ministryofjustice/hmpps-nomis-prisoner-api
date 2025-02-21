@@ -2019,10 +2019,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private lateinit var courseActivity: CourseActivity
 
-    private fun WebTestClient.endActivities(courseActivityIds: Collection<Long>) = put().uri("/activities/end")
+    private fun WebTestClient.endActivities(courseActivityIds: Collection<Long>, endDate: LocalDate? = null) = put().uri("/activities/end")
       .contentType(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
-      .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds }"""))
+      .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds, "endDate": ${endDate?.let { "\"$it\"" }} }"""))
       .exchange()
 
     @Test
@@ -2079,6 +2079,38 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       courseAllocations.forEach {
         with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
           assertThat(endDate).isEqualTo(today)
+          assertThat(programStatus.code).isEqualTo("END")
+          assertThat(endReason?.code).isEqualTo("OTH")
+          assertThat(endComment).isNull()
+        }
+      }
+    }
+
+    @Test
+    fun `should end an activity on the requested date`() {
+      val courseAllocations = mutableListOf<OffenderProgramProfile>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday")
+        }
+        repeat(2) {
+          offender {
+            booking {
+              courseAllocations += courseAllocation(courseActivity = courseActivity)
+            }
+          }
+        }
+      }
+
+      webTestClient.endActivities(listOf(courseActivity.courseActivityId), tomorrow)
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(tomorrow)
+      }
+      courseAllocations.forEach {
+        with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
+          assertThat(endDate).isEqualTo(tomorrow)
           assertThat(programStatus.code).isEqualTo("END")
           assertThat(endReason?.code).isEqualTo("OTH")
           assertThat(endComment).isNull()

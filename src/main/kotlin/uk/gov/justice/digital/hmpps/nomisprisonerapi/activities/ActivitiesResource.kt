@@ -842,7 +842,7 @@ class ActivitiesResource(
   )
   fun endActivities(
     @Schema(description = "End activities request") @RequestBody request: EndActivitiesRequest,
-  ) = activityService.endActivities(request.courseActivityIds, LocalDate.now())
+  ) = activityService.endActivities(request.courseActivityIds, request.endDate ?: LocalDate.now())
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/reconciliation/{prisonId}")
