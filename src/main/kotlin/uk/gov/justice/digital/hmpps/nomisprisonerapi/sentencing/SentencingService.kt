@@ -523,7 +523,7 @@ class SentencingService(
       fineAmount = request.fine,
       sentenceLevel = request.sentenceLevel,
       courtOrder = existingCourtOrderByCaseId(case.id),
-      // this is the sentence sequence of the sentence this sentence is consecutive to
+      // this is the sentence sequence this sentence is consecutive to
       consecSequence = request.consecutiveToSentenceSeq?.let {
         findConsecutiveSentenceSequence(
           it,
