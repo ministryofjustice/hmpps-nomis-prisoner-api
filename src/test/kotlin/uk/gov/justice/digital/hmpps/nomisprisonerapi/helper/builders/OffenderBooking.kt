@@ -543,7 +543,7 @@ class BookingBuilder(
         offenderBooking = offenderBooking,
         sequence = offenderBooking.sentences.size.toLong() + 1,
         sentenceLevel = sentenceLevel,
-        consecSequence = consecSequence,
+        consecLineSequence = consecSequence,
         // todo
         courtOrder = null,
         endDate = endDate,

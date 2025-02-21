@@ -523,18 +523,26 @@ class SentencingService(
       fineAmount = request.fine,
       sentenceLevel = request.sentenceLevel,
       courtOrder = existingCourtOrderByCaseId(case.id),
+      consecSequence = request.consecutiveToSentenceSeq?.let {
+        findConsecutiveSentenceLineSequence(
+          it,
+          offenderBooking,
+        ).toInt()
+      },
+      lineSequence = offenderSentenceRepository.getNextLineSequence(offenderBooking).toInt(),
     )
 
+    var termSequence = offenderSentenceTermRepository.getNextTermSequence(
+      offenderBookId = offenderBooking.bookingId,
+      sentenceSeq = sentence.id.sequence,
+    )
     request.sentenceTerms.map { termRequest ->
       sentence.offenderSentenceTerms.add(
         OffenderSentenceTerm(
           id = OffenderSentenceTermId(
             offenderBooking = offenderBooking,
             sentenceSequence = sentence.id.sequence,
-            termSequence = offenderSentenceTermRepository.getNextTermSequence(
-              offenderBookId = offenderBooking.bookingId,
-              sentenceSeq = sentence.id.sequence,
-            ),
+            termSequence = termSequence++,
           ),
           years = termRequest.years,
           months = termRequest.months,
@@ -587,6 +595,18 @@ class SentencingService(
         null,
       )
     }
+  }
+
+  private fun findConsecutiveSentenceLineSequence(sentenceSequence: Long, offenderBooking: OffenderBooking): Long {
+    val sentence = offenderSentenceRepository.findByIdOrNull(
+      SentenceId(
+        sequence = sentenceSequence,
+        offenderBooking = offenderBooking,
+      ),
+    )
+      ?: throw NotFoundException("Consecutive sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
+    return sentence.lineSequence?.toLong()
+      ?: throw NotFoundException("No Line sequence found for Consecutive sentence with booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence")
   }
 
   @Audit
@@ -700,7 +720,9 @@ class SentencingService(
           }
         }
 
-        if (sentence.offenderSentenceCharges.map { it.offenderCharge.id }.toSet() != request.offenderChargeIds.toSet()) {
+        if (sentence.offenderSentenceCharges.map { it.offenderCharge.id }
+            .toSet() != request.offenderChargeIds.toSet()
+        ) {
           sentence.offenderSentenceCharges.clear()
           sentence.offenderSentenceCharges.addAll(
             request.offenderChargeIds.map { chargeId ->
