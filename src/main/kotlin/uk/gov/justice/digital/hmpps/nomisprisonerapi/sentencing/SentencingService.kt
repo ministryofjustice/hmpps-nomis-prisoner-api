@@ -523,8 +523,9 @@ class SentencingService(
       fineAmount = request.fine,
       sentenceLevel = request.sentenceLevel,
       courtOrder = existingCourtOrderByCaseId(case.id),
+      // this is the sentence sequence this sentence is consecutive to
       consecSequence = request.consecutiveToSentenceSeq?.let {
-        findConsecutiveSentenceLineSequence(
+        findConsecutiveSentenceSequence(
           it,
           offenderBooking,
         ).toInt()
@@ -597,7 +598,7 @@ class SentencingService(
     }
   }
 
-  private fun findConsecutiveSentenceLineSequence(sentenceSequence: Long, offenderBooking: OffenderBooking): Long {
+  private fun findConsecutiveSentenceSequence(sentenceSequence: Long, offenderBooking: OffenderBooking): Long {
     val sentence = offenderSentenceRepository.findByIdOrNull(
       SentenceId(
         sequence = sentenceSequence,
@@ -605,8 +606,7 @@ class SentencingService(
       ),
     )
       ?: throw NotFoundException("Consecutive sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
-    return sentence.lineSequence?.toLong()
-      ?: throw NotFoundException("No Line sequence found for Consecutive sentence with booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence")
+    return sentence.id.sequence
   }
 
   @Audit
