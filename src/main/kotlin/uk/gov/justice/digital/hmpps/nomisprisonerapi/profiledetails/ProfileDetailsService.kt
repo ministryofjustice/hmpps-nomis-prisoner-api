@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.profiledetails
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileTypeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTime
 import java.time.LocalDate
 
 @Service
@@ -30,20 +29,21 @@ class ProfileDetailsService(
   private val telemetryClient: TelemetryClient,
 ) {
 
-  fun getProfileDetails(offenderNo: String): PrisonerProfileDetailsResponse {
+  fun getProfileDetails(offenderNo: String, profileTypes: List<String>, bookingId: Long? = null): PrisonerProfileDetailsResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("No offender found for $offenderNo")
     }
 
     return bookingRepository.findAllByOffenderNomsId(offenderNo)
+      .filter { booking -> bookingId == null || booking.bookingId == bookingId }
       .mapNotNull { booking ->
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
-          startDateTime = booking.bookingBeginDate,
-          endDateTime = booking.getReleaseTime(),
           latestBooking = booking.bookingSequence == 1,
+          startDateTime = booking.bookingBeginDate,
           profileDetails = booking.profileDetails
             .filter { it.id.sequence == 1L }
+            .filter { profileTypes.isEmpty() || it.id.profileType.type in profileTypes }
             .map { pd ->
               ProfileDetailsResponse(
                 type = pd.id.profileType.type,

@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.profiledetails
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails
 
 import io.opentelemetry.sdk.testing.assertj.OpenTelemetryAssertions.assertThat
 import org.assertj.core.api.Assertions.tuple
@@ -74,7 +74,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       @Test
       fun `not found if prisoner does not exist`() {
         webTestClient.get().uri("/prisoners/A1234AA/profile-details")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -98,8 +98,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           .consumeWith {
             with(it.responseBody!!) {
               assertThat(offenderNo).isEqualTo("A1234AA")
-              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
-                .containsExactly(tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true))
+              assertThat(bookings).extracting("bookingId", "latestBooking")
+                .containsExactly(tuple(booking.bookingId, true))
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
                   tuple("L_EYE_C", "RED"),
@@ -286,10 +286,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
                 .containsExactly(
-                  tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true),
-                  tuple(oldBooking.bookingId, oldBooking.bookingBeginDate, oldBooking.bookingEndDate, false),
+                  tuple(booking.bookingId, true, booking.bookingBeginDate),
+                  tuple(oldBooking.bookingId, false, oldBooking.bookingBeginDate),
                 )
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
@@ -324,10 +324,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
                 .containsExactly(
-                  tuple(booking.bookingId, booking.bookingBeginDate, booking.bookingEndDate, true),
-                  tuple(oldBooking.bookingId, oldBooking.bookingBeginDate, oldBooking.bookingEndDate, false),
+                  tuple(booking.bookingId, true, booking.bookingBeginDate),
+                  tuple(oldBooking.bookingId, false, oldBooking.bookingBeginDate),
                 )
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
@@ -367,10 +367,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "startDateTime", "endDateTime", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
                 .containsExactly(
-                  tuple(booking.bookingId, booking.bookingBeginDate, null, true),
-                  tuple(aliasBooking.bookingId, today.minusDays(2), yesterday, false),
+                  tuple(booking.bookingId, true, booking.bookingBeginDate),
+                  tuple(aliasBooking.bookingId, false, aliasBooking.bookingBeginDate),
                 )
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
@@ -385,10 +385,104 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
             }
           }
       }
+
+      @Test
+      fun `should return profile details for requested profile types`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BROWN")
+              profileDetail(profileType = "FACIAL_HAIR", profileCode = "CLEAN SHAVEN")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk("A1234AA", profileTypes = listOf("HAIR", "SHOESIZE"))
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
+                .containsExactly(tuple(booking.bookingId, true, booking.bookingBeginDate))
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("HAIR", "BROWN"),
+                  tuple("SHOESIZE", "8.5"),
+                )
+            }
+          }
+      }
+
+      @Test
+      fun `should return profile details for requested booking ID`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BROWN")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
+            }
+            booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BLACK")
+              profileDetail(profileType = "SHOESIZE", profileCode = "9")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk("A1234AA", bookingId = booking.bookingId)
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
+                .containsExactly(tuple(booking.bookingId, true, booking.bookingBeginDate))
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("HAIR", "BROWN"),
+                  tuple("SHOESIZE", "8.5"),
+                )
+            }
+          }
+      }
+
+      @Test
+      fun `should return profile details for requested booking ID and profile type`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BROWN")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
+            }
+            booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+              profile()
+              profileDetail(profileType = "HAIR", profileCode = "BLACK")
+              profileDetail(profileType = "SHOESIZE", profileCode = "9")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk("A1234AA", profileTypes = listOf("HAIR"), bookingId = booking.bookingId)
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
+                .containsExactly(tuple(booking.bookingId, true, booking.bookingBeginDate))
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("HAIR", "BROWN"),
+                )
+            }
+          }
+      }
     }
 
-    fun WebTestClient.getProfileDetailsOk(offenderNo: String) = this.get().uri("/prisoners/$offenderNo/profile-details")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+    fun WebTestClient.getProfileDetailsOk(offenderNo: String, profileTypes: List<String> = listOf(), bookingId: Long? = null) = this.get()
+      .uri {
+        it.path("/prisoners/$offenderNo/profile-details")
+          .queryParam("profileTypes", profileTypes)
+          .apply { bookingId?.let { queryParam("bookingId", bookingId) } }
+          .build()
+      }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
       .exchange()
       .expectStatus().isOk
       .expectBody<PrisonerProfileDetailsResponse>()
@@ -404,30 +498,34 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       @Test
       fun `access unauthorised with no auth token`() {
         webTestClient.put().uri("/prisoners/A1234AA/profile-details")
+          .bodyValue(UpsertProfileDetailsRequest("HAIR", "BROWN"))
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoners/A1234AA/profile-details")
+        webTestClient.put().uri("/prisoners/A1234AA/profile-details")
           .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(UpsertProfileDetailsRequest("HAIR", "BROWN"))
           .exchange()
           .expectStatus().isForbidden
       }
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoners/A1234AA/profile-details")
+        webTestClient.put().uri("/prisoners/A1234AA/profile-details")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .bodyValue(UpsertProfileDetailsRequest("HAIR", "BROWN"))
           .exchange()
           .expectStatus().isForbidden
       }
 
       @Test
       fun `not found if prisoner does not exist`() {
-        webTestClient.get().uri("/prisoners/A1234AA/profile-details")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+        webTestClient.put().uri("/prisoners/A1234AA/profile-details")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .bodyValue(UpsertProfileDetailsRequest("HAIR", "BROWN"))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -793,7 +891,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       .expectBody<UpsertProfileDetailsResponse>()
 
     fun WebTestClient.upsertProfileDetails(offenderNo: String, profileType: String, profileCode: String?) = put().uri("/prisoners/$offenderNo/profile-details")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISON_PERSON")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
       .bodyValue(UpsertProfileDetailsRequest(profileType, profileCode))
       .exchange()
 

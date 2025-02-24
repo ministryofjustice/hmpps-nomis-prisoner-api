@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.profiledetails
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -13,15 +13,16 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+@PreAuthorize("hasAnyRole('ROLE_NOMIS_CONTACTPERSONS')")
 class ProfileDetailsResource(private val service: ProfileDetailsService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISON_PERSON')")
   @GetMapping("/prisoners/{offenderNo}/profile-details")
   @Operation(
     summary = "Get profile details for a prisoner",
@@ -71,7 +72,9 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
   )
   fun getProfileDetails(
     @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
-  ): PrisonerProfileDetailsResponse = service.getProfileDetails(offenderNo)
+    @Schema(description = "Profile types", example = "HAIR") @RequestParam(required = false) profileTypes: List<String> = listOf(),
+    @Schema(description = "Booking ID", example = "12345") @RequestParam(required = false) bookingId: Long? = null,
+  ): PrisonerProfileDetailsResponse = service.getProfileDetails(offenderNo, profileTypes, bookingId)
 
   @PutMapping("/prisoners/{offenderNo}/profile-details")
   @Operation(

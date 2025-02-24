@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -48,10 +49,9 @@ class SentencingAdjustmentService(
           adjustmentDate = request.adjustmentDate,
           adjustmentNumberOfDays = request.adjustmentDays,
           fromDate = request.adjustmentFromDate,
-          // dates are inclusive so a 1-day remand starts and end on dame day
-          toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1),
+          toDate = request.adjustmentFromDate.asToDate(request.adjustmentDays),
           comment = request.comment,
-          active = request.active,
+          active = request.active.takeUnlessZeroDays(request.adjustmentDays),
         ),
       ).id
       telemetryClient.trackEvent(
@@ -77,11 +77,15 @@ class SentencingAdjustmentService(
       this.adjustmentDate = request.adjustmentDate
       this.adjustmentNumberOfDays = request.adjustmentDays
       this.fromDate = request.adjustmentFromDate
-      this.toDate = request.adjustmentFromDate?.plusDays(request.adjustmentDays - 1)
+      this.toDate = request.adjustmentFromDate.asToDate(request.adjustmentDays)
       this.comment = request.comment
-      request.active?.also {
-        // only set when supplied - currently DPS never overwrite this
-        this.active = it
+      if (request.adjustmentDays == 0L) {
+        this.active = false
+      } else {
+        request.active?.also {
+          // only set when supplied - currently DPS never overwrite this
+          this.active = it
+        }
       }
       this.sentenceSequence = sentence.id.sequence
       telemetryClient.trackEvent(
@@ -144,9 +148,9 @@ class SentencingAdjustmentService(
         adjustmentDate = request.adjustmentDate,
         adjustmentNumberOfDays = request.adjustmentDays,
         fromDate = request.adjustmentFromDate,
-        toDate = request.adjustmentFromDate.plusDays(request.adjustmentDays - 1),
+        toDate = request.adjustmentFromDate.asToDate(request.adjustmentDays),
         comment = request.comment,
-        active = request.active,
+        active = request.active.takeUnlessZeroDays(request.adjustmentDays),
       ),
     ).id
     telemetryClient.trackEvent(
@@ -173,11 +177,15 @@ class SentencingAdjustmentService(
     this.adjustmentDate = request.adjustmentDate
     this.adjustmentNumberOfDays = request.adjustmentDays
     this.fromDate = request.adjustmentFromDate
-    this.toDate = request.adjustmentFromDate.plusDays(request.adjustmentDays - 1)
+    this.toDate = request.adjustmentFromDate.asToDate(request.adjustmentDays)
     this.comment = request.comment
-    request.active?.also {
-      // only set when supplied - currently DPS never overwrite this
-      this.active = it
+    if (request.adjustmentDays == 0L) {
+      this.active = false
+    } else {
+      request.active?.also {
+        // only set when supplied - currently DPS never overwrite this
+        this.active = it
+      }
     }
     entityManager.flush()
     storedProcedureRepository.postKeyDateAdjustmentUpsert(
@@ -287,3 +295,11 @@ private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustme
   hasBeenReleased = this.offenderBooking.hasBeenReleased(),
   prisonId = this.offenderBooking.location?.id ?: "OUT",
 )
+
+// dates are inclusive so a 1-day remand starts and end on dame day - unless zero days so have no toDate else it would be the day before
+private fun LocalDate?.asToDate(adjustmentDays: Long) = this?.takeIf { adjustmentDays > 0 }?.plusDays(adjustmentDays - 1)
+private fun Boolean.takeUnlessZeroDays(adjustmentDays: Long) = if (adjustmentDays == 0L) {
+  false
+} else {
+  this
+}
