@@ -782,7 +782,7 @@ class SentencingService(
     }
   }
 
-  fun refreshCourtOrder(
+  private fun refreshCourtOrder(
     courtEvent: CourtEvent,
     offenderNo: String,
   ) {
