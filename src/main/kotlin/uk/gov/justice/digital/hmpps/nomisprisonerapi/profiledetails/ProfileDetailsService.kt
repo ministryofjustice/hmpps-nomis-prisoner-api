@@ -29,18 +29,20 @@ class ProfileDetailsService(
   private val telemetryClient: TelemetryClient,
 ) {
 
-  fun getProfileDetails(offenderNo: String): PrisonerProfileDetailsResponse {
+  fun getProfileDetails(offenderNo: String, profileTypes: List<String>, bookingId: Long? = null): PrisonerProfileDetailsResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("No offender found for $offenderNo")
     }
 
     return bookingRepository.findAllByOffenderNomsId(offenderNo)
+      .filter { booking -> bookingId == null || booking.bookingId == bookingId }
       .mapNotNull { booking ->
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
           latestBooking = booking.bookingSequence == 1,
           profileDetails = booking.profileDetails
             .filter { it.id.sequence == 1L }
+            .filter { profileTypes.isEmpty() || it.id.profileType.type in profileTypes }
             .map { pd ->
               ProfileDetailsResponse(
                 type = pd.id.profileType.type,
