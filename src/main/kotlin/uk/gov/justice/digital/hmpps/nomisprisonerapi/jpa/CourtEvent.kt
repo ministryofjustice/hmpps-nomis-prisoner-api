@@ -123,6 +123,7 @@ class CourtEvent(
   @OneToMany(mappedBy = "id.courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   var courtEventCharges: MutableList<CourtEventCharge> = mutableListOf(),
 
+  // Only ever 1 order of type "AUTO" for an event
   @OneToMany(mappedBy = "courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   val courtOrders: MutableList<CourtOrder> = mutableListOf(),
 

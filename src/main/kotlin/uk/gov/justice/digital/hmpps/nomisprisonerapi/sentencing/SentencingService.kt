@@ -522,7 +522,8 @@ class SentencingService(
       status = request.status,
       fineAmount = request.fine,
       sentenceLevel = request.sentenceLevel,
-      courtOrder = existingCourtOrderByCaseId(case.id),
+      // will always have to be a court order (via the court event) - throw exception if not
+      courtOrder = existingCourtOrder(offenderBooking = offenderBooking, courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId)) ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}"),
       // this is the sentence sequence this sentence is consecutive to
       consecSequence = request.consecutiveToSentenceSeq?.let {
         findConsecutiveSentenceSequence(
@@ -650,6 +651,7 @@ class SentencingService(
   ) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       findSentence(booking = case.offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
+        val offenderBooking = case.offenderBooking
         sentence.category = lookupSentenceCategory(request.sentenceCategory)
         sentence.calculationType = lookupSentenceCalculationType(
           categoryCode = request.sentenceCategory,
@@ -662,6 +664,7 @@ class SentencingService(
         sentence.status = request.status
         sentence.fineAmount = request.fine
         sentence.sentenceLevel = request.sentenceLevel
+        sentence.courtOrder = existingCourtOrder(offenderBooking = offenderBooking, courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId)) ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}")
 
         val requestTermTypes = request.sentenceTerms.map { it.sentenceTermType }
         // terms maximum of 2, no duplicate term codes and DPS provide terms in the correct order
@@ -779,7 +782,7 @@ class SentencingService(
     }
   }
 
-  private fun refreshCourtOrder(
+  fun refreshCourtOrder(
     courtEvent: CourtEvent,
     offenderNo: String,
   ) {
@@ -932,6 +935,7 @@ class SentencingService(
         createdByUsername = sentence.createUsername,
         sentenceTerms = sentence.offenderSentenceTerms.map { it.toSentenceTermResponse() },
         offenderCharges = sentence.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
+        prisonId = sentence.id.offenderBooking.location?.id ?: "OUT",
       )
     }
       ?: throw NotFoundException("Offender sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")

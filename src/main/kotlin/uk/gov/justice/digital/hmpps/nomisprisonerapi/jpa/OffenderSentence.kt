@@ -63,7 +63,7 @@ data class OffenderSentence(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ORDER_ID")
-  val courtOrder: CourtOrder? = null,
+  var courtOrder: CourtOrder? = null,
 
   @Column(name = "CONSEC_TO_SENTENCE_SEQ")
   val consecSequence: Int? = null,

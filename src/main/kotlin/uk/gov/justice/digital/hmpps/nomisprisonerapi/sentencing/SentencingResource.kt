@@ -1523,6 +1523,7 @@ data class SentenceResponse(
   val createdByUsername: String,
   val sentenceTerms: List<SentenceTermResponse>,
   val offenderCharges: List<OffenderChargeResponse>,
+  val prisonId: String,
 )
 
 @Schema(description = "Sentence Term")
@@ -1685,6 +1686,7 @@ data class CreateSentenceRequest(
   val sentenceTerms: List<SentenceTermRequest>,
   val offenderChargeIds: List<Long>,
   val consecutiveToSentenceSeq: Long? = null,
+  val eventId: Long,
 )
 
 @Schema(description = "Sentence term request")
