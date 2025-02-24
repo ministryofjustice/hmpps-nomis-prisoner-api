@@ -286,10 +286,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
                 .containsExactly(
-                  tuple(booking.bookingId, true),
-                  tuple(oldBooking.bookingId, false),
+                  tuple(booking.bookingId, true, booking.bookingBeginDate),
+                  tuple(oldBooking.bookingId, false, oldBooking.bookingBeginDate),
                 )
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
@@ -324,10 +324,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
                 .containsExactly(
-                  tuple(booking.bookingId, true),
-                  tuple(oldBooking.bookingId, false),
+                  tuple(booking.bookingId, true, booking.bookingBeginDate),
+                  tuple(oldBooking.bookingId, false, oldBooking.bookingBeginDate),
                 )
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
@@ -367,10 +367,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA")
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "latestBooking")
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
                 .containsExactly(
-                  tuple(booking.bookingId, true),
-                  tuple(aliasBooking.bookingId, false),
+                  tuple(booking.bookingId, true, booking.bookingBeginDate),
+                  tuple(aliasBooking.bookingId, false, aliasBooking.bookingBeginDate),
                 )
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
@@ -402,8 +402,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA", profileTypes = listOf("HAIR", "SHOESIZE"))
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "latestBooking")
-                .containsExactly(tuple(booking.bookingId, true))
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
+                .containsExactly(tuple(booking.bookingId, true, booking.bookingBeginDate))
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
                   tuple("HAIR", "BROWN"),
@@ -433,8 +433,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA", bookingId = booking.bookingId)
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "latestBooking")
-                .containsExactly(tuple(booking.bookingId, true))
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
+                .containsExactly(tuple(booking.bookingId, true, booking.bookingBeginDate))
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
                   tuple("HAIR", "BROWN"),
@@ -464,8 +464,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         webTestClient.getProfileDetailsOk("A1234AA", profileTypes = listOf("HAIR"), bookingId = booking.bookingId)
           .consumeWith {
             with(it.responseBody!!) {
-              assertThat(bookings).extracting("bookingId", "latestBooking")
-                .containsExactly(tuple(booking.bookingId, true))
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
+                .containsExactly(tuple(booking.bookingId, true, booking.bookingBeginDate))
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
                   tuple("HAIR", "BROWN"),

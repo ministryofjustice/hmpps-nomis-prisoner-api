@@ -40,6 +40,7 @@ class ProfileDetailsService(
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
           latestBooking = booking.bookingSequence == 1,
+          startDateTime = booking.bookingBeginDate,
           profileDetails = booking.profileDetails
             .filter { it.id.sequence == 1L }
             .filter { profileTypes.isEmpty() || it.id.profileType.type in profileTypes }
