@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.profiledetails
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content

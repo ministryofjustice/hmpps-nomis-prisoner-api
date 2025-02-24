@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.profiledetails
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileTypeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson.getReleaseTime
 import java.time.LocalDate
 
 @Service
@@ -39,8 +38,6 @@ class ProfileDetailsService(
       .mapNotNull { booking ->
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
-          startDateTime = booking.bookingBeginDate,
-          endDateTime = booking.getReleaseTime(),
           latestBooking = booking.bookingSequence == 1,
           profileDetails = booking.profileDetails
             .filter { it.id.sequence == 1L }
