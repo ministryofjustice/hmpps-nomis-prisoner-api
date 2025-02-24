@@ -1070,7 +1070,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if case not found`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/54321/sentences/${sentence.id.sequence}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/54321/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
@@ -1134,6 +1135,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("cjaAct").isEqualTo("A")
           .jsonPath("sled2Calc").isEqualTo("2023-01-20")
           .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
+          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location!!.id)
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(2)
@@ -1927,7 +1929,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `404 when case does not exist`() {
-        webTestClient.put().uri("/prisoners/$offenderNo/sentencing/court-cases/1234/court-appearances/${courtEvent.id}/charges/${offenderCharge1.id}")
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/1234/court-appearances/${courtEvent.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -2013,7 +2016,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createOffenderChargeRequest(resultCode1 = "1101", offenceDate = LocalDate.parse("2024-01-01"), offenceEndDate = LocalDate.parse("2024-01-02")),
+              createOffenderChargeRequest(
+                resultCode1 = "1101",
+                offenceDate = LocalDate.parse("2024-01-01"),
+                offenceEndDate = LocalDate.parse("2024-01-02"),
+              ),
             ),
           )
           .exchange()
@@ -2508,7 +2515,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `will log event when court appearance does not exist`() {
-        webTestClient.delete().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/1234")
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/1234")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -3157,17 +3165,20 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if no court event charge is found - offender charge and appearance do exist seperately`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge3.id}")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge3.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Court event charge with offenderChargeId ${offenderCharge3.id} for ${prisonerAtMoorland.nomsId} not found")
+          .jsonPath("developerMessage")
+          .isEqualTo("Court event charge with offenderChargeId ${offenderCharge3.id} for ${prisonerAtMoorland.nomsId} not found")
       }
 
       @Test
       fun `will return 404 if charge not found`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/111")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/111")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
@@ -3602,7 +3613,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3616,7 +3627,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3629,7 +3640,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3646,7 +3657,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3662,7 +3673,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(category = "TREE"),
+              createSentence(category = "TREE", eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3678,7 +3689,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(calcType = "TREE"),
+              createSentence(calcType = "TREE", eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3695,7 +3706,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(calcType = "ADIMP_ORA"),
+              createSentence(calcType = "ADIMP_ORA", eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3712,7 +3723,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(offenderChargeIds = mutableListOf(123)),
+              createSentence(offenderChargeIds = mutableListOf(123), eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -3728,13 +3739,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(offenderChargeIds = mutableListOf(123), consecSentenceSeq = 234),
+              createSentence(
+                offenderChargeIds = mutableListOf(123),
+                consecSentenceSeq = 234,
+                eventId = courtAppearance.id,
+              ),
             ),
           )
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Consecutive sentence for booking ${courtCase.offenderBooking.bookingId} and sentence sequence 234 not found")
+          .jsonPath("developerMessage")
+          .isEqualTo("Consecutive sentence for booking ${courtCase.offenderBooking.bookingId} and sentence sequence 234 not found")
       }
     }
 
@@ -3742,26 +3758,29 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class CreateSentenceSuccess {
       @Test
       fun `can create a sentence with data`() {
-        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+        val sentenceSeq =
+          webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createSentence(
+                  offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+                  eventId = courtAppearance.id,
+                ),
               ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
-          .returnResult().responseBody!!.sentenceSeq
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+            .returnResult().responseBody!!.sentenceSeq
 
         verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
 
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -3808,63 +3827,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `can create a sentence without a court order`() {
-        // update appearance to have one inactive charge (removing the court order)
-        webTestClient.put()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${courtAppearance.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              // this will leave just one inactive charge
-              createCourtAppearanceRequest(
-                courtEventCharges = mutableListOf(
-                  offenderCharge2.id,
-                ),
-              ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isOk
-
-        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                offenderChargeIds = mutableListOf(offenderCharge2.id),
-              ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
-          .returnResult().responseBody!!.sentenceSeq
-
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("bookingId").isEqualTo(latestBookingId)
-          .jsonPath("sentenceSeq").isEqualTo(sentenceSeq)
-          .jsonPath("courtOrder").doesNotExist()
-          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge2.id)
-      }
-
-      @Test
       fun `will track telemetry for the create`() {
-        val sentenceSeq = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(),
-            ),
-          )
-          .exchange()
-          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
-          .returnResult().responseBody!!.sentenceSeq
+        val sentenceSeq =
+          webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createSentence(eventId = courtAppearance.id),
+              ),
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+            .returnResult().responseBody!!.sentenceSeq
 
         verify(telemetryClient).trackEvent(
           eq("sentence-created"),
@@ -3886,6 +3861,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createSentence(
                 offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+                eventId = courtAppearance.id,
               ),
             ),
           )
@@ -3919,19 +3895,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create consecutive sentences`() {
         // create first sentence
-        val sentenceSeq1 = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+        val sentenceSeq1 =
+          webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createSentence(
+                  offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+                  eventId = courtAppearance.id,
+                ),
               ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
-          .returnResult().responseBody!!.sentenceSeq
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+            .returnResult().responseBody!!.sentenceSeq
 
         // create an aggregate sentence in between (although this will have a line seq, unlike when generated in nomis so not totally accurate)
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
@@ -3944,6 +3922,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentenceLevel = "AGG",
                 calcType = "AGG_IND_ORA",
                 category = "1991",
+                eventId = courtAppearance.id,
               ),
             ),
           )
@@ -3951,39 +3930,43 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isCreated
 
         // create second sentence consecutive to first
-        val sentenceSeq2 = webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                consecSentenceSeq = sentenceSeq1,
-                sentenceTerms = mutableListOf(
-                  createSentenceTerm(
-                    startDate = LocalDate.parse(aLaterDateString),
-                    days = 20,
-                    sentenceTermType = "IMP",
+        val sentenceSeq2 =
+          webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createSentence(
+                  consecSentenceSeq = sentenceSeq1,
+                  sentenceTerms = mutableListOf(
+                    createSentenceTerm(
+                      startDate = LocalDate.parse(aLaterDateString),
+                      days = 20,
+                      sentenceTermType = "IMP",
+                    ),
+                    createSentenceTerm(
+                      startDate = LocalDate.parse(aLaterDateString),
+                      days = 10,
+                      sentenceTermType = "LIC",
+                    ),
                   ),
-                  createSentenceTerm(
-                    startDate = LocalDate.parse(aLaterDateString),
-                    days = 10,
-                    sentenceTermType = "LIC",
-                  ),
+                  eventId = courtAppearance.id,
                 ),
               ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
-          .returnResult().responseBody!!.sentenceSeq
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+            .returnResult().responseBody!!.sentenceSeq
 
-        val sentence1 = webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq1")
+        val sentence1 = webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq1")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectBody(SentenceResponse::class.java)
           .returnResult().responseBody!!
 
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq2")
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq2")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
@@ -4011,9 +3994,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var sentence: OffenderSentence
     private lateinit var sentenceTwo: OffenderSentence
     private lateinit var courtCase: CourtCase
+    private lateinit var courtEvent: CourtEvent
+    private lateinit var courtEvent2: CourtEvent
     private lateinit var newCourtCase: CourtCase
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
+    private lateinit var offenderCharge3: OffenderCharge
     private val aLaterDateString = "2023-01-05"
 
     @BeforeEach
@@ -4027,7 +4013,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             booking(agencyLocationId = "MDI") {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
-                offenderCharge2 = offenderCharge(offenceCode = "RR84700", offenceDate = LocalDate.parse(aLaterDateString))
+                offenderCharge2 =
+                  offenderCharge(offenceCode = "RR84700", offenceDate = LocalDate.parse(aLaterDateString))
+                courtEvent = courtEvent {
+                  courtEventCharge(offenderCharge = offenderCharge)
+                  courtEventCharge(offenderCharge = offenderCharge2)
+                  courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                }
                 sentence = sentence(statusUpdateStaff = staff) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
@@ -4036,8 +4028,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
               newCourtCase = courtCase(reportingStaff = staff, caseSequence = 2) {
+                offenderCharge3 = offenderCharge(offenceCode = "RT88074", resultCode1 = "1002")
+                courtEvent2 = courtEvent(eventDateTime = LocalDateTime.of(2023, 2, 1, 9, 0)) {
+                  courtEventCharge(offenderCharge = offenderCharge3)
+                  courtOrder(courtDate = LocalDate.of(2023, 2, 1))
+                }
                 sentenceTwo = sentence(statusUpdateStaff = staff) {
-                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  offenderSentenceCharge(offenderCharge = offenderCharge3)
                   term(startDate = LocalDate.parse(aLaterDateString), days = 20, sentenceTermType = "IMP")
                 }
               }
@@ -4057,7 +4054,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtEvent.id),
             ),
           )
           .exchange()
@@ -4072,7 +4069,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtEvent.id),
             ),
           )
           .exchange()
@@ -4086,7 +4083,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtEvent.id),
             ),
           )
           .exchange()
@@ -4104,7 +4101,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtEvent2.id),
             ),
           )
           .exchange()
@@ -4121,7 +4118,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtEvent.id),
             ),
           )
           .exchange()
@@ -4139,7 +4136,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(calcType = "ADIMP_ORA"),
+              createSentence(calcType = "ADIMP_ORA", eventId = courtEvent.id),
             ),
           )
           .exchange()
@@ -4164,6 +4161,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               createSentence(
                 calcType = "FTR_ORA",
                 category = "1991",
+                eventId = courtEvent2.id,
                 startDate = LocalDate.parse(aLaterDateString),
                 endDate = null,
                 sentenceLevel = "AGG",
@@ -4221,6 +4219,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 category = "1991",
                 startDate = LocalDate.parse(aLaterDateString),
                 endDate = null,
+                eventId = courtEvent2.id,
                 sentenceLevel = "AGG",
                 fine = BigDecimal.valueOf(9.7),
                 offenderChargeIds = mutableListOf(offenderCharge.id, offenderCharge2.id),
@@ -4283,6 +4282,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               createSentence(
                 calcType = "FTR_ORA",
                 category = "1991",
+                eventId = courtEvent.id,
                 startDate = LocalDate.parse(aLaterDateString),
                 endDate = null,
                 sentenceLevel = "AGG",
@@ -4337,7 +4337,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(),
+              createSentence(eventId = courtEvent.id),
             ),
           )
           .exchange()
@@ -4543,6 +4543,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       createSentenceTerm(),
     ),
     consecSentenceSeq: Long? = null,
+    eventId: Long,
   ) = CreateSentenceRequest(
     startDate = startDate,
     status = status,
@@ -4554,6 +4555,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     sentenceTerms = sentenceTerms,
     offenderChargeIds = offenderChargeIds,
     consecutiveToSentenceSeq = consecSentenceSeq,
+    eventId = eventId,
   )
 
   private fun createSentenceTerm(
