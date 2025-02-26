@@ -1093,7 +1093,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("bookingId").isEqualTo(latestBookingId)
           .jsonPath("sentenceSeq").isEqualTo(sentence.id.sequence)
           .jsonPath("status").isEqualTo("I")
-          .jsonPath("calculationType").isEqualTo("ADIMP_ORA")
+          .jsonPath("calculationType.code").isEqualTo("ADIMP_ORA")
+          .jsonPath("calculationType.description").isEqualTo("ORA CJA03 Standard Determinate Sentence")
           .jsonPath("category.code").isEqualTo("2003")
           .jsonPath("startDate").isEqualTo(aDateString)
           // .jsonPath("courtOrder").isEqualTo("I")
@@ -3564,6 +3565,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
     private lateinit var courtAppearance: CourtEvent
+    private lateinit var courtAppearanceNoCourtOrder: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private var latestBookingId: Long = 0
@@ -3596,6 +3598,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     sentencePurpose(purposeCode = "REPAIR")
                     sentencePurpose(purposeCode = "PUNISH")
                   }
+                }
+                courtAppearanceNoCourtOrder = courtEvent {
+                  courtEventCharge(
+                    resultCode1 = offenderCharge2.resultCode1?.code,
+                    offenderCharge = offenderCharge2,
+                    plea = "NG",
+                  )
                 }
               }
             }
@@ -3754,6 +3763,25 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Test
+    fun `400 if associated appearance Id does not relate to a court order`() {
+      webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            createSentence(
+              offenderChargeIds = mutableListOf(offenderCharge2.id),
+              eventId = courtAppearanceNoCourtOrder.id,
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest.expectBody()
+        .jsonPath("developerMessage")
+        .isEqualTo("Court order not found for booking ${prisonerAtMoorland.latestBooking().bookingId} and court event ${courtAppearanceNoCourtOrder.id}")
+    }
+
     @Nested
     inner class CreateSentenceSuccess {
       @Test
@@ -3788,7 +3816,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("bookingId").isEqualTo(latestBookingId)
           .jsonPath("sentenceSeq").isEqualTo(sentenceSeq)
           .jsonPath("status").isEqualTo("A")
-          .jsonPath("calculationType").isEqualTo("ADIMP")
+          .jsonPath("calculationType.code").isEqualTo("ADIMP")
           .jsonPath("sentenceLevel").isEqualTo("IND")
           .jsonPath("category.code").isEqualTo("2020")
           .jsonPath("startDate").isEqualTo(aDateString)
@@ -4194,7 +4222,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseId").isEqualTo(newCourtCase.id)
           .jsonPath("sentenceSeq").isEqualTo(sentenceTwo.id.sequence)
           .jsonPath("status").isEqualTo("A")
-          .jsonPath("calculationType").isEqualTo("FTR_ORA")
+          .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
           .jsonPath("sentenceLevel").isEqualTo("AGG")
           .jsonPath("category.code").isEqualTo("1991")
           .jsonPath("startDate").isEqualTo(aLaterDateString)
@@ -4256,7 +4284,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseId").isEqualTo(newCourtCase.id)
           .jsonPath("sentenceSeq").isEqualTo(sentenceTwo.id.sequence)
           .jsonPath("status").isEqualTo("A")
-          .jsonPath("calculationType").isEqualTo("FTR_ORA")
+          .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
           .jsonPath("sentenceLevel").isEqualTo("AGG")
           .jsonPath("category.code").isEqualTo("1991")
           .jsonPath("startDate").isEqualTo(aLaterDateString)
@@ -4316,7 +4344,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseId").isEqualTo(courtCase.id)
           .jsonPath("sentenceSeq").isEqualTo(sentence.id.sequence)
           .jsonPath("status").isEqualTo("A")
-          .jsonPath("calculationType").isEqualTo("FTR_ORA")
+          .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
           .jsonPath("sentenceLevel").isEqualTo("AGG")
           .jsonPath("category.code").isEqualTo("1991")
           .jsonPath("startDate").isEqualTo(aLaterDateString)
