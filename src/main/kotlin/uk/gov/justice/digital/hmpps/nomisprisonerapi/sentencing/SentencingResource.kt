@@ -1476,7 +1476,7 @@ data class SentenceResponse(
   val bookingId: Long,
   val sentenceSeq: Long,
   val status: String,
-  val calculationType: String,
+  val calculationType: CodeDescription,
   val category: CodeDescription,
   val startDate: LocalDate,
   val courtOrder: CourtOrderResponse?,

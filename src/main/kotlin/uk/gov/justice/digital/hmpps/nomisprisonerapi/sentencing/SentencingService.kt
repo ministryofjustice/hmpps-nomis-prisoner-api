@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -888,7 +889,7 @@ class SentencingService(
         bookingId = sentence.id.offenderBooking.bookingId,
         sentenceSeq = sentence.id.sequence,
         status = sentence.status,
-        calculationType = sentence.calculationType.id.calculationType,
+        calculationType = CodeDescription(code = sentence.calculationType.id.calculationType, description = sentence.calculationType.description),
         startDate = sentence.startDate,
         courtOrder = sentence.courtOrder?.toCourtOrder(),
         consecSequence = sentence.consecSequence,
