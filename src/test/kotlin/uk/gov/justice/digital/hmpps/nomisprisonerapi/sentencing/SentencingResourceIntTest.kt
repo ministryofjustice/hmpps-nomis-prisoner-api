@@ -3765,22 +3765,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `400 if associated appearance Id does not relate to a court order`() {
-      val sentenceSeq =
-        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
-                eventId = courtAppearance.id,
-              ),
+      webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            createSentence(
+              offenderChargeIds = mutableListOf(offenderCharge2.id),
+              eventId = courtAppearanceNoCourtOrder.id,
             ),
-          )
-          .exchange()
-          .expectStatus().isBadRequest.expectBody()
-          .jsonPath("developerMessage")
-          .isEqualTo("Consecutive sentence for booking ${courtCase.offenderBooking.bookingId} and sentence sequence 234 not found")
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest.expectBody()
+        .jsonPath("developerMessage")
+        .isEqualTo("Court order not found for booking ${prisonerAtMoorland.latestBooking().bookingId} and court event ${courtAppearanceNoCourtOrder.id}")
     }
 
     @Nested
