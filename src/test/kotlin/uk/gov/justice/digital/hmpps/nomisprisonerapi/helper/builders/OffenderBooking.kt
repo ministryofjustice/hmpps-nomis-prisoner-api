@@ -32,9 +32,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -274,6 +276,22 @@ interface BookingDsl {
     dsl: VisitBalanceDsl.() -> Unit = {},
   ): OffenderVisitBalance
 
+  @VisitBalanceAdjustmentDslMarker
+  fun visitBalanceAdjustment(
+    remainingVisitOrders: Int? = 4,
+    previousRemainingVisitOrders: Int? = 0,
+    remainingPrivilegedVisitOrders: Int? = 3,
+    previousRemainingPrivilegedVisitOrders: Int? = 0,
+    adjustmentDate: LocalDate = LocalDate.now(),
+    adjustmentReasonCode: String = IEP_ENTITLEMENT,
+    comment: String? = null,
+    expiryBalance: Int? = null,
+    expiryDate: LocalDate? = null,
+    endorsedStaffId: Long? = null,
+    authorisedStaffId: Long? = null,
+    dsl: VisitBalanceAdjustmentDsl.() -> Unit = {},
+  ): OffenderVisitBalanceAdjustment
+
   @VisitDslMarker
   fun visit(
     visitTypeCode: String = "SCON",
@@ -370,6 +388,7 @@ class BookingBuilderFactory(
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
+  private val visitBalanceAdjustmentBuilderFactory: VisitBalanceAdjustmentBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -387,6 +406,7 @@ class BookingBuilderFactory(
     offenderPhysicalAttributesBuilderFactory,
     offenderProfileBuilderFactory,
     visitBalanceBuilderFactory,
+    visitBalanceAdjustmentBuilderFactory,
     offenderContactPersonBuilderFactory,
     visitBuilderFactory,
     profileDetailBuilderFactory,
@@ -412,6 +432,7 @@ class BookingBuilder(
   private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
   private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
+  private val visitBalanceAdjustmentBuilderFactory: VisitBalanceAdjustmentBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
@@ -848,6 +869,40 @@ class BookingBuilder(
     )
     return offenderBooking.visitBalance!!
   }
+
+  override fun visitBalanceAdjustment(
+    remainingVisitOrders: Int?,
+    previousRemainingVisitOrders: Int?,
+    remainingPrivilegedVisitOrders: Int?,
+    previousRemainingPrivilegedVisitOrders: Int?,
+    adjustmentDate: LocalDate,
+    adjustmentReasonCode: String,
+    comment: String?,
+    expiryBalance: Int?,
+    expiryDate: LocalDate?,
+    endorsedStaffId: Long?,
+    authorisedStaffId: Long?,
+    dsl: VisitBalanceAdjustmentDsl.() -> Unit,
+  ): OffenderVisitBalanceAdjustment = visitBalanceAdjustmentBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        remainingVisitOrders = remainingVisitOrders,
+        previousRemainingVisitOrders = previousRemainingVisitOrders,
+        remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
+        previousRemainingPrivilegedVisitOrders = previousRemainingPrivilegedVisitOrders,
+        adjustmentDate = adjustmentDate,
+        adjustmentReasonCode = adjustmentReasonCode,
+        comment = comment,
+        expiryBalance = expiryBalance,
+        expiryDate = expiryDate,
+        endorsedStaffId = endorsedStaffId,
+        authorisedStaffId = authorisedStaffId,
+      ).also {
+        offenderBooking.visitBalanceAdjustments += it
+        builder.apply(dsl)
+      }
+    }
 
   override fun visit(
     visitTypeCode: String,
