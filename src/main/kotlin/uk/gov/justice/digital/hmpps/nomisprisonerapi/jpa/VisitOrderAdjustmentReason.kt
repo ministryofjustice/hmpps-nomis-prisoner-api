@@ -11,6 +11,8 @@ class VisitOrderAdjustmentReason(code: String, description: String) : ReferenceC
     const val PRIVILEGED_VISIT_ORDER_ISSUE = "PVO_ISSUE"
     const val VISIT_ORDER_CANCEL = "VO_CANCEL"
     const val PRIVILEGED_VISIT_ORDER_CANCEL = "PVO_CANCEL"
+    const val IEP_ENTITLEMENT = "IEP"
+    const val PVO_IEP_ENTITLEMENT = "PVO_IEP"
 
     const val VISIT_ORDER_ADJUSTMENT = "VIS_ORD_ADJ"
 
