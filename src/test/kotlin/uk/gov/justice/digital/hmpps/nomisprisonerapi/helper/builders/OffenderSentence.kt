@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
@@ -94,6 +96,7 @@ class OffenderSentenceBuilder(
   private lateinit var offenderSentence: OffenderSentence
 
   fun build(
+    courtCase: CourtCase?,
     calculationType: String,
     category: String,
     startDate: LocalDate,
@@ -102,7 +105,7 @@ class OffenderSentenceBuilder(
     offenderBooking: OffenderBooking,
     sequence: Long,
     consecLineSequence: Int?,
-    courtOrder: Long?,
+    courtOrder: CourtOrder?,
     endDate: LocalDate,
     commentText: String?,
     absenceCount: Int?,
@@ -141,13 +144,14 @@ class OffenderSentenceBuilder(
     startDate2Calc: LocalDate?,
   ): OffenderSentence = OffenderSentence(
     id = SentenceId(offenderBooking = offenderBooking, sequence = sequence),
+    courtCase = courtCase,
     status = status,
     startDate = startDate,
     calculationType = repository.lookupSentenceCalculationType(calculationType, category),
     category = repository.lookupSentenceCategoryType(category),
     sentenceLevel = sentenceLevel,
     consecSequence = consecLineSequence,
-    // courtOrder = courtOrder,
+    courtOrder = courtOrder,
     endDate = endDate,
     commentText = commentText,
     absenceCount = absenceCount,

@@ -1360,6 +1360,7 @@ data class CourtCaseResponse(
   val courtEvents: List<CourtEventResponse>,
   val offenderCharges: List<OffenderChargeResponse>,
   val caseInfoNumbers: List<CaseIdentifierResponse>,
+  val sentences: List<SentenceResponse>,
 )
 
 @Schema(description = "Court Event")
@@ -1538,7 +1539,7 @@ data class SentenceTermResponse(
   val hours: Int?,
   val startDate: LocalDate,
   val endDate: LocalDate?,
-  val lifeSentenceFlag: Boolean?,
+  val lifeSentenceFlag: Boolean,
 )
 
 @Schema(description = "Court case create request")
