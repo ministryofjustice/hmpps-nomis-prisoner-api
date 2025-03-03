@@ -42,6 +42,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var repository: Repository
   private var aLocationInMoorland = 0L
+  private lateinit var staff: Staff
+  private lateinit var prisonerAtMoorland: Offender
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -62,9 +64,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Nested
   inner class GetCourtCase {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
+    private lateinit var courtOrder: CourtOrder
     private lateinit var courtCaseTwo: CourtCase
     private lateinit var offenderCharge1: OffenderCharge
 
@@ -94,11 +95,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   courtEventCharge(
                     offenderCharge = offenderCharge2,
                   )
-                  courtOrder {
+                  courtOrder = courtOrder {
                     sentencePurpose(purposeCode = "REPAIR")
                     sentencePurpose(purposeCode = "PUNISH")
                   }
                 }
+                sentence(
+                  courtOrder = courtOrder,
+                  calculationType = "AGG_IND_ORA",
+                  category = "1991",
+                )
               }
               courtCaseTwo = courtCase(
                 reportingStaff = staff,
@@ -272,6 +278,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[0].lidsOffenceNumber").isEqualTo(11)
+          .jsonPath("sentences[0].calculationType.code").isEqualTo("AGG_IND_ORA")
+          .jsonPath("sentences[0].category.code").isEqualTo("1991")
       }
 
       @Test
@@ -328,9 +336,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /court-cases/{id}")
   @Nested
   inner class GetCourtCaseForMigration {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
+    private lateinit var courtOrder: CourtOrder
     private lateinit var courtCaseTwo: CourtCase
     private lateinit var offenderCharge1: OffenderCharge
 
@@ -363,11 +370,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   courtEventCharge(
                     offenderCharge = offenderCharge2,
                   )
-                  courtOrder {
+                  courtOrder = courtOrder {
                     sentencePurpose(purposeCode = "REPAIR")
                     sentencePurpose(purposeCode = "PUNISH")
                   }
                 }
+                sentence(courtOrder = courtOrder)
               }
               courtCaseTwo = courtCase(
                 reportingStaff = staff,
@@ -585,7 +593,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      private lateinit var staff: Staff
       private lateinit var prisoner1: Offender
       private lateinit var prisoner1Booking: OffenderBooking
       private lateinit var prisoner1Booking2: OffenderBooking
@@ -752,7 +759,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases")
   @Nested
   inner class GetCourtCasesByOffender {
-    private lateinit var staff: Staff
     private lateinit var prisoner1: Offender
     private lateinit var prisoner1Booking: OffenderBooking
     private lateinit var prisoner1Booking2: OffenderBooking
@@ -868,7 +874,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /prisoners/booking-id/{bookingId}/sentencing/court-cases")
   @Nested
   inner class GetCourtCasesByOffenderBooking {
-    private lateinit var staff: Staff
     private lateinit var prisoner1: Offender
     private lateinit var prisoner1Booking: OffenderBooking
     private lateinit var prisoner1Booking2: OffenderBooking
@@ -982,11 +987,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /prisoners/{offenderNo}/court-cases/{caseId}/sentences/{seq}")
   @Nested
   inner class GetOffenderSentence {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
     private lateinit var courtCase: CourtCase
+    private lateinit var courtOrder: CourtOrder
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private val aDateString = "2023-01-01"
@@ -1004,7 +1008,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-                sentence = sentence(statusUpdateStaff = staff) {
+                courtEvent {
+                  courtOrder = courtOrder()
+                }
+                sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
                   term {}
@@ -1395,8 +1402,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
 
@@ -1629,8 +1634,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -1811,8 +1814,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtEvent: CourtEvent
     private lateinit var earlierCourtEvent: CourtEvent
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
@@ -2094,8 +2095,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtEvent: CourtEvent
     private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
@@ -2436,8 +2435,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtEvent: CourtEvent
     private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
 
     @BeforeEach
@@ -2596,8 +2593,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtEvent: CourtEvent
     private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
 
     @BeforeEach
@@ -2751,8 +2746,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-appearances/{id}")
   @Nested
   inner class GetCourtAppearance {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtAppearance: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private val aDateString = "2023-01-01"
@@ -2928,8 +2921,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/offender-charges/{id}")
   @Nested
   inner class GetOffenderCharge {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtAppearance: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private val aDateString = "2023-01-01"
@@ -3064,8 +3055,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-appearances/{eventId}/charges/{id}")
   @Nested
   inner class GetCourtEventCharge {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
     private lateinit var firstCourtAppearance: CourtEvent
     private lateinit var secondCourtAppearance: CourtEvent
@@ -3222,8 +3211,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtEvent1: CourtEvent
     private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
 
@@ -3376,8 +3363,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtEvent1: CourtEvent
     private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
-    private lateinit var prisonerAtMoorland: Offender
-    private lateinit var staff: Staff
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
@@ -3561,8 +3546,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("POST /prisoners/{offenderNo}/court-cases/{caseId}/sentences")
   inner class CreateSentence {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private lateinit var courtCase: CourtCase
     private lateinit var courtAppearance: CourtEvent
     private lateinit var courtAppearanceNoCourtOrder: CourtEvent
@@ -4016,12 +3999,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   inner class UpdateSentence {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
     private lateinit var sentenceTwo: OffenderSentence
     private lateinit var courtCase: CourtCase
+    private lateinit var courtOrder: CourtOrder
+    private lateinit var courtOrder2: CourtOrder
     private lateinit var courtEvent: CourtEvent
     private lateinit var courtEvent2: CourtEvent
     private lateinit var newCourtCase: CourtCase
@@ -4046,9 +4029,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 courtEvent = courtEvent {
                   courtEventCharge(offenderCharge = offenderCharge)
                   courtEventCharge(offenderCharge = offenderCharge2)
-                  courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                  courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
                 }
-                sentence = sentence(statusUpdateStaff = staff) {
+                sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
                   term(startDate = LocalDate.parse(aLaterDateString), days = 35, sentenceTermType = "IMP")
@@ -4059,9 +4042,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 offenderCharge3 = offenderCharge(offenceCode = "RT88074", resultCode1 = "1002")
                 courtEvent2 = courtEvent(eventDateTime = LocalDateTime.of(2023, 2, 1, 9, 0)) {
                   courtEventCharge(offenderCharge = offenderCharge3)
-                  courtOrder(courtDate = LocalDate.of(2023, 2, 1))
+                  courtOrder2 = courtOrder(courtDate = LocalDate.of(2023, 2, 1))
                 }
-                sentenceTwo = sentence(statusUpdateStaff = staff) {
+                sentenceTwo = sentence(courtOrder = courtOrder2, statusUpdateStaff = staff) {
                   offenderSentenceCharge(offenderCharge = offenderCharge3)
                   term(startDate = LocalDate.parse(aLaterDateString), days = 20, sentenceTermType = "IMP")
                 }
@@ -4383,11 +4366,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("DELETE /prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   inner class DeleteSentence {
-    private lateinit var staff: Staff
-    private lateinit var prisonerAtMoorland: Offender
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
     private lateinit var courtCase: CourtCase
+    private lateinit var courtOrder: CourtOrder
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private val aLaterDateString = "2023-01-05"
@@ -4404,8 +4386,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-
-                sentence = sentence(statusUpdateStaff = staff) {
+                courtEvent {
+                  courtOrder = courtOrder { }
+                }
+                sentence = sentence(courtOrder = courtOrder, statusUpdateStaff = staff) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
                   term {}

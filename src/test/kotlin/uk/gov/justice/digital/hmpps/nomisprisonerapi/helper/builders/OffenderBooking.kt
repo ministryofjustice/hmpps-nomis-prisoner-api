@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPDocument
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
@@ -126,7 +127,7 @@ interface BookingDsl {
     status: String = "I",
     sentenceLevel: String = "AGG",
     consecSequence: Int? = 2,
-    courtOrder: Long? = null,
+    courtOrder: CourtOrder? = null,
     endDate: LocalDate = LocalDate.of(2023, 1, 5),
     commentText: String? = "a sentence comment",
     absenceCount: Int? = 2,
@@ -516,7 +517,7 @@ class BookingBuilder(
     status: String,
     sentenceLevel: String,
     consecSequence: Int?,
-    courtOrder: Long?,
+    courtOrder: CourtOrder?,
     endDate: LocalDate,
     commentText: String?,
     absenceCount: Int?,
@@ -557,6 +558,7 @@ class BookingBuilder(
   ): OffenderSentence = offenderSentenceBuilderFactory.builder()
     .let { builder ->
       builder.build(
+        courtCase = null,
         calculationType = calculationType,
         category = category,
         startDate = startDate,
@@ -565,8 +567,7 @@ class BookingBuilder(
         sequence = offenderBooking.sentences.size.toLong() + 1,
         sentenceLevel = sentenceLevel,
         consecLineSequence = consecSequence,
-        // todo
-        courtOrder = null,
+        courtOrder = courtOrder,
         endDate = endDate,
         commentText = commentText,
         absenceCount = absenceCount,
