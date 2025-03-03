@@ -370,7 +370,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `Adjustment with 0 days is made inactive and as no TO date`() {
+      fun `Adjustment with 0 days has no TO DATE`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -404,7 +404,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("adjustmentDays").isEqualTo("0")
-          .jsonPath("active").isEqualTo(false)
+          .jsonPath("active").isEqualTo(true)
 
         verify(spRepository).postKeyDateAdjustmentUpsert(
           eq(adjustmentId),
@@ -698,7 +698,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `updating an adjustment to zero days removed the to date and makes it inactive`() {
+      fun `updating an adjustment to zero days removes the TO DATE`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -709,7 +709,8 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
               "adjustmentDays": 0,
               "adjustmentTypeCode": "ADA",
               "adjustmentDate": "2023-01-18",
-              "adjustmentFromDate": "2023-01-02"
+              "adjustmentFromDate": "2023-01-02",
+              "active": true
               }
               """,
             ),
@@ -730,7 +731,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("adjustmentDays").isEqualTo(0)
-          .jsonPath("active").isEqualTo(false)
+          .jsonPath("active").isEqualTo(true)
       }
 
       @Test
@@ -1348,7 +1349,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `Adjustment with 0 days is made inactive and as no TO date`() {
+      fun `Adjustment with 0 days has no TO DATE`() {
         val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1382,7 +1383,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-01")
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("adjustmentDays").isEqualTo(0)
-          .jsonPath("active").isEqualTo(false)
+          .jsonPath("active").isEqualTo(true)
       }
 
       @Test
@@ -1820,7 +1821,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `updating an adjustment to zero days removes the to date and makes it inactive`() {
+      fun `updating an adjustment to zero days removes the TO DATE`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -1855,7 +1856,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .jsonPath("adjustmentFromDate").isEqualTo("2023-01-02")
           .jsonPath("adjustmentToDate").doesNotExist()
           .jsonPath("adjustmentDays").isEqualTo("0")
-          .jsonPath("active").isEqualTo(false)
+          .jsonPath("active").isEqualTo(true)
       }
 
       @Test
