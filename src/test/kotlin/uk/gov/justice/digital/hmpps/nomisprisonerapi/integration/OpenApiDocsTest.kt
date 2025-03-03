@@ -73,13 +73,11 @@ class OpenApiDocsTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectBody()
-      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.example").isEqualTo("2021-07-05T10:35:17")
-      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.description")
-      .isEqualTo("Visit start date and time")
-      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.type").isEqualTo("string")
-      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.pattern")
-      .isEqualTo("""^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}${'$'}""")
-      .jsonPath("$.components.schemas.VisitResponse.properties.startDateTime.format").doesNotExist()
+      .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.example").isEqualTo("2021-07-16T12:34:56")
+      .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.description")
+      .isEqualTo("The time the profile info was last changed")
+      .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.type").isEqualTo("string")
+      .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.format").isEqualTo("date-time")
   }
 
   @Test
@@ -100,12 +98,13 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `the open api json doesn't include LocalTime`() {
+  fun `the open api json doesn't include LocalTime and instead uses partial-time format`() {
     webTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
       .expectBody().jsonPath("components.schemas.LocalTime").doesNotExist()
+      .jsonPath("$.components.schemas.UpsertAttendanceRequest.properties.startTime.format").isEqualTo("partial-time")
   }
 }
