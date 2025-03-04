@@ -1139,6 +1139,7 @@ private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
   commentText = this.commentText,
   nonReportFlag = this.nonReportFlag,
   sentencePurposes = this.sentencePurposes.map { it.toSentencePurpose() },
+  eventId = this.courtEvent.id,
 )
 
 private fun SentencePurpose.toSentencePurpose(): SentencePurposeResponse = SentencePurposeResponse(

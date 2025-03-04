@@ -990,6 +990,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
     private lateinit var courtCase: CourtCase
+    private lateinit var appearance: CourtEvent
     private lateinit var courtOrder: CourtOrder
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
@@ -1008,7 +1009,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-                courtEvent {
+                appearance = courtEvent {
                   courtOrder = courtOrder()
                 }
                 sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
@@ -1104,7 +1105,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("calculationType.description").isEqualTo("ORA CJA03 Standard Determinate Sentence")
           .jsonPath("category.code").isEqualTo("2003")
           .jsonPath("startDate").isEqualTo(aDateString)
-          // .jsonPath("courtOrder").isEqualTo("I")
+          .jsonPath("courtOrder.eventId").isEqualTo(appearance.id)
+          .jsonPath("courtOrder.courtDate").isEqualTo(appearance.eventDate.toString())
           .jsonPath("consecSequence").isEqualTo(2)
           .jsonPath("endDate").isEqualTo(aLaterDateString)
           .jsonPath("commentText").isEqualTo("a sentence comment")
