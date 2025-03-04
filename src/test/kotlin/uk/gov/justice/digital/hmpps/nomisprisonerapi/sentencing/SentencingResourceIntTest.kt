@@ -1147,7 +1147,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(2)
-          .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo(courtOrder.courtDate.toString())
           .jsonPath("sentenceTerms[0].endDate").doesNotExist()
           .jsonPath("sentenceTerms[0].years").isEqualTo(2)
           .jsonPath("sentenceTerms[0].months").isEqualTo(3)
@@ -1156,7 +1156,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceTerms[0].hours").isEqualTo(6)
           .jsonPath("sentenceTerms[0].sentenceTermType.description").isEqualTo("Section 86 of 2000 Act")
           .jsonPath("sentenceTerms[0].lifeSentenceFlag").isEqualTo(true)
-          .jsonPath("sentenceTerms[1].startDate").isEqualTo(aLaterDateString)
+          .jsonPath("sentenceTerms[1].startDate").isEqualTo(courtOrder.courtDate.toString())
           .jsonPath("offenderCharges.size()").isEqualTo(2)
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
