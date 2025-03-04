@@ -40,8 +40,9 @@ interface OffenderSentenceDsl {
 
   @OffenderSentenceTermDslMarker
   fun term(
+    // will use the court order date and null end date for dps created sentences
     startDate: LocalDate = LocalDate.of(2023, 1, 1),
-    endDate: LocalDate = LocalDate.of(2023, 1, 5),
+    endDate: LocalDate? = null,
     years: Int? = 2,
     months: Int? = 3,
     weeks: Int? = 4,
@@ -216,7 +217,7 @@ class OffenderSentenceBuilder(
 
   override fun term(
     startDate: LocalDate,
-    endDate: LocalDate,
+    endDate: LocalDate?,
     years: Int?,
     months: Int?,
     weeks: Int?,
@@ -229,7 +230,8 @@ class OffenderSentenceBuilder(
     builder.build(
       offenderBooking = offenderSentence.id.offenderBooking,
       termSequence = (offenderSentence.offenderSentenceTerms.size + 1).toLong(),
-      startDate = startDate,
+      // replicate use of courtOrder date if available (should always be available)
+      startDate = offenderSentence.courtOrder?.courtDate ?: startDate,
       endDate = endDate,
       years = years,
       months = months,

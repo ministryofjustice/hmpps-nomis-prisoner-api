@@ -39,7 +39,7 @@ class OffenderSentenceTermBuilder(
     offenderBooking: OffenderBooking,
     termSequence: Long,
     startDate: LocalDate,
-    endDate: LocalDate,
+    endDate: LocalDate?,
     years: Int?,
     months: Int?,
     weeks: Int?,
