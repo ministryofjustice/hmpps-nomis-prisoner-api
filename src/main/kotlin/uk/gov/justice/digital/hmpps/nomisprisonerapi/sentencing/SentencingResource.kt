@@ -1450,6 +1450,7 @@ data class CourtEventChargeResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtOrderResponse(
   val id: Long,
+  val eventId: Long,
   val courtDate: LocalDate,
   val issuingCourt: String,
   val courtInfoId: String?,
