@@ -1692,8 +1692,6 @@ data class CreateSentenceRequest(
 
 @Schema(description = "Sentence term request")
 data class SentenceTermRequest(
-  val startDate: LocalDate,
-  val endDate: LocalDate? = null,
   val years: Int? = null,
   val months: Int? = null,
   val weeks: Int? = null,

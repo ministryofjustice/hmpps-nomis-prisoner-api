@@ -554,8 +554,9 @@ class SentencingService(
           hours = termRequest.hours,
           lifeSentenceFlag = termRequest.lifeSentenceFlag,
           offenderSentence = sentence,
-          startDate = termRequest.startDate,
-          endDate = termRequest.endDate,
+          // DPS have requested that the court date from Court orders is used here, always present
+          startDate = sentence.courtOrder!!.courtDate,
+          endDate = null,
           sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
         ),
       )
@@ -688,8 +689,6 @@ class SentencingService(
               term.days = termRequest.days
               term.hours = termRequest.hours
               term.lifeSentenceFlag = termRequest.lifeSentenceFlag
-              term.startDate = termRequest.startDate
-              term.endDate = termRequest.endDate
               term.sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType)
             } ?: let {
             sentence.offenderSentenceTerms.add(
@@ -709,8 +708,9 @@ class SentencingService(
                 hours = termRequest.hours,
                 lifeSentenceFlag = termRequest.lifeSentenceFlag,
                 offenderSentence = sentence,
-                startDate = termRequest.startDate,
-                endDate = termRequest.endDate,
+                // court order is always present
+                startDate = sentence.courtOrder!!.courtDate,
+                endDate = null,
                 sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
               ),
             )
