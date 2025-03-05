@@ -32,11 +32,11 @@ class PersonEmployment(
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = true,
+  var active: Boolean = true,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "EMPLOYER_CORP_ID", nullable = true)
-  val employerCorporate: Corporate,
+  var employerCorporate: Corporate,
 
   /*
   Not mapped:
