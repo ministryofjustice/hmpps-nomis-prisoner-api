@@ -1,3 +1,5 @@
+@file:Suppress("ClassName")
+
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitorders
 
 import org.assertj.core.api.Assertions.assertThat
@@ -10,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
@@ -46,14 +49,23 @@ class VisitOrderResourceIntTest : IntegrationTestBase() {
             visitBalance { }
             visitBalanceAdjustment { }
             visitBalanceAdjustment(
-              remainingVisitOrders = 5, 1, null, null,
+              remainingVisitOrders = 5,
+              previousRemainingVisitOrders = 1,
+              remainingPrivilegedVisitOrders = null,
+              previousRemainingPrivilegedVisitOrders = null,
               comment = "this is a comment",
               expiryBalance = 7,
               expiryDate = LocalDate.parse("2027-11-30"),
               endorsedStaffId = 234,
               authorisedStaffId = 123,
             )
-            visitBalanceAdjustment(null, null, 3, 2, adjustmentReasonCode = PVO_IEP_ENTITLEMENT)
+            visitBalanceAdjustment(
+              remainingVisitOrders = null,
+              previousRemainingVisitOrders = null,
+              remainingPrivilegedVisitOrders = 3,
+              previousRemainingPrivilegedVisitOrders = 2,
+              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+            )
           }
         }
       }
@@ -111,8 +123,8 @@ class VisitOrderResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("remainingVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
-          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
+          .jsonPath("remainingVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders!!)
+          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders!!)
       }
 
       @Test
@@ -151,7 +163,6 @@ class VisitOrderResourceIntTest : IntegrationTestBase() {
           assertThat(comment).isNull()
           assertThat(expiryBalance).isNull()
           assertThat(expiryDate).isNull()
-          assertThat(expiryStatus).isNull()
           assertThat(endorsedStaffId).isNull()
           assertThat(authorisedStaffId).isNull()
         }
@@ -166,7 +177,6 @@ class VisitOrderResourceIntTest : IntegrationTestBase() {
           assertThat(comment).isEqualTo("this is a comment")
           assertThat(expiryBalance).isEqualTo(7)
           assertThat(expiryDate).isEqualTo(LocalDate.parse("2027-11-30"))
-          assertThat(expiryStatus).isNull()
           assertThat(endorsedStaffId).isEqualTo(234)
           assertThat(authorisedStaffId).isEqualTo(123)
         }
@@ -178,6 +188,128 @@ class VisitOrderResourceIntTest : IntegrationTestBase() {
           assertThat(adjustmentReason!!.code).isEqualTo("PVO_IEP")
           assertThat(adjustmentReason!!.description).isEqualTo("PVO IEP Entitlements")
         }
+      }
+    }
+  }
+
+  @DisplayName("GET /visit-orders/visit-balance-adjustment/{visitBalanceAdjustmentId}")
+  @Nested
+  inner class getVisitBalanceAdjustment {
+    private lateinit var adjustmentMin: OffenderVisitBalanceAdjustment
+    private lateinit var adjustment: OffenderVisitBalanceAdjustment
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender {
+          booking {
+            adjustmentMin = visitBalanceAdjustment(
+              remainingVisitOrders = null,
+              previousRemainingVisitOrders = null,
+              remainingPrivilegedVisitOrders = null,
+              previousRemainingPrivilegedVisitOrders = null,
+              adjustmentDate = LocalDate.parse("2021-11-30"),
+            )
+            adjustment = visitBalanceAdjustment(
+              remainingVisitOrders = 1,
+              previousRemainingVisitOrders = 2,
+              remainingPrivilegedVisitOrders = 3,
+              previousRemainingPrivilegedVisitOrders = 4,
+              adjustmentDate = LocalDate.parse("2021-11-30"),
+              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+              comment = "this is a comment",
+              expiryBalance = 7,
+              expiryDate = LocalDate.parse("2027-11-30"),
+              endorsedStaffId = 234,
+              authorisedStaffId = 123,
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when adjustment not found`() {
+        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/12345")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_ORDERS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return minimal visit balance adjustment`() {
+        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustmentMin.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_ORDERS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("remainingVisitOrders").doesNotExist()
+          .jsonPath("previousRemainingVisitOrders").doesNotExist()
+          .jsonPath("remainingPrivilegedVisitOrders").doesNotExist()
+          .jsonPath("previousRemainingPrivilegedVisitOrders").doesNotExist()
+          .jsonPath("adjustmentReason.code").isEqualTo("IEP")
+          .jsonPath("adjustmentReason.description").isEqualTo("IEP Entitlements")
+          .jsonPath("adjustmentDate").isEqualTo("2021-11-30")
+          .jsonPath("comment").doesNotExist()
+          .jsonPath("expiryBalance").doesNotExist()
+          .jsonPath("expiryDate").doesNotExist()
+      }
+
+      @Test
+      fun `will return visit balance adjustment fully populated`() {
+        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_ORDERS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("remainingVisitOrders").isEqualTo(1)
+          .jsonPath("previousRemainingVisitOrders").isEqualTo(2)
+          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(3)
+          .jsonPath("previousRemainingPrivilegedVisitOrders").isEqualTo(4)
+          .jsonPath("adjustmentReason.code").isEqualTo(PVO_IEP_ENTITLEMENT)
+          .jsonPath("adjustmentReason.description").isEqualTo("PVO IEP Entitlements")
+          .jsonPath("adjustmentDate").isEqualTo("2021-11-30")
+          .jsonPath("comment").isEqualTo("this is a comment")
+          .jsonPath("expiryBalance").isEqualTo(7)
+          .jsonPath("expiryDate").isEqualTo("2027-11-30")
       }
     }
   }

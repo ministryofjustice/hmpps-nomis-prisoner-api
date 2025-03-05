@@ -14,8 +14,7 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.VISIT_ORDER_ADJUSTMENT
 import java.time.LocalDate
 
 @Entity
@@ -48,12 +47,11 @@ data class OffenderVisitBalanceAdjustment(
   val previousRemainingPrivilegedVisitOrders: Int? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'" + VisitOrderAdjustmentReason.VISIT_ORDER_ADJUSTMENT + "'",
+          value = "'$VISIT_ORDER_ADJUSTMENT'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(
@@ -65,7 +63,7 @@ data class OffenderVisitBalanceAdjustment(
       ),
     ],
   )
-  val adjustReasonCode: VisitOrderAdjustmentReason? = null,
+  val adjustReasonCode: VisitOrderAdjustmentReason,
 
   @Column(name = "AUTHORISED_STAFF_ID")
   val authorisedStaffId: Long? = null,
@@ -74,7 +72,7 @@ data class OffenderVisitBalanceAdjustment(
   val endorsedStaffId: Long? = null,
 
   @Column(name = "ADJUST_DATE")
-  val adjustDate: LocalDate? = null,
+  val adjustDate: LocalDate,
 
   @Column(name = "COMMENT_TEXT")
   @Size(max = 240)
@@ -85,10 +83,6 @@ data class OffenderVisitBalanceAdjustment(
 
   @Column(name = "EXPIRY_DATE")
   val expiryDate: LocalDate? = null,
-
-  @Column(name = "EXPIRY_STATUS")
-  @Size(max = 3)
-  val expiryStatus: String? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {

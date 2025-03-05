@@ -22,12 +22,12 @@ import java.time.LocalDate
 
 @RestController
 @Validated
+@PreAuthorize("hasRole('ROLE_NOMIS_VISIT_ORDERS')")
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class VisitOrderBalanceResource(
   private val visitOrderService: VisitOrderService,
 ) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISIT_ORDERS')")
   @GetMapping("/prisoners/{offenderNo}/visit-orders/balance/to-migrate")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -75,6 +75,54 @@ class VisitOrderBalanceResource(
     @PathVariable
     offenderNo: String,
   ): PrisonerVisitOrderBalanceResponse = visitOrderService.getVisitOrderBalance(offenderNo)
+
+  @GetMapping("/visit-orders/visit-balance-adjustment/{visitBalanceAdjustmentId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get specific offender visit balance adjustment",
+    description = "Retrieves offender visit balance adjustment. Requires ROLE_NOMIS_VISIT_ORDERS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Visit balance adjustment returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_ORDERS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Adjustment does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getVisitBalanceAdjustment(
+    @Schema(description = "Visit balance adjustment id", example = "5")
+    @PathVariable
+    visitBalanceAdjustmentId: Long,
+  ): VisitBalanceAdjustmentResponse = visitOrderService.getVisitBalanceAdjustment(visitBalanceAdjustmentId)
 }
 
 @Schema(description = "The list of visit orders held against a prisoner")
@@ -87,12 +135,12 @@ data class PrisonerVisitOrderBalanceResponse(
   val remainingPrivilegedVisitOrders: Int = 0,
 
   @Schema(description = "Balance adjustments for this prisoner over the last 28 days")
-  val visitOrderBalanceAdjustments: List<VisitOrderBalanceAdjResponse>,
+  val visitOrderBalanceAdjustments: List<VisitBalanceAdjustmentResponse>,
 )
 
-@Schema(description = "The visit orders balance changes held against a booking for a  prisoner")
+@Schema(description = "The visit orders balance changes held against a booking for a prisoner")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class VisitOrderBalanceAdjResponse(
+data class VisitBalanceAdjustmentResponse(
   @Schema(description = "Number of visit orders affected by the adjustment")
   val remainingVisitOrders: Int? = null,
   @Schema(description = "Previous number of visit orders before the adjustment")
@@ -111,8 +159,6 @@ data class VisitOrderBalanceAdjResponse(
   val expiryBalance: Int? = null,
   @Schema(description = "Expiry date")
   val expiryDate: LocalDate? = null,
-  @Schema(description = "Expiry status")
-  val expiryStatus: String? = null,
   @Schema(description = "Which staff member endorsed the adjustment aka Entered by")
   val endorsedStaffId: Long? = null,
   @Schema(description = "Which staff member authorised the adjustment")
@@ -122,17 +168,16 @@ data class VisitOrderBalanceAdjResponse(
   // val createDateTime: LocalDateTime
 )
 
-fun OffenderVisitBalanceAdjustment.toVisitOrderBalanceAdjResponse(): VisitOrderBalanceAdjResponse = VisitOrderBalanceAdjResponse(
+fun OffenderVisitBalanceAdjustment.toVisitBalanceAdjustmentResponse(): VisitBalanceAdjustmentResponse = VisitBalanceAdjustmentResponse(
   remainingVisitOrders = remainingVisitOrders,
   previousRemainingVisitOrders = previousRemainingVisitOrders,
   remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
   previousRemainingPrivilegedVisitOrders = previousRemainingPrivilegedVisitOrders,
-  adjustmentReason = adjustReasonCode?.toCodeDescription(),
+  adjustmentReason = adjustReasonCode.toCodeDescription(),
   authorisedStaffId = authorisedStaffId,
   endorsedStaffId = endorsedStaffId,
   adjustmentDate = adjustDate,
   comment = commentText,
   expiryBalance = expiryBalance,
   expiryDate = expiryDate,
-  expiryStatus = expiryStatus,
 )
