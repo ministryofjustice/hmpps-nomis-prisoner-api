@@ -1666,7 +1666,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     description = "Updates a person identifier in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
     responses = [
       ApiResponse(
-        responseCode = "209",
+        responseCode = "200",
         description = "Person Identifier updated",
       ),
       ApiResponse(
@@ -1773,6 +1773,188 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     @PathVariable
     sequence: Long,
   ) = contactPersonService.deletePersonIdentifier(personId, sequence)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PostMapping("/persons/{personId}/employment")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a person employment",
+    description = "Creates a person employment in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Person Employment sequence returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreatePersonEmploymentResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request data, e.g corporate is not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPersonEmployment(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @RequestBody @Valid
+    request: CreatePersonEmploymentRequest,
+  ): CreatePersonEmploymentResponse = contactPersonService.createPersonEmployment(personId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/persons/{personId}/employment/{sequence}")
+  @Operation(
+    summary = "Updates a person employment",
+    description = "Updates a person employment in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Person Employment updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request data, e.g type is not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person or employment does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePersonEmployment(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Employment sequence", example = "4")
+    @PathVariable
+    sequence: Long,
+    @RequestBody @Valid
+    request: UpdatePersonEmploymentRequest,
+  ) = contactPersonService.updatePersonEmployment(personId, sequence, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/persons/{personId}/employment/{sequence}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Deletes a person employment",
+    description = "Deletes a person employment in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Person Employment deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Person does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deletePersonEmployment(
+    @Schema(description = "Person Id", example = "12345")
+    @PathVariable
+    personId: Long,
+    @Schema(description = "Employment sequence", example = "4")
+    @PathVariable
+    sequence: Long,
+  ) = contactPersonService.deletePersonEmployment(personId, sequence)
 }
 
 @Schema(description = "The data held in NOMIS about a person who is a contact for a prisoner")
@@ -2242,6 +2424,25 @@ data class UpdatePersonIdentifierRequest(
 
 data class CreatePersonIdentifierResponse(
   @Schema(description = "Unique NOMIS sequence for this identifier for this person")
+  val sequence: Long,
+)
+
+data class UpdatePersonEmploymentRequest(
+  @Schema(description = "The id of the corporate organisation this employment is at")
+  val corporateId: Long,
+  @Schema(description = "True is employment is active")
+  val active: Boolean,
+)
+
+data class CreatePersonEmploymentRequest(
+  @Schema(description = "The id of the corporate organisation this employment is at")
+  val corporateId: Long,
+  @Schema(description = "True is employment is active")
+  val active: Boolean,
+)
+
+data class CreatePersonEmploymentResponse(
+  @Schema(description = "Unique NOMIS sequence for this employment for this person")
   val sequence: Long,
 )
 

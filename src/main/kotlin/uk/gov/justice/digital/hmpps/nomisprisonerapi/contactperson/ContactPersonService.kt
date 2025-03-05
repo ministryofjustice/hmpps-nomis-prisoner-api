@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ContactType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestrict
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmploymentPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonPhone
@@ -34,10 +36,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitorRestriction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPersonRestrictRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonEmploymentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonPhoneRepository
@@ -58,6 +62,7 @@ class ContactPersonService(
   private val personPhoneRepository: PersonPhoneRepository,
   private val addressPhoneRepository: AddressPhoneRepository,
   private val personIdentifierRepository: PersonIdentifierRepository,
+  private val personEmploymentRepository: PersonEmploymentRepository,
   private val personRestrictionRepository: VisitorRestrictionRepository,
   private val personContactRestrictionRepository: OffenderPersonRestrictRepository,
   private val genderRepository: ReferenceCodeRepository<Gender>,
@@ -74,6 +79,7 @@ class ContactPersonService(
   private val identifierRepository: ReferenceCodeRepository<IdentifierType>,
   private val restrictionTypeRepository: ReferenceCodeRepository<RestrictionType>,
   private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val corporateRepository: CorporateRepository,
 ) {
   fun getPerson(personId: Long): ContactPerson = personRepository.findByIdOrNull(personId)?.let {
     ContactPerson(
@@ -476,6 +482,30 @@ class ContactPersonService(
     personIdentifierRepository.deleteById(PersonIdentifierPK(person = personOf(personId), sequence = sequence))
   }
 
+  fun createPersonEmployment(personId: Long, request: CreatePersonEmploymentRequest): CreatePersonEmploymentResponse = personOf(personId).let { person ->
+    personEmploymentRepository.saveAndFlush(
+      uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment(
+
+        id = PersonEmploymentPK(person = person, sequence = personEmploymentRepository.getNextSequence(person)),
+        active = request.active,
+        employerCorporate = corporateOf(request.corporateId),
+      ),
+    ).let { CreatePersonEmploymentResponse(sequence = it.id.sequence) }
+  }
+
+  fun updatePersonEmployment(personId: Long, sequence: Long, request: UpdatePersonEmploymentRequest) {
+    employmentOf(personId, sequence = sequence).run {
+      request.also {
+        active = it.active
+        employerCorporate = corporateOf(it.corporateId)
+      }
+    }
+  }
+
+  fun deletePersonEmployment(personId: Long, sequence: Long) {
+    personEmploymentRepository.deleteById(PersonEmploymentPK(person = personOf(personId), sequence = sequence))
+  }
+
   fun createPersonRestriction(
     personId: Long,
     request: CreateContactPersonRestrictionRequest,
@@ -581,6 +611,8 @@ class ContactPersonService(
   fun emailOf(personId: Long, emailAddressId: Long): PersonInternetAddress = (personInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("EMail with id=$emailAddressId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Email with id=$emailAddressId on Person with id=$personId does not exist")
   fun phoneOf(personId: Long, addressId: Long, phoneId: Long) = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address == addressOf(personId = personId, addressId = addressId) } ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Person with id=$personId does not exist")
   fun identifierOf(personId: Long, sequence: Long) = personIdentifierRepository.findByIdOrNull(PersonIdentifierPK(personOf(personId), sequence)) ?: throw NotFoundException("Identifier with sequence=$sequence does not exist on person $personId")
+  fun employmentOf(personId: Long, sequence: Long) = personEmploymentRepository.findByIdOrNull(PersonEmploymentPK(personOf(personId), sequence)) ?: throw NotFoundException("Employment with sequence=$sequence does not exist on person $personId")
+  fun corporateOf(corporateId: Long): Corporate = corporateRepository.findByIdOrNull(corporateId) ?: throw BadDataException("Corporate with id $corporateId does not exist")
   fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
   fun identifierTypeOf(code: String): IdentifierType = identifierRepository.findByIdOrNull(IdentifierType.pk(code)) ?: throw BadDataException("IdentifierType with code $code does not exist")
   fun restrictionTypeOf(code: String): RestrictionType = restrictionTypeRepository.findByIdOrNull(RestrictionType.pk(code)) ?: throw BadDataException("RestrictionType with code $code does not exist")

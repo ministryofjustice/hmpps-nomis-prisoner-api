@@ -19,6 +19,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestrict
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmploymentPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonInternetAddress
@@ -32,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCont
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPersonRestrictRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonEmploymentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonPhoneRepository
@@ -72,6 +75,9 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var personIdentifierRepository: PersonIdentifierRepository
+
+  @Autowired
+  private lateinit var personEmploymentRepository: PersonEmploymentRepository
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
@@ -1210,7 +1216,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
   inner class DeletePerson {
     private lateinit var person: Person
     private lateinit var phone: PersonPhone
-    private lateinit var address: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var address: PersonAddress
     private lateinit var addressPhone: AddressPhone
     private lateinit var email: PersonInternetAddress
     private lateinit var corporate: Corporate
@@ -2220,7 +2226,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     )
 
     private lateinit var existingPerson: Person
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var existingAddress: PersonAddress
 
     @BeforeEach
     fun setUp() {
@@ -2388,7 +2394,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class DeletePersonAddress {
     private lateinit var existingPerson: Person
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var existingAddress: PersonAddress
 
     @BeforeEach
     fun setUp() {
@@ -3095,7 +3101,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
     private lateinit var existingPerson: Person
     private lateinit var anotherPerson: Person
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var existingAddress: PersonAddress
 
     @BeforeEach
     fun setUp() {
@@ -3235,7 +3241,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     )
 
     private lateinit var existingPerson: Person
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var existingAddress: PersonAddress
     private lateinit var existingPhone: AddressPhone
 
     @BeforeEach
@@ -3366,7 +3372,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class DeletePersonAddressPhone {
     private lateinit var existingPerson: Person
-    private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
+    private lateinit var existingAddress: PersonAddress
     private lateinit var existingPhone: AddressPhone
 
     @BeforeEach
@@ -3787,6 +3793,339 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             PersonIdentifierPK(
               person = existingPerson,
               sequence = existingIdentifier.id.sequence,
+            ),
+          ),
+        ).isFalse()
+      }
+    }
+  }
+
+  @DisplayName("POST /persons/{personId}/employment")
+  @Nested
+  inner class CreatePersonEmployment {
+    private lateinit var validEmploymentRequest: CreatePersonEmploymentRequest
+    private lateinit var existingPerson: Person
+    private lateinit var corporate: Corporate
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        corporate = corporate(corporateName = "Police")
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+
+      validEmploymentRequest = CreatePersonEmploymentRequest(
+        corporateId = corporate.id,
+        active = true,
+      )
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/employment")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmploymentRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/employment")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmploymentRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/employment")
+          .bodyValue(validEmploymentRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.post().uri("/persons/999/employment")
+          .bodyValue(validEmploymentRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when corporate Id does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/employment")
+          .bodyValue(validEmploymentRequest.copy(corporateId = 9999))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a employment`() {
+        val response: CreatePersonEmploymentResponse = webTestClient.post().uri("/persons/${existingPerson.id}/employment")
+          .bodyValue(validEmploymentRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePersonEmploymentResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val employment = personEmploymentRepository.findByIdOrNull(PersonEmploymentPK(person = existingPerson, sequence = response.sequence))!!
+
+        with(employment) {
+          assertThat(id.sequence).isEqualTo(response.sequence)
+          assertThat(id.person.id).isEqualTo(existingPerson.id)
+          assertThat(this.active).isTrue
+          assertThat(this.employerCorporate.id).isEqualTo(validEmploymentRequest.corporateId)
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.employments).anyMatch { it.id.sequence == employment.id.sequence }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /persons/{personId}/employment/{sequence}")
+  @Nested
+  inner class UpdatePersonEmployment {
+    private lateinit var validEmploymentRequest: UpdatePersonEmploymentRequest
+    private lateinit var corporate: Corporate
+    private lateinit var existingPerson: Person
+    private lateinit var existingEmployment: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        corporate = corporate(corporateName = "Police")
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingEmployment = employment(
+            employerCorporate = corporate,
+            active = true,
+          )
+        }
+      }
+      validEmploymentRequest = UpdatePersonEmploymentRequest(
+        corporateId = corporate.id,
+        active = true,
+      )
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmploymentRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmploymentRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .bodyValue(validEmploymentRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.put().uri("/persons/99999/employment/${existingEmployment.id.sequence}")
+          .bodyValue(validEmploymentRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when sequence of employment does not exist`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/employment/9999")
+          .bodyValue(validEmploymentRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when employment type code does not exist`() {
+        webTestClient.post().uri("/persons/${existingPerson.id}/employment")
+          .bodyValue(validEmploymentRequest.copy(corporateId = 999))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a employment`() {
+        webTestClient.put().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .bodyValue(validEmploymentRequest.copy(active = false))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val employment = personEmploymentRepository.findByIdOrNull(PersonEmploymentPK(person = existingPerson, sequence = existingEmployment.id.sequence))!!
+
+        with(employment) {
+          assertThat(id.sequence).isEqualTo(existingEmployment.id.sequence)
+          assertThat(id.person.id).isEqualTo(existingPerson.id)
+          assertThat(this.employerCorporate.id).isEqualTo(corporate.id)
+          assertThat(this.active).isFalse
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val person = personRepository.findByIdOrNull(existingPerson.id)
+          assertThat(person?.employments).anyMatch { it.id.sequence == employment.id.sequence }
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /persons/{personId}/employment/{sequence}")
+  @Nested
+  inner class DeletePersonEmployment {
+    private lateinit var existingPerson: Person
+    private lateinit var existingEmployment: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmployment
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        val corporate = corporate(corporateName = "Police")
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingEmployment = employment(
+            employerCorporate = corporate,
+            active = true,
+          )
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when person does not exist`() {
+        webTestClient.delete().uri("/persons/99999/employment/${existingEmployment.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 204 when sequence of employment does not exist`() {
+        webTestClient.delete().uri("/persons/${existingPerson.id}/employment/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a employment`() {
+        assertThat(
+          personEmploymentRepository.existsById(
+            PersonEmploymentPK(
+              person = existingPerson,
+              sequence = existingEmployment.id.sequence,
+            ),
+          ),
+        ).isTrue()
+        webTestClient.delete().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(
+          personEmploymentRepository.existsById(
+            PersonEmploymentPK(
+              person = existingPerson,
+              sequence = existingEmployment.id.sequence,
             ),
           ),
         ).isFalse()
