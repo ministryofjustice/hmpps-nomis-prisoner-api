@@ -990,6 +990,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
     private lateinit var courtCase: CourtCase
+    private lateinit var appearance: CourtEvent
     private lateinit var courtOrder: CourtOrder
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
@@ -1008,14 +1009,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-                courtEvent {
+                appearance = courtEvent {
                   courtOrder = courtOrder()
                 }
                 sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
                   term {}
-                  term(startDate = LocalDate.parse(aLaterDateString), days = 35)
+                  term(days = 35)
                 }
               }
             }
@@ -1104,7 +1105,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("calculationType.description").isEqualTo("ORA CJA03 Standard Determinate Sentence")
           .jsonPath("category.code").isEqualTo("2003")
           .jsonPath("startDate").isEqualTo(aDateString)
-          // .jsonPath("courtOrder").isEqualTo("I")
+          .jsonPath("courtOrder.eventId").isEqualTo(appearance.id)
+          .jsonPath("courtOrder.courtDate").isEqualTo(appearance.eventDate.toString())
           .jsonPath("consecSequence").isEqualTo(2)
           .jsonPath("endDate").isEqualTo(aLaterDateString)
           .jsonPath("commentText").isEqualTo("a sentence comment")
@@ -1147,8 +1149,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(2)
-          .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
-          .jsonPath("sentenceTerms[0].endDate").isEqualTo(aLaterDateString)
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo(courtOrder.courtDate.toString())
+          .jsonPath("sentenceTerms[0].endDate").doesNotExist()
           .jsonPath("sentenceTerms[0].years").isEqualTo(2)
           .jsonPath("sentenceTerms[0].months").isEqualTo(3)
           .jsonPath("sentenceTerms[0].weeks").isEqualTo(4)
@@ -1156,7 +1158,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("sentenceTerms[0].hours").isEqualTo(6)
           .jsonPath("sentenceTerms[0].sentenceTermType.description").isEqualTo("Section 86 of 2000 Act")
           .jsonPath("sentenceTerms[0].lifeSentenceFlag").isEqualTo(true)
-          .jsonPath("sentenceTerms[1].startDate").isEqualTo(aLaterDateString)
+          .jsonPath("sentenceTerms[1].startDate").isEqualTo(courtOrder.courtDate.toString())
           .jsonPath("offenderCharges.size()").isEqualTo(2)
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
@@ -3577,7 +3579,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     offenderCharge = offenderCharge1,
                     plea = "NG",
                   )
-                  courtOrder {
+                  courtOrder(courtDate = LocalDate.of(2023, 1, 10)) {
                     sentencePurpose(purposeCode = "REPAIR")
                     sentencePurpose(purposeCode = "PUNISH")
                   }
@@ -3808,8 +3810,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtOrder.id").isEqualTo(courtCase.courtEvents[0].courtOrders[0].id)
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
-          .jsonPath("sentenceTerms[0].startDate").isEqualTo(aDateString)
-          .jsonPath("sentenceTerms[0].endDate").isEqualTo(aLaterDateString)
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo("2023-01-10")
+          .jsonPath("sentenceTerms[0].endDate").doesNotExist()
           .jsonPath("sentenceTerms[0].years").isEqualTo(7)
           .jsonPath("sentenceTerms[0].months").isEqualTo(2)
           .jsonPath("sentenceTerms[0].weeks").isEqualTo(3)
@@ -3951,12 +3953,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   consecSentenceSeq = sentenceSeq1,
                   sentenceTerms = mutableListOf(
                     createSentenceTerm(
-                      startDate = LocalDate.parse(aLaterDateString),
                       days = 20,
                       sentenceTermType = "IMP",
                     ),
                     createSentenceTerm(
-                      startDate = LocalDate.parse(aLaterDateString),
                       days = 10,
                       sentenceTermType = "LIC",
                     ),
@@ -4034,8 +4034,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
-                  term(startDate = LocalDate.parse(aLaterDateString), days = 35, sentenceTermType = "IMP")
-                  term(startDate = LocalDate.parse(aLaterDateString), days = 15, sentenceTermType = "LIC")
+                  term(days = 35, sentenceTermType = "IMP")
+                  term(days = 15, sentenceTermType = "LIC")
                 }
               }
               newCourtCase = courtCase(reportingStaff = staff, caseSequence = 2) {
@@ -4046,7 +4046,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 }
                 sentenceTwo = sentence(courtOrder = courtOrder2, statusUpdateStaff = staff) {
                   offenderSentenceCharge(offenderCharge = offenderCharge3)
-                  term(startDate = LocalDate.parse(aLaterDateString), days = 20, sentenceTermType = "IMP")
+                  term(days = 20, sentenceTermType = "IMP")
                 }
               }
             }
@@ -4180,7 +4180,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 offenderChargeIds = mutableListOf(offenderCharge2.id),
                 sentenceTerms = mutableListOf(
                   createSentenceTerm(
-                    startDate = LocalDate.parse(aLaterDateString),
                     days = 20,
                   ),
                 ),
@@ -4215,6 +4214,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges.size()").isEqualTo(1)
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
           .jsonPath("sentenceTerms[0].days").isEqualTo(20)
+          // not updated as taken from the court order
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo(courtOrder2.courtDate.toString())
       }
 
       @Test
@@ -4236,12 +4237,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 offenderChargeIds = mutableListOf(offenderCharge.id, offenderCharge2.id),
                 sentenceTerms = mutableListOf(
                   createSentenceTerm(
-                    startDate = LocalDate.parse(aLaterDateString),
                     days = 20,
                     sentenceTermType = "IMP",
                   ),
                   createSentenceTerm(
-                    startDate = LocalDate.parse(aLaterDateString),
                     days = 20,
                     sentenceTermType = "LIC",
                   ),
@@ -4279,6 +4278,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[1].id").isEqualTo(offenderCharge2.id)
           .jsonPath("sentenceTerms.size()").isEqualTo(2)
           .jsonPath("sentenceTerms[0].sentenceTermType.code").isEqualTo("IMP")
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo(courtOrder2.courtDate.toString())
           .jsonPath("sentenceTerms[1].sentenceTermType.code").isEqualTo("LIC")
       }
 
@@ -4301,7 +4301,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 offenderChargeIds = mutableListOf(offenderCharge2.id),
                 sentenceTerms = mutableListOf(
                   createSentenceTerm(
-                    startDate = LocalDate.parse(aLaterDateString),
                     days = 20,
                     sentenceTermType = "IMP",
                   ),
@@ -4393,7 +4392,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
                   term {}
-                  term(startDate = LocalDate.parse(aLaterDateString), days = 35)
+                  term(days = 35)
                 }
               }
             }
@@ -4571,8 +4570,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   )
 
   private fun createSentenceTerm(
-    startDate: LocalDate = LocalDate.parse(aDateString),
-    endDate: LocalDate? = LocalDate.parse(aLaterDateString),
     sentenceTermType: String = "IMP",
     lifeSentenceFlag: Boolean = true,
     years: Int = 7,
@@ -4581,8 +4578,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     days: Int = 4,
     hours: Int = 5,
   ) = SentenceTermRequest(
-    startDate = startDate,
-    endDate = endDate,
     sentenceTermType = sentenceTermType,
     lifeSentenceFlag = lifeSentenceFlag,
     years = years,

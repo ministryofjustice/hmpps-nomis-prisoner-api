@@ -1450,6 +1450,7 @@ data class CourtEventChargeResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtOrderResponse(
   val id: Long,
+  val eventId: Long,
   val courtDate: LocalDate,
   val issuingCourt: String,
   val courtInfoId: String?,
@@ -1692,8 +1693,6 @@ data class CreateSentenceRequest(
 
 @Schema(description = "Sentence term request")
 data class SentenceTermRequest(
-  val startDate: LocalDate,
-  val endDate: LocalDate? = null,
   val years: Int? = null,
   val months: Int? = null,
   val weeks: Int? = null,
