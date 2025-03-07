@@ -91,6 +91,51 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): ContactPerson = contactPersonService.getPerson(personId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @GetMapping("/prisoners/{offenderNo}/contacts")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets a prisoner's contacts",
+    description = "Retrieves all contacts across all bookings for a prisoner. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Contacts Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PrisonerWithContacts::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerWithContacts(
+    @Schema(description = "Offender No aka prisoner number", example = "A1234KT")
+    @PathVariable
+    offenderNo: String,
+  ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/persons/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -2113,7 +2158,7 @@ data class PersonIdentifier(
 @Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PersonContact(
-  @Schema(description = "Unique NOMIS sequence for this identifier for this contact")
+  @Schema(description = "Unique NOMIS sequence for the identifier for this contact")
   val id: Long,
   @Schema(description = "The contact type")
   val contactType: CodeDescription,
@@ -2152,6 +2197,55 @@ data class ContactForPrisoner(
   val lastName: String,
   @Schema(description = "First name of the prisoner", example = "John")
   val firstName: String,
+)
+
+data class PrisonerWithContacts(
+  @Schema(description = "List of contacts for this prisoner")
+  val contacts: List<PrisonerContact>,
+)
+
+@Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ContactForPerson(
+  @Schema(description = "Unique NOMIS Id of person associated with the prisoner")
+  val personId: Long,
+  @Schema(description = "Last name of the person", example = "Smith")
+  val lastName: String,
+  @Schema(description = "First name of the person", example = "John")
+  val firstName: String,
+)
+
+@Schema(description = "The data held in NOMIS about a prisoner's contact with a person")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PrisonerContact(
+  @Schema(description = "Unique NOMIS sequence for the identifier for this contact")
+  val id: Long,
+  @Schema(description = "Unique NOMIS Id of booking associated with the contact")
+  val bookingId: Long,
+  @Schema(description = "Booking sequence this contact is related to. When 1 this indicates contact is for current term")
+  val bookingSequence: Long,
+  @Schema(description = "The contact type")
+  val contactType: CodeDescription,
+  @Schema(description = "The relationship type")
+  val relationshipType: CodeDescription,
+  @Schema(description = "True if active")
+  val active: Boolean,
+  @Schema(description = "Date contact is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "True if approved to visit the prisoner")
+  val approvedVisitor: Boolean,
+  @Schema(description = "True if next of kin to the prisoner")
+  val nextOfKin: Boolean,
+  @Schema(description = "True if emergency contact for the prisoner")
+  val emergencyContact: Boolean,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
+  @Schema(description = "The person this prisoner is a contact for")
+  val person: ContactForPerson,
+  @Schema(description = "List of restrictions specifically between the prisoner and this contact")
+  val restrictions: List<ContactRestriction>,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "The data held in NOMIS about a person's restriction with a prisoner")
