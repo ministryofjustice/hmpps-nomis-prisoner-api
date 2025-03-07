@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisonperson
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails
 
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
