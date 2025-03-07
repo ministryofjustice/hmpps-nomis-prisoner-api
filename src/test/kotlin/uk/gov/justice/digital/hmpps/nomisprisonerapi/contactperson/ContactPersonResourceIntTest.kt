@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonPhoneR
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitorRestrictionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -827,6 +828,187 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("restrictions[1].expiryDate").doesNotExist()
           .jsonPath("restrictions[1].enteredStaff.staffId").isEqualTo(lsaStaffMember.id)
           .jsonPath("restrictions[1].enteredStaff.username").isEqualTo("j.staff_gen")
+      }
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/contacts")
+  @Nested
+  inner class GetPrisonerWithContacts {
+    private lateinit var friend: Person
+    private lateinit var mum: Person
+    private lateinit var solicitor: Person
+    private lateinit var prisoner: Offender
+    private lateinit var friendContact: OffenderContactPerson
+    private lateinit var mumContact: OffenderContactPerson
+    private lateinit var mumContactOnOldBooking: OffenderContactPerson
+    private lateinit var solicitorContact: OffenderContactPerson
+    private lateinit var generalStaffMember: Staff
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        generalStaffMember = staff(firstName = "JANE", lastName = "SMITH") {
+          account(username = "j.smith")
+        }
+        friend = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        mum = person(
+          firstName = "BETH",
+          lastName = "BEAKS",
+        )
+        solicitor = person(
+          firstName = "AFAN",
+          lastName = "ABDALLAH",
+        )
+        prisoner = offender {
+          booking {
+            mumContact = contact(
+              person = mum,
+              contactType = "S",
+              relationshipType = "MOT",
+            )
+            solicitorContact = contact(
+              person = solicitor,
+              contactType = "O",
+              relationshipType = "SOL",
+            )
+            friendContact = contact(
+              person = friend,
+              contactType = "S",
+              relationshipType = "FRI",
+              active = true,
+              nextOfKin = false,
+              emergencyContact = false,
+              approvedVisitor = true,
+              comment = "Friend can visit",
+            ) {
+              restriction(
+                restrictionType = "BAN",
+                enteredStaff = generalStaffMember,
+                comment = "Banned for life!",
+                effectiveDate = "2020-01-01",
+                expiryDate = "2023-02-02",
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+              restriction(
+                restrictionType = "CCTV",
+                enteredStaff = generalStaffMember,
+              )
+            }
+          }
+          booking {
+            release()
+            mumContactOnOldBooking = contact(
+              person = mum,
+              contactType = "S",
+              relationshipType = "MOT",
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `list will be empty when no prisoner found`() {
+        val prisonerWithContacts: PrisonerWithContacts = webTestClient.get().uri("/prisoners/A9999KT/contacts")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(prisonerWithContacts.contacts).isEmpty()
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      lateinit var prisonerWithContacts: PrisonerWithContacts
+
+      @BeforeEach
+      fun setUp() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+      }
+
+      @Test
+      fun `will return contacts for all bookings`() {
+        assertThat(prisonerWithContacts.contacts).hasSize(4)
+
+        val mumOnCurrentBooking = prisonerWithContacts.contacts.find { it.id == mumContact.id }!!
+        val mumOnOldBooking = prisonerWithContacts.contacts.find { it.id == mumContactOnOldBooking.id }!!
+
+        assertThat(mumOnCurrentBooking.bookingSequence).isEqualTo(1)
+        assertThat(mumOnOldBooking.bookingSequence).isEqualTo(2)
+      }
+
+      @Test
+      fun `will return restrictions for contact`() {
+        val friendWithRestriction = prisonerWithContacts.contacts.find { it.id == friendContact.id }!!
+
+        assertThat(friendWithRestriction.restrictions).hasSize(2)
+
+        val restriction = friendWithRestriction.restrictions.first()
+
+        assertThat(restriction.type.code).isEqualTo("BAN")
+        assertThat(restriction.type.description).isEqualTo("Banned")
+        assertThat(restriction.comment).isEqualTo("Banned for life!")
+        assertThat(restriction.effectiveDate).isEqualTo("2020-01-01")
+        assertThat(restriction.expiryDate).isEqualTo("2023-02-02")
+        assertThat(restriction.enteredStaff.staffId).isEqualTo(generalStaffMember.id)
+        assertThat(restriction.enteredStaff.username).isEqualTo("j.smith")
+      }
+
+      @Test
+      fun `will returns details about the contact relationship`() {
+        val friendAsContact = prisonerWithContacts.contacts.find { it.id == friendContact.id }!!
+
+        assertThat(friendContact.relationshipType.code).isEqualTo("FRI")
+        assertThat(friendContact.contactType.code).isEqualTo("S")
+        assertThat(friendAsContact.active).isTrue
+        assertThat(friendAsContact.nextOfKin).isFalse
+        assertThat(friendAsContact.emergencyContact).isFalse
+        assertThat(friendAsContact.approvedVisitor).isTrue
+        assertThat(friendAsContact.comment).isEqualTo("Friend can visit")
       }
     }
   }
