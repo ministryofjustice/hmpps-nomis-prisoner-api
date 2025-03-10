@@ -522,6 +522,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         "ROLE_NOMIS_ALERTS",
         "ROLE_NOMIS_CORE_PERSON",
         "ROLE_NOMIS_PRISON_PERSON",
+        "ROLE_NOMIS_SENTENCING",
         "ROLE_SYNCHRONISATION_REPORTING",
       )
       fun `access allowed for role`(role: String) {
