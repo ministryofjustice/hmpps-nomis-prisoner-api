@@ -29,13 +29,14 @@ class ProfileDetailsService(
   private val telemetryClient: TelemetryClient,
 ) {
 
-  fun getProfileDetails(offenderNo: String, profileTypes: List<String>, bookingId: Long? = null): PrisonerProfileDetailsResponse {
+  fun getProfileDetails(offenderNo: String, profileTypes: List<String>, bookingId: Long? = null, latestBookingOnly: Boolean): PrisonerProfileDetailsResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("No offender found for $offenderNo")
     }
 
     return bookingRepository.findAllByOffenderNomsId(offenderNo)
       .filter { booking -> bookingId == null || booking.bookingId == bookingId }
+      .filter { booking -> !latestBookingOnly || booking.bookingSequence == 1 }
       .mapNotNull { booking ->
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,

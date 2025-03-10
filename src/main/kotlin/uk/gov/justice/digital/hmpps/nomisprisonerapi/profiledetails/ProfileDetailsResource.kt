@@ -74,7 +74,8 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
     @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
     @Schema(description = "Profile types", example = "HAIR") @RequestParam(required = false) profileTypes: List<String> = listOf(),
     @Schema(description = "Booking ID", example = "12345") @RequestParam(required = false) bookingId: Long? = null,
-  ): PrisonerProfileDetailsResponse = service.getProfileDetails(offenderNo, profileTypes, bookingId)
+    @Schema(description = "Latest booking only?", example = "true") @RequestParam(required = false) latestBookingOnly: Boolean = false,
+  ): PrisonerProfileDetailsResponse = service.getProfileDetails(offenderNo, profileTypes, bookingId, latestBookingOnly)
 
   @PutMapping("/prisoners/{offenderNo}/profile-details")
   @Operation(

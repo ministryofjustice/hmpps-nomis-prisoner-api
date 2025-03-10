@@ -104,7 +104,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
                   tuple("L_EYE_C", "RED"),
                   tuple("SHOESIZE", "8.5"),
                 )
-              assertThat(bookings[0].profileDetails[0].createDateTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
+              assertThat(bookings[0].profileDetails[0].createDateTime).isCloseTo(
+                LocalDateTime.now(),
+                within(3, ChronoUnit.SECONDS),
+              )
               assertThat(bookings[0].profileDetails[0].createdBy).isEqualTo("SA")
             }
           }
@@ -472,13 +475,85 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
             }
           }
       }
+
+      @Test
+      fun `should return profile details for latest booking and profile types`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile()
+              profileDetail(profileType = "MARITAL", profileCode = "D")
+              profileDetail(profileType = "CHILD", profileCode = "0")
+              profileDetail(profileType = "HAIR", profileCode = "BALD")
+            }
+            booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+              profile()
+              profileDetail(profileType = "MARITAL", profileCode = "M")
+              profileDetail(profileType = "CHILD", profileCode = "3")
+              profileDetail(profileType = "HAIR", profileCode = "BROWN")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk(
+          "A1234AA",
+          profileTypes = listOf("MARITAL", "CHILD"),
+          latestBookingOnly = true,
+        )
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).extracting("bookingId", "latestBooking", "startDateTime")
+                .containsExactly(tuple(booking.bookingId, true, booking.bookingBeginDate))
+              assertThat(bookings[0].profileDetails).extracting("type", "code")
+                .containsExactlyInAnyOrder(
+                  tuple("MARITAL", "D"),
+                  tuple("CHILD", "0"),
+                )
+            }
+          }
+      }
+
+      @Test
+      fun `should return nothing if requested booking ID is not the latest booking`() {
+        lateinit var oldBooking: OffenderBooking
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+              profile()
+              profileDetail(profileType = "MARITAL", profileCode = "D")
+            }
+            oldBooking = booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+              profile()
+              profileDetail(profileType = "MARITAL", profileCode = "M")
+            }
+          }
+        }
+
+        webTestClient.getProfileDetailsOk(
+          "A1234AA",
+          profileTypes = listOf("MARITAL", "CHILD"),
+          bookingId = oldBooking.bookingId,
+          latestBookingOnly = true,
+        )
+          .consumeWith {
+            with(it.responseBody!!) {
+              assertThat(bookings).isEmpty()
+            }
+          }
+      }
     }
 
-    fun WebTestClient.getProfileDetailsOk(offenderNo: String, profileTypes: List<String> = listOf(), bookingId: Long? = null) = this.get()
+    fun WebTestClient.getProfileDetailsOk(
+      offenderNo: String,
+      profileTypes: List<String> = listOf(),
+      bookingId: Long? = null,
+      latestBookingOnly: Boolean = false,
+    ) = this.get()
       .uri {
         it.path("/prisoners/$offenderNo/profile-details")
           .queryParam("profileTypes", profileTypes)
           .apply { bookingId?.let { queryParam("bookingId", bookingId) } }
+          .queryParam("latestBookingOnly", latestBookingOnly)
           .build()
       }
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
