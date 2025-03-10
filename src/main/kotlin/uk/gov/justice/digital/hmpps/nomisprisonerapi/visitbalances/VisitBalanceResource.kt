@@ -1,10 +1,14 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitorders
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -12,6 +16,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -22,21 +27,67 @@ import java.time.LocalDate
 
 @RestController
 @Validated
-@PreAuthorize("hasRole('ROLE_NOMIS_VISIT_ORDERS')")
+@PreAuthorize("hasRole('ROLE_NOMIS_VISIT_BALANCE')")
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class VisitOrderBalanceResource(
-  private val visitOrderService: VisitOrderService,
+class VisitBalanceResource(
+  private val visitBalanceService: VisitBalanceService,
 ) {
 
-  @GetMapping("/prisoners/{offenderNo}/visit-orders/balance/to-migrate")
-  @ResponseStatus(HttpStatus.OK)
+  @GetMapping("/visit-balances/ids")
   @Operation(
-    summary = "Get visit order balance data for a prisoner",
-    description = "Retrieves visit order balance details for the last month for a prisoner. Requires ROLE_NOMIS_VISIT_ORDERS",
+    summary = "Find paged visit balance ids",
+    description = """
+      Returns the visit balance ids (which are booking ids) for the latest booking for offenders with balance entries.
+      Requires role NOMIS_VISIT_BALANCE""",
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Visit Orders Returned",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_VISIT_BALANCE",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun findVisitBalanceIds(
+    @PageableDefault(sort = ["offenderBookingId"], direction = Sort.Direction.DESC) pageRequest: Pageable,
+    @Schema(description = "Prison id") @RequestParam prisonId: String?,
+  ): Page<VisitBalanceIdResponse> = visitBalanceService.findAllIds(prisonId, pageRequest)
+
+  @GetMapping("/prisoners/{prisonNumber}/visit-orders/balance")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get visit order balance data for a prisoner",
+    description = "Retrieves visit order balance details for the last month for a prisoner. Requires ROLE_NOMIS_VISIT_BALANCE",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Visit balance returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -50,7 +101,7 @@ class VisitOrderBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_ORDERS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
         content = [
           Content(
             mediaType = "application/json",
@@ -70,17 +121,17 @@ class VisitOrderBalanceResource(
       ),
     ],
   )
-  fun getVisitOrderBalanceToMigrate(
-    @Schema(description = "Offender No AKA prisoner number", example = "A1234AK")
+  fun getVisitBalanceToMigrate(
+    @Schema(description = "Prison number aka Offender No.", example = "A1234AK")
     @PathVariable
-    offenderNo: String,
-  ): PrisonerVisitOrderBalanceResponse = visitOrderService.getVisitOrderBalance(offenderNo)
+    prisonNumber: String,
+  ): PrisonerVisitOrderBalanceResponse = visitBalanceService.getVisitOrderBalance(prisonNumber)
 
   @GetMapping("/visit-orders/visit-balance-adjustment/{visitBalanceAdjustmentId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get specific offender visit balance adjustment",
-    description = "Retrieves offender visit balance adjustment. Requires ROLE_NOMIS_VISIT_ORDERS",
+    description = "Retrieves offender visit balance adjustment. Requires ROLE_NOMIS_VISIT_BALANCE",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -98,7 +149,7 @@ class VisitOrderBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_ORDERS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
         content = [
           Content(
             mediaType = "application/json",
@@ -122,7 +173,7 @@ class VisitOrderBalanceResource(
     @Schema(description = "Visit balance adjustment id", example = "5")
     @PathVariable
     visitBalanceAdjustmentId: Long,
-  ): VisitBalanceAdjustmentResponse = visitOrderService.getVisitBalanceAdjustment(visitBalanceAdjustmentId)
+  ): VisitBalanceAdjustmentResponse = visitBalanceService.getVisitBalanceAdjustment(visitBalanceAdjustmentId)
 }
 
 @Schema(description = "The list of visit orders held against a prisoner")
@@ -138,7 +189,7 @@ data class PrisonerVisitOrderBalanceResponse(
   val visitOrderBalanceAdjustments: List<VisitBalanceAdjustmentResponse>,
 )
 
-@Schema(description = "The visit orders balance changes held against a booking for a prisoner")
+@Schema(description = "The visit order balance changes held against a booking for a prisoner")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class VisitBalanceAdjustmentResponse(
   @Schema(description = "Number of visit orders affected by the adjustment")
@@ -163,9 +214,15 @@ data class VisitBalanceAdjustmentResponse(
   val endorsedStaffId: Long? = null,
   @Schema(description = "Which staff member authorised the adjustment")
   val authorisedStaffId: Long? = null,
-  // TODO add in - Not normally needed but included to compare against wrongly entered adjust_date
-  // @Schema(description = "Date/time the adjustment was created")
-  // val createDateTime: LocalDateTime
+  @Schema(description = "Who created the adjustment")
+  val createUsername: String,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Incident id")
+data class VisitBalanceIdResponse(
+  @Schema(description = "The visit balance booking id")
+  val visitBalanceId: Long,
 )
 
 fun OffenderVisitBalanceAdjustment.toVisitBalanceAdjustmentResponse(): VisitBalanceAdjustmentResponse = VisitBalanceAdjustmentResponse(
@@ -180,4 +237,5 @@ fun OffenderVisitBalanceAdjustment.toVisitBalanceAdjustmentResponse(): VisitBala
   comment = commentText,
   expiryBalance = expiryBalance,
   expiryDate = expiryDate,
+  createUsername = createUsername,
 )
