@@ -219,9 +219,9 @@ data class VisitBalanceAdjustmentResponse(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Incident id")
+@Schema(description = "visit balance id")
 data class VisitBalanceIdResponse(
-  @Schema(description = "The visit balance booking id")
+  @Schema(description = "The visit balance (booking) id")
   val visitBalanceId: Long,
 )
 
