@@ -83,7 +83,7 @@ data class OffenderVisitBalanceAdjustment(
 
   @Column(name = "EXPIRY_DATE")
   val expiryDate: LocalDate? = null,
-) {
+) : NomisAuditableEntity() {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

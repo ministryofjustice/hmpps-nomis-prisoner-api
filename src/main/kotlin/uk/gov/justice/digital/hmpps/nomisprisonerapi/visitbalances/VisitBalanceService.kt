@@ -1,29 +1,35 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitorders
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import java.time.LocalDate
 
 @Service
 @Transactional
-class VisitOrderService(
+class VisitBalanceService(
+  val visitBalanceRepository: OffenderVisitBalanceRepository,
   val offenderBookingRepository: OffenderBookingRepository,
   val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
 ) {
-  fun getVisitOrderBalance(offenderNo: String): PrisonerVisitOrderBalanceResponse = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).takeIf { it.isNotEmpty() }
-    ?.let { bookings ->
-      val toDate = LocalDate.now()
-      val fromDate = toDate.minusMonths(1)
-      val latestBooking = bookings.first { it.bookingSequence == 1 }
+
+  fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
+    .map { VisitBalanceIdResponse(it.offenderBookingId) }
+
+  fun getVisitOrderBalance(offenderNo: String): PrisonerVisitOrderBalanceResponse = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+    ?.let { latestBooking ->
+      val fromDate = LocalDate.now().minusMonths(1)
 
       PrisonerVisitOrderBalanceResponse(
         remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders ?: 0,
         remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders ?: 0,
         visitOrderBalanceAdjustments = latestBooking.visitBalanceAdjustments.filter {
-          it.adjustDate.let { adjDate -> !adjDate.isBefore(fromDate) && !adjDate.isAfter(toDate) }
+          it.adjustDate.let { adjDate -> !adjDate.isBefore(fromDate) }
         }.map { it.toVisitBalanceAdjustmentResponse() },
       )
     } ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
