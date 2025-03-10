@@ -75,7 +75,7 @@ class VisitBalanceResource(
     ],
   )
   fun findVisitBalanceIds(
-    @PageableDefault(sort = ["offenderBookingId"], direction = Sort.Direction.DESC) pageRequest: Pageable,
+    @PageableDefault(sort = ["offenderBookingId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String?,
   ): Page<VisitBalanceIdResponse> = visitBalanceService.findAllIds(prisonId, pageRequest)
 

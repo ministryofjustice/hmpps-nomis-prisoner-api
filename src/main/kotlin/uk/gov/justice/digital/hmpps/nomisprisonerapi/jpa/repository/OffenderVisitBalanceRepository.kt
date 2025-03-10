@@ -22,5 +22,5 @@ interface OffenderVisitBalanceRepository : CrudRepository<OffenderVisitBalance, 
         and (:prisonId is null or ob.location.id = :prisonId)
     """,
   )
-  fun findForCurrentBooking(prisonId: String? = null, pageable: Pageable): Page<OffenderVisitBalance>
+  fun findForLatestBooking(prisonId: String? = null, pageable: Pageable): Page<OffenderVisitBalance>
 }

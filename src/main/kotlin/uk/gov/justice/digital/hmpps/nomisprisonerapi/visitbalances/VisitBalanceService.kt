@@ -18,7 +18,7 @@ class VisitBalanceService(
   val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
 ) {
 
-  fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForCurrentBooking(prisonId, pageRequest)
+  fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
     .map { VisitBalanceIdResponse(it.offenderBookingId) }
 
   fun getVisitOrderBalance(offenderNo: String): PrisonerVisitOrderBalanceResponse = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
