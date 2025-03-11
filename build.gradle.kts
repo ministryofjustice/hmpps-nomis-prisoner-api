@@ -40,6 +40,9 @@ dependencies {
 
 kotlin {
   jvmToolchain(21)
+  compilerOptions {
+    freeCompilerArgs.add("-Xwhen-guards")
+  }
 }
 
 tasks {
