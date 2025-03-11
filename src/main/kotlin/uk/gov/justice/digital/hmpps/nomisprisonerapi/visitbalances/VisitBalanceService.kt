@@ -5,10 +5,11 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
-import java.time.LocalDate
 
 @Service
 @Transactional
@@ -23,14 +24,13 @@ class VisitBalanceService(
 
   fun getVisitOrderBalance(offenderNo: String): PrisonerVisitOrderBalanceResponse = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?.let { latestBooking ->
-      val fromDate = LocalDate.now().minusMonths(1)
 
       PrisonerVisitOrderBalanceResponse(
         remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders ?: 0,
         remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders ?: 0,
-        visitOrderBalanceAdjustments = latestBooking.visitBalanceAdjustments.filter {
-          it.adjustDate.let { adjDate -> !adjDate.isBefore(fromDate) }
-        }.map { it.toVisitBalanceAdjustmentResponse() },
+        lastIEPAllocationDate = latestBooking.visitBalanceAdjustments
+          .filter { it.isCreatedByBatchVOProcess() }.maxByOrNull { it.adjustDate }
+          ?.adjustDate,
       )
     } ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
 
@@ -38,3 +38,5 @@ class VisitBalanceService(
     .map { it.toVisitBalanceAdjustmentResponse() }
     .orElseThrow { NotFoundException("Visit balance adjustment with id $visitBalanceAdjustmentId not found") }
 }
+
+fun OffenderVisitBalanceAdjustment.isCreatedByBatchVOProcess() = adjustReasonCode.code == IEP_ENTITLEMENT && createUsername == "OMS_OWNER"

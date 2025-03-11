@@ -185,8 +185,8 @@ data class PrisonerVisitOrderBalanceResponse(
   @Schema(description = "Total number of unallocated (remaining) privileged visit orders")
   val remainingPrivilegedVisitOrders: Int = 0,
 
-  @Schema(description = "Balance adjustments for this prisoner over the last 28 days")
-  val visitOrderBalanceAdjustments: List<VisitBalanceAdjustmentResponse>,
+  @Schema(description = "The date of the last IEP Allocation date via the batch process, if it exists")
+  val lastIEPAllocationDate: LocalDate? = null,
 )
 
 @Schema(description = "The visit order balance changes held against a booking for a prisoner")
@@ -203,7 +203,7 @@ data class VisitBalanceAdjustmentResponse(
   @Schema(description = "Adjustment reason")
   val adjustmentReason: CodeDescription? = null,
   @Schema(description = "Date the adjust was made")
-  val adjustmentDate: LocalDate? = null,
+  val adjustmentDate: LocalDate,
   @Schema(description = "Comment text")
   val comment: String? = null,
   @Schema(description = "Expiry balance")

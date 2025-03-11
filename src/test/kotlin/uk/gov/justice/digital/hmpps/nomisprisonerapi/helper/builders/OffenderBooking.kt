@@ -283,7 +283,7 @@ interface BookingDsl {
     previousRemainingVisitOrders: Int? = 0,
     remainingPrivilegedVisitOrders: Int? = 3,
     previousRemainingPrivilegedVisitOrders: Int? = 0,
-    adjustmentDate: LocalDate = LocalDate.now(),
+    adjustmentDate: LocalDate = LocalDate.parse("2022-01-01"),
     adjustmentReasonCode: String = IEP_ENTITLEMENT,
     comment: String? = null,
     expiryBalance: Int? = null,

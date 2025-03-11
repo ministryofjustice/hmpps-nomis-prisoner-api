@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
@@ -33,9 +34,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        staff(firstName = "KOFE", lastName = "ADDY") {
-          account(username = "KOFEADDY", type = "GENERAL")
-        }
         offender = offender(
           nomsId = "A1234BC",
           firstName = "JANE",
@@ -53,7 +51,9 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
               previousRemainingVisitOrders = 1,
               remainingPrivilegedVisitOrders = null,
               previousRemainingPrivilegedVisitOrders = null,
-              comment = "this is a comment",
+              adjustmentReasonCode = IEP_ENTITLEMENT,
+              adjustmentDate = LocalDate.now().minusDays(1),
+              comment = "this is a comment for the most recent batch iep adjustment",
               expiryBalance = 7,
               expiryDate = LocalDate.parse("2027-11-30"),
               endorsedStaffId = 234,
@@ -65,6 +65,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
               remainingPrivilegedVisitOrders = 3,
               previousRemainingPrivilegedVisitOrders = 2,
               adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+              adjustmentDate = LocalDate.now().minusMonths(5),
             )
             visitBalanceAdjustment(
               remainingVisitOrders = null,
@@ -136,17 +137,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return visit order balance adjustments`() {
-        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-orders/balance")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("visitOrderBalanceAdjustments.length()").isEqualTo(3)
-      }
-
-      @Test
       fun `is able to re-hydrate visit order balance`() {
         val visitOrderBalanceResponse =
           webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-orders/balance")
@@ -158,46 +148,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
         assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
         assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
-
-        assertThat(visitOrderBalanceResponse.visitOrderBalanceAdjustments.size).isEqualTo(3)
-        with(visitOrderBalanceResponse.visitOrderBalanceAdjustments[0]) {
-          assertThat(remainingVisitOrders).isEqualTo(4)
-          assertThat(previousRemainingVisitOrders).isEqualTo(0)
-          assertThat(remainingPrivilegedVisitOrders).isEqualTo(3)
-          assertThat(previousRemainingPrivilegedVisitOrders).isEqualTo(0)
-          assertThat(adjustmentReason!!.code).isEqualTo("IEP")
-          assertThat(adjustmentReason!!.description).isEqualTo("IEP Entitlements")
-          assertThat(adjustmentDate).isEqualTo(LocalDate.now())
-          assertThat(comment).isNull()
-          assertThat(expiryBalance).isNull()
-          assertThat(expiryDate).isNull()
-          assertThat(endorsedStaffId).isNull()
-          assertThat(authorisedStaffId).isNull()
-          assertThat(createUsername).isEqualTo("SA")
-        }
-        with(visitOrderBalanceResponse.visitOrderBalanceAdjustments[1]) {
-          assertThat(remainingVisitOrders).isEqualTo(5)
-          assertThat(previousRemainingVisitOrders).isEqualTo(1)
-          assertThat(remainingPrivilegedVisitOrders).isNull()
-          assertThat(previousRemainingPrivilegedVisitOrders).isNull()
-          assertThat(adjustmentReason!!.code).isEqualTo("IEP")
-          assertThat(adjustmentReason!!.description).isEqualTo("IEP Entitlements")
-          assertThat(adjustmentDate).isEqualTo(LocalDate.now())
-          assertThat(comment).isEqualTo("this is a comment")
-          assertThat(expiryBalance).isEqualTo(7)
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2027-11-30"))
-          assertThat(endorsedStaffId).isEqualTo(234)
-          assertThat(authorisedStaffId).isEqualTo(123)
-          assertThat(createUsername).isEqualTo("SA")
-        }
-        with(visitOrderBalanceResponse.visitOrderBalanceAdjustments[2]) {
-          assertThat(remainingVisitOrders).isNull()
-          assertThat(previousRemainingVisitOrders).isNull()
-          assertThat(remainingPrivilegedVisitOrders).isEqualTo(3)
-          assertThat(previousRemainingPrivilegedVisitOrders).isEqualTo(2)
-          assertThat(adjustmentReason!!.code).isEqualTo("PVO_IEP")
-          assertThat(adjustmentReason!!.description).isEqualTo("PVO IEP Entitlements")
-        }
+        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isNull()
       }
     }
   }
@@ -208,9 +159,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        staff(firstName = "KOFE", lastName = "ADDY") {
-          account(username = "KOFEADDY", type = "GENERAL")
-        }
         offender(nomsId = "A1234BC") {
           booking {
             visitBalance { }
