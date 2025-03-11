@@ -1330,6 +1330,65 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `Plan progression and intervention text fields will be truncated when over 4000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith3999Characters = "A".repeat(3999)
+        val textWith3996Characters = "A".repeat(3996)
+        val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip2.id).copy(
+          plans = listOf(planRequest.copy(progression = veryLongSummary, intervention = veryLongSummary)),
+        )
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val updatedCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(updatedCsip.plans.size).isEqualTo(1)
+          assertThat(updatedCsip.plans[0].progression).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+          assertThat(updatedCsip.plans[0].intervention).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+        }
+      }
+
+      @Test
+      fun `Plan Identified Need text field will be truncated when over 1000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith999Characters = "A".repeat(999)
+        val textWith996Characters = "A".repeat(996)
+        val veryLongSummary = textWithASingle4ByteCharacter + textWith999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip2.id).copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongSummary)))
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val updatedCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(updatedCsip.plans.size).isEqualTo(1)
+          assertThat(updatedCsip.plans[0].identifiedNeed).isEqualTo(textWithASingle4ByteCharacter + textWith996Characters)
+        }
+      }
+
+      @Test
       fun `will track telemetry event for create with minimal data`() {
         val validCSIP = createUpsertCSIPRequestMinimalData()
 
@@ -1720,6 +1779,63 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           // Reviews
           assertThat(updatedCsip.reviews.size).isEqualTo(1)
           assertThat(updatedCsip.reviews[0].summary).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+        }
+      }
+
+      @Test
+      fun `Plan progression and intervention text fields will be truncated when over 4000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith3999Characters = "A".repeat(3999)
+        val textWith3996Characters = "A".repeat(3996)
+        val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(progression = veryLongSummary, intervention = veryLongSummary)))
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val updatedCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(updatedCsip.plans.size).isEqualTo(1)
+          assertThat(updatedCsip.plans[0].progression).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+          assertThat(updatedCsip.plans[0].intervention).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+        }
+      }
+
+      @Test
+      fun `Plan Identified Need text field will be truncated when over 1000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith999Characters = "A".repeat(999)
+        val textWith996Characters = "A".repeat(996)
+        val veryLongSummary = textWithASingle4ByteCharacter + textWith999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongSummary)))
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val updatedCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(updatedCsip.plans.size).isEqualTo(1)
+          assertThat(updatedCsip.plans[0].identifiedNeed).isEqualTo(textWithASingle4ByteCharacter + textWith996Characters)
         }
       }
 
