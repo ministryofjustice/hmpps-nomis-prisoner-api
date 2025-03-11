@@ -26,7 +26,7 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
   @GetMapping("/prisoners/{offenderNo}/profile-details")
   @Operation(
     summary = "Get profile details for a prisoner",
-    description = "Retrieves profile details for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_PRISON_PERSON",
+    description = "Retrieves profile details for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_CONTACTPERSONS",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -50,7 +50,7 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISON_PERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
@@ -80,7 +80,7 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
   @PutMapping("/prisoners/{offenderNo}/profile-details")
   @Operation(
     summary = "Upsert profile details for a prisoner",
-    description = "Upserts profile details on the latest booking for a prisoner, if it exists. Requires ROLE_NOMIS_PRISON_PERSON",
+    description = "Upserts profile details on the latest booking for a prisoner, if it exists. Requires ROLE_NOMIS_CONTACTPERSONS",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -112,7 +112,7 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISON_PERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
         content = [
           Content(
             mediaType = "application/json",
