@@ -268,9 +268,9 @@ class CSIPService(
         request.id?.let {
           plans.find { it.id == request.id }
             ?.apply {
-              identifiedNeed = request.identifiedNeed
-              intervention = request.intervention
-              progression = request.progression
+              identifiedNeed = request.identifiedNeed.truncateToUtf8Length(1000)
+              intervention = request.intervention.truncateToUtf8Length(4000)
+              progression = request.progression?.truncateToUtf8Length(4000)
               referredBy = request.referredBy
               targetDate = request.targetDate
               closedDate = request.closedDate
@@ -278,9 +278,9 @@ class CSIPService(
             ?: throw BadDataException("Attempting to update csip report $id with a csip plan id (${request.id}) that does not exist")
         } ?: CSIPPlan(
           csipReport = this,
-          identifiedNeed = request.identifiedNeed,
-          intervention = request.intervention,
-          progression = request.progression,
+          identifiedNeed = request.identifiedNeed.truncateToUtf8Length(1000),
+          intervention = request.intervention.truncateToUtf8Length(4000),
+          progression = request.progression?.truncateToUtf8Length(4000),
           referredBy = request.referredBy,
           targetDate = request.targetDate,
           closedDate = request.closedDate,
