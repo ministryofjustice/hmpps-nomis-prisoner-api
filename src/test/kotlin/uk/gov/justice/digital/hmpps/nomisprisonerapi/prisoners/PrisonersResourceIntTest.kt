@@ -522,6 +522,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         "ROLE_NOMIS_ALERTS",
         "ROLE_NOMIS_CORE_PERSON",
         "ROLE_SYNCHRONISATION_REPORTING",
+        "ROLE_NOMIS_SENTENCING",
       )
       fun `access allowed for role`(role: String) {
         webTestClient.get().uri("/prisoners/ids/all")
