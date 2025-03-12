@@ -507,7 +507,7 @@ class SentencingService(
   }
 
   @Audit
-  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
+  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
 
     val offenderBooking = case.offenderBooking
     val sentence = OffenderSentence(
@@ -935,6 +935,9 @@ class SentencingService(
     ?: throw NotFoundException("Offender booking $id not found")
 
   private fun findCourtCase(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court case $id for $offenderNo not found")
+
+  private fun findCourtCaseWithLock(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNullForUpdate(id)
     ?: throw NotFoundException("Court case $id for $offenderNo not found")
 
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
