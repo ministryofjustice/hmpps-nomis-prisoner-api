@@ -105,21 +105,10 @@ class SentencingService(
   fun getCourtCaseForMigration(id: Long): CourtCaseResponse = courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
     ?: throw NotFoundException("Court case $id not found")
 
-  fun getCourtCasesByOffender(offenderNo: String): List<CourtCaseResponse> {
-    findLatestBooking(offenderNo)
-
-    return courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
-      .map { courtCase ->
-        courtCase.toCourtCaseResponse()
-      }
-  }
-
-  fun getCourtCasesByOffenderBooking(bookingId: Long): List<CourtCaseResponse> = findOffenderBooking(bookingId).let {
-    courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(it)
-      .map { courtCase ->
-        courtCase.toCourtCaseResponse()
-      }
-  }
+  fun getCourtCasesByOffender(offenderNo: String): List<CourtCaseResponse> = courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
+    .map { courtCase ->
+      courtCase.toCourtCaseResponse()
+    }
 
   fun getOffenderCharge(id: Long): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender Charge $id not found")
