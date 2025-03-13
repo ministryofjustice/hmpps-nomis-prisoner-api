@@ -148,7 +148,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
         assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
         assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
-        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isNull()
+        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo(LocalDate.now().minusDays(1))
       }
     }
   }
