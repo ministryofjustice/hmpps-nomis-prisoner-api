@@ -137,7 +137,7 @@ class VisitBalanceServiceTest {
       @Test
       fun `there will be a last IEP allocation date`() {
         val visitBalance = visitBalanceService.getVisitOrderBalance("A1234KT")
-        Assertions.assertThat(visitBalance.lastIEPAllocationDate).isNull()
+        Assertions.assertThat(visitBalance.lastIEPAllocationDate).isEqualTo("2025-03-13")
       }
     }
 

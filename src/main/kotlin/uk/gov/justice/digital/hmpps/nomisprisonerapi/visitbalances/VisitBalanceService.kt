@@ -25,12 +25,13 @@ class VisitBalanceService(
   fun getVisitOrderBalance(offenderNo: String): PrisonerVisitOrderBalanceResponse = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?.let { latestBooking ->
 
+      val lastBatchIEPAdjustmentDate = latestBooking.visitBalanceAdjustments
+        .filter { it.isIEPAllocation() && it.isCreatedByBatchVOProcess() }.maxByOrNull { it.adjustDate }?.adjustDate
+
       PrisonerVisitOrderBalanceResponse(
         remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders ?: 0,
         remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders ?: 0,
-        lastIEPAllocationDate = latestBooking.visitBalanceAdjustments
-          .filter { it.isCreatedByBatchVOProcess() }.maxByOrNull { it.adjustDate }
-          ?.adjustDate,
+        lastIEPAllocationDate = lastBatchIEPAdjustmentDate ?: latestBooking.visitBalanceAdjustments.filter { it.isIEPAllocation() }.maxByOrNull { it.adjustDate }?.adjustDate,
       )
     } ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
 
@@ -39,4 +40,5 @@ class VisitBalanceService(
     .orElseThrow { NotFoundException("Visit balance adjustment with id $visitBalanceAdjustmentId not found") }
 }
 
-fun OffenderVisitBalanceAdjustment.isCreatedByBatchVOProcess() = adjustReasonCode.code == IEP_ENTITLEMENT && createUsername == "OMS_OWNER"
+fun OffenderVisitBalanceAdjustment.isCreatedByBatchVOProcess() = createUsername == "OMS_OWNER"
+fun OffenderVisitBalanceAdjustment.isIEPAllocation() = adjustReasonCode.code == IEP_ENTITLEMENT
