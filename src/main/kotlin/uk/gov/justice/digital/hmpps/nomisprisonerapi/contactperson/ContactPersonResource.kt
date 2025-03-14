@@ -133,7 +133,13 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     @Schema(description = "Offender No aka prisoner number", example = "A1234KT")
     @PathVariable
     offenderNo: String,
-  ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo)
+    @RequestParam(value = "active-only", required = false, defaultValue = "true")
+    @Parameter(
+      description = "When true only return contacts that are active",
+      example = "false",
+    )
+    activeOnly: Boolean,
+  ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/persons/ids")

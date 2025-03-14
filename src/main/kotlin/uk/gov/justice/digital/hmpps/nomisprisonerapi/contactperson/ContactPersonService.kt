@@ -214,10 +214,11 @@ class ContactPersonService(
     )
   } ?: throw NotFoundException("Person not found $personId")
 
-  fun getPrisonerWithContacts(offenderNo: String): PrisonerWithContacts = bookingRepository.findAllByOffenderNomsId(offenderNo).flatMap { booking ->
+  fun getPrisonerWithContacts(offenderNo: String, activeOnly: Boolean): PrisonerWithContacts = bookingRepository.findAllByOffenderNomsId(offenderNo).flatMap { booking ->
     booking.contacts
       // only interested in person contacts - not other prisoners
       .filter { it.person != null }
+      .filter { activeOnly == false || it.active }
       .map { contact ->
         PrisonerContact(
           id = contact.id,
