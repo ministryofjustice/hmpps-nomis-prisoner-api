@@ -306,6 +306,7 @@ class CSIPService(
               summary = request.summary?.truncateToUtf8Length(4000)
               nextReviewDate = request.nextReviewDate
               closeDate = request.closeDate
+              reviewSequence = request.reviewSequence
             }
             ?: throw BadDataException("Attempting to update csip report $id with a csip review id (${request.id}) that does not exist")
         } else {
@@ -321,7 +322,7 @@ class CSIPService(
             closeDate = request.closeDate,
             recordedDate = request.recordedDate,
             recordedUser = request.recordedBy,
-            reviewSequence = reviewRepository.getNextSequence(this.id),
+            reviewSequence = request.reviewSequence,
           )
         }.apply {
           if (!request.attendees.isNullOrEmpty()) {
