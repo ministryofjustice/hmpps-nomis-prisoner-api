@@ -30,7 +30,7 @@ class CSIPReview(
   override val id: Long = 0,
 
   @Column(name = "REVIEW_SEQ", nullable = false)
-  val reviewSequence: Int,
+  var reviewSequence: Int,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CSIP_ID")

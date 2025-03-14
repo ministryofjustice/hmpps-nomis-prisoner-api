@@ -106,6 +106,9 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             review {
               attendee(name = "Fred Attendee", role = "Witness", attended = true, contribution = "helped")
             }
+            review {
+              attendee(name = "Jim Attendee", role = "Witness", attended = false, contribution = "information")
+            }
           }
           csip2 = csipReport {}
           csip3 = csipReport {
@@ -410,7 +413,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("id").isEqualTo(csip1.id)
         .jsonPath("reviews[0].id").isEqualTo(csip1.reviews[0].id)
-        .jsonPath("reviews[0].reviewSequence").isEqualTo(1)
+        .jsonPath("reviews[0].reviewSequence").isEqualTo(csip1.reviews[0].reviewSequence)
         .jsonPath("reviews[0].remainOnCSIP").isEqualTo(true)
         .jsonPath("reviews[0].csipUpdated").isEqualTo(true)
         .jsonPath("reviews[0].caseNote").isEqualTo(false)
@@ -755,7 +758,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCSIPs[0].reportDetails.factors.size()").isEqualTo(2)
           .jsonPath("offenderCSIPs[0].investigation.interviews.size()").isEqualTo(1)
           .jsonPath("offenderCSIPs[0].plans.size()").isEqualTo(1)
-          .jsonPath("offenderCSIPs[0].reviews.size()").isEqualTo(1)
+          .jsonPath("offenderCSIPs[0].reviews.size()").isEqualTo(2)
           .jsonPath("offenderCSIPs[0].reviews[0].attendees.size()").isEqualTo(1)
       }
 
@@ -1280,6 +1283,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
           // Reviews
           assertThat(newCsip.reviews.size).isEqualTo(1)
+          assertThat(newCsip.reviews[0].reviewSequence).isEqualTo(6)
           assertThat(newCsip.reviews[0].remainOnCSIP).isEqualTo(true)
           assertThat(newCsip.reviews[0].csipUpdated).isEqualTo(false)
           assertThat(newCsip.reviews[0].caseNote).isEqualTo(false)
@@ -1337,7 +1341,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip2.id).copy(
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(
           plans = listOf(planRequest.copy(progression = veryLongSummary, intervention = veryLongSummary)),
         )
 
@@ -1368,7 +1372,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val veryLongSummary = textWithASingle4ByteCharacter + textWith999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip2.id).copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongSummary)))
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongSummary)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -1623,7 +1627,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `updating a csip with full data will allow the data to be retrieved`() {
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip2.id)
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id)
 
         val upsertResponse = webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -1733,6 +1737,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
           // Reviews
           assertThat(updatedCsip.reviews.size).isEqualTo(1)
+          assertThat(updatedCsip.reviews[0].reviewSequence).isEqualTo(6)
           assertThat(updatedCsip.reviews[0].remainOnCSIP).isEqualTo(true)
           assertThat(updatedCsip.reviews[0].csipUpdated).isEqualTo(false)
           assertThat(updatedCsip.reviews[0].caseNote).isEqualTo(false)
@@ -1754,6 +1759,63 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `updating a csip with fewer reviews will clear old reviews and associated attendees`() {
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip1.id).copy(
+          reviews = listOf(
+            reviewRequest.copy(
+              dpsId = "111222",
+              id = csip1.reviews[1].id,
+              summary = "test1",
+              attendees = listOf(attendeeRequest.copy(dpsId = "7788", id = csip1.reviews[1].attendees[0].id, name = "some body")),
+            ),
+          ),
+        )
+
+        repository.runInTransaction {
+          val originalCsip = csipRepository.findByIdOrNull(csip1.id)!!
+          assertThat(originalCsip.reviews.size).isEqualTo(2)
+          assertThat(originalCsip.reviews[0].attendees.size).isEqualTo(1)
+          assertThat(originalCsip.reviews[1].attendees.size).isEqualTo(1)
+        }
+
+        webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val updatedCsip = csipRepository.findByIdOrNull(csip1.id)
+          assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+
+          // Reviews
+          assertThat(updatedCsip.reviews.size).isEqualTo(1)
+          assertThat(updatedCsip.reviews[0].reviewSequence).isEqualTo(6)
+          assertThat(updatedCsip.reviews[0].remainOnCSIP).isEqualTo(true)
+          assertThat(updatedCsip.reviews[0].csipUpdated).isEqualTo(false)
+          assertThat(updatedCsip.reviews[0].caseNote).isEqualTo(false)
+          assertThat(updatedCsip.reviews[0].closeCSIP).isEqualTo(true)
+          assertThat(updatedCsip.reviews[0].peopleInformed).isEqualTo(false)
+          assertThat(updatedCsip.reviews[0].summary).isEqualTo("test1")
+          assertThat(updatedCsip.reviews[0].nextReviewDate).isEqualTo(LocalDate.parse("2024-08-01"))
+          assertThat(updatedCsip.reviews[0].closeDate).isEqualTo(LocalDate.parse("2024-04-16"))
+          assertThat(updatedCsip.reviews[0].recordedUser).isEqualTo("FRED.JAMES")
+
+          // Check attendees
+          assertThat(updatedCsip.reviews[0].attendees.size).isEqualTo(1)
+          assertThat(updatedCsip.reviews[0].attendees[0].name).isEqualTo("some body")
+          assertThat(updatedCsip.reviews[0].attendees[0].role).isEqualTo("person")
+          assertThat(updatedCsip.reviews[0].attendees[0].attended).isEqualTo(true)
+          assertThat(updatedCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
+        }
+      }
+
+      @Test
       fun `summary will be truncated when over 4000 bytes`() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith3999Characters = "A".repeat(3999)
@@ -1761,7 +1823,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip2.id).copy(reviews = listOf(reviewRequest.copy(summary = veryLongSummary)))
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(reviews = listOf(reviewRequest.copy(summary = veryLongSummary)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -1872,7 +1934,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will track telemetry event for update with full data`() {
-        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportd = csip1.id)
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip1.id)
 
         webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -2113,6 +2175,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                     recordedBy = "FRED.JAMES",
                     attendees = listOf(),
                     recordedDate = LocalDate.parse("2024-04-01"),
+                    reviewSequence = 2,
                   ),
                   reviewRequest.copy(dpsId = "0099881111", summary = "Help3"),
                 ),
@@ -2184,6 +2247,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
                       attendeeRequest.copy(dpsId = "7766", contribution = "Attendee 2"),
                     ),
                     recordedDate = LocalDate.parse("2024-04-01"),
+                    reviewSequence = 4,
                   ),
                   reviewRequest.copy(dpsId = "0099881111", summary = "Help3"),
                 ),
@@ -2304,8 +2368,8 @@ private fun createUpsertCSIPRequestMinimalData(csipReportId: Long? = null) = Ups
   reportedDate = LocalDate.parse("2024-05-12"),
 )
 
-private fun createUpsertCSIPRequest(nomisCSIPReportd: Long? = null) = UpsertCSIPRequest(
-  id = nomisCSIPReportd,
+private fun createUpsertCSIPRequest(nomisCSIPReportId: Long? = null) = UpsertCSIPRequest(
+  id = nomisCSIPReportId,
   offenderNo = "A1234TT",
   incidentDate = LocalDate.parse("2023-12-23"),
   incidentTime = LocalTime.parse("10:32:12"),
@@ -2420,4 +2484,5 @@ private val reviewRequest = ReviewRequest(
   recordedBy = "FRED.JAMES",
   attendees = listOf(attendeeRequest),
   recordedDate = LocalDate.parse("2024-04-01"),
+  reviewSequence = 6,
 )

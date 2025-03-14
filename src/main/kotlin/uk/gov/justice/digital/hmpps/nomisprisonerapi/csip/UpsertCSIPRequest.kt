@@ -229,6 +229,8 @@ data class ReviewRequest(
   val recordedDate: LocalDate,
   @Schema(description = "The username of the person who recorded the review")
   val recordedBy: String,
+  @Schema(description = "The sequence number of the review, allowing for dps to set ")
+  val reviewSequence: Int,
 ) : CSIPChildRequest
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
