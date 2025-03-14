@@ -970,6 +970,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBodyResponse()
         assertThat(prisonerWithContacts.contacts).hasSize(4)
+        assertThat(prisonerWithContacts.contacts).anyMatch { !it.active }
       }
 
       @Test
@@ -980,7 +981,20 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBodyResponse()
-        assertThat(prisonerWithContacts.contacts).hasSize(4)
+        assertThat(prisonerWithContacts.contacts).hasSize(3)
+        assertThat(prisonerWithContacts.contacts).noneMatch { !it.active }
+      }
+
+      @Test
+      fun `by default only can active contacts return`() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+        assertThat(prisonerWithContacts.contacts).hasSize(3)
+        assertThat(prisonerWithContacts.contacts).noneMatch { !it.active }
       }
     }
 
