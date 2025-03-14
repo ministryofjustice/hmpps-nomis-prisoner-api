@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
@@ -26,9 +27,137 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
 
+  @DisplayName("GET /visit-balances/{visitBalanceId}")
+  @Nested
+  inner class getVisitBalanceByIdToMigrate {
+    private lateinit var offender: Offender
+    private lateinit var booking: OffenderBooking
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(
+          nomsId = "A1234BC",
+          firstName = "JANE",
+          lastName = "NARK",
+          birthDate = LocalDate.parse("1999-12-22"),
+          birthPlace = "LONDON",
+          genderCode = "F",
+          whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+        ) {
+          booking = booking {
+            visitBalance { }
+            visitBalanceAdjustment { }
+            visitBalanceAdjustment(
+              remainingVisitOrders = 5,
+              previousRemainingVisitOrders = 1,
+              remainingPrivilegedVisitOrders = null,
+              previousRemainingPrivilegedVisitOrders = null,
+              adjustmentReasonCode = IEP_ENTITLEMENT,
+              adjustmentDate = LocalDate.now().minusDays(1),
+              comment = "this is a comment for the most recent batch iep adjustment",
+              expiryBalance = 7,
+              expiryDate = LocalDate.parse("2027-11-30"),
+              endorsedStaffId = 234,
+              authorisedStaffId = 123,
+            )
+            visitBalanceAdjustment(
+              remainingVisitOrders = null,
+              previousRemainingVisitOrders = null,
+              remainingPrivilegedVisitOrders = 3,
+              previousRemainingPrivilegedVisitOrders = 2,
+              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+              adjustmentDate = LocalDate.now().minusMonths(5),
+            )
+            visitBalanceAdjustment(
+              remainingVisitOrders = null,
+              previousRemainingVisitOrders = null,
+              remainingPrivilegedVisitOrders = 4,
+              previousRemainingPrivilegedVisitOrders = 1,
+              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+              adjustmentDate = LocalDate.now().minusMonths(1).minusDays(1),
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/visit-balances/${booking.bookingId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/visit-balances/${booking.bookingId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/visit-balances/${booking.bookingId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/prisoners/AB1234C/visit-orders/balance")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return visit order balances`() {
+        webTestClient.get().uri("/visit-balances/${booking.bookingId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("remainingVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders!!)
+          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders!!)
+      }
+
+      @Test
+      fun `is able to re-hydrate visit order balance`() {
+        val visitOrderBalanceResponse =
+          webTestClient.get().uri("/visit-balances/${booking.bookingId}")
+            .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+            .exchange()
+            .expectStatus()
+            .isOk
+            .returnResult(PrisonerVisitBalanceResponse::class.java).responseBody.blockFirst()!!
+
+        assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
+        assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
+        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo("2025-03-13")
+      }
+    }
+  }
+
   @DisplayName("GET /prisoners/{offenderNo}/visit-orders/balance")
   @Nested
-  inner class GetOffenderVisitBalance {
+  inner class getVisitBalanceToMigrate {
     private lateinit var offender: Offender
 
     @BeforeEach
@@ -144,7 +273,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus()
             .isOk
-            .returnResult(PrisonerVisitOrderBalanceResponse::class.java).responseBody.blockFirst()!!
+            .returnResult(PrisonerVisitBalanceResponse::class.java).responseBody.blockFirst()!!
 
         assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
         assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)

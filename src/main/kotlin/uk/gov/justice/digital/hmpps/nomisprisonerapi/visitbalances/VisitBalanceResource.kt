@@ -125,7 +125,55 @@ class VisitBalanceResource(
     @Schema(description = "Prison number aka Offender No.", example = "A1234AK")
     @PathVariable
     prisonNumber: String,
-  ): PrisonerVisitOrderBalanceResponse = visitBalanceService.getVisitOrderBalance(prisonNumber)
+  ): PrisonerVisitBalanceResponse = visitBalanceService.getVisitBalanceForPrisoner(prisonNumber)
+
+  @GetMapping("/visit-balances/{visitBalanceId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get visit balance data for a booking",
+    description = "Retrieves visit order balance details for the last month for a booking. Requires ROLE_NOMIS_VISIT_BALANCE",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Visit balance returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getVisitBalanceByIdToMigrate(
+    @Schema(description = "Visit balance (offender booking) id.", example = "12345")
+    @PathVariable
+    visitBalanceId: Long,
+  ): PrisonerVisitBalanceResponse = visitBalanceService.getVisitBalanceById(visitBalanceId)
 
   @GetMapping("/visit-orders/visit-balance-adjustment/{visitBalanceAdjustmentId}")
   @ResponseStatus(HttpStatus.OK)
@@ -176,10 +224,11 @@ class VisitBalanceResource(
   ): VisitBalanceAdjustmentResponse = visitBalanceService.getVisitBalanceAdjustment(visitBalanceAdjustmentId)
 }
 
-@Schema(description = "The list of visit orders held against a prisoner")
+@Schema(description = "The visit balance held against a prisoner's latest booking")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class PrisonerVisitOrderBalanceResponse(
-
+data class PrisonerVisitBalanceResponse(
+  @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
+  val prisonNumber: String,
   @Schema(description = "Total number of unallocated (remaining) visit orders")
   val remainingVisitOrders: Int = 0,
   @Schema(description = "Total number of unallocated (remaining) privileged visit orders")
