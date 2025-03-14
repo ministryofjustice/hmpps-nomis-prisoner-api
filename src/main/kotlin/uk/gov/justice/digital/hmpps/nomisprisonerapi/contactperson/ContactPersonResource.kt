@@ -139,7 +139,13 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       example = "false",
     )
     activeOnly: Boolean,
-  ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly)
+    @RequestParam(value = "latest-booking-only", required = false, defaultValue = "true")
+    @Parameter(
+      description = "When true only return contacts that related to latest booking",
+      example = "false",
+    )
+    latestBookingOnly: Boolean,
+  ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly, latestBookingOnly)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/persons/ids")

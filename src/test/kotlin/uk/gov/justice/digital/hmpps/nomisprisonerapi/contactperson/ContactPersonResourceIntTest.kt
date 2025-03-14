@@ -963,7 +963,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can request active and inactive contacts`() {
-        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false")
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=false")
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
@@ -975,7 +975,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can request just active contacts`() {
-        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=true")
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=true&latest-booking-only=false")
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
@@ -987,13 +987,66 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `by default only can active contacts return`() {
-        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?latest-booking-only=false")
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBodyResponse()
         assertThat(prisonerWithContacts.contacts).hasSize(3)
+        assertThat(prisonerWithContacts.contacts).noneMatch { !it.active }
+      }
+
+      @Test
+      fun `can include latest booking only`() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=false")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(prisonerWithContacts.contacts).hasSize(4)
+        assertThat(prisonerWithContacts.contacts).anyMatch { it.bookingSequence > 1 }
+      }
+
+      @Test
+      fun `can filter by latest booking only bookings`() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=true")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(prisonerWithContacts.contacts).hasSize(3)
+        assertThat(prisonerWithContacts.contacts).noneMatch { it.bookingSequence > 1 }
+      }
+
+      @Test
+      fun `by default only latest booking contacts are returned`() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(prisonerWithContacts.contacts).hasSize(3)
+        assertThat(prisonerWithContacts.contacts).noneMatch { it.bookingSequence > 1 }
+      }
+
+      @Test
+      fun `by default only latest booking contacts and active are returned`() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(prisonerWithContacts.contacts).hasSize(2)
+        assertThat(prisonerWithContacts.contacts).noneMatch { it.bookingSequence > 1 }
         assertThat(prisonerWithContacts.contacts).noneMatch { !it.active }
       }
     }
@@ -1004,7 +1057,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
 
       @BeforeEach
       fun setUp() {
-        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false")
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=false")
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()

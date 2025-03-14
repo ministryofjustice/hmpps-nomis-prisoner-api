@@ -214,44 +214,46 @@ class ContactPersonService(
     )
   } ?: throw NotFoundException("Person not found $personId")
 
-  fun getPrisonerWithContacts(offenderNo: String, activeOnly: Boolean): PrisonerWithContacts = bookingRepository.findAllByOffenderNomsId(offenderNo).flatMap { booking ->
-    booking.contacts
-      // only interested in person contacts - not other prisoners
-      .filter { it.person != null }
-      .filter { activeOnly == false || it.active }
-      .map { contact ->
-        PrisonerContact(
-          id = contact.id,
-          bookingId = booking.bookingId,
-          bookingSequence = booking.bookingSequence.toLong(),
-          contactType = contact.contactType.toCodeDescription(),
-          relationshipType = contact.relationshipType.toCodeDescription(),
-          active = contact.active,
-          approvedVisitor = contact.approvedVisitor == true,
-          emergencyContact = contact.emergencyContact,
-          nextOfKin = contact.nextOfKin,
-          expiryDate = contact.expiryDate,
-          comment = contact.comment,
-          person = ContactForPerson(
-            personId = contact.person!!.id,
-            lastName = contact.person!!.lastName,
-            firstName = contact.person!!.firstName,
-          ),
-          restrictions = contact.restrictions.map { restriction ->
-            ContactRestriction(
-              id = restriction.id,
-              type = restriction.restrictionType.toCodeDescription(),
-              comment = restriction.comment,
-              effectiveDate = restriction.effectiveDate,
-              expiryDate = restriction.expiryDate,
-              enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
-              audit = restriction.toAudit(),
-            )
-          },
-          audit = contact.toAudit(),
-        )
-      }
-  }.let { PrisonerWithContacts(contacts = it) }
+  fun getPrisonerWithContacts(offenderNo: String, activeOnly: Boolean, latestBookingOnly: Boolean): PrisonerWithContacts = bookingRepository.findAllByOffenderNomsId(offenderNo)
+    .filter { latestBookingOnly == false || it.bookingSequence == 1 }
+    .flatMap { booking ->
+      booking.contacts
+        // only interested in person contacts - not other prisoners
+        .filter { it.person != null }
+        .filter { activeOnly == false || it.active }
+        .map { contact ->
+          PrisonerContact(
+            id = contact.id,
+            bookingId = booking.bookingId,
+            bookingSequence = booking.bookingSequence.toLong(),
+            contactType = contact.contactType.toCodeDescription(),
+            relationshipType = contact.relationshipType.toCodeDescription(),
+            active = contact.active,
+            approvedVisitor = contact.approvedVisitor == true,
+            emergencyContact = contact.emergencyContact,
+            nextOfKin = contact.nextOfKin,
+            expiryDate = contact.expiryDate,
+            comment = contact.comment,
+            person = ContactForPerson(
+              personId = contact.person!!.id,
+              lastName = contact.person!!.lastName,
+              firstName = contact.person!!.firstName,
+            ),
+            restrictions = contact.restrictions.map { restriction ->
+              ContactRestriction(
+                id = restriction.id,
+                type = restriction.restrictionType.toCodeDescription(),
+                comment = restriction.comment,
+                effectiveDate = restriction.effectiveDate,
+                expiryDate = restriction.expiryDate,
+                enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
+                audit = restriction.toAudit(),
+              )
+            },
+            audit = contact.toAudit(),
+          )
+        }
+    }.let { PrisonerWithContacts(contacts = it) }
 
   fun findPersonIdsByFilter(
     pageRequest: Pageable,
