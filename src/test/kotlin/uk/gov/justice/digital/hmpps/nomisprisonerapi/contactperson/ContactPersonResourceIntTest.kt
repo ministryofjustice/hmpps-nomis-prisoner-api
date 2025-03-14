@@ -867,6 +867,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           booking {
             mumContact = contact(
               person = mum,
+              active = false,
               contactType = "S",
               relationshipType = "MOT",
             )
@@ -957,12 +958,39 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
+    inner class Filtering {
+      lateinit var prisonerWithContacts: PrisonerWithContacts
+
+      @Test
+      fun `can request active and inactive contacts`() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+        assertThat(prisonerWithContacts.contacts).hasSize(4)
+      }
+
+      @Test
+      fun `can request just active contacts`() {
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=true")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+        assertThat(prisonerWithContacts.contacts).hasSize(4)
+      }
+    }
+
+    @Nested
     inner class HappyPath {
       lateinit var prisonerWithContacts: PrisonerWithContacts
 
       @BeforeEach
       fun setUp() {
-        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
+        prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false")
           .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
           .exchange()
           .expectStatus()
