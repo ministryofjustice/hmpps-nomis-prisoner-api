@@ -1345,6 +1345,136 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /persons/ids/all-from-id")
+  @Nested
+  inner class GetPersonIdsFromId {
+    private var lowestPersonId = 0L
+    private var highestPersonId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        lowestPersonId = (1..20).map {
+          person(
+            firstName = "JOHN",
+            lastName = "BOG",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00").minusMinutes(it.toLong()),
+          )
+        }.first().id
+        (1..20).forEach { _ ->
+          person(
+            firstName = "JOHN",
+            lastName = "BOG",
+            whenCreated = LocalDateTime.parse("2022-01-01T00:00"),
+          )
+        }
+        highestPersonId = (1..20).map {
+          person(
+            firstName = "JOHN",
+            lastName = "BOG",
+            whenCreated = LocalDateTime.parse("2024-01-01T10:00").minusMinutes(it.toLong()),
+          )
+        }.last().id
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/persons/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/persons/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/persons/ids/all-from-id")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return first 10 or all persons`() {
+        webTestClient.get().uri {
+          it.path("/persons/ids/all-from-id")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("personIds.size()").isEqualTo(10)
+          .jsonPath("lastPersonId").isEqualTo(lowestPersonId + 9)
+      }
+
+      @Test
+      fun `can set page size`() {
+        webTestClient.get().uri {
+          it.path("/persons/ids/all-from-id")
+            .queryParam("pageSize", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("personIds.size()").isEqualTo(1)
+          .jsonPath("lastPersonId").isEqualTo(lowestPersonId)
+      }
+
+      @Test
+      fun `can set request another page`() {
+        webTestClient.get().uri {
+          it.path("/persons/ids/all-from-id")
+            .queryParam("pageSize", "10")
+            .queryParam("personId", lowestPersonId + 9)
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("personIds.size()").isEqualTo(10)
+          .jsonPath("personIds[0]").isEqualTo(lowestPersonId + 10)
+          .jsonPath("personIds[9]").isEqualTo(lowestPersonId + 19)
+          .jsonPath("lastPersonId").isEqualTo(lowestPersonId + 19)
+      }
+
+      @Test
+      fun `will order by personId ascending`() {
+        webTestClient.get().uri {
+          it.path("/persons/ids/all-from-id")
+            .queryParam("pageSize", "60")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("personIds.size()").isEqualTo(60)
+          .jsonPath("lastPersonId").isEqualTo(highestPersonId)
+      }
+    }
+  }
+
   @DisplayName("POST /persons")
   @Nested
   inner class CreatePerson {

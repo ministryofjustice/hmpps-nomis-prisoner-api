@@ -270,6 +270,10 @@ class ContactPersonService(
     )
   }.map { PersonIdResponse(personId = it.personId) }
 
+  fun findPersonIdsFromId(personId: Long, pageSize: Int): PersonIdsWithLast = personRepository.findAllIdsFromId(personId = personId, pageSize = pageSize).let {
+    PersonIdsWithLast(lastPersonId = it.lastOrNull() ?: 0, personIds = it)
+  }
+
   fun createPerson(request: CreatePersonRequest): CreatePersonResponse {
     assertDoesNotExist(request)
 

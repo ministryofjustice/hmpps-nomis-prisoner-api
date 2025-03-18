@@ -39,6 +39,19 @@ interface PersonRepository :
     toDate: LocalDateTime?,
     pageable: Pageable,
   ): Page<PersonIdProjection>
+
+  @Query(
+    """
+      select 
+       PERSON_ID 
+      from PERSONS
+      where  PERSON_ID > :personId
+        and rownum <= :pageSize
+      order by PERSON_ID
+    """,
+    nativeQuery = true,
+  )
+  fun findAllIdsFromId(personId: Long, pageSize: Int): List<Long>
 }
 
 interface PersonIdProjection {
