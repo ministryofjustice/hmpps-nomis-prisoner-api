@@ -205,6 +205,39 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     ),
   )
 
+  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING')")
+  @GetMapping("/persons/ids/all-from-id")
+  @Operation(
+    summary = "Gets the identifier for all persons.",
+    description = """Gets the specified number of persons starting after the given id number.
+      Clients can iterate through all persons by calling this endpoint using the id from the last call (omit for first call).
+      Iteration ends when the returned prisonerIds list has size less than the requested page size.
+      Requires role SYNCHRONISATION_REPORTING.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of person ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role SYNCHRONISATION_REPORTING not present",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getPersonIdsFromId(
+    @Schema(description = "If supplied get person starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "personId", defaultValue = "0")
+    personId: Long,
+    @Schema(description = "Number of persons to get", required = false, defaultValue = "10")
+    @RequestParam(value = "pageSize", defaultValue = "10")
+    pageSize: Int,
+  ): PersonIdsWithLast = contactPersonService.findPersonIdsFromId(personId, pageSize)
+
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons")
   @ResponseStatus(HttpStatus.CREATED)
@@ -2585,4 +2618,9 @@ data class UpdateContactPersonRestrictionRequest(
   val expiryDate: LocalDate?,
   @Schema(description = "Username Staff member who updated the restriction")
   val enteredStaffUsername: String,
+)
+
+data class PersonIdsWithLast(
+  val personIds: List<Long>,
+  val lastPersonId: Long,
 )
