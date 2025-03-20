@@ -279,10 +279,10 @@ interface BookingDsl {
 
   @VisitBalanceAdjustmentDslMarker
   fun visitBalanceAdjustment(
-    remainingVisitOrders: Int? = 4,
-    previousRemainingVisitOrders: Int? = 0,
-    remainingPrivilegedVisitOrders: Int? = 3,
-    previousRemainingPrivilegedVisitOrders: Int? = 0,
+    visitOrderChange: Int? = 4,
+    previousVisitOrderCount: Int? = 0,
+    privilegedVisitOrderChange: Int? = 3,
+    previousPrivilegedVisitOrderCount: Int? = 0,
     adjustmentDate: LocalDate = LocalDate.parse("2022-01-01"),
     adjustmentReasonCode: String = IEP_ENTITLEMENT,
     comment: String? = null,
@@ -872,10 +872,10 @@ class BookingBuilder(
   }
 
   override fun visitBalanceAdjustment(
-    remainingVisitOrders: Int?,
-    previousRemainingVisitOrders: Int?,
-    remainingPrivilegedVisitOrders: Int?,
-    previousRemainingPrivilegedVisitOrders: Int?,
+    visitOrderChange: Int?,
+    previousVisitOrderCount: Int?,
+    privilegedVisitOrderChange: Int?,
+    previousPrivilegedVisitOrderCount: Int?,
     adjustmentDate: LocalDate,
     adjustmentReasonCode: String,
     comment: String?,
@@ -888,10 +888,10 @@ class BookingBuilder(
     .let { builder ->
       builder.build(
         offenderBooking = offenderBooking,
-        remainingVisitOrders = remainingVisitOrders,
-        previousRemainingVisitOrders = previousRemainingVisitOrders,
-        remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
-        previousRemainingPrivilegedVisitOrders = previousRemainingPrivilegedVisitOrders,
+        visitOrderChange = visitOrderChange,
+        previousVisitOrderCount = previousVisitOrderCount,
+        privilegedVisitOrderChange = privilegedVisitOrderChange,
+        previousPrivilegedVisitOrderCount = previousPrivilegedVisitOrderCount,
         adjustmentDate = adjustmentDate,
         adjustmentReasonCode = adjustmentReasonCode,
         comment = comment,

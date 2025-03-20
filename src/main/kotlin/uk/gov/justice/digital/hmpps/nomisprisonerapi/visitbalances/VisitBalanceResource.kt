@@ -175,7 +175,7 @@ class VisitBalanceResource(
     visitBalanceId: Long,
   ): PrisonerVisitBalanceResponse = visitBalanceService.getVisitBalanceById(visitBalanceId)
 
-  @GetMapping("/visit-orders/visit-balance-adjustment/{visitBalanceAdjustmentId}")
+  @GetMapping("/visit-balances/visit-balance-adjustment/{visitBalanceAdjustmentId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get specific offender visit balance adjustment",
@@ -242,15 +242,15 @@ data class PrisonerVisitBalanceResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class VisitBalanceAdjustmentResponse(
   @Schema(description = "Number of visit orders affected by the adjustment")
-  val remainingVisitOrders: Int? = null,
+  val visitOrderChange: Int? = null,
   @Schema(description = "Previous number of visit orders before the adjustment")
-  val previousRemainingVisitOrders: Int? = null,
+  val previousVisitOrderCount: Int? = null,
   @Schema(description = "Number of privileged visit orders affected by the adjustment")
-  val remainingPrivilegedVisitOrders: Int? = null,
+  val privilegedVisitOrderChange: Int? = null,
   @Schema(description = "Previous number of privileged visit orders before the adjustment")
-  val previousRemainingPrivilegedVisitOrders: Int? = null,
+  val previousPrivilegedVisitOrderCount: Int? = null,
   @Schema(description = "Adjustment reason")
-  val adjustmentReason: CodeDescription? = null,
+  val adjustmentReason: CodeDescription,
   @Schema(description = "Date the adjust was made")
   val adjustmentDate: LocalDate,
   @Schema(description = "Comment text")
@@ -275,10 +275,10 @@ data class VisitBalanceIdResponse(
 )
 
 fun OffenderVisitBalanceAdjustment.toVisitBalanceAdjustmentResponse(): VisitBalanceAdjustmentResponse = VisitBalanceAdjustmentResponse(
-  remainingVisitOrders = remainingVisitOrders,
-  previousRemainingVisitOrders = previousRemainingVisitOrders,
-  remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
-  previousRemainingPrivilegedVisitOrders = previousRemainingPrivilegedVisitOrders,
+  visitOrderChange = remainingVisitOrders,
+  previousVisitOrderCount = previousRemainingVisitOrders,
+  privilegedVisitOrderChange = remainingPrivilegedVisitOrders,
+  previousPrivilegedVisitOrderCount = previousRemainingPrivilegedVisitOrders,
   adjustmentReason = adjustReasonCode.toCodeDescription(),
   authorisedStaffId = authorisedStaffId,
   endorsedStaffId = endorsedStaffId,

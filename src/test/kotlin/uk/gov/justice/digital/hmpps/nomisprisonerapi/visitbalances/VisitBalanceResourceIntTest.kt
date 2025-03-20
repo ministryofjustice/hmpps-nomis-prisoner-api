@@ -49,12 +49,12 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             visitBalance { }
             visitBalanceAdjustment { }
             visitBalanceAdjustment(
-              remainingVisitOrders = 5,
-              previousRemainingVisitOrders = 1,
-              remainingPrivilegedVisitOrders = null,
-              previousRemainingPrivilegedVisitOrders = null,
+              visitOrderChange = 5,
+              previousVisitOrderCount = 1,
+              privilegedVisitOrderChange = null,
+              previousPrivilegedVisitOrderCount = null,
               adjustmentReasonCode = IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.now().minusDays(1),
+              adjustmentDate = LocalDate.parse("2025-03-12"),
               comment = "this is a comment for the most recent batch iep adjustment",
               expiryBalance = 7,
               expiryDate = LocalDate.parse("2027-11-30"),
@@ -62,20 +62,20 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
               authorisedStaffId = 123,
             )
             visitBalanceAdjustment(
-              remainingVisitOrders = null,
-              previousRemainingVisitOrders = null,
-              remainingPrivilegedVisitOrders = 3,
-              previousRemainingPrivilegedVisitOrders = 2,
+              visitOrderChange = null,
+              previousVisitOrderCount = null,
+              privilegedVisitOrderChange = 3,
+              previousPrivilegedVisitOrderCount = 2,
               adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.now().minusMonths(5),
+              adjustmentDate = LocalDate.parse("2025-01-11"),
             )
             visitBalanceAdjustment(
-              remainingVisitOrders = null,
-              previousRemainingVisitOrders = null,
-              remainingPrivilegedVisitOrders = 4,
-              previousRemainingPrivilegedVisitOrders = 1,
+              visitOrderChange = null,
+              previousVisitOrderCount = null,
+              privilegedVisitOrderChange = 4,
+              previousPrivilegedVisitOrderCount = 1,
               adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.now().minusMonths(1).minusDays(1),
+              adjustmentDate = LocalDate.parse("2025-02-10"),
             )
           }
         }
@@ -150,7 +150,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
         assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
         assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
-        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo(LocalDate.now().minusDays(1))
+        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2025-03-12"))
       }
     }
   }
@@ -176,10 +176,10 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             visitBalance { }
             visitBalanceAdjustment { }
             visitBalanceAdjustment(
-              remainingVisitOrders = 5,
-              previousRemainingVisitOrders = 1,
-              remainingPrivilegedVisitOrders = null,
-              previousRemainingPrivilegedVisitOrders = null,
+              visitOrderChange = 5,
+              previousVisitOrderCount = 1,
+              privilegedVisitOrderChange = null,
+              previousPrivilegedVisitOrderCount = null,
               adjustmentReasonCode = IEP_ENTITLEMENT,
               adjustmentDate = LocalDate.now().minusDays(1),
               comment = "this is a comment for the most recent batch iep adjustment",
@@ -189,18 +189,18 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
               authorisedStaffId = 123,
             )
             visitBalanceAdjustment(
-              remainingVisitOrders = null,
-              previousRemainingVisitOrders = null,
-              remainingPrivilegedVisitOrders = 3,
-              previousRemainingPrivilegedVisitOrders = 2,
+              visitOrderChange = null,
+              previousVisitOrderCount = null,
+              privilegedVisitOrderChange = 3,
+              previousPrivilegedVisitOrderCount = 2,
               adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
               adjustmentDate = LocalDate.now().minusMonths(5),
             )
             visitBalanceAdjustment(
-              remainingVisitOrders = null,
-              previousRemainingVisitOrders = null,
-              remainingPrivilegedVisitOrders = 4,
-              previousRemainingPrivilegedVisitOrders = 1,
+              visitOrderChange = null,
+              previousVisitOrderCount = null,
+              privilegedVisitOrderChange = 4,
+              previousPrivilegedVisitOrderCount = 1,
               adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
               adjustmentDate = LocalDate.now().minusMonths(1).minusDays(1),
             )
@@ -399,7 +399,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /visit-orders/visit-balance-adjustment/{visitBalanceAdjustmentId}")
+  @DisplayName("GET /visit-balances/visit-balance-adjustment/{visitBalanceAdjustmentId}")
   @Nested
   inner class getVisitBalanceAdjustment {
     private lateinit var adjustmentMin: OffenderVisitBalanceAdjustment
@@ -411,17 +411,17 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
         offender {
           booking {
             adjustmentMin = visitBalanceAdjustment(
-              remainingVisitOrders = null,
-              previousRemainingVisitOrders = null,
-              remainingPrivilegedVisitOrders = null,
-              previousRemainingPrivilegedVisitOrders = null,
+              visitOrderChange = null,
+              previousVisitOrderCount = null,
+              privilegedVisitOrderChange = null,
+              previousPrivilegedVisitOrderCount = null,
               adjustmentDate = LocalDate.parse("2021-11-30"),
             )
             adjustment = visitBalanceAdjustment(
-              remainingVisitOrders = 1,
-              previousRemainingVisitOrders = 2,
-              remainingPrivilegedVisitOrders = 3,
-              previousRemainingPrivilegedVisitOrders = 4,
+              visitOrderChange = 1,
+              previousVisitOrderCount = 22,
+              privilegedVisitOrderChange = 3,
+              previousPrivilegedVisitOrderCount = 24,
               adjustmentDate = LocalDate.parse("2021-11-30"),
               adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
               comment = "this is a comment",
@@ -444,7 +444,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+        webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${adjustment.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -452,7 +452,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+        webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${adjustment.id}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -460,7 +460,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+        webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${adjustment.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -470,7 +470,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when adjustment not found`() {
-        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/12345")
+        webTestClient.get().uri("/visit-balances/visit-balance-adjustment/12345")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus().isNotFound
@@ -481,16 +481,16 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return minimal visit balance adjustment`() {
-        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustmentMin.id}")
+        webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${adjustmentMin.id}")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("remainingVisitOrders").doesNotExist()
-          .jsonPath("previousRemainingVisitOrders").doesNotExist()
-          .jsonPath("remainingPrivilegedVisitOrders").doesNotExist()
-          .jsonPath("previousRemainingPrivilegedVisitOrders").doesNotExist()
+          .jsonPath("visitOrderChange").doesNotExist()
+          .jsonPath("previousVisitOrderCount").doesNotExist()
+          .jsonPath("privilegedVisitOrderChange").doesNotExist()
+          .jsonPath("previousPrivilegedVisitOrderCount").doesNotExist()
           .jsonPath("adjustmentReason.code").isEqualTo("IEP")
           .jsonPath("adjustmentReason.description").isEqualTo("IEP Entitlements")
           .jsonPath("adjustmentDate").isEqualTo("2021-11-30")
@@ -501,16 +501,16 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return visit balance adjustment fully populated`() {
-        webTestClient.get().uri("/visit-orders/visit-balance-adjustment/${adjustment.id}")
+        webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${adjustment.id}")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("remainingVisitOrders").isEqualTo(1)
-          .jsonPath("previousRemainingVisitOrders").isEqualTo(2)
-          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(3)
-          .jsonPath("previousRemainingPrivilegedVisitOrders").isEqualTo(4)
+          .jsonPath("visitOrderChange").isEqualTo(1)
+          .jsonPath("previousVisitOrderCount").isEqualTo(22)
+          .jsonPath("privilegedVisitOrderChange").isEqualTo(3)
+          .jsonPath("previousPrivilegedVisitOrderCount").isEqualTo(24)
           .jsonPath("adjustmentReason.code").isEqualTo(PVO_IEP_ENTITLEMENT)
           .jsonPath("adjustmentReason.description").isEqualTo("PVO IEP Entitlements")
           .jsonPath("adjustmentDate").isEqualTo("2021-11-30")
