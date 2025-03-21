@@ -191,8 +191,13 @@ class ActivityService(
       if (program.programCode != requestedProgramService.programCode) {
         program = requestedProgramService
         offenderProgramProfiles
-          .filter { it.endDate == null }
-          .forEach { it.program = requestedProgramService }
+          .filterNot { it.isEnded() }
+          .forEach {
+            it.program = requestedProgramService
+            it.offenderCourseAttendances.filter { it.eventDate > LocalDate.now() }.forEach { attendance ->
+              attendance.program = program
+            }
+          }
       }
     }
 
