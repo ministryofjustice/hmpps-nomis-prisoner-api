@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.activities
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -194,6 +196,8 @@ class ActivityService(
           .filterNot { it.isEnded() }
           .forEach {
             it.program = requestedProgramService
+            val attendanceDetails = it.offenderCourseAttendances.map { it.eventId to it.eventDate }
+            log.info("Updating to program ${requestedProgramService.programCode} (${requestedProgramService.programId}) and considering the following course attendances: $attendanceDetails")
             it.offenderCourseAttendances.filter { it.eventDate > LocalDate.now() }.forEach { attendance ->
               attendance.program = program
             }
@@ -256,5 +260,9 @@ class ActivityService(
   fun endActivities(courseActivityIds: Collection<Long>, date: LocalDate) {
     courseActivityRepository.endActivities(courseActivityIds, date)
     allocationService.endAllocations(courseActivityIds, date)
+  }
+
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 }
