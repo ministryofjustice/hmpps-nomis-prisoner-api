@@ -1305,7 +1305,36 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `summary will be truncated when over 4000 bytes`() {
+      fun `Investigation usual behaviour will be truncated when over 4000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith3999Characters = "A".repeat(3999)
+        val textWith3996Characters = "A".repeat(3996)
+        val veryLongTextField = textWithASingle4ByteCharacter + textWith3999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest().copy(
+          investigation = investigationDetailRequest.copy(usualBehaviour = veryLongTextField),
+        )
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val newCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(newCsip.usualBehaviour).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+        }
+      }
+
+      @Test
+      fun `Review summary will be truncated when over 4000 bytes`() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith3999Characters = "A".repeat(3999)
         val textWith3996Characters = "A".repeat(3996)
@@ -1338,11 +1367,11 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith3999Characters = "A".repeat(3999)
         val textWith3996Characters = "A".repeat(3996)
-        val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
+        val veryLongTextField = textWithASingle4ByteCharacter + textWith3999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
         val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(
-          plans = listOf(planRequest.copy(progression = veryLongSummary, intervention = veryLongSummary)),
+          plans = listOf(planRequest.copy(progression = veryLongTextField, intervention = veryLongTextField)),
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
@@ -1369,10 +1398,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith999Characters = "A".repeat(999)
         val textWith996Characters = "A".repeat(996)
-        val veryLongSummary = textWithASingle4ByteCharacter + textWith999Characters
+        val veryLongTextField = textWithASingle4ByteCharacter + textWith999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongSummary)))
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -1816,14 +1845,43 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `Investigation usual behaviour will be truncated when over 4000 bytes`() {
+        val textWithASingle4ByteCharacter = "😀"
+        val textWith3999Characters = "A".repeat(3999)
+        val textWith3996Characters = "A".repeat(3996)
+        val veryLongTextField = textWithASingle4ByteCharacter + textWith3999Characters
+
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(
+          investigation = investigationDetailRequest.copy(usualBehaviour = veryLongTextField),
+        )
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val updatedCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(updatedCsip.usualBehaviour).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+        }
+      }
+
+      @Test
       fun `summary will be truncated when over 4000 bytes`() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith3999Characters = "A".repeat(3999)
         val textWith3996Characters = "A".repeat(3996)
-        val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
+        val veryLongTextField = textWithASingle4ByteCharacter + textWith3999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(reviews = listOf(reviewRequest.copy(summary = veryLongSummary)))
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(reviews = listOf(reviewRequest.copy(summary = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -1849,10 +1907,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith3999Characters = "A".repeat(3999)
         val textWith3996Characters = "A".repeat(3996)
-        val veryLongSummary = textWithASingle4ByteCharacter + textWith3999Characters
+        val veryLongTextField = textWithASingle4ByteCharacter + textWith3999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(progression = veryLongSummary, intervention = veryLongSummary)))
+        val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(progression = veryLongTextField, intervention = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
@@ -1878,10 +1936,10 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith999Characters = "A".repeat(999)
         val textWith996Characters = "A".repeat(996)
-        val veryLongSummary = textWithASingle4ByteCharacter + textWith999Characters
+        val veryLongTextField = textWithASingle4ByteCharacter + textWith999Characters
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
-        val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongSummary)))
+        val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
