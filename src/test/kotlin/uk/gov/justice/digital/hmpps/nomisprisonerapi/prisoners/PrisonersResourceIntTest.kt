@@ -852,6 +852,14 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         .jsonPath("offenderNo").isEqualTo("A1234WW")
         .jsonPath("active").isEqualTo(false)
     }
+
+    @Test
+    fun `can use role ROLE_NOMIS_CONTACTPERSONS`() {
+      webTestClient.get().uri("/prisoners/A1234WW")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+        .exchange()
+        .expectStatus().isOk
+    }
   }
 
   @Nested
