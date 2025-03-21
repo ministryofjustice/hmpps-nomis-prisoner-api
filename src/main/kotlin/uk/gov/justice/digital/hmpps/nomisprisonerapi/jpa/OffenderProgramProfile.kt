@@ -113,4 +113,6 @@ data class OffenderProgramProfile(
       .filter { profilePayBands -> profilePayBands.endDate == null }
       .any { profilePayBands -> profilePayBands.payBand.code == payBandCode }
   }
+
+  fun isEnded() = this.endDate != null && this.endDate!! <= LocalDate.now()
 }

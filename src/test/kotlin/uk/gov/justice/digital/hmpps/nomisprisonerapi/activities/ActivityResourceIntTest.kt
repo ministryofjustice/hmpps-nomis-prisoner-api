@@ -1611,8 +1611,93 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         repository.runInTransaction {
           val updated = repository.getActivity(courseActivity.courseActivityId)
           assertThat(updated.program.programCode).isEqualTo("NEW_SERVICE")
+          // The allocated booking is updated to the new program service
           assertThat(updated.getProgramCode(offenderBooking.bookingId)).isEqualTo("NEW_SERVICE")
-          assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST") // The deallocated booking is not moved to the new program
+          // The allocation record is updated to the new program service
+          assertThat(updated.offenderProgramProfiles.first().program.programCode).isEqualTo("NEW_SERVICE")
+          // The deallocated booking is not moved to the new program service
+          assertThat(updated.getProgramCode(deallocatedOffenderBooking.bookingId)).isEqualTo("INTTEST")
+        }
+      }
+
+      @Test
+      fun `should update program for future allocations`() {
+        nomisDataBuilder.build {
+          programService(programCode = "NEW_SERVICE")
+          offender(nomsId = "A1234TT") {
+            offenderBooking = booking {
+              courseAllocation(courseActivity, startDate = "$tomorrow")
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withProgramCode("NEW_SERVICE"),
+          ),
+        )
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          val updated = repository.getActivity(courseActivity.courseActivityId)
+          assertThat(updated.offenderProgramProfiles.first().program.programCode).isEqualTo("NEW_SERVICE")
+        }
+      }
+
+      @Test
+      fun `should update program for future attendances`() {
+        lateinit var scheduleToday: CourseSchedule
+        lateinit var scheduleTomorrow: CourseSchedule
+        nomisDataBuilder.build {
+          programService(programCode = "NEW_SERVICE")
+          programService(programCode = "OLD_SERVICE") {
+            courseActivity = courseActivity {
+              courseScheduleRule()
+              payRate()
+              scheduleToday = courseSchedule(scheduleDate = "$today")
+              scheduleTomorrow = courseSchedule(scheduleDate = "$tomorrow")
+            }
+          }
+          offender {
+            offenderBooking = booking {
+              courseAllocation(courseActivity) {
+                courseAttendance(courseSchedule = scheduleToday)
+                courseAttendance(courseSchedule = scheduleTomorrow)
+              }
+            }
+          }
+        }
+
+        callUpdateEndpoint(
+          courseActivityId = courseActivity.courseActivityId,
+          jsonBody = updateActivityRequestJson(
+            detailsJson = detailsJson().withProgramCode("NEW_SERVICE"),
+            schedulesJson = """"schedules": [
+              {
+                "id": "${scheduleToday.courseScheduleId}",
+                "date": "$today",
+                "startTime": "08:00",
+                "endTime": "11:00"
+              },
+              {
+                "id": "${scheduleTomorrow.courseScheduleId}",
+                "date": "$tomorrow",
+                "startTime": "08:00",
+                "endTime": "11:00"
+              }
+            ]
+            """.trimIndent(),
+          ),
+        )
+          .expectStatus().isOk
+
+        fun CourseActivity.findAttendance(date: LocalDate) = offenderProgramProfiles.first().offenderCourseAttendances.find { it.eventDate == date }!!
+
+        repository.runInTransaction {
+          val updated = repository.getActivity(courseActivity.courseActivityId)
+          assertThat(updated.findAttendance(today).program?.programCode).isEqualTo("OLD_SERVICE")
+          assertThat(updated.findAttendance(tomorrow).program?.programCode).isEqualTo("NEW_SERVICE")
         }
       }
 

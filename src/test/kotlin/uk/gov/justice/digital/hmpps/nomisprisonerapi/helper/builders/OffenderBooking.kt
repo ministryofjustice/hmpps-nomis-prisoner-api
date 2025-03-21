@@ -507,6 +507,7 @@ class BookingBuilder(
         courseActivity,
       )
         .also { offenderBooking.offenderProgramProfiles += it }
+        .also { courseActivity.offenderProgramProfiles += it }
         .also { builder.apply(dsl) }
     }
 
