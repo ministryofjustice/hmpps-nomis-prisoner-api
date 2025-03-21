@@ -255,11 +255,11 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     fromDate: LocalDate?,
   ): List<MergeDetail> = prisonerService.findPrisonerMerges(offenderNo, fromDate)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasAnyRole( 'ROLE_NOMIS_ALERTS', 'ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/prisoners/{offenderNo}")
   @Operation(
     summary = "Gets the prisoner's details",
-    description = "Requires role NOMIS_ALERTS.",
+    description = "Requires role NOMIS_ALERTS or NOMIS_CONTACTPERSONS.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -283,7 +283,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_ALERTS not present",
+        description = "Forbidden to access this endpoint when role NOMIS_ALERTS or NOMIS_CONTACTPERSONS not present",
         content = [
           Content(
             mediaType = "application/json",
