@@ -93,7 +93,6 @@ class ActivityService(
     val oldRules = existingActivity.courseScheduleRules.map { it.copy() }
     val oldPayRates = existingActivity.payRates.map { it.copy() }
     val oldSchedules = existingActivity.courseSchedules.map { it.copy() }
-    val oldProgramCode = existingActivity.program.programCode
 
     return mapActivityModel(existingActivity, request)
       .let { activityRepository.saveAndFlush(it) }
