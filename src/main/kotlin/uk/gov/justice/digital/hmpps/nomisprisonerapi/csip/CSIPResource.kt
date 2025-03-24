@@ -2,14 +2,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.csip
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
@@ -137,61 +133,6 @@ class CSIPResource(private val csipService: CSIPService) {
     @PathVariable
     offenderNo: String,
   ): PrisonerCSIPsResponse = csipService.getCSIPs(offenderNo)
-
-  @GetMapping("/csip/ids")
-  @Operation(
-    summary = "get csip IDs by filter",
-    description = "Retrieves a paged list of csip ids by filter. Requires ROLE_NOMIS_CSIP.",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Pageable list of ids are returned",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_CSIP not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getIdsByFilter(
-    pageRequest: Pageable,
-    @RequestParam(value = "fromDate", required = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by those that were created on or after the given date",
-      example = "2021-11-03",
-    )
-    fromDate: LocalDate?,
-    @RequestParam(value = "toDate", required = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by those that were created on or before the given date",
-      example = "2021-11-03",
-    )
-    toDate: LocalDate?,
-  ): Page<CSIPIdResponse> = csipService.findIdsByFilter(
-    pageRequest = pageRequest,
-    CSIPFilter(
-      toDate = toDate,
-      fromDate = fromDate,
-    ),
-  )
 
   @GetMapping("/csip/{id}")
   @Operation(
