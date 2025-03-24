@@ -241,14 +241,9 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   @GetMapping("/non-associations/booking/{bookingId}")
   @Operation(
     summary = "Get non-associations by booking ID",
-    description = "Get non-associations for the given booking ID. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Get non-associations for the given booking ID. Returns empty list if none found. Requires role NOMIS_NON_ASSOCIATIONS",
     responses = [
       ApiResponse(responseCode = "200", description = "List of non-associations"),
-      ApiResponse(
-        responseCode = "404",
-        description = "No non-associations found for the given booking ID",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",

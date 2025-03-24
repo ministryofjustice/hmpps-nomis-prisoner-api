@@ -329,9 +329,6 @@ class NonAssociationService(
   }
 
   fun getByBookingId(bookingId: Long): List<NonAssociationIdResponse> = offenderNonAssociationRepository.findByOffenderBookingId(bookingId)
-    .ifEmpty {
-      throw NotFoundException("No non-associations found for bookingId=$bookingId")
-    }
 
   fun findIdsByFilter(
     pageRequest: Pageable,
