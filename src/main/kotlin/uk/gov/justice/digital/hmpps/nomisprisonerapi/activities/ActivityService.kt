@@ -194,14 +194,7 @@ class ActivityService(
         program = requestedProgramService
         offenderProgramProfiles
           .filterNot { it.isEnded() }
-          .forEach {
-            it.program = requestedProgramService
-            val attendanceDetails = it.offenderCourseAttendances.map { it.eventId to it.eventDate }
-            log.info("Updating to program ${requestedProgramService.programCode} (${requestedProgramService.programId}) and considering the following course attendances: $attendanceDetails")
-            it.offenderCourseAttendances.filter { it.eventDate > LocalDate.now() }.forEach { attendance ->
-              attendance.program = program
-            }
-          }
+          .forEach { it.program = requestedProgramService }
       }
     }
 

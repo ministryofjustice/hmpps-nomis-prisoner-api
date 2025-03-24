@@ -1646,62 +1646,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should update program for future attendances`() {
-        lateinit var scheduleToday: CourseSchedule
-        lateinit var scheduleTomorrow: CourseSchedule
-        nomisDataBuilder.build {
-          programService(programCode = "NEW_SERVICE")
-          programService(programCode = "OLD_SERVICE") {
-            courseActivity = courseActivity {
-              courseScheduleRule()
-              payRate()
-              scheduleToday = courseSchedule(scheduleDate = "$today")
-              scheduleTomorrow = courseSchedule(scheduleDate = "$tomorrow")
-            }
-          }
-          offender {
-            offenderBooking = booking {
-              courseAllocation(courseActivity) {
-                courseAttendance(courseSchedule = scheduleToday)
-                courseAttendance(courseSchedule = scheduleTomorrow)
-              }
-            }
-          }
-        }
-
-        callUpdateEndpoint(
-          courseActivityId = courseActivity.courseActivityId,
-          jsonBody = updateActivityRequestJson(
-            detailsJson = detailsJson().withProgramCode("NEW_SERVICE"),
-            schedulesJson = """"schedules": [
-              {
-                "id": "${scheduleToday.courseScheduleId}",
-                "date": "$today",
-                "startTime": "08:00",
-                "endTime": "11:00"
-              },
-              {
-                "id": "${scheduleTomorrow.courseScheduleId}",
-                "date": "$tomorrow",
-                "startTime": "08:00",
-                "endTime": "11:00"
-              }
-            ]
-            """.trimIndent(),
-          ),
-        )
-          .expectStatus().isOk
-
-        fun CourseActivity.findAttendance(date: LocalDate) = offenderProgramProfiles.first().offenderCourseAttendances.find { it.eventDate == date }!!
-
-        repository.runInTransaction {
-          val updated = repository.getActivity(courseActivity.courseActivityId)
-          assertThat(updated.findAttendance(today).program?.programCode).isEqualTo("OLD_SERVICE")
-          assertThat(updated.findAttendance(tomorrow).program?.programCode).isEqualTo("NEW_SERVICE")
-        }
-      }
-
-      @Test
       fun `should default CSWAP if internal location is null`() {
         nomisDataBuilder.build {
           programService(programCode = "NEW_SERVICE") {
