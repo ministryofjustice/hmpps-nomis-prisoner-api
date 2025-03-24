@@ -1683,7 +1683,9 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
       webTestClient.get().uri("/non-associations/booking/999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
         .exchange()
-        .expectStatus().isNotFound
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(0)
     }
 
     @Test
