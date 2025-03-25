@@ -37,8 +37,8 @@ class VisitBalanceService(
 
     return PrisonerVisitBalanceResponse(
       prisonNumber = latestBooking.offender.nomsId,
-      remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders ?: 0,
-      remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders ?: 0,
+      remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders,
+      remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders,
       lastIEPAllocationDate = lastBatchIEPAdjustmentDate ?: latestBooking.visitBalanceAdjustments.filter { it.isIEPAllocation() }.maxByOrNull { it.adjustDate }?.adjustDate,
     )
   }
