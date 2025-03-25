@@ -230,9 +230,9 @@ data class PrisonerVisitBalanceResponse(
   @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
   val prisonNumber: String,
   @Schema(description = "Total number of unallocated (remaining) visit orders")
-  val remainingVisitOrders: Int = 0,
+  val remainingVisitOrders: Int? = null,
   @Schema(description = "Total number of unallocated (remaining) privileged visit orders")
-  val remainingPrivilegedVisitOrders: Int = 0,
+  val remainingPrivilegedVisitOrders: Int? = null,
 
   @Schema(description = "The date of the last IEP Allocation date via the batch process, if it exists")
   val lastIEPAllocationDate: LocalDate? = null,

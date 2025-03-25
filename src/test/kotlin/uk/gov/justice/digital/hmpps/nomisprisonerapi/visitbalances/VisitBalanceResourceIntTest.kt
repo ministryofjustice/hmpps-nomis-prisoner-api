@@ -157,7 +157,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("GET /prisoners/{offenderNo}/visit-orders/balance")
   @Nested
-  inner class getVisitBalanceToMigrate {
+  inner class getVisitBalance {
     private lateinit var offender: Offender
 
     @BeforeEach

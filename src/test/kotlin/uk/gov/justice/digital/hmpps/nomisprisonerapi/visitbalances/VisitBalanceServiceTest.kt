@@ -51,9 +51,12 @@ class VisitBalanceServiceTest {
       }
 
       @Test
-      fun `there will be no last IEP allocation date`() {
+      fun `there will be no values set`() {
         val visitBalance = visitBalanceService.getVisitBalanceById(123)
 
+        assertThat(visitBalance.prisonNumber).isEqualTo("A1234KT")
+        assertThat(visitBalance.remainingVisitOrders).isNull()
+        assertThat(visitBalance.remainingPrivilegedVisitOrders).isNull()
         assertThat(visitBalance.lastIEPAllocationDate).isNull()
       }
     }
