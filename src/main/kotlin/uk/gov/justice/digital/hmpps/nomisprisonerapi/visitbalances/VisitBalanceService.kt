@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -23,24 +24,33 @@ class VisitBalanceService(
   fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
     .map { VisitBalanceIdResponse(it.offenderBookingId) }
 
-  fun getVisitBalanceById(visitBalanceId: Long): PrisonerVisitBalanceResponse = offenderBookingRepository.findById(visitBalanceId).map { getVisitBalance(it) }.orElseThrow {
-    NotFoundException("Prisoner with booking number $visitBalanceId not found with any bookings")
-  }
+  fun getVisitBalanceById(visitBalanceId: Long): VisitBalanceDetailResponse = offenderBookingRepository.findByIdOrNull(visitBalanceId) ?.let { getVisitBalance(it) }
+    ?: throw NotFoundException("Visit Balance $visitBalanceId not found")
 
-  fun getVisitBalanceForPrisoner(offenderNo: String): PrisonerVisitBalanceResponse = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)?.let {
-    getVisitBalance(it)
-  } ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
-
-  private fun getVisitBalance(latestBooking: OffenderBooking): PrisonerVisitBalanceResponse {
+  private fun getVisitBalance(latestBooking: OffenderBooking): VisitBalanceDetailResponse? = latestBooking.visitBalance?.let {
     val lastBatchIEPAdjustmentDate = latestBooking.visitBalanceAdjustments
       .filter { it.isIEPAllocation() && it.isCreatedByBatchVOProcess() }.maxByOrNull { it.adjustDate }?.adjustDate
 
-    return PrisonerVisitBalanceResponse(
+    VisitBalanceDetailResponse(
       prisonNumber = latestBooking.offender.nomsId,
-      remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders,
-      remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders,
-      lastIEPAllocationDate = lastBatchIEPAdjustmentDate ?: latestBooking.visitBalanceAdjustments.filter { it.isIEPAllocation() }.maxByOrNull { it.adjustDate }?.adjustDate,
+      remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders!!,
+      remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders!!,
+      lastIEPAllocationDate = lastBatchIEPAdjustmentDate
+        ?: latestBooking.visitBalanceAdjustments.filter { it.isIEPAllocation() }
+          .maxByOrNull { it.adjustDate }?.adjustDate,
     )
+  }
+
+  fun getVisitBalanceForPrisoner(offenderNo: String): VisitBalanceResponse? {
+    val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
+
+    return offenderBooking.visitBalance?.let {
+      VisitBalanceResponse(
+        remainingVisitOrders = it.remainingVisitOrders!!,
+        remainingPrivilegedVisitOrders = it.remainingPrivilegedVisitOrders!!,
+      )
+    }
   }
 
   fun getVisitBalanceAdjustment(visitBalanceAdjustmentId: Long): VisitBalanceAdjustmentResponse = offenderVisitBalanceAdjustmentRepository.findById(visitBalanceAdjustmentId)

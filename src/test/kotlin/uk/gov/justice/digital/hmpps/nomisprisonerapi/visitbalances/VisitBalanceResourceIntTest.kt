@@ -146,11 +146,11 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus()
             .isOk
-            .returnResult(PrisonerVisitBalanceResponse::class.java).responseBody.blockFirst()!!
+            .returnResult(VisitBalanceDetailResponse::class.java).responseBody.blockFirst()!!
 
         assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
         assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
-        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2025-03-12"))
+        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo("2025-03-12")
       }
     }
   }
@@ -159,6 +159,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class getVisitBalance {
     private lateinit var offender: Offender
+    private lateinit var offender2: Offender
 
     @BeforeEach
     fun setUp() {
@@ -174,37 +175,18 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
         ) {
           booking {
             visitBalance { }
-            visitBalanceAdjustment { }
-            visitBalanceAdjustment(
-              visitOrderChange = 5,
-              previousVisitOrderCount = 1,
-              privilegedVisitOrderChange = null,
-              previousPrivilegedVisitOrderCount = null,
-              adjustmentReasonCode = IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.now().minusDays(1),
-              comment = "this is a comment for the most recent batch iep adjustment",
-              expiryBalance = 7,
-              expiryDate = LocalDate.parse("2027-11-30"),
-              endorsedStaffId = 234,
-              authorisedStaffId = 123,
-            )
-            visitBalanceAdjustment(
-              visitOrderChange = null,
-              previousVisitOrderCount = null,
-              privilegedVisitOrderChange = 3,
-              previousPrivilegedVisitOrderCount = 2,
-              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.now().minusMonths(5),
-            )
-            visitBalanceAdjustment(
-              visitOrderChange = null,
-              previousVisitOrderCount = null,
-              privilegedVisitOrderChange = 4,
-              previousPrivilegedVisitOrderCount = 1,
-              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.now().minusMonths(1).minusDays(1),
-            )
           }
+        }
+        offender2 = offender(
+          nomsId = "A5432BC",
+          firstName = "JIM",
+          lastName = "PARK",
+          birthDate = LocalDate.parse("1999-12-22"),
+          birthPlace = "LONDON",
+          genderCode = "F",
+          whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+        ) {
+          booking() // no visit balance
         }
       }
     }
@@ -249,6 +231,15 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
       }
+
+      @Test
+      fun `return null when no visit balance found`() {
+        webTestClient.get().uri("/prisoners/A5432BC/visit-orders/balance")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody().isEmpty
+      }
     }
 
     @Nested
@@ -273,11 +264,10 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus()
             .isOk
-            .returnResult(PrisonerVisitBalanceResponse::class.java).responseBody.blockFirst()!!
+            .returnResult(VisitBalanceResponse::class.java).responseBody.blockFirst()!!
 
         assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
         assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
-        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo(LocalDate.now().minusDays(1))
       }
     }
   }
