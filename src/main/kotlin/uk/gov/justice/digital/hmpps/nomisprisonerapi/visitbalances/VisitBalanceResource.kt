@@ -79,59 +79,11 @@ class VisitBalanceResource(
     @Schema(description = "Prison id") @RequestParam prisonId: String?,
   ): Page<VisitBalanceIdResponse> = visitBalanceService.findAllIds(prisonId, pageRequest)
 
-  @GetMapping("/prisoners/{prisonNumber}/visit-orders/balance")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-    summary = "Get visit order balance data for a prisoner",
-    description = "Retrieves visit order balance details for the last month for a prisoner. Requires ROLE_NOMIS_VISIT_BALANCE",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Visit balance returned",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prisoner does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getVisitBalanceToMigrate(
-    @Schema(description = "Prison number aka Offender No.", example = "A1234AK")
-    @PathVariable
-    prisonNumber: String,
-  ): PrisonerVisitBalanceResponse = visitBalanceService.getVisitBalanceForPrisoner(prisonNumber)
-
   @GetMapping("/visit-balances/{visitBalanceId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get visit balance data for a booking",
-    description = "Retrieves visit order balance details for the last month for a booking. Requires ROLE_NOMIS_VISIT_BALANCE",
+    description = "Retrieves visit order balance for a booking . Requires ROLE_NOMIS_VISIT_BALANCE",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -159,7 +111,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Prisoner does not exist",
+        description = "Visit Balance does not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -173,7 +125,55 @@ class VisitBalanceResource(
     @Schema(description = "Visit balance (offender booking) id.", example = "12345")
     @PathVariable
     visitBalanceId: Long,
-  ): PrisonerVisitBalanceResponse = visitBalanceService.getVisitBalanceById(visitBalanceId)
+  ): VisitBalanceDetailResponse? = visitBalanceService.getVisitBalanceById(visitBalanceId)
+
+  @GetMapping("/prisoners/{prisonNumber}/visit-orders/balance")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get visit order balance data for a prisoner",
+    description = "Retrieves visit order balance details for a prisoner. Requires ROLE_NOMIS_VISIT_BALANCE",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Visit balance returned or null if no visit balance exists",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getVisitBalanceForOffender(
+    @Schema(description = "Prison number aka Offender No.", example = "A1234AK")
+    @PathVariable
+    prisonNumber: String,
+  ): VisitBalanceResponse? = visitBalanceService.getVisitBalanceForPrisoner(prisonNumber)
 
   @GetMapping("/visit-balances/visit-balance-adjustment/{visitBalanceAdjustmentId}")
   @ResponseStatus(HttpStatus.OK)
@@ -226,14 +226,22 @@ class VisitBalanceResource(
 
 @Schema(description = "The visit balance held against a prisoner's latest booking")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class PrisonerVisitBalanceResponse(
+data class VisitBalanceResponse(
+  @Schema(description = "Total number of unallocated (remaining) visit orders")
+  val remainingVisitOrders: Int,
+  @Schema(description = "Total number of unallocated (remaining) privileged visit orders")
+  val remainingPrivilegedVisitOrders: Int,
+)
+
+@Schema(description = "The visit balance held against a prisoner's latest booking including the last IEP Allocation date")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class VisitBalanceDetailResponse(
   @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
   val prisonNumber: String,
   @Schema(description = "Total number of unallocated (remaining) visit orders")
-  val remainingVisitOrders: Int? = null,
+  val remainingVisitOrders: Int,
   @Schema(description = "Total number of unallocated (remaining) privileged visit orders")
-  val remainingPrivilegedVisitOrders: Int? = null,
-
+  val remainingPrivilegedVisitOrders: Int,
   @Schema(description = "The date of the last IEP Allocation date via the batch process, if it exists")
   val lastIEPAllocationDate: LocalDate? = null,
 )

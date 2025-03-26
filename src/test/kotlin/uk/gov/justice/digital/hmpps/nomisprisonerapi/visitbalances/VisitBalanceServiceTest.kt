@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -11,6 +12,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -41,7 +43,7 @@ class VisitBalanceServiceTest {
   }
 
   @Nested
-  inner class GetVisitBalance {
+  inner class GetVisitBalanceDetail {
     @Nested
     @DisplayName("With no visit balance on latest booking")
     inner class WithNoVisitBalanceAtAll {
@@ -51,13 +53,9 @@ class VisitBalanceServiceTest {
       }
 
       @Test
-      fun `there will be no values set`() {
+      fun `will return null`() {
         val visitBalance = visitBalanceService.getVisitBalanceById(123)
-
-        assertThat(visitBalance.prisonNumber).isEqualTo("A1234KT")
-        assertThat(visitBalance.remainingVisitOrders).isNull()
-        assertThat(visitBalance.remainingPrivilegedVisitOrders).isNull()
-        assertThat(visitBalance.lastIEPAllocationDate).isNull()
+        assertThat(visitBalance).isNull()
       }
     }
 
@@ -79,7 +77,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be no last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
 
         assertThat(visitBalance.lastIEPAllocationDate).isNull()
       }
@@ -110,7 +108,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be no last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
 
         assertThat(visitBalance.lastIEPAllocationDate).isNull()
       }
@@ -141,7 +139,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
         assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.now().toString())
       }
     }
@@ -171,7 +169,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
 
         assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.now())
       }
@@ -218,15 +216,31 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
 
-        assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2023-02-03"))
+        assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2023-02-03"))!!
       }
     }
   }
 
   @Nested
-  inner class GetVisitBalanceForPrisoner {
+  inner class GetVisitBalanceForOffender {
+    @Nested
+    @DisplayName("With no booking")
+    inner class WithNoAssociatedBooking {
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(null)
+      }
+
+      @Test
+      fun `there will be no visit data set`() {
+        assertThrows(NotFoundException::class.java) {
+          visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
+        }
+      }
+    }
+
     @Nested
     @DisplayName("With no visit balance on latest booking")
     inner class WithNoVisitBalanceAtAll {
@@ -236,16 +250,15 @@ class VisitBalanceServiceTest {
       }
 
       @Test
-      fun `there will be no last IEP allocation date`() {
+      fun `there will be no visit data set`() {
         val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
-
-        assertThat(visitBalance.lastIEPAllocationDate).isNull()
+        assertThat(visitBalance).isNull()
       }
     }
 
     @Nested
-    @DisplayName("With no visit balance adjustments on latest booking")
-    inner class WithNoVisitBalanceAdjustmentsAtAll {
+    @DisplayName("With visit balance on latest booking")
+    inner class WithVisitBalance {
       @BeforeEach
       fun setUp() {
         val booking = booking()
@@ -255,154 +268,15 @@ class VisitBalanceServiceTest {
           offenderBooking = booking,
         )
         booking.visitBalance = ovb
-
         whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
       }
 
       @Test
-      fun `there will be no last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
+      fun `there will be visit data set`() {
+        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")!!
 
-        assertThat(visitBalance.lastIEPAllocationDate).isNull()
-      }
-    }
-
-    @Nested
-    @DisplayName("With no IEP visit balance adjustments on latest booking")
-    inner class WithNoIEPVisitBalanceAdjustments {
-      @BeforeEach
-      fun setUp() {
-        val booking = booking()
-        val ovb = OffenderVisitBalance(
-          remainingVisitOrders = 10,
-          remainingPrivilegedVisitOrders = 5,
-          offenderBooking = booking,
-        )
-        booking.visitBalance = ovb
-        booking.visitBalanceAdjustments.add(
-          OffenderVisitBalanceAdjustment(
-            adjustReasonCode = VisitOrderAdjustmentReason(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE, "VO Issue"),
-            adjustDate = LocalDate.now(),
-            offenderBooking = booking,
-          ),
-        )
-
-        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
-      }
-
-      @Test
-      fun `there will be no last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
-
-        assertThat(visitBalance.lastIEPAllocationDate).isNull()
-      }
-    }
-
-    @Nested
-    @DisplayName("With 1 IEP visit balance adjustment not from batch allocation on latest booking")
-    inner class WithOneNonBatchIEPVisitBalanceAdjustments {
-      @BeforeEach
-      fun setUp() {
-        val booking = booking()
-        val ovb = OffenderVisitBalance(
-          remainingVisitOrders = 10,
-          remainingPrivilegedVisitOrders = 5,
-          offenderBooking = booking,
-        )
-        booking.visitBalance = ovb
-        booking.visitBalanceAdjustments.add(
-          OffenderVisitBalanceAdjustment(
-            adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
-            adjustDate = LocalDate.now(),
-            offenderBooking = booking,
-          ).apply { createUsername = "NOT_BATCH_JOB" },
-        )
-
-        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
-      }
-
-      @Test
-      fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
-        assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.now().toString())
-      }
-    }
-
-    @Nested
-    @DisplayName("With 1 IEP visit balance adjustment on latest booking")
-    inner class WithOneIEPVisitBalanceAdjustments {
-      @BeforeEach
-      fun setUp() {
-        val booking = booking()
-        val ovb = OffenderVisitBalance(
-          remainingVisitOrders = 10,
-          remainingPrivilegedVisitOrders = 5,
-          offenderBooking = booking,
-        )
-        booking.visitBalance = ovb
-        booking.visitBalanceAdjustments.add(
-          OffenderVisitBalanceAdjustment(
-            adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
-            adjustDate = LocalDate.now(),
-            offenderBooking = booking,
-          ).apply { createUsername = "OMS_OWNER" },
-        )
-
-        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
-      }
-
-      @Test
-      fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
-
-        assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.now())
-      }
-    }
-
-    @Nested
-    @DisplayName("With multiple IEP visit balance adjustments on latest booking")
-    inner class WithMultipleIEPVisitBalanceAdjustments {
-      @BeforeEach
-      fun setUp() {
-        val booking = booking()
-        val ovb = OffenderVisitBalance(
-          remainingVisitOrders = 10,
-          remainingPrivilegedVisitOrders = 5,
-          offenderBooking = booking,
-        )
-        booking.visitBalance = ovb
-        val visitBalanceAdjustments = listOf(
-          OffenderVisitBalanceAdjustment(
-            adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
-            adjustDate = LocalDate.parse("2021-01-01"),
-            offenderBooking = booking,
-          ).apply { createUsername = "OMS_OWNER" },
-          OffenderVisitBalanceAdjustment(
-            adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
-            adjustDate = LocalDate.parse("2023-02-03"),
-            offenderBooking = booking,
-          ).apply { createUsername = "OMS_OWNER" },
-          OffenderVisitBalanceAdjustment(
-            adjustReasonCode = VisitOrderAdjustmentReason(PVO_IEP_ENTITLEMENT, "PVO IEP Entitlement"),
-            adjustDate = LocalDate.parse("2023-02-03"),
-            offenderBooking = booking,
-          ).apply { createUsername = "OMS_OWNER" },
-          OffenderVisitBalanceAdjustment(
-            adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
-            adjustDate = LocalDate.parse("2023-02-02"),
-            offenderBooking = booking,
-          ).apply { createUsername = "OMS_OWNER" },
-        )
-        booking.visitBalanceAdjustments.addAll(visitBalanceAdjustments)
-
-        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
-      }
-
-      @Test
-      fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
-
-        assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2023-02-03"))
+        assertThat(visitBalance.remainingVisitOrders).isEqualTo(10)
+        assertThat(visitBalance.remainingPrivilegedVisitOrders).isEqualTo(5)
       }
     }
   }
