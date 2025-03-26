@@ -235,7 +235,7 @@ class VisitBalanceServiceTest {
       fun `there will be a last IEP allocation date`() {
         val visitBalance = visitBalanceService.getVisitBalanceById(123)
 
-        assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2023-02-03"))!!
+        assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2023-02-03"))
       }
     }
   }
