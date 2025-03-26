@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -23,11 +24,8 @@ class VisitBalanceService(
   fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
     .map { VisitBalanceIdResponse(it.offenderBookingId) }
 
-  fun getVisitBalanceById(visitBalanceId: Long): VisitBalanceDetailResponse? {
-    val offenderBooking = offenderBookingRepository.findById(visitBalanceId)
-      ?: throw NotFoundException("Prisoner with booking number $visitBalanceId not found with any bookings")
-    return getVisitBalance(offenderBooking.get())
-  }
+  fun getVisitBalanceById(visitBalanceId: Long): VisitBalanceDetailResponse = offenderBookingRepository.findByIdOrNull(visitBalanceId) ?.let { getVisitBalance(it) }
+    ?: throw NotFoundException("Visit Balance $visitBalanceId not found")
 
   private fun getVisitBalance(latestBooking: OffenderBooking): VisitBalanceDetailResponse? = latestBooking.visitBalance?.let {
     val lastBatchIEPAdjustmentDate = latestBooking.visitBalanceAdjustments

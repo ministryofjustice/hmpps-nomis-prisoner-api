@@ -125,7 +125,7 @@ class VisitBalanceResource(
     @Schema(description = "Visit balance (offender booking) id.", example = "12345")
     @PathVariable
     visitBalanceId: Long,
-  ): VisitBalanceDetailResponse? = visitBalanceService.getVisitBalanceById(visitBalanceId)
+  ): VisitBalanceDetailResponse = visitBalanceService.getVisitBalanceById(visitBalanceId)
 
   @GetMapping("/prisoners/{prisonNumber}/visit-orders/balance")
   @ResponseStatus(HttpStatus.OK)

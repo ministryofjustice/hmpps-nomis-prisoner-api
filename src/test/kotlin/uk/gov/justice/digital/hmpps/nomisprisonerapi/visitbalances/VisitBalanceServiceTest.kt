@@ -45,6 +45,22 @@ class VisitBalanceServiceTest {
   @Nested
   inner class GetVisitBalanceDetail {
     @Nested
+    @DisplayName("With no booking")
+    inner class WithNoVisitBookingAtAll {
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findById(anyLong())).thenReturn(Optional.ofNullable(null))
+      }
+
+      @Test
+      fun `will throw exception`() {
+        assertThrows(NotFoundException::class.java) {
+          visitBalanceService.getVisitBalanceById(123)
+        }
+      }
+    }
+
+    @Nested
     @DisplayName("With no visit balance on latest booking")
     inner class WithNoVisitBalanceAtAll {
       @BeforeEach
@@ -53,9 +69,10 @@ class VisitBalanceServiceTest {
       }
 
       @Test
-      fun `will return null`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)
-        assertThat(visitBalance).isNull()
+      fun `will throw exception`() {
+        assertThrows(NotFoundException::class.java) {
+          visitBalanceService.getVisitBalanceById(123)
+        }
       }
     }
 
@@ -77,7 +94,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be no last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)
 
         assertThat(visitBalance.lastIEPAllocationDate).isNull()
       }
@@ -108,7 +125,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be no last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)
 
         assertThat(visitBalance.lastIEPAllocationDate).isNull()
       }
@@ -139,7 +156,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)
         assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.now().toString())
       }
     }
@@ -169,7 +186,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)
 
         assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.now())
       }
@@ -216,7 +233,7 @@ class VisitBalanceServiceTest {
 
       @Test
       fun `there will be a last IEP allocation date`() {
-        val visitBalance = visitBalanceService.getVisitBalanceById(123)!!
+        val visitBalance = visitBalanceService.getVisitBalanceById(123)
 
         assertThat(visitBalance.lastIEPAllocationDate).isEqualTo(LocalDate.parse("2023-02-03"))!!
       }
