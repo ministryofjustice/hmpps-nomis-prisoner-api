@@ -19,7 +19,7 @@ dependencies {
   implementation("org.hibernate.orm:hibernate-community-dialects")
   implementation("com.google.guava:guava:33.4.5-jre")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.3.232")
