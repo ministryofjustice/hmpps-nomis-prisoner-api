@@ -44,12 +44,17 @@ class VisitBalanceService(
   fun getVisitBalanceForPrisoner(offenderNo: String): VisitBalanceResponse? {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
+    return offenderBooking.visitBalanceWithEntries()
+  }
 
-    return offenderBooking.visitBalance?.let {
+  fun OffenderBooking.visitBalanceWithEntries(): VisitBalanceResponse? = visitBalance ?.let {
+    if (it.remainingVisitOrders != null && it.remainingPrivilegedVisitOrders != null) {
       VisitBalanceResponse(
         remainingVisitOrders = it.remainingVisitOrders!!,
         remainingPrivilegedVisitOrders = it.remainingPrivilegedVisitOrders!!,
       )
+    } else {
+      null
     }
   }
 
