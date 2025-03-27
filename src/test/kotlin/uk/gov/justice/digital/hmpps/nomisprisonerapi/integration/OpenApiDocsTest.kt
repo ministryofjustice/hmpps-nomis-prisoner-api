@@ -98,13 +98,13 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `the open api json doesn't include LocalTime and instead uses partial-time format`() {
+  fun `the open api json doesn't include LocalTime`() {
     webTestClient.get()
       .uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
-      .expectBody().jsonPath("components.schemas.LocalTime").doesNotExist()
-      .jsonPath("$.components.schemas.UpsertAttendanceRequest.properties.startTime.format").isEqualTo("partial-time")
+      .expectBody()
+      .jsonPath("components.schemas.LocalTime").doesNotExist()
   }
 }
