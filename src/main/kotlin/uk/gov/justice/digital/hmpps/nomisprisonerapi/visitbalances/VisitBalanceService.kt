@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 
 import jakarta.transaction.Transactional
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -20,7 +22,9 @@ class VisitBalanceService(
   val offenderBookingRepository: OffenderBookingRepository,
   val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
 ) {
-
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
   fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
     .map { VisitBalanceIdResponse(it.offenderBookingId) }
 
@@ -44,12 +48,18 @@ class VisitBalanceService(
   fun getVisitBalanceForPrisoner(offenderNo: String): VisitBalanceResponse? {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
+    return offenderBooking.visitBalanceWithEntries()
+  }
 
-    return offenderBooking.visitBalance?.let {
+  fun OffenderBooking.visitBalanceWithEntries(): VisitBalanceResponse? = visitBalance ?.let {
+    if (it.remainingVisitOrders != null && it.remainingPrivilegedVisitOrders != null) {
       VisitBalanceResponse(
         remainingVisitOrders = it.remainingVisitOrders!!,
         remainingPrivilegedVisitOrders = it.remainingPrivilegedVisitOrders!!,
       )
+    } else {
+      log.info("Visit balance for offender ${it.offenderBooking.offender.nomsId}, booking ${it.offenderBooking.bookingId} contains null entries")
+      null
     }
   }
 

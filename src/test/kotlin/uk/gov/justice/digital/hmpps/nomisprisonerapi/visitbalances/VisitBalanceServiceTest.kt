@@ -274,6 +274,77 @@ class VisitBalanceServiceTest {
     }
 
     @Nested
+    @DisplayName("With null entries in visit balance on latest booking")
+    inner class WithNullEntriesInVisitBalance {
+
+      @Nested
+      @DisplayName("With null entries in visit balance on latest booking")
+      inner class WithNullEntriesForBothFields {
+        @BeforeEach
+        fun setUp() {
+          val booking = booking()
+          val ovb = OffenderVisitBalance(
+            remainingVisitOrders = null,
+            remainingPrivilegedVisitOrders = null,
+            offenderBooking = booking,
+          )
+          booking.visitBalance = ovb
+          whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
+        }
+
+        @Test
+        fun `there will be no visit data set if null entries for both visit balance entries`() {
+          val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
+          assertThat(visitBalance).isNull()
+        }
+      }
+
+      @Nested
+      @DisplayName("With null entry for visit balance visit balance on latest booking")
+      inner class WithNullEntryForVisitBalance {
+        @BeforeEach
+        fun setUp() {
+          val booking = booking()
+          val ovb = OffenderVisitBalance(
+            remainingVisitOrders = null,
+            remainingPrivilegedVisitOrders = 5,
+            offenderBooking = booking,
+          )
+          booking.visitBalance = ovb
+          whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
+        }
+
+        @Test
+        fun `there will be no visit data set if null entry for visit order balance`() {
+          val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")
+          assertThat(visitBalance).isNull()
+        }
+      }
+
+      @Nested
+      @DisplayName("With null entry for privileged visit balance visit balance on latest booking")
+      inner class WithNullEntryForPrivilegedVisitBalance {
+        @BeforeEach
+        fun setUp() {
+          val booking = booking()
+          val ovb = OffenderVisitBalance(
+            remainingVisitOrders = 5,
+            remainingPrivilegedVisitOrders = null,
+            offenderBooking = booking,
+          )
+          booking.visitBalance = ovb
+          whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1235KT")).thenReturn(booking)
+        }
+
+        @Test
+        fun `there will be no visit data set if null entry for privileged visit order balance`() {
+          val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1235KT")
+          assertThat(visitBalance).isNull()
+        }
+      }
+    }
+
+    @Nested
     @DisplayName("With visit balance on latest booking")
     inner class WithVisitBalance {
       @BeforeEach
@@ -285,12 +356,12 @@ class VisitBalanceServiceTest {
           offenderBooking = booking,
         )
         booking.visitBalance = ovb
-        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1236KT")).thenReturn(booking)
       }
 
       @Test
       fun `there will be visit data set`() {
-        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1234KT")!!
+        val visitBalance = visitBalanceService.getVisitBalanceForPrisoner("A1236KT")!!
 
         assertThat(visitBalance.remainingVisitOrders).isEqualTo(10)
         assertThat(visitBalance.remainingPrivilegedVisitOrders).isEqualTo(5)
