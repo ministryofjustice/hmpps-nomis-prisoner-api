@@ -193,6 +193,64 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffender(offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/post-merge")
+  @Operation(
+    summary = "Get court cases affected by the last prisoner merge of two prisoner records",
+    description = "Requires role NOMIS_SENTENCING. The court cases returned - if any -  includes cases that may have been cloned onto the active booking and those deactivated",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the lists of court cases affected. Not all merges result in cases being changed, so these lists might be empty even if the current booking has a court case",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "This prisoner has no merge recorded",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtCasesChangedByMergePrisoners(
+    @Schema(description = "Offender No", example = "AA12345")
+    @PathVariable
+    offenderNo: String,
+  ): PostPrisonerMergeCaseChanges = sentencingService.getCourtCasesChangedByMergePrisoners(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Operation(
     summary = "delete a court case",
@@ -1681,4 +1739,12 @@ data class CaseIdentifierResponse(
     example = "DPS_SYNCHRONISATION",
   )
   val auditModuleName: String?,
+)
+
+@Schema(description = "Court Cases (and related charges and sentences) created or updated due to the latest prisoner merge")
+data class PostPrisonerMergeCaseChanges(
+  @Schema(description = "Court cases and related child entities create due to the merge after being copied from a previous booking")
+  val courtCasesCreated: List<CourtCaseResponse> = emptyList(),
+  @Schema(description = "Court cases and related child entities deactivated due to the merge after being cloned from a previous booking")
+  val courtCasesDeactivated: List<CourtCaseResponse> = emptyList(),
 )

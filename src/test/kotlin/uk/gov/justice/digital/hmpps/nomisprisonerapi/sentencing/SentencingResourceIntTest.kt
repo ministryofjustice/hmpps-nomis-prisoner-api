@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.math.BigDecimal
@@ -847,6 +848,268 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("$[0].bookingId").isEqualTo(prisoner1Booking2.bookingId)
           .jsonPath("$[1].offenderNo").isEqualTo(prisoner1.nomsId)
           .jsonPath("$[1].bookingId").isEqualTo(prisoner1Booking.bookingId)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.deleteOffenders()
+      repository.delete(staff)
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/post-merge")
+  @Nested
+  inner class GetCourtCasesChangedByMergePrisoners {
+    private lateinit var prisonerWithRecentMerge: Offender
+    private lateinit var prisonerWithRecentMergeCasesNotAffected: Offender
+    private lateinit var prisonerWithOldMerge: Offender
+    private lateinit var prisonerWithNoMerge: Offender
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      val mergeDate = LocalDateTime.parse("2002-01-01T12:00:00")
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerWithRecentMerge =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase(
+                caseInfoNumber = "A/100",
+                reportingStaff = staff,
+                caseStatus = "C",
+                caseSequence = 2,
+              ) {
+                // case added by merge and then amened in NOMIS (very rare assuming event is process immediately)
+                audit(createDatetime = mergeDate.plusMinutes(1), modifyDatetime = mergeDate.plusMinutes(2), auditModule = "OCDCCASE")
+              }
+              courtCase(
+                caseInfoNumber = "A/123",
+                reportingStaff = staff,
+                caseStatus = "A",
+                caseSequence = 1,
+              ) {
+                // case added by merge but never amended
+                audit(createDatetime = mergeDate.plusMinutes(1), auditModule = "MERGE")
+              }
+            }
+            booking(agencyLocationId = "MDI") {
+              release()
+              courtCase(
+                caseInfoNumber = "A/100",
+                reportingStaff = staff,
+                caseStatus = "I",
+                caseSequence = 2,
+              ) {
+                // original case cloned by MERGE and made inactive
+                audit(createDatetime = mergeDate.minusDays(10), modifyDatetime = mergeDate.plusMinutes(1), auditModule = "MERGE")
+              }
+              courtCase(
+                caseInfoNumber = "A/123",
+                reportingStaff = staff,
+                caseStatus = "I",
+                caseSequence = 1,
+              ) {
+                // original case cloned by MERGE and made inactive
+                audit(createDatetime = mergeDate.minusDays(10), modifyDatetime = mergeDate.plusMinutes(1), auditModule = "MERGE")
+              }
+            }
+            booking(agencyLocationId = "MDI") {
+              release()
+              courtCase(
+                caseInfoNumber = "A/321",
+                reportingStaff = staff,
+                caseSequence = 1,
+              ) {
+                // some other old case
+                audit(createDatetime = mergeDate.minusYears(1), modifyDatetime = mergeDate.minusYears(1))
+              }
+            }
+          }
+        prisonerWithRecentMergeCasesNotAffected =
+          offender(nomsId = "A1234AC") {
+            booking(agencyLocationId = "MDI") {
+              courtCase(
+                caseInfoNumber = "B/123",
+                reportingStaff = staff,
+                caseSequence = 2,
+              ) {
+                // court case created after merge
+                audit(createDatetime = mergeDate.plusMinutes(1))
+              }
+              courtCase(
+                caseInfoNumber = "B/321",
+                reportingStaff = staff,
+                caseSequence = 1,
+              ) {
+                // court case created before merge
+                audit(createDatetime = mergeDate.minusDays(1))
+              }
+            }
+            booking(agencyLocationId = "MDI") {
+              release()
+              courtCase(
+                caseInfoNumber = "B/456",
+                reportingStaff = staff,
+                caseSequence = 1,
+              ) {
+                audit(createDatetime = mergeDate.minusDays(10), modifyDatetime = mergeDate.minusDays(2))
+              }
+            }
+          }
+        prisonerWithOldMerge =
+          offender(nomsId = "A1234AD") {
+            booking(agencyLocationId = "MDI") {
+              courtCase(
+                caseInfoNumber = "C/123",
+                reportingStaff = staff,
+                caseSequence = 1,
+              ) {
+                // court case created after first merge but before recent merge
+                audit(createDatetime = mergeDate.minusDays(10), auditModule = "MERGE")
+              }
+            }
+            booking(agencyLocationId = "MDI") {
+              release()
+              courtCase(
+                caseInfoNumber = "C/123",
+                reportingStaff = staff,
+                caseSequence = 1,
+              ) {
+                // original case that was clone from previous merge
+                audit(createDatetime = mergeDate.minusDays(11), modifyDatetime = mergeDate.minusDays(10), auditModule = "MERGE")
+              }
+            }
+          }
+        prisonerWithNoMerge =
+          offender(nomsId = "A1234AE") {
+            booking(agencyLocationId = "MDI") {
+              courtCase(
+                reportingStaff = staff,
+                caseSequence = 1,
+              ) {}
+            }
+          }
+
+        mergeTransaction(
+          requestDate = mergeDate,
+          nomsId1 = "A9999AK",
+          nomsId2 = "A1234AB",
+        )
+        mergeTransaction(
+          requestDate = mergeDate,
+          nomsId1 = "A9999AK",
+          nomsId2 = "A1234AC",
+        )
+        mergeTransaction(
+          requestDate = mergeDate,
+          nomsId1 = "A1234AD",
+          nomsId2 = "A9999AK",
+        )
+        mergeTransaction(
+          requestDate = mergeDate.minusDays(10),
+          nomsId1 = "A1234AD",
+          nomsId2 = "A9999AK",
+        )
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/${prisonerWithRecentMerge.nomsId}/sentencing/court-cases/post-merge")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/${prisonerWithRecentMerge.nomsId}/sentencing/court-cases/post-merge")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/${prisonerWithRecentMerge.nomsId}/sentencing/court-cases/post-merge")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/prisoners/${prisonerWithRecentMerge.nomsId}/sentencing/court-cases/post-merge")
+          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will fail if there has never been a merge for this prisoner`() {
+        webTestClient.get().uri("/prisoners/${prisonerWithNoMerge.nomsId}/sentencing/court-cases/post-merge")
+          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the created and amended court cases for the offender`() {
+        val response: PostPrisonerMergeCaseChanges = webTestClient.get().uri("/prisoners/${prisonerWithRecentMerge.nomsId}/sentencing/court-cases/post-merge")
+          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(response.courtCasesDeactivated).hasSize(2)
+        with(response.courtCasesDeactivated.find { it.caseSequence == 1 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("I")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/123")
+        }
+        with(response.courtCasesDeactivated.find { it.caseSequence == 2 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("I")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/100")
+        }
+        assertThat(response.courtCasesCreated).hasSize(2)
+        with(response.courtCasesCreated.find { it.caseSequence == 1 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("A")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/123")
+        }
+        with(response.courtCasesCreated.find { it.caseSequence == 2 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("C")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/100")
+        }
+      }
+
+      @Test
+      fun `will not return anything if merge didn't copy any cases`() {
+        val response: PostPrisonerMergeCaseChanges = webTestClient.get().uri("/prisoners/${prisonerWithRecentMergeCasesNotAffected.nomsId}/sentencing/court-cases/post-merge")
+          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(response.courtCasesDeactivated).hasSize(0)
+        assertThat(response.courtCasesCreated).hasSize(0)
+      }
+
+      @Test
+      fun `will not return anything when the merge happened before cases where added`() {
+        val response: PostPrisonerMergeCaseChanges = webTestClient.get().uri("/prisoners/${prisonerWithOldMerge.nomsId}/sentencing/court-cases/post-merge")
+          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(response.courtCasesDeactivated).hasSize(0)
+        assertThat(response.courtCasesCreated).hasSize(0)
       }
     }
 

@@ -8,6 +8,7 @@ import jakarta.persistence.Entity
 class CaseStatus(code: String, description: String) : ReferenceCode(CASE_STS, code, description) {
   companion object {
     const val CASE_STS = "CASE_STS"
+    const val INACTIVE = "I"
     fun pk(code: String): Pk = Pk(CASE_STS, code)
   }
 }

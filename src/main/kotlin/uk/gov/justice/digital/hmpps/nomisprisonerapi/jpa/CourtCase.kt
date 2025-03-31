@@ -13,13 +13,11 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Entity
 @Table(name = "OFFENDER_CASES")
@@ -118,21 +116,14 @@ class CourtCase(
   @OneToMany(mappedBy = "id.courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
   var caseInfoNumbers: MutableList<OffenderCaseIdentifier> = mutableListOf(),
 
-  @Column(name = "CREATE_DATETIME")
-  @Generated
-  var createDatetime: LocalDateTime = LocalDateTime.now(),
   /* COLUMNS NOT MAPPED
     VICTIM_LIAISON_UNIT - not used
     CASE_INFO_PREFIX - not used
    */
 
-) {
+) : NomisAuditableEntity() {
 
   fun getDpsCaseInfoNumbers(): List<OffenderCaseIdentifier> = caseInfoNumbers.filter { it.isDpsCaseInfoNumber() }
-
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
