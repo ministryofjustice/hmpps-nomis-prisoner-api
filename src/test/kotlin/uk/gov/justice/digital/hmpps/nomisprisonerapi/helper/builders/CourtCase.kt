@@ -46,6 +46,8 @@ interface CourtCaseDsl {
   @CourtCaseAuditDslMarker
   fun audit(
     createDatetime: LocalDateTime = LocalDateTime.now(),
+    modifyDatetime: LocalDateTime? = null,
+    auditModule: String = "OCDCCASE",
   )
 
   @OffenderCaseIdentifierDslMarker
@@ -153,16 +155,22 @@ class CourtCaseBuilderRepository(
   fun updateAudit(
     id: Long,
     createDatetime: LocalDateTime,
+    modifyDatetime: LocalDateTime?,
+    auditModule: String,
   ) {
     jdbcTemplate.update(
       """
       UPDATE OFFENDER_CASES 
       SET 
-        CREATE_DATETIME = :createDatetime 
+        CREATE_DATETIME = :createDatetime,
+        MODIFY_DATETIME = :modifyDatetime,
+        AUDIT_MODULE_NAME = :auditModule
       WHERE CASE_ID = :id 
       """,
       mapOf(
         "createDatetime" to createDatetime,
+        "modifyDatetime" to modifyDatetime,
+        "auditModule" to auditModule,
         "id" to id,
       ),
     )
@@ -401,8 +409,12 @@ class CourtCaseBuilder(
 
   override fun audit(
     createDatetime: LocalDateTime,
+    modifyDatetime: LocalDateTime?,
+    auditModule: String,
   ) = repository.updateAudit(
     id = courtCase.id,
     createDatetime = createDatetime,
+    modifyDatetime = modifyDatetime,
+    auditModule = auditModule,
   )
 }
