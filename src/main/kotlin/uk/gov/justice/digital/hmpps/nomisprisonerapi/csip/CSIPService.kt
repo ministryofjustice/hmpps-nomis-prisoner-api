@@ -207,7 +207,7 @@ class CSIPService(
     }
     currentRequest.saferCustodyScreening?.let { saferCustodyScreening ->
       outcome = lookupOutcome(saferCustodyScreening.scsOutcomeCode)
-      reasonForDecision = saferCustodyScreening.reasonForDecision
+      reasonForDecision = saferCustodyScreening.reasonForDecision?.truncateToUtf8Length(4000)
       outcomeCreateUsername = saferCustodyScreening.recordedBy
       outcomeCreateDate = saferCustodyScreening.recordedDate
     }
