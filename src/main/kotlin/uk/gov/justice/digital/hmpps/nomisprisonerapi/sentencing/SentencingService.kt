@@ -115,7 +115,7 @@ class SentencingService(
   fun getCourtCasesChangedByMergePrisoners(offenderNo: String): PostPrisonerMergeCaseChanges {
     val lastMerge = mergeTransactionRepository.findLatestByNomsId(offenderNo) ?: throw BadDataException("Prisoner $offenderNo has no merges")
     val allCases = courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
-    val casesDeactivatedByMerge = allCases.filter { it.caseStatus.code == CaseStatus.INACTIVE && it.auditModuleName == "MERGE" && lastMerge.requestDate < it.modifyDatetime }
+    val casesDeactivatedByMerge = allCases.filter { it.caseStatus.code == CaseStatus.INACTIVE && it.auditModuleName == "MERGE" && it.modifyDatetime != null && lastMerge.requestDate < it.modifyDatetime }
     // if no cases were deactivated by merge then none would have been cloned
     if (casesDeactivatedByMerge.isNotEmpty()) {
       val casesCreated = allCases.filter { lastMerge.requestDate < it.createDatetime }
