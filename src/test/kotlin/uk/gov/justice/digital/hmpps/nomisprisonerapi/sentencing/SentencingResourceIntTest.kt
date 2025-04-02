@@ -880,10 +880,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "A/100",
                 reportingStaff = staff,
                 caseStatus = "C",
+                caseSequence = 3,
+              ) {
+                // case added after a merge (very rare but would happen if the merge event was delayed for some reason)
+                audit(createDatetime = mergeDate.plusMinutes(2), auditModule = "OCDCCASE")
+              }
+              courtCase(
+                caseInfoNumber = "A/100",
+                reportingStaff = staff,
+                caseStatus = "C",
                 caseSequence = 2,
               ) {
                 // case added by merge and then amened in NOMIS (very rare assuming event is process immediately)
-                audit(createDatetime = mergeDate.plusMinutes(1), modifyDatetime = mergeDate.plusMinutes(2), auditModule = "OCDCCASE")
+                audit(createDatetime = mergeDate.plusMinutes(1), modifyDatetime = mergeDate.plusMinutes(2), auditModule = "OCDCCASE", createUserId = "SYS")
               }
               courtCase(
                 caseInfoNumber = "A/123",
@@ -892,7 +901,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseSequence = 1,
               ) {
                 // case added by merge but never amended
-                audit(createDatetime = mergeDate.plusMinutes(1), auditModule = "MERGE")
+                audit(createDatetime = mergeDate.plusMinutes(1), auditModule = "MERGE", createUserId = "SYS")
               }
             }
             booking(agencyLocationId = "MDI") {
@@ -968,7 +977,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseSequence = 1,
               ) {
                 // court case created after first merge but before recent merge
-                audit(createDatetime = mergeDate.minusDays(10), auditModule = "MERGE")
+                audit(createDatetime = mergeDate.minusDays(10), auditModule = "MERGE", createUserId = "SYS")
               }
             }
             booking(agencyLocationId = "MDI") {
