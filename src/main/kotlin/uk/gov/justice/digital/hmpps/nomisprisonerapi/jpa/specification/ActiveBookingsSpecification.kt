@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 
-class ActiveBookingsSpecification(val prisonId: String? = null) : Specification<OffenderBooking> {
+class ActiveBookingsSpecification(val prisonId: String?) : Specification<OffenderBooking> {
   override fun toPredicate(
     root: Root<OffenderBooking>,
     @Nullable query: CriteriaQuery<*>?,
