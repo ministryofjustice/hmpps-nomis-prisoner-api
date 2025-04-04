@@ -25,7 +25,7 @@ class PrisonerService(
   private val mergeTransactionRepository: MergeTransactionRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
 ) {
-  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> = bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
+  fun findAllActivePrisoners(pageRequest: Pageable, prisonId: String? = null): Page<PrisonerIds> = bookingRepository.findAll(ActiveBookingsSpecification(prisonId), pageRequest)
     .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
 
   fun findAllPrisonersWithBookings(pageRequest: Pageable): Page<PrisonerIds> = offenderRepository.findAllWithBookings(

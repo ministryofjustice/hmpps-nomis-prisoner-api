@@ -6,9 +6,11 @@ import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.lang.Nullable
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 
-class ActiveBookingsSpecification : Specification<OffenderBooking> {
+class ActiveBookingsSpecification(val prisonId: String? = null) : Specification<OffenderBooking> {
   override fun toPredicate(
     root: Root<OffenderBooking>,
     @Nullable query: CriteriaQuery<*>?,
@@ -17,6 +19,9 @@ class ActiveBookingsSpecification : Specification<OffenderBooking> {
     val predicates = mutableListOf<Predicate>()
 
     predicates.add(criteriaBuilder.equal(root.get<String>(OffenderBooking::active.name), true))
+    if (prisonId != null) {
+      predicates.add(criteriaBuilder.equal(root.get<String>(Visit::location.name).get<String>(AgencyLocation::id.name), prisonId))
+    }
     // ignore prisoners that are out but with a booking end date - since the data must be in a bad state
     // due to NOMIS data fix
     predicates.add(

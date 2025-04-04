@@ -344,7 +344,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
               booking {}
             }
           activePrisoner2 = offender(nomsId = "A1234SS") {
-            booking {}
+            booking(agencyLocationId = "MDI")
           }
 
           inactivePrisoner1 = offender(nomsId = "A1234WW") {
@@ -369,6 +369,28 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("$.totalElements").isEqualTo(3)
           .jsonPath("$.numberOfElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `will return count of all active prisoners at a prison if prisonId set`() {
+        webTestClient.get().uri("/prisoners/ids/active?prisonId=BXI&size=1&page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.totalElements").isEqualTo(2)
+          .jsonPath("$.numberOfElements").isEqualTo(1)
+      }
+
+      @Test
+      fun `will return count of 0 active prisoners at a prison if prisonId set and no prisoners`() {
+        webTestClient.get().uri("/prisoners/ids/active?prisonId=SYI&size=1&page=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.totalElements").isEqualTo(0)
+          .jsonPath("$.numberOfElements").isEqualTo(0)
       }
 
       @Test

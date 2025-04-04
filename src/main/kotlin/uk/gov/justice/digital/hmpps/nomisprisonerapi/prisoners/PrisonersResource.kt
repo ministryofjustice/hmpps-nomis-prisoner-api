@@ -106,7 +106,10 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   fun getActivePrisonerIdentifiers(
     @PageableDefault(sort = ["bookingId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
-  ): Page<PrisonerIds> = prisonerService.findAllActivePrisoners(pageRequest)
+    @Schema(description = "If supplied get active prisoners at this prison", required = false, example = "ASI")
+    @RequestParam(value = "prisonId")
+    prisonId: String?,
+  ): Page<PrisonerIds> = prisonerService.findAllActivePrisoners(pageRequest, prisonId)
 
   @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING', 'ROLE_NOMIS_ALERTS', 'ROLE_NOMIS_CORE_PERSON', 'ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/ids/all")
@@ -139,7 +142,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @Operation(
     summary = "Gets the identifier for all prisoners.",
     description = """Gets the specified number of prisoners starting after the given id number.
-      Clients can iterate through all prisoners by calling this endpoint using the id from the last call (omit for first call).
+      Clients can iterate through all p©risoners by calling this endpoint using the id from the last call (omit for first call).
       Iteration ends when the returned prisonerIds list has size less than the requested page size.
       Requires role SYNCHRONISATION_REPORTING or NOMIS_CASENOTES.""",
     responses = [
