@@ -142,7 +142,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @Operation(
     summary = "Gets the identifier for all prisoners.",
     description = """Gets the specified number of prisoners starting after the given id number.
-      Clients can iterate through all p©risoners by calling this endpoint using the id from the last call (omit for first call).
+      Clients can iterate through all prisoners by calling this endpoint using the id from the last call (omit for first call).
       Iteration ends when the returned prisonerIds list has size less than the requested page size.
       Requires role SYNCHRONISATION_REPORTING or NOMIS_CASENOTES.""",
     responses = [
