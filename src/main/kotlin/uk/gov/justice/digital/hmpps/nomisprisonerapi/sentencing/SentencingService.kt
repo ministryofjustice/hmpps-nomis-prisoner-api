@@ -48,6 +48,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtOrderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -87,6 +88,7 @@ class SentencingService(
   private val courtOrderRepository: CourtOrderRepository,
   private val storedProcedureRepository: StoredProcedureRepository,
   private val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
+  private val mergeTransactionRepository: MergeTransactionRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -109,6 +111,21 @@ class SentencingService(
     .map { courtCase ->
       courtCase.toCourtCaseResponse()
     }
+
+  fun getCourtCasesChangedByMergePrisoners(offenderNo: String): PostPrisonerMergeCaseChanges {
+    val lastMerge = mergeTransactionRepository.findLatestByNomsId(offenderNo) ?: throw BadDataException("Prisoner $offenderNo has no merges")
+    val allCases = courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
+    val casesDeactivatedByMerge = allCases.filter { it.wasDeactivatedByMerge(lastMerge.requestDate) }
+    // if no cases were deactivated by merge then none would have been cloned
+    if (casesDeactivatedByMerge.isNotEmpty()) {
+      val casesCreated = allCases.filter { it.wasCreatedByMerge(lastMerge.requestDate) }
+      return PostPrisonerMergeCaseChanges(courtCasesCreated = casesCreated.map { it.toCourtCaseResponse() }, courtCasesDeactivated = casesDeactivatedByMerge.map { it.toCourtCaseResponse() })
+    }
+    return PostPrisonerMergeCaseChanges()
+  }
+
+  private fun CourtCase.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = caseStatus.code == CaseStatus.INACTIVE && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime
+  private fun CourtCase.wasCreatedByMerge(mergeRequestDate: LocalDateTime) = mergeRequestDate < createDatetime && createUsername == "SYS"
 
   fun getOffenderCharge(id: Long): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender Charge $id not found")
