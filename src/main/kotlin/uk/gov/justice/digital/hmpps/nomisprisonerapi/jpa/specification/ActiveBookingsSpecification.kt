@@ -8,7 +8,6 @@ import org.springframework.data.jpa.domain.Specification
 import org.springframework.lang.Nullable
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 
 class ActiveBookingsSpecification(val prisonId: String?) : Specification<OffenderBooking> {
   override fun toPredicate(
@@ -20,7 +19,7 @@ class ActiveBookingsSpecification(val prisonId: String?) : Specification<Offende
 
     predicates.add(criteriaBuilder.equal(root.get<String>(OffenderBooking::active.name), true))
     if (prisonId != null) {
-      predicates.add(criteriaBuilder.equal(root.get<String>(Visit::location.name).get<String>(AgencyLocation::id.name), prisonId))
+      predicates.add(criteriaBuilder.equal(root.get<String>(OffenderBooking::location.name).get<String>(AgencyLocation::id.name), prisonId))
     }
     // ignore prisoners that are out but with a booking end date - since the data must be in a bad state
     // due to NOMIS data fix
