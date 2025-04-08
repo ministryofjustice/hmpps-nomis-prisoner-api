@@ -315,7 +315,7 @@ data class CreateVisitBalanceAdjustmentRequest(
 @Schema(description = "A response after a visit balance adjustment is created in NOMIS")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateVisitBalanceAdjustmentResponse(
-  @Schema(description = "The id of the visit balance")
+  @Schema(description = "The id of the visit balance adjustment")
   val visitBalanceAdjustmentId: Long,
 )
 

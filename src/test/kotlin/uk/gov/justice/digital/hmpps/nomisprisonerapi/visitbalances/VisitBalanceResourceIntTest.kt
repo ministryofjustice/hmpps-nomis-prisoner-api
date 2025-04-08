@@ -20,16 +20,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdj
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
-  private lateinit var offenderRepository: OffenderRepository
 
   @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
@@ -406,7 +402,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class getVisitBalance {
     private lateinit var offender: Offender
-    private lateinit var offender2: Offender
 
     @BeforeEach
     fun setUp() {
@@ -424,7 +419,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             visitBalance { }
           }
         }
-        offender2 = offender(
+        offender(
           nomsId = "A5432BC",
           firstName = "JIM",
           lastName = "PARK",
@@ -440,8 +435,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-      repository.delete(offender)
-      repository.delete(offender2)
+      repository.deleteOffenders()
     }
 
     @Nested
@@ -555,7 +549,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-      offenderRepository.deleteAll()
+      repository.deleteOffenders()
     }
 
     @Nested
@@ -675,7 +669,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-      offenderRepository.deleteAll()
+      repository.deleteOffenders()
     }
 
     @Nested
