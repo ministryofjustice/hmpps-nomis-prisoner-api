@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -15,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -222,7 +225,99 @@ class VisitBalanceResource(
     @PathVariable
     visitBalanceAdjustmentId: Long,
   ): VisitBalanceAdjustmentResponse = visitBalanceService.getVisitBalanceAdjustment(visitBalanceAdjustmentId)
+
+  @PostMapping("/prisoners/{prisonNumber}/visit-balance-adjustments")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Inserts a visit balance adjustment for an offender",
+    description = "Creates a visit balance adjustment on the prisoner's latest booking. Requires ROLE_NOMIS_VISIT_BALANCE",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Visit balance adjustment created",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createVisitBalanceAdjustment(
+    @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
+    @PathVariable
+    prisonNumber: String,
+    @RequestBody @Valid
+    request: CreateVisitBalanceAdjustmentRequest,
+  ): CreateVisitBalanceAdjustmentResponse = visitBalanceService.createVisitBalanceAdjustment(prisonNumber, request)
 }
+
+data class CreateVisitBalanceAdjustmentRequest(
+  @Schema(description = "Number of visit orders affected by the adjustment")
+  val visitOrderChange: Int? = null,
+  @Schema(description = "Previous number of visit orders before the adjustment")
+  val previousVisitOrderCount: Int? = null,
+  @Schema(description = "Number of privileged visit orders affected by the adjustment")
+  val privilegedVisitOrderChange: Int? = null,
+  @Schema(description = "Previous number of privileged visit orders before the adjustment")
+  val previousPrivilegedVisitOrderCount: Int? = null,
+  @Schema(description = "The Adjustment reason code")
+  val adjustmentReasonCode: String,
+  @Schema(description = "Date the adjust was made")
+  val adjustmentDate: LocalDate,
+  @Schema(description = "Comment text")
+  val comment: String? = null,
+  @Schema(description = "Expiry balance")
+  val expiryBalance: Int? = null,
+  @Schema(description = "Expiry date")
+  val expiryDate: LocalDate? = null,
+  @Schema(description = "Which staff member endorsed the adjustment aka Entered by")
+  val endorsedStaffId: Long? = null,
+  @Schema(description = "Which staff member authorised the adjustment")
+  val authorisedStaffId: Long? = null,
+)
+
+@Schema(description = "A response after a visit balance adjustment is created in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateVisitBalanceAdjustmentResponse(
+  @Schema(description = "The id of the visit balance adjustment")
+  val visitBalanceAdjustmentId: Long,
+)
 
 @Schema(description = "The visit balance held against a prisoner's latest booking")
 @JsonInclude(JsonInclude.Include.NON_NULL)

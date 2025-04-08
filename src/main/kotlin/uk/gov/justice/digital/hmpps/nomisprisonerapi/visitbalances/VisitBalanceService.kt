@@ -7,13 +7,16 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @Service
 @Transactional
@@ -21,6 +24,7 @@ class VisitBalanceService(
   val visitBalanceRepository: OffenderVisitBalanceRepository,
   val offenderBookingRepository: OffenderBookingRepository,
   val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
+  val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -66,6 +70,31 @@ class VisitBalanceService(
   fun getVisitBalanceAdjustment(visitBalanceAdjustmentId: Long): VisitBalanceAdjustmentResponse = offenderVisitBalanceAdjustmentRepository.findById(visitBalanceAdjustmentId)
     .map { it.toVisitBalanceAdjustmentResponse() }
     .orElseThrow { NotFoundException("Visit balance adjustment with id $visitBalanceAdjustmentId not found") }
+
+  fun createVisitBalanceAdjustment(prisonNumber: String, request: CreateVisitBalanceAdjustmentRequest): CreateVisitBalanceAdjustmentResponse {
+    val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
+      ?: throw NotFoundException("Prisoner $prisonNumber not found with a booking")
+    val adjustmentReason = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.pk(request.adjustmentReasonCode))
+      .orElseThrow { BadDataException("Visit Adjustment Reason with code ${request.adjustmentReasonCode} does not exist") }
+
+    val visitBalanceAdjustment = OffenderVisitBalanceAdjustment(
+      offenderBooking = offenderBooking,
+      adjustDate = request.adjustmentDate,
+      adjustReasonCode = adjustmentReason,
+      remainingVisitOrders = request.visitOrderChange,
+      previousRemainingVisitOrders = request.previousVisitOrderCount,
+      remainingPrivilegedVisitOrders = request.privilegedVisitOrderChange,
+      previousRemainingPrivilegedVisitOrders = request.previousPrivilegedVisitOrderCount,
+      commentText = request.comment,
+      authorisedStaffId = request.authorisedStaffId,
+      endorsedStaffId = request.endorsedStaffId,
+      expiryBalance = request.expiryBalance,
+      expiryDate = request.expiryDate,
+    )
+
+    offenderBooking.visitBalanceAdjustments.add(visitBalanceAdjustment)
+    return CreateVisitBalanceAdjustmentResponse(visitBalanceAdjustmentId = visitBalanceAdjustment.id)
+  }
 }
 
 fun OffenderVisitBalanceAdjustment.isCreatedByBatchVOProcess() = createUsername == "OMS_OWNER"
