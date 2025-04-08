@@ -39,6 +39,7 @@ class VisitBalanceServiceTest {
       offenderBookingRepository = offenderBookingRepository,
       visitBalanceRepository = mock(),
       offenderVisitBalanceAdjustmentRepository = mock(),
+      visitOrderAdjustmentReasonRepository = mock(),
     )
   }
 

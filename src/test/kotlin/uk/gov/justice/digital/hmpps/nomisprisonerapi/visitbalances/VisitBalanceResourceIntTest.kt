@@ -9,13 +9,17 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,6 +30,249 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
+
+  @Autowired
+  private lateinit var offenderBookingRepository: OffenderBookingRepository
+
+  @Autowired
+  private lateinit var repository: Repository
+
+  @DisplayName("POST /prisoners/{prisonNumber}/visit-balance-adjustments")
+  @Nested
+  inner class CreateVisitBalanceAdjustment {
+    private var activeBookingId = 0L
+    private lateinit var prisoner: Offender
+    private val validAdjustment = CreateVisitBalanceAdjustmentRequest(
+      visitOrderChange = 3,
+      adjustmentReasonCode = "GOV",
+      adjustmentDate = LocalDate.parse("2025-03-03"),
+    )
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1234AB") {
+          activeBookingId = booking {
+            visitBalanceAdjustment(
+              privilegedVisitOrderChange = 5,
+              previousPrivilegedVisitOrderCount = 6,
+            )
+            visitBalanceAdjustment(
+              visitOrderChange = 11,
+            )
+          }.bookingId
+          booking(bookingBeginDate = LocalDateTime.parse("2021-07-18T10:00:00")) {
+            visitBalanceAdjustment(
+              visitOrderChange = 3,
+              previousVisitOrderCount = 7,
+              privilegedVisitOrderChange = 2,
+              previousPrivilegedVisitOrderCount = 1,
+              adjustmentDate = LocalDate.parse("2025-03-03"),
+              adjustmentReasonCode = "GOV",
+              comment = "Good behaviour",
+              expiryBalance = 7,
+              expiryDate = LocalDate.parse("2025-03-23"),
+              endorsedStaffId = 123,
+              authorisedStaffId = 456,
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(prisoner)
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAdjustment)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAdjustment)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAdjustment)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private val validVisitBalanceAdjustment = CreateVisitBalanceAdjustmentRequest(
+        visitOrderChange = 3,
+        adjustmentReasonCode = "GOV",
+        adjustmentDate = LocalDate.parse("2025-03-03"),
+      )
+
+      @Test
+      fun `validation fails when prisoner does not exist`() {
+        webTestClient.post().uri("/prisoners/A9999ZZ/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validVisitBalanceAdjustment)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `validation fails when visit-balance-adjustment code is not present`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "visitOrderChange" : 3,
+                "adjustmentDate": "2025-03-03"
+              }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `validation fails when visit-balance-adjustment code is not valid`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "visitOrderChange" : 3,
+                "adjustmentReasonCode": "INVALID",
+                "adjustmentDate": "2025-03-03"
+              }
+            
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private val validFullAdjustment = CreateVisitBalanceAdjustmentRequest(
+        visitOrderChange = 3,
+        previousVisitOrderCount = 7,
+        privilegedVisitOrderChange = 2,
+        previousPrivilegedVisitOrderCount = 1,
+        adjustmentReasonCode = "GOV",
+        adjustmentDate = LocalDate.parse("2025-03-03"),
+        comment = "Good behaviour",
+        expiryBalance = 12,
+        expiryDate = LocalDate.parse("2025-03-23"),
+        endorsedStaffId = 123,
+        authorisedStaffId = 456,
+      )
+
+      @Test
+      fun `creating a visit balance adjustment with minimal data will be successful`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "adjustmentReasonCode": "DISC",
+                "adjustmentDate": "2025-03-03"
+              }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(201)
+          .expectBody()
+          .jsonPath("visitBalanceAdjustmentId").isNotEmpty
+      }
+
+      @Test
+      fun `creating a visit balance adjustment will allow the data to be retrieved`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validFullAdjustment)
+          .exchange()
+          .expectStatus().isEqualTo(201)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          assertThat(booking?.visitBalanceAdjustments).hasSize(3)
+          val newAdjustment = booking?.visitBalanceAdjustments?.last()!!
+          assertThat(newAdjustment.id).isNotNull()
+          assertThat(newAdjustment.remainingVisitOrders).isEqualTo(3)
+          assertThat(newAdjustment.previousRemainingVisitOrders).isEqualTo(7)
+          assertThat(newAdjustment.remainingPrivilegedVisitOrders).isEqualTo(2)
+          assertThat(newAdjustment.previousRemainingPrivilegedVisitOrders).isEqualTo(1)
+          assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("GOV")
+          assertThat(newAdjustment.authorisedStaffId).isEqualTo(456)
+          assertThat(newAdjustment.endorsedStaffId).isEqualTo(123)
+          assertThat(newAdjustment.adjustDate).isEqualTo(LocalDate.parse("2025-03-03"))
+          assertThat(newAdjustment.commentText).isEqualTo("Good behaviour")
+          assertThat(newAdjustment.expiryBalance).isEqualTo(12)
+          assertThat(newAdjustment.expiryDate).isEqualTo(LocalDate.parse("2025-03-23"))
+        }
+      }
+
+      @Test
+      fun `creating a visit balance adjustment with minimal data will allow the data to be retrieved`() {
+        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            CreateVisitBalanceAdjustmentRequest(
+              adjustmentReasonCode = "GOV",
+              adjustmentDate = LocalDate.parse("2025-03-03"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(201)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          assertThat(booking?.visitBalanceAdjustments).hasSize(3)
+          val newAdjustment = booking?.visitBalanceAdjustments?.last()!!
+          assertThat(newAdjustment.id).isNotNull()
+          assertThat(newAdjustment.remainingVisitOrders).isNull()
+          assertThat(newAdjustment.previousRemainingVisitOrders).isNull()
+          assertThat(newAdjustment.remainingPrivilegedVisitOrders).isNull()
+          assertThat(newAdjustment.previousRemainingPrivilegedVisitOrders).isNull()
+          assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("GOV")
+          assertThat(newAdjustment.authorisedStaffId).isNull()
+          assertThat(newAdjustment.endorsedStaffId).isNull()
+          assertThat(newAdjustment.adjustDate).isEqualTo(LocalDate.parse("2025-03-03"))
+          assertThat(newAdjustment.commentText).isNull()
+          assertThat(newAdjustment.expiryBalance).isNull()
+          assertThat(newAdjustment.expiryDate).isNull()
+        }
+      }
+    }
+  }
 
   @DisplayName("GET /visit-balances/{visitBalanceId}")
   @Nested
@@ -84,7 +331,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-      offenderRepository.deleteAll()
+      repository.delete(offender)
     }
 
     @Nested
@@ -193,7 +440,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-      offenderRepository.deleteAll()
+      repository.delete(offender)
+      repository.delete(offender2)
     }
 
     @Nested
