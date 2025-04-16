@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Min
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -17,6 +18,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -130,7 +132,7 @@ class VisitBalanceResource(
     visitBalanceId: Long,
   ): VisitBalanceDetailResponse = visitBalanceService.getVisitBalanceById(visitBalanceId)
 
-  @GetMapping("/prisoners/{prisonNumber}/visit-orders/balance")
+  @GetMapping("/prisoners/{prisonNumber}/visit-balance")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get visit order balance data for a prisoner",
@@ -285,7 +287,78 @@ class VisitBalanceResource(
     @RequestBody @Valid
     request: CreateVisitBalanceAdjustmentRequest,
   ): CreateVisitBalanceAdjustmentResponse = visitBalanceService.createVisitBalanceAdjustment(prisonNumber, request)
+
+  @PutMapping("/prisoners/{prisonNumber}/visit-balance")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Updates a visit order balance for an offender",
+    description = "Updates a visit order balance on the prisoner's latest booking or creates one if it doesn't already exist. Requires ROLE_NOMIS_VISIT_BALANCE",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visit balance updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "One or more fields in the request contains invalid data",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateVisitBalance(
+    @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
+    @PathVariable
+    prisonNumber: String,
+    @Valid @RequestBody
+    request: UpdateVisitBalanceRequest,
+  ) = visitBalanceService.upsertVisitBalance(prisonNumber, request)
 }
+
+@Schema(description = "Visit Balance update request")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateVisitBalanceRequest(
+  @Schema(description = "Total number of unallocated (remaining) visit orders", required = true)
+  @field:Min(0)
+  val remainingVisitOrders: Int = -1,
+  @Schema(description = "Total number of unallocated (remaining) privileged visit orders", required = true)
+  @field:Min(0)
+  val remainingPrivilegedVisitOrders: Int = -1,
+)
 
 data class CreateVisitBalanceAdjustmentRequest(
   @Schema(description = "Number of visit orders affected by the adjustment")
@@ -313,7 +386,6 @@ data class CreateVisitBalanceAdjustmentRequest(
 )
 
 @Schema(description = "A response after a visit balance adjustment is created in NOMIS")
-@JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateVisitBalanceAdjustmentResponse(
   @Schema(description = "The id of the visit balance adjustment")
   val visitBalanceAdjustmentId: Long,
