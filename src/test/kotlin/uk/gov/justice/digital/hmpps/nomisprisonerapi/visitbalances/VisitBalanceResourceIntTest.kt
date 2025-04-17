@@ -270,6 +270,177 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /prisoners/{prisonNumber}/visit-balance")
+  @Nested
+  inner class UpdateVisitBalance {
+    private var activeBookingId = 0L
+    private var bookingWithNoVisitBalanceId = 0L
+    private lateinit var prisoner: Offender
+    private lateinit var prisoner2: Offender
+    private val validAdjustment = UpdateVisitBalanceRequest(
+      remainingVisitOrders = 3,
+      remainingPrivilegedVisitOrders = 7,
+    )
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prisoner = offender(nomsId = "A1234AB") {
+          activeBookingId = booking {
+            visitBalance(
+              remainingVisitOrders = 5,
+              remainingPrivilegedVisitOrders = 6,
+            )
+            visitBalance(
+              remainingVisitOrders = 11,
+            )
+          }.bookingId
+          booking(bookingBeginDate = LocalDateTime.parse("2021-07-18T10:00:00")) {
+            visitBalance(
+              remainingVisitOrders = 3,
+              remainingPrivilegedVisitOrders = 4,
+            )
+          }
+        }
+        prisoner2 = offender(nomsId = "A4321AB") {
+          bookingWithNoVisitBalanceId = booking().bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAdjustment)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAdjustment)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validAdjustment)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private val validVisitBalance = UpdateVisitBalanceRequest(
+        remainingVisitOrders = 13,
+        remainingPrivilegedVisitOrders = 14,
+      )
+
+      @Test
+      fun `validation fails when prisoner does not exist`() {
+        webTestClient.put().uri("/prisoners/A9999ZZ/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validVisitBalance)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `validation fails when remainingVisitOrders is not present`() {
+        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "remainingPrivilegedVisitOrders" : 3
+              }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `validation fails when remainingPrivilegedVisitOrders is not present`() {
+        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            //language=JSON
+            """
+              {
+                "remainingVisitOrders" : 3
+              }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private val validFullBalance = UpdateVisitBalanceRequest(
+        remainingVisitOrders = 13,
+        remainingPrivilegedVisitOrders = 14,
+      )
+
+      @Test
+      fun `updating a visit balance will allow the data to be retrieved`() {
+        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validFullBalance)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          val newBalance = booking?.visitBalance!!
+          assertThat(newBalance.remainingVisitOrders).isEqualTo(13)
+          assertThat(newBalance.remainingPrivilegedVisitOrders).isEqualTo(14)
+        }
+      }
+
+      @Test
+      fun `creating a visit balance will allow the data to be retrieved`() {
+        webTestClient.put().uri("/prisoners/A4321AB/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validFullBalance)
+          .exchange()
+          .expectStatus().isEqualTo(204)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(bookingWithNoVisitBalanceId)
+          val newBalance = booking?.visitBalance!!
+          assertThat(newBalance.remainingVisitOrders).isEqualTo(13)
+          assertThat(newBalance.remainingPrivilegedVisitOrders).isEqualTo(14)
+        }
+      }
+    }
+  }
+
   @DisplayName("GET /visit-balances/{visitBalanceId}")
   @Nested
   inner class getVisitBalanceByIdToMigrate {
@@ -360,7 +531,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when offender not found`() {
-        webTestClient.get().uri("/prisoners/AB1234C/visit-orders/balance")
+        webTestClient.get().uri("/prisoners/AB1234C/visit-balance")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus().isNotFound
@@ -398,7 +569,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/visit-orders/balance")
+  @DisplayName("GET /prisoners/{offenderNo}/visit-balance")
   @Nested
   inner class getVisitBalance {
     private lateinit var offender: Offender
@@ -442,7 +613,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-orders/balance")
+        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-balance")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -450,7 +621,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-orders/balance")
+        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-balance")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -458,7 +629,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-orders/balance")
+        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-balance")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -468,7 +639,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when offender not found`() {
-        webTestClient.get().uri("/prisoners/AB1234C/visit-orders/balance")
+        webTestClient.get().uri("/prisoners/AB1234C/visit-balance")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus().isNotFound
@@ -476,7 +647,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `return null when no visit balance found`() {
-        webTestClient.get().uri("/prisoners/A5432BC/visit-orders/balance")
+        webTestClient.get().uri("/prisoners/A5432BC/visit-balance")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus().isOk
@@ -488,7 +659,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return visit order balances`() {
-        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-orders/balance")
+        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-balance")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus()
@@ -501,7 +672,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `is able to re-hydrate visit order balance`() {
         val visitOrderBalanceResponse =
-          webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-orders/balance")
+          webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-balance")
             .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
             .exchange()
             .expectStatus()
