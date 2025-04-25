@@ -43,7 +43,7 @@ class PrisonResource(val prisonService: PrisonService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role SYNCHRONISATION_REPORTING",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],

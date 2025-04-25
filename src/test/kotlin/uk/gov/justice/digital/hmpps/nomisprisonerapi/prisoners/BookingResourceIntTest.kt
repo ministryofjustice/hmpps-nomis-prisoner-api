@@ -56,9 +56,9 @@ class BookingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `access allowed for SYNCHRONISATION_REPORTING`() {
+      fun `access allowed for NOMIS_PRISONER_API__SYNCHRONISATION__RW`() {
         webTestClient.get().uri("/bookings/ids/latest-from-id")
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -101,7 +101,7 @@ class BookingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will find all latest booking with a large page size`() {
         val response: BookingIdsWithLast = webTestClient.get().uri("/bookings/ids/latest-from-id?pageSize=1000")
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
@@ -113,7 +113,7 @@ class BookingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will find all latest active booking with a large page size`() {
         val response: BookingIdsWithLast = webTestClient.get().uri("/bookings/ids/latest-from-id?pageSize=1000&activeOnly=true")
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
@@ -125,7 +125,7 @@ class BookingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return a page of Ids from first booking`() {
         val response: BookingIdsWithLast = webTestClient.get().uri("/bookings/ids/latest-from-id?pageSize=5&activeOnly=true")
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
@@ -140,7 +140,7 @@ class BookingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can page through results of pages using last bookingId`() {
         val page1: BookingIdsWithLast = webTestClient.get().uri("/bookings/ids/latest-from-id?pageSize=4&activeOnly=true")
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
@@ -151,7 +151,7 @@ class BookingResourceIntTest : IntegrationTestBase() {
         assertThat(page1.prisonerIds[3].offenderNo).isEqualTo("A1233TT")
 
         val page2: BookingIdsWithLast = webTestClient.get().uri("/bookings/ids/latest-from-id?pageSize=4&activeOnly=true&bookingId=${page1.prisonerIds.last().bookingId}")
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
@@ -162,7 +162,7 @@ class BookingResourceIntTest : IntegrationTestBase() {
         assertThat(page2.prisonerIds[3].offenderNo).isEqualTo("A1237TT")
 
         val page3: BookingIdsWithLast = webTestClient.get().uri("/bookings/ids/latest-from-id?pageSize=4&activeOnly=true&bookingId=${page2.prisonerIds.last().bookingId}")
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
