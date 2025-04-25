@@ -17,14 +17,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class BookingsResource(private val bookingService: BookingService) {
-  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING')")
+  @PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/bookings/ids/latest-from-id")
   @Operation(
     summary = "Gets the identifiers for all latest bookings.",
     description = """Gets the specified number of latest bookings starting after the given id number.
       Clients can iterate through all bookings by calling this endpoint using the id from the last call (omit for first call).
       Iteration ends when the returned prisonerIds list has size less than the requested page size.
-      Requires role SYNCHRONISATION_REPORTING.""",
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
     responses = [
       ApiResponse(responseCode = "200", description = "list of prisoner ids containing bookingId and offenderNo"),
       ApiResponse(
@@ -34,7 +34,7 @@ class BookingsResource(private val bookingService: BookingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role SYNCHRONISATION_REPORTING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],

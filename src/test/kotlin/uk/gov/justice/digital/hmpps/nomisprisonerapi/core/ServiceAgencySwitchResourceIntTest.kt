@@ -80,7 +80,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return not found if service does not exist`() {
       webTestClient.get()
         .uri("/service-prisons/UNKNOWN_SERVICE")
-        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -92,7 +92,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return a list of prisons for the service`() {
       webTestClient.get()
         .uri("/service-prisons/SOME_SERVICE")
-        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -109,7 +109,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
 
       webTestClient.get()
         .uri("/service-prisons/ANOTHER_SERVICE")
-        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody().jsonPath("$.size()").isEqualTo(0)

@@ -1417,7 +1417,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           it.path("/persons/ids/all-from-id")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1432,7 +1432,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             .queryParam("pageSize", "1")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1448,7 +1448,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             .queryParam("personId", lowestPersonId + 9)
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1465,7 +1465,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             .queryParam("pageSize", "60")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()

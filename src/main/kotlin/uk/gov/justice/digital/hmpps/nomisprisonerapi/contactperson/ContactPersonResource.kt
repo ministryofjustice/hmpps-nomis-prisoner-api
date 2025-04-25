@@ -205,14 +205,14 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     ),
   )
 
-  @PreAuthorize("hasAnyRole('ROLE_SYNCHRONISATION_REPORTING')")
+  @PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/persons/ids/all-from-id")
   @Operation(
     summary = "Gets the identifier for all persons.",
     description = """Gets the specified number of persons starting after the given id number.
       Clients can iterate through all persons by calling this endpoint using the id from the last call (omit for first call).
       Iteration ends when the returned prisonerIds list has size less than the requested page size.
-      Requires role SYNCHRONISATION_REPORTING.""",
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
     responses = [
       ApiResponse(responseCode = "200", description = "list of person ids"),
       ApiResponse(
@@ -222,7 +222,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role SYNCHRONISATION_REPORTING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
