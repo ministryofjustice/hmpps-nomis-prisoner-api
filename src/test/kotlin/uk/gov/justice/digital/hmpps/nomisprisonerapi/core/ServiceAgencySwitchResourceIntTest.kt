@@ -42,6 +42,9 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
         serviceAgencySwitch(prisonId = "LEI")
         serviceAgencySwitch(prisonId = "MDI")
       }
+      externalService(serviceName = "OTHER_SERVICE") {
+        serviceAgencySwitch(prisonId = "*ALL*")
+      }
     }
   }
 
@@ -106,6 +109,18 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should return a list of prisons even if all are switched on`() {
+      webTestClient.get()
+        .uri("/service-prisons/OTHER_SERVICE")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(1)
+        .jsonPath("$[0].prisonId").isEqualTo("*ALL*")
+    }
+
+    @Test
     fun `should return an empty list if no prisons`() {
       nomisDataBuilder.build {
         externalService(serviceName = "ANOTHER_SERVICE")
@@ -166,6 +181,15 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
       webTestClient.get()
         .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isEqualTo(NO_CONTENT)
+    }
+
+    @Test
+    fun `should return 204 if service turned on for all prisons`() {
+      webTestClient.get()
+        .uri("/service-prisons/OTHER_SERVICE/prison/MDI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isEqualTo(NO_CONTENT)
     }

@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ALL_PRISONS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen.Companion.SPLASH_ALL_PRISONS
 
 class SplashScreenResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -24,7 +24,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       splashScreen(moduleName = "SCREEN1", accessBlockedCode = "NO")
       splashScreen(moduleName = "SCREEN2", accessBlockedCode = "COND", warningText = "A warning", blockedText = "Block message") {
-        splashCondition(prisonId = ALL_PRISONS, accessBlocked = true)
+        splashCondition(prisonId = SPLASH_ALL_PRISONS, accessBlocked = true)
       }
       splashScreen(moduleName = "SCREEN3", accessBlockedCode = "YES", warningText = "A warning", blockedText = "Block message") {
         splashCondition(prisonId = "LEI", accessBlocked = true)
@@ -203,7 +203,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("size()").isEqualTo(1)
-        .jsonPath("[0].prisonId").isEqualTo(ALL_PRISONS)
+        .jsonPath("[0].prisonId").isEqualTo(SPLASH_ALL_PRISONS)
     }
 
     @Test
