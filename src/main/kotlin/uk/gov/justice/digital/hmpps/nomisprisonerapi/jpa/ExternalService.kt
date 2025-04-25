@@ -32,3 +32,5 @@ data class ExternalService(
 
   override fun hashCode(): Int = this.javaClass.hashCode()
 }
+
+const val VISIT_ALLOCATION_SERVICE = "VISIT_ALLOCATION"
