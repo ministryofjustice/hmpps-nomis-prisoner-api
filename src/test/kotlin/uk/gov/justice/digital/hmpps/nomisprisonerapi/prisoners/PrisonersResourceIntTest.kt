@@ -276,7 +276,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return count of all active prisoners by default`() {
         webTestClient.get().uri("/prisoners/ids?size=1&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -287,7 +287,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return a page of prisoners ordered by booking id ASC`() {
         webTestClient.get().uri("/prisoners/ids?page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -363,7 +363,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return count of all active prisoners by default`() {
         webTestClient.get().uri("/prisoners/ids/active?size=1&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -374,7 +374,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return a page of prisoners ordered by booking id ASC`() {
         webTestClient.get().uri("/prisoners/ids/active?page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -419,7 +419,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
 
       @ParameterizedTest
-      @CsvSource("ROLE_NOMIS_ALERTS", "ROLE_SYNCHRONISATION_REPORTING")
+      @CsvSource("ROLE_NOMIS_ALERTS", "ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")
       fun `access allowed for role`(role: String) {
         webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
           .headers(setAuthorisation(roles = listOf(role)))
@@ -462,7 +462,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return count of all prisoners with bookings`() {
         webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -473,7 +473,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return a page of prisoners ordered by rootOffenderId ASC`() {
         webTestClient.get().uri("/prisoners/ids?active=false&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -521,7 +521,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @CsvSource(
         "ROLE_NOMIS_ALERTS",
         "ROLE_NOMIS_CORE_PERSON",
-        "ROLE_SYNCHRONISATION_REPORTING",
+        "ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         "ROLE_NOMIS_SENTENCING",
       )
       fun `access allowed for role`(role: String) {
@@ -566,7 +566,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return count of all prisoners even without a booking`() {
         webTestClient.get().uri("/prisoners/ids/all?size=1&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -577,7 +577,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return a page of prisoners ordered by rootOffenderId ASC`() {
         webTestClient.get().uri("/prisoners/ids/all?page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -620,9 +620,9 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `access allowed for SYNCHRONISATION_REPORTING`() {
+      fun `access allowed for NOMIS_PRISONER_API__SYNCHRONISATION__RW`() {
         webTestClient.get().uri("/prisoners/ids/all-from-id")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -653,7 +653,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return first page of prisoners ordered by rootOffenderId ASC`() {
         webTestClient.get().uri("/prisoners/ids/all-from-id?pageSize=2")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -666,7 +666,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return second page of prisoners ordered by rootOffenderId ASC`() {
         webTestClient.get().uri("/prisoners/ids/all-from-id?pageSize=2&offenderId=$id2")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -731,7 +731,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return empty list if not found`() {
       webTestClient.post().uri("/prisoners/bookings")
-        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(""" [99999] """))
         .exchange()
@@ -743,7 +743,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should get prisoner details`() {
       webTestClient.post().uri("/prisoners/bookings")
-        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(""" [${bookingBxi.bookingId}] """))
         .exchange()
@@ -758,7 +758,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should get inactive prisoner details`() {
       webTestClient.post().uri("/prisoners/bookings")
-        .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(""" [${bookingOut.bookingId}, ${bookingTrn.bookingId}] """))
         .exchange()
@@ -1104,7 +1104,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return old merge and new merge with no filter`() {
         webTestClient.get().uri("/prisoners/A1234AK/merges")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1124,7 +1124,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return merges after filter date`() {
         webTestClient.get().uri("/prisoners/A1234AK/merges?fromDate=2023-01-01")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1139,7 +1139,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return empty list when prisoner not found with a merge transaction`() {
         webTestClient.get().uri("/prisoners/A9898AK/merges?fromDate=2024-04-01")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1149,7 +1149,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return merge when retained ID is in the number 2 field`() {
         webTestClient.get().uri("/prisoners/A1234ZG/merges")
-          .headers(setAuthorisation(roles = listOf("ROLE_SYNCHRONISATION_REPORTING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()

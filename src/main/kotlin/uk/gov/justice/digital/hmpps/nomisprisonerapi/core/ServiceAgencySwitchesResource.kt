@@ -22,11 +22,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesService) {
 
-  @PreAuthorize("hasRole('ROLE_SYNCHRONISATION_REPORTING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/service-prisons/{serviceCode}")
   @Operation(
     summary = "Retrieve a list of prisons switched on for the service",
-    description = "Retrieves all prisons switched on for the service code, or an empty list if there are none. Requires role SYNCHRONISATION_REPORTING",
+    description = "Retrieves all prisons switched on for the service code, or an empty list if there are none. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -48,7 +48,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role SYNCHRONISATION_REPORTING",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -86,7 +86,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role SYNCHRONISATION_REPORTING",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -136,7 +136,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role SYNCHRONISATION_REPORTING",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
