@@ -14,9 +14,11 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.ServiceAgencySwitchesService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -88,6 +90,7 @@ internal class VisitServiceTest {
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val visitOrderVisitorRepository: VisitOrderVisitorRepository = mock()
+  private val serviceAgencySwitchesService: ServiceAgencySwitchesService = mock()
 
   private val visitService: VisitService = VisitService(
     visitRepository,
@@ -110,6 +113,7 @@ internal class VisitServiceTest {
     visitSlotRepository,
     internalLocationRepository,
     visitOrderVisitorRepository,
+    serviceAgencySwitchesService,
   )
 
   val visitType = VisitType("SCON", "desc")
@@ -118,6 +122,7 @@ internal class VisitServiceTest {
     bookingId = OFFENDER_BOOKING_ID,
     offender = defaultOffender,
     bookingBeginDate = LocalDateTime.now(),
+    location = AgencyLocation("MKI", "Millsike Prison"),
   ).apply {
     // add circular reference
     visitBalance = OffenderVisitBalance(
@@ -351,12 +356,13 @@ internal class VisitServiceTest {
         )
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE)
+          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(-1)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
@@ -367,17 +373,51 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance decrement is saved correctly when available`() {
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_ISSUE)
+          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_ISSUE)
           assertThat(balanceArgument.remainingVisitOrders).isNull()
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(-1)
           assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
         },
       )
+    }
+
+    @Test
+    fun `balance decrement is not saved if DPS in charge of allocation`() {
+      defaultVisit.offenderBooking.visitBalance =
+        OffenderVisitBalance(
+          remainingVisitOrders = 3,
+          remainingPrivilegedVisitOrders = 0,
+          offenderBooking = OffenderBooking(
+            bookingId = OFFENDER_BOOKING_ID,
+            bookingBeginDate = LocalDateTime.now(),
+            offender = defaultOffender,
+          ),
+        )
+
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
+
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
+
+      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
+      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
+    }
+
+    @Test
+    fun `privilege balance decrement is not saved if DPS in charge of allocation`() {
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
+
+      visitService.createVisit(OFFENDER_NO, createVisitRequest)
+
+      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
+      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
     }
 
     @Test
@@ -513,33 +553,60 @@ internal class VisitServiceTest {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       verify(offenderVisitBalanceAdjustmentRepository).save(
         check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_CANCEL)
+          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_CANCEL)
           assertThat(balanceArgument.remainingVisitOrders).isEqualTo(1)
           assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
+          assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
+        },
+      )
+      verify(serviceAgencySwitchesService).checkServicePrison("VISIT_ALLOCATION", "MKI")
+    }
+
+    @Test
+    fun `balance increment is not saved if DPS in charge of allocation`() {
+      defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
+
+      whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
+
+      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
+
+      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
+      verify(serviceAgencySwitchesService).checkServicePrison("VISIT_ALLOCATION", "MKI")
+    }
+
+    @Test
+    fun `privilege balance increment is saved correctly`() {
+      whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
+
+      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
+
+      verify(offenderVisitBalanceAdjustmentRepository).save(
+        check { balanceArgument ->
+          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_CANCEL)
+          assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(1)
+          assertThat(balanceArgument.remainingVisitOrders).isNull()
           assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
         },
       )
     }
 
     @Test
-    fun `privilege balance increment is saved correctly`() {
+    fun `privilege balance increment is not saved if DPS in charge of balance`() {
       whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
+      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
-      verify(offenderVisitBalanceAdjustmentRepository).save(
-        check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode?.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_CANCEL)
-          assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(1)
-          assertThat(balanceArgument.remainingVisitOrders).isNull()
-          assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
-        },
-      )
+      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
+      verify(serviceAgencySwitchesService).checkServicePrison("VISIT_ALLOCATION", "MKI")
     }
 
     @Test

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.ServiceAgencySwitchesService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.S
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VISIT_ALLOCATION_SERVICE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
@@ -74,6 +76,7 @@ class VisitService(
   private val visitSlotRepository: AgencyVisitSlotRepository,
   private val internalLocationRepository: AgencyInternalLocationRepository,
   private val visitOrderVisitorRepository: VisitOrderVisitorRepository,
+  private val serviceAgencySwitchesService: ServiceAgencySwitchesService,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -291,22 +294,23 @@ class VisitService(
     visitDto: CreateVisitRequest,
     offenderBooking: OffenderBooking,
   ) {
-    val offenderVisitBalance = offenderBooking.visitBalance
-    if (offenderVisitBalance != null) {
+    offenderBooking.visitBalance?.let { offenderVisitBalance ->
       if (offenderVisitBalance.remainingPrivilegedVisitOrders!! > 0) {
-        val adjustReasonCode =
-          visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_ISSUE).orElseThrow()
+        if (!isDpsInChargeOfAllocation(offenderBooking)) {
+          val adjustReasonCode =
+            visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_ISSUE).orElseThrow()
 
-        offenderVisitBalanceAdjustmentRepository.save(
-          OffenderVisitBalanceAdjustment(
-            offenderBooking = offenderBooking,
-            adjustDate = visitDto.issueDate,
-            adjustReasonCode = adjustReasonCode,
-            remainingPrivilegedVisitOrders = -1,
-            previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
-            commentText = visitDto.visitOrderComment,
-          ),
-        )
+          offenderVisitBalanceAdjustmentRepository.save(
+            OffenderVisitBalanceAdjustment(
+              offenderBooking = offenderBooking,
+              adjustDate = visitDto.issueDate,
+              adjustReasonCode = adjustReasonCode,
+              remainingPrivilegedVisitOrders = -1,
+              previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
+              commentText = visitDto.visitOrderComment,
+            ),
+          )
+        }
         visit.visitOrder = VisitOrder(
           offenderBooking = offenderBooking,
           visitOrderNumber = visitOrderRepository.getVisitOrderNumber(),
@@ -324,19 +328,21 @@ class VisitService(
           }.toMutableList()
         }
       } else {
-        val adjustReasonCode =
-          visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow()
+        if (!isDpsInChargeOfAllocation(offenderBooking)) {
+          val adjustReasonCode =
+            visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow()
 
-        offenderVisitBalanceAdjustmentRepository.save(
-          OffenderVisitBalanceAdjustment(
-            offenderBooking = offenderBooking,
-            adjustDate = visitDto.issueDate,
-            adjustReasonCode = adjustReasonCode,
-            remainingVisitOrders = -1,
-            previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
-            commentText = visitDto.visitOrderComment,
-          ),
-        )
+          offenderVisitBalanceAdjustmentRepository.save(
+            OffenderVisitBalanceAdjustment(
+              offenderBooking = offenderBooking,
+              adjustDate = visitDto.issueDate,
+              adjustReasonCode = adjustReasonCode,
+              remainingVisitOrders = -1,
+              previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
+              commentText = visitDto.visitOrderComment,
+            ),
+          )
+        }
         visit.visitOrder = VisitOrder(
           offenderBooking = offenderBooking,
           visitOrderNumber = visitOrderRepository.getVisitOrderNumber(),
@@ -366,8 +372,9 @@ class VisitService(
     offenderBooking: OffenderBooking,
     today: LocalDate,
   ) {
-    val offenderVisitBalance = offenderBooking.visitBalance
-    if (offenderVisitBalance != null) {
+    offenderBooking.visitBalance?.takeUnless {
+      isDpsInChargeOfAllocation(offenderBooking)
+    }?.let { offenderVisitBalance ->
       offenderVisitBalanceAdjustmentRepository.save(
 
         if (visitOrder.visitOrderType.isPrivileged()) {
@@ -394,6 +401,8 @@ class VisitService(
       )
     }
   }
+
+  private fun isDpsInChargeOfAllocation(offenderBooking: OffenderBooking): Boolean = serviceAgencySwitchesService.checkServicePrison(VISIT_ALLOCATION_SERVICE, offenderBooking.location?.id ?: "NONE")
 
   private fun mapVisitModel(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
     val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))
