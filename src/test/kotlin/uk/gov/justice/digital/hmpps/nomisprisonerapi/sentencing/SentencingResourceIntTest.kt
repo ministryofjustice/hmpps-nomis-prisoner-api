@@ -2998,12 +2998,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if court case not found`() {
-        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/11")
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/1155")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Court appearance 11 for ${prisonerAtMoorland.nomsId} not found")
+          .jsonPath("developerMessage").isEqualTo("Court appearance 1155 for ${prisonerAtMoorland.nomsId} not found")
       }
 
       @Test
