@@ -19,11 +19,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 
 @RestController
 @Validated
-@RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/service-prisons/", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesService) {
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @GetMapping("/service-prisons/{serviceCode}")
+  @GetMapping("/{serviceCode}")
   @Operation(
     summary = "Retrieve a list of prisons switched on for the service",
     description = "Retrieves all prisons switched on for the service code, or an empty list if there are none. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -60,7 +60,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
   ): List<PrisonDetails> = service.getServicePrisons(serviceCode)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @GetMapping("/service-prisons/{serviceCode}/prison/{prisonId}")
+  @GetMapping("/{serviceCode}/prison/{prisonId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Check if a service is turned on for a prison",
@@ -109,8 +109,58 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
     }
   }
 
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/{serviceCode}/prisoner/{prisonNumber}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Check if a service is turned on for the prison relating to this prisoner",
+    description = "Check if the prisoner's current prison is turned on for a service. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not Found, the service is not turned on for the prison",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun checkServicePrisonForPrisoner(
+    @Schema(description = "The code of the service from the EXTERNAL_SERVICES table", example = "ACTIVITY") @PathVariable serviceCode: String,
+    @Schema(description = "Offender No AKA prisoner number", example = "A1234BC") @PathVariable prisonNumber: String,
+  ) {
+    if (!service.checkServicePrisonForPrisoner(serviceCode, prisonNumber)) {
+      throw NotFoundException("Service $serviceCode not turned on for prisoner $prisonNumber")
+    }
+  }
+
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
-  @PostMapping("/service-prisons/{serviceCode}/prison/{prisonId}")
+  @PostMapping("{serviceCode}/prison/{prisonId}")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Turn on a service for a prison",

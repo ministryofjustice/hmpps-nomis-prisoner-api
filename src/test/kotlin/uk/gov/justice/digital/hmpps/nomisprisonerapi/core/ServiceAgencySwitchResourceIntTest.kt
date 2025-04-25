@@ -11,6 +11,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus.NO_CONTENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ServiceAgencySwitchId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -30,6 +31,9 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
+
+  @Autowired
+  lateinit var repository: Repository
 
   @BeforeEach
   fun `set up`() {
@@ -246,6 +250,99 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
       val agencyLocation = agencyLocationRepository.findByIdOrNull("MDI") ?: throw NotFoundException("BXI not found")
       val servicePrison = serviceAgencySwitchesRepository.findByIdOrNull(ServiceAgencySwitchId(service, agencyLocation))
       assertThat(servicePrison).isNotNull
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /service-prisons/{serviceCode}/prisoner/{prisonNumber}")
+  inner class GetServicePrisonForPrisoner {
+
+    @BeforeEach
+    internal fun createPrisoners() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234TT") {
+          booking {}
+        }
+        offender(nomsId = "A1234SS") {
+          booking(agencyLocationId = "MDI")
+        }
+      }
+    }
+
+    @AfterEach
+    fun cleanUp() {
+      repository.deleteOffenders()
+    }
+
+    @Test
+    fun `should return unauthorised without an auth token`() {
+      webTestClient.get()
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden without a role`() {
+      webTestClient.get()
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden without a valid role`() {
+      webTestClient.get()
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
+        .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return not found if the service doesn't exist`() {
+      webTestClient.get()
+        .uri("/service-prisons/UNKNOWN_SERVICE/prisoner/A1234SS")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Service UNKNOWN_SERVICE not turned on for prisoner A1234SS")
+        }
+    }
+
+    @Test
+    fun `should return not found if the prisoner doesn't exist`() {
+      webTestClient.get()
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A9999BC")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("No prisoner with offender A9999BC found")
+        }
+    }
+
+    @Test
+    fun `should return not found if prisoner's prison not turned on for service`() {
+      webTestClient.get()
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Service SOME_SERVICE not turned on for prisoner A1234TT")
+        }
+    }
+
+    @Test
+    fun `should return 204 if service turned on for prisoner's prison`() {
+      webTestClient.get()
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234SS")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isEqualTo(NO_CONTENT)
     }
   }
 }
