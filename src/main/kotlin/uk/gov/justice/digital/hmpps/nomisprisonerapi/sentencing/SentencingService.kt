@@ -885,6 +885,7 @@ class SentencingService(
         booking = case.offenderBooking,
         sentenceSequence = sentenceSequence,
         termSequence = termSequence,
+        offenderNo = offenderNo,
       ).let { term ->
 
         term.years = termRequest.years
@@ -1044,14 +1045,7 @@ class SentencingService(
     termSequence: Long,
     sentenceSequence: Long,
   ): SentenceTermResponse = findOffenderBooking(id = offenderBookingId).let { offenderBooking ->
-    return offenderSentenceTermRepository.findByIdOrNull(
-      OffenderSentenceTermId(
-        offenderBooking = offenderBooking,
-        sentenceSequence = sentenceSequence,
-        termSequence = termSequence,
-      ),
-    )?.toSentenceTermResponse()
-      ?: throw NotFoundException("Sentence term for offender $offenderNo, booking ${offenderBooking.bookingId}, term sequence $termSequence and sentence sequence $sentenceSequence not found")
+    return findSentenceTerm(offenderNo = offenderNo, booking = offenderBooking, sentenceSequence = sentenceSequence, termSequence = termSequence).toSentenceTermResponse()
   }
 
   fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
@@ -1116,6 +1110,7 @@ class SentencingService(
     termSequence: Long,
     sentenceSequence: Long,
     booking: OffenderBooking,
+    offenderNo: String,
   ): OffenderSentenceTerm = offenderSentenceTermRepository.findByIdOrNull(
     OffenderSentenceTermId(
       termSequence = termSequence,
@@ -1123,7 +1118,7 @@ class SentencingService(
       offenderBooking = booking,
     ),
   )
-    ?: throw NotFoundException("Sentence term for booking ${booking.bookingId}, termSequence $termSequence and sentenceSequence $sentenceSequence not found")
+    ?: throw NotFoundException("Sentence term for offender $offenderNo, booking ${booking.bookingId}, term sequence $termSequence and sentence sequence $sentenceSequence not found")
 
   private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")

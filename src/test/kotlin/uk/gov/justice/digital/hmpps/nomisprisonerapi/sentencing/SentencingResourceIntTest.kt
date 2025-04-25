@@ -5021,7 +5021,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Sentence term for booking $latestBookingId, termSequence ${term.id.termSequence} and sentenceSequence 5555 not found")
+          .isEqualTo("Sentence term for offender ${prisonerAtMoorland.nomsId}, booking $latestBookingId, term sequence ${term.id.termSequence} and sentence sequence 5555 not found")
       }
     }
 
