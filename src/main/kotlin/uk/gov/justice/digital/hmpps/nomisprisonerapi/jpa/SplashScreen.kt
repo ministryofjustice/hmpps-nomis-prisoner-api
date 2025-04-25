@@ -62,6 +62,11 @@ data class SplashScreen(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
+
+  companion object {
+    // Note that this uses two * at the beginning, as opposed to ServiceAgencySwitch that uses one.
+    const val SPLASH_ALL_PRISONS = "**ALL**"
+  }
 }
 
 fun SplashScreen.blockedList(): List<String> = if (isBlockedAccess()) {
@@ -75,5 +80,3 @@ fun SplashScreen.blockedList(): List<String> = if (isBlockedAccess()) {
 fun SplashScreen.isBlockedAccess(): Boolean = accessBlockedType.code == "YES"
 fun SplashScreen.isConditionalAccess(): Boolean = accessBlockedType.code == "COND"
 fun SplashScreen.isNotBlockedAccess(): Boolean = accessBlockedType.code == "NO"
-
-const val ALL_PRISONS = "**ALL**"

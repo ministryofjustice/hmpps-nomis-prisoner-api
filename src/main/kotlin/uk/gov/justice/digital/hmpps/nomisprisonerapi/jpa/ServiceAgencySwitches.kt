@@ -37,4 +37,9 @@ data class ServiceAgencySwitch(
   }
 
   override fun hashCode(): Int = this.javaClass.hashCode()
+
+  companion object {
+    // Note that this uses one * at the beginning, as opposed to SplashScreen that uses two.
+    const val SERVICE_ALL_PRISONS = "*ALL*"
+  }
 }
