@@ -113,18 +113,23 @@ class SentencingService(
     }
 
   fun getCourtCasesChangedByMergePrisoners(offenderNo: String): PostPrisonerMergeCaseChanges {
-    val lastMerge = mergeTransactionRepository.findLatestByNomsId(offenderNo) ?: throw BadDataException("Prisoner $offenderNo has no merges")
+    val lastMerge = mergeTransactionRepository.findLatestByNomsId(offenderNo)
+      ?: throw BadDataException("Prisoner $offenderNo has no merges")
     val allCases = courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
     val casesDeactivatedByMerge = allCases.filter { it.wasDeactivatedByMerge(lastMerge.requestDate) }
     // if no cases were deactivated by merge then none would have been cloned
     if (casesDeactivatedByMerge.isNotEmpty()) {
       val casesCreated = allCases.filter { it.wasCreatedByMerge(lastMerge.requestDate) }
-      return PostPrisonerMergeCaseChanges(courtCasesCreated = casesCreated.map { it.toCourtCaseResponse() }, courtCasesDeactivated = casesDeactivatedByMerge.map { it.toCourtCaseResponse() })
+      return PostPrisonerMergeCaseChanges(
+        courtCasesCreated = casesCreated.map { it.toCourtCaseResponse() },
+        courtCasesDeactivated = casesDeactivatedByMerge.map { it.toCourtCaseResponse() },
+      )
     }
     return PostPrisonerMergeCaseChanges()
   }
 
   private fun CourtCase.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = caseStatus.code == CaseStatus.INACTIVE && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime
+
   private fun CourtCase.wasCreatedByMerge(mergeRequestDate: LocalDateTime) = mergeRequestDate < createDatetime && createUsername == "SYS"
 
   fun getOffenderCharge(id: Long): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
@@ -530,7 +535,11 @@ class SentencingService(
       fineAmount = request.fine,
       sentenceLevel = request.sentenceLevel,
       // will always have to be a court order (via the court event) - throw exception if not
-      courtOrder = existingCourtOrder(offenderBooking = offenderBooking, courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId)) ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}"),
+      courtOrder = existingCourtOrder(
+        offenderBooking = offenderBooking,
+        courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId),
+      )
+        ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}"),
       // this is the sentence sequence this sentence is consecutive to
       consecSequence = request.consecutiveToSentenceSeq?.let {
         findConsecutiveSentenceSequence(
@@ -619,6 +628,58 @@ class SentencingService(
   }
 
   @Audit
+  fun createSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termRequest: SentenceTermRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
+
+    val offenderBooking = case.offenderBooking
+    var termSequence = offenderSentenceTermRepository.getNextTermSequence(
+      offenderBookId = offenderBooking.bookingId,
+      sentenceSeq = sentenceSequence,
+    )
+    val sentence = findSentence(sentenceSequence = sentenceSequence, booking = offenderBooking)
+    val term = OffenderSentenceTerm(
+      id = OffenderSentenceTermId(
+        offenderBooking = offenderBooking,
+        sentenceSequence = sentenceSequence,
+        termSequence = termSequence,
+      ),
+      years = termRequest.years,
+      months = termRequest.months,
+      weeks = termRequest.weeks,
+      days = termRequest.days,
+      hours = termRequest.hours,
+      lifeSentenceFlag = termRequest.lifeSentenceFlag,
+      offenderSentence = sentence,
+      // DPS have requested that the court date from Court orders is used here, always present
+      startDate = sentence.courtOrder!!.courtDate,
+      endDate = null,
+      sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
+    )
+    offenderSentenceTermRepository.saveAndFlush(term).also {
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = offenderBooking.bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
+    }
+
+    CreateSentenceTermResponse(
+      sentenceSeq = sentenceSequence,
+      termSeq = term.id.termSequence,
+      bookingId = offenderBooking.bookingId,
+    ).also { response ->
+      telemetryClient.trackEvent(
+        "sentence-term-created",
+        mapOf(
+          "sentenceSeq" to response.sentenceSeq.toString(),
+          "termSeq" to response.termSeq.toString(),
+          "bookingId" to offenderBooking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+        ),
+        null,
+      )
+    }
+  }
+
+  @Audit
   fun deleteSentence(offenderNo: String, caseId: Long, sentenceSequence: Long) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = case.offenderBooking
@@ -651,6 +712,41 @@ class SentencingService(
   }
 
   @Audit
+  fun deleteSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termSequence: Long) {
+    findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
+      val offenderBooking = case.offenderBooking
+      offenderSentenceTermRepository.findByIdOrNull(
+        OffenderSentenceTermId(
+          offenderBooking = offenderBooking,
+          sentenceSequence = sentenceSequence,
+          termSequence = termSequence,
+        ),
+      )?.also {
+        offenderSentenceTermRepository.delete(it)
+        telemetryClient.trackEvent(
+          "sentence-term-deleted",
+          mapOf(
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "sentenceSequence" to sentenceSequence.toString(),
+            "termSequence" to termSequence.toString(),
+          ),
+          null,
+        )
+      }
+        ?: telemetryClient.trackEvent(
+          "sentence-term-delete-not-found",
+          mapOf(
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "sentenceSequence" to sentenceSequence.toString(),
+            "termSequence" to termSequence.toString(),
+          ),
+          null,
+        )
+    }
+  }
+
+  @Audit
   fun updateSentence(
     caseId: Long,
     sentenceSequence: Long,
@@ -672,7 +768,11 @@ class SentencingService(
         sentence.status = request.status
         sentence.fineAmount = request.fine
         sentence.sentenceLevel = request.sentenceLevel
-        sentence.courtOrder = existingCourtOrder(offenderBooking = offenderBooking, courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId)) ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}")
+        sentence.courtOrder = existingCourtOrder(
+          offenderBooking = offenderBooking,
+          courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId),
+        )
+          ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}")
 
         val requestTermTypes = request.sentenceTerms.map { it.sentenceTermType }
         // terms maximum of 2, no duplicate term codes and DPS provide terms in the correct order
@@ -763,7 +863,54 @@ class SentencingService(
             "sentenceSequence" to sentenceSequence.toString(),
             "caseId" to caseId.toString(),
             "terms" to requestTermTypes.toString(),
+            "offenderNo" to offenderNo,
             "charges" to request.offenderChargeIds.toString(),
+          ),
+          null,
+        )
+      }
+    }
+  }
+
+  @Audit
+  fun updateSentenceTerm(
+    caseId: Long,
+    sentenceSequence: Long,
+    termSequence: Long,
+    termRequest: SentenceTermRequest,
+    offenderNo: String,
+  ) {
+    findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
+      findSentenceTerm(
+        booking = case.offenderBooking,
+        sentenceSequence = sentenceSequence,
+        termSequence = termSequence,
+        offenderNo = offenderNo,
+      ).let { term ->
+
+        term.years = termRequest.years
+        term.months = termRequest.months
+        term.weeks = termRequest.weeks
+        term.days = termRequest.days
+        term.hours = termRequest.hours
+        term.lifeSentenceFlag = termRequest.lifeSentenceFlag
+        term.sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType)
+
+        offenderSentenceTermRepository.saveAndFlush(term).also {
+          storedProcedureRepository.imprisonmentStatusUpdate(
+            bookingId = case.offenderBooking.bookingId,
+            changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+          )
+        }
+
+        telemetryClient.trackEvent(
+          "sentence-term-updated",
+          mapOf(
+            "bookingId" to case.offenderBooking.bookingId.toString(),
+            "sentenceSequence" to sentenceSequence.toString(),
+            "caseId" to caseId.toString(),
+            "offenderNo" to offenderNo,
+            "termSequence" to termSequence.toString(),
           ),
           null,
         )
@@ -862,8 +1009,6 @@ class SentencingService(
 
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
 
-  private fun existingCourtOrderByCaseId(caseId: Long) = courtOrderRepository.findFirstByCourtCase_IdAndOrderTypeOrderByCourtDateDesc(caseId = caseId)
-
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
       .plusDays(1)
   ) {
@@ -892,6 +1037,15 @@ class SentencingService(
       ),
     )?.toSentenceResponse()
       ?: throw NotFoundException("Offender sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
+  }
+
+  fun getOffenderSentenceTerm(
+    offenderNo: String,
+    offenderBookingId: Long,
+    termSequence: Long,
+    sentenceSequence: Long,
+  ): SentenceTermResponse = findOffenderBooking(id = offenderBookingId).let { offenderBooking ->
+    return findSentenceTerm(offenderNo = offenderNo, booking = offenderBooking, sentenceSequence = sentenceSequence, termSequence = termSequence).toSentenceTermResponse()
   }
 
   fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
@@ -952,6 +1106,20 @@ class SentencingService(
   private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNull(SentenceId(sequence = sentenceSequence, offenderBooking = booking))
     ?: throw NotFoundException("Sentence for booking ${booking.bookingId} and sentence sequence $sentenceSequence not found")
 
+  private fun findSentenceTerm(
+    termSequence: Long,
+    sentenceSequence: Long,
+    booking: OffenderBooking,
+    offenderNo: String,
+  ): OffenderSentenceTerm = offenderSentenceTermRepository.findByIdOrNull(
+    OffenderSentenceTermId(
+      termSequence = termSequence,
+      sentenceSequence = sentenceSequence,
+      offenderBooking = booking,
+    ),
+  )
+    ?: throw NotFoundException("Sentence term for offender $offenderNo, booking ${booking.bookingId}, term sequence $termSequence and sentence sequence $sentenceSequence not found")
+
   private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
 
@@ -964,7 +1132,7 @@ class SentencingService(
 
   private fun lookupSentenceTermType(code: String): SentenceTermType = sentenceTermTypeRepository.findByIdOrNull(
     SentenceTermType.pk(code),
-  ) ?: throw BadDataException("Sentence Type $code not found")
+  ) ?: throw BadDataException("Sentence term type $code not found")
 
   private fun lookupSentenceCategory(code: String): SentenceCategoryType = sentenceCategoryRepository.findByIdOrNull(
     SentenceCategoryType.pk(code),
@@ -1174,7 +1342,10 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   bookingId = this.id.offenderBooking.bookingId,
   sentenceSeq = this.id.sequence,
   status = this.status,
-  calculationType = CodeDescription(code = this.calculationType.id.calculationType, description = this.calculationType.description),
+  calculationType = CodeDescription(
+    code = this.calculationType.id.calculationType,
+    description = this.calculationType.description,
+  ),
   startDate = this.startDate,
   courtOrder = this.courtOrder?.toCourtOrder(),
   consecSequence = this.consecSequence,
