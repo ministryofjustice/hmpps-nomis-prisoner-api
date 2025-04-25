@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.SplashScreenService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ALL_PRISONS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
@@ -19,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.closedStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.openStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen.Companion.SPLASH_ALL_PRISONS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import java.time.LocalDateTime
@@ -66,7 +66,7 @@ class IncidentService(
 
   fun findAllIncidentAgencies(): List<IncidentAgencyId> {
     val blockedPrisonIds = splashScreenService.getBlockedPrisons(INCIDENT_REPORTING_SCREEN_ID).map { it.prisonId }
-    return if (blockedPrisonIds.contains(ALL_PRISONS)) {
+    return if (blockedPrisonIds.contains(SPLASH_ALL_PRISONS)) {
       listOf()
     } else {
       incidentRepository.findAllIncidentAgencies()

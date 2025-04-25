@@ -41,7 +41,7 @@ dependencies {
 kotlin {
   jvmToolchain(21)
   compilerOptions {
-    freeCompilerArgs.add("-Xwhen-guards")
+    freeCompilerArgs.addAll("-Xjvm-default=all", "-Xwhen-guards")
   }
 }
 

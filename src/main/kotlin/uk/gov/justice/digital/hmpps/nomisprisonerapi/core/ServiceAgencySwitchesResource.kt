@@ -25,8 +25,10 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{serviceCode}")
   @Operation(
-    summary = "Retrieve a list of prisons switched on for the service",
-    description = "Retrieves all prisons switched on for the service code, or an empty list if there are none. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Retrieve a list of prisons switched on for the service code",
+    description = """Returns a list of prisons switched on for the service code.
+      A special prisonId of `*ALL*` is used to designate that the service is switched on for all prisons.
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -59,17 +61,19 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
     @Schema(description = "The code of the service from the EXTERNAL_SERVICES table") @PathVariable serviceCode: String,
   ): List<PrisonDetails> = service.getServicePrisons(serviceCode)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasAnyRole('ROLE_NOMIS_ACTIVITIES', 'ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{serviceCode}/prison/{prisonId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
-    summary = "Check if a service is turned on for a prison",
-    description = "Check if a prison is turned on for a service. Requires role NOMIS_ACTIVITIES",
+    summary = "Returns if the service is switched on for the specified service code / prison id.",
+    description = """Returns 204 if the service is switched on for the service code / prison id combination.
+    If the service is not switched on then 404 is returned.
+    This endpoint also takes into account the special `*ALL*` prison id - if the service code has a prison entry of
+    `*ALL*` then the service is deemed to be switched on for all prisons and will therefore return 204 irrespective of the
+    prison id that is passed in.
+    Requires role NOMIS_ACTIVITIES or ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
-      ApiResponse(
-        responseCode = "204",
-        description = "OK",
-      ),
+      ApiResponse(responseCode = "204", description = "Service is switched on for the service code and prison id."),
       ApiResponse(
         responseCode = "400",
         description = "Bad request",
@@ -93,10 +97,8 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Not Found, the service is not turned on for the prison",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
+        description = "The service code does not exist or the service is not switched on for the prison.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )
@@ -186,7 +188,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        description = "Forbidden, requires role NOMIS_ACTIVITIES",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
