@@ -673,7 +673,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Sentence Term",
-    description = "Required role NOMIS_SENTENCING Updates a Sentence Term for the offender, case and sentence",
+    description = "Required role NOMIS_SENTENCING Updates a Sentence Term for the offender",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -729,7 +729,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Sentence does not exist",
+        description = "Sentence term does not exist",
         content = [
           Content(
             mediaType = "application/json",
