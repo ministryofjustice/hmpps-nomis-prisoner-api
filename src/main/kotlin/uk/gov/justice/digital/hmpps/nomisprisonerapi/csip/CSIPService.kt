@@ -214,8 +214,8 @@ class CSIPService(
 
     currentRequest.investigation?.let { investigationRequest ->
       staffInvolved = investigationRequest.staffInvolved
-      evidenceSecured = investigationRequest.evidenceSecured
-      reasonOccurred = investigationRequest.reasonOccurred
+      evidenceSecured = investigationRequest.evidenceSecured?.truncateToUtf8Length(4000)
+      reasonOccurred = investigationRequest.reasonOccurred?.truncateToUtf8Length(4000)
       usualBehaviour = investigationRequest.usualBehaviour?.truncateToUtf8Length(4000)
       trigger = investigationRequest.trigger
       protectiveFactors = investigationRequest.protectiveFactors

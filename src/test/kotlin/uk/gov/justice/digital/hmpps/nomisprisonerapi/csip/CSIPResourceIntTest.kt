@@ -1826,7 +1826,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `Investigation usual behaviour will be truncated when over 4000 bytes`() {
+      fun `Investigation fields- usual behaviour, evidenceSecured and reasonOccurred will be truncated when over 4000 bytes`() {
         val textWithASingle4ByteCharacter = "😀"
         val textWith3999Characters = "A".repeat(3999)
         val textWith3996Characters = "A".repeat(3996)
@@ -1834,7 +1834,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
 
         val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
         val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(
-          investigation = investigationDetailRequest.copy(usualBehaviour = veryLongTextField),
+          investigation = investigationDetailRequest.copy(usualBehaviour = veryLongTextField, reasonOccurred = veryLongTextField, evidenceSecured = veryLongTextField),
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
@@ -1851,6 +1851,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(updatedCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
           assertThat(updatedCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
           assertThat(updatedCsip.usualBehaviour).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+          assertThat(updatedCsip.reasonOccurred).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
+          assertThat(updatedCsip.evidenceSecured).isEqualTo(textWithASingle4ByteCharacter + textWith3996Characters)
         }
       }
 
