@@ -662,6 +662,42 @@ class ContactPersonService(
   fun identifierTypeOf(code: String): IdentifierType = identifierRepository.findByIdOrNull(IdentifierType.pk(code)) ?: throw BadDataException("IdentifierType with code $code does not exist")
   fun restrictionTypeOf(code: String): RestrictionType = restrictionTypeRepository.findByIdOrNull(RestrictionType.pk(code)) ?: throw BadDataException("RestrictionType with code $code does not exist")
   fun contactOf(personId: Long, contactId: Long): OffenderContactPerson = (contactRepository.findByIdOrNull(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Contact with id=$contactId on Person with id=$personId does not exist")
+
+  fun getContact(contactId: Long): PersonContact {
+    val contact = contactRepository.findByIdOrNull(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")
+    return PersonContact(
+      id = contact.id,
+      contactType = contact.contactType.toCodeDescription(),
+      relationshipType = contact.relationshipType.toCodeDescription(),
+      active = contact.active,
+      approvedVisitor = contact.approvedVisitor ?: false,
+      emergencyContact = contact.emergencyContact,
+      nextOfKin = contact.nextOfKin,
+      expiryDate = contact.expiryDate,
+      comment = contact.comment,
+      audit = contact.toAudit(),
+      prisoner = contact.offenderBooking.let { booking ->
+        ContactForPrisoner(
+          bookingId = booking.bookingId,
+          bookingSequence = booking.bookingSequence.toLong(),
+          offenderNo = booking.offender.nomsId,
+          lastName = booking.offender.lastName,
+          firstName = booking.offender.firstName,
+        )
+      },
+      restrictions = contact.restrictions.map { restriction ->
+        ContactRestriction(
+          id = restriction.id,
+          type = restriction.restrictionType.toCodeDescription(),
+          comment = restriction.comment,
+          effectiveDate = restriction.effectiveDate,
+          expiryDate = restriction.expiryDate,
+          enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
+          audit = restriction.toAudit(),
+        )
+      },
+    )
+  }
 }
 
 data class PersonFilter(

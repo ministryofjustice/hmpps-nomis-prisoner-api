@@ -5360,4 +5360,104 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /contact/{contactId}")
+  @Nested
+  inner class GetContact {
+    private lateinit var existingPerson: Person
+    private lateinit var existingContact: OffenderContactPerson
+    private lateinit var existingOffender: Offender
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingPerson = person(
+          firstName = "JOHN",
+          lastName = "SMITH",
+        )
+        existingOffender = offender(nomsId = "A1234AA") {
+          booking {
+            existingContact = contact(
+              person = existingPerson,
+              contactType = "S",
+              relationshipType = "BRO",
+              emergencyContact = true,
+              nextOfKin = true,
+              active = true,
+              approvedVisitor = true,
+              comment = "Some comment text",
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/contact/${existingContact.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when contact not found`() {
+        webTestClient.get().uri("/contact/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return contact details`() {
+        val response = webTestClient.get().uri("/contact/${existingContact.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<PersonContact>()
+
+        with(response) {
+          assertThat(id).isEqualTo(existingContact.id)
+          assertThat(contactType.code).isEqualTo("S")
+          assertThat(relationshipType.code).isEqualTo("BRO")
+          assertThat(active).isTrue
+          assertThat(approvedVisitor).isTrue
+          assertThat(emergencyContact).isTrue
+          assertThat(nextOfKin).isTrue
+          assertThat(comment).isEqualTo("Some comment text")
+          assertThat(prisoner.offenderNo).isEqualTo("A1234AA")
+          assertThat(prisoner.firstName).isEqualTo(existingOffender.firstName)
+          assertThat(prisoner.lastName).isEqualTo(existingOffender.lastName)
+        }
+      }
+    }
+  }
 }

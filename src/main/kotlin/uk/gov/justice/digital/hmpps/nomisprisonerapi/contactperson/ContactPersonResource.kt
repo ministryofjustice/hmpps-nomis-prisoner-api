@@ -35,6 +35,37 @@ import java.time.LocalDate
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class ContactPersonResource(private val contactPersonService: ContactPersonService) {
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @GetMapping("/contact/{contactId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a contact by ID",
+    description = "Gets a single contact by ID",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Contact Information Returned",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = PersonContact::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Contact not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getContact(
+    @Schema(description = "Contact Id", example = "75675")
+    @PathVariable
+    contactId: Long,
+  ): PersonContact = contactPersonService.getContact(contactId)
+
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/persons/{personId}")
   @ResponseStatus(HttpStatus.OK)
