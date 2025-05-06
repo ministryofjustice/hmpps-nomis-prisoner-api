@@ -602,7 +602,7 @@ class SentencingService(
   fun createSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termRequest: SentenceTermRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
 
     val offenderBooking = case.offenderBooking
-    var termSequence = offenderSentenceTermRepository.getNextTermSequence(
+    val termSequence = offenderSentenceTermRepository.getNextTermSequence(
       offenderBookId = offenderBooking.bookingId,
       sentenceSeq = sentenceSequence,
     )
@@ -1313,4 +1313,11 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   sentenceTerms = this.offenderSentenceTerms.map { it.toSentenceTermResponse() },
   offenderCharges = this.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
   prisonId = this.id.offenderBooking.location?.id ?: "OUT",
+  recallCustodyDate = this.id.offenderBooking.fixedTermRecall?.let {
+    RecallCustodyDate(
+      returnToCustodyDate = it.returnToCustodyDate,
+      recallLength = it.recallLength,
+      comments = it.comments,
+    )
+  },
 )

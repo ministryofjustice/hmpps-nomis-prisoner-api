@@ -1835,6 +1835,15 @@ data class SentenceResponse(
   val sentenceTerms: List<SentenceTermResponse>,
   val offenderCharges: List<OffenderChargeResponse>,
   val prisonId: String,
+  val recallCustodyDate: RecallCustodyDate?,
+)
+
+@Schema(description = "Recall custody return date data")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class RecallCustodyDate(
+  val returnToCustodyDate: LocalDate,
+  val recallLength: Long,
+  val comments: String?,
 )
 
 @Schema(description = "Sentence Term")

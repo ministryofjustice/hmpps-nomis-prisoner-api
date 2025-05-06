@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBookingImage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
@@ -198,6 +199,15 @@ interface BookingDsl {
     lidsCombinedCaseId: Int? = 3,
     dsl: CourtCaseDsl.() -> Unit = { },
   ): CourtCase
+
+  @OffenderFixedTermRecallDslMarker
+  fun fixedTermRecall(
+    returnToCustodyDate: LocalDate = LocalDate.now(),
+    comments: String? = null,
+    recallLength: Long = 28,
+    staff: Staff,
+    dsl: OffenderFixedTermRecallDsl.() -> Unit = { },
+  ): OffenderFixedTermRecall
 
   @OffenderAlertDslMarker
   fun alert(
@@ -374,6 +384,7 @@ class BookingBuilderFactory(
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
+  private val offenderFixedTermRecallBuilderFactory: OffenderFixedTermRecallBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
@@ -398,6 +409,7 @@ class BookingBuilderFactory(
     adjudicationPartyBuilderFactory,
     offenderSentenceBuilderFactory,
     courtCaseBuilderFactory,
+    offenderFixedTermRecallBuilderFactory,
     offenderKeyDateAdjustmentBuilderFactory,
     offenderExternalMovementBuilderFactory,
     offenderAlertBuilderFactory,
@@ -424,6 +436,7 @@ class BookingBuilder(
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
+  private val offenderFixedTermRecallBuilderFactory: OffenderFixedTermRecallBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
   private val offenderAlertBuilderFactory: OffenderAlertBuilderFactory,
@@ -700,6 +713,26 @@ class BookingBuilder(
         lidsCaseNumber = lidsCaseNumber,
         lidsCaseId = lidsCaseId,
         lidsCombinedCaseId = lidsCombinedCaseId,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
+
+  override fun fixedTermRecall(
+    returnToCustodyDate: LocalDate,
+    comments: String?,
+    recallLength: Long,
+    staff: Staff,
+    dsl: OffenderFixedTermRecallDsl.() -> Unit,
+  ): OffenderFixedTermRecall = offenderFixedTermRecallBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        booking = offenderBooking,
+        returnToCustodyDate = returnToCustodyDate,
+        comments = comments,
+        staff = staff,
+        recallLength = recallLength,
       )
         .also {
           builder.apply(dsl)
