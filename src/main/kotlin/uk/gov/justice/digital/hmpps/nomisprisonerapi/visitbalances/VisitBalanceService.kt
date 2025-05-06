@@ -14,10 +14,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_ISSUE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.VO_ISSUE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances.VisitBalanceService.Companion.OMS_OWNER
 
 @Service
 @Transactional
@@ -26,9 +30,11 @@ class VisitBalanceService(
   val offenderBookingRepository: OffenderBookingRepository,
   val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
   val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>,
+  val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+    const val OMS_OWNER = "OMS_OWNER"
   }
   fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
     .map { VisitBalanceIdResponse(it.offenderBookingId) }
@@ -91,8 +97,12 @@ class VisitBalanceService(
   fun createVisitBalanceAdjustment(prisonNumber: String, request: CreateVisitBalanceAdjustmentRequest): CreateVisitBalanceAdjustmentResponse {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
       ?: throw NotFoundException("Prisoner $prisonNumber not found with a booking")
-    val adjustmentReason = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.pk(request.adjustmentReasonCode))
-      .orElseThrow { BadDataException("Visit Adjustment Reason with code ${request.adjustmentReasonCode} does not exist") }
+    val adjustmentReasonPk = if (request.visitOrderChange != null) VO_ISSUE else PVO_ISSUE
+    val adjustmentReason = visitOrderAdjustmentReasonRepository.findById(adjustmentReasonPk)
+      .orElseThrow { RuntimeException("Visit Adjustment Reason with code $adjustmentReasonPk does not exist") }
+    val staffUserAccount = (request.authorisedUsername ?: OMS_OWNER).let {
+      staffUserAccountRepository.findByUsername(it) ?: throw BadDataException("Username $it not found")
+    }
 
     val visitBalanceAdjustment = OffenderVisitBalanceAdjustment(
       offenderBooking = offenderBooking,
@@ -103,10 +113,8 @@ class VisitBalanceService(
       remainingPrivilegedVisitOrders = request.privilegedVisitOrderChange,
       previousRemainingPrivilegedVisitOrders = request.previousPrivilegedVisitOrderCount,
       commentText = request.comment,
-      authorisedStaffId = request.authorisedStaffId,
-      endorsedStaffId = request.endorsedStaffId,
-      expiryBalance = request.expiryBalance,
-      expiryDate = request.expiryDate,
+      authorisedStaffId = staffUserAccount.staff.id,
+      endorsedStaffId = staffUserAccount.staff.id,
     )
 
     offenderBooking.visitBalanceAdjustments.add(visitBalanceAdjustment)
@@ -114,5 +122,5 @@ class VisitBalanceService(
   }
 }
 
-fun OffenderVisitBalanceAdjustment.isCreatedByBatchVOProcess() = createUsername == "OMS_OWNER"
+fun OffenderVisitBalanceAdjustment.isCreatedByBatchVOProcess() = createUsername == OMS_OWNER
 fun OffenderVisitBalanceAdjustment.isIEPAllocation() = adjustReasonCode.code == IEP_ENTITLEMENT

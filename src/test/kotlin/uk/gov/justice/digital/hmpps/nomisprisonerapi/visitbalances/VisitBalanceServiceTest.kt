@@ -1,47 +1,51 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.Mock
 import org.mockito.Mockito.mock
-import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.description
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_ISSUE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.VO_ISSUE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances.CreateVisitBalanceAdjustmentRequest
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
 
-@ExtendWith(MockitoExtension::class)
 class VisitBalanceServiceTest {
-  private lateinit var visitBalanceService: VisitBalanceService
-
-  @Mock
-  lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  @BeforeEach
-  fun setUp() {
-    visitBalanceService = VisitBalanceService(
-      offenderBookingRepository = offenderBookingRepository,
-      visitBalanceRepository = mock(),
-      offenderVisitBalanceAdjustmentRepository = mock(),
-      visitOrderAdjustmentReasonRepository = mock(),
-    )
-  }
+  private val offenderBookingRepository: OffenderBookingRepository = mock()
+  private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason> = mock()
+  private val staffUserAccountRepository: StaffUserAccountRepository = mock()
+  private val visitBalanceService = VisitBalanceService(
+    offenderBookingRepository = offenderBookingRepository,
+    visitBalanceRepository = mock(),
+    offenderVisitBalanceAdjustmentRepository = mock(),
+    visitOrderAdjustmentReasonRepository = visitOrderAdjustmentReasonRepository,
+    staffUserAccountRepository = staffUserAccountRepository,
+  )
 
   @Nested
   inner class GetVisitBalanceDetail {
@@ -366,6 +370,164 @@ class VisitBalanceServiceTest {
 
         assertThat(visitBalance.remainingVisitOrders).isEqualTo(10)
         assertThat(visitBalance.remainingPrivilegedVisitOrders).isEqualTo(5)
+      }
+    }
+  }
+
+  @Nested
+  inner class CreateVisitBalanceAdjustment {
+    @Nested
+    @DisplayName("With no booking")
+    inner class WithNoAssociatedBooking {
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(null)
+      }
+
+      @Test
+      fun `it will throw a not found exception`() {
+        assertThrows(NotFoundException::class.java) {
+          visitBalanceService.createVisitBalanceAdjustment("A1234KT", CreateVisitBalanceAdjustmentRequest(adjustmentDate = LocalDate.now()))
+        }
+      }
+    }
+
+    @Nested
+    @DisplayName("With missing adjustment reason")
+    inner class WithMissingAdjustmentReason {
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking())
+      }
+
+      @Test
+      fun `it will throw a runtime exception if no VO_ISSUE`() {
+        assertThatThrownBy {
+          visitBalanceService.createVisitBalanceAdjustment("A1234KT", CreateVisitBalanceAdjustmentRequest(adjustmentDate = LocalDate.now(), visitOrderChange = 1))
+        }.isInstanceOf(RuntimeException::class.java).hasMessageStartingWith("Visit Adjustment Reason with code").hasMessageContaining("code=VO_ISSUE")
+      }
+
+      @Test
+      fun `it will throw a runtime exception if no PVO_ISSUE`() {
+        assertThatThrownBy {
+          visitBalanceService.createVisitBalanceAdjustment("A1234KT", CreateVisitBalanceAdjustmentRequest(adjustmentDate = LocalDate.now()))
+        }.isInstanceOf(RuntimeException::class.java).hasMessageStartingWith("Visit Adjustment Reason with code").hasMessageContaining("code=PVO_ISSUE")
+      }
+    }
+
+    @Nested
+    @DisplayName("With missing user")
+    inner class MissingAuthorisedUser {
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking())
+
+        whenever(visitOrderAdjustmentReasonRepository.findById(any())).thenReturn(
+          Optional.of(
+            VisitOrderAdjustmentReason(
+              code = "CODE",
+              description = "DESC",
+            ),
+          ),
+        )
+      }
+
+      @Test
+      fun `it will throw a bad data exception when user supplied`() {
+        assertThatThrownBy {
+          visitBalanceService.createVisitBalanceAdjustment("A1234KT", CreateVisitBalanceAdjustmentRequest(adjustmentDate = LocalDate.now(), authorisedUsername = "BILLY"))
+        }.isInstanceOf(BadDataException::class.java).hasMessage("Username BILLY not found")
+      }
+    }
+
+    @Nested
+    @DisplayName("With create balance adjustment on booking")
+    inner class WithVisitBalance {
+      private lateinit var booking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        booking = booking().apply {
+          visitBalance = OffenderVisitBalance(
+            remainingVisitOrders = 10,
+            remainingPrivilegedVisitOrders = 5,
+            offenderBooking = this,
+          )
+        }
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1236KT")).thenReturn(booking)
+
+        whenever(staffUserAccountRepository.findByUsername(any())).thenReturn(
+          StaffUserAccount(
+            username = "JMORROW_GEN",
+            Staff(12345L, "First1", "Last1"),
+            "type",
+            "source",
+          ),
+        )
+        whenever(visitOrderAdjustmentReasonRepository.findById(any())).thenReturn(
+          Optional.of(
+            VisitOrderAdjustmentReason(
+              code = "CODE",
+              description = "DESC",
+            ),
+          ),
+        )
+      }
+
+      @Test
+      fun `it will create a balance adjustment for specified staff user`() {
+        visitBalanceService.createVisitBalanceAdjustment(
+          "A1236KT",
+          CreateVisitBalanceAdjustmentRequest(
+            visitOrderChange = 1,
+            privilegedVisitOrderChange = 2,
+            adjustmentDate = LocalDate.now(),
+            authorisedUsername = "JMORROW_GEN",
+          ),
+        )
+        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        verify(staffUserAccountRepository).findByUsername("JMORROW_GEN")
+      }
+
+      @Test
+      fun `it will create a balance adjustment for system user`() {
+        visitBalanceService.createVisitBalanceAdjustment(
+          "A1236KT",
+          CreateVisitBalanceAdjustmentRequest(
+            visitOrderChange = 1,
+            privilegedVisitOrderChange = 2,
+            adjustmentDate = LocalDate.now(),
+          ),
+        )
+        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        verify(staffUserAccountRepository).findByUsername("OMS_OWNER")
+      }
+
+      @Test
+      fun `it will create a VO_ISSUE balance adjustment when visit order change supplied`() {
+        visitBalanceService.createVisitBalanceAdjustment(
+          "A1236KT",
+          CreateVisitBalanceAdjustmentRequest(
+            visitOrderChange = 1,
+            privilegedVisitOrderChange = 2,
+            adjustmentDate = LocalDate.now(),
+          ),
+        )
+        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        verify(visitOrderAdjustmentReasonRepository).findById(VO_ISSUE)
+      }
+
+      @Test
+      fun `it will create a PVO_ISSUE balance adjustment when visit order change not supplied`() {
+        visitBalanceService.createVisitBalanceAdjustment(
+          "A1236KT",
+          CreateVisitBalanceAdjustmentRequest(
+            privilegedVisitOrderChange = 2,
+            adjustmentDate = LocalDate.now(),
+          ),
+        )
+        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        verify(visitOrderAdjustmentReasonRepository).findById(PVO_ISSUE)
       }
     }
   }

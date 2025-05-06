@@ -369,20 +369,12 @@ data class CreateVisitBalanceAdjustmentRequest(
   val privilegedVisitOrderChange: Int? = null,
   @Schema(description = "Previous number of privileged visit orders before the adjustment")
   val previousPrivilegedVisitOrderCount: Int? = null,
-  @Schema(description = "The Adjustment reason code")
-  val adjustmentReasonCode: String,
   @Schema(description = "Date the adjust was made")
   val adjustmentDate: LocalDate,
   @Schema(description = "Comment text")
   val comment: String? = null,
-  @Schema(description = "Expiry balance")
-  val expiryBalance: Int? = null,
-  @Schema(description = "Expiry date")
-  val expiryDate: LocalDate? = null,
-  @Schema(description = "Which staff member endorsed the adjustment aka Entered by")
-  val endorsedStaffId: Long? = null,
-  @Schema(description = "Which staff member authorised the adjustment")
-  val authorisedStaffId: Long? = null,
+  @Schema(description = "Which user authorised the adjustment. Will be null for a system initiated change")
+  val authorisedUsername: String? = null,
 )
 
 @Schema(description = "A response after a visit balance adjustment is created in NOMIS")

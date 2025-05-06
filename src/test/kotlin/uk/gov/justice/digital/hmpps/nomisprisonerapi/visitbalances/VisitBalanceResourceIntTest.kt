@@ -40,7 +40,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     private lateinit var prisoner: Offender
     private val validAdjustment = CreateVisitBalanceAdjustmentRequest(
       visitOrderChange = 3,
-      adjustmentReasonCode = "GOV",
       adjustmentDate = LocalDate.parse("2025-03-03"),
     )
 
@@ -118,7 +117,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       private val validVisitBalanceAdjustment = CreateVisitBalanceAdjustmentRequest(
         visitOrderChange = 3,
-        adjustmentReasonCode = "GOV",
         adjustmentDate = LocalDate.parse("2025-03-03"),
       )
 
@@ -133,7 +131,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `validation fails when visit-balance-adjustment code is not present`() {
+      fun `validation fails when visit-balance-adjustment username is not valid`() {
         webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -142,25 +140,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             """
               {
                 "visitOrderChange" : 3,
-                "adjustmentDate": "2025-03-03"
-              }
-            """.trimIndent(),
-          )
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `validation fails when visit-balance-adjustment code is not valid`() {
-        webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(
-            //language=JSON
-            """
-              {
-                "visitOrderChange" : 3,
-                "adjustmentReasonCode": "INVALID",
+                "authorisedUsername": "INVALID",
                 "adjustmentDate": "2025-03-03"
               }
             
@@ -178,13 +158,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
         previousVisitOrderCount = 7,
         privilegedVisitOrderChange = 2,
         previousPrivilegedVisitOrderCount = 1,
-        adjustmentReasonCode = "GOV",
         adjustmentDate = LocalDate.parse("2025-03-03"),
         comment = "Good behaviour",
-        expiryBalance = 12,
-        expiryDate = LocalDate.parse("2025-03-23"),
-        endorsedStaffId = 123,
-        authorisedStaffId = 456,
       )
 
       @Test
@@ -225,13 +200,13 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           assertThat(newAdjustment.previousRemainingVisitOrders).isEqualTo(7)
           assertThat(newAdjustment.remainingPrivilegedVisitOrders).isEqualTo(2)
           assertThat(newAdjustment.previousRemainingPrivilegedVisitOrders).isEqualTo(1)
-          assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("GOV")
-          assertThat(newAdjustment.authorisedStaffId).isEqualTo(456)
-          assertThat(newAdjustment.endorsedStaffId).isEqualTo(123)
+          assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("VO_ISSUE")
+          assertThat(newAdjustment.authorisedStaffId).isEqualTo(1)
+          assertThat(newAdjustment.endorsedStaffId).isEqualTo(1)
           assertThat(newAdjustment.adjustDate).isEqualTo(LocalDate.parse("2025-03-03"))
           assertThat(newAdjustment.commentText).isEqualTo("Good behaviour")
-          assertThat(newAdjustment.expiryBalance).isEqualTo(12)
-          assertThat(newAdjustment.expiryDate).isEqualTo(LocalDate.parse("2025-03-23"))
+          assertThat(newAdjustment.expiryBalance).isNull()
+          assertThat(newAdjustment.expiryDate).isNull()
         }
       }
 
@@ -242,7 +217,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             CreateVisitBalanceAdjustmentRequest(
-              adjustmentReasonCode = "GOV",
               adjustmentDate = LocalDate.parse("2025-03-03"),
             ),
           )
@@ -258,9 +232,9 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           assertThat(newAdjustment.previousRemainingVisitOrders).isNull()
           assertThat(newAdjustment.remainingPrivilegedVisitOrders).isNull()
           assertThat(newAdjustment.previousRemainingPrivilegedVisitOrders).isNull()
-          assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("GOV")
-          assertThat(newAdjustment.authorisedStaffId).isNull()
-          assertThat(newAdjustment.endorsedStaffId).isNull()
+          assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("PVO_ISSUE")
+          assertThat(newAdjustment.authorisedStaffId).isEqualTo(1)
+          assertThat(newAdjustment.endorsedStaffId).isEqualTo(1)
           assertThat(newAdjustment.adjustDate).isEqualTo(LocalDate.parse("2025-03-03"))
           assertThat(newAdjustment.commentText).isNull()
           assertThat(newAdjustment.expiryBalance).isNull()
