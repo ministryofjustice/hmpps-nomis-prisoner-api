@@ -1155,6 +1155,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   inner class GetOffenderSentence {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
+    private lateinit var recallSentence: OffenderSentence
     private lateinit var courtCase: CourtCase
     private lateinit var appearance: CourtEvent
     private lateinit var courtOrder: CourtOrder
@@ -1184,7 +1185,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   term {}
                   term(days = 35)
                 }
+                recallSentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, calculationType = "FTR_ORA", category = "2003") {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  term {}
+                }
               }
+              fixedTermRecall(returnToCustodyDate = LocalDate.parse("2024-01-01"), staff = staff, comments = "Fixed term recall", recallLength = 14)
             }
           }
       }
@@ -1343,6 +1349,23 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
+      }
+
+      @Test
+      fun `will return the fixed term recall data offender sentence`() {
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${recallSentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(recallSentence.id.sequence)
+          .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
+          .jsonPath("calculationType.description").isEqualTo("ORA 28 Day Fixed Term Recall")
+          .jsonPath("recallCustodyDate.returnToCustodyDate").isEqualTo("2024-01-01")
+          .jsonPath("recallCustodyDate.recallLength").isEqualTo(14)
+          .jsonPath("recallCustodyDate.comments").isEqualTo("Fixed term recall")
       }
     }
 

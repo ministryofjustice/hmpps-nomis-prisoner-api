@@ -104,6 +104,10 @@ data class OffenderBooking(
   @PrimaryKeyJoinColumn
   var visitBalance: OffenderVisitBalance? = null,
 
+  @OneToOne(mappedBy = "offenderBooking", cascade = [CascadeType.ALL])
+  @PrimaryKeyJoinColumn
+  var fixedTermRecall: OffenderFixedTermRecall? = null,
+
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val visitBalanceAdjustments: MutableList<OffenderVisitBalanceAdjustment> = mutableListOf(),
 
@@ -156,7 +160,7 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val identifyingMarks: MutableList<OffenderIdentifyingMark> = mutableListOf(),
 ) {
-  fun getNextSequence(): Long = incentives.map { it.id.sequence }.maxOrNull()?.let { it + 1 } ?: 1
+  fun getNextSequence(): Long = incentives.maxOfOrNull { it.id.sequence }?.let { it + 1 } ?: 1
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
