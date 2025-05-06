@@ -352,12 +352,12 @@ class VisitBalanceResource(
 @Schema(description = "Visit Balance update request")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateVisitBalanceRequest(
-  @Schema(description = "Total number of unallocated (remaining) visit orders", required = true)
+  @Schema(description = "Total number of unallocated (remaining) visit orders", required = false)
   @field:Min(0)
-  val remainingVisitOrders: Int = -1,
-  @Schema(description = "Total number of unallocated (remaining) privileged visit orders", required = true)
+  val remainingVisitOrders: Int?,
+  @Schema(description = "Total number of unallocated (remaining) privileged visit orders", required = false)
   @field:Min(0)
-  val remainingPrivilegedVisitOrders: Int = -1,
+  val remainingPrivilegedVisitOrders: Int?,
 )
 
 data class CreateVisitBalanceAdjustmentRequest(
