@@ -1348,7 +1348,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
-// repository.delete(sentence)
       repository.delete(prisonerAtMoorland)
       repository.delete(staff)
     }
@@ -3975,16 +3974,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("fineAmount").isEqualTo("8.5")
           .jsonPath("courtOrder.id").isEqualTo(courtCase.courtEvents[0].courtOrders[0].id)
           .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("sentenceTerms.size()").isEqualTo(1)
-          .jsonPath("sentenceTerms[0].startDate").isEqualTo("2023-01-10")
-          .jsonPath("sentenceTerms[0].endDate").doesNotExist()
-          .jsonPath("sentenceTerms[0].years").isEqualTo(7)
-          .jsonPath("sentenceTerms[0].months").isEqualTo(2)
-          .jsonPath("sentenceTerms[0].weeks").isEqualTo(3)
-          .jsonPath("sentenceTerms[0].days").isEqualTo(4)
-          .jsonPath("sentenceTerms[0].hours").isEqualTo(5)
-          .jsonPath("sentenceTerms[0].sentenceTermType.description").isEqualTo("Imprisonment")
-          .jsonPath("sentenceTerms[0].lifeSentenceFlag").isEqualTo(true)
+          .jsonPath("sentenceTerms.size()").isEqualTo(0)
           .jsonPath("offenderCharges.size()").isEqualTo(2)
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
@@ -4117,16 +4107,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               BodyInserters.fromValue(
                 createSentence(
                   consecSentenceSeq = sentenceSeq1,
-                  sentenceTerms = mutableListOf(
-                    createSentenceTerm(
-                      days = 20,
-                      sentenceTermType = "IMP",
-                    ),
-                    createSentenceTerm(
-                      days = 10,
-                      sentenceTermType = "LIC",
-                    ),
-                  ),
                   eventId = courtAppearance.id,
                 ),
               ),
@@ -4344,11 +4324,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentenceLevel = "AGG",
                 fine = BigDecimal.valueOf(9.7),
                 offenderChargeIds = mutableListOf(offenderCharge2.id),
-                sentenceTerms = mutableListOf(
-                  createSentenceTerm(
-                    days = 20,
-                  ),
-                ),
               ),
             ),
           )
@@ -4378,131 +4353,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("fineAmount").isEqualTo("9.7")
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("offenderCharges.size()").isEqualTo(1)
+          // update doesn't affect terms, there was 1 existing
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
-          .jsonPath("sentenceTerms[0].days").isEqualTo(20)
-// not updated as taken from the court order
-          .jsonPath("sentenceTerms[0].startDate").isEqualTo(courtOrder2.courtDate.toString())
-      }
-
-      @Test
-      fun `can add a second sentence term`() {
-        webTestClient.put()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                calcType = "FTR_ORA",
-                category = "1991",
-                startDate = LocalDate.parse(aLaterDateString),
-                endDate = null,
-                eventId = courtEvent2.id,
-                sentenceLevel = "AGG",
-                fine = BigDecimal.valueOf(9.7),
-                offenderChargeIds = mutableListOf(offenderCharge.id, offenderCharge2.id),
-                sentenceTerms = mutableListOf(
-                  createSentenceTerm(
-                    days = 20,
-                    sentenceTermType = "IMP",
-                  ),
-                  createSentenceTerm(
-                    days = 20,
-                    sentenceTermType = "LIC",
-                  ),
-                ),
-              ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isOk
-
-        verify(spRepository).imprisonmentStatusUpdate(
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-        )
-
-        webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("bookingId").isEqualTo(latestBookingId)
-          .jsonPath("caseId").isEqualTo(newCourtCase.id)
-          .jsonPath("sentenceSeq").isEqualTo(sentenceTwo.id.sequence)
-          .jsonPath("status").isEqualTo("A")
-          .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
-          .jsonPath("sentenceLevel").isEqualTo("AGG")
-          .jsonPath("category.code").isEqualTo("1991")
-          .jsonPath("startDate").isEqualTo(aLaterDateString)
-          .jsonPath("endDate").doesNotExist()
-          .jsonPath("fineAmount").isEqualTo("9.7")
-          .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("offenderCharges.size()").isEqualTo(2)
-          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
-          .jsonPath("offenderCharges[1].id").isEqualTo(offenderCharge2.id)
-          .jsonPath("sentenceTerms.size()").isEqualTo(2)
-          .jsonPath("sentenceTerms[0].sentenceTermType.code").isEqualTo("IMP")
-          .jsonPath("sentenceTerms[0].startDate").isEqualTo(courtOrder2.courtDate.toString())
-          .jsonPath("sentenceTerms[1].sentenceTermType.code").isEqualTo("LIC")
-      }
-
-      @Test
-      fun `can remove a sentence term by providing list with only 1 term`() {
-        webTestClient.put()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                calcType = "FTR_ORA",
-                category = "1991",
-                eventId = courtEvent.id,
-                startDate = LocalDate.parse(aLaterDateString),
-                endDate = null,
-                sentenceLevel = "AGG",
-                fine = BigDecimal.valueOf(9.7),
-                offenderChargeIds = mutableListOf(offenderCharge2.id),
-                sentenceTerms = mutableListOf(
-                  createSentenceTerm(
-                    days = 20,
-                    sentenceTermType = "IMP",
-                  ),
-                ),
-              ),
-            ),
-          )
-          .exchange()
-          .expectStatus().isOk
-
-        verify(spRepository).imprisonmentStatusUpdate(
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-        )
-
-        webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("bookingId").isEqualTo(latestBookingId)
-          .jsonPath("caseId").isEqualTo(courtCase.id)
-          .jsonPath("sentenceSeq").isEqualTo(sentence.id.sequence)
-          .jsonPath("status").isEqualTo("A")
-          .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
-          .jsonPath("sentenceLevel").isEqualTo("AGG")
-          .jsonPath("category.code").isEqualTo("1991")
-          .jsonPath("startDate").isEqualTo(aLaterDateString)
-          .jsonPath("endDate").doesNotExist()
-          .jsonPath("fineAmount").isEqualTo("9.7")
-          .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("offenderCharges.size()").isEqualTo(1)
-          .jsonPath("offenderCharges[0].offence.offenceCode").isEqualTo("RR84700")
-          .jsonPath("sentenceTerms.size()").isEqualTo(1)
-          .jsonPath("sentenceTerms[0].sentenceTermType.code").isEqualTo("IMP")
       }
 
       @Test
@@ -5408,9 +5260,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     sentenceLevel: String = "IND",
     fine: BigDecimal? = BigDecimal.valueOf(8.5),
     offenderChargeIds: MutableList<Long> = mutableListOf(),
-    sentenceTerms: MutableList<SentenceTermRequest> = mutableListOf(
-      createSentenceTerm(),
-    ),
     consecSentenceSeq: Long? = null,
     eventId: Long,
   ) = CreateSentenceRequest(
@@ -5421,7 +5270,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     sentenceCategory = category,
     sentenceLevel = sentenceLevel,
     fine = fine,
-    sentenceTerms = sentenceTerms,
     offenderChargeIds = offenderChargeIds,
     consecutiveToSentenceSeq = consecSentenceSeq,
     eventId = eventId,
