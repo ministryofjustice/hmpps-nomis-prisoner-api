@@ -5,4 +5,4 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 
 @Repository
-interface OffenderFixedTermRecallRepository : JpaRepository<OffenderFixedTermRecall, Long> 
+interface OffenderFixedTermRecallRepository : JpaRepository<OffenderFixedTermRecall, Long>
