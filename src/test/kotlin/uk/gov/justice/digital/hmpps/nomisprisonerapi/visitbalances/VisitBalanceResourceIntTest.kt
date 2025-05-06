@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -37,6 +38,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class CreateVisitBalanceAdjustment {
     private var activeBookingId = 0L
+    private lateinit var omsOwner: Staff
+    private lateinit var staffUser: Staff
     private lateinit var prisoner: Offender
     private val validAdjustment = CreateVisitBalanceAdjustmentRequest(
       visitOrderChange = 3,
@@ -46,6 +49,13 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        omsOwner = staff(firstName = "OMS", lastName = "OWNER") {
+          account(username = "OMS_OWNER")
+        }
+        staffUser = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+
         prisoner = offender(nomsId = "A1234AB") {
           activeBookingId = booking {
             visitBalanceAdjustment(
@@ -78,6 +88,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.delete(prisoner)
+      repository.delete(omsOwner)
+      repository.delete(staffUser)
     }
 
     @Nested
@@ -201,8 +213,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           assertThat(newAdjustment.remainingPrivilegedVisitOrders).isEqualTo(2)
           assertThat(newAdjustment.previousRemainingPrivilegedVisitOrders).isEqualTo(1)
           assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("VO_ISSUE")
-          assertThat(newAdjustment.authorisedStaffId).isEqualTo(1)
-          assertThat(newAdjustment.endorsedStaffId).isEqualTo(1)
+          assertThat(newAdjustment.authorisedStaffId).isEqualTo(omsOwner.id)
+          assertThat(newAdjustment.endorsedStaffId).isEqualTo(omsOwner.id)
           assertThat(newAdjustment.adjustDate).isEqualTo(LocalDate.parse("2025-03-03"))
           assertThat(newAdjustment.commentText).isEqualTo("Good behaviour")
           assertThat(newAdjustment.expiryBalance).isNull()
@@ -218,6 +230,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           .bodyValue(
             CreateVisitBalanceAdjustmentRequest(
               adjustmentDate = LocalDate.parse("2025-03-03"),
+              authorisedUsername = "JANESTAFF",
             ),
           )
           .exchange()
@@ -233,8 +246,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           assertThat(newAdjustment.remainingPrivilegedVisitOrders).isNull()
           assertThat(newAdjustment.previousRemainingPrivilegedVisitOrders).isNull()
           assertThat(newAdjustment.adjustReasonCode.code).isEqualTo("PVO_ISSUE")
-          assertThat(newAdjustment.authorisedStaffId).isEqualTo(1)
-          assertThat(newAdjustment.endorsedStaffId).isEqualTo(1)
+          assertThat(newAdjustment.authorisedStaffId).isEqualTo(staffUser.id)
+          assertThat(newAdjustment.endorsedStaffId).isEqualTo(staffUser.id)
           assertThat(newAdjustment.adjustDate).isEqualTo(LocalDate.parse("2025-03-03"))
           assertThat(newAdjustment.commentText).isNull()
           assertThat(newAdjustment.expiryBalance).isNull()
