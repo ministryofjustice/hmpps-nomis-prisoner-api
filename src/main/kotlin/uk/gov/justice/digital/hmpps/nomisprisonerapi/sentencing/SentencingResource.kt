@@ -1894,12 +1894,10 @@ data class CourtCaseIdResponse(
   val caseId: Long,
 )
 
-// TODO term will come out of here as it is now mapped separately
 @Schema(description = "Create sentence response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateSentenceResponse(
   val sentenceSeq: Long,
-  val termSeq: Long,
   val bookingId: Long,
 )
 
@@ -2002,8 +2000,6 @@ data class CreateSentenceRequest(
   // 'IND' or 'AGG'
   val sentenceLevel: String,
   val fine: BigDecimal? = null,
-  // can receive multiple terms from DPS with a maximum of 1 custodial per sentence
-  val sentenceTerms: List<SentenceTermRequest>,
   val offenderChargeIds: List<Long>,
   val consecutiveToSentenceSeq: Long? = null,
   val eventId: Long,

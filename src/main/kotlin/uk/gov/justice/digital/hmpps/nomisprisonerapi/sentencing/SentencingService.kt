@@ -550,33 +550,6 @@ class SentencingService(
       lineSequence = offenderSentenceRepository.getNextLineSequence(offenderBooking).toInt(),
     )
 
-    var termSequence = offenderSentenceTermRepository.getNextTermSequence(
-      offenderBookId = offenderBooking.bookingId,
-      sentenceSeq = sentence.id.sequence,
-    )
-    request.sentenceTerms.map { termRequest ->
-      sentence.offenderSentenceTerms.add(
-        OffenderSentenceTerm(
-          id = OffenderSentenceTermId(
-            offenderBooking = offenderBooking,
-            sentenceSequence = sentence.id.sequence,
-            termSequence = termSequence++,
-          ),
-          years = termRequest.years,
-          months = termRequest.months,
-          weeks = termRequest.weeks,
-          days = termRequest.days,
-          hours = termRequest.hours,
-          lifeSentenceFlag = termRequest.lifeSentenceFlag,
-          offenderSentence = sentence,
-          // DPS have requested that the court date from Court orders is used here, always present
-          startDate = sentence.courtOrder!!.courtDate,
-          endDate = null,
-          sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
-        ),
-      )
-    }
-
     sentence.offenderSentenceCharges.addAll(
       request.offenderChargeIds.map { chargeId ->
         OffenderSentenceCharge(
@@ -600,14 +573,12 @@ class SentencingService(
 
     CreateSentenceResponse(
       sentenceSeq = sentence.id.sequence,
-      termSeq = sentence.offenderSentenceTerms[0].id.termSequence,
       bookingId = offenderBooking.bookingId,
     ).also { response ->
       telemetryClient.trackEvent(
         "sentence-created",
         mapOf(
           "sentenceSeq" to response.sentenceSeq.toString(),
-          "termSeq" to response.termSeq.toString(),
           "bookingId" to offenderBooking.bookingId.toString(),
           "offenderNo" to offenderNo,
         ),
@@ -774,61 +745,11 @@ class SentencingService(
         )
           ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}")
 
-        val requestTermTypes = request.sentenceTerms.map { it.sentenceTermType }
-        // terms maximum of 2, no duplicate term codes and DPS provide terms in the correct order
-        log.info(
-          "\nUpdating sentence terms for sentence $sentenceSequence, booking ${case.offenderBooking.bookingId} and offender $offenderNo " +
-            "\nwith terms: $requestTermTypes " +
-            "\noriginal terms: ${sentence.offenderSentenceTerms.map { it.sentenceTermType.code }}",
-        )
         log.info(
           "\nUpdating sentence charges for sentence $sentenceSequence, booking ${case.offenderBooking.bookingId} and offender $offenderNo " +
             "\nwith charges: ${request.offenderChargeIds} " +
             "\noriginal charges: ${sentence.offenderSentenceCharges.map { it.offenderCharge.id }}",
         )
-        request.sentenceTerms.forEachIndexed { index, termRequest ->
-          sentence.offenderSentenceTerms.getOrNull(index)
-            ?.let { term ->
-              term.years = termRequest.years
-              term.months = termRequest.months
-              term.weeks = termRequest.weeks
-              term.days = termRequest.days
-              term.hours = termRequest.hours
-              term.lifeSentenceFlag = termRequest.lifeSentenceFlag
-              term.sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType)
-            } ?: let {
-            sentence.offenderSentenceTerms.add(
-              OffenderSentenceTerm(
-                id = OffenderSentenceTermId(
-                  offenderBooking = case.offenderBooking,
-                  sentenceSequence = sentence.id.sequence,
-                  termSequence = offenderSentenceTermRepository.getNextTermSequence(
-                    offenderBookId = case.offenderBooking.bookingId,
-                    sentenceSeq = sentence.id.sequence,
-                  ),
-                ),
-                years = termRequest.years,
-                months = termRequest.months,
-                weeks = termRequest.weeks,
-                days = termRequest.days,
-                hours = termRequest.hours,
-                lifeSentenceFlag = termRequest.lifeSentenceFlag,
-                offenderSentence = sentence,
-                // court order is always present
-                startDate = sentence.courtOrder!!.courtDate,
-                endDate = null,
-                sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
-              ),
-            )
-          }
-        }.also {
-          // remove any additional terms
-          if (sentence.offenderSentenceTerms.size > request.sentenceTerms.size) {
-            val newList = sentence.offenderSentenceTerms.take(request.sentenceTerms.size).toMutableList()
-            sentence.offenderSentenceTerms.clear()
-            sentence.offenderSentenceTerms.addAll(newList)
-          }
-        }
 
         if (sentence.offenderSentenceCharges.map { it.offenderCharge.id }
             .toSet() != request.offenderChargeIds.toSet()
@@ -862,7 +783,6 @@ class SentencingService(
             "bookingId" to case.offenderBooking.bookingId.toString(),
             "sentenceSequence" to sentenceSequence.toString(),
             "caseId" to caseId.toString(),
-            "terms" to requestTermTypes.toString(),
             "offenderNo" to offenderNo,
             "charges" to request.offenderChargeIds.toString(),
           ),
