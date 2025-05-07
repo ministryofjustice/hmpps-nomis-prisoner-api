@@ -338,7 +338,7 @@ class AllocationService(
     offenderProgramProfileRepository.endAllocations(courseActivityIds, date)
   }
 
-  fun findActiveAllocationsSummary(prisonId: String): AllocationReconciliationResponse = offenderProgramProfileRepository.findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId, "ALLOC")
+  fun findActiveAllocationsSummary(prisonId: String, suspended: Boolean): AllocationReconciliationResponse = offenderProgramProfileRepository.findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId, "ALLOC", suspended = suspended)
     .let {
       AllocationReconciliationResponse(
         prisonId = prisonId,
