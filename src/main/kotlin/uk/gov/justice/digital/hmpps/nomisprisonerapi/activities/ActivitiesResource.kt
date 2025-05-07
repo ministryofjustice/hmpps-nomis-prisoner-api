@@ -879,7 +879,8 @@ class ActivitiesResource(
   )
   fun getAllocationReconciliationSummary(
     @Schema(description = "Prison id") @PathVariable prisonId: String,
-  ) = allocationService.findActiveAllocationsSummary(prisonId)
+    @Schema(description = "suspended allocations only") @RequestParam suspended: Boolean = false,
+  ) = allocationService.findActiveAllocationsSummary(prisonId, suspended)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/attendances/reconciliation/{prisonId}")

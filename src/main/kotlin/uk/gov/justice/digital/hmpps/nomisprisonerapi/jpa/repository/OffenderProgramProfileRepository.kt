@@ -146,12 +146,12 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
       and (ca.scheduleEndDate is null or ca.scheduleEndDate >= :date)
       and opp.prison.id = :prisonId
       and ob.location.id = :prisonId
-      and opp.suspended = false
+      and opp.suspended = :suspended
       group by opp.offenderBooking.bookingId
       order by opp.offenderBooking.bookingId
     """,
   )
-  fun findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId: String, prisonerStatusCode: String, date: LocalDate = LocalDate.now()): List<BookingCount>
+  fun findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonId: String, prisonerStatusCode: String, date: LocalDate = LocalDate.now(), suspended: Boolean): List<BookingCount>
 }
 
 interface SuspendedAllocations {

@@ -283,6 +283,229 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  inner class SuspendedAllocationReconciliation {
+
+    lateinit var courseActivity: CourseActivity
+    lateinit var offenderBooking: OffenderBooking
+
+    private fun WebTestClient.getSuspendedAllocationReconciliation(prisonId: String = "BXI") = get()
+      .uri("/allocations/reconciliation/$prisonId?suspended=true")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .exchange()
+      .expectStatus().isOk
+
+    @BeforeEach
+    fun `create an activity in BXI`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(prisonId = "BXI")
+        }
+      }
+    }
+
+    @Test
+    fun `should return empty list if none`() {
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("prisonId").isEqualTo("BXI")
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should find a single booking's allocation`() {
+      nomisDataBuilder.build {
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity, suspended = true)
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("prisonId").isEqualTo("BXI")
+        .jsonPath("bookings.size()").isEqualTo(1)
+        .jsonPath("bookings[0].bookingId").isEqualTo(offenderBooking.bookingId)
+        .jsonPath("bookings[0].count").isEqualTo("1")
+    }
+
+    @Test
+    fun `should ignore allocations at the wrong status`() {
+      nomisDataBuilder.build {
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity, suspended = true, programStatusCode = "END")
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should ignore allocations with an end date in the past`() {
+      nomisDataBuilder.build {
+        offender {
+          booking {
+            courseAllocation(courseActivity, suspended = true, endDate = "$yesterday")
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should find allocations with an end date not in the past`() {
+      nomisDataBuilder.build {
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity, suspended = true, endDate = "$today")
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(1)
+        .jsonPath("bookings[0].bookingId").isEqualTo(offenderBooking.bookingId)
+        .jsonPath("bookings[0].count").isEqualTo("1")
+    }
+
+    @Test
+    fun `should ignore allocations with a start date in the future`() {
+      nomisDataBuilder.build {
+        offender {
+          booking {
+            courseAllocation(courseActivity, suspended = true, startDate = "$tomorrow")
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should ignore allocations where the course activity has ended`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(endDate = "$yesterday")
+        }
+        offender {
+          booking {
+            courseAllocation(courseActivity, suspended = true)
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should ignore allocations in the wrong prison`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(prisonId = "MDI")
+        }
+        offender {
+          booking {
+            courseAllocation(courseActivity, suspended = true)
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation(prisonId = "BXI")
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should ignore bookings in the wrong prison`() {
+      nomisDataBuilder.build {
+        offender {
+          booking(agencyLocationId = "MDI") {
+            courseAllocation(courseActivity, suspended = true)
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation(prisonId = "BXI")
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should ignore allocations which are not suspended`() {
+      nomisDataBuilder.build {
+        offender {
+          booking {
+            courseAllocation(courseActivity, suspended = false)
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should find multiple allocations for the same booking`() {
+      lateinit var courseActivity2: CourseActivity
+      nomisDataBuilder.build {
+        programService {
+          courseActivity2 = courseActivity()
+        }
+        offender {
+          offenderBooking = booking {
+            courseAllocation(courseActivity, suspended = true)
+            courseAllocation(courseActivity2, suspended = true)
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(1)
+        .jsonPath("bookings[0].bookingId").isEqualTo(offenderBooking.bookingId)
+        .jsonPath("bookings[0].count").isEqualTo("2")
+    }
+
+    @Test
+    fun `should find multiple bookings`() {
+      lateinit var offenderBooking2: OffenderBooking
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234AA") {
+          offenderBooking = booking {
+            courseAllocation(courseActivity, suspended = true)
+          }
+        }
+        offender(nomsId = "A1234BB") {
+          offenderBooking2 = booking {
+            courseAllocation(courseActivity, suspended = true)
+          }
+        }
+      }
+
+      webTestClient.getSuspendedAllocationReconciliation()
+        .expectBody()
+        .jsonPath("bookings.size()").isEqualTo(2)
+        .jsonPath("bookings[0].bookingId").isEqualTo(offenderBooking.bookingId)
+        .jsonPath("bookings[0].count").isEqualTo("1")
+        .jsonPath("bookings[1].bookingId").isEqualTo(offenderBooking2.bookingId)
+        .jsonPath("bookings[1].count").isEqualTo("1")
+    }
+  }
+
+  @Nested
   inner class AttendanceReconciliation {
 
     lateinit var courseActivity: CourseActivity
