@@ -790,7 +790,8 @@ class ActivitiesResource(
   fun endActivity(
     @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
     @Schema(description = "End comment") @RequestParam endComment: String?,
-  ) = activityService.endActivity(courseActivityId, LocalDate.now(), endComment)
+    @Schema(description = "End date") @RequestParam endDate: LocalDate? = null,
+  ) = activityService.endActivity(courseActivityId, endDate ?: LocalDate.now(), endComment)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PutMapping("/activities/end")
