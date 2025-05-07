@@ -531,6 +531,83 @@ class VisitBalanceServiceTest {
       }
     }
   }
+
+  @Nested
+  inner class UpsertVisitBalance {
+    @Nested
+    @DisplayName("With no booking")
+    inner class WithNoAssociatedBooking {
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(null)
+      }
+
+      @Test
+      fun `it will throw a not found exception`() {
+        assertThrows(NotFoundException::class.java) {
+          visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(null, null))
+        }
+      }
+    }
+
+    @Nested
+    @DisplayName("With no existing visit balance")
+    inner class WithNoExistingBalance {
+      val booking = booking()
+
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
+      }
+
+      @Test
+      fun `it will do nothing if no entries passed in`() {
+        visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(null, null))
+        assertThat(booking.visitBalance).isNull()
+      }
+
+      @Test
+      fun `it will update the balance if vo passed in`() {
+        visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(remainingVisitOrders = 5, remainingPrivilegedVisitOrders = null))
+        assertThat(booking.visitBalance?.remainingVisitOrders).isEqualTo(5)
+        assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isNull()
+      }
+
+      @Test
+      fun `it will update the balance if pvo passed in`() {
+        visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(remainingVisitOrders = null, remainingPrivilegedVisitOrders = 5))
+        assertThat(booking.visitBalance?.remainingVisitOrders).isNull()
+        assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isEqualTo(5)
+      }
+    }
+
+    @Nested
+    @DisplayName("With existing visit balance")
+    inner class WithExistingBalance {
+      val booking = booking().apply { this.visitBalance = OffenderVisitBalance(offenderBooking = this) }
+
+      @BeforeEach
+      fun setUp() {
+        whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
+      }
+
+      @Test
+      fun `it will reset any existing balance if no balance passed in`() {
+        booking.visitBalance?.remainingVisitOrders = 5
+        booking.visitBalance?.remainingPrivilegedVisitOrders = 4
+        visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(null, null))
+        assertThat(booking.visitBalance?.remainingVisitOrders).isNull()
+        assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isNull()
+      }
+
+      @Test
+      fun `it will update the balance`() {
+        visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(remainingVisitOrders = 5, remainingPrivilegedVisitOrders = null))
+        assertThat(booking.visitBalance?.remainingVisitOrders).isEqualTo(5)
+        assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isNull()
+      }
+    }
+  }
 }
 
 private fun booking(bookingSequence: Int = 1): OffenderBooking = OffenderBooking(

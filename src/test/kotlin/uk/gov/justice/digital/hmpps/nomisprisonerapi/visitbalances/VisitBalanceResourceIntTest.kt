@@ -349,40 +349,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
       }
-
-      @Test
-      fun `validation fails when remainingVisitOrders is not present`() {
-        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(
-            //language=JSON
-            """
-              {
-                "remainingPrivilegedVisitOrders" : 3
-              }
-            """.trimIndent(),
-          )
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `validation fails when remainingPrivilegedVisitOrders is not present`() {
-        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(
-            //language=JSON
-            """
-              {
-                "remainingVisitOrders" : 3
-              }
-            """.trimIndent(),
-          )
-          .exchange()
-          .expectStatus().isBadRequest
-      }
     }
 
     @Nested
@@ -423,6 +389,21 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           val newBalance = booking?.visitBalance!!
           assertThat(newBalance.remainingVisitOrders).isEqualTo(13)
           assertThat(newBalance.remainingPrivilegedVisitOrders).isEqualTo(14)
+        }
+      }
+
+      @Test
+      fun `passing in no visit balance when no existing balance will cause no action`() {
+        webTestClient.put().uri("/prisoners/${prisoner2.nomsId}/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(UpdateVisitBalanceRequest(null, null))
+          .exchange()
+          .expectStatus().isEqualTo(204)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(bookingWithNoVisitBalanceId)
+          assertThat(booking?.visitBalance).isNull()
         }
       }
     }

@@ -70,11 +70,14 @@ class VisitBalanceService(
       it.remainingVisitOrders = request.remainingVisitOrders
       it.remainingPrivilegedVisitOrders = request.remainingPrivilegedVisitOrders
     } ?: let {
-      offenderBooking.visitBalance = OffenderVisitBalance(
-        remainingVisitOrders = request.remainingVisitOrders,
-        remainingPrivilegedVisitOrders = request.remainingPrivilegedVisitOrders,
-        offenderBooking = offenderBooking,
-      )
+      // only take action if we get a non-null order
+      if (request.remainingVisitOrders != null || request.remainingPrivilegedVisitOrders != null) {
+        offenderBooking.visitBalance = OffenderVisitBalance(
+          remainingVisitOrders = request.remainingVisitOrders,
+          remainingPrivilegedVisitOrders = request.remainingPrivilegedVisitOrders,
+          offenderBooking = offenderBooking,
+        )
+      }
     }
   }
 
