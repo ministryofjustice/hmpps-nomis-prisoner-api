@@ -240,13 +240,13 @@ class ActivityService(
       ?: throw NotFoundException("Course Activity $courseActivityId not found")
 
     with(courseActivity) {
-      if (courseActivity.scheduleEndDate == null || courseActivity.scheduleEndDate!! > date) {
+      if (courseActivity.scheduleEndDate == null || courseActivity.scheduleEndDate!! >= LocalDate.now()) {
         scheduleEndDate = date
         endComment?.run { commentText = endComment }
       }
     }
     offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndProgramStatusCode(courseActivityId, "ALLOC")
-      .filter { it.endDate == null || it.endDate!! > date }
+      .filter { it.endDate == null || it.endDate!! >= LocalDate.now() }
       .forEach { allocationService.endAllocation(it, date, endComment) }
   }
 

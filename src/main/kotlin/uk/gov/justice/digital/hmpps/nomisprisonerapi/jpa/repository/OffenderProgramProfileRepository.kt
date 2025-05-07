@@ -129,7 +129,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
       set opp.offender_end_date = :date, opp.offender_end_reason = 'OTH', opp.offender_program_status = 'END'
       where opp.crs_acty_id in :courseActivityIds
       and opp.offender_program_status = 'ALLOC'
-      and (opp.offender_end_date is null or opp.offender_end_date > current_date)
+      and (opp.offender_end_date is null or opp.offender_end_date >= current_date)
     """,
   )
   fun endAllocations(courseActivityIds: Collection<Long>, date: LocalDate)

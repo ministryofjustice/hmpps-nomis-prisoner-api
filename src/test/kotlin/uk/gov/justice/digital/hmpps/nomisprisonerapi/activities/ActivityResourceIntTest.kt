@@ -1845,9 +1845,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private lateinit var courseActivity: CourseActivity
 
-    private fun WebTestClient.endAllocation(courseActivityId: Long, endComment: String? = null) = put().uri {
+    private fun WebTestClient.endAllocation(courseActivityId: Long, endComment: String? = null, endDate: LocalDate? = null) = put().uri {
       it.path("/activities/$courseActivityId/end")
         .apply { endComment?.run { it.queryParam("endComment", endComment) } }
+        .apply { endDate?.run { it.queryParam("endDate", endDate) } }
         .build()
     }
       .contentType(MediaType.APPLICATION_JSON)
@@ -2041,6 +2042,31 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(endDate).isNull()
       }
     }
+
+    @Test
+    fun `should move end date if already ended`() {
+      lateinit var allocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday", endDate = "$today")
+        }
+        offender {
+          booking {
+            allocation = courseAllocation(courseActivity = courseActivity, endDate = "$today")
+          }
+        }
+      }
+
+      webTestClient.endAllocation(courseActivity.courseActivityId, endDate = tomorrow)
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(tomorrow)
+      }
+      with(repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(tomorrow)
+      }
+    }
   }
 
   @Nested
@@ -2213,6 +2239,31 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
       with(repository.getOffenderProgramProfile(endedAllocation.offenderProgramReferenceId)) {
         assertThat(endDate).isEqualTo(yesterday)
+      }
+    }
+
+    @Test
+    fun `should move the end date if ending today`() {
+      lateinit var allocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(startDate = "$yesterday", endDate = "$today")
+        }
+        offender {
+          booking {
+            allocation = courseAllocation(courseActivity = courseActivity, endDate = "$today")
+          }
+        }
+      }
+
+      webTestClient.endActivities(listOf(courseActivity.courseActivityId), endDate = tomorrow)
+        .expectStatus().isOk
+
+      with(repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(tomorrow)
+      }
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(tomorrow)
       }
     }
 
