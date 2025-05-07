@@ -194,7 +194,7 @@ class CSIPService(
     // oracle form loads in the Referral continued screen
     currentRequest.reportDetailRequest?.let { reportDetailRequest ->
       involvement = reportDetailRequest.involvementCode?.let { lookupInvolvement(it) }
-      concernDescription = reportDetailRequest.concern
+      concernDescription = reportDetailRequest.concern?.truncateToUtf8Length(4000)
       knownReasons = reportDetailRequest.knownReasons
       otherInformation = reportDetailRequest.otherInformation
       saferCustodyTeamInformed = reportDetailRequest.saferCustodyTeamInformed
