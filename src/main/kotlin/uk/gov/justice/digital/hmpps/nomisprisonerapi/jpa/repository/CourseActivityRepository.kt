@@ -96,7 +96,7 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
     value = """
     update CourseActivity ca set ca.scheduleEndDate = :date 
     where ca.courseActivityId in :courseActivityIds
-    and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date)
+    and (ca.scheduleEndDate is null or ca.scheduleEndDate >= current_date)
   """,
   )
   fun endActivities(courseActivityIds: Collection<Long>, date: LocalDate)
