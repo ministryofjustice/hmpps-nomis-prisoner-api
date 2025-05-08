@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -26,11 +28,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances.VisitBalanceS
 @Service
 @Transactional
 class VisitBalanceService(
-  val visitBalanceRepository: OffenderVisitBalanceRepository,
-  val offenderBookingRepository: OffenderBookingRepository,
-  val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
-  val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>,
-  val staffUserAccountRepository: StaffUserAccountRepository,
+  private val visitBalanceRepository: OffenderVisitBalanceRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
+  private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
+  private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>,
+  private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val telemetryClient: TelemetryClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -67,8 +70,23 @@ class VisitBalanceService(
       ?: throw NotFoundException("Prisoner with offender no $offenderNo not found with any bookings")
 
     offenderBooking.visitBalance?.let {
-      it.remainingVisitOrders = request.remainingVisitOrders
-      it.remainingPrivilegedVisitOrders = request.remainingPrivilegedVisitOrders
+      if (
+        it.remainingVisitOrders != request.remainingVisitOrders ||
+        it.remainingPrivilegedVisitOrders != request.remainingPrivilegedVisitOrders
+      ) {
+        telemetryClient.trackEvent(
+          "visit.balance.upsert.updated",
+          mapOf(
+            "prisonNumber" to offenderNo,
+            "remainingVisitOrders" to request.remainingVisitOrders.toString(),
+            "remainingPrivilegedVisitOrders" to request.remainingPrivilegedVisitOrders.toString(),
+          ),
+        )
+        it.remainingVisitOrders = request.remainingVisitOrders
+        it.remainingPrivilegedVisitOrders = request.remainingPrivilegedVisitOrders
+      } else {
+        telemetryClient.trackEvent("visit.balance.upsert.unchanged", mapOf("prisonNumber" to offenderNo))
+      }
     } ?: let {
       // only take action if we get a non-null order
       if (request.remainingVisitOrders != null || request.remainingPrivilegedVisitOrders != null) {
@@ -76,6 +94,14 @@ class VisitBalanceService(
           remainingVisitOrders = request.remainingVisitOrders,
           remainingPrivilegedVisitOrders = request.remainingPrivilegedVisitOrders,
           offenderBooking = offenderBooking,
+        )
+        telemetryClient.trackEvent(
+          "visit.balance.upsert.inserted",
+          mapOf(
+            "prisonNumber" to offenderNo,
+            "remainingVisitOrders" to request.remainingVisitOrders.toString(),
+            "remainingPrivilegedVisitOrders" to request.remainingPrivilegedVisitOrders.toString(),
+          ),
         )
       }
     }
