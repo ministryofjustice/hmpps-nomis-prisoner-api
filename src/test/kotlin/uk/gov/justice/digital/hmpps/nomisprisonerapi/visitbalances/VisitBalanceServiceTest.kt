@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -11,7 +12,10 @@ import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.description
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -39,12 +43,14 @@ class VisitBalanceServiceTest {
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason> = mock()
   private val staffUserAccountRepository: StaffUserAccountRepository = mock()
+  private val telemetryClient: TelemetryClient = mock()
   private val visitBalanceService = VisitBalanceService(
     offenderBookingRepository = offenderBookingRepository,
     visitBalanceRepository = mock(),
     offenderVisitBalanceAdjustmentRepository = mock(),
     visitOrderAdjustmentReasonRepository = visitOrderAdjustmentReasonRepository,
     staffUserAccountRepository = staffUserAccountRepository,
+    telemetryClient = telemetryClient,
   )
 
   @Nested
@@ -564,6 +570,7 @@ class VisitBalanceServiceTest {
       fun `it will do nothing if no entries passed in`() {
         visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(null, null))
         assertThat(booking.visitBalance).isNull()
+        verifyNoInteractions(telemetryClient)
       }
 
       @Test
@@ -571,6 +578,7 @@ class VisitBalanceServiceTest {
         visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(remainingVisitOrders = 5, remainingPrivilegedVisitOrders = null))
         assertThat(booking.visitBalance?.remainingVisitOrders).isEqualTo(5)
         assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isNull()
+        verify(telemetryClient).trackEvent(eq("visit.balance.upsert.inserted"), any(), isNull())
       }
 
       @Test
@@ -578,16 +586,18 @@ class VisitBalanceServiceTest {
         visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(remainingVisitOrders = null, remainingPrivilegedVisitOrders = 5))
         assertThat(booking.visitBalance?.remainingVisitOrders).isNull()
         assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isEqualTo(5)
+        verify(telemetryClient).trackEvent(eq("visit.balance.upsert.inserted"), any(), isNull())
       }
     }
 
     @Nested
     @DisplayName("With existing visit balance")
     inner class WithExistingBalance {
-      val booking = booking().apply { this.visitBalance = OffenderVisitBalance(offenderBooking = this) }
+      val booking = booking()
 
       @BeforeEach
       fun setUp() {
+        booking.visitBalance = OffenderVisitBalance(offenderBooking = booking)
         whenever(offenderBookingRepository.findLatestByOffenderNomsId("A1234KT")).thenReturn(booking)
       }
 
@@ -598,6 +608,7 @@ class VisitBalanceServiceTest {
         visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(null, null))
         assertThat(booking.visitBalance?.remainingVisitOrders).isNull()
         assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isNull()
+        verify(telemetryClient).trackEvent(eq("visit.balance.upsert.updated"), any(), isNull())
       }
 
       @Test
@@ -605,6 +616,17 @@ class VisitBalanceServiceTest {
         visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(remainingVisitOrders = 5, remainingPrivilegedVisitOrders = null))
         assertThat(booking.visitBalance?.remainingVisitOrders).isEqualTo(5)
         assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isNull()
+        verify(telemetryClient).trackEvent(eq("visit.balance.upsert.updated"), any(), isNull())
+      }
+
+      @Test
+      fun `it will do nothing if balance unchanged`() {
+        booking.visitBalance?.remainingVisitOrders = 5
+        booking.visitBalance?.remainingPrivilegedVisitOrders = null
+        visitBalanceService.upsertVisitBalance("A1234KT", UpdateVisitBalanceRequest(remainingVisitOrders = 5, remainingPrivilegedVisitOrders = null))
+        assertThat(booking.visitBalance?.remainingVisitOrders).isEqualTo(5)
+        assertThat(booking.visitBalance?.remainingPrivilegedVisitOrders).isNull()
+        verify(telemetryClient).trackEvent(eq("visit.balance.upsert.unchanged"), any(), isNull())
       }
     }
   }
