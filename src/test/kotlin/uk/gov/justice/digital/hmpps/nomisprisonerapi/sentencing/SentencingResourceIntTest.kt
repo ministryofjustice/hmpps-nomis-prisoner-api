@@ -1156,6 +1156,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
     private lateinit var recallSentence: OffenderSentence
+    private lateinit var inactiveRecallSentence: OffenderSentence
     private lateinit var courtCase: CourtCase
     private lateinit var appearance: CourtEvent
     private lateinit var courtOrder: CourtOrder
@@ -1179,13 +1180,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 appearance = courtEvent {
                   courtOrder = courtOrder()
                 }
-                sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
+                sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A") {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
                   term {}
                   term(days = 35)
                 }
-                recallSentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, calculationType = "FTR_ORA", category = "2003") {
+                recallSentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, calculationType = "FTR_ORA", category = "2003", status = "A") {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  term {}
+                }
+                inactiveRecallSentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, calculationType = "FTR_ORA", category = "2003", status = "I") {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   term {}
                 }
@@ -1272,7 +1277,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("bookingId").isEqualTo(latestBookingId)
           .jsonPath("sentenceSeq").isEqualTo(sentence.id.sequence)
-          .jsonPath("status").isEqualTo("I")
+          .jsonPath("status").isEqualTo("A")
           .jsonPath("calculationType.code").isEqualTo("ADIMP_ORA")
           .jsonPath("calculationType.description").isEqualTo("ORA CJA03 Standard Determinate Sentence")
           .jsonPath("category.code").isEqualTo("2003")
@@ -1361,11 +1366,44 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("bookingId").isEqualTo(latestBookingId)
           .jsonPath("sentenceSeq").isEqualTo(recallSentence.id.sequence)
+          .jsonPath("status").isEqualTo("A")
           .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
           .jsonPath("calculationType.description").isEqualTo("ORA 28 Day Fixed Term Recall")
           .jsonPath("recallCustodyDate.returnToCustodyDate").isEqualTo("2024-01-01")
           .jsonPath("recallCustodyDate.recallLength").isEqualTo(14)
           .jsonPath("recallCustodyDate.comments").isEqualTo("Fixed term recall")
+      }
+
+      @Test
+      fun `will not return the fixed term recall data if the recall sentence is not active`() {
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${inactiveRecallSentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(inactiveRecallSentence.id.sequence)
+          .jsonPath("status").isEqualTo("I")
+          .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
+          .jsonPath("calculationType.description").isEqualTo("ORA 28 Day Fixed Term Recall")
+          .jsonPath("recallCustodyDate").doesNotExist()
+      }
+
+      @Test
+      fun `will not return the fixed term recall data if the sentence is not a recall`() {
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(sentence.id.sequence)
+          .jsonPath("status").isEqualTo("A")
+          .jsonPath("calculationType.code").isEqualTo("ADIMP_ORA")
+          .jsonPath("calculationType.description").isEqualTo("ORA CJA03 Standard Determinate Sentence")
+          .jsonPath("recallCustodyDate").doesNotExist()
       }
     }
 

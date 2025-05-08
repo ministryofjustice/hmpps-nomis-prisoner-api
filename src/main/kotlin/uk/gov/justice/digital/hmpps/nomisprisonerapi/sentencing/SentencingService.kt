@@ -1313,7 +1313,7 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   sentenceTerms = this.offenderSentenceTerms.map { it.toSentenceTermResponse() },
   offenderCharges = this.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
   prisonId = this.id.offenderBooking.location?.id ?: "OUT",
-  recallCustodyDate = this.id.offenderBooking.fixedTermRecall?.let {
+  recallCustodyDate = this.id.offenderBooking.fixedTermRecall?.takeIf { this.isActiveRecallSentence() }?.let {
     RecallCustodyDate(
       returnToCustodyDate = it.returnToCustodyDate,
       recallLength = it.recallLength,
@@ -1321,3 +1321,12 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
     )
   },
 )
+
+fun OffenderSentence.isActiveRecallSentence() = this.status == "A" && this.isRecallSentence()
+fun OffenderSentence.isRecallSentence() = this.calculationType.isRecallSentence()
+
+fun SentenceCalculationType.isRecallSentence() = with(this.id.calculationType) {
+  startsWith("LR") ||
+    contains("FTR") ||
+    this in listOf("CUR", "CUR_ORA", "HDR", "HDR_ORA")
+}
