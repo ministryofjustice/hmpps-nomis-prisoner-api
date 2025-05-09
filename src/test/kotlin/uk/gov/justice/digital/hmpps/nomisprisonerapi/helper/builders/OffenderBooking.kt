@@ -83,6 +83,7 @@ interface BookingDsl {
     endReasonCode: String? = null,
     endComment: String? = null,
     suspended: Boolean = false,
+    prisonId: String? = null,
     dsl: CourseAllocationDsl.() -> Unit = { payBand() },
   ): OffenderProgramProfile
 
@@ -506,6 +507,7 @@ class BookingBuilder(
     endReasonCode: String?,
     endComment: String?,
     suspended: Boolean,
+    prisonId: String?,
     dsl: CourseAllocationDsl.() -> Unit,
   ) = courseAllocationBuilderFactory.builder()
     .let { builder ->
@@ -517,6 +519,7 @@ class BookingBuilder(
         endReasonCode,
         endComment,
         suspended,
+        prisonId,
         courseActivity,
       )
         .also { offenderBooking.offenderProgramProfiles += it }

@@ -427,19 +427,20 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
         .jsonPath("bookings.size()").isEqualTo(0)
     }
 
+    // Handles scenario where prisoners are transferred but an allocation in the old prison is not ended
     @Test
-    fun `should ignore bookings in the wrong prison`() {
+    fun `should NOT ignore bookings in the wrong prison`() {
       nomisDataBuilder.build {
         offender {
           booking(agencyLocationId = "MDI") {
-            courseAllocation(courseActivity, suspended = true)
+            courseAllocation(courseActivity, suspended = true, prisonId = "BXI")
           }
         }
       }
 
       webTestClient.getSuspendedAllocationReconciliation(prisonId = "BXI")
         .expectBody()
-        .jsonPath("bookings.size()").isEqualTo(0)
+        .jsonPath("bookings.size()").isEqualTo(1)
     }
 
     @Test

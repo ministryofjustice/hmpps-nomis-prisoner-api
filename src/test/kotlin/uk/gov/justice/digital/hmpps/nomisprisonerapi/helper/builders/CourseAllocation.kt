@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderActivityExclusion
@@ -13,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramServiceEndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SlotCategory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -50,9 +53,11 @@ interface CourseAllocationDsl {
 class CourseAllocationBuilderRepository(
   private val programStatusRepository: ReferenceCodeRepository<OffenderProgramStatus>,
   private val programEndReasonRepository: ReferenceCodeRepository<ProgramServiceEndReason>,
+  private val agencyLocationRepository: AgencyLocationRepository? = null,
 ) {
   fun programStatus(code: String): OffenderProgramStatus = programStatusRepository.findByIdOrNull(OffenderProgramStatus.pk(code))!!
   fun programEndReason(code: String): ProgramServiceEndReason = programEndReasonRepository.findByIdOrNull(ProgramServiceEndReason.pk(code))!!
+  fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository?.findByIdOrNull(id)!!
 }
 
 @Component
@@ -87,6 +92,7 @@ class CourseAllocationBuilder(
     endReasonCode: String?,
     endComment: String?,
     suspended: Boolean,
+    prisonId: String? = null,
     courseActivity: CourseActivity,
   ) = OffenderProgramProfile(
     offenderBooking = offenderBooking,
@@ -94,7 +100,7 @@ class CourseAllocationBuilder(
     startDate = startDate?.let { LocalDate.parse(startDate) },
     programStatus = programStatus(programStatusCode),
     courseActivity = courseActivity,
-    prison = courseActivity.prison,
+    prison = prisonId?.let { lookupAgency(prisonId) } ?: courseActivity.prison,
     endDate = endDate?.let { LocalDate.parse(endDate) },
     endReason = endReasonCode?.let { programEndReason(endReasonCode) },
     endComment = endComment,
@@ -147,4 +153,7 @@ class CourseAllocationBuilder(
 
   private fun programEndReason(endReasonCode: String) = repository?.programEndReason(endReasonCode)
     ?: ProgramServiceEndReason(code = endReasonCode, description = endReasonCode)
+
+  private fun lookupAgency(id: String): AgencyLocation = repository?.lookupAgency(id)
+    ?: AgencyLocation(id = id, description = id, type = AgencyLocationType.PRISON_TYPE, active = true)
 }
