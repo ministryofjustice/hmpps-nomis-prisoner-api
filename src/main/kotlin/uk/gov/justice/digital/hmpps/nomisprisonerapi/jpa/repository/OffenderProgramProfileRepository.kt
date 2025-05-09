@@ -134,6 +134,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
   )
   fun endAllocations(courseActivityIds: Collection<Long>, date: LocalDate)
 
+  // Note that if we're looking for suspensions we check bookings in other prisons too in case a suspended allocation for a transferred prisoner was never ended
   @Query(
     value = """
       select new uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.BookingCount(opp.offenderBooking.bookingId, count(opp))
@@ -145,7 +146,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
       and (opp.endDate is null or opp.endDate >= :date)
       and (ca.scheduleEndDate is null or ca.scheduleEndDate >= :date)
       and opp.prison.id = :prisonId
-      and ob.location.id = :prisonId
+      and (ob.location.id = :prisonId or :suspended = true)
       and opp.suspended = :suspended
       group by opp.offenderBooking.bookingId
       order by opp.offenderBooking.bookingId
