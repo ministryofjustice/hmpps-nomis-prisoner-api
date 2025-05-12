@@ -1146,7 +1146,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.otherInformation).isEqualTo("other information goes in here")
           assertThat(newCsip.saferCustodyTeamInformed).isEqualTo(false)
           assertThat(newCsip.referralComplete).isEqualTo(true)
-          assertThat(newCsip.referralCompletedBy).isEqualTo("JIM_ADM")
+          assertThat(newCsip.referralCompletedBy).isEqualTo("FRED.JAMES")
+          assertThat(newCsip.referralCompletedByStaffUserAccount!!.username).isEqualTo("FRED.JAMES")
           assertThat(newCsip.referralCompletedDate).isEqualTo(LocalDate.parse("2024-04-04"))
 
           // Contributory factors
@@ -1224,6 +1225,31 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.reviews[0].attendees[0].role).isEqualTo("person")
           assertThat(newCsip.reviews[0].attendees[0].attended).isEqualTo(true)
           assertThat(newCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
+        }
+      }
+
+      @Test
+      fun `Report details referralCompletedBy is set to null if staff user does not exist`() {
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest().copy(
+          reportDetailRequest = reportDetailRequest.copy(referralCompletedBy = "DOES_NOT_EXIST"),
+        )
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val newCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(newCsip.referralCompletedBy).isNull()
+          assertThat(newCsip.referralCompletedByStaffUserAccount).isNull()
         }
       }
 
@@ -1687,7 +1713,8 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(updatedCsip.otherInformation).isEqualTo("other information goes in here")
           assertThat(updatedCsip.saferCustodyTeamInformed).isEqualTo(false)
           assertThat(updatedCsip.referralComplete).isEqualTo(true)
-          assertThat(updatedCsip.referralCompletedBy).isEqualTo("JIM_ADM")
+          assertThat(updatedCsip.referralCompletedBy).isEqualTo("FRED.JAMES")
+          assertThat(updatedCsip.referralCompletedByStaffUserAccount!!.username).isEqualTo("FRED.JAMES")
           assertThat(updatedCsip.referralCompletedDate).isEqualTo(LocalDate.parse("2024-04-04"))
 
           // Contributory factors
@@ -1822,6 +1849,31 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(updatedCsip.reviews[0].attendees[0].role).isEqualTo("person")
           assertThat(updatedCsip.reviews[0].attendees[0].attended).isEqualTo(true)
           assertThat(updatedCsip.reviews[0].attendees[0].contribution).isEqualTo("talked about things")
+        }
+      }
+
+      @Test
+      fun `Report details referralCompletedBy is set to null if staff user does not exist`() {
+        val booking = offenderBookingRepository.findLatestByOffenderNomsId("A1234TT")
+        val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(
+          reportDetailRequest = reportDetailRequest.copy(referralCompletedBy = "DOES_NOT_EXIST"),
+        )
+
+        val upsertResponse = webTestClient.put().uri("/csip")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(validCSIP)
+          .exchange()
+          .expectStatus().isEqualTo(200)
+          .expectBody(UpsertCSIPResponse::class.java)
+          .returnResult().responseBody!!
+
+        repository.runInTransaction {
+          val newCsip = csipRepository.findByIdOrNull(upsertResponse.nomisCSIPReportId)
+          assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
+          assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
+          assertThat(newCsip.referralCompletedBy).isNull()
+          assertThat(newCsip.referralCompletedByStaffUserAccount).isNull()
         }
       }
 
@@ -2506,7 +2558,7 @@ private val reportDetailRequest = UpsertReportDetailsRequest(
   otherInformation = "other information goes in here",
   saferCustodyTeamInformed = false,
   referralComplete = true,
-  referralCompletedBy = "JIM_ADM",
+  referralCompletedBy = "FRED.JAMES",
   referralCompletedDate = LocalDate.parse("2024-04-04"),
   factors = listOf(factorRequest),
 )
