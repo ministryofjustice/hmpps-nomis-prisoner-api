@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReviewRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDateTime
 
 @Service
@@ -57,6 +58,7 @@ class CSIPService(
   val outcomeRepository: ReferenceCodeRepository<CSIPOutcome>,
   val typeRepository: ReferenceCodeRepository<CSIPIncidentType>,
   val reviewRepository: CSIPReviewRepository,
+  val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -199,7 +201,7 @@ class CSIPService(
       otherInformation = reportDetailRequest.otherInformation
       saferCustodyTeamInformed = reportDetailRequest.saferCustodyTeamInformed
       referralComplete = reportDetailRequest.referralComplete
-      referralCompletedBy = reportDetailRequest.referralCompletedBy
+      referralCompletedBy = findByStaffUserNameOrNullIfNotExists(reportDetailRequest.referralCompletedBy)
       referralCompletedDate = reportDetailRequest.referralCompletedDate
       if (reportDetailRequest.factors.isNotEmpty()) {
         addOrUpdateFactors(reportDetailRequest.factors)
@@ -422,6 +424,8 @@ class CSIPService(
     ?: throw BadDataException("Signed off role type $code not found")
   fun lookupFactorType(code: String) = factorRepository.findByIdOrNull(CSIPFactorType.pk(code))
     ?: throw BadDataException("Factor type $code not found")
+
+  fun findByStaffUserNameOrNullIfNotExists(staffUserName: String?): String? = staffUserName?.let { staffUserAccountRepository.findByUsername(staffUserName)?.username }
 }
 
 fun CSIPReport.identifyNewComponents(request: UpsertCSIPRequest): List<CSIPComponent> = identifyNewChildComponents(request.reportDetailRequest?.factors, factors, FACTOR) +
