@@ -28,6 +28,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
@@ -43,6 +45,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var repository: Repository
+
+  @Autowired
+  lateinit var offenderSentenceRepository: OffenderSentenceRepository
+
+  @Autowired
+  lateinit var offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository
+
   private var aLocationInMoorland = 0L
   private lateinit var staff: Staff
   private lateinit var prisonerAtMoorland: Offender
@@ -5353,4 +5362,472 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     days = days,
     hours = hours,
   )
+
+  @Nested
+  @DisplayName("PUT /prisoners/{offenderNo}/sentences/recall")
+  inner class RecallSentences {
+    @Nested
+    inner class Security {
+      private lateinit var prisoner: Offender
+      private lateinit var booking: OffenderBooking
+      private lateinit var staff: Staff
+      private lateinit var sentence: OffenderSentence
+      private lateinit var request: CreateRecallRequest
+
+      @BeforeEach
+      fun createPrisonerAndSentence() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account(username = "T.SMITH")
+          }
+          prisoner =
+            offender(nomsId = "A1234AB") {
+              booking = booking(agencyLocationId = "MDI") {
+                lateinit var courtOrder: CourtOrder
+                courtCase(reportingStaff = staff) {
+                  val offenderCharge = offenderCharge(offenceCode = "RT88074")
+                  courtEvent {
+                    courtEventCharge(offenderCharge = offenderCharge)
+                    courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                  }
+                  sentence = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                    offenderSentenceCharge(offenderCharge = offenderCharge)
+                    term(days = 35, sentenceTermType = "IMP")
+                  }
+                }
+              }
+            }
+        }
+        request = CreateRecallRequest(
+          returnToCustody = null,
+          sentenceCategory = "2020",
+          sentenceCalcType = "FTR_ORA",
+          sentenceIds = listOf(
+            SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence.id.sequence),
+          ),
+        )
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.delete(prisoner)
+        repository.delete(staff)
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(request))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(request))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(request))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var prisoner: Offender
+      private lateinit var booking: OffenderBooking
+      private lateinit var staff: Staff
+      private lateinit var sentence: OffenderSentence
+      private lateinit var request: CreateRecallRequest
+
+      @BeforeEach
+      fun createPrisonerAndSentence() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account(username = "T.SMITH")
+          }
+          prisoner =
+            offender(nomsId = "A1234AB") {
+              booking = booking(agencyLocationId = "MDI") {
+                lateinit var courtOrder: CourtOrder
+                courtCase(reportingStaff = staff) {
+                  val offenderCharge = offenderCharge(offenceCode = "RT88074")
+                  courtEvent {
+                    courtEventCharge(offenderCharge = offenderCharge)
+                    courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                  }
+                  sentence = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                    offenderSentenceCharge(offenderCharge = offenderCharge)
+                    term(days = 35, sentenceTermType = "IMP")
+                  }
+                }
+              }
+            }
+        }
+        request = CreateRecallRequest(
+          returnToCustody = null,
+          sentenceCategory = "2020",
+          sentenceCalcType = "FTR_ORA",
+          sentenceIds = listOf(
+            SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence.id.sequence),
+          ),
+        )
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.delete(prisoner)
+        repository.delete(staff)
+      }
+
+      @Test
+      fun `400 when category code and calc type are individually valid but not a valid combination`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(request.copy(sentenceCategory = "1880")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `404 when sentence does not exist`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(BodyInserters.fromValue(request.copy(sentenceIds = listOf(SentenceId(booking.bookingId, 99L)))))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Not Found: Sentence for booking ${booking.bookingId} and sentence sequence 99 not found")
+      }
+    }
+
+    @Nested
+    inner class RecallSentencesSuccess {
+      private lateinit var prisoner: Offender
+      private lateinit var booking: OffenderBooking
+      private lateinit var staff: Staff
+      private lateinit var sentence1: OffenderSentence
+      private lateinit var sentence2: OffenderSentence
+      private lateinit var request: CreateRecallRequest
+
+      @Nested
+      inner class FirstFixedTermRecall {
+        @BeforeEach
+        fun createPrisonerAndSentence() {
+          nomisDataBuilder.build {
+            staff = staff {
+              account(username = "T.SMITH")
+            }
+            prisoner =
+              offender(nomsId = "A1234AB") {
+                booking = booking(agencyLocationId = "MDI") {
+                  lateinit var courtOrder: CourtOrder
+                  courtCase(reportingStaff = staff) {
+                    val offenderCharge = offenderCharge(offenceCode = "RT88074")
+                    courtEvent {
+                      courtEventCharge(offenderCharge = offenderCharge)
+                      courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                    }
+                    sentence1 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                    sentence2 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                  }
+                }
+              }
+          }
+          request = CreateRecallRequest(
+            returnToCustody = ReturnToCustodyRequest(
+              returnToCustodyDate = LocalDate.parse("2023-01-01"),
+              enteredByStaffUsername = "T.SMITH",
+              recallLength = 28,
+            ),
+            sentenceCategory = "2020",
+            sentenceCalcType = "FTR_ORA",
+            sentenceIds = listOf(
+              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
+              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence2.id.sequence),
+            ),
+          )
+        }
+
+        @Test
+        fun `can recall a sentence`() {
+          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isFalse
+            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+            assertThat(status).isEqualTo("I")
+          }
+          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isFalse
+            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+            assertThat(status).isEqualTo("I")
+          }
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("A")
+          }
+          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("A")
+          }
+        }
+
+        @Test
+        fun `will add a return to custody data`() {
+          assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isNotPresent()
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          val returnToCustodyData = offenderFixedTermRecallRepository.findById(booking.bookingId).orElseThrow()
+          assertThat(returnToCustodyData.returnToCustodyDate).isEqualTo(LocalDate.parse("2023-01-01"))
+          assertThat(returnToCustodyData.recallLength).isEqualTo(28L)
+          assertThat(returnToCustodyData.staff.id).isEqualTo(staff.id)
+        }
+
+        @Test
+        fun `will not add a return to custody data with not supplied`() {
+          assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isNotPresent()
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request.copy(returnToCustody = null)))
+            .exchange()
+            .expectStatus().isOk
+
+          assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isNotPresent()
+        }
+
+        @Test
+        fun `will update the imprisonment status`() {
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          verify(spRepository).imprisonmentStatusUpdate(
+            bookingId = eq(booking.bookingId),
+            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
+          )
+        }
+
+        @Test
+        fun `will track telemetry for the recall`() {
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          verify(telemetryClient).trackEvent(
+            eq("sentences-recalled"),
+            org.mockito.kotlin.check {
+              assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
+              assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}")
+              assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
+            },
+            isNull(),
+          )
+        }
+      }
+
+      @Nested
+      inner class SecondFixedTermRecall {
+        private lateinit var prisoner: Offender
+        private lateinit var booking: OffenderBooking
+        private lateinit var staff: Staff
+        private lateinit var otherStaff: Staff
+        private lateinit var sentence1: OffenderSentence
+        private lateinit var sentence2: OffenderSentence
+        private lateinit var request: CreateRecallRequest
+
+        @BeforeEach
+        fun createPrisonerAndSentence() {
+          nomisDataBuilder.build {
+            staff = staff {
+              account(username = "T.SMITH")
+            }
+            otherStaff = staff {
+              account(username = "T.JONES")
+            }
+            prisoner =
+              offender(nomsId = "A1234AB") {
+                booking = booking(agencyLocationId = "MDI") {
+                  fixedTermRecall(returnToCustodyDate = LocalDate.parse("2022-01-05"), staff = otherStaff, recallLength = 14)
+                  lateinit var courtOrder: CourtOrder
+                  courtCase(reportingStaff = staff) {
+                    val offenderCharge = offenderCharge(offenceCode = "RT88074")
+                    courtEvent {
+                      courtEventCharge(offenderCharge = offenderCharge)
+                      courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                    }
+                    sentence1 = sentence(category = "2020", calculationType = "14FTR_ORA", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                    sentence2 = sentence(category = "2020", calculationType = "14FTR_ORA", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                  }
+                }
+              }
+          }
+          request = CreateRecallRequest(
+            returnToCustody = ReturnToCustodyRequest(
+              returnToCustodyDate = LocalDate.parse("2024-01-01"),
+              enteredByStaffUsername = "T.SMITH",
+              recallLength = 28,
+            ),
+            sentenceCategory = "2020",
+            sentenceCalcType = "FTR_ORA",
+            sentenceIds = listOf(
+              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
+              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence2.id.sequence),
+            ),
+          )
+        }
+
+        @Test
+        fun `can recall a sentence`() {
+          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("I")
+          }
+          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("I")
+          }
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("A")
+          }
+          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("A")
+          }
+        }
+
+        @Test
+        fun `will update a return to custody data`() {
+          with(offenderFixedTermRecallRepository.findById(booking.bookingId).orElseThrow()) {
+            assertThat(returnToCustodyDate).isEqualTo(LocalDate.parse("2022-01-05"))
+            assertThat(recallLength).isEqualTo(14L)
+            assertThat(staff.id).isEqualTo(otherStaff.id)
+          }
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          with(offenderFixedTermRecallRepository.findById(booking.bookingId).orElseThrow()) {
+            assertThat(returnToCustodyDate).isEqualTo(LocalDate.parse("2024-01-01"))
+            assertThat(recallLength).isEqualTo(28L)
+            assertThat(staff.id).isEqualTo(staff.id)
+          }
+        }
+
+        @Test
+        fun `will update the imprisonment status`() {
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          verify(spRepository).imprisonmentStatusUpdate(
+            bookingId = eq(booking.bookingId),
+            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
+          )
+        }
+
+        @Test
+        fun `will track telemetry for the recall`() {
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          verify(telemetryClient).trackEvent(
+            eq("sentences-recalled"),
+            org.mockito.kotlin.check {
+              assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
+              assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}")
+              assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
+            },
+            isNull(),
+          )
+        }
+      }
+    }
+  }
 }
