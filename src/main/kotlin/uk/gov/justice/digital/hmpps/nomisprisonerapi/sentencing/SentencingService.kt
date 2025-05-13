@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceChargeId
@@ -43,6 +44,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceTermType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventChargeRepository
@@ -57,6 +59,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceTermRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.time.LocalDate
@@ -89,6 +92,7 @@ class SentencingService(
   private val storedProcedureRepository: StoredProcedureRepository,
   private val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
+  private val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -1008,6 +1012,66 @@ class SentencingService(
     courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
   }
 
+  fun recallSentences(offenderNo: String, request: CreateRecallRequest) {
+    // It would be odd for the sentences to sit across bookings but give DPS is booking agnostic,
+    // it would make sense to not make any assumptions
+    val bookingIds = request.sentenceIds.map { it.offenderBookingId }.toSet()
+
+    // Update sentences
+    request.sentenceIds.forEach { sentenceId ->
+      val offenderBooking = findOffenderBooking(sentenceId.offenderBookingId)
+      with(findSentence(booking = offenderBooking, sentenceSequence = sentenceId.sentenceSequence)) {
+        category = lookupSentenceCategory(request.sentenceCategory)
+        calculationType = lookupSentenceCalculationType(
+          categoryCode = request.sentenceCategory,
+          calcType = request.sentenceCalcType,
+        )
+        status = "A"
+        offenderSentenceRepository.saveAndFlush(this)
+      }
+    }
+
+    // Create or update OffenderFixedTermRecall records if requested
+    if (request.returnToCustody != null) {
+      val enteredByStaff = findStaffByUsername(request.returnToCustody.enteredByStaffUsername)
+      bookingIds.forEach { bookingId ->
+        with(findOffenderBooking(bookingId)) {
+          if (fixedTermRecall == null) {
+            fixedTermRecall = OffenderFixedTermRecall(
+              returnToCustodyDate = request.returnToCustody.returnToCustodyDate,
+              staff = enteredByStaff,
+              recallLength = request.returnToCustody.recallLength.toLong(),
+              offenderBooking = this,
+            )
+          } else {
+            with(fixedTermRecall!!) {
+              returnToCustodyDate = request.returnToCustody.returnToCustodyDate
+              staff = enteredByStaff
+              recallLength = request.returnToCustody.recallLength.toLong()
+            }
+          }
+        }
+      }
+    }
+
+    bookingIds.forEach { bookingId ->
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
+    }
+
+    telemetryClient.trackEvent(
+      "sentences-recalled",
+      mapOf(
+        "bookingId" to bookingIds.joinToString { it.toString() },
+        "sentenceSequences" to request.sentenceIds.map { it.sentenceSequence }.joinToString { it.toString() },
+        "offenderNo" to offenderNo,
+      ),
+      null,
+    )
+  }
+
   private fun findLatestBooking(offenderNo: String): OffenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
 
@@ -1094,6 +1158,9 @@ class SentencingService(
   private fun lookupChargeStatusType(code: String): ChargeStatusType = chargeStatusTypeRepository.findByIdOrNull(
     ChargeStatusType.pk(code),
   ) ?: throw BadDataException("Charge status Type $code not found")
+
+  private fun findStaffByUsername(username: String): Staff = staffUserAccountRepository.findByUsername(username)?.staff
+    ?: throw BadDataException("Username $username not found")
 }
 
 private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest = ExistingOffenderChargeRequest(
