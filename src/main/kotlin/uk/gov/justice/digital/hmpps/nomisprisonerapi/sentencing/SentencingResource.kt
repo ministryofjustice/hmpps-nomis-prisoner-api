@@ -1915,6 +1915,7 @@ data class SentenceResponse(
   val createdByUsername: String,
   val sentenceTerms: List<SentenceTermResponse>,
   val offenderCharges: List<OffenderChargeResponse>,
+  val missingCourtOffenderChargeIds: List<Long>,
   val prisonId: String,
   val recallCustodyDate: RecallCustodyDate?,
 )
@@ -1940,6 +1941,7 @@ data class SentenceTermResponse(
   val startDate: LocalDate,
   val endDate: LocalDate?,
   val lifeSentenceFlag: Boolean,
+  val prisonId: String,
 )
 
 @Schema(description = "Court case create request")
