@@ -18,8 +18,8 @@ class VisitBalanceBuilderFactory {
 class VisitBalanceBuilder : VisitBalanceDsl {
   fun build(
     offenderBooking: OffenderBooking,
-    remainingVisitOrders: Int,
-    remainingPrivilegedVisitOrders: Int,
+    remainingVisitOrders: Int?,
+    remainingPrivilegedVisitOrders: Int?,
   ): OffenderVisitBalance = OffenderVisitBalance(
     offenderBooking = offenderBooking,
     remainingVisitOrders = remainingVisitOrders,
