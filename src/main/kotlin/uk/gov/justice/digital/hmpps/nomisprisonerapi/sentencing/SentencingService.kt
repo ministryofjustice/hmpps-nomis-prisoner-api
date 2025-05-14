@@ -969,7 +969,12 @@ class SentencingService(
     termSequence: Long,
     sentenceSequence: Long,
   ): SentenceTermResponse = findOffenderBooking(id = offenderBookingId).let { offenderBooking ->
-    return findSentenceTerm(offenderNo = offenderNo, booking = offenderBooking, sentenceSequence = sentenceSequence, termSequence = termSequence).toSentenceTermResponse()
+    return findSentenceTerm(
+      offenderNo = offenderNo,
+      booking = offenderBooking,
+      sentenceSequence = sentenceSequence,
+      termSequence = termSequence,
+    ).toSentenceTermResponse()
   }
 
   fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
@@ -1323,6 +1328,7 @@ private fun OffenderSentenceTerm.toSentenceTermResponse(): SentenceTermResponse 
   endDate = this.endDate,
   lifeSentenceFlag = this.lifeSentenceFlag,
   sentenceTermType = this.sentenceTermType.toCodeDescription(),
+  prisonId = this.id.offenderBooking.location?.id ?: "OUT",
 )
 
 fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
@@ -1379,6 +1385,7 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   createdByUsername = this.createUsername,
   sentenceTerms = this.offenderSentenceTerms.map { it.toSentenceTermResponse() },
   offenderCharges = this.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
+  missingCourtOffenderChargeIds = getMissingCourtEventChargeIds(),
   prisonId = this.id.offenderBooking.location?.id ?: "OUT",
   recallCustodyDate = this.id.offenderBooking.fixedTermRecall?.takeIf { this.isActiveRecallSentence() }?.let {
     RecallCustodyDate(
@@ -1396,4 +1403,11 @@ fun SentenceCalculationType.isRecallSentence() = with(this.id.calculationType) {
   startsWith("LR") ||
     contains("FTR") ||
     this in listOf("CUR", "CUR_ORA", "HDR", "HDR_ORA")
+}
+
+private fun OffenderSentence.getMissingCourtEventChargeIds(): List<Long> {
+  val courtEventCharges = this.courtOrder?.courtEvent?.courtEventCharges ?: emptyList<CourtEventCharge>()
+  return this.offenderSentenceCharges.filter { sentenceCharge -> courtEventCharges.all { it.id.offenderCharge.id != sentenceCharge.id.offenderChargeId } }.map { missingSentenceCharge ->
+    missingSentenceCharge.id.offenderChargeId
+  }
 }
