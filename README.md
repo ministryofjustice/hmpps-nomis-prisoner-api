@@ -1,5 +1,6 @@
 # HMPPS NOMIS Synchronisation Prisoner API
 [![repo standards badge](https://img.shields.io/badge/endpoint.svg?&style=flat&logo=github&url=https%3A%2F%2Foperations-engineering-reports.cloud-platform.service.justice.gov.uk%2Fapi%2Fv1%2Fcompliant_public_repositories%2Fhmpps-nomis-prisoner-api)](https://operations-engineering-reports.cloud-platform.service.justice.gov.uk/public-report/hmpps-nomis-prisoner-api "Link to report")
+[![Docker Repository on ghcr](https://img.shields.io/badge/ghcr.io-repository-2496ED.svg?logo=docker)](https://ghcr.io/ministryofjustice/hmpps-nomis-prisoner-api)
 [![API docs](https://img.shields.io/badge/API_docs_-view-85EA2D.svg?logo=swagger)](https://nomis-prisoner-api-dev.prison.service.justice.gov.uk/swagger-ui/index.html)
 
 This is a private API for synchronising data between NOMIS and DPS services that hold data outside of NOMIS.
