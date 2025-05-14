@@ -283,8 +283,8 @@ interface BookingDsl {
 
   @VisitBalanceDslMarker
   fun visitBalance(
-    remainingVisitOrders: Int = 4,
-    remainingPrivilegedVisitOrders: Int = 4,
+    remainingVisitOrders: Int? = 4,
+    remainingPrivilegedVisitOrders: Int? = 4,
     dsl: VisitBalanceDsl.() -> Unit = {},
   ): OffenderVisitBalance
 
@@ -896,8 +896,8 @@ class BookingBuilder(
     }
 
   override fun visitBalance(
-    remainingVisitOrders: Int,
-    remainingPrivilegedVisitOrders: Int,
+    remainingVisitOrders: Int?,
+    remainingPrivilegedVisitOrders: Int?,
     dsl: VisitBalanceDsl.() -> Unit,
   ): OffenderVisitBalance {
     offenderBooking.visitBalance = visitBalanceBuilderFactory.builder().build(
