@@ -48,11 +48,10 @@ class VisitBalanceService(
   private fun getVisitBalanceForPrisoner(latestBooking: OffenderBooking): VisitBalanceDetailResponse? = latestBooking.visitBalance?.let {
     val lastBatchIEPAdjustmentDate = latestBooking.visitBalanceAdjustments
       .filter { it.isIEPAllocation() && it.isCreatedByBatchVOProcess() }.maxByOrNull { it.adjustDate }?.adjustDate
-
     VisitBalanceDetailResponse(
       prisonNumber = latestBooking.offender.nomsId,
-      remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders!!,
-      remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders!!,
+      remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders ?: 0,
+      remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders ?: 0,
       lastIEPAllocationDate = lastBatchIEPAdjustmentDate
         ?: latestBooking.visitBalanceAdjustments.filter { it.isIEPAllocation() }
           .maxByOrNull { it.adjustDate }?.adjustDate,

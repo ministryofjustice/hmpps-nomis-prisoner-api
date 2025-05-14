@@ -414,6 +414,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   inner class getVisitBalanceByIdToMigrate {
     private lateinit var offender: Offender
     private lateinit var booking: OffenderBooking
+    private var bookingIdWithNullVisitOrders: Long = 0
 
     @BeforeEach
     fun setUp() {
@@ -461,12 +462,20 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             )
           }
         }
+        offender(nomsId = "A1234DE") {
+          bookingIdWithNullVisitOrders = booking {
+            visitBalance(
+              remainingVisitOrders = null,
+              remainingPrivilegedVisitOrders = null,
+            )
+          }.bookingId
+        }
       }
     }
 
     @AfterEach
     fun tearDown() {
-      repository.delete(offender)
+      repository.deleteOffenders()
     }
 
     @Nested
@@ -499,10 +508,22 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when offender not found`() {
-        webTestClient.get().uri("/prisoners/AB1234C/visit-balance")
+        webTestClient.get().uri("/visit-balances/9999")
           .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
           .exchange()
           .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return zero balances when null entries for vos or pvos`() {
+        webTestClient.get().uri("/visit-balances/$bookingIdWithNullVisitOrders")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("remainingVisitOrders").isEqualTo(0)
+          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(0)
       }
     }
 
@@ -569,6 +590,14 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
         ) {
           booking() // no visit balance
         }
+        offender(nomsId = "A1234DE") {
+          booking {
+            visitBalance(
+              remainingVisitOrders = null,
+              remainingPrivilegedVisitOrders = null,
+            )
+          }
+        }
       }
     }
 
@@ -620,6 +649,17 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody().isEmpty
+      }
+
+      @Test
+      fun `return null when null entries for vos or pvos`() {
+        webTestClient.get().uri("/prisoners/A1234DE/visit-balance")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .isEmpty
       }
     }
 
