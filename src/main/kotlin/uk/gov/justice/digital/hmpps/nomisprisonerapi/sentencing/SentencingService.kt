@@ -55,6 +55,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepos
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceTermRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -70,6 +71,7 @@ import java.time.LocalTime
 @Transactional
 class SentencingService(
   private val courtCaseRepository: CourtCaseRepository,
+  private val offenderRepository: OffenderRepository,
   private val offenderSentenceRepository: OffenderSentenceRepository,
   private val offenderSentenceTermRepository: OffenderSentenceTermRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
@@ -102,8 +104,7 @@ class SentencingService(
   }
 
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
-    findLatestBooking(offenderNo)
-
+    checkOffenderExists(offenderNo)
     return courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
       ?: throw NotFoundException("Court case $id not found")
   }
@@ -188,51 +189,50 @@ class SentencingService(
     caseId: Long,
     courtAppearanceRequest: CourtAppearanceRequest,
   ): CreateCourtAppearanceResponse {
-    findLatestBooking(offenderNo).let { booking ->
-      findCourtCase(caseId, offenderNo).let { courtCase ->
-        val courtEvent = CourtEvent(
-          offenderBooking = booking,
-          courtCase = courtCase,
-          eventDate = courtAppearanceRequest.eventDateTime.toLocalDate(),
-          startTime = courtAppearanceRequest.eventDateTime,
-          courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
-          eventStatus = determineEventStatus(
-            courtAppearanceRequest.eventDateTime.toLocalDate(),
-            booking,
-          ),
-          court = lookupEstablishment(courtAppearanceRequest.courtId),
-          outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
-          nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
-          nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
-          directionCode = lookupDirectionType(DirectionType.OUT),
-        )
-        // 'to update' in this context of a new appearance means that the offender charges exist and are associated
-        associateChargesWithAppearance(courtAppearanceRequest.courtEventCharges, courtEvent)
+    checkOffenderExists(offenderNo)
+    findCourtCase(caseId, offenderNo).let { courtCase ->
+      val courtEvent = CourtEvent(
+        offenderBooking = courtCase.offenderBooking,
+        courtCase = courtCase,
+        eventDate = courtAppearanceRequest.eventDateTime.toLocalDate(),
+        startTime = courtAppearanceRequest.eventDateTime,
+        courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+        eventStatus = determineEventStatus(
+          courtAppearanceRequest.eventDateTime.toLocalDate(),
+          courtCase.offenderBooking,
+        ),
+        court = lookupEstablishment(courtAppearanceRequest.courtId),
+        outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
+        nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
+        nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
+        directionCode = lookupDirectionType(DirectionType.OUT),
+      )
+      // 'to update' in this context of a new appearance means that the offender charges exist and are associated
+      associateChargesWithAppearance(courtAppearanceRequest.courtEventCharges, courtEvent)
 
-        courtCase.courtEvents.add(
-          courtEvent,
+      courtCase.courtEvents.add(
+        courtEvent,
+      )
+      courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
+        refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          bookingId = courtCase.offenderBooking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
-        courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
-          refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
-          storedProcedureRepository.imprisonmentStatusUpdate(
-            bookingId = booking.bookingId,
-            changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+        return CreateCourtAppearanceResponse(
+          id = createdCourtEvent.id,
+        ).also { response ->
+          telemetryClient.trackEvent(
+            "court-appearance-created",
+            mapOf(
+              "courtCaseId" to caseId.toString(),
+              "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+              "offenderNo" to offenderNo,
+              "court" to courtAppearanceRequest.courtId,
+              "courtEventId" to response.id.toString(),
+            ),
+            null,
           )
-          return CreateCourtAppearanceResponse(
-            id = createdCourtEvent.id,
-          ).also { response ->
-            telemetryClient.trackEvent(
-              "court-appearance-created",
-              mapOf(
-                "courtCaseId" to caseId.toString(),
-                "bookingId" to booking.bookingId.toString(),
-                "offenderNo" to offenderNo,
-                "court" to courtAppearanceRequest.courtId,
-                "courtEventId" to response.id.toString(),
-              ),
-              null,
-            )
-          }
         }
       }
     }
@@ -244,48 +244,47 @@ class SentencingService(
     caseId: Long,
     offenderChargeRequest: OffenderChargeRequest,
   ): OffenderChargeIdResponse {
-    findLatestBooking(offenderNo).let { booking ->
-      findCourtCase(caseId, offenderNo).let { courtCase ->
-        val resultCode =
-          offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) }
-        val offenderCharge = OffenderCharge(
-          courtCase = courtCase,
-          offenderBooking = booking,
-          offence = lookupOffence(offenderChargeRequest.offenceCode),
-          offenceDate = offenderChargeRequest.offenceDate,
-          offenceEndDate = offenderChargeRequest.offenceEndDate,
-          resultCode1 = resultCode,
-          resultCode1Indicator = resultCode?.dispositionCode,
-          chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) },
-        )
-        offenderChargeRepository.saveAndFlush(offenderCharge).let { createdOffenderCharge ->
-          return OffenderChargeIdResponse(
-            offenderChargeId = createdOffenderCharge.id,
-          ).also { response ->
-            // calculates main offence
-            storedProcedureRepository.imprisonmentStatusUpdate(
-              bookingId = booking.bookingId,
-              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-            )
-            telemetryClient.trackEvent(
-              "offender-charge-created",
-              mapOf(
-                "courtCaseId" to caseId.toString(),
-                "bookingId" to booking.bookingId.toString(),
-                "offenderNo" to offenderNo,
-                "offenderChargeId" to response.offenderChargeId.toString(),
-                "offenceCode" to createdOffenderCharge.offence.id.offenceCode,
-              ),
-              null,
-            )
-          }
+    checkOffenderExists(offenderNo)
+    findCourtCase(caseId, offenderNo).let { courtCase ->
+      val resultCode =
+        offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) }
+      val offenderCharge = OffenderCharge(
+        courtCase = courtCase,
+        offenderBooking = courtCase.offenderBooking,
+        offence = lookupOffence(offenderChargeRequest.offenceCode),
+        offenceDate = offenderChargeRequest.offenceDate,
+        offenceEndDate = offenderChargeRequest.offenceEndDate,
+        resultCode1 = resultCode,
+        resultCode1Indicator = resultCode?.dispositionCode,
+        chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) },
+      )
+      offenderChargeRepository.saveAndFlush(offenderCharge).let { createdOffenderCharge ->
+        return OffenderChargeIdResponse(
+          offenderChargeId = createdOffenderCharge.id,
+        ).also { response ->
+          // calculates main offence
+          storedProcedureRepository.imprisonmentStatusUpdate(
+            bookingId = courtCase.offenderBooking.bookingId,
+            changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+          )
+          telemetryClient.trackEvent(
+            "offender-charge-created",
+            mapOf(
+              "courtCaseId" to caseId.toString(),
+              "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+              "offenderNo" to offenderNo,
+              "offenderChargeId" to response.offenderChargeId.toString(),
+              "offenceCode" to createdOffenderCharge.offence.id.offenceCode,
+            ),
+            null,
+          )
         }
       }
     }
   }
 
   fun getCourtAppearance(id: Long, offenderNo: String): CourtEventResponse {
-    findLatestBooking(offenderNo)
+    checkOffenderExists(offenderNo)
     return findCourtAppearance(offenderNo = offenderNo, id = id).toCourtEvent()
   }
 
@@ -331,72 +330,71 @@ class SentencingService(
     eventId: Long,
     request: CourtAppearanceRequest,
   ): UpdateCourtAppearanceResponse {
-    findLatestBooking(offenderNo).let { offenderBooking ->
-      findCourtCase(caseId, offenderNo).let { courtCase ->
-        findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
-          courtAppearance.eventDate = request.eventDateTime.toLocalDate()
-          courtAppearance.startTime = request.eventDateTime
-          courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
-          courtAppearance.eventStatus = determineEventStatus(
-            request.eventDateTime.toLocalDate(),
-            courtCase.offenderBooking,
-          )
-          courtAppearance.court = lookupEstablishment(request.courtId)
-          courtAppearance.outcomeReasonCode =
-            request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
-          courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
-          courtAppearance.nextEventStartTime = request.nextEventDateTime
+    checkOffenderExists(offenderNo)
+    findCourtCase(caseId, offenderNo).let { courtCase ->
+      findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
+        courtAppearance.eventDate = request.eventDateTime.toLocalDate()
+        courtAppearance.startTime = request.eventDateTime
+        courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
+        courtAppearance.eventStatus = determineEventStatus(
+          request.eventDateTime.toLocalDate(),
+          courtCase.offenderBooking,
+        )
+        courtAppearance.court = lookupEstablishment(request.courtId)
+        courtAppearance.outcomeReasonCode =
+          request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
+        courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
+        courtAppearance.nextEventStartTime = request.nextEventDateTime
 
-          associateChargesWithAppearance(request.courtEventCharges, courtAppearance)
+        associateChargesWithAppearance(request.courtEventCharges, courtAppearance)
 
-          // Offender charges are deleted if no longer associated with an appearance
-          val deletedOffenderCharges =
-            courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
-              orphanedOffenderCharges.forEach {
-                courtCase.offenderCharges.remove(it)
-                log.debug("Offender charge deleted: ${it.id}")
-                telemetryClient.trackEvent(
-                  "offender-charge-deleted",
-                  mapOf(
-                    "courtCaseId" to caseId.toString(),
-                    "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-                    "offenderNo" to offenderNo,
-                    "offenderChargeId" to it.id.toString(),
-                    "courtEventId" to eventId.toString(),
-                  ),
-                  null,
-                )
-              }
-            }
-
-          courtEventRepository.saveAndFlush(courtAppearance).also {
-            refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
-            storedProcedureRepository.imprisonmentStatusUpdate(
-              bookingId = offenderBooking.bookingId,
-              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-            )
-          }
-
-          return UpdateCourtAppearanceResponse(
-            deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
-              OffenderChargeIdResponse(
-                offenderChargeId = offenderCharge.id,
+        // Offender charges are deleted if no longer associated with an appearance
+        val deletedOffenderCharges =
+          courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
+            orphanedOffenderCharges.forEach {
+              courtCase.offenderCharges.remove(it)
+              log.debug("Offender charge deleted: ${it.id}")
+              telemetryClient.trackEvent(
+                "offender-charge-deleted",
+                mapOf(
+                  "courtCaseId" to caseId.toString(),
+                  "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+                  "offenderNo" to offenderNo,
+                  "offenderChargeId" to it.id.toString(),
+                  "courtEventId" to eventId.toString(),
+                ),
+                null,
               )
-            },
-          ).also {
-            telemetryClient.trackEvent(
-              "court-appearance-updated",
-              mapOf(
-                "courtCaseId" to caseId.toString(),
-                "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-                "offenderNo" to offenderNo,
-                "court" to request.courtId,
-                "courtEventId" to eventId.toString(),
-                "deletedOffenderCharges" to it.deletedOffenderChargesIds.toString(),
-              ),
-              null,
-            )
+            }
           }
+
+        courtEventRepository.saveAndFlush(courtAppearance).also {
+          refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
+          storedProcedureRepository.imprisonmentStatusUpdate(
+            bookingId = courtCase.offenderBooking.bookingId,
+            changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+          )
+        }
+
+        return UpdateCourtAppearanceResponse(
+          deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
+            OffenderChargeIdResponse(
+              offenderChargeId = offenderCharge.id,
+            )
+          },
+        ).also {
+          telemetryClient.trackEvent(
+            "court-appearance-updated",
+            mapOf(
+              "courtCaseId" to caseId.toString(),
+              "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+              "offenderNo" to offenderNo,
+              "court" to request.courtId,
+              "courtEventId" to eventId.toString(),
+              "deletedOffenderCharges" to it.deletedOffenderChargesIds.toString(),
+            ),
+            null,
+          )
         }
       }
     }
@@ -408,9 +406,9 @@ class SentencingService(
     caseId: Long,
     eventId: Long,
   ) {
-    findLatestBooking(offenderNo).let { booking ->
+    findCourtCase(caseId, offenderNo).let { case ->
       val telemetry = mapOf(
-        "bookingId" to booking.bookingId.toString(),
+        "bookingId" to case.offenderBooking.bookingId.toString(),
         "offenderNo" to offenderNo,
         "eventId" to eventId.toString(),
         "caseId" to caseId.toString(),
@@ -418,7 +416,7 @@ class SentencingService(
       courtEventRepository.findByIdOrNull(eventId)?.also {
         courtEventRepository.delete(it)
         storedProcedureRepository.imprisonmentStatusUpdate(
-          bookingId = booking.bookingId,
+          bookingId = case.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
         telemetryClient.trackEvent(
@@ -440,30 +438,28 @@ class SentencingService(
     offenderNo: String,
     caseId: Long,
   ) {
-    findLatestBooking(offenderNo).let { booking ->
-      val telemetry = mapOf(
-        "bookingId" to booking.bookingId.toString(),
-        "offenderNo" to offenderNo,
-        "caseId" to caseId.toString(),
+    var telemetry = mapOf(
+      "offenderNo" to offenderNo,
+      "caseId" to caseId.toString(),
+    )
+    courtCaseRepository.findByIdOrNull(caseId)?.also {
+      telemetry = telemetry + ("bookingId" to it.offenderBooking.bookingId.toString())
+      courtCaseRepository.delete(it)
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = it.offenderBooking.bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
       )
-      courtCaseRepository.findByIdOrNull(caseId)?.also {
-        courtCaseRepository.delete(it)
-        storedProcedureRepository.imprisonmentStatusUpdate(
-          bookingId = booking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-        )
-        telemetryClient.trackEvent(
-          "court-case-deleted",
-          telemetry,
-          null,
-        )
-      }
-        ?: telemetryClient.trackEvent(
-          "court-case-delete-not-found",
-          telemetry,
-          null,
-        )
+      telemetryClient.trackEvent(
+        "court-case-deleted",
+        telemetry,
+        null,
+      )
     }
+      ?: telemetryClient.trackEvent(
+        "court-case-delete-not-found",
+        telemetry,
+        null,
+      )
   }
 
   @Audit
@@ -474,47 +470,46 @@ class SentencingService(
     courtEventId: Long,
     request: OffenderChargeRequest,
   ) {
-    findLatestBooking(offenderNo).let { booking ->
-      findCourtCase(caseId, offenderNo).let { courtCase ->
-        findCourtAppearance(courtEventId, offenderNo).let { courtAppearance ->
-          val offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId)
-          findCourtEventCharge(
-            offenderNo = offenderNo,
-            id = CourtEventChargeId(offenderCharge, courtAppearance),
-          ).let { courtEventCharge ->
+    checkOffenderExists(offenderNo)
+    findCourtCase(caseId, offenderNo).let { courtCase ->
+      findCourtAppearance(courtEventId, offenderNo).let { courtAppearance ->
+        val offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId)
+        findCourtEventCharge(
+          offenderNo = offenderNo,
+          id = CourtEventChargeId(offenderCharge, courtAppearance),
+        ).let { courtEventCharge ->
 
-            val resultCode = request.resultCode1?.let { lookupOffenceResultCode(it) }
-            courtEventCharge.offenceDate = request.offenceDate
-            courtEventCharge.offenceEndDate = request.offenceEndDate
-            courtEventCharge.resultCode1 = resultCode
-            courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
+          val resultCode = request.resultCode1?.let { lookupOffenceResultCode(it) }
+          courtEventCharge.offenceDate = request.offenceDate
+          courtEventCharge.offenceEndDate = request.offenceEndDate
+          courtEventCharge.resultCode1 = resultCode
+          courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
 
-            refreshOffenderCharge(
-              courtEventCharge = courtEventCharge,
-              offenderChargeRequest = request.toExistingOffenderChargeRequest(chargeId),
-              resultCode = resultCode,
-              latestAppearance = courtEventCharge.id.courtEvent.isLatestAppearance(),
-            ).also {
-              courtCase.courtEvents.forEach { courtAppearance ->
-                courtEventRepository.saveAndFlush(courtAppearance).also {
-                  refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
-                }
+          refreshOffenderCharge(
+            courtEventCharge = courtEventCharge,
+            offenderChargeRequest = request.toExistingOffenderChargeRequest(chargeId),
+            resultCode = resultCode,
+            latestAppearance = courtEventCharge.id.courtEvent.isLatestAppearance(),
+          ).also {
+            courtCase.courtEvents.forEach { courtAppearance ->
+              courtEventRepository.saveAndFlush(courtAppearance).also {
+                refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
               }
-              storedProcedureRepository.imprisonmentStatusUpdate(
-                bookingId = booking.bookingId,
-                changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-              )
-              telemetryClient.trackEvent(
-                "court-charge-updated",
-                mapOf(
-                  "courtCaseId" to caseId.toString(),
-                  "bookingId" to booking.bookingId.toString(),
-                  "offenderNo" to offenderNo,
-                  "offenderChargeId" to chargeId.toString(),
-                ),
-                null,
-              )
             }
+            storedProcedureRepository.imprisonmentStatusUpdate(
+              bookingId = courtCase.offenderBooking.bookingId,
+              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+            )
+            telemetryClient.trackEvent(
+              "court-charge-updated",
+              mapOf(
+                "courtCaseId" to caseId.toString(),
+                "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+                "offenderNo" to offenderNo,
+                "offenderChargeId" to chargeId.toString(),
+              ),
+              null,
+            )
           }
         }
       }
@@ -978,7 +973,7 @@ class SentencingService(
   }
 
   fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
-    findLatestBooking(offenderNo)
+    checkOffenderExists(offenderNo)
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
   }
 
@@ -1079,6 +1074,13 @@ class SentencingService(
 
   private fun findLatestBooking(offenderNo: String): OffenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
+
+  private fun checkOffenderExists(offenderNo: String): Boolean {
+    if (offenderRepository.existsByNomsId(offenderNo)) {
+      return true
+    }
+    throw NotFoundException("Prisoner $offenderNo not found")
+  }
 
   private fun findOffenderBooking(id: Long): OffenderBooking = offenderBookingRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender booking $id not found")
