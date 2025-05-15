@@ -2335,6 +2335,177 @@ class ActivityResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  inner class MoveActivitiesEndDate {
+
+    private lateinit var courseActivity: CourseActivity
+
+    private fun WebTestClient.moveEndDate(courseActivityIds: Collection<Long>, oldEndDate: LocalDate, newEndDate: LocalDate) = put().uri("/activities/move-end-date")
+      .contentType(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds, "oldEndDate": "$oldEndDate", "newEndDate": "$newEndDate" }"""))
+      .exchange()
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.put().uri("/activities/move-end-date")
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue("""{ "courseActivityIds": [1], "oldEndDate": "$today", "newEndDate": "$tomorrow" }"""))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.put().uri("/activities/move-end-date")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue("""{ "courseActivityIds": [1], "oldEndDate": "$today", "newEndDate": "$tomorrow" }"""))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.put().uri("/activities/move-end-date")
+        .contentType(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue("""{ "courseActivityIds": [1], "oldEndDate": "$today", "newEndDate": "$tomorrow" }"""))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should move end date for an activity and its allocations`() {
+      val courseAllocations = mutableListOf<OffenderProgramProfile>()
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(endDate = "$today")
+        }
+        repeat(2) {
+          offender {
+            booking {
+              courseAllocations += courseAllocation(courseActivity = courseActivity, endDate = "$today", programStatusCode = "END")
+            }
+          }
+        }
+      }
+
+      webTestClient.moveEndDate(listOf(courseActivity.courseActivityId), oldEndDate = today, newEndDate = tomorrow)
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(tomorrow)
+      }
+      courseAllocations.forEach {
+        with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
+          assertThat(endDate).isEqualTo(tomorrow)
+        }
+      }
+    }
+
+    @Test
+    fun `should move end date for an activity with no allocations`() {
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(endDate = "$today")
+        }
+      }
+
+      webTestClient.moveEndDate(listOf(courseActivity.courseActivityId), oldEndDate = today, newEndDate = tomorrow)
+        .expectStatus().isOk
+
+      with(repository.getActivity(courseActivity.courseActivityId)) {
+        assertThat(scheduleEndDate).isEqualTo(tomorrow)
+      }
+    }
+
+    @Test
+    fun `should not change allocations that ended on a different day`() {
+      lateinit var courseAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(endDate = "$today")
+        }
+        offender {
+          booking {
+            courseAllocation = courseAllocation(courseActivity = courseActivity, endDate = "$yesterday", programStatusCode = "END")
+          }
+        }
+      }
+
+      webTestClient.moveEndDate(listOf(courseActivity.courseActivityId), oldEndDate = today, newEndDate = tomorrow)
+        .expectStatus().isOk
+
+      with(repository.getOffenderProgramProfile(courseAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isEqualTo(yesterday)
+      }
+    }
+
+    @Test
+    fun `should not update allocations that are not already ended`() {
+      lateinit var activeAllocation: OffenderProgramProfile
+      lateinit var waitingAllocation: OffenderProgramProfile
+      nomisDataBuilder.build {
+        programService {
+          courseActivity = courseActivity(endDate = "$today")
+        }
+        offender {
+          booking {
+            activeAllocation = courseAllocation(courseActivity = courseActivity)
+            waitingAllocation = courseAllocation(courseActivity = courseActivity, programStatusCode = "WAIT")
+          }
+        }
+      }
+
+      webTestClient.moveEndDate(listOf(courseActivity.courseActivityId), oldEndDate = today, newEndDate = tomorrow)
+        .expectStatus().isOk
+
+      with(repository.getOffenderProgramProfile(activeAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isNull()
+      }
+      with(repository.getOffenderProgramProfile(waitingAllocation.offenderProgramReferenceId)) {
+        assertThat(endDate).isNull()
+      }
+    }
+
+    @Test
+    fun `should end multiple activities with multiple allocations`() {
+      val courseActivities = mutableListOf<CourseActivity>()
+      val courseAllocations = mutableListOf<OffenderProgramProfile>()
+      nomisDataBuilder.build {
+        repeat(3) {
+          programService {
+            courseActivities += courseActivity(endDate = "$today")
+          }
+        }
+        courseActivities.forEach { ca ->
+          offender {
+            booking {
+              repeat(2) {
+                courseAllocations += courseAllocation(courseActivity = ca, endDate = "$today", programStatusCode = "END")
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.moveEndDate(courseActivities.map { it.courseActivityId }, oldEndDate = today, newEndDate = tomorrow)
+        .expectStatus().isOk
+
+      courseActivities.forEach {
+        with(repository.getActivity(it.courseActivityId)) {
+          assertThat(scheduleEndDate).isEqualTo(tomorrow)
+        }
+      }
+      courseAllocations.forEach {
+        with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
+          assertThat(endDate).isEqualTo(tomorrow)
+        }
+      }
+    }
+  }
+
+  @Nested
   inner class MaxCourseScheduleId {
 
     @Test

@@ -255,6 +255,11 @@ class ActivityService(
     allocationService.endAllocations(courseActivityIds, date)
   }
 
+  fun moveActivitiesEndDate(courseActivityIds: Collection<Long>, oldEndDate: LocalDate, newEndDate: LocalDate) {
+    courseActivityRepository.moveEndDate(courseActivityIds, oldEndDate, newEndDate)
+    allocationService.moveEndDate(courseActivityIds, oldEndDate, newEndDate)
+  }
+
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
