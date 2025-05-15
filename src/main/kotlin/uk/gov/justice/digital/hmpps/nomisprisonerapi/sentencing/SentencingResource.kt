@@ -1015,7 +1015,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Court Appearance",
-    description = "Required role NOMIS_SENTENCING Creates a new Court Appearance for the offender,latest booking and given Court Case",
+    description = "Required role NOMIS_SENTENCING Creates a new Court Appearance for the offender and given Court Case",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1168,7 +1168,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Court Appearance",
-    description = "Required role NOMIS_SENTENCING Updates a new Court Appearance for the offender,latest booking and given Court Case",
+    description = "Required role NOMIS_SENTENCING Updates a new Court Appearance for the offender and given Court Case",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(

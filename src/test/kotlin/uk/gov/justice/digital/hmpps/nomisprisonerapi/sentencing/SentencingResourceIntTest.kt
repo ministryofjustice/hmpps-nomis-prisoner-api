@@ -194,7 +194,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
       }
     }
 
@@ -1774,7 +1774,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
       }
 
       @Test
@@ -1987,7 +1987,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
       }
 
       @Test
@@ -2201,7 +2201,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
       }
 
       @Test
@@ -2493,7 +2493,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
       }
 
       @Test
@@ -2954,7 +2954,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         verify(telemetryClient).trackEvent(
           eq("court-case-delete-not-found"),
           org.mockito.kotlin.check {
-            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("caseId", "333")
           },
@@ -3120,7 +3119,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
       }
     }
 
@@ -3285,7 +3284,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found or has no bookings")
+          .jsonPath("developerMessage").isEqualTo("Prisoner XXXX not found")
       }
     }
 
