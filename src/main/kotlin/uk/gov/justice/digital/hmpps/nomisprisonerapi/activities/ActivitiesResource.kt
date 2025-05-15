@@ -855,7 +855,7 @@ class ActivitiesResource(
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = EndActivitiesRequest::class),
+          schema = Schema(implementation = MoveActivityEndDateRequest::class),
         ),
       ],
     ),
