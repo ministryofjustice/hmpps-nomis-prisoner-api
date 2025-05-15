@@ -100,6 +100,16 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
   """,
   )
   fun endActivities(courseActivityIds: Collection<Long>, date: LocalDate)
+
+  @Modifying
+  @Query(
+    value = """
+    update CourseActivity ca set ca.scheduleEndDate = :newEndDate   
+    where ca.courseActivityId in :courseActivityIds
+    and (ca.scheduleEndDate = :oldEndDate)
+  """,
+  )
+  fun moveEndDate(courseActivityIds: Collection<Long>, oldEndDate: LocalDate, newEndDate: LocalDate)
 }
 
 interface PayRateWithUnknownIncentive {

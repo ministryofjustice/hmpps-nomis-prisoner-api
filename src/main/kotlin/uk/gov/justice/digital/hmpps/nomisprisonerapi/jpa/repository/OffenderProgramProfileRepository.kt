@@ -134,6 +134,19 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
   )
   fun endAllocations(courseActivityIds: Collection<Long>, date: LocalDate)
 
+  @Suppress("SqlNoDataSourceInspection")
+  @Modifying
+  @Query(
+    nativeQuery = true,
+    value = """
+      update offender_program_profiles opp
+      set opp.offender_end_date = :newEndDate
+      where opp.crs_acty_id in :courseActivityIds
+      and opp.offender_end_date = :oldEndDate
+    """,
+  )
+  fun moveAllocationEndDate(courseActivityIds: Collection<Long>, oldEndDate: LocalDate, newEndDate: LocalDate)
+
   // Note that if we're looking for suspensions we don't check bookings in other prisons because we've found that the other
   // prisons often end activities in the old prison so these would give false positives in the reconciliation.
   // Note also that we have started including non-suspended allocations where the prisoner has moved to another prisoner
