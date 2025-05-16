@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceId
@@ -1266,6 +1267,13 @@ private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse = Co
   resultCode1 = this.resultCode1?.toOffenceResultCodeResponse(),
   resultCode2 = this.resultCode2?.toOffenceResultCodeResponse(),
   mostSeriousFlag = this.mostSeriousFlag,
+  linkedCaseDetails = this.linkedCaseTransaction?.toLinkedCaseDetails(),
+)
+
+private fun LinkCaseTxn.toLinkedCaseDetails(): LinkedCaseChargeDetails = LinkedCaseChargeDetails(
+  caseId = this.sourceCase.id,
+  eventId = this.courtEvent.id,
+  dateLinked = this.createDatetime.toLocalDate(),
 )
 
 private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(

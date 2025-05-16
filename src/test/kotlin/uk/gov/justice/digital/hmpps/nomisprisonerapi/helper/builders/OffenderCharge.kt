@@ -40,7 +40,7 @@ class OffenderChargeBuilderRepository(
   val offenceResultCodeRepository: OffenceResultCodeRepository,
   val offenceRepository: OffenceRepository,
 ) {
-  fun save(offenderCharge: OffenderCharge): OffenderCharge = repository.save(offenderCharge)
+  fun save(offenderCharge: OffenderCharge): OffenderCharge = repository.saveAndFlush(offenderCharge)
 
   fun lookupChargeStatus(code: String): ChargeStatusType = chargeStatusTypeRepository.findByIdOrNull(ChargeStatusType.pk(code))!!
 

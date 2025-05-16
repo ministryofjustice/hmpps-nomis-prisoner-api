@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.never
@@ -22,12 +23,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
@@ -51,6 +54,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository
+
+  @Autowired
+  lateinit var linkCaseTxnRepository: LinkCaseTxnRepository
 
   private var aLocationInMoorland = 0L
   private lateinit var staff: Staff
@@ -1884,7 +1890,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-appearance-created"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -2063,7 +2069,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("offender-charge-created"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -2344,7 +2350,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-charge-updated"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -2670,7 +2676,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-appearance-updated"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -2682,7 +2688,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 // this is an update on an appearance with an existing order, it should update the order date if different
         verify(telemetryClient).trackEvent(
           eq("court-order-updated"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -2796,7 +2802,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-appearance-delete-not-found"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("eventId", "1234")
@@ -2842,7 +2848,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-appearance-deleted"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("eventId", courtEvent.id.toString())
@@ -2953,7 +2959,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-case-delete-not-found"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("caseId", "333")
           },
@@ -3000,7 +3006,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-case-deleted"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("caseId", courtEvent.courtCase?.id.toString())
@@ -3330,12 +3336,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetCourtEventCharge {
     private lateinit var courtCase: CourtCase
+    private lateinit var sourceCourtCase: CourtCase
     private lateinit var firstCourtAppearance: CourtEvent
     private lateinit var secondCourtAppearance: CourtEvent
     private lateinit var thirdCourtAppearance: CourtEvent
+    private lateinit var sourceCourtAppearance: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
+    private lateinit var linkedCaseTransaction1: LinkCaseTxn
+    private lateinit var linkedCaseTransaction2: LinkCaseTxn
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -3382,8 +3392,31 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   )
                 }
               }
+
+              sourceCourtCase = courtCase(reportingStaff = staff, caseSequence = 2, combinedCase = courtCase) {
+                sourceCourtAppearance = courtEvent {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                }
+              }
             }
           }
+        linkedCaseTransaction1 = linkedCaseTransaction(
+          sourceCase = sourceCourtCase,
+          targetCase = courtCase,
+          courtEvent = secondCourtAppearance,
+          offenderCharge = offenderCharge1,
+          whenCreated = LocalDateTime.parse("2024-02-11T10:00"),
+        )
+        linkedCaseTransaction2 = linkedCaseTransaction(
+          sourceCase = sourceCourtCase,
+          targetCase = courtCase,
+          courtEvent = secondCourtAppearance,
+          offenderCharge = offenderCharge2,
+          whenCreated = LocalDateTime.parse("2024-02-11T10:00"),
+        )
       }
     }
 
@@ -3455,20 +3488,60 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return the court event charge`() {
-        webTestClient.get()
+        val response: CourtEventChargeResponse = webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge2.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectStatus().isOk
-          .expectBody()
-          .jsonPath("offenderCharge.id").isEqualTo(offenderCharge2.id)
-          .jsonPath("resultCode1.code").isEqualTo("1002")
-          .jsonPath("resultCode1.description").isEqualTo("Imprisonment")
+          .expectBodyResponse()
+
+        assertThat(response.offenderCharge.id).isEqualTo(offenderCharge2.id)
+        assertThat(response.resultCode1?.code).isEqualTo("1002")
+        assertThat(response.resultCode1?.description).isEqualTo("Imprisonment")
+        assertThat(response.linkedCaseDetails).isNull()
+      }
+
+      @Test
+      fun `will return the linked charge data for court event charge`() {
+        val chargeResponse1: CourtEventChargeResponse = webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${secondCourtAppearance.id}/charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+
+        with(chargeResponse1) {
+          assertThat(offenderCharge.id).isEqualTo(offenderCharge1.id)
+          assertThat(linkedCaseDetails).isNotNull
+          with(linkedCaseDetails) {
+            assertThat(this!!.eventId).isEqualTo(secondCourtAppearance.id)
+            assertThat(caseId).isEqualTo(sourceCourtCase.id)
+            assertThat(dateLinked).isEqualTo(LocalDate.parse("2024-02-11"))
+          }
+        }
+        val chargeResponse2: CourtEventChargeResponse = webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${secondCourtAppearance.id}/charges/${offenderCharge2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+
+        with(chargeResponse2) {
+          assertThat(offenderCharge.id).isEqualTo(offenderCharge2.id)
+          assertThat(linkedCaseDetails).isNotNull
+          with(linkedCaseDetails) {
+            assertThat(this!!.eventId).isEqualTo(secondCourtAppearance.id)
+            assertThat(caseId).isEqualTo(sourceCourtCase.id)
+            assertThat(dateLinked).isEqualTo(LocalDate.parse("2024-02-11"))
+          }
+        }
       }
     }
 
     @AfterEach
     internal fun deletePrisoner() {
+      linkCaseTxnRepository.deleteAll()
+      repository.delete(sourceCourtAppearance)
       repository.delete(firstCourtAppearance)
       repository.delete(secondCourtAppearance)
       repository.delete(thirdCourtAppearance)
@@ -3746,7 +3819,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-order-created"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -3796,7 +3869,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("court-order-deleted"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -4119,7 +4192,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("sentence-created"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("sentenceSeq", sentenceSeq.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", prisonerAtMoorland.nomsId)
@@ -4575,7 +4648,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       verify(telemetryClient).trackEvent(
         eq("sentence-delete-not-found"),
-        org.mockito.kotlin.check {
+        check {
           assertThat(it).containsEntry("sentenceSequence", "9999")
           assertThat(it).containsEntry("bookingId", latestBookingId.toString())
         },
@@ -4614,7 +4687,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       verify(telemetryClient).trackEvent(
         eq("sentence-deleted"),
-        org.mockito.kotlin.check {
+        check {
           assertThat(it).containsEntry("sentenceSequence", sentence.id.sequence.toString())
           assertThat(it).containsEntry("bookingId", latestBookingId.toString())
           assertThat(it).containsEntry("offenderNo", prisonerAtMoorland.nomsId)
@@ -4828,7 +4901,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("sentence-term-created"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("sentenceSeq", response.sentenceSeq.toString())
             assertThat(it).containsEntry("termSeq", response.termSeq.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
@@ -5040,7 +5113,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         verify(telemetryClient).trackEvent(
           eq("sentence-term-updated"),
-          org.mockito.kotlin.check {
+          check {
             assertThat(it).containsEntry("sentenceSequence", sentence.id.sequence.toString())
             assertThat(it).containsEntry("termSequence", term.id.termSequence.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
@@ -5142,7 +5215,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       verify(telemetryClient).trackEvent(
         eq("sentence-term-delete-not-found"),
-        org.mockito.kotlin.check {
+        check {
           assertThat(it).containsEntry("sentenceSequence", "9999")
           assertThat(it).containsEntry("termSequence", term.id.termSequence.toString())
           assertThat(it).containsEntry("bookingId", latestBookingId.toString())
@@ -5182,7 +5255,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       verify(telemetryClient).trackEvent(
         eq("sentence-term-deleted"),
-        org.mockito.kotlin.check {
+        check {
           assertThat(it).containsEntry("sentenceSequence", sentence.id.sequence.toString())
           assertThat(it).containsEntry("termSequence", term.id.termSequence.toString())
           assertThat(it).containsEntry("bookingId", latestBookingId.toString())
@@ -5712,7 +5785,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           verify(telemetryClient).trackEvent(
             eq("sentences-recalled"),
-            org.mockito.kotlin.check {
+            check {
               assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
               assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}")
               assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
@@ -5863,7 +5936,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           verify(telemetryClient).trackEvent(
             eq("sentences-recalled"),
-            org.mockito.kotlin.check {
+            check {
               assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
               assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}")
               assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
