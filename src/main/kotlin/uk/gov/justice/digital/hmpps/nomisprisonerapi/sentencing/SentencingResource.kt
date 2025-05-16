@@ -1834,6 +1834,16 @@ data class CourtEventChargeResponse(
   val resultCode1: OffenceResultCodeResponse?,
   val resultCode2: OffenceResultCodeResponse?,
   val mostSeriousFlag: Boolean,
+  val linkedCaseDetails: LinkedCaseChargeDetails?,
+)
+
+@Schema(description = "Linked case details for a court event charge")
+data class LinkedCaseChargeDetails(
+  @Schema(description = "Source caseId")
+  val caseId: Long,
+  @Schema(description = "Target court eventId")
+  val eventId: Long,
+  val dateLinked: LocalDate,
 )
 
 @Schema(description = "Court Order")

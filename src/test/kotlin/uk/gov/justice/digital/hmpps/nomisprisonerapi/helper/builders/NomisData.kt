@@ -5,11 +5,15 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MergeTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -36,6 +40,7 @@ class NomisDataBuilder(
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
   private val personBuilderFactory: PersonBuilderFactory? = null,
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
+  private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
 ) {
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -54,6 +59,7 @@ class NomisDataBuilder(
     templateBuilderFactory,
     personBuilderFactory,
     corporateBuilderFactory,
+    linkCaseTxnBuilderFactory,
   ).apply(dsl)
 }
 
@@ -72,7 +78,7 @@ class NomisData(
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
   private val personBuilderFactory: PersonBuilderFactory? = null,
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
-
+  private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
 ) : NomisDataDsl {
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
@@ -412,6 +418,27 @@ class NomisData(
           builder.apply(dsl)
         }
     }
+
+  override fun linkedCaseTransaction(
+    sourceCase: CourtCase,
+    targetCase: CourtCase,
+    courtEvent: CourtEvent,
+    offenderCharge: OffenderCharge,
+    whenCreated: LocalDateTime?,
+    dsl: LinkCaseTxnDsl.() -> Unit,
+  ): LinkCaseTxn = linkCaseTxnBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        sourceCase = sourceCase,
+        targetCase = targetCase,
+        courtEvent = courtEvent,
+        offenderCharge = offenderCharge,
+        whenCreated = whenCreated,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
 }
 
 @NomisDataDslMarker
@@ -588,6 +615,16 @@ interface NomisDataDsl {
     whoCreated: String? = null,
     dsl: CorporateDsl.() -> Unit = {},
   ): Corporate
+
+  @LinkCaseTxnDslMarker
+  fun linkedCaseTransaction(
+    sourceCase: CourtCase,
+    targetCase: CourtCase,
+    courtEvent: CourtEvent,
+    offenderCharge: OffenderCharge,
+    whenCreated: LocalDateTime? = null,
+    dsl: LinkCaseTxnDsl.() -> Unit = {},
+  ): LinkCaseTxn
 }
 
 @DslMarker
