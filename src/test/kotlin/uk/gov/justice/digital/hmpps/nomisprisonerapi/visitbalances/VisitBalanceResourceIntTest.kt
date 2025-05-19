@@ -38,6 +38,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class CreateVisitBalanceAdjustment {
     private var activeBookingId = 0L
+    private var bookingWithNoVisitBalanceId = 0L
     private lateinit var omsOwner: Staff
     private lateinit var staffUser: Staff
     private lateinit var prisoner: Offender
@@ -82,14 +83,16 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             )
           }
         }
+        offender(nomsId = "A5678CD") {
+          bookingWithNoVisitBalanceId = booking().bookingId
+        }
       }
     }
 
     @AfterEach
     fun tearDown() {
-      repository.delete(prisoner)
-      repository.delete(omsOwner)
-      repository.delete(staffUser)
+      repository.deleteOffenders()
+      repository.deleteStaff()
     }
 
     @Nested
@@ -252,6 +255,39 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           assertThat(newAdjustment.commentText).isNull()
           assertThat(newAdjustment.expiryBalance).isNull()
           assertThat(newAdjustment.expiryDate).isNull()
+        }
+      }
+
+      @Test
+      fun `creating a visit balance adjustment when no visit balance exists successfully create a new balance`() {
+        val adjustment = CreateVisitBalanceAdjustmentRequest(
+          visitOrderChange = 3,
+          privilegedVisitOrderChange = 2,
+          adjustmentDate = LocalDate.parse("2025-03-03"),
+          comment = "Good behaviour",
+        )
+
+        webTestClient.post().uri("/prisoners/A5678CD/visit-balance-adjustments")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(adjustment)
+          .exchange()
+          .expectStatus().isEqualTo(201)
+          .expectBody()
+          .jsonPath("visitBalanceAdjustmentId").isNotEmpty
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(bookingWithNoVisitBalanceId)!!
+          assertThat(booking.visitBalanceAdjustments).hasSize(1)
+          val newAdjustment = booking.visitBalanceAdjustments.first()
+          assertThat(newAdjustment.id).isNotNull()
+
+          assertThat(newAdjustment.remainingVisitOrders).isEqualTo(3)
+          assertThat(newAdjustment.remainingPrivilegedVisitOrders).isEqualTo(2)
+
+          // Check that visit balance exists
+          assertThat(booking.visitBalance!!.remainingVisitOrders).isNotNull
+          assertThat(booking.visitBalance!!.remainingPrivilegedVisitOrders).isNotNull
         }
       }
     }
