@@ -132,6 +132,14 @@ class VisitBalanceService(
       staffUserAccountRepository.findByUsername(it) ?: throw BadDataException("Username $it not found")
     }
 
+    if (offenderBooking.visitBalance == null) {
+      offenderBooking.visitBalance = OffenderVisitBalance(
+        remainingVisitOrders = 0,
+        remainingPrivilegedVisitOrders = 0,
+        offenderBooking = offenderBooking,
+      )
+    }
+
     val visitBalanceAdjustment = OffenderVisitBalanceAdjustment(
       offenderBooking = offenderBooking,
       adjustDate = request.adjustmentDate,
