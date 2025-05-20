@@ -1318,7 +1318,7 @@ private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
   commentText = this.commentText,
   nonReportFlag = this.nonReportFlag,
   sentencePurposes = this.sentencePurposes.map { it.toSentencePurpose() },
-  eventId = this.courtEvent.id,
+  eventId = this.courtEvent!!.id,
 )
 
 private fun SentencePurpose.toSentencePurpose(): SentencePurposeResponse = SentencePurposeResponse(
@@ -1350,7 +1350,8 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
     description = this.calculationType.description,
   ),
   startDate = this.startDate,
-  courtOrder = this.courtOrder?.toCourtOrder(),
+  // no referential integrity on courtEvent
+  courtOrder = this.courtOrder?.takeIf { it.courtEvent != null }?.toCourtOrder(),
   consecSequence = this.consecSequence,
   endDate = this.endDate,
   commentText = this.commentText,
