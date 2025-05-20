@@ -58,7 +58,7 @@ private val updateVisit: (visitorPersonIds: List<Long>) -> UpdateVisitRequest =
       visitorPersonIds = visitorPersonIds,
       room = "Main visit room",
       openClosedStatus = "OPEN",
-      visitComment = "comment"
+      visitComment = "comment",
     )
   }
 
@@ -1119,7 +1119,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           visitorPersonIds = listOf(johnSmith, neoAyomide).map { it.id },
           room = "Main visit room",
           openClosedStatus = "OPEN",
-          visitComment = "comment"
+          visitComment = "comment",
         )
       }
 
