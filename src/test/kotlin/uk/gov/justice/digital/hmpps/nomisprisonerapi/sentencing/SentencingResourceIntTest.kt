@@ -5489,7 +5489,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var booking: OffenderBooking
       private lateinit var staff: Staff
       private lateinit var sentence: OffenderSentence
-      private lateinit var request: CreateRecallRequest
+      private lateinit var request: ConvertToRecallRequest
 
       @BeforeEach
       fun createPrisonerAndSentence() {
@@ -5515,12 +5515,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               }
             }
         }
-        request = CreateRecallRequest(
+        request = ConvertToRecallRequest(
           returnToCustody = null,
-          sentenceCategory = "2020",
-          sentenceCalcType = "FTR_ORA",
-          sentenceIds = listOf(
-            SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence.id.sequence),
+          sentences = listOf(
+            RecallSentenceDetails(
+              sentenceCategory = "2020",
+              sentenceCalcType = "FTR_ORA",
+              sentenceId = SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence.id.sequence),
+            ),
           ),
         )
       }
@@ -5533,7 +5535,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.put()
+        webTestClient.post()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
@@ -5544,7 +5546,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.put()
+        webTestClient.post()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -5555,7 +5557,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.put()
+        webTestClient.post()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(request))
@@ -5570,7 +5572,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var booking: OffenderBooking
       private lateinit var staff: Staff
       private lateinit var sentence: OffenderSentence
-      private lateinit var request: CreateRecallRequest
+      private lateinit var request: ConvertToRecallRequest
 
       @BeforeEach
       fun createPrisonerAndSentence() {
@@ -5596,12 +5598,15 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               }
             }
         }
-        request = CreateRecallRequest(
+
+        request = ConvertToRecallRequest(
           returnToCustody = null,
-          sentenceCategory = "2020",
-          sentenceCalcType = "FTR_ORA",
-          sentenceIds = listOf(
-            SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence.id.sequence),
+          sentences = listOf(
+            RecallSentenceDetails(
+              sentenceCategory = "2020",
+              sentenceCalcType = "FTR_ORA",
+              sentenceId = SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence.id.sequence),
+            ),
           ),
         )
       }
@@ -5614,22 +5619,22 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `400 when category code and calc type are individually valid but not a valid combination`() {
-        webTestClient.put()
+        webTestClient.post()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(request.copy(sentenceCategory = "1880")))
+          .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceCategory = "1880") })))
           .exchange()
           .expectStatus().isBadRequest
       }
 
       @Test
       fun `404 when sentence does not exist`() {
-        webTestClient.put()
+        webTestClient.post()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(request.copy(sentenceIds = listOf(SentenceId(booking.bookingId, 99L)))))
+          .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceId = SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = 99)) })))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -5644,7 +5649,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var staff: Staff
       private lateinit var sentence1: OffenderSentence
       private lateinit var sentence2: OffenderSentence
-      private lateinit var request: CreateRecallRequest
+      private lateinit var request: ConvertToRecallRequest
 
       @Nested
       inner class FirstFixedTermRecall {
@@ -5676,17 +5681,24 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
           }
-          request = CreateRecallRequest(
+          request = ConvertToRecallRequest(
             returnToCustody = ReturnToCustodyRequest(
               returnToCustodyDate = LocalDate.parse("2023-01-01"),
               enteredByStaffUsername = "T.SMITH",
               recallLength = 28,
             ),
-            sentenceCategory = "2020",
-            sentenceCalcType = "FTR_ORA",
-            sentenceIds = listOf(
-              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
-              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence2.id.sequence),
+            sentences = listOf(
+              RecallSentenceDetails(
+                SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "FTR_ORA",
+              ),
+              RecallSentenceDetails(
+                SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence2.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "FTR_ORA",
+              ),
+
             ),
           )
         }
@@ -5704,7 +5716,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(status).isEqualTo("I")
           }
 
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5728,7 +5740,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will add a return to custody data`() {
           assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isNotPresent()
 
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5746,7 +5758,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will not add a return to custody data with not supplied`() {
           assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isNotPresent()
 
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5759,7 +5771,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `will update the imprisonment status`() {
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5775,7 +5787,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `will track telemetry for the recall`() {
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5803,7 +5815,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         private lateinit var otherStaff: Staff
         private lateinit var sentence1: OffenderSentence
         private lateinit var sentence2: OffenderSentence
-        private lateinit var request: CreateRecallRequest
+        private lateinit var request: ConvertToRecallRequest
 
         @BeforeEach
         fun createPrisonerAndSentence() {
@@ -5837,17 +5849,24 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
           }
-          request = CreateRecallRequest(
+          request = ConvertToRecallRequest(
             returnToCustody = ReturnToCustodyRequest(
               returnToCustodyDate = LocalDate.parse("2024-01-01"),
               enteredByStaffUsername = "T.SMITH",
               recallLength = 28,
             ),
-            sentenceCategory = "2020",
-            sentenceCalcType = "FTR_ORA",
-            sentenceIds = listOf(
-              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
-              SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence2.id.sequence),
+            sentences = listOf(
+              RecallSentenceDetails(
+                SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "FTR_ORA",
+              ),
+              RecallSentenceDetails(
+                SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence2.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "FTR_ORA",
+              ),
+
             ),
           )
         }
@@ -5865,7 +5884,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(status).isEqualTo("I")
           }
 
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5893,7 +5912,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(staff.id).isEqualTo(otherStaff.id)
           }
 
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5910,7 +5929,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `will update the imprisonment status`() {
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -5926,7 +5945,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `will track telemetry for the recall`() {
-          webTestClient.put()
+          webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)

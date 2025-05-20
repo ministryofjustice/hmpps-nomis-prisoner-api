@@ -1072,6 +1072,65 @@ class SentencingService(
       null,
     )
   }
+  fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest) {
+    // It would be odd for the sentences to sit across bookings but give DPS is booking agnostic,
+    // it would make sense to not make any assumptions
+    val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
+
+    // Update sentences
+    request.sentences.forEach { sentence ->
+      val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
+      with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
+        category = lookupSentenceCategory(sentence.sentenceCategory)
+        calculationType = lookupSentenceCalculationType(
+          categoryCode = sentence.sentenceCategory,
+          calcType = sentence.sentenceCalcType,
+        )
+        status = "A"
+        offenderSentenceRepository.saveAndFlush(this)
+      }
+    }
+
+    // Create or update OffenderFixedTermRecall records if requested
+    if (request.returnToCustody != null) {
+      val enteredByStaff = findStaffByUsername(request.returnToCustody.enteredByStaffUsername)
+      bookingIds.forEach { bookingId ->
+        with(findOffenderBooking(bookingId)) {
+          if (fixedTermRecall == null) {
+            fixedTermRecall = OffenderFixedTermRecall(
+              returnToCustodyDate = request.returnToCustody.returnToCustodyDate,
+              staff = enteredByStaff,
+              recallLength = request.returnToCustody.recallLength.toLong(),
+              offenderBooking = this,
+            )
+          } else {
+            with(fixedTermRecall!!) {
+              returnToCustodyDate = request.returnToCustody.returnToCustodyDate
+              staff = enteredByStaff
+              recallLength = request.returnToCustody.recallLength.toLong()
+            }
+          }
+        }
+      }
+    }
+
+    bookingIds.forEach { bookingId ->
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
+    }
+
+    telemetryClient.trackEvent(
+      "sentences-recalled",
+      mapOf(
+        "bookingId" to bookingIds.joinToString { it.toString() },
+        "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
+        "offenderNo" to offenderNo,
+      ),
+      null,
+    )
+  }
 
   private fun findLatestBooking(offenderNo: String): OffenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("Prisoner $offenderNo not found or has no bookings")
