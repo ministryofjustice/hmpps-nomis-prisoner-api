@@ -274,6 +274,7 @@ class VisitService(
     visit.startDateTime = updateVisitRequest.startDateTime
     visit.endDateTime = endDateTime
     visit.agencyInternalLocation = visit.agencyVisitSlot?.agencyInternalLocation
+    updateVisitRequest.visitComment?.let { visit.commentText = it }
   }
 
   fun getVisit(visitId: Long): VisitResponse {

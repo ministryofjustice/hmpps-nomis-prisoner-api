@@ -58,6 +58,7 @@ private val updateVisit: (visitorPersonIds: List<Long>) -> UpdateVisitRequest =
       visitorPersonIds = visitorPersonIds,
       room = "Main visit room",
       openClosedStatus = "OPEN",
+      visitComment = "comment"
     )
   }
 
@@ -1118,6 +1119,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           visitorPersonIds = listOf(johnSmith, neoAyomide).map { it.id },
           room = "Main visit room",
           openClosedStatus = "OPEN",
+          visitComment = "comment"
         )
       }
 
@@ -1263,6 +1265,26 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visits.first()["VISIT_DATE"]).isEqualTo(LocalDate.parse("2021-11-05").asSQLTimestamp())
         assertThat(visits.first()["START_TIME"]).isEqualTo(LocalDateTime.parse("2021-11-05T14:00").asSQLTimestamp())
         assertThat(visits.first()["END_TIME"]).isEqualTo(LocalDateTime.parse("2021-11-05T15:30").asSQLTimestamp())
+      }
+
+      @Test
+      internal fun `can change the visit comment`() {
+        webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .body(
+            BodyInserters.fromValue(updateRequest),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(VisitResponse::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(updatedVisit.commentText).isEqualTo(updateRequest.visitComment)
       }
     }
   }
