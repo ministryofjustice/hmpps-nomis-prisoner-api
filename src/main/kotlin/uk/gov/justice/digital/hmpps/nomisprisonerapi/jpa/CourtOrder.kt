@@ -17,6 +17,8 @@ import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
@@ -45,10 +47,11 @@ class CourtOrder(
   @JoinColumn(name = "CASE_ID")
   val courtCase: CourtCase,
 
-  // optional on DB but no nulls in prod
+  // optional on DB but no nulls in prod.  No referential integrity some missing event ids in prod
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "EVENT_ID", nullable = false)
-  var courtEvent: CourtEvent,
+  @NotFound(action = NotFoundAction.IGNORE)
+  var courtEvent: CourtEvent? = null,
 
   var courtDate: LocalDate,
 
