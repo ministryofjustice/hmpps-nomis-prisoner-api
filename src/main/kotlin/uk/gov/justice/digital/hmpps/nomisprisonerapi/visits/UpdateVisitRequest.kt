@@ -23,4 +23,7 @@ data class UpdateVisitRequest(
 
   @Schema(description = "Whether visit is restricted to a closed session", allowableValues = ["OPEN", "CLOSED"])
   val openClosedStatus: String,
+
+  @Schema(description = "Comment to be added to visit")
+  val visitComment: String? = null,
 )
