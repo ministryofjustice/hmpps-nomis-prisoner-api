@@ -739,6 +739,7 @@ class SentencingService(
         sentence.status = request.status
         sentence.fineAmount = request.fine
         sentence.sentenceLevel = request.sentenceLevel
+        sentence.consecSequence = request.consecutiveToSentenceSeq?.toInt()
         sentence.courtOrder = existingCourtOrder(
           offenderBooking = offenderBooking,
           courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId),

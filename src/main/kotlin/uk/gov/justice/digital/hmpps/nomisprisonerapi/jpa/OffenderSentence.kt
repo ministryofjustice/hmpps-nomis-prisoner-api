@@ -66,7 +66,7 @@ data class OffenderSentence(
   var courtOrder: CourtOrder? = null,
 
   @Column(name = "CONSEC_TO_SENTENCE_SEQ")
-  val consecSequence: Int? = null,
+  var consecSequence: Int? = null,
 
   @Column(name = "END_DATE")
   var endDate: LocalDate? = null,

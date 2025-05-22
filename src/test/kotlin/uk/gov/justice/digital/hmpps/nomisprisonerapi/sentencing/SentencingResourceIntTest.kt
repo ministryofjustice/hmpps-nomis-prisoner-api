@@ -4507,6 +4507,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentenceLevel = "AGG",
                 fine = BigDecimal.valueOf(9.7),
                 offenderChargeIds = mutableListOf(offenderCharge2.id),
+                consecSentenceSeq = sentence.id.sequence,
               ),
             ),
           )
@@ -4530,6 +4531,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("status").isEqualTo("A")
           .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
           .jsonPath("sentenceLevel").isEqualTo("AGG")
+          .jsonPath("consecSequence").isEqualTo(sentence.id.sequence)
           .jsonPath("category.code").isEqualTo("1991")
           .jsonPath("startDate").isEqualTo(aLaterDateString)
           .jsonPath("endDate").doesNotExist()
@@ -4541,6 +4543,31 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("missingCourtOffenderChargeIds[0]").isEqualTo(offenderCharge2.id)
           // update doesn't affect terms, there was 1 existing
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
+
+        // now update to remove the consecutive sentence status
+
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(eventId = courtEvent2.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("caseId").isEqualTo(newCourtCase.id)
+          .jsonPath("sentenceSeq").isEqualTo(sentenceTwo.id.sequence)
+          .jsonPath("consecSequence").doesNotExist()
       }
 
       @Test
