@@ -1013,65 +1013,6 @@ class SentencingService(
     courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
   }
 
-  fun recallSentences(offenderNo: String, request: CreateRecallRequest) {
-    // It would be odd for the sentences to sit across bookings but give DPS is booking agnostic,
-    // it would make sense to not make any assumptions
-    val bookingIds = request.sentenceIds.map { it.offenderBookingId }.toSet()
-
-    // Update sentences
-    request.sentenceIds.forEach { sentenceId ->
-      val offenderBooking = findOffenderBooking(sentenceId.offenderBookingId)
-      with(findSentence(booking = offenderBooking, sentenceSequence = sentenceId.sentenceSequence)) {
-        category = lookupSentenceCategory(request.sentenceCategory)
-        calculationType = lookupSentenceCalculationType(
-          categoryCode = request.sentenceCategory,
-          calcType = request.sentenceCalcType,
-        )
-        status = "A"
-        offenderSentenceRepository.saveAndFlush(this)
-      }
-    }
-
-    // Create or update OffenderFixedTermRecall records if requested
-    if (request.returnToCustody != null) {
-      val enteredByStaff = findStaffByUsername(request.returnToCustody.enteredByStaffUsername)
-      bookingIds.forEach { bookingId ->
-        with(findOffenderBooking(bookingId)) {
-          if (fixedTermRecall == null) {
-            fixedTermRecall = OffenderFixedTermRecall(
-              returnToCustodyDate = request.returnToCustody.returnToCustodyDate,
-              staff = enteredByStaff,
-              recallLength = request.returnToCustody.recallLength.toLong(),
-              offenderBooking = this,
-            )
-          } else {
-            with(fixedTermRecall!!) {
-              returnToCustodyDate = request.returnToCustody.returnToCustodyDate
-              staff = enteredByStaff
-              recallLength = request.returnToCustody.recallLength.toLong()
-            }
-          }
-        }
-      }
-    }
-
-    bookingIds.forEach { bookingId ->
-      storedProcedureRepository.imprisonmentStatusUpdate(
-        bookingId = bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
-      )
-    }
-
-    telemetryClient.trackEvent(
-      "sentences-recalled",
-      mapOf(
-        "bookingId" to bookingIds.joinToString { it.toString() },
-        "sentenceSequences" to request.sentenceIds.map { it.sentenceSequence }.joinToString { it.toString() },
-        "offenderNo" to offenderNo,
-      ),
-      null,
-    )
-  }
   fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest) {
     // It would be odd for the sentences to sit across bookings but give DPS is booking agnostic,
     // it would make sense to not make any assumptions

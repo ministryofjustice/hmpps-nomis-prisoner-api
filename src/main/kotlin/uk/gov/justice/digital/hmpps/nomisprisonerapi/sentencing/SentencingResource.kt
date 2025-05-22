@@ -669,88 +669,6 @@ class SentencingResource(private val sentencingService: SentencingService) {
   )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
-  @PutMapping("/prisoners/{offenderNo}/sentences/recall")
-  @Operation(
-    summary = "Recalls Sentences",
-    description = "Required role NOMIS_SENTENCING Recalls sentences for the offender",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreateRecallRequest::class),
-        ),
-      ],
-    ),
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Sentences recalled",
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Booking does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Sentence does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @Deprecated(message = "Use POST /prisoners/{offenderNo}/sentences/recall")
-  fun recallSentences(
-    @Schema(description = "Offender no", example = "AA668EC", required = true)
-    @PathVariable
-    offenderNo: String,
-    @RequestBody @Valid
-    request: CreateRecallRequest,
-  ) = sentencingService.recallSentences(
-    offenderNo = offenderNo,
-    request = request,
-  )
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentences/recall")
   @Operation(
     summary = "Recalls Sentences by convert the specified sentences to the requested recall sentence",
@@ -2199,14 +2117,6 @@ data class ReturnToCustodyRequest(
   val returnToCustodyDate: LocalDate,
   val enteredByStaffUsername: String,
   val recallLength: Int,
-)
-
-@Schema(description = "Recall add request")
-data class CreateRecallRequest(
-  val sentenceCategory: String,
-  val sentenceCalcType: String,
-  val sentenceIds: List<SentenceId>,
-  val returnToCustody: ReturnToCustodyRequest? = null,
 )
 
 @Schema(description = "Recall convert request")
