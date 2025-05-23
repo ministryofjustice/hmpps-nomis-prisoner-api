@@ -214,7 +214,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
         repository.runInTransaction {
           val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)!!
-          assertThat(booking.visitBalance!!.visitBalanceAdjustments).hasSize(3)
+          assertThat(booking.visitBalanceAdjustments).hasSize(3)
           assertThat(booking.visitBalance!!.visitBalanceAdjustments).hasSize(3)
           val newAdjustment = booking.visitBalanceAdjustments.last()
           assertThat(newAdjustment.id).isNotNull()
