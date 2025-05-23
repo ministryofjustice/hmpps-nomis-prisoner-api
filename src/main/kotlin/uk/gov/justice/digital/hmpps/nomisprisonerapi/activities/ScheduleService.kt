@@ -97,7 +97,7 @@ class ScheduleService(
 
     updateRequest.validate(courseActivity)
 
-    val schedule = scheduleRepository.findByIdOrNull(updateRequest.id)
+    val schedule = scheduleRepository.findByIdOrNull(updateRequest.id!!)
       ?: throw NotFoundException("Course schedule id=${updateRequest.id} not found")
 
     if (schedule.isImmutable()) {
