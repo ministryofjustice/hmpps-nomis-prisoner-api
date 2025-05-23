@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -32,7 +32,7 @@ class VisitBalanceAdjustmentBuilder(
   private val repository: VisitBalanceAdjustmentBuilderRepository,
 ) : VisitBalanceAdjustmentDsl {
   fun build(
-    offenderBooking: OffenderBooking,
+    visitBalance: OffenderVisitBalance,
     visitOrderChange: Int?,
     previousVisitOrderCount: Int?,
     privilegedVisitOrderChange: Int?,
@@ -45,7 +45,7 @@ class VisitBalanceAdjustmentBuilder(
     endorsedStaffId: Long?,
     authorisedStaffId: Long?,
   ): OffenderVisitBalanceAdjustment = OffenderVisitBalanceAdjustment(
-    offenderBooking = offenderBooking,
+    visitBalance = visitBalance,
     remainingVisitOrders = visitOrderChange,
     previousRemainingVisitOrders = previousVisitOrderCount,
     remainingPrivilegedVisitOrders = privilegedVisitOrderChange,

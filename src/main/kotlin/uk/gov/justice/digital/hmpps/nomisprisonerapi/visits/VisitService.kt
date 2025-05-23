@@ -303,12 +303,12 @@ class VisitService(
 
           offenderVisitBalanceAdjustmentRepository.save(
             OffenderVisitBalanceAdjustment(
-              offenderBooking = offenderBooking,
               adjustDate = visitDto.issueDate,
               adjustReasonCode = adjustReasonCode,
               remainingPrivilegedVisitOrders = -1,
               previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
               commentText = visitDto.visitOrderComment,
+              visitBalance = offenderBooking.visitBalance!!,
             ),
           )
         }
@@ -335,12 +335,12 @@ class VisitService(
 
           offenderVisitBalanceAdjustmentRepository.save(
             OffenderVisitBalanceAdjustment(
-              offenderBooking = offenderBooking,
               adjustDate = visitDto.issueDate,
               adjustReasonCode = adjustReasonCode,
               remainingVisitOrders = -1,
               previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
               commentText = visitDto.visitOrderComment,
+              visitBalance = offenderBooking.visitBalance!!,
             ),
           )
         }
@@ -380,23 +380,23 @@ class VisitService(
 
         if (visitOrder.visitOrderType.isPrivileged()) {
           OffenderVisitBalanceAdjustment(
-            offenderBooking = offenderBooking,
             adjustDate = today,
             commentText = "Booking cancelled by VSIP",
             adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_CANCEL)
               .orElseThrow(),
             remainingPrivilegedVisitOrders = 1,
             previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
+            visitBalance = offenderBooking.visitBalance!!,
           )
         } else {
           OffenderVisitBalanceAdjustment(
-            offenderBooking = offenderBooking,
             adjustDate = today,
             commentText = "Booking cancelled by VSIP",
             adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_CANCEL)
               .orElseThrow(),
             remainingVisitOrders = 1,
             previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
+            visitBalance = offenderBooking.visitBalance!!,
           )
         },
       )

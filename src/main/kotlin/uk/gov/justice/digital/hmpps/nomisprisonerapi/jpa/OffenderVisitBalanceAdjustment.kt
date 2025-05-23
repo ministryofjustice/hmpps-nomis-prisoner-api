@@ -32,7 +32,7 @@ data class OffenderVisitBalanceAdjustment(
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
-  val offenderBooking: OffenderBooking,
+  val visitBalance: OffenderVisitBalance,
 
   @Column(name = "REMAINING_VO")
   val remainingVisitOrders: Int? = null,
@@ -84,6 +84,10 @@ data class OffenderVisitBalanceAdjustment(
   @Column(name = "EXPIRY_DATE")
   val expiryDate: LocalDate? = null,
 ) : NomisAuditableEntity() {
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false, insertable = false, updatable = false)
+  lateinit var offenderBooking: OffenderBooking
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
