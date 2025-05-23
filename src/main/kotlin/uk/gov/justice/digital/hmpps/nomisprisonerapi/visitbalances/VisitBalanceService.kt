@@ -45,16 +45,21 @@ class VisitBalanceService(
   fun getVisitBalanceById(visitBalanceId: Long): VisitBalanceDetailResponse = offenderBookingRepository.findByIdOrNull(visitBalanceId) ?.let { getVisitBalanceForPrisoner(it) }
     ?: throw NotFoundException("Visit Balance $visitBalanceId not found")
 
-  private fun getVisitBalanceForPrisoner(latestBooking: OffenderBooking): VisitBalanceDetailResponse? = latestBooking.visitBalance?.let {
-    val lastBatchIEPAdjustmentDate = latestBooking.visitBalanceAdjustments
-      .filter { it.isIEPAllocation() && it.isCreatedByBatchVOProcess() }.maxByOrNull { it.adjustDate }?.adjustDate
+  private fun getVisitBalanceForPrisoner(latestBooking: OffenderBooking): VisitBalanceDetailResponse? = latestBooking.visitBalance?.let { visitBalance ->
+    val lastBatchIEPAdjustmentDate = visitBalance.visitBalanceAdjustments
+      .filter { it.isIEPAllocation() && it.isCreatedByBatchVOProcess() }
+      .maxByOrNull { it.adjustDate }
+      ?.adjustDate
+
     VisitBalanceDetailResponse(
       prisonNumber = latestBooking.offender.nomsId,
-      remainingVisitOrders = latestBooking.visitBalance?.remainingVisitOrders ?: 0,
-      remainingPrivilegedVisitOrders = latestBooking.visitBalance?.remainingPrivilegedVisitOrders ?: 0,
+      remainingVisitOrders = visitBalance.remainingVisitOrders ?: 0,
+      remainingPrivilegedVisitOrders = visitBalance.remainingPrivilegedVisitOrders ?: 0,
       lastIEPAllocationDate = lastBatchIEPAdjustmentDate
-        ?: latestBooking.visitBalanceAdjustments.filter { it.isIEPAllocation() }
-          .maxByOrNull { it.adjustDate }?.adjustDate,
+        ?: visitBalance.visitBalanceAdjustments
+          .filter { it.isIEPAllocation() }
+          .maxByOrNull { it.adjustDate }
+          ?.adjustDate,
     )
   }
 
@@ -132,16 +137,14 @@ class VisitBalanceService(
       staffUserAccountRepository.findByUsername(it) ?: throw BadDataException("Username $it not found")
     }
 
-    if (offenderBooking.visitBalance == null) {
-      offenderBooking.visitBalance = OffenderVisitBalance(
+    val visitBalance = offenderBooking.visitBalance
+      ?: OffenderVisitBalance(
         remainingVisitOrders = 0,
         remainingPrivilegedVisitOrders = 0,
         offenderBooking = offenderBooking,
-      )
-    }
+      ).also { offenderBooking.visitBalance = it }
 
     val visitBalanceAdjustment = OffenderVisitBalanceAdjustment(
-      offenderBooking = offenderBooking,
       adjustDate = request.adjustmentDate,
       adjustReasonCode = adjustmentReason,
       remainingVisitOrders = request.visitOrderChange,
@@ -151,9 +154,10 @@ class VisitBalanceService(
       commentText = request.comment,
       authorisedStaffId = staffUserAccount.staff.id,
       endorsedStaffId = staffUserAccount.staff.id,
+      visitBalance = visitBalance,
     )
 
-    offenderBooking.visitBalanceAdjustments.add(visitBalanceAdjustment)
+    visitBalance.visitBalanceAdjustments.add(visitBalanceAdjustment)
     return CreateVisitBalanceAdjustmentResponse(visitBalanceAdjustmentId = visitBalanceAdjustment.id)
   }
 }

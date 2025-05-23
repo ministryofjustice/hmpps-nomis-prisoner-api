@@ -59,28 +59,34 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
         prisoner = offender(nomsId = "A1234AB") {
           activeBookingId = booking {
-            visitBalanceAdjustment(
-              privilegedVisitOrderChange = 5,
-              previousPrivilegedVisitOrderCount = 6,
-            )
-            visitBalanceAdjustment(
-              visitOrderChange = 11,
-            )
+            visitBalance(remainingVisitOrders = 1, remainingPrivilegedVisitOrders = 1) {
+              visitBalanceAdjustment(
+                privilegedVisitOrderChange = 5,
+                previousPrivilegedVisitOrderCount = 6,
+                authorisedStaffId = staffUser.id,
+              )
+              visitBalanceAdjustment(
+                visitOrderChange = 11,
+                authorisedStaffId = staffUser.id,
+              )
+            }
           }.bookingId
           booking(bookingBeginDate = LocalDateTime.parse("2021-07-18T10:00:00")) {
-            visitBalanceAdjustment(
-              visitOrderChange = 3,
-              previousVisitOrderCount = 7,
-              privilegedVisitOrderChange = 2,
-              previousPrivilegedVisitOrderCount = 1,
-              adjustmentDate = LocalDate.parse("2025-03-03"),
-              adjustmentReasonCode = "GOV",
-              comment = "Good behaviour",
-              expiryBalance = 7,
-              expiryDate = LocalDate.parse("2025-03-23"),
-              endorsedStaffId = 123,
-              authorisedStaffId = 456,
-            )
+            visitBalance(remainingVisitOrders = 1, remainingPrivilegedVisitOrders = 1) {
+              visitBalanceAdjustment(
+                visitOrderChange = 3,
+                previousVisitOrderCount = 7,
+                privilegedVisitOrderChange = 2,
+                previousPrivilegedVisitOrderCount = 1,
+                adjustmentDate = LocalDate.parse("2025-03-03"),
+                adjustmentReasonCode = "GOV",
+                comment = "Good behaviour",
+                expiryBalance = 7,
+                expiryDate = LocalDate.parse("2025-03-23"),
+                endorsedStaffId = staffUser.id,
+                authorisedStaffId = staffUser.id,
+              )
+            }
           }
         }
         offender(nomsId = "A5678CD") {
@@ -207,9 +213,10 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           .expectStatus().isEqualTo(201)
 
         repository.runInTransaction {
-          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
-          assertThat(booking?.visitBalanceAdjustments).hasSize(3)
-          val newAdjustment = booking?.visitBalanceAdjustments?.last()!!
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)!!
+          assertThat(booking.visitBalanceAdjustments).hasSize(3)
+          assertThat(booking.visitBalance!!.visitBalanceAdjustments).hasSize(3)
+          val newAdjustment = booking.visitBalanceAdjustments.last()
           assertThat(newAdjustment.id).isNotNull()
           assertThat(newAdjustment.remainingVisitOrders).isEqualTo(3)
           assertThat(newAdjustment.previousRemainingVisitOrders).isEqualTo(7)
@@ -314,9 +321,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
               remainingVisitOrders = 5,
               remainingPrivilegedVisitOrders = 6,
             )
-            visitBalance(
-              remainingVisitOrders = 11,
-            )
           }.bookingId
           booking(bookingBeginDate = LocalDateTime.parse("2021-07-18T10:00:00")) {
             visitBalance(
@@ -334,6 +338,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
+      repository.deleteStaff()
     }
 
     @Nested
@@ -448,6 +453,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /visit-balances/{visitBalanceId}")
   @Nested
   inner class getVisitBalanceByIdToMigrate {
+    private lateinit var staffUser: Staff
     private lateinit var offender: Offender
     private lateinit var booking: OffenderBooking
     private var bookingIdWithNullVisitOrders: Long = 0
@@ -455,6 +461,9 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staffUser = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
         offender = offender(
           nomsId = "A1234BC",
           firstName = "JANE",
@@ -465,37 +474,42 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
         ) {
           booking = booking {
-            visitBalance { }
-            visitBalanceAdjustment { }
-            visitBalanceAdjustment(
-              visitOrderChange = 5,
-              previousVisitOrderCount = 1,
-              privilegedVisitOrderChange = null,
-              previousPrivilegedVisitOrderCount = null,
-              adjustmentReasonCode = IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.parse("2025-03-12"),
-              comment = "this is a comment for the most recent batch iep adjustment",
-              expiryBalance = 7,
-              expiryDate = LocalDate.parse("2027-11-30"),
-              endorsedStaffId = 234,
-              authorisedStaffId = 123,
-            )
-            visitBalanceAdjustment(
-              visitOrderChange = null,
-              previousVisitOrderCount = null,
-              privilegedVisitOrderChange = 3,
-              previousPrivilegedVisitOrderCount = 2,
-              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.parse("2025-01-11"),
-            )
-            visitBalanceAdjustment(
-              visitOrderChange = null,
-              previousVisitOrderCount = null,
-              privilegedVisitOrderChange = 4,
-              previousPrivilegedVisitOrderCount = 1,
-              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
-              adjustmentDate = LocalDate.parse("2025-02-10"),
-            )
+            visitBalance {
+              visitBalanceAdjustment(
+                authorisedStaffId = staffUser.id,
+              )
+              visitBalanceAdjustment(
+                visitOrderChange = 5,
+                previousVisitOrderCount = 1,
+                privilegedVisitOrderChange = null,
+                previousPrivilegedVisitOrderCount = null,
+                adjustmentReasonCode = IEP_ENTITLEMENT,
+                adjustmentDate = LocalDate.parse("2025-03-12"),
+                comment = "this is a comment for the most recent batch iep adjustment",
+                expiryBalance = 7,
+                expiryDate = LocalDate.parse("2027-11-30"),
+                endorsedStaffId = staffUser.id,
+                authorisedStaffId = staffUser.id,
+              )
+              visitBalanceAdjustment(
+                visitOrderChange = null,
+                previousVisitOrderCount = null,
+                privilegedVisitOrderChange = 3,
+                previousPrivilegedVisitOrderCount = 2,
+                adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+                adjustmentDate = LocalDate.parse("2025-01-11"),
+                authorisedStaffId = staffUser.id,
+              )
+              visitBalanceAdjustment(
+                visitOrderChange = null,
+                previousVisitOrderCount = null,
+                privilegedVisitOrderChange = 4,
+                previousPrivilegedVisitOrderCount = 1,
+                adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+                adjustmentDate = LocalDate.parse("2025-02-10"),
+                authorisedStaffId = staffUser.id,
+              )
+            }
           }
         }
         offender(nomsId = "A1234DE") {
@@ -512,6 +526,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
+      repository.deleteStaff()
     }
 
     @Nested
@@ -566,18 +581,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `will return visit order balances`() {
-        webTestClient.get().uri("/visit-balances/${booking.bookingId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("remainingVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders!!)
-          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders!!)
-      }
-
-      @Test
       fun `is able to re-hydrate visit order balance`() {
         val visitOrderBalanceResponse =
           webTestClient.get().uri("/visit-balances/${booking.bookingId}")
@@ -587,8 +590,9 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             .isOk
             .returnResult(VisitBalanceDetailResponse::class.java).responseBody.blockFirst()!!
 
-        assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
-        assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
+        assertThat(visitOrderBalanceResponse.prisonNumber).isEqualTo("A1234BC")
+        assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(7)
+        assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(4)
         assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo("2025-03-12")
       }
     }
@@ -640,6 +644,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
+      repository.deleteStaff()
     }
 
     @Nested
@@ -701,17 +706,6 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      @Test
-      fun `will return visit order balances`() {
-        webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-balance")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("remainingVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders!!)
-          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders!!)
-      }
 
       @Test
       fun `is able to re-hydrate visit order balance`() {
@@ -723,8 +717,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
             .isOk
             .returnResult(VisitBalanceResponse::class.java).responseBody.blockFirst()!!
 
-        assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingVisitOrders)
-        assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(offender.latestBooking().visitBalance!!.remainingPrivilegedVisitOrders)
+        assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(7)
+        assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(4)
       }
     }
   }
@@ -765,6 +759,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
+      repository.deleteStaff()
     }
 
     @Nested
@@ -849,34 +844,41 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /visit-balances/visit-balance-adjustment/{visitBalanceAdjustmentId}")
   @Nested
   inner class getVisitBalanceAdjustment {
+    private lateinit var staffUser: Staff
     private lateinit var adjustmentMin: OffenderVisitBalanceAdjustment
     private lateinit var adjustment: OffenderVisitBalanceAdjustment
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staffUser = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
         offender {
           booking {
-            adjustmentMin = visitBalanceAdjustment(
-              visitOrderChange = null,
-              previousVisitOrderCount = null,
-              privilegedVisitOrderChange = null,
-              previousPrivilegedVisitOrderCount = null,
-              adjustmentDate = LocalDate.parse("2021-11-30"),
-            )
-            adjustment = visitBalanceAdjustment(
-              visitOrderChange = 1,
-              previousVisitOrderCount = 22,
-              privilegedVisitOrderChange = 3,
-              previousPrivilegedVisitOrderCount = 24,
-              adjustmentDate = LocalDate.parse("2021-11-30"),
-              adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
-              comment = "this is a comment",
-              expiryBalance = 7,
-              expiryDate = LocalDate.parse("2027-11-30"),
-              endorsedStaffId = 234,
-              authorisedStaffId = 123,
-            )
+            visitBalance {
+              adjustmentMin = visitBalanceAdjustment(
+                visitOrderChange = null,
+                previousVisitOrderCount = null,
+                privilegedVisitOrderChange = null,
+                previousPrivilegedVisitOrderCount = null,
+                adjustmentDate = LocalDate.parse("2021-11-30"),
+                authorisedStaffId = staffUser.id,
+              )
+              adjustment = visitBalanceAdjustment(
+                visitOrderChange = 1,
+                previousVisitOrderCount = 22,
+                privilegedVisitOrderChange = 3,
+                previousPrivilegedVisitOrderCount = 24,
+                adjustmentDate = LocalDate.parse("2021-11-30"),
+                adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+                comment = "this is a comment",
+                expiryBalance = 7,
+                expiryDate = LocalDate.parse("2027-11-30"),
+                endorsedStaffId = staffUser.id,
+                authorisedStaffId = staffUser.id,
+              )
+            }
           }
         }
       }
@@ -885,6 +887,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
+      repository.deleteStaff()
     }
 
     @Nested
