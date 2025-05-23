@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
@@ -133,7 +134,12 @@ class VisitRepositoryTest : IntegrationTestBase() {
   @Test
   fun saveBalanceAdjustment() {
     lateinit var seedOffenderBooking: OffenderBooking
+    lateinit var staffUser: Staff
+
     nomisDataBuilder.build {
+      staffUser = staff(firstName = "JANE", lastName = "STAFF") {
+        account(username = "JANESTAFF")
+      }
       offender {
         seedOffenderBooking = booking {
           visitBalance(remainingPrivilegedVisitOrders = 2, remainingVisitOrders = 25)
@@ -147,7 +153,7 @@ class VisitRepositoryTest : IntegrationTestBase() {
 
     offenderVisitBalanceAdjustmentRepository.save(
       OffenderVisitBalanceAdjustment(
-        offenderBooking = seedOffenderBooking,
+        visitBalance = seedOffenderBooking.visitBalance!!,
         adjustDate = LocalDate.of(2020, 12, 21),
         adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE)
           .orElseThrow(),
@@ -155,8 +161,8 @@ class VisitRepositoryTest : IntegrationTestBase() {
         // from offender_visit_balances
         previousRemainingVisitOrders = seedBalance.remainingVisitOrders,
         commentText = "test comment",
-        authorisedStaffId = 123L,
-        endorsedStaffId = 123L,
+        authorisedStaffId = staffUser.id,
+        endorsedStaffId = staffUser.id,
       ),
     )
 
@@ -164,11 +170,12 @@ class VisitRepositoryTest : IntegrationTestBase() {
     assertThat(offenderVisitBalanceAdjustment.id).isEqualTo(1)
     assertThat(offenderVisitBalanceAdjustment.offenderBooking.bookingId).isEqualTo(seedOffenderBooking.bookingId)
     assertThat(offenderVisitBalanceAdjustment.adjustDate).isEqualTo(LocalDate.of(2020, 12, 21))
-    assertThat(offenderVisitBalanceAdjustment.adjustReasonCode?.code).isEqualTo("VO_ISSUE")
+    assertThat(offenderVisitBalanceAdjustment.adjustReasonCode.code).isEqualTo("VO_ISSUE")
     assertThat(offenderVisitBalanceAdjustment.remainingVisitOrders).isEqualTo(-1)
     assertThat(offenderVisitBalanceAdjustment.previousRemainingVisitOrders).isEqualTo(25)
     assertThat(offenderVisitBalanceAdjustment.commentText).isEqualTo("test comment")
-    assertThat(offenderVisitBalanceAdjustment.authorisedStaffId).isEqualTo(123L)
-    assertThat(offenderVisitBalanceAdjustment.endorsedStaffId).isEqualTo(123L)
+    assertThat(offenderVisitBalanceAdjustment.authorisedStaffId).isEqualTo(staffUser.id)
+    assertThat(offenderVisitBalanceAdjustment.endorsedStaffId).isEqualTo(staffUser.id)
+    assertThat(offenderVisitBalanceAdjustment.visitBalance.offenderBookingId).isEqualTo(seedOffenderBooking.bookingId)
   }
 }

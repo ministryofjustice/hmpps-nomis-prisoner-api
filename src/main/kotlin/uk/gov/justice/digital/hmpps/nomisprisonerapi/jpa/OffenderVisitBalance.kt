@@ -1,11 +1,14 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.MapsId
+import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -23,6 +26,9 @@ data class OffenderVisitBalance(
   @MapsId
   @JoinColumn(name = "OFFENDER_BOOK_ID")
   val offenderBooking: OffenderBooking,
+
+  @OneToMany(mappedBy = "visitBalance", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val visitBalanceAdjustments: MutableList<OffenderVisitBalanceAdjustment> = mutableListOf(),
 
   @Column(name = "REMAINING_VO")
   var remainingVisitOrders: Int? = null,

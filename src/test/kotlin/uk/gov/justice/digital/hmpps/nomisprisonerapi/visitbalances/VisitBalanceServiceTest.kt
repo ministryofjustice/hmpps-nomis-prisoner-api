@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
-import org.mockito.kotlin.description
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
@@ -34,7 +33,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentRea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances.CreateVisitBalanceAdjustmentRequest
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -123,11 +121,11 @@ class VisitBalanceServiceTest {
           offenderBooking = booking,
         )
         booking.visitBalance = ovb
-        booking.visitBalanceAdjustments.add(
+        ovb.visitBalanceAdjustments.add(
           OffenderVisitBalanceAdjustment(
             adjustReasonCode = VisitOrderAdjustmentReason(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE, "VO Issue"),
             adjustDate = LocalDate.now(),
-            offenderBooking = booking,
+            visitBalance = ovb,
           ),
         )
 
@@ -154,11 +152,11 @@ class VisitBalanceServiceTest {
           offenderBooking = booking,
         )
         booking.visitBalance = ovb
-        booking.visitBalanceAdjustments.add(
+        ovb.visitBalanceAdjustments.add(
           OffenderVisitBalanceAdjustment(
             adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
             adjustDate = LocalDate.now(),
-            offenderBooking = booking,
+            visitBalance = ovb,
           ).apply { createUsername = "NOT_BATCH_JOB" },
         )
 
@@ -184,11 +182,11 @@ class VisitBalanceServiceTest {
           offenderBooking = booking,
         )
         booking.visitBalance = ovb
-        booking.visitBalanceAdjustments.add(
+        ovb.visitBalanceAdjustments.add(
           OffenderVisitBalanceAdjustment(
             adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
             adjustDate = LocalDate.now(),
-            offenderBooking = booking,
+            visitBalance = ovb,
           ).apply { createUsername = "OMS_OWNER" },
         )
 
@@ -219,25 +217,25 @@ class VisitBalanceServiceTest {
           OffenderVisitBalanceAdjustment(
             adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
             adjustDate = LocalDate.parse("2021-01-01"),
-            offenderBooking = booking,
+            visitBalance = ovb,
           ).apply { createUsername = "OMS_OWNER" },
           OffenderVisitBalanceAdjustment(
             adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
             adjustDate = LocalDate.parse("2023-02-03"),
-            offenderBooking = booking,
+            visitBalance = ovb,
           ).apply { createUsername = "OMS_OWNER" },
           OffenderVisitBalanceAdjustment(
             adjustReasonCode = VisitOrderAdjustmentReason(PVO_IEP_ENTITLEMENT, "PVO IEP Entitlement"),
             adjustDate = LocalDate.parse("2023-02-03"),
-            offenderBooking = booking,
+            visitBalance = ovb,
           ).apply { createUsername = "OMS_OWNER" },
           OffenderVisitBalanceAdjustment(
             adjustReasonCode = VisitOrderAdjustmentReason(IEP_ENTITLEMENT, "IEP Entitlement"),
             adjustDate = LocalDate.parse("2023-02-02"),
-            offenderBooking = booking,
+            visitBalance = ovb,
           ).apply { createUsername = "OMS_OWNER" },
         )
-        booking.visitBalanceAdjustments.addAll(visitBalanceAdjustments)
+        ovb.visitBalanceAdjustments.addAll(visitBalanceAdjustments)
 
         whenever(offenderBookingRepository.findById(anyLong())).thenReturn(Optional.of(booking))
       }
@@ -491,7 +489,7 @@ class VisitBalanceServiceTest {
             authorisedUsername = "JMORROW_GEN",
           ),
         )
-        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        assertThat(booking.visitBalance!!.visitBalanceAdjustments).hasSize(1)
         verify(staffUserAccountRepository).findByUsername("JMORROW_GEN")
       }
 
@@ -505,7 +503,7 @@ class VisitBalanceServiceTest {
             adjustmentDate = LocalDate.now(),
           ),
         )
-        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        assertThat(booking.visitBalance!!.visitBalanceAdjustments).hasSize(1)
         verify(staffUserAccountRepository).findByUsername("OMS_OWNER")
       }
 
@@ -519,7 +517,7 @@ class VisitBalanceServiceTest {
             adjustmentDate = LocalDate.now(),
           ),
         )
-        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        assertThat(booking.visitBalance!!.visitBalanceAdjustments).hasSize(1)
         verify(visitOrderAdjustmentReasonRepository).findById(VO_ISSUE)
       }
 
@@ -532,7 +530,7 @@ class VisitBalanceServiceTest {
             adjustmentDate = LocalDate.now(),
           ),
         )
-        assertThat(booking.visitBalanceAdjustments).hasSize(1)
+        assertThat(booking.visitBalance!!.visitBalanceAdjustments).hasSize(1)
         verify(visitOrderAdjustmentReasonRepository).findById(PVO_ISSUE)
       }
     }

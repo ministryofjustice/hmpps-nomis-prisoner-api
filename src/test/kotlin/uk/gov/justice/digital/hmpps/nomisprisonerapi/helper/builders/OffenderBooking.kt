@@ -34,11 +34,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -283,26 +281,10 @@ interface BookingDsl {
 
   @VisitBalanceDslMarker
   fun visitBalance(
-    remainingVisitOrders: Int? = 4,
+    remainingVisitOrders: Int? = 7,
     remainingPrivilegedVisitOrders: Int? = 4,
     dsl: VisitBalanceDsl.() -> Unit = {},
   ): OffenderVisitBalance
-
-  @VisitBalanceAdjustmentDslMarker
-  fun visitBalanceAdjustment(
-    visitOrderChange: Int? = 4,
-    previousVisitOrderCount: Int? = 0,
-    privilegedVisitOrderChange: Int? = 3,
-    previousPrivilegedVisitOrderCount: Int? = 0,
-    adjustmentDate: LocalDate = LocalDate.parse("2022-01-01"),
-    adjustmentReasonCode: String = IEP_ENTITLEMENT,
-    comment: String? = null,
-    expiryBalance: Int? = null,
-    expiryDate: LocalDate? = null,
-    endorsedStaffId: Long? = null,
-    authorisedStaffId: Long? = null,
-    dsl: VisitBalanceAdjustmentDsl.() -> Unit = {},
-  ): OffenderVisitBalanceAdjustment
 
   @VisitDslMarker
   fun visit(
@@ -401,7 +383,6 @@ class BookingBuilderFactory(
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
-  private val visitBalanceAdjustmentBuilderFactory: VisitBalanceAdjustmentBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -420,7 +401,6 @@ class BookingBuilderFactory(
     offenderPhysicalAttributesBuilderFactory,
     offenderProfileBuilderFactory,
     visitBalanceBuilderFactory,
-    visitBalanceAdjustmentBuilderFactory,
     offenderContactPersonBuilderFactory,
     visitBuilderFactory,
     profileDetailBuilderFactory,
@@ -447,7 +427,6 @@ class BookingBuilder(
   private val offenderPhysicalAttributesBuilderFactory: OffenderPhysicalAttributesBuilderFactory,
   private val offenderProfileBuilderFactory: OffenderProfileBuilderFactory,
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
-  private val visitBalanceAdjustmentBuilderFactory: VisitBalanceAdjustmentBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
@@ -899,45 +878,13 @@ class BookingBuilder(
     remainingVisitOrders: Int?,
     remainingPrivilegedVisitOrders: Int?,
     dsl: VisitBalanceDsl.() -> Unit,
-  ): OffenderVisitBalance {
-    offenderBooking.visitBalance = visitBalanceBuilderFactory.builder().build(
-      offenderBooking = offenderBooking,
-      remainingVisitOrders = remainingVisitOrders,
-      remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
-    )
-    return offenderBooking.visitBalance!!
-  }
-
-  override fun visitBalanceAdjustment(
-    visitOrderChange: Int?,
-    previousVisitOrderCount: Int?,
-    privilegedVisitOrderChange: Int?,
-    previousPrivilegedVisitOrderCount: Int?,
-    adjustmentDate: LocalDate,
-    adjustmentReasonCode: String,
-    comment: String?,
-    expiryBalance: Int?,
-    expiryDate: LocalDate?,
-    endorsedStaffId: Long?,
-    authorisedStaffId: Long?,
-    dsl: VisitBalanceAdjustmentDsl.() -> Unit,
-  ): OffenderVisitBalanceAdjustment = visitBalanceAdjustmentBuilderFactory.builder()
+  ): OffenderVisitBalance = visitBalanceBuilderFactory.builder()
     .let { builder ->
       builder.build(
         offenderBooking = offenderBooking,
-        visitOrderChange = visitOrderChange,
-        previousVisitOrderCount = previousVisitOrderCount,
-        privilegedVisitOrderChange = privilegedVisitOrderChange,
-        previousPrivilegedVisitOrderCount = previousPrivilegedVisitOrderCount,
-        adjustmentDate = adjustmentDate,
-        adjustmentReasonCode = adjustmentReasonCode,
-        comment = comment,
-        expiryBalance = expiryBalance,
-        expiryDate = expiryDate,
-        endorsedStaffId = endorsedStaffId,
-        authorisedStaffId = authorisedStaffId,
+        remainingVisitOrders = remainingVisitOrders,
+        remainingPrivilegedVisitOrders = remainingPrivilegedVisitOrders,
       ).also {
-        offenderBooking.visitBalanceAdjustments += it
         builder.apply(dsl)
       }
     }

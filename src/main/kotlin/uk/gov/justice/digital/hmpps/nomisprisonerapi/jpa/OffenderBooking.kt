@@ -109,7 +109,7 @@ data class OffenderBooking(
   var fixedTermRecall: OffenderFixedTermRecall? = null,
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  val visitBalanceAdjustments: MutableList<OffenderVisitBalanceAdjustment> = mutableListOf(),
+  val visitBalanceAdjustments: List<OffenderVisitBalanceAdjustment> = listOf(),
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val contacts: MutableList<OffenderContactPerson> = mutableListOf(),
