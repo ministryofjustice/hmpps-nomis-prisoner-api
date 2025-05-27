@@ -56,6 +56,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceRepos
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceTermRepository
@@ -96,6 +97,8 @@ class SentencingService(
   private val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository,
+
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -1019,50 +1022,14 @@ class SentencingService(
     // it would make sense to not make any assumptions
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
-    // Update sentences
-    request.sentences.forEach { sentence ->
-      val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
-      with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
-        category = lookupSentenceCategory(sentence.sentenceCategory)
-        calculationType = lookupSentenceCalculationType(
-          categoryCode = sentence.sentenceCategory,
-          calcType = sentence.sentenceCalcType,
-        )
-        status = "A"
-        offenderSentenceRepository.saveAndFlush(this)
-      }
-    }
-
-    // Create or update OffenderFixedTermRecall records if requested
-    if (request.returnToCustody != null) {
-      val enteredByStaff = findStaffByUsername(request.returnToCustody.enteredByStaffUsername)
-      bookingIds.forEach { bookingId ->
-        with(findOffenderBooking(bookingId)) {
-          if (fixedTermRecall == null) {
-            fixedTermRecall = OffenderFixedTermRecall(
-              returnToCustodyDate = request.returnToCustody.returnToCustodyDate,
-              staff = enteredByStaff,
-              recallLength = request.returnToCustody.recallLength.toLong(),
-              offenderBooking = this,
-            )
-          } else {
-            with(fixedTermRecall!!) {
-              returnToCustodyDate = request.returnToCustody.returnToCustodyDate
-              staff = enteredByStaff
-              recallLength = request.returnToCustody.recallLength.toLong()
-            }
-          }
-        }
-      }
-    }
-
+    request.sentences.updateSentences()
+    request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
       storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
-
     telemetryClient.trackEvent(
       "sentences-recalled",
       mapOf(
@@ -1072,6 +1039,95 @@ class SentencingService(
       ),
       null,
     )
+  }
+
+  fun updateRecallSentences(offenderNo: String, request: ConvertToRecallRequest) {
+    val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
+
+    request.sentences.updateSentences()
+    request.returnToCustody.createOrUpdateBooking(bookingIds)
+    bookingIds.forEach { bookingId ->
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
+    }
+    telemetryClient.trackEvent(
+      "recall-sentences-updated",
+      mapOf(
+        "bookingId" to bookingIds.joinToString { it.toString() },
+        "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
+        "offenderNo" to offenderNo,
+      ),
+      null,
+    )
+  }
+
+  fun replaceRecallSentences(offenderNo: String, request: DeleteRecallRequest) {
+    val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
+
+    request.sentences.updateSentences()
+    bookingIds.forEach { bookingId ->
+      findOffenderBooking(bookingId).fixedTermRecall = null
+      offenderFixedTermRecallRepository.deleteById(bookingId)
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
+    }
+    telemetryClient.trackEvent(
+      "recall-sentences-replaced",
+      mapOf(
+        "bookingId" to bookingIds.joinToString { it.toString() },
+        "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
+        "offenderNo" to offenderNo,
+      ),
+      null,
+    )
+  }
+
+  private fun ReturnToCustodyRequest?.createOrUpdateBooking(bookingIds: Set<Long>) {
+    if (this != null) {
+      val enteredByStaff = findStaffByUsername(this.enteredByStaffUsername)
+      bookingIds.forEach { bookingId ->
+        with(findOffenderBooking(bookingId)) {
+          if (fixedTermRecall == null) {
+            fixedTermRecall = OffenderFixedTermRecall(
+              returnToCustodyDate = this@createOrUpdateBooking.returnToCustodyDate,
+              staff = enteredByStaff,
+              recallLength = this@createOrUpdateBooking.recallLength.toLong(),
+              offenderBooking = this,
+            )
+          } else {
+            with(fixedTermRecall!!) {
+              returnToCustodyDate = this@createOrUpdateBooking.returnToCustodyDate
+              staff = enteredByStaff
+              recallLength = this@createOrUpdateBooking.recallLength.toLong()
+            }
+          }
+        }
+      }
+    } else {
+      bookingIds.forEach { bookingId ->
+        findOffenderBooking(bookingId).fixedTermRecall = null
+        offenderFixedTermRecallRepository.deleteById(bookingId)
+      }
+    }
+  }
+
+  private fun List<RecallRelatedSentenceDetails>.updateSentences() {
+    this.forEach { sentence ->
+      val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
+      with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
+        category = lookupSentenceCategory(sentence.sentenceCategory)
+        calculationType = lookupSentenceCalculationType(
+          categoryCode = sentence.sentenceCategory,
+          calcType = sentence.sentenceCalcType,
+        )
+        status = if (sentence.active) "A" else "I"
+        offenderSentenceRepository.saveAndFlush(this)
+      }
+    }
   }
 
   private fun findLatestBooking(offenderNo: String): OffenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
@@ -1136,6 +1192,7 @@ class SentencingService(
   )
     ?: throw BadDataException("Sentence calculation with category $categoryCode and calculation type $calcType not found")
 
+  @Suppress("SameParameterValue")
   private fun lookupDirectionType(code: String): DirectionType = directionTypeRepository.findByIdOrNull(
     DirectionType.pk(code),
   ) ?: throw BadDataException("Case status $code not found")
