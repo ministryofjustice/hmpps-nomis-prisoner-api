@@ -2,9 +2,13 @@ name: Security OWASP dependency check
 on:
   workflow_dispatch:
   schedule:
-    - cron: "51 4 * * MON-FRI" # Every weekday at 04:51 UTC
+    - cron: "23 8 * * MON-FRI" # Every weekday at 08:23 UTC
 jobs:
   security-kotlin-owasp-check:
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
     name: Kotlin security OWASP dependency check
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/security_owasp.yml@v2 # WORKFLOW_VERSION
     with:
