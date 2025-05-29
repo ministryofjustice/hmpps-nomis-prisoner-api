@@ -42,10 +42,17 @@ class VisitBalanceService(
   fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
     .map { VisitBalanceIdResponse(it.offenderBookingId) }
 
-  fun getVisitBalanceById(visitBalanceId: Long): VisitBalanceDetailResponse = offenderBookingRepository.findByIdOrNull(visitBalanceId) ?.let { getVisitBalanceForPrisoner(it) }
+  fun getVisitBalanceDetailsById(visitBalanceId: Long): VisitBalanceDetailResponse = offenderBookingRepository.findByIdOrNull(visitBalanceId) ?.let { getVisitBalanceDetailsForBooking(it) }
     ?: throw NotFoundException("Visit Balance $visitBalanceId not found")
 
-  private fun getVisitBalanceForPrisoner(latestBooking: OffenderBooking): VisitBalanceDetailResponse? = latestBooking.visitBalance?.let { visitBalance ->
+  fun getVisitBalanceDetailsForPrisoner(prisonNumber: String): VisitBalanceDetailResponse {
+    val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
+      ?: throw NotFoundException("Prisoner with offender no $prisonNumber not found with any bookings")
+    return getVisitBalanceDetailsForBooking(offenderBooking)
+      ?: throw NotFoundException("Visit Balance for offender $prisonNumber not found")
+  }
+
+  private fun getVisitBalanceDetailsForBooking(latestBooking: OffenderBooking): VisitBalanceDetailResponse? = latestBooking.visitBalance?.let { visitBalance ->
     val lastBatchIEPAdjustmentDate = visitBalance.visitBalanceAdjustments
       .filter { it.isIEPAllocation() && it.isCreatedByBatchVOProcess() }
       .maxByOrNull { it.adjustDate }

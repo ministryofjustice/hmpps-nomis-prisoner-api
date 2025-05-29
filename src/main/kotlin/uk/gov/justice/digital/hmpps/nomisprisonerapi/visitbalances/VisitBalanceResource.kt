@@ -130,7 +130,55 @@ class VisitBalanceResource(
     @Schema(description = "Visit balance (offender booking) id.", example = "12345")
     @PathVariable
     visitBalanceId: Long,
-  ): VisitBalanceDetailResponse = visitBalanceService.getVisitBalanceById(visitBalanceId)
+  ): VisitBalanceDetailResponse = visitBalanceService.getVisitBalanceDetailsById(visitBalanceId)
+
+  @GetMapping("/prisoners/{prisonNumber}/visit-balance/details")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get visit balance details for a prisoner",
+    description = "Retrieves visit balance details including last IEP allocation date for a prisoner. Requires ROLE_NOMIS_VISIT_BALANCE",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Visit balance details returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getVisitBalanceDetailsForPrisoner(
+    @Schema(description = "Prison number aka Offender No.", example = "A1234AK")
+    @PathVariable
+    prisonNumber: String,
+  ): VisitBalanceDetailResponse = visitBalanceService.getVisitBalanceDetailsForPrisoner(prisonNumber)
 
   @GetMapping("/prisoners/{prisonNumber}/visit-balance")
   @ResponseStatus(HttpStatus.OK)
@@ -174,7 +222,7 @@ class VisitBalanceResource(
       ),
     ],
   )
-  fun getVisitBalanceForOffender(
+  fun getVisitBalanceForPrisoner(
     @Schema(description = "Prison number aka Offender No.", example = "A1234AK")
     @PathVariable
     prisonNumber: String,

@@ -452,7 +452,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("GET /visit-balances/{visitBalanceId}")
   @Nested
-  inner class getVisitBalanceByIdToMigrate {
+  inner class getVisitBalanceDetailsByIdToMigrate {
     private lateinit var staffUser: Staff
     private lateinit var offender: Offender
     private lateinit var booking: OffenderBooking
@@ -598,7 +598,154 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /prisoners/{offenderNo}/visit-balance")
+  @DisplayName("GET /prisoners/{prisonNumber}/visit-balance/detail")
+  @Nested
+  inner class getVisitBalanceDetailsByPrisoner {
+    private lateinit var staffUser: Staff
+    private var offenderId: String = ""
+    private var offenderIdWithNullVisitOrders: String = ""
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staffUser = staff(firstName = "JANE", lastName = "STAFF") {
+          account(username = "JANESTAFF")
+        }
+        offenderId = offender(
+          nomsId = "A1234BC",
+          firstName = "JANE",
+          lastName = "NARK",
+          birthDate = LocalDate.parse("1999-12-22"),
+          birthPlace = "LONDON",
+          genderCode = "F",
+          whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+        ) {
+          booking {
+            visitBalance {
+              visitBalanceAdjustment(
+                authorisedStaffId = staffUser.id,
+              )
+              visitBalanceAdjustment(
+                visitOrderChange = 5,
+                previousVisitOrderCount = 1,
+                privilegedVisitOrderChange = null,
+                previousPrivilegedVisitOrderCount = null,
+                adjustmentReasonCode = IEP_ENTITLEMENT,
+                adjustmentDate = LocalDate.parse("2025-03-12"),
+                comment = "this is a comment for the most recent batch iep adjustment",
+                expiryBalance = 7,
+                expiryDate = LocalDate.parse("2027-11-30"),
+                endorsedStaffId = staffUser.id,
+                authorisedStaffId = staffUser.id,
+              )
+              visitBalanceAdjustment(
+                visitOrderChange = null,
+                previousVisitOrderCount = null,
+                privilegedVisitOrderChange = 3,
+                previousPrivilegedVisitOrderCount = 2,
+                adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+                adjustmentDate = LocalDate.parse("2025-01-11"),
+                authorisedStaffId = staffUser.id,
+              )
+              visitBalanceAdjustment(
+                visitOrderChange = null,
+                previousVisitOrderCount = null,
+                privilegedVisitOrderChange = 4,
+                previousPrivilegedVisitOrderCount = 1,
+                adjustmentReasonCode = PVO_IEP_ENTITLEMENT,
+                adjustmentDate = LocalDate.parse("2025-02-10"),
+                authorisedStaffId = staffUser.id,
+              )
+            }
+          }
+        }.nomsId
+        offenderIdWithNullVisitOrders = offender(nomsId = "A1234DE") {
+          booking {
+            visitBalance(
+              remainingVisitOrders = null,
+              remainingPrivilegedVisitOrders = null,
+            )
+          }
+        }.nomsId
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+      repository.deleteStaff()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/$offenderId/visit-balance/details")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/$offenderId/visit-balance/details")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/$offenderId/visit-balance/details")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/prisoners/9999/visit-balance/details")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return zero balances when null entries for vos or pvos`() {
+        webTestClient.get().uri("/prisoners/$offenderIdWithNullVisitOrders/visit-balance/details")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("remainingVisitOrders").isEqualTo(0)
+          .jsonPath("remainingPrivilegedVisitOrders").isEqualTo(0)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `is able to re-hydrate visit order balance`() {
+        val visitOrderBalanceResponse =
+          webTestClient.get().uri("/prisoners/$offenderId/visit-balance/details")
+            .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+            .exchange()
+            .expectStatus()
+            .isOk
+            .returnResult(VisitBalanceDetailResponse::class.java).responseBody.blockFirst()!!
+
+        assertThat(visitOrderBalanceResponse.prisonNumber).isEqualTo("A1234BC")
+        assertThat(visitOrderBalanceResponse.remainingVisitOrders).isEqualTo(7)
+        assertThat(visitOrderBalanceResponse.remainingPrivilegedVisitOrders).isEqualTo(4)
+        assertThat(visitOrderBalanceResponse.lastIEPAllocationDate).isEqualTo("2025-03-12")
+      }
+    }
+  }
+
+  @DisplayName("GET /prisoners/{prisonNumber}/visit-balance")
   @Nested
   inner class getVisitBalance {
     private lateinit var offender: Offender
