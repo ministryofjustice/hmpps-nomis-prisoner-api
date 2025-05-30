@@ -248,14 +248,7 @@ class CorporateService(
     }
   }
 
-  fun deleteCorporateAddressPhone(corporateId: Long, addressId: Long, phoneId: Long) {
-    addressPhoneRepository.findByIdOrNull(phoneId)?.also {
-      if (it.address.addressId != addressId) throw BadDataException("Phone of $phoneId does not exist on address $addressId but does on address ${it.address.addressId}")
-    }
-    corporateAddressRepository.findByIdOrNull(addressId)?.also {
-      if (it.corporate.id != corporateId) throw BadDataException("Address of $addressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
-    }
-
+  fun deleteCorporateAddressPhone(corporateId: Long, phoneId: Long) {
     addressPhoneRepository.deleteById(phoneId)
   }
 
