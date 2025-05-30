@@ -606,7 +606,7 @@ class CorporateResource(private val corporateService: CorporateService) {
   ) = corporateService.updateCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId, request = request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
-  @DeleteMapping("/corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
+  @DeleteMapping("/corporates/{corporateId}/address/phone/{phoneId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a corporate address phone",
@@ -652,10 +652,8 @@ class CorporateResource(private val corporateService: CorporateService) {
     @PathVariable
     corporateId: Long,
     @PathVariable
-    addressId: Long,
-    @PathVariable
     phoneId: Long,
-  ) = corporateService.deleteCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId)
+  ) = corporateService.deleteCorporateAddressPhone(corporateId = corporateId, phoneId = phoneId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/corporates/{corporateId}/phone")
