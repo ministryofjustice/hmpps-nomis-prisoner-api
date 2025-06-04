@@ -977,6 +977,13 @@ class SentencingService(
     ).toSentenceTermResponse()
   }
 
+  fun getActiveRecallSentencesByBookingId(bookingId: Long): List<SentenceResponse> {
+    val offenderBooking = findOffenderBooking(id = bookingId)
+    return offenderBooking.sentences
+      .filter { it.isActiveRecallSentence() }
+      .map { it.toSentenceResponse() }
+  }
+
   fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
     checkOffenderExists(offenderNo)
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
