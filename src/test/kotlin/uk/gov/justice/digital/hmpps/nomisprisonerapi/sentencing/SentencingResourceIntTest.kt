@@ -5299,6 +5299,150 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/sentences/recall")
+  @Nested
+  inner class GetActiveRecallSentences {
+    private var latestBookingId: Long = 0
+    private lateinit var recallSentence: OffenderSentence
+    private lateinit var nonRecallSentence: OffenderSentence
+    private lateinit var inactiveRecallSentence: OffenderSentence
+    private lateinit var courtCase: CourtCase
+    private lateinit var appearance: CourtEvent
+    private lateinit var courtOrder: CourtOrder
+    private lateinit var offenderCharge: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndSentence() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(reportingStaff = staff) {
+                offenderCharge = offenderCharge(offenceCode = "RT88074")
+                appearance = courtEvent {
+                  courtOrder = courtOrder()
+                }
+                // Active recall sentence
+                recallSentence = sentence(
+                  statusUpdateStaff = staff,
+                  courtOrder = courtOrder,
+                  status = "A",
+                  category = "2020",
+                  calculationType = "FTR_ORA",
+                ) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  term {}
+                }
+                // Non-recall sentence
+                nonRecallSentence = sentence(
+                  statusUpdateStaff = staff,
+                  courtOrder = courtOrder,
+                  status = "A",
+                  category = "2003",
+                  calculationType = "ADIMP_ORA",
+                ) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  term {}
+                }
+                // Inactive recall sentence
+                inactiveRecallSentence = sentence(
+                  statusUpdateStaff = staff,
+                  courtOrder = courtOrder,
+                  status = "I",
+                  category = "2020",
+                  calculationType = "FTR_ORA",
+                ) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  term {}
+                }
+              }
+            }
+          }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/recall")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/recall")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/recall")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/recall")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if booking not found`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/9999999/sentences/recall")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Offender booking 9999999 not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return only active recall sentences`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/recall")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(1)
+          .jsonPath("$[0].bookingId").isEqualTo(latestBookingId)
+          .jsonPath("$[0].sentenceSeq").isEqualTo(recallSentence.id.sequence)
+          .jsonPath("$[0].status").isEqualTo("A")
+          .jsonPath("$[0].calculationType.code").isEqualTo("FTR_ORA")
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
   @DisplayName("GET /prisoners/{offenderNo}/sentence-terms/booking-id/{bookingId}/sentence-sequence/{sentenceSequence}/term-sequence/{termSequence}")
   @Nested
   inner class GetOffenderSentenceTerm {
