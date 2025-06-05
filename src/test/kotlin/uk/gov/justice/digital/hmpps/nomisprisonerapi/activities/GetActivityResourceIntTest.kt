@@ -227,6 +227,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("content.size()").isEqualTo(1)
           .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("content[0].hasScheduleRules").isEqualTo(true)
       }
 
       @Test
@@ -285,7 +286,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `should not include if there are no schedule rules`() {
+      fun `should include if there are no schedule rules`() {
         nomisDataBuilder.build {
           programService {
             courseActivity = courseActivity(startDate = "$yesterday", createdByDps = false) {} // no schedule rules
@@ -299,7 +300,9 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getActiveActivities()
           .expectBody()
-          .jsonPath("content.size()").isEqualTo(0)
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("content[0].courseActivityId").isEqualTo(courseActivity.courseActivityId)
+          .jsonPath("content[0].hasScheduleRules").isEqualTo(false)
       }
 
       @Test

@@ -116,7 +116,7 @@ class ActivityService(
 
   fun findActiveActivityIds(pageRequest: Pageable, prisonId: String, courseActivityId: Long?): Page<FindActiveActivityIdsResponse> = findPrisonOrThrow(prisonId)
     .let { courseActivityRepository.findActiveActivities(prisonId, courseActivityId, pageRequest) }
-    .map { FindActiveActivityIdsResponse(it) }
+    .map { (activityId, scheduleRuleCount) -> FindActiveActivityIdsResponse(activityId, (scheduleRuleCount > 0)) }
 
   fun findPayRatesWithUnknownIncentive(prisonId: String, courseActivityId: Long?): List<FindPayRateWithUnknownIncentiveResponse> = findPrisonOrThrow(prisonId)
     .let { courseActivityRepository.findPayRatesWithUnknownIncentive(prisonId, courseActivityId) }
