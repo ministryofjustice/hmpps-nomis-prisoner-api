@@ -7,6 +7,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.SplashScreenService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
@@ -15,12 +16,19 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.closedStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.openStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen.Companion.SPLASH_ALL_PRISONS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentStatusRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
@@ -30,6 +38,10 @@ class IncidentService(
   private val incidentRepository: IncidentRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val splashScreenService: SplashScreenService,
+  private val agencyLocationRepository: AgencyLocationRepository,
+  private val incidentStatusRepository: IncidentStatusRepository,
+  private val questionnaireRepository: QuestionnaireRepository,
+  private val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -38,6 +50,35 @@ class IncidentService(
 
   fun getIncident(incidentId: Long): IncidentResponse? = incidentRepository.findByIdOrNull(incidentId)?.toIncidentResponse()
     ?: throw NotFoundException("Incident with id=$incidentId does not exist")
+
+  fun createIncident(incidentId: Long, request: CreateIncidentRequest): Long {
+    val agency = findAgencyOrThrow(request.location)
+    val questionnaire = lookupQuestionnaire(request.typeCode)
+    val status = lookupIncidentStatusCode(request.statusCode)
+    val reportedStaff = lookupStaff(request.reportedBy)
+
+    return Incident(
+      id = incidentId,
+      title = request.title,
+      description = request.description,
+      incidentType = questionnaire.code,
+      agency = agency,
+      questionnaire = questionnaire,
+      questions = mutableListOf<IncidentQuestion>(),
+      offenderParties = mutableListOf<IncidentOffenderParty>(),
+      incidentHistory = mutableListOf<IncidentHistory>(),
+      staffParties = mutableListOf<IncidentStaffParty>(),
+      requirements = mutableListOf<IncidentRequirement>(),
+      reportingStaff = reportedStaff.staff,
+      reportedDate = request.reportedDateTime.toLocalDate(),
+      reportedTime = request.reportedDateTime.toLocalTime(),
+      incidentDate = request.incidentDateTime.toLocalDate(),
+      incidentTime = request.incidentDateTime.toLocalTime(),
+      status = status,
+    ).let {
+      incidentRepository.save(it).id
+    }
+  }
 
   fun findIdsByFilter(pageRequest: Pageable, incidentFilter: IncidentFilter): Page<IncidentIdResponse> {
     log.info("Incident Id filter request : $incidentFilter with page request $pageRequest")
@@ -81,6 +122,18 @@ class IncidentService(
   )
 
   fun getOpenIncidentIdsForReconciliation(agencyId: String, pageRequest: Pageable): Page<IncidentIdResponse> = incidentRepository.findAllIncidentIdsByAgencyAndStatus(agencyId, openStatusValues, pageRequest).map { IncidentIdResponse(it) }
+
+  private fun findAgencyOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
+    ?: throw BadDataException("Agency with id=$agencyId does not exist")
+
+  private fun lookupIncidentStatusCode(code: String): IncidentStatus = incidentStatusRepository.findByIdOrNull(code)
+    ?: throw BadDataException("Incident status with code=$code does not exist")
+
+  private fun lookupQuestionnaire(code: String): Questionnaire = questionnaireRepository.findOneByCode(code)
+    ?: throw BadDataException("Questionnaire with code=$code does not exist")
+
+  private fun lookupStaff(username: String): StaffUserAccount = staffUserAccountRepository.findByUsername(username)
+    ?: throw BadDataException("Staff user account $username not found")
 }
 
 private fun Incident.toIncidentResponse(): IncidentResponse = IncidentResponse(

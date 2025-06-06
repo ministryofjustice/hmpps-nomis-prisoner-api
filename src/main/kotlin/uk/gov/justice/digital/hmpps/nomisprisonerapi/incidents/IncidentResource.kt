@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -16,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -29,9 +32,9 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(value = ["/incidents"], produces = [MediaType.APPLICATION_JSON_VALUE])
+@PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
 class IncidentResource(private val incidentService: IncidentService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/ids")
   @Operation(
     summary = "get incident IDs by filter",
@@ -88,7 +91,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/booking/{bookingId}")
   @Operation(
     summary = "Get a list of Incidents for a booking",
@@ -134,7 +136,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     bookingId: Long,
   ) = incidentService.getIncidentsForBooking(bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/{incidentId}")
   @Operation(
     summary = "Get incident details",
@@ -178,7 +179,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     @Schema(description = "Incident id") @PathVariable incidentId: Long,
   ) = incidentService.getIncident(incidentId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/reconciliation/agencies")
   @Operation(
     summary = "Retrieve a list of all agencies that have raised incidents)",
@@ -199,7 +199,6 @@ class IncidentResource(private val incidentService: IncidentService) {
   )
   fun getIncidentAgencies() = incidentService.findAllIncidentAgencies()
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/reconciliation/agency/{agencyId}/counts")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -239,7 +238,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     agencyId: String,
   ) = incidentService.getIncidentCountsForReconciliation(agencyId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/reconciliation/agency/{agencyId}/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -280,7 +278,88 @@ class IncidentResource(private val incidentService: IncidentService) {
     @PathVariable
     agencyId: String,
   ) = incidentService.getOpenIncidentIdsForReconciliation(agencyId, pageRequest)
+
+  @PutMapping("/{incidentId}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "creates an incident using the specified id",
+    description = "Creates an incident. Requires ROLE_NOMIS_INCIDENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Incident Created Returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_INCIDENTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Incident already exists",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createIncident(
+    @Schema(description = "Incident id") @PathVariable incidentId: Long,
+    @RequestBody @Valid
+    request: CreateIncidentRequest,
+  ): IncidentResponse? = incidentService.createIncident(incidentId, request).let {
+    incidentService.getIncident(it)
+  }
 }
+
+@Schema(description = "Incident Request")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateIncidentRequest(
+  @Schema(description = "A summary of the incident")
+  val title: String?,
+  @Schema(description = "The incident details")
+  val description: String?,
+  @Schema(description = "Prison where the incident occurred")
+  val location: String,
+  @Schema(description = "Status details")
+  val statusCode: String,
+  @Schema(description = "The incident questionnaire type")
+  val typeCode: String,
+  @Schema(description = "The date and time of the incident")
+  val incidentDateTime: LocalDateTime,
+  @Schema(description = "The date and time the incident was reported")
+  val reportedDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who reported the incident")
+  val reportedBy: String,
+)
 
 @Schema(description = "Incident Details")
 @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -1,12 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class IncidentResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -41,6 +43,21 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   private lateinit var responseRecordingStaff: Staff
   private var bookingId2: Long = 0
 
+  private var currentId: Long = 0
+
+  private val createIncidentRequest: () -> CreateIncidentRequest = {
+    CreateIncidentRequest(
+      title = "Some title",
+      description = "Some description",
+      location = "MDI",
+      statusCode = "AWAN",
+      typeCode = questionnaire1.code,
+      incidentDateTime = LocalDateTime.parse("2025-12-20T01:02:03"),
+      reportedDateTime = LocalDateTime.parse("2025-12-20T01:02:03"),
+      reportedBy = reportingStaff1.accounts.get(0).username,
+    )
+  }
+
   @BeforeEach
   internal fun createIncidents() {
     nomisDataBuilder.build {
@@ -52,6 +69,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       incident1 = incident(
+        id = ++currentId,
         title = "Fight in the cell",
         description = "Offenders were injured and furniture was damaged.",
         reportingStaff = reportingStaff1,
@@ -84,7 +102,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         }
       }
       // Incident and incident history with missing questionnaire answer - to mimic Nomis data
-      incident2 = incident(reportingStaff = reportingStaff1, questionnaire = questionnaire1, locationId = "MDI") {
+      incident2 = incident(id = ++currentId, reportingStaff = reportingStaff1, questionnaire = questionnaire1, locationId = "MDI") {
         question(question = questionnaire1.questions[1]) {
           response(recordingStaff = responseRecordingStaff, comment = "Hammer")
           response(answer = questionnaire1.questions[1].answers[2], comment = "Large Crow bar", recordingStaff = responseRecordingStaff)
@@ -95,8 +113,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           }
         }
       }
-      incident3 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1, incidentStatus = "CLOSE")
-      incident4 = incident(reportingStaff = reportingStaff2, questionnaire = questionnaire1)
+      incident3 = incident(id = ++currentId, reportingStaff = reportingStaff2, questionnaire = questionnaire1, incidentStatus = "CLOSE")
+      incident4 = incident(id = ++currentId, reportingStaff = reportingStaff2, questionnaire = questionnaire1)
     }
   }
 
@@ -286,7 +304,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isNotFound
         .expectBody()
         .jsonPath("userMessage").value<String> {
-          Assertions.assertThat(it).contains("Not Found: Incident with id=999999 does not exist")
+          assertThat(it).contains("Not Found: Incident with id=999999 does not exist")
         }
     }
 
@@ -557,7 +575,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectStatus().isNotFound
         .expectBody()
         .jsonPath("userMessage").value<String> {
-          Assertions.assertThat(it).contains("Not Found: Prisoner with booking 999999 not found")
+          assertThat(it).contains("Not Found: Prisoner with booking 999999 not found")
         }
     }
 
@@ -581,6 +599,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     fun `booking with multiple incidents should return incidents list`() {
       nomisDataBuilder.build {
         incident1 = incident(
+          id = ++currentId,
           title = "Fighting",
           description = "Offenders were causing trouble.",
           reportingStaff = reportingStaff1,
@@ -589,6 +608,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           offenderParty(offenderBooking = offender2.latestBooking(), outcome = "POR")
         }
         incident(
+          id = ++currentId,
           title = "Fighting again",
           description = "causing trouble.",
           reportingStaff = reportingStaff1,
@@ -664,8 +684,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will not get agencies excluded from incident agency service list`() {
       nomisDataBuilder.build {
-        incident(locationId = "HAZLWD", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
-        incident(locationId = "LEI", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
+        incident(id = ++currentId, locationId = "HAZLWD", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
+        incident(id = ++currentId, locationId = "LEI", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
       }
       webTestClient.get().uri("/incidents/reconciliation/agencies")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
@@ -812,6 +832,159 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("number").isEqualTo(1)
         .jsonPath("totalPages").isEqualTo(2)
         .jsonPath("size").isEqualTo(1)
+    }
+  }
+
+  @Nested
+  @DisplayName("PUT /incidents/{incidentId}")
+  inner class CreateIncident {
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/incidents/123456")
+          .headers(setAuthorisation(roles = listOf()))
+          .body(BodyInserters.fromValue(createIncidentRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/incidents/123456")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .body(BodyInserters.fromValue(createIncidentRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/incidents/123456")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `will fail if location can't be found`() {
+      webTestClient.put().uri("/incidents/${++currentId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .body(
+          BodyInserters.fromValue(
+            createIncidentRequest().copy(
+              location = "UNKNOW",
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Agency with id=UNKNOW does not exist")
+        }
+    }
+
+    @Test
+    fun `will fail if incident status code can't be found`() {
+      webTestClient.put().uri("/incidents/${++currentId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .body(
+          BodyInserters.fromValue(
+            createIncidentRequest().copy(
+              statusCode = "UNKNOW",
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Incident status with code=UNKNOW does not exist")
+        }
+    }
+
+    @Test
+    fun `will fail if questionnaire can't be found`() {
+      webTestClient.put().uri("/incidents/${++currentId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .body(
+          BodyInserters.fromValue(
+            createIncidentRequest().copy(
+              typeCode = "UNKNOW",
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Questionnaire with code=UNKNOW does not exist")
+        }
+    }
+
+    @Test
+    fun `will fail if reportedBy can't be found`() {
+      webTestClient.put().uri("/incidents/${++currentId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .body(
+          BodyInserters.fromValue(
+            createIncidentRequest().copy(
+              reportedBy = "UNKNOW",
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Staff user account UNKNOW not found")
+        }
+    }
+
+    @Test
+    fun `will create an incident`() {
+      webTestClient.put().uri("/incidents/${++currentId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .body(
+          BodyInserters.fromValue(
+            createIncidentRequest().copy(
+              title = "Something happened",
+              description = "and people had a fight",
+              statusCode = "AWAN",
+              typeCode = questionnaire1.code,
+              location = "BXI",
+              incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
+              reportedDateTime = LocalDateTime.parse("2024-01-02T09:30:00"),
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("incidentId").isEqualTo(currentId)
+        .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
+        .jsonPath("title").isEqualTo("Something happened")
+        .jsonPath("description").isEqualTo("and people had a fight")
+        .jsonPath("status.code").isEqualTo("AWAN")
+        .jsonPath("status.description").isEqualTo("Awaiting Analysis")
+        .jsonPath("status.listSequence").isEqualTo(1)
+        .jsonPath("status.standardUser").isEqualTo(true)
+        .jsonPath("status.enhancedUser").isEqualTo(true)
+        .jsonPath("type").isEqualTo("ESCAPE_EST")
+        .jsonPath("agency.code").isEqualTo("BXI")
+        .jsonPath("agency.description").isEqualTo("BRIXTON")
+        .jsonPath("followUpDate").doesNotExist()
+        .jsonPath("lockedResponse").isEqualTo(false)
+        .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
+        .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
+        .jsonPath("reportingStaff.username").isEqualTo("FREDSTAFF")
+        .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
+        .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
+        .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
+        .jsonPath("createDateTime").isNotEmpty
+        .jsonPath("createdBy").isNotEmpty
     }
   }
 }

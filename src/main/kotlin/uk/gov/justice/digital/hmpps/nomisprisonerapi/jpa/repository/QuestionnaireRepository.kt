@@ -8,4 +8,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 @Repository
 interface QuestionnaireRepository :
   CrudRepository<Questionnaire, Long>,
-  JpaSpecificationExecutor<Questionnaire>
+  JpaSpecificationExecutor<Questionnaire> {
+
+  fun findFirstByCodeAndCategory(code: String, category: String): Questionnaire?
+  fun findOneByCode(code: String) = findFirstByCodeAndCategory(code, "IR_TYPE")
+}
