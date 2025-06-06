@@ -5,16 +5,16 @@ import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
+import org.springframework.data.annotation.CreatedBy
+import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,8 +26,6 @@ import java.time.LocalTime
 class Incident(
   @Id
   @Column(name = "INCIDENT_CASE_ID")
-  @SequenceGenerator(name = "INCIDENT_CASE_ID", sequenceName = "INCIDENT_CASE_ID", allocationSize = 1)
-  @GeneratedValue(generator = "INCIDENT_CASE_ID")
   val id: Long = 0,
 
   @Column(name = "INCIDENT_TITLE")
@@ -73,7 +71,7 @@ class Incident(
   val reportedTime: LocalTime,
 
   @Column(name = "FOLLOW_UP_DATE")
-  val followUpDate: LocalDate,
+  val followUpDate: LocalDate? = null,
 
   @Column(name = "INCIDENT_DATE", nullable = false)
   val incidentDate: LocalDate,
@@ -100,11 +98,11 @@ class Incident(
   // All AUDIT data
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
+  @CreatedBy
   lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
-  @Generated
+  @CreatedDate
   lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
