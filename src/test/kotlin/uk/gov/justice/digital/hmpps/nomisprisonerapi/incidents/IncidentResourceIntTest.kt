@@ -45,8 +45,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
   private var currentId: Long = 0
 
-  private val createIncidentRequest: () -> CreateIncidentRequest = {
-    CreateIncidentRequest(
+  private val upsertIncidentRequest: () -> UpsertIncidentRequest = {
+    UpsertIncidentRequest(
       title = "Some title",
       description = "Some description",
       location = "MDI",
@@ -837,7 +837,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("PUT /incidents/{incidentId}")
-  inner class CreateIncident {
+  inner class UpsertIncident {
 
     @Nested
     inner class Security {
@@ -845,7 +845,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       fun `access forbidden when no role`() {
         webTestClient.put().uri("/incidents/123456")
           .headers(setAuthorisation(roles = listOf()))
-          .body(BodyInserters.fromValue(createIncidentRequest()))
+          .body(BodyInserters.fromValue(upsertIncidentRequest()))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -854,7 +854,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       fun `access forbidden with wrong role`() {
         webTestClient.put().uri("/incidents/123456")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-          .body(BodyInserters.fromValue(createIncidentRequest()))
+          .body(BodyInserters.fromValue(upsertIncidentRequest()))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -873,7 +873,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .body(
           BodyInserters.fromValue(
-            createIncidentRequest().copy(
+            upsertIncidentRequest().copy(
               location = "UNKNOW",
             ),
           ),
@@ -892,7 +892,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .body(
           BodyInserters.fromValue(
-            createIncidentRequest().copy(
+            upsertIncidentRequest().copy(
               statusCode = "UNKNOW",
             ),
           ),
@@ -911,7 +911,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .body(
           BodyInserters.fromValue(
-            createIncidentRequest().copy(
+            upsertIncidentRequest().copy(
               typeCode = "UNKNOW",
             ),
           ),
@@ -930,7 +930,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .body(
           BodyInserters.fromValue(
-            createIncidentRequest().copy(
+            upsertIncidentRequest().copy(
               reportedBy = "UNKNOW",
             ),
           ),
@@ -949,7 +949,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
         .body(
           BodyInserters.fromValue(
-            createIncidentRequest().copy(
+            upsertIncidentRequest().copy(
               title = "Something happened",
               description = "and people had a fight",
               statusCode = "AWAN",
@@ -961,7 +961,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           ),
         )
         .exchange()
-        .expectStatus().isCreated
+        .expectStatus().isOk
 
       webTestClient.get().uri("/incidents/$currentId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
@@ -980,6 +980,54 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("agency.code").isEqualTo("BXI")
         .jsonPath("agency.description").isEqualTo("BRIXTON")
         .jsonPath("followUpDate").doesNotExist()
+        .jsonPath("lockedResponse").isEqualTo(false)
+        .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
+        .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
+        .jsonPath("reportingStaff.username").isEqualTo("FREDSTAFF")
+        .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
+        .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
+        .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
+        .jsonPath("createDateTime").isNotEmpty
+        .jsonPath("createdBy").isNotEmpty
+    }
+
+    @Test
+    fun `will update an incident`() {
+      webTestClient.put().uri("/incidents/${incident4.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .body(
+          BodyInserters.fromValue(
+            upsertIncidentRequest().copy(
+              title = "Something happened",
+              description = "and people had a fight",
+              statusCode = "AWAN",
+              typeCode = questionnaire1.code,
+              location = "BXI",
+              incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
+              reportedDateTime = LocalDateTime.parse("2024-01-02T09:30:00"),
+            ),
+          ),
+        )
+        .exchange()
+        .expectStatus().isOk
+
+      webTestClient.get().uri("/incidents/${incident4.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
+        .expectBody()
+        .jsonPath("incidentId").isEqualTo(currentId)
+        .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
+        .jsonPath("title").isEqualTo("Something happened")
+        .jsonPath("description").isEqualTo("and people had a fight")
+        .jsonPath("status.code").isEqualTo("AWAN")
+        .jsonPath("status.description").isEqualTo("Awaiting Analysis")
+        .jsonPath("status.listSequence").isEqualTo(1)
+        .jsonPath("status.standardUser").isEqualTo(true)
+        .jsonPath("status.enhancedUser").isEqualTo(true)
+        .jsonPath("type").isEqualTo("ESCAPE_EST")
+        .jsonPath("agency.code").isEqualTo("BXI")
+        .jsonPath("agency.description").isEqualTo("BRIXTON")
+        .jsonPath("followUpDate").isEqualTo("2025-05-04") // existing data not overwritten
         .jsonPath("lockedResponse").isEqualTo(false)
         .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
         .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)

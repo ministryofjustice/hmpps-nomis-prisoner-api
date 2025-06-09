@@ -280,14 +280,13 @@ class IncidentResource(private val incidentService: IncidentService) {
   ) = incidentService.getOpenIncidentIdsForReconciliation(agencyId, pageRequest)
 
   @PutMapping("/{incidentId}")
-  @ResponseStatus(HttpStatus.CREATED)
   @Operation(
-    summary = "creates an incident using the specified id",
-    description = "Creates an incident. Requires ROLE_NOMIS_INCIDENTS",
+    summary = "create or update an incident using the specified id",
+    description = "Create or update an incident. Requires ROLE_NOMIS_INCIDENTS",
     responses = [
       ApiResponse(
-        responseCode = "201",
-        description = "Incident Created Returned",
+        responseCode = "200",
+        description = "Incident created or updated",
       ),
       ApiResponse(
         responseCode = "401",
@@ -331,18 +330,18 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
     ],
   )
-  fun createIncident(
+  fun upsertIncident(
     @Schema(description = "Incident id") @PathVariable incidentId: Long,
     @RequestBody @Valid
-    request: CreateIncidentRequest,
+    request: UpsertIncidentRequest,
   ) {
-    incidentService.createIncident(incidentId, request)
+    incidentService.upsertIncident(incidentId, request)
   }
 }
 
 @Schema(description = "Incident Request")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class CreateIncidentRequest(
+data class UpsertIncidentRequest(
   @Schema(description = "A summary of the incident")
   val title: String?,
   @Schema(description = "The incident details")

@@ -29,14 +29,14 @@ class Incident(
   val id: Long = 0,
 
   @Column(name = "INCIDENT_TITLE")
-  val title: String? = null,
+  var title: String? = null,
 
   @Column(name = "INCIDENT_DETAILS")
-  val description: String? = null,
+  var description: String? = null,
 
   // Maps to the code of the questionnaire (so is really just the same mapping as questionnaire)
   @JoinColumn(nullable = false)
-  val incidentType: String,
+  var incidentType: String,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
@@ -44,43 +44,43 @@ class Incident(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "QUESTIONNAIRE_ID", nullable = false)
-  val questionnaire: Questionnaire,
+  var questionnaire: Questionnaire,
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   val questions: MutableList<IncidentQuestion> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
-  var offenderParties: MutableList<IncidentOffenderParty> = mutableListOf(),
+  val offenderParties: MutableList<IncidentOffenderParty> = mutableListOf(),
 
   @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "INCIDENT_CASE_ID", nullable = false)
-  var incidentHistory: MutableList<IncidentHistory> = mutableListOf(),
+  val incidentHistory: MutableList<IncidentHistory> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
-  var staffParties: MutableList<IncidentStaffParty> = mutableListOf(),
+  val staffParties: MutableList<IncidentStaffParty> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   val requirements: MutableList<IncidentRequirement> = mutableListOf(),
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REPORTED_STAFF_ID", nullable = false)
-  val reportingStaff: Staff,
+  var reportingStaff: Staff,
   @Column(name = "REPORT_DATE", nullable = false)
-  val reportedDate: LocalDate,
+  var reportedDate: LocalDate,
   @Column(name = "REPORT_TIME", nullable = false)
-  val reportedTime: LocalTime,
+  var reportedTime: LocalTime,
 
   @Column(name = "FOLLOW_UP_DATE")
   val followUpDate: LocalDate? = null,
 
   @Column(name = "INCIDENT_DATE", nullable = false)
-  val incidentDate: LocalDate,
+  var incidentDate: LocalDate,
   @Column(name = "INCIDENT_TIME", nullable = false)
-  val incidentTime: LocalTime,
+  var incidentTime: LocalTime,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INCIDENT_STATUS", nullable = false)
-  val status: IncidentStatus,
+  var status: IncidentStatus,
 
   @Column(name = "RESPONSE_LOCKED_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)

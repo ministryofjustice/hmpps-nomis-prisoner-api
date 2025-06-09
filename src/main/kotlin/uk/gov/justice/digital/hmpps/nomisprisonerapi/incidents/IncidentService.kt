@@ -51,31 +51,49 @@ class IncidentService(
   fun getIncident(incidentId: Long): IncidentResponse? = incidentRepository.findByIdOrNull(incidentId)?.toIncidentResponse()
     ?: throw NotFoundException("Incident with id=$incidentId does not exist")
 
-  fun createIncident(incidentId: Long, request: CreateIncidentRequest) {
+  fun upsertIncident(incidentId: Long, request: UpsertIncidentRequest) {
     val agency = findAgencyOrThrow(request.location)
     val questionnaire = lookupQuestionnaire(request.typeCode)
     val status = lookupIncidentStatusCode(request.statusCode)
     val reportedStaff = lookupStaff(request.reportedBy)
 
-    return Incident(
-      id = incidentId,
-      title = request.title,
-      description = request.description,
-      incidentType = questionnaire.code,
-      agency = agency,
-      questionnaire = questionnaire,
-      questions = mutableListOf<IncidentQuestion>(),
-      offenderParties = mutableListOf<IncidentOffenderParty>(),
-      incidentHistory = mutableListOf<IncidentHistory>(),
-      staffParties = mutableListOf<IncidentStaffParty>(),
-      requirements = mutableListOf<IncidentRequirement>(),
-      reportingStaff = reportedStaff.staff,
-      reportedDate = request.reportedDateTime.toLocalDate(),
-      reportedTime = request.reportedDateTime.toLocalTime(),
-      incidentDate = request.incidentDateTime.toLocalDate(),
-      incidentTime = request.incidentDateTime.toLocalTime(),
-      status = status,
-    ).let {
+    return (
+      incidentRepository.findByIdOrNull(incidentId)?.apply {
+        this.title = request.title
+        this.description = request.description
+        this.incidentType = questionnaire.code
+        this.agency = agency
+        this.questionnaire = questionnaire
+//      this.questions = mutableListOf<IncidentQuestion>()
+//      this.offenderParties = mutableListOf<IncidentOffenderParty>()
+//      this.incidentHistory = mutableListOf<IncidentHistory>()
+//      this.staffParties = mutableListOf<IncidentStaffParty>()
+//      this.requirements = mutableListOf<IncidentRequirement>()
+        this.reportingStaff = reportedStaff.staff
+        this.reportedDate = request.reportedDateTime.toLocalDate()
+        this.reportedTime = request.reportedDateTime.toLocalTime()
+        this.incidentDate = request.incidentDateTime.toLocalDate()
+        this.incidentTime = request.incidentDateTime.toLocalTime()
+      } ?: Incident(
+        id = incidentId,
+        title = request.title,
+        description = request.description,
+        incidentType = questionnaire.code,
+        agency = agency,
+        questionnaire = questionnaire,
+        questions = mutableListOf<IncidentQuestion>(),
+        offenderParties = mutableListOf<IncidentOffenderParty>(),
+        incidentHistory = mutableListOf<IncidentHistory>(),
+        staffParties = mutableListOf<IncidentStaffParty>(),
+        requirements = mutableListOf<IncidentRequirement>(),
+        reportingStaff = reportedStaff.staff,
+        reportedDate = request.reportedDateTime.toLocalDate(),
+        reportedTime = request.reportedDateTime.toLocalTime(),
+        incidentDate = request.incidentDateTime.toLocalDate(),
+        incidentTime = request.incidentDateTime.toLocalTime(),
+        status = status,
+      )
+      ).let {
       incidentRepository.save(it)
     }
   }
