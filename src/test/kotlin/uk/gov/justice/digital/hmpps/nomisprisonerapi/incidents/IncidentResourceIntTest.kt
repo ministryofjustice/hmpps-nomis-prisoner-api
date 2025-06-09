@@ -962,6 +962,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
+
+      webTestClient.get().uri("/incidents/$currentId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .exchange()
         .expectBody()
         .jsonPath("incidentId").isEqualTo(currentId)
         .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)

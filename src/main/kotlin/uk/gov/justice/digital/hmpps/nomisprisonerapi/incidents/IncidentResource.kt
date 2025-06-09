@@ -335,8 +335,8 @@ class IncidentResource(private val incidentService: IncidentService) {
     @Schema(description = "Incident id") @PathVariable incidentId: Long,
     @RequestBody @Valid
     request: CreateIncidentRequest,
-  ): IncidentResponse? = incidentService.createIncident(incidentId, request).let {
-    incidentService.getIncident(it)
+  ) {
+    incidentService.createIncident(incidentId, request)
   }
 }
 
