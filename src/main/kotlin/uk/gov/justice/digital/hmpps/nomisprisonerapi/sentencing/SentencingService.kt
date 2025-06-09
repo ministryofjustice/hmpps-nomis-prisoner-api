@@ -1029,8 +1029,46 @@ class SentencingService(
     // it would make sense to not make any assumptions
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
-    request.sentences.updateSentences()
+    val sentencesUpdated = request.sentences.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
+
+    // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence
+    val uniqueCourtCases = sentencesUpdated.mapNotNull { it.courtCase }.toSet()
+    // Create a new CourtEvent for each unique CourtCase
+    uniqueCourtCases.forEach { courtCase ->
+      // Find all sentences associated with this court case that are being recalled
+      val sentencesForCase = sentencesUpdated.filter {
+        it.courtCase == courtCase
+      }
+
+      // Find the court from the last appearance
+      val court = courtCase.courtEvents.maxByOrNull(CourtEvent::eventDate)!!.court
+
+      // Create the court event
+      val courtEvent = CourtEvent(
+        offenderBooking = courtCase.offenderBooking,
+        courtCase = courtCase,
+        eventDate = request.recallRevocationDate,
+        startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT),
+        courtEventType = lookupMovementReasonType("BREACH"),
+        eventStatus = determineEventStatus(
+          request.recallRevocationDate,
+          courtCase.offenderBooking,
+        ),
+        court = court,
+        outcomeReasonCode = lookupOffenceResultCode("1501"),
+        directionCode = lookupDirectionType(DirectionType.OUT),
+      )
+
+      // Create CourtEventCharge for each offenderSentenceCharge in the OffenderSentence
+      val offenderChargeIds = sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
+      // Associate charges with the court event
+      associateChargesWithAppearance(offenderChargeIds.toList(), courtEvent)
+
+      // Add the court event to the court case
+      courtCase.courtEvents.add(courtEvent)
+    }
+
     bookingIds.forEach { bookingId ->
       storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = bookingId,
@@ -1122,18 +1160,16 @@ class SentencingService(
     }
   }
 
-  private fun List<RecallRelatedSentenceDetails>.updateSentences() {
-    this.forEach { sentence ->
-      val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
-      with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
-        category = lookupSentenceCategory(sentence.sentenceCategory)
-        calculationType = lookupSentenceCalculationType(
-          categoryCode = sentence.sentenceCategory,
-          calcType = sentence.sentenceCalcType,
-        )
-        status = if (sentence.active) "A" else "I"
-        offenderSentenceRepository.saveAndFlush(this)
-      }
+  private fun List<RecallRelatedSentenceDetails>.updateSentences(): List<OffenderSentence> = this.map { sentence ->
+    val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
+    with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
+      category = lookupSentenceCategory(sentence.sentenceCategory)
+      calculationType = lookupSentenceCalculationType(
+        categoryCode = sentence.sentenceCategory,
+        calcType = sentence.sentenceCalcType,
+      )
+      status = if (sentence.active) "A" else "I"
+      offenderSentenceRepository.saveAndFlush(this)
     }
   }
 

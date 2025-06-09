@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
@@ -39,6 +40,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.Impr
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class SentencingResourceIntTest : IntegrationTestBase() {
   private val aDateString = "2023-01-01"
@@ -51,6 +53,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderSentenceRepository: OffenderSentenceRepository
+
+  @Autowired
+  lateinit var courtCaseRepository: CourtCaseRepository
 
   @Autowired
   lateinit var offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository
@@ -5820,10 +5825,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var staff: Staff
       private lateinit var sentence1: OffenderSentence
       private lateinit var sentence2: OffenderSentence
+      private lateinit var sentence3: OffenderSentence
+      private lateinit var courtCase1: CourtCase
+      private lateinit var courtCase2: CourtCase
+      private lateinit var offenderCharge1: OffenderCharge
+      private lateinit var offenderCharge2: OffenderCharge
+      private lateinit var offenderCharge3: OffenderCharge
       private lateinit var request: ConvertToRecallRequest
 
       @Nested
-      inner class FirstFixedTermRecall {
+      open inner class FirstFixedTermRecall {
         @BeforeEach
         fun createPrisonerAndSentence() {
           nomisDataBuilder.build {
@@ -5833,19 +5844,36 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             prisoner =
               offender(nomsId = "A1234AB") {
                 booking = booking(agencyLocationId = "MDI") {
-                  lateinit var courtOrder: CourtOrder
-                  courtCase(reportingStaff = staff) {
-                    val offenderCharge = offenderCharge(offenceCode = "RT88074")
-                    courtEvent {
-                      courtEventCharge(offenderCharge = offenderCharge)
-                      courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                  courtCase1 = courtCase(reportingStaff = staff, agencyId = "ABDRCT", caseSequence = 1) {
+                    lateinit var courtOrder: CourtOrder
+                    offenderCharge1 = offenderCharge(offenceCode = "RT88074")
+                    offenderCharge2 = offenderCharge(offenceCode = "RT88074")
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-01T10:00"), agencyId = "ABDRCT") {
+                      courtEventCharge(offenderCharge = offenderCharge1)
+                    }
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-02T10:00"), agencyId = "LEEDYC") {
+                      courtEventCharge(offenderCharge = offenderCharge1)
+                      courtEventCharge(offenderCharge = offenderCharge2)
+                      courtOrder = courtOrder(courtDate = LocalDate.parse("2023-01-01"))
                     }
                     sentence1 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
-                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      offenderSentenceCharge(offenderCharge = offenderCharge1)
                       term(days = 35, sentenceTermType = "IMP")
                     }
                     sentence2 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
-                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      offenderSentenceCharge(offenderCharge = offenderCharge2)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                  }
+                  courtCase2 = courtCase(reportingStaff = staff, agencyId = "LEICYC", caseSequence = 2) {
+                    lateinit var courtOrder: CourtOrder
+                    offenderCharge3 = offenderCharge(offenceCode = "RT88074")
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-05-02T10:00"), agencyId = "LEICYC") {
+                      courtEventCharge(offenderCharge = offenderCharge3)
+                      courtOrder = courtOrder(courtDate = LocalDate.parse("2023-05-02"))
+                    }
+                    sentence3 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      offenderSentenceCharge(offenderCharge = offenderCharge3)
                       term(days = 35, sentenceTermType = "IMP")
                     }
                   }
@@ -5869,6 +5897,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentenceCategory = "2020",
                 sentenceCalcType = "FTR_ORA",
               ),
+              RecallRelatedSentenceDetails(
+                SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence3.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "FTR_ORA",
+              ),
 
             ),
           )
@@ -5882,6 +5915,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(status).isEqualTo("I")
           }
           with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isFalse
+            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+            assertThat(status).isEqualTo("I")
+          }
+          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
             assertThat(calculationType.isRecallSentence()).isFalse
             assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
             assertThat(status).isEqualTo("I")
@@ -5901,6 +5939,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(status).isEqualTo("A")
           }
           with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("A")
+          }
+          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
             assertThat(calculationType.isRecallSentence()).isTrue
             assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
             assertThat(status).isEqualTo("A")
@@ -5970,11 +6013,57 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             eq("sentences-recalled"),
             check {
               assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
-              assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}")
+              assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}, ${sentence3.id.sequence}")
               assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
             },
             isNull(),
           )
+        }
+
+        @Test
+        fun `will create a court event when recallRevocationDate is supplied`() {
+          assertThat(courtCase1.courtEvents).hasSize(2)
+          assertThat(courtCase2.courtEvents).hasSize(1)
+
+          // Set a specific recall revocation date
+          val recallRevocationDate = LocalDate.parse("2023-02-15")
+          val requestWithSpecificDate = request.copy(recallRevocationDate = recallRevocationDate)
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(requestWithSpecificDate))
+            .exchange()
+            .expectStatus().isOk
+
+          nomisDataBuilder.runInTransaction {
+            // Get the court case from the sentence
+            with(courtCaseRepository.findById(courtCase1.id).orElseThrow()) {
+              assertThat(this.courtEvents).hasSize(3)
+              with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
+                assertThat(eventDate).isEqualTo(recallRevocationDate)
+                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(courtEventType.code).isEqualTo("BREACH")
+                assertThat(outcomeReasonCode?.code).isEqualTo("1501")
+                assertThat(court.id).isEqualTo("LEEDYC")
+                assertThat(courtEventCharges).extracting<Long> { it.id.offenderCharge.id }.containsExactly(offenderCharge1.id, offenderCharge2.id)
+              }
+            }
+            with(courtCaseRepository.findById(courtCase2.id).orElseThrow()) {
+              assertThat(this.courtEvents).hasSize(2)
+              with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
+                assertThat(eventDate).isEqualTo(recallRevocationDate)
+                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(courtEventType.code).isEqualTo("BREACH")
+                assertThat(outcomeReasonCode?.code).isEqualTo("1501")
+                assertThat(court.id).isEqualTo("LEICYC")
+                assertThat(courtEventCharges).extracting<Long> { it.id.offenderCharge.id }.containsExactly(offenderCharge3.id)
+              }
+            }
+          }
         }
       }
 

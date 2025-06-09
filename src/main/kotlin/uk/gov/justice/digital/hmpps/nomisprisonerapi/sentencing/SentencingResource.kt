@@ -2333,6 +2333,7 @@ data class ReturnToCustodyRequest(
 data class ConvertToRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,
   val returnToCustody: ReturnToCustodyRequest? = null,
+  val recallRevocationDate: LocalDate = LocalDate.now(),
 )
 
 @Schema(description = "Delete recall sentence request")
