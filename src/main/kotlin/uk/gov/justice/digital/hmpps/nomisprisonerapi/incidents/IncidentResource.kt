@@ -343,9 +343,11 @@ class IncidentResource(private val incidentService: IncidentService) {
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpsertIncidentRequest(
   @Schema(description = "A summary of the incident")
-  val title: String?,
+  val title: String,
   @Schema(description = "The incident details")
-  val description: String?,
+  val description: String,
+  @Schema(description = "Amendments to the incident details")
+  val descriptionAmendments: List<UpsertDescriptionAmendmentRequest>,
   @Schema(description = "Prison where the incident occurred")
   val location: String,
   @Schema(description = "Status details")
@@ -358,6 +360,17 @@ data class UpsertIncidentRequest(
   val reportedDateTime: LocalDateTime,
   @Schema(description = "The username of the person who reported the incident")
   val reportedBy: String,
+)
+
+data class UpsertDescriptionAmendmentRequest(
+  @Schema(description = "When addendum was added", example = "2024-04-29T12:34:56.789012")
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "First name of person that added this addendum", example = "John")
+  val firstName: String,
+  @Schema(description = "Last name of person that added this addendum", example = "Doe")
+  val lastName: String,
+  @Schema(description = "Addendum text")
+  val text: String,
 )
 
 @Schema(description = "Incident Details")

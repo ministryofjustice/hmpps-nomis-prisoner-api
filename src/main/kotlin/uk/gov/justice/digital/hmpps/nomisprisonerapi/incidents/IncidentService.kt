@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents
 
+import com.google.common.base.Utf8
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
 @Service
@@ -48,6 +50,9 @@ class IncidentService(
     const val INCIDENT_REPORTING_SCREEN_ID = "OIDINCRS"
   }
 
+  private val seeDps = "... see DPS for full text"
+  private val amendmentDateTimeFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm")
+
   fun getIncident(incidentId: Long): IncidentResponse? = incidentRepository.findByIdOrNull(incidentId)?.toIncidentResponse()
     ?: throw NotFoundException("Incident with id=$incidentId does not exist")
 
@@ -60,7 +65,7 @@ class IncidentService(
     return (
       incidentRepository.findByIdOrNull(incidentId)?.apply {
         this.title = request.title
-        this.description = request.description
+        this.description = reconstructText(request)
         this.incidentType = questionnaire.code
         this.agency = agency
         this.questionnaire = questionnaire
@@ -77,7 +82,7 @@ class IncidentService(
       } ?: Incident(
         id = incidentId,
         title = request.title,
-        description = request.description,
+        description = reconstructText(request),
         incidentType = questionnaire.code,
         agency = agency,
         questionnaire = questionnaire,
@@ -152,7 +157,25 @@ class IncidentService(
 
   private fun lookupStaff(username: String): StaffUserAccount = staffUserAccountRepository.findByUsername(username)
     ?: throw BadDataException("Staff user account $username not found")
+
+  internal fun reconstructText(request: UpsertIncidentRequest): String? {
+    var text = request.description
+    request.descriptionAmendments.forEach { amendment ->
+      val timestamp = amendment.createdDateTime.format(amendmentDateTimeFormat)
+      text += "User:${amendment.lastName},${amendment.firstName} Date:$timestamp${amendment.text}"
+    }
+
+    return text.truncate()
+  }
+
+  private fun String.truncate(): String = // encodedLength always >= length
+    if (Utf8.encodedLength(this) <= MAX_INCIDENT_LENGTH_BYTES) {
+      this
+    } else {
+      substring(0, MAX_INCIDENT_LENGTH_BYTES - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
+    }
 }
+private const val MAX_INCIDENT_LENGTH_BYTES: Int = 4000
 
 private fun Incident.toIncidentResponse(): IncidentResponse = IncidentResponse(
   incidentId = id,
