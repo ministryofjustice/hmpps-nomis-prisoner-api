@@ -49,6 +49,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     UpsertIncidentRequest(
       title = "Some title",
       description = "Some description",
+      descriptionAmendments = emptyList(),
       location = "MDI",
       statusCode = "AWAN",
       typeCode = questionnaire1.code,
@@ -867,176 +868,261 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    @Test
-    fun `will fail if location can't be found`() {
-      webTestClient.put().uri("/incidents/${++currentId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .body(
-          BodyInserters.fromValue(
-            upsertIncidentRequest().copy(
-              location = "UNKNOW",
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will fail if location can't be found`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                location = "UNKNOW",
+              ),
             ),
-          ),
-        )
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody()
-        .jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Agency with id=UNKNOW does not exist")
-        }
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Agency with id=UNKNOW does not exist")
+          }
+      }
+
+      @Test
+      fun `will fail if incident status code can't be found`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                statusCode = "UNKNOW",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Incident status with code=UNKNOW does not exist")
+          }
+      }
+
+      @Test
+      fun `will fail if questionnaire can't be found`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                typeCode = "UNKNOW",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Questionnaire with code=UNKNOW does not exist")
+          }
+      }
+
+      @Test
+      fun `will fail if reportedBy can't be found`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                reportedBy = "UNKNOW",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Staff user account UNKNOW not found")
+          }
+      }
     }
 
-    @Test
-    fun `will fail if incident status code can't be found`() {
-      webTestClient.put().uri("/incidents/${++currentId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .body(
-          BodyInserters.fromValue(
-            upsertIncidentRequest().copy(
-              statusCode = "UNKNOW",
+    @Nested
+    inner class Create {
+      @Test
+      fun `will create an incident`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened",
+                description = "and people had a fight",
+                statusCode = "AWAN",
+                typeCode = questionnaire1.code,
+                location = "BXI",
+                incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
+                reportedDateTime = LocalDateTime.parse("2024-01-02T09:30:00"),
+              ),
             ),
-          ),
-        )
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody()
-        .jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Incident status with code=UNKNOW does not exist")
-        }
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
+          .jsonPath("title").isEqualTo("Something happened")
+          .jsonPath("description").isEqualTo("and people had a fight")
+          .jsonPath("status.code").isEqualTo("AWAN")
+          .jsonPath("status.description").isEqualTo("Awaiting Analysis")
+          .jsonPath("status.listSequence").isEqualTo(1)
+          .jsonPath("status.standardUser").isEqualTo(true)
+          .jsonPath("status.enhancedUser").isEqualTo(true)
+          .jsonPath("type").isEqualTo("ESCAPE_EST")
+          .jsonPath("agency.code").isEqualTo("BXI")
+          .jsonPath("agency.description").isEqualTo("BRIXTON")
+          .jsonPath("followUpDate").doesNotExist()
+          .jsonPath("lockedResponse").isEqualTo(false)
+          .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
+          .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
+          .jsonPath("reportingStaff.username").isEqualTo("FREDSTAFF")
+          .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
+          .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
+          .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
+          .jsonPath("createDateTime").isNotEmpty
+          .jsonPath("createdBy").isNotEmpty
+      }
+
+      @Test
+      fun `will create an incident with amendments`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with amendments",
+                description = "and people had a fight",
+                descriptionAmendments = listOf(
+                  UpsertDescriptionAmendmentRequest(
+                    text = "amendment",
+                    firstName = "Bob",
+                    lastName = "Bloggs",
+                    createdDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
+                  ),
+                  UpsertDescriptionAmendmentRequest(
+                    text = "second amendment",
+                    firstName = "Joe",
+                    lastName = "Smith",
+                    createdDateTime = LocalDateTime.parse("2024-12-30T13:45:00"),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("title").isEqualTo("Something happened with amendments")
+          .jsonPath("description").isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
+      }
     }
 
-    @Test
-    fun `will fail if questionnaire can't be found`() {
-      webTestClient.put().uri("/incidents/${++currentId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .body(
-          BodyInserters.fromValue(
-            upsertIncidentRequest().copy(
-              typeCode = "UNKNOW",
+    @Nested
+    inner class Update {
+      @Test
+      fun `will update an incident`() {
+        webTestClient.put().uri("/incidents/${incident4.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened",
+                description = "and people had a fight",
+                statusCode = "AWAN",
+                typeCode = questionnaire1.code,
+                location = "BXI",
+                incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
+                reportedDateTime = LocalDateTime.parse("2024-01-02T09:30:00"),
+              ),
             ),
-          ),
-        )
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody()
-        .jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Questionnaire with code=UNKNOW does not exist")
-        }
-    }
+          )
+          .exchange()
+          .expectStatus().isOk
 
-    @Test
-    fun `will fail if reportedBy can't be found`() {
-      webTestClient.put().uri("/incidents/${++currentId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .body(
-          BodyInserters.fromValue(
-            upsertIncidentRequest().copy(
-              reportedBy = "UNKNOW",
+        webTestClient.get().uri("/incidents/${incident4.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident4.id)
+          .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
+          .jsonPath("title").isEqualTo("Something happened")
+          .jsonPath("description").isEqualTo("and people had a fight")
+          .jsonPath("status.code").isEqualTo("AWAN")
+          .jsonPath("status.description").isEqualTo("Awaiting Analysis")
+          .jsonPath("status.listSequence").isEqualTo(1)
+          .jsonPath("status.standardUser").isEqualTo(true)
+          .jsonPath("status.enhancedUser").isEqualTo(true)
+          .jsonPath("type").isEqualTo("ESCAPE_EST")
+          .jsonPath("agency.code").isEqualTo("BXI")
+          .jsonPath("agency.description").isEqualTo("BRIXTON")
+          .jsonPath("followUpDate").isEqualTo("2025-05-04") // existing data not overwritten
+          .jsonPath("lockedResponse").isEqualTo(false)
+          .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
+          .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
+          .jsonPath("reportingStaff.username").isEqualTo("FREDSTAFF")
+          .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
+          .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
+          .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
+          .jsonPath("createDateTime").isNotEmpty
+          .jsonPath("createdBy").isNotEmpty
+      }
+
+      @Test
+      fun `will update an incident with amendments`() {
+        webTestClient.put().uri("/incidents/${incident3.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with amendments",
+                description = "and people had a fight",
+                descriptionAmendments = listOf(
+                  UpsertDescriptionAmendmentRequest(
+                    text = "amendment",
+                    firstName = "Bob",
+                    lastName = "Bloggs",
+                    createdDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
+                  ),
+                  UpsertDescriptionAmendmentRequest(
+                    text = "second amendment",
+                    firstName = "Joe",
+                    lastName = "Smith",
+                    createdDateTime = LocalDateTime.parse("2024-12-30T13:45:00"),
+                  ),
+                ),
+              ),
             ),
-          ),
-        )
-        .exchange()
-        .expectStatus().isBadRequest
-        .expectBody()
-        .jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Staff user account UNKNOW not found")
-        }
-    }
+          )
+          .exchange()
+          .expectStatus().isOk
 
-    @Test
-    fun `will create an incident`() {
-      webTestClient.put().uri("/incidents/${++currentId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .body(
-          BodyInserters.fromValue(
-            upsertIncidentRequest().copy(
-              title = "Something happened",
-              description = "and people had a fight",
-              statusCode = "AWAN",
-              typeCode = questionnaire1.code,
-              location = "BXI",
-              incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
-              reportedDateTime = LocalDateTime.parse("2024-01-02T09:30:00"),
-            ),
-          ),
-        )
-        .exchange()
-        .expectStatus().isOk
-
-      webTestClient.get().uri("/incidents/$currentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .exchange()
-        .expectBody()
-        .jsonPath("incidentId").isEqualTo(currentId)
-        .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
-        .jsonPath("title").isEqualTo("Something happened")
-        .jsonPath("description").isEqualTo("and people had a fight")
-        .jsonPath("status.code").isEqualTo("AWAN")
-        .jsonPath("status.description").isEqualTo("Awaiting Analysis")
-        .jsonPath("status.listSequence").isEqualTo(1)
-        .jsonPath("status.standardUser").isEqualTo(true)
-        .jsonPath("status.enhancedUser").isEqualTo(true)
-        .jsonPath("type").isEqualTo("ESCAPE_EST")
-        .jsonPath("agency.code").isEqualTo("BXI")
-        .jsonPath("agency.description").isEqualTo("BRIXTON")
-        .jsonPath("followUpDate").doesNotExist()
-        .jsonPath("lockedResponse").isEqualTo(false)
-        .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
-        .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
-        .jsonPath("reportingStaff.username").isEqualTo("FREDSTAFF")
-        .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
-        .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
-        .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
-        .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isNotEmpty
-    }
-
-    @Test
-    fun `will update an incident`() {
-      webTestClient.put().uri("/incidents/${incident4.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .body(
-          BodyInserters.fromValue(
-            upsertIncidentRequest().copy(
-              title = "Something happened",
-              description = "and people had a fight",
-              statusCode = "AWAN",
-              typeCode = questionnaire1.code,
-              location = "BXI",
-              incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
-              reportedDateTime = LocalDateTime.parse("2024-01-02T09:30:00"),
-            ),
-          ),
-        )
-        .exchange()
-        .expectStatus().isOk
-
-      webTestClient.get().uri("/incidents/${incident4.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .exchange()
-        .expectBody()
-        .jsonPath("incidentId").isEqualTo(currentId)
-        .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
-        .jsonPath("title").isEqualTo("Something happened")
-        .jsonPath("description").isEqualTo("and people had a fight")
-        .jsonPath("status.code").isEqualTo("AWAN")
-        .jsonPath("status.description").isEqualTo("Awaiting Analysis")
-        .jsonPath("status.listSequence").isEqualTo(1)
-        .jsonPath("status.standardUser").isEqualTo(true)
-        .jsonPath("status.enhancedUser").isEqualTo(true)
-        .jsonPath("type").isEqualTo("ESCAPE_EST")
-        .jsonPath("agency.code").isEqualTo("BXI")
-        .jsonPath("agency.description").isEqualTo("BRIXTON")
-        .jsonPath("followUpDate").isEqualTo("2025-05-04") // existing data not overwritten
-        .jsonPath("lockedResponse").isEqualTo(false)
-        .jsonPath("incidentDateTime").isEqualTo("2023-12-30T13:45:00")
-        .jsonPath("reportingStaff.staffId").isEqualTo(reportingStaff1.id)
-        .jsonPath("reportingStaff.username").isEqualTo("FREDSTAFF")
-        .jsonPath("reportingStaff.firstName").isEqualTo("FRED")
-        .jsonPath("reportingStaff.lastName").isEqualTo("STAFF")
-        .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
-        .jsonPath("createDateTime").isNotEmpty
-        .jsonPath("createdBy").isNotEmpty
+        webTestClient.get().uri("/incidents/${incident3.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident3.id)
+          .jsonPath("title").isEqualTo("Something happened with amendments")
+          .jsonPath("description").isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
+      }
     }
   }
 }
