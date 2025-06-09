@@ -51,7 +51,7 @@ class IncidentService(
   fun getIncident(incidentId: Long): IncidentResponse? = incidentRepository.findByIdOrNull(incidentId)?.toIncidentResponse()
     ?: throw NotFoundException("Incident with id=$incidentId does not exist")
 
-  fun createIncident(incidentId: Long, request: CreateIncidentRequest): Long {
+  fun createIncident(incidentId: Long, request: CreateIncidentRequest) {
     val agency = findAgencyOrThrow(request.location)
     val questionnaire = lookupQuestionnaire(request.typeCode)
     val status = lookupIncidentStatusCode(request.statusCode)
@@ -76,7 +76,7 @@ class IncidentService(
       incidentTime = request.incidentDateTime.toLocalTime(),
       status = status,
     ).let {
-      incidentRepository.save(it).id
+      incidentRepository.save(it)
     }
   }
 
