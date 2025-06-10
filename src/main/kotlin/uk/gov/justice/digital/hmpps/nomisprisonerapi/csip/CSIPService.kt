@@ -66,7 +66,6 @@ class CSIPService(
   }
 
   fun upsertCSIP(request: UpsertCSIPRequest): UpsertCSIPResponse {
-    log.debug("Received upsert request {}", request)
     val toCreate = request.id == null
     val csipReport = if (toCreate) {
       request.toCreateCSIPReport()
