@@ -29,6 +29,10 @@ class OffenceResultCode(
   var conviction: Boolean = false,
 ) {
 
+  companion object {
+    const val RECALL_TO_PRISON = "1501"
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

@@ -9,6 +9,7 @@ class MovementReason(code: String, description: String) : ReferenceCode(MOVE_RSN
 
   companion object {
     const val MOVE_RSN = "MOVE_RSN"
+    const val RECALL_BREACH_HEARING = "BREACH"
     fun pk(code: String): Pk = Pk(MOVE_RSN, code)
   }
 }

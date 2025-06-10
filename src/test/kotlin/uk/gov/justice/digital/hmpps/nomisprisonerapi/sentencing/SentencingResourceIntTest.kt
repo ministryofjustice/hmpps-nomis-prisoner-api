@@ -6049,6 +6049,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEEDYC")
                 assertThat(courtEventCharges).extracting<Long> { it.id.offenderCharge.id }.containsExactly(offenderCharge1.id, offenderCharge2.id)
+                assertThat(courtEventCharges).extracting<String> { it.resultCode1!!.code }.containsExactly("1501", "1501")
               }
             }
             with(courtCaseRepository.findById(courtCase2.id).orElseThrow()) {
@@ -6061,6 +6062,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEICYC")
                 assertThat(courtEventCharges).extracting<Long> { it.id.offenderCharge.id }.containsExactly(offenderCharge3.id)
+                assertThat(courtEventCharges).extracting<String> { it.resultCode1!!.code }.containsExactly("1501")
               }
             }
           }
