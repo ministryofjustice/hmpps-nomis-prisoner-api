@@ -102,6 +102,7 @@ class IncidentBuilder(
   private lateinit var incident: Incident
 
   fun build(
+    id: Long,
     title: String,
     description: String,
     agencyId: String,
@@ -112,6 +113,7 @@ class IncidentBuilder(
     followUpDate: LocalDate,
     questionnaire: Questionnaire,
   ): Incident = Incident(
+    id = id,
     title = title,
     description = description,
     agency = repository.lookupAgency(agencyId),

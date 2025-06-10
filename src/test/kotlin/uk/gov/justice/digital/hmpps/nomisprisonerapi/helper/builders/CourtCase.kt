@@ -32,7 +32,7 @@ interface CourtCaseDsl {
   @CourtEventDslMarker
   fun courtEvent(
     commentText: String? = "Court event comment",
-    prison: String = "MDI",
+    agencyId: String = "MDI",
     courtEventType: String = "TRIAL",
     eventStatusCode: String = "SCH",
     outcomeReasonCode: String? = "3514",
@@ -199,7 +199,7 @@ class CourtCaseBuilder(
     caseStatus: String,
     legalCaseType: String,
     beginDate: LocalDate,
-    prisonId: String,
+    agencyId: String,
     combinedCase: CourtCase?,
     statusUpdateReason: String?,
     statusUpdateComment: String?,
@@ -215,7 +215,7 @@ class CourtCaseBuilder(
     caseStatus = repository.lookupCaseStatus(caseStatus),
     legalCaseType = repository.lookupCaseType(legalCaseType),
     offenderBooking = offenderBooking,
-    court = repository.lookupAgency(prisonId),
+    court = repository.lookupAgency(agencyId),
     combinedCase = combinedCase,
     statusUpdateStaff = statusUpdateStaff,
     statusUpdateDate = statusUpdateDate,
@@ -284,7 +284,7 @@ class CourtCaseBuilder(
 
   override fun courtEvent(
     commentText: String?,
-    prison: String,
+    agencyId: String,
     courtEventType: String,
     eventStatusCode: String,
     outcomeReasonCode: String?,
@@ -296,7 +296,7 @@ class CourtCaseBuilder(
   ) = courtEventBuilderFactory.builder().let { builder ->
     builder.build(
       commentText = commentText,
-      prison = prison,
+      agencyId = agencyId,
       courtEventType = courtEventType,
       eventStatusCode = eventStatusCode,
       outcomeReasonCode = outcomeReasonCode,

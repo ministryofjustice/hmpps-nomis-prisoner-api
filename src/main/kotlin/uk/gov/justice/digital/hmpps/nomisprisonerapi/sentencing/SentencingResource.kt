@@ -360,6 +360,54 @@ class SentencingResource(private val sentencingService: SentencingService) {
   )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/sentences/recall")
+  @Operation(
+    summary = "get all active recall sentences for a booking",
+    description = "Requires role NOMIS_SENTENCING. Retrieves all active recall sentences for a booking",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the active recall sentences",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender booking not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActiveRecallSentences(
+    @Schema(description = "Booking ID", example = "12345", required = true)
+    @PathVariable
+    bookingId: Long,
+  ): List<SentenceResponse> = sentencingService.getActiveRecallSentencesByBookingId(bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentence-terms/booking-id/{bookingId}/sentence-sequence/{sentenceSequence}/term-sequence/{termSequence}")
   @Operation(
     summary = "get a sentence term by id (offender booking, sentence sequence and term sequence",
@@ -2285,6 +2333,7 @@ data class ReturnToCustodyRequest(
 data class ConvertToRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,
   val returnToCustody: ReturnToCustodyRequest? = null,
+  val recallRevocationDate: LocalDate = LocalDate.now(),
 )
 
 @Schema(description = "Delete recall sentence request")
