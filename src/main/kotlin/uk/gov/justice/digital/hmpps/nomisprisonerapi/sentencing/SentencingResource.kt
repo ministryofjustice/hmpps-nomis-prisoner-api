@@ -2336,6 +2336,12 @@ data class ConvertToRecallRequest(
   val recallRevocationDate: LocalDate = LocalDate.now(),
 )
 
+@Schema(description = "Recall convert response")
+data class ConvertToRecallResponse(
+  @Schema(description = "the breach court appearance ids created")
+  val courtEventIds: List<Long>,
+)
+
 @Schema(description = "Delete recall sentence request")
 data class DeleteRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,

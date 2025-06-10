@@ -6029,13 +6029,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           val recallRevocationDate = LocalDate.parse("2023-02-15")
           val requestWithSpecificDate = request.copy(recallRevocationDate = recallRevocationDate)
 
-          webTestClient.post()
+          val recallResponse: ConvertToRecallResponse = webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(requestWithSpecificDate))
             .exchange()
-            .expectStatus().isOk
+            .expectStatus().isOk.expectBodyResponse()
 
           nomisDataBuilder.runInTransaction {
             // Get the court case from the sentence
@@ -6050,6 +6050,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 assertThat(court.id).isEqualTo("LEEDYC")
                 assertThat(courtEventCharges).extracting<Long> { it.id.offenderCharge.id }.containsExactly(offenderCharge1.id, offenderCharge2.id)
                 assertThat(courtEventCharges).extracting<String> { it.resultCode1!!.code }.containsExactly("1501", "1501")
+                assertThat(recallResponse.courtEventIds).contains(this.id)
               }
             }
             with(courtCaseRepository.findById(courtCase2.id).orElseThrow()) {
@@ -6063,6 +6064,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 assertThat(court.id).isEqualTo("LEICYC")
                 assertThat(courtEventCharges).extracting<Long> { it.id.offenderCharge.id }.containsExactly(offenderCharge3.id)
                 assertThat(courtEventCharges).extracting<String> { it.resultCode1!!.code }.containsExactly("1501")
+                assertThat(recallResponse.courtEventIds).contains(this.id)
               }
             }
           }

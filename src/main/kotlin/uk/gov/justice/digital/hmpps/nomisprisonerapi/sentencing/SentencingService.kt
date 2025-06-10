@@ -1031,7 +1031,7 @@ class SentencingService(
     courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
   }
 
-  fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest) {
+  fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest): ConvertToRecallResponse {
     // It would be odd for the sentences to sit across bookings but give DPS is booking agnostic,
     // it would make sense to not make any assumptions
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
@@ -1042,7 +1042,7 @@ class SentencingService(
     // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence
     val uniqueCourtCases = sentencesUpdated.mapNotNull { it.courtCase }.toSet()
     // Create a new CourtEvent for each unique CourtCase
-    uniqueCourtCases.forEach { courtCase ->
+    val courtEvents = uniqueCourtCases.map { courtCase ->
       // Find all sentences associated with this court case that are being recalled
       val sentencesForCase = sentencesUpdated.filter {
         it.courtCase == courtCase
@@ -1076,8 +1076,7 @@ class SentencingService(
         useCourtEventOutcome = true,
       )
 
-      // Add the court event to the court case
-      courtCase.courtEvents.add(courtEvent)
+      courtEventRepository.saveAndFlush(courtEvent)
     }
 
     bookingIds.forEach { bookingId ->
@@ -1094,6 +1093,10 @@ class SentencingService(
         "offenderNo" to offenderNo,
       ),
       null,
+    )
+
+    return ConvertToRecallResponse(
+      courtEventIds = courtEvents.map { it.id },
     )
   }
 
