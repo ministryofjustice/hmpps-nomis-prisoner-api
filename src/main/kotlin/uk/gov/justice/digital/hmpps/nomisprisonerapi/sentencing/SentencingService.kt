@@ -26,9 +26,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason.Companion.RECALL_BREACH_HEARING
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode.Companion.RECALL_TO_PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifierPK
@@ -296,6 +298,7 @@ class SentencingService(
   private fun associateChargesWithAppearance(
     courtEventChargesToUpdate: List<Long>,
     courtEvent: CourtEvent,
+    useCourtEventOutcome: Boolean = false,
   ) {
     val originalList = courtEvent.courtEventCharges
     val newChargeList = mutableListOf<CourtEventCharge>()
@@ -305,7 +308,11 @@ class SentencingService(
           newChargeList.add(existingCourtEventCharge)
         } ?: let {
         getOffenderCharge(requestChargeId).let { offenderCharge ->
-          val resultCode = offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
+          val resultCode = if (useCourtEventOutcome) {
+            courtEvent.outcomeReasonCode
+          } else {
+            offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
+          }
           newChargeList.add(
             CourtEventCharge(
               CourtEventChargeId(
@@ -1050,20 +1057,24 @@ class SentencingService(
         courtCase = courtCase,
         eventDate = request.recallRevocationDate,
         startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT),
-        courtEventType = lookupMovementReasonType("BREACH"),
+        courtEventType = lookupMovementReasonType(RECALL_BREACH_HEARING),
         eventStatus = determineEventStatus(
           request.recallRevocationDate,
           courtCase.offenderBooking,
         ),
         court = court,
-        outcomeReasonCode = lookupOffenceResultCode("1501"),
+        outcomeReasonCode = lookupOffenceResultCode(RECALL_TO_PRISON),
         directionCode = lookupDirectionType(DirectionType.OUT),
       )
 
       // Create CourtEventCharge for each offenderSentenceCharge in the OffenderSentence
       val offenderChargeIds = sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
       // Associate charges with the court event
-      associateChargesWithAppearance(offenderChargeIds.toList(), courtEvent)
+      associateChargesWithAppearance(
+        courtEventChargesToUpdate = offenderChargeIds.toList(),
+        courtEvent = courtEvent,
+        useCourtEventOutcome = true,
+      )
 
       // Add the court event to the court case
       courtCase.courtEvents.add(courtEvent)
