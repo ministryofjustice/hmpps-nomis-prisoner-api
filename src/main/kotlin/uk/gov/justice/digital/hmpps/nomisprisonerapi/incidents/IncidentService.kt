@@ -75,10 +75,10 @@ class IncidentService(
 //      this.staffParties = mutableListOf<IncidentStaffParty>()
 //      this.requirements = mutableListOf<IncidentRequirement>()
         this.reportingStaff = reportedStaff.staff
-        this.reportedDate = request.reportedDateTime.toLocalDate()
-        this.reportedTime = request.reportedDateTime.toLocalTime()
-        this.incidentDate = request.incidentDateTime.toLocalDate()
-        this.incidentTime = request.incidentDateTime.toLocalTime()
+        this.reportedDate = request.reportedDateTime
+        this.reportedTime = request.reportedDateTime
+        this.incidentDate = request.incidentDateTime
+        this.incidentTime = request.incidentDateTime
       } ?: Incident(
         id = incidentId,
         title = request.title,
@@ -92,10 +92,10 @@ class IncidentService(
         staffParties = mutableListOf<IncidentStaffParty>(),
         requirements = mutableListOf<IncidentRequirement>(),
         reportingStaff = reportedStaff.staff,
-        reportedDate = request.reportedDateTime.toLocalDate(),
-        reportedTime = request.reportedDateTime.toLocalTime(),
-        incidentDate = request.incidentDateTime.toLocalDate(),
-        incidentTime = request.incidentDateTime.toLocalTime(),
+        reportedDate = request.reportedDateTime,
+        reportedTime = request.reportedDateTime,
+        incidentDate = request.incidentDateTime,
+        incidentTime = request.incidentDateTime,
         status = status,
       )
       ).let {
@@ -186,10 +186,10 @@ private fun Incident.toIncidentResponse(): IncidentResponse = IncidentResponse(
   type = questionnaire.code,
   agency = agency.toCodeDescription(),
   lockedResponse = lockedResponse,
-  incidentDateTime = LocalDateTime.of(incidentDate, incidentTime),
+  incidentDateTime = LocalDateTime.of(incidentDate.toLocalDate(), incidentTime.toLocalTime()),
   followUpDate = followUpDate,
   reportingStaff = reportingStaff.toStaff(),
-  reportedDateTime = LocalDateTime.of(reportedDate, reportedTime),
+  reportedDateTime = LocalDateTime.of(reportedDate.toLocalDate(), reportedTime.toLocalTime()),
   staffParties = staffParties.map { it.toStaffParty() },
   offenderParties = offenderParties.map { it.toOffenderParty() },
   requirements = requirements.map { it.toRequirement() },
@@ -205,7 +205,7 @@ private fun IncidentRequirement.toRequirement() = Requirement(
   staff = recordingStaff.toStaff(),
   sequence = id.requirementSequence,
   comment = comment,
-  date = recordedDate,
+  date = recordedDate.toLocalDate(),
   agencyId = agency.id,
   createDateTime = createDatetime,
   createdBy = createUsername,

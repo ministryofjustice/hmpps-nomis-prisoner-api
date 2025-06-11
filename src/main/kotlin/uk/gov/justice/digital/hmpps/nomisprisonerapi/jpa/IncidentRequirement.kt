@@ -12,7 +12,6 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Embeddable
@@ -57,7 +56,7 @@ class IncidentRequirement(
 ) {
   @Column(name = "RECORD_DATE", insertable = false, updatable = false)
   @Generated
-  lateinit var recordedDate: LocalDate
+  lateinit var recordedDate: LocalDateTime
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
