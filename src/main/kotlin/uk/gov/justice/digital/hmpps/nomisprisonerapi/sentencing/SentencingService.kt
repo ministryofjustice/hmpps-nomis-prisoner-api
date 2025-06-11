@@ -1100,7 +1100,7 @@ class SentencingService(
     )
   }
 
-  fun updateRecallSentences(offenderNo: String, request: ConvertToRecallRequest) {
+  fun updateRecallSentences(offenderNo: String, request: UpdateRecallRequest) {
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
     request.sentences.updateSentences()
@@ -1117,6 +1117,7 @@ class SentencingService(
         "bookingId" to bookingIds.joinToString { it.toString() },
         "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
+        "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
       ),
       null,
     )
@@ -1140,6 +1141,7 @@ class SentencingService(
         "bookingId" to bookingIds.joinToString { it.toString() },
         "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
+        "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
       ),
       null,
     )
