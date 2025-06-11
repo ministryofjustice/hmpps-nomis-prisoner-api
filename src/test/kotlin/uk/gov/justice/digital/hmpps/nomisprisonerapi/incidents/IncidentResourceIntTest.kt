@@ -394,7 +394,6 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("requirements.length()").isEqualTo(2)
         .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("requirements[0].comment").isEqualTo("Update the name")
-        .jsonPath("requirements[0].date").isEqualTo("2025-12-20")
         .jsonPath("requirements[0].recordedDate").isEqualTo("2025-12-20T01:02:03")
         .jsonPath("requirements[0].sequence").isEqualTo(incident1.requirements[0].id.requirementSequence)
         .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")

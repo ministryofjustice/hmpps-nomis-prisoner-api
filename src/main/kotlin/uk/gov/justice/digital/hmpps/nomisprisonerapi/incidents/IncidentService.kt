@@ -205,7 +205,6 @@ private fun IncidentRequirement.toRequirement() = Requirement(
   staff = recordingStaff.toStaff(),
   sequence = id.requirementSequence,
   comment = comment,
-  date = recordedDate.toLocalDate(),
   recordedDate = recordedDate,
   agencyId = agency.id,
   createDateTime = createDatetime,
