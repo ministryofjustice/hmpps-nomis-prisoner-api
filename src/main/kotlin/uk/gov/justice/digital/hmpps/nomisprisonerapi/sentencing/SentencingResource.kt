@@ -872,7 +872,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
     @RequestBody @Valid
-    request: ConvertToRecallRequest,
+    request: UpdateRecallRequest,
   ) = sentencingService.updateRecallSentences(
     offenderNo = offenderNo,
     request = request,
@@ -2336,6 +2336,15 @@ data class ConvertToRecallRequest(
   val recallRevocationDate: LocalDate = LocalDate.now(),
 )
 
+@Schema(description = "Recall convert request")
+data class UpdateRecallRequest(
+  val sentences: List<RecallRelatedSentenceDetails>,
+  val returnToCustody: ReturnToCustodyRequest? = null,
+  val recallRevocationDate: LocalDate = LocalDate.now(),
+  @Schema(description = "the breach court appearance that require updating")
+  val beachCourtEventIds: List<Long> = emptyList(),
+)
+
 @Schema(description = "Recall convert response")
 data class ConvertToRecallResponse(
   @Schema(description = "the breach court appearance ids created")
@@ -2345,6 +2354,8 @@ data class ConvertToRecallResponse(
 @Schema(description = "Delete recall sentence request")
 data class DeleteRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,
+  @Schema(description = "the breach court appearance that require deleting")
+  val beachCourtEventIds: List<Long> = emptyList(),
 )
 
 @Schema(description = "Recall sentences to set")
