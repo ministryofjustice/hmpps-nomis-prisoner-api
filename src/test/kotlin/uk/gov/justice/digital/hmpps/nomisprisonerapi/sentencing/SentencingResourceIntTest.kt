@@ -14,6 +14,7 @@ import org.mockito.kotlin.isNull
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
@@ -24,6 +25,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason.Companion.RECALL_BREACH_HEARING
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode.Companion.RECALL_TO_PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
@@ -31,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
@@ -56,6 +60,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var courtCaseRepository: CourtCaseRepository
+
+  @Autowired
+  lateinit var courtEventRepository: CourtEventRepository
 
   @Autowired
   lateinit var offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository
@@ -6403,7 +6410,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var staff: Staff
       private lateinit var sentence1: OffenderSentence
       private lateinit var sentence2: OffenderSentence
-      private lateinit var request: ConvertToRecallRequest
+      private lateinit var request: UpdateRecallRequest
+      private lateinit var breachCourtEvent: CourtEvent
 
       @Nested
       inner class FirstFixedTermRecall {
@@ -6431,13 +6439,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       offenderSentenceCharge(offenderCharge = offenderCharge)
                       term(days = 35, sentenceTermType = "IMP")
                     }
+                    breachCourtEvent = courtEvent(courtEventType = RECALL_BREACH_HEARING, outcomeReasonCode = RECALL_TO_PRISON, eventDateTime = LocalDate.parse("2023-01-01").atStartOfDay()) {
+                      courtEventCharge(offenderCharge = offenderCharge, resultCode1 = RECALL_TO_PRISON)
+                      courtOrder = courtOrder(courtDate = LocalDate.parse("2023-01-01"))
+                    }
                   }
                   fixedTermRecall(staff = staff)
                 }
               }
           }
-          request = ConvertToRecallRequest(
+          request = UpdateRecallRequest(
             returnToCustody = null,
+            beachCourtEventIds = listOf(breachCourtEvent.id),
+            recallRevocationDate = LocalDate.parse("2023-06-06"),
             sentences = listOf(
               RecallRelatedSentenceDetails(
                 SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
@@ -6487,6 +6501,25 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(calculationType.isRecallSentence()).isTrue
             assertThat(calculationType.description).isEqualTo("Licence Recall")
             assertThat(status).isEqualTo("I")
+          }
+        }
+
+        @Test
+        fun `will update the breach court appearance date`() {
+          with(courtEventRepository.findByIdOrNull(breachCourtEvent.id)!!) {
+            assertThat(eventDate).isEqualTo(LocalDate.parse("2023-01-01"))
+          }
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          with(courtEventRepository.findByIdOrNull(breachCourtEvent.id)!!) {
+            assertThat(eventDate).isEqualTo(LocalDate.parse("2023-06-06"))
           }
         }
 
@@ -6744,6 +6777,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var sentence1: OffenderSentence
       private lateinit var sentence2: OffenderSentence
       private lateinit var request: DeleteRecallRequest
+      private lateinit var breachCourtEvent: CourtEvent
 
       @Nested
       inner class FirstFixedTermRecall {
@@ -6771,12 +6805,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       offenderSentenceCharge(offenderCharge = offenderCharge)
                       term(days = 35, sentenceTermType = "IMP")
                     }
+                    breachCourtEvent = courtEvent(courtEventType = RECALL_BREACH_HEARING, outcomeReasonCode = RECALL_TO_PRISON, eventDateTime = LocalDate.parse("2023-01-01").atStartOfDay()) {
+                      courtEventCharge(offenderCharge = offenderCharge, resultCode1 = RECALL_TO_PRISON)
+                      courtOrder = courtOrder(courtDate = LocalDate.parse("2023-01-01"))
+                    }
                   }
                   fixedTermRecall(staff = staff)
                 }
               }
           }
           request = DeleteRecallRequest(
+            beachCourtEventIds = listOf(breachCourtEvent.id),
             sentences = listOf(
               RecallRelatedSentenceDetails(
                 SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
@@ -6841,6 +6880,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isNotPresent
+        }
+
+        @Test
+        fun `will remove breach court appearance data`() {
+          assertThat(courtEventRepository.findById(breachCourtEvent.id)).isPresent
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          assertThat(courtEventRepository.findById(breachCourtEvent.id)).isNotPresent
         }
 
         @Test
