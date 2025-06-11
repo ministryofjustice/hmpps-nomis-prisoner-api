@@ -1111,6 +1111,12 @@ class SentencingService(
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
+    request.beachCourtEventIds.forEach {
+      courtEventRepository.findByIdOrNull(it)?.also { courtEvent ->
+        courtEvent.eventDate = request.recallRevocationDate
+        courtEvent.startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT)
+      }
+    }
     telemetryClient.trackEvent(
       "recall-sentences-updated",
       mapOf(
@@ -1135,6 +1141,8 @@ class SentencingService(
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
+    // TODO: should we check it hasn't been amended in NOMIS; some one adds a sentence or some such madness
+    courtEventRepository.deleteAllById(request.beachCourtEventIds)
     telemetryClient.trackEvent(
       "recall-sentences-replaced",
       mapOf(
