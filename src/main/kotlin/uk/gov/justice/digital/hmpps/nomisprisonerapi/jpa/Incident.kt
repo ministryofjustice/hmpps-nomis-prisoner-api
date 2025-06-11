@@ -18,7 +18,6 @@ import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 @Entity
 @Table(name = "INCIDENT_CASES")
@@ -66,17 +65,17 @@ class Incident(
   @JoinColumn(name = "REPORTED_STAFF_ID", nullable = false)
   var reportingStaff: Staff,
   @Column(name = "REPORT_DATE", nullable = false)
-  var reportedDate: LocalDate,
+  var reportedDate: LocalDateTime,
   @Column(name = "REPORT_TIME", nullable = false)
-  var reportedTime: LocalTime,
+  var reportedTime: LocalDateTime,
 
   @Column(name = "FOLLOW_UP_DATE")
   val followUpDate: LocalDate? = null,
 
   @Column(name = "INCIDENT_DATE", nullable = false)
-  var incidentDate: LocalDate,
+  var incidentDate: LocalDateTime,
   @Column(name = "INCIDENT_TIME", nullable = false)
-  var incidentTime: LocalTime,
+  var incidentTime: LocalDateTime,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INCIDENT_STATUS", nullable = false)
