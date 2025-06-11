@@ -501,8 +501,11 @@ data class Requirement(
   val comment: String?,
   @Schema(description = "The sequence number of the requirement for this incident")
   val sequence: Int,
+  @Deprecated("will be removed - use recordedDate instead")
   @Schema(description = "Date the requirement was recorded")
   val date: LocalDate,
+  @Schema(description = "Date and time the requirement was recorded")
+  val recordedDate: LocalDateTime,
   @Schema(description = "The staff member who made the requirement request")
   val staff: Staff,
   @Schema(description = "The reporting agency of the staff")

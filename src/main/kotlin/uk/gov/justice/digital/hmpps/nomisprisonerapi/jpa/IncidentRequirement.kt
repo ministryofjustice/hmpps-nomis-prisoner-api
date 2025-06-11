@@ -39,25 +39,12 @@ class IncidentRequirement(
   val agency: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "RECORD_STAFF_ID", updatable = false, nullable = false)
+  @JoinColumn(name = "RECORD_STAFF_ID")
   val recordingStaff: Staff,
 
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  @Generated
-  var lastModifiedUsername: String? = null,
-
-  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
-  @Generated
-  var lastModifiedDateTime: LocalDateTime? = null,
-
-  // ---- NOT MAPPED Columns ---- //
-  // All AUDIT data
-
+  @Column(name = "RECORD_DATE")
+  var recordedDate: LocalDateTime,
 ) {
-  @Column(name = "RECORD_DATE", insertable = false, updatable = false)
-  @Generated
-  lateinit var recordedDate: LocalDateTime
-
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
@@ -65,6 +52,14 @@ class IncidentRequirement(
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
   lateinit var createDatetime: LocalDateTime
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

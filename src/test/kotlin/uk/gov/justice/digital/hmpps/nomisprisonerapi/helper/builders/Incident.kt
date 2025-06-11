@@ -47,6 +47,7 @@ interface IncidentDsl {
     comment: String = "Please update the name correct",
     recordingStaff: Staff,
     locationId: String,
+    recordedDate: LocalDateTime = LocalDateTime.now(),
     dsl: IncidentRequirementDsl.() -> Unit = {},
   ): IncidentRequirement
 
@@ -174,6 +175,7 @@ class IncidentBuilder(
     comment: String,
     recordingStaff: Staff,
     agencyId: String,
+    recordedDate: LocalDateTime,
     dsl: IncidentRequirementDsl.() -> Unit,
   ): IncidentRequirement = incidentRequirementBuilderFactory.builder()
     .let { builder ->
@@ -182,6 +184,7 @@ class IncidentBuilder(
         incident = incident,
         recordingStaff = recordingStaff,
         agencyId = agencyId,
+        recordedDate = recordedDate,
         requirementSequence = incident.requirements.size + 1,
       )
         .also { incident.requirements += it }

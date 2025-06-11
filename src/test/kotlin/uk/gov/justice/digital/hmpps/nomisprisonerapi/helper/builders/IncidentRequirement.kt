@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class IncidentRequirementDslMarker
@@ -41,12 +42,13 @@ class IncidentRequirementBuilder(
     recordingStaff: Staff,
     agencyId: String,
     requirementSequence: Int,
+    recordedDate: LocalDateTime,
   ): IncidentRequirement = IncidentRequirement(
     id = IncidentRequirementId(incident.id, requirementSequence),
     comment = comment,
     recordingStaff = recordingStaff,
     agency = repository.lookupAgency(agencyId),
-
+    recordedDate = recordedDate,
   )
     .also { incidentRequirement = it }
 }
