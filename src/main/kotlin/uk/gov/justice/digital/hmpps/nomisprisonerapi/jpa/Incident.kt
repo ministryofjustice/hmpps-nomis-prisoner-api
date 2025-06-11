@@ -13,8 +13,6 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.type.YesNoConverter
-import org.springframework.data.annotation.CreatedBy
-import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -84,25 +82,22 @@ class Incident(
   @Column(name = "RESPONSE_LOCKED_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
   val lockedResponse: Boolean = false,
-
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  @Generated
-  var lastModifiedUsername: String? = null,
-
-  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
-  @Generated
-  var lastModifiedDateTime: LocalDateTime? = null,
-
-  // ---- NOT MAPPED columns ---- //
-  // All AUDIT data
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @CreatedBy
+  @Generated
   lateinit var createUsername: String
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
-  @CreatedDate
+  @Generated
   lateinit var createDatetime: LocalDateTime
+
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedUsername: String? = null
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

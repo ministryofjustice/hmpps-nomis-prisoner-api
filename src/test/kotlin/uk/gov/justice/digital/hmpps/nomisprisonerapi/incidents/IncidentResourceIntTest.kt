@@ -80,7 +80,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         staffParty(staff = reportingStaff2)
         offenderParty(offenderBooking = offender1.latestBooking(), outcome = "POR")
 
-        requirement("Update the name", recordingStaff = requirementRecordingStaff, locationId = "MDI")
+        requirement("Update the name", recordingStaff = requirementRecordingStaff, locationId = "MDI", recordedDate = LocalDateTime.parse("2025-12-20T01:02:03"))
         requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, locationId = "MDI")
 
         question(question = questionnaire1.questions[3])
@@ -394,6 +394,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("requirements.length()").isEqualTo(2)
         .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("requirements[0].comment").isEqualTo("Update the name")
+        .jsonPath("requirements[0].date").isEqualTo("2025-12-20")
+        .jsonPath("requirements[0].recordedDate").isEqualTo("2025-12-20T01:02:03")
         .jsonPath("requirements[0].sequence").isEqualTo(incident1.requirements[0].id.requirementSequence)
         .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
         .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
