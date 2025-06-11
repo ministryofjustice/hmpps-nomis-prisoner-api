@@ -55,7 +55,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       typeCode = questionnaire1.code,
       incidentDateTime = LocalDateTime.parse("2025-12-20T01:02:03"),
       reportedDateTime = LocalDateTime.parse("2025-12-20T01:02:03"),
-      reportedBy = reportingStaff1.accounts.get(0).username,
+      reportedBy = reportingStaff1.accounts[0].username,
+      requirements = emptyList(),
     )
   }
 
@@ -395,7 +396,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("requirements[0].comment").isEqualTo("Update the name")
         .jsonPath("requirements[0].recordedDate").isEqualTo("2025-12-20T01:02:03")
-        .jsonPath("requirements[0].sequence").isEqualTo(incident1.requirements[0].id.requirementSequence)
+        .jsonPath("requirements[0].sequence").isEqualTo(incident1.requirements.first().id.requirementSequence)
         .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
         .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
         .jsonPath("requirements[0].agencyId").isEqualTo("MDI")
@@ -1021,6 +1022,14 @@ class IncidentResourceIntTest : IntegrationTestBase() {
                     createdDateTime = LocalDateTime.parse("2024-12-30T13:45:00"),
                   ),
                 ),
+                requirements = listOf(
+                  UpsertIncidentRequirementRequest(
+                    comment = "missing some data",
+                    date = LocalDateTime.parse("2024-12-30T13:45:00"),
+                    username = reportingStaff1.accounts[0].username,
+                    location = "MDI",
+                  ),
+                ),
               ),
             ),
           )
@@ -1034,6 +1043,45 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("incidentId").isEqualTo(currentId)
           .jsonPath("title").isEqualTo("Something happened with amendments")
           .jsonPath("description").isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
+      }
+
+      @Test
+      fun `will create an incident with requirements`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with requirements",
+                requirements = listOf(
+                  UpsertIncidentRequirementRequest(
+                    comment = "missing some data",
+                    date = LocalDateTime.parse("2024-12-30T13:45:00"),
+                    username = reportingStaff1.accounts[0].username,
+                    location = "MDI",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("title").isEqualTo("Something happened with requirements")
+          .jsonPath("requirements[0].comment").isEqualTo("missing some data")
+          .jsonPath("requirements[0].recordedDate").isEqualTo("2024-12-30T13:45:00")
+          .jsonPath("requirements[0].sequence").isEqualTo(0)
+          .jsonPath("requirements[0].staff.firstName").isEqualTo("FRED")
+          .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
+          .jsonPath("requirements[0].agencyId").isEqualTo("MDI")
+          .jsonPath("requirements[0].createDateTime").isNotEmpty
+          .jsonPath("requirements[0].createdBy").isNotEmpty
+          .jsonPath("requirements.length()").isEqualTo(1)
       }
     }
 
@@ -1089,7 +1137,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will update an incident with amendments`() {
-        webTestClient.put().uri("/incidents/${incident3.id}")
+        webTestClient.put().uri("/incidents/${incident2.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
           .body(
             BodyInserters.fromValue(
@@ -1116,13 +1164,53 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        webTestClient.get().uri("/incidents/${incident3.id}")
+        webTestClient.get().uri("/incidents/${incident2.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
           .exchange()
           .expectBody()
-          .jsonPath("incidentId").isEqualTo(incident3.id)
+          .jsonPath("incidentId").isEqualTo(incident2.id)
           .jsonPath("title").isEqualTo("Something happened with amendments")
           .jsonPath("description").isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
+      }
+
+      @Test
+      fun `will update an incident with requirements`() {
+        webTestClient.put().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with requirements",
+                description = "and people had a fight",
+                requirements = listOf(
+                  UpsertIncidentRequirementRequest(
+                    comment = "Update the name",
+                    date = LocalDateTime.parse("2024-12-30T13:45:00"),
+                    username = requirementRecordingStaff.accounts[0].username,
+                    location = "MDI",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident1.id)
+          .jsonPath("title").isEqualTo("Something happened with requirements")
+          .jsonPath("requirements[0].comment").isEqualTo("Update the name")
+          .jsonPath("requirements[0].recordedDate").isEqualTo("2024-12-30T13:45:00")
+          .jsonPath("requirements[0].sequence").isEqualTo(0)
+          .jsonPath("requirements[0].staff.firstName").isEqualTo("PETER")
+          .jsonPath("requirements[0].staff.lastName").isEqualTo("STAFF")
+          .jsonPath("requirements[0].agencyId").isEqualTo("MDI")
+          .jsonPath("requirements[0].createDateTime").isNotEmpty
+          .jsonPath("requirements[0].createdBy").isNotEmpty
+          .jsonPath("requirements.length()").isEqualTo(1)
       }
     }
   }

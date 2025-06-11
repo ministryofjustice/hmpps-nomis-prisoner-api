@@ -185,7 +185,7 @@ class IncidentBuilder(
         recordingStaff = recordingStaff,
         agencyId = agencyId,
         recordedDate = recordedDate,
-        requirementSequence = incident.requirements.size + 1,
+        requirementSequence = incident.requirements.size,
       )
         .also { incident.requirements += it }
         .also { builder.apply(dsl) }
