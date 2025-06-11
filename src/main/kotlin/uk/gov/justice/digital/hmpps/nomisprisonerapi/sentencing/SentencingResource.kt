@@ -806,7 +806,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = ConvertToRecallRequest::class),
+          schema = Schema(implementation = UpdateRecallRequest::class),
         ),
       ],
     ),
