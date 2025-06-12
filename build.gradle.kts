@@ -10,7 +10,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.4.5")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.4.6")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
@@ -19,7 +19,7 @@ dependencies {
   implementation("org.hibernate.orm:hibernate-community-dialects")
   implementation("com.google.guava:guava:33.4.8-jre")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.3.232")
@@ -27,10 +27,10 @@ dependencies {
 
   developmentOnly("org.springframework.boot:spring-boot-devtools")
 
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:1.4.5")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:1.4.6")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.28") {
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.29") {
     exclude(group = "io.swagger.core.v3")
   }
   testImplementation("io.swagger.core.v3:swagger-core-jakarta:2.2.32")
