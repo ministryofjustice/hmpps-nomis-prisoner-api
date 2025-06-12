@@ -960,6 +960,87 @@ class SentencingResource(private val sentencingService: SentencingService) {
   )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PutMapping("/prisoners/{offenderNo}/sentences/recall/restore-previous")
+  @Operation(
+    summary = "Deletes Recalls Sentences and replaces with previous recall sentence",
+    description = "Required role NOMIS_SENTENCING replaces recall sentences for the offender",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = RevertRecallRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Recall Sentences deleted and replaced with previous recall sentences",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "One or more sentence does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun revertRecallSentences(
+    @Schema(description = "Offender no", example = "AA668EC", required = true)
+    @PathVariable
+    offenderNo: String,
+    @RequestBody @Valid
+    request: RevertRecallRequest,
+  ) = sentencingService.revertRecallSentences(
+    offenderNo = offenderNo,
+    request = request,
+  )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PutMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sentenceSequence}/sentence-terms/{termSequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -2333,16 +2414,24 @@ data class ReturnToCustodyRequest(
 data class ConvertToRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,
   val returnToCustody: ReturnToCustodyRequest? = null,
-  val recallRevocationDate: LocalDate = LocalDate.now(),
+  val recallRevocationDate: LocalDate,
 )
 
 @Schema(description = "Recall convert request")
 data class UpdateRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,
   val returnToCustody: ReturnToCustodyRequest? = null,
-  val recallRevocationDate: LocalDate = LocalDate.now(),
+  val recallRevocationDate: LocalDate,
   @Schema(description = "the breach court appearance that require updating")
-  val beachCourtEventIds: List<Long> = emptyList(),
+  val beachCourtEventIds: List<Long>,
+)
+
+@Schema(description = "Recall revert request when a recall is replaced with older recall")
+data class RevertRecallRequest(
+  val sentences: List<RecallRelatedSentenceDetails>,
+  val returnToCustody: ReturnToCustodyRequest? = null,
+  @Schema(description = "the breach court appearance that require deleting")
+  val beachCourtEventIds: List<Long>,
 )
 
 @Schema(description = "Recall convert response")
@@ -2355,7 +2444,7 @@ data class ConvertToRecallResponse(
 data class DeleteRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,
   @Schema(description = "the breach court appearance that require deleting")
-  val beachCourtEventIds: List<Long> = emptyList(),
+  val beachCourtEventIds: List<Long>,
 )
 
 @Schema(description = "Recall sentences to set")
