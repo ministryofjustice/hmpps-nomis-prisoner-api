@@ -1129,6 +1129,32 @@ class SentencingService(
     )
   }
 
+  fun revertRecallSentences(offenderNo: String, request: RevertRecallRequest) {
+    val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
+
+    request.sentences.updateSentences()
+    request.returnToCustody.createOrUpdateBooking(bookingIds)
+    bookingIds.forEach { bookingId ->
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
+    }
+
+    courtEventRepository.deleteAllById(request.beachCourtEventIds)
+
+    telemetryClient.trackEvent(
+      "recall-sentences-reverted",
+      mapOf(
+        "bookingId" to bookingIds.joinToString { it.toString() },
+        "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
+        "offenderNo" to offenderNo,
+        "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
+      ),
+      null,
+    )
+  }
+
   fun replaceRecallSentences(offenderNo: String, request: DeleteRecallRequest) {
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
@@ -1141,7 +1167,6 @@ class SentencingService(
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
-    // TODO: should we check it hasn't been amended in NOMIS; some one adds a sentence or some such madness
     courtEventRepository.deleteAllById(request.beachCourtEventIds)
     telemetryClient.trackEvent(
       "recall-sentences-replaced",
