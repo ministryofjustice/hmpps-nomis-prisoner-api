@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.closedStatusValues
@@ -90,7 +91,7 @@ class IncidentService(
         offenderParties = mutableListOf<IncidentOffenderParty>(),
         incidentHistory = mutableListOf<IncidentHistory>(),
         staffParties = mutableListOf<IncidentStaffParty>(),
-        requirements = mutableListOf<IncidentRequirement>(),
+        requirements = sortedSetOf<IncidentRequirement>(),
         reportingStaff = reportedStaff.staff,
         reportedDate = request.reportedDateTime,
         reportedTime = request.reportedDateTime,
@@ -99,9 +100,36 @@ class IncidentService(
         status = status,
       )
       ).let {
+      upsertIncidentRequirements(it, request)
       incidentRepository.save(it)
     }
   }
+
+  private fun upsertIncidentRequirements(incident: Incident, request: UpsertIncidentRequest) {
+    incident.requirements.retainAll(
+      request.requirements.mapIndexed { sequence, dpsRequirement ->
+        val newRequirement = createIncidentRequirement(incident, sequence, dpsRequirement)
+        incident.requirements.find { it == newRequirement }?.apply {
+          this.comment = newRequirement.comment
+          this.agency = newRequirement.agency
+          this.recordingStaff = newRequirement.recordingStaff
+          this.recordedDate = newRequirement.recordedDate
+        } ?: newRequirement.apply { incident.requirements.add(newRequirement) }
+      }.toSet(),
+    )
+  }
+
+  private fun createIncidentRequirement(
+    incident: Incident,
+    index: Int,
+    dpsRequirement: UpsertIncidentRequirementRequest,
+  ): IncidentRequirement = IncidentRequirement(
+    id = IncidentRequirementId(incidentId = incident.id, requirementSequence = index),
+    comment = dpsRequirement.comment,
+    agency = findAgencyOrThrow(dpsRequirement.location),
+    recordingStaff = lookupStaff(dpsRequirement.username).staff,
+    recordedDate = dpsRequirement.date,
+  )
 
   fun findIdsByFilter(pageRequest: Pageable, incidentFilter: IncidentFilter): Page<IncidentIdResponse> {
     log.info("Incident Id filter request : $incidentFilter with page request $pageRequest")
@@ -175,6 +203,7 @@ class IncidentService(
       substring(0, MAX_INCIDENT_LENGTH_BYTES - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
     }
 }
+
 private const val MAX_INCIDENT_LENGTH_BYTES: Int = 4000
 
 private fun Incident.toIncidentResponse(): IncidentResponse = IncidentResponse(

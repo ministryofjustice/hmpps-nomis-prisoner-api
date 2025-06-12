@@ -12,10 +12,12 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
+import org.hibernate.annotations.SortNatural
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.SortedSet
 
 @Entity
 @Table(name = "INCIDENT_CASES")
@@ -57,7 +59,8 @@ class Incident(
   val staffParties: MutableList<IncidentStaffParty> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val requirements: MutableList<IncidentRequirement> = mutableListOf(),
+  @SortNatural
+  val requirements: SortedSet<IncidentRequirement> = sortedSetOf(),
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "REPORTED_STAFF_ID", nullable = false)

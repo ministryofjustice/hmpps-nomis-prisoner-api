@@ -8,20 +8,18 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
-import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
-import java.io.Serializable
 import java.time.LocalDateTime
 
 @Embeddable
-open class IncidentRequirementId(
+data class IncidentRequirementId(
   @Column(name = "INCIDENT_CASE_ID", nullable = false)
   var incidentId: Long,
 
   @Column(name = "REQUIREMENT_SEQ", nullable = false)
   var requirementSequence: Int,
-) : Serializable
+)
 
 @Entity
 @Table(name = "INCIDENT_CASE_REQUIREMENTS")
@@ -32,19 +30,20 @@ class IncidentRequirement(
   val id: IncidentRequirementId,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
-  val agency: AgencyLocation,
+  var agency: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "RECORD_STAFF_ID")
-  val recordingStaff: Staff,
+  @JoinColumn(name = "RECORD_STAFF_ID", nullable = false)
+  var recordingStaff: Staff,
 
-  @Column(name = "RECORD_DATE")
+  @Column(name = "RECORD_DATE", nullable = false)
   var recordedDate: LocalDateTime,
-) {
+) : Comparable<IncidentRequirement> {
+
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
@@ -61,12 +60,22 @@ class IncidentRequirement(
   @Generated
   var lastModifiedDateTime: LocalDateTime? = null
 
+  companion object {
+    private val COMPARATOR = compareBy<IncidentRequirement>
+      { it.id.incidentId }
+      .thenBy { it.id.requirementSequence }
+  }
+
+  override fun compareTo(other: IncidentRequirement) = COMPARATOR.compare(this, other)
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
-    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    if (javaClass != other?.javaClass) return false
+
     other as IncidentRequirement
+
     return id == other.id
   }
 
-  override fun hashCode(): Int = javaClass.hashCode()
+  override fun hashCode(): Int = id.hashCode()
 }

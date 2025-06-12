@@ -360,6 +360,8 @@ data class UpsertIncidentRequest(
   val reportedDateTime: LocalDateTime,
   @Schema(description = "The username of the person who reported the incident")
   val reportedBy: String,
+  @Schema(description = "Requirements for completing the incident report")
+  val requirements: List<UpsertIncidentRequirementRequest> = listOf(),
 )
 
 data class UpsertDescriptionAmendmentRequest(
@@ -371,6 +373,17 @@ data class UpsertDescriptionAmendmentRequest(
   val lastName: String,
   @Schema(description = "Addendum text")
   val text: String,
+)
+
+data class UpsertIncidentRequirementRequest(
+  @Schema(description = "The update required to the incident report")
+  val comment: String?,
+  @Schema(description = "Date the requirement was recorded")
+  val date: LocalDateTime,
+  @Schema(description = "The staff member who made the requirement request")
+  val username: String,
+  @Schema(description = "The reporting agency of the staff")
+  val location: String,
 )
 
 @Schema(description = "Incident Details")
