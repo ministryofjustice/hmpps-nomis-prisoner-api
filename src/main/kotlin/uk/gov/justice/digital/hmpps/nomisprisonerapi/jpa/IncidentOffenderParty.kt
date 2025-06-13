@@ -19,7 +19,7 @@ class IncidentOffenderParty(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID")
-  val offenderBooking: OffenderBooking,
+  var offenderBooking: OffenderBooking,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -32,7 +32,7 @@ class IncidentOffenderParty(
       ), JoinColumnOrFormula(column = JoinColumn(name = "PARTICIPATION_ROLE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val role: IncidentOffenderPartyRole,
+  var role: IncidentOffenderPartyRole,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -45,12 +45,6 @@ class IncidentOffenderParty(
       ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_CODE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val outcome: Outcome? = null,
+  var outcome: Outcome? = null,
 
 ) : IncidentParty(id, comment)
-
-// ---- NOT MAPPED columns ---- //
-// PERSON_ID - all are null in prod
-// STAFF_ID - only used in IncidentStaffParty
-// RECORD_STAFF_ID - this is the staff Id for the create user Id
-// All AUDIT data

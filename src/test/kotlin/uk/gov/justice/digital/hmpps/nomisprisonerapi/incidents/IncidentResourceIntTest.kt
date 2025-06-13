@@ -57,6 +57,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       reportedDateTime = LocalDateTime.parse("2025-12-20T01:02:03"),
       reportedBy = reportingStaff1.accounts[0].username,
       requirements = emptyList(),
+      offenderParties = emptyList(),
     )
   }
 
@@ -350,7 +351,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("staffParties[0].staff.staffId").isEqualTo(partyStaff1.id)
-        .jsonPath("staffParties[0].sequence").isEqualTo(incident1.staffParties[0].id.partySequence)
+        .jsonPath("staffParties[0].sequence").isEqualTo(incident1.staffParties.first.id.partySequence)
         .jsonPath("staffParties[0].staff.username").isEqualTo("JIIMPARTYSTAFF")
         .jsonPath("staffParties[0].staff.firstName").isEqualTo("JIM")
         .jsonPath("staffParties[0].staff.lastName").isEqualTo("PARTYSTAFF")
@@ -375,7 +376,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("offenderParties[0].offender.offenderNo").isEqualTo("A1234TT")
         .jsonPath("offenderParties[0].offender.firstName").isEqualTo("Bob")
         .jsonPath("offenderParties[0].offender.lastName").isEqualTo("Smith")
-        .jsonPath("offenderParties[0].sequence").isEqualTo(incident1.offenderParties[0].id.partySequence)
+        .jsonPath("offenderParties[0].sequence").isEqualTo(incident1.offenderParties.first().id.partySequence)
         .jsonPath("offenderParties[0].outcome.code").isEqualTo("POR")
         .jsonPath("offenderParties[0].outcome.description").isEqualTo("Placed on Report")
         .jsonPath("offenderParties[0].role.code").isEqualTo("VICT")
@@ -1030,6 +1031,14 @@ class IncidentResourceIntTest : IntegrationTestBase() {
                     location = "MDI",
                   ),
                 ),
+                offenderParties = listOf(
+                  UpsertOffenderPartyRequest(
+                    prisonNumber = offender1.nomsId,
+                    role = "ACTINV",
+                    outcome = "ACCT",
+                    comment = "This is a comment on the party",
+                  ),
+                ),
               ),
             ),
           )
@@ -1082,6 +1091,46 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("requirements[0].createDateTime").isNotEmpty
           .jsonPath("requirements[0].createdBy").isNotEmpty
           .jsonPath("requirements.length()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will create an incident with parties`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with parties",
+                offenderParties = listOf(
+                  UpsertOffenderPartyRequest(
+                    comment = "a party with some data",
+                    prisonNumber = offender1.nomsId,
+                    role = "VICT",
+                    outcome = "POR",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("title").isEqualTo("Something happened with parties")
+          .jsonPath("offenderParties[0].offender.offenderNo").isEqualTo(offender1.nomsId)
+          .jsonPath("offenderParties[0].offender.firstName").isEqualTo("Bob")
+          .jsonPath("offenderParties[0].offender.lastName").isEqualTo("Smith")
+          .jsonPath("offenderParties[0].sequence").isEqualTo(2000)
+          .jsonPath("offenderParties[0].outcome.code").isEqualTo("POR")
+          .jsonPath("offenderParties[0].outcome.description").isEqualTo("Placed on Report")
+          .jsonPath("offenderParties[0].role.code").isEqualTo("VICT")
+          .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
+          .jsonPath("offenderParties[0].comment").isEqualTo("a party with some data")
+          .jsonPath("offenderParties.length()").isEqualTo(1)
       }
     }
 
@@ -1211,6 +1260,46 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("requirements[0].createDateTime").isNotEmpty
           .jsonPath("requirements[0].createdBy").isNotEmpty
           .jsonPath("requirements.length()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will update an incident with parties`() {
+        webTestClient.put().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with parties",
+                offenderParties = listOf(
+                  UpsertOffenderPartyRequest(
+                    comment = "a party with some data",
+                    prisonNumber = offender2.nomsId,
+                    role = "VICT",
+                    outcome = "POR",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident1.id)
+          .jsonPath("title").isEqualTo("Something happened with parties")
+          .jsonPath("offenderParties[0].offender.offenderNo").isEqualTo(offender2.nomsId)
+          .jsonPath("offenderParties[0].offender.firstName").isEqualTo("Bob")
+          .jsonPath("offenderParties[0].offender.lastName").isEqualTo("Smith")
+          .jsonPath("offenderParties[0].sequence").isEqualTo(2000)
+          .jsonPath("offenderParties[0].outcome.code").isEqualTo("POR")
+          .jsonPath("offenderParties[0].outcome.description").isEqualTo("Placed on Report")
+          .jsonPath("offenderParties[0].role.code").isEqualTo("VICT")
+          .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
+          .jsonPath("offenderParties[0].comment").isEqualTo("a party with some data")
+          .jsonPath("offenderParties.length()").isEqualTo(1)
       }
     }
   }

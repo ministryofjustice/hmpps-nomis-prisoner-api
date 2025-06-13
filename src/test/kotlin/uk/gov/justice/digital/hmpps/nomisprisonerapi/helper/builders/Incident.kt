@@ -143,7 +143,7 @@ class IncidentBuilder(
         staff = staff,
         comment = comment,
         incident = incident,
-        partySequence = incident.partyCount() + 1,
+        partySequence = incident.staffParties.count() + 1000,
       )
         .also { incident.staffParties += it }
         .also { builder.apply(dsl) }
@@ -163,13 +163,11 @@ class IncidentBuilder(
         offenderBooking = offenderBooking,
         comment = comment,
         incident = incident,
-        index = incident.partyCount() + 1,
+        index = incident.offenderParties.count() + 2000,
       )
         .also { incident.offenderParties += it }
         .also { builder.apply(dsl) }
     }
-
-  private fun Incident.partyCount() = staffParties.size + offenderParties.size
 
   override fun requirement(
     comment: String,

@@ -18,6 +18,9 @@ class IncidentsServiceTest {
     incidentStatusRepository = mock(),
     questionnaireRepository = mock(),
     staffUserAccountRepository = mock(),
+    outcomeRepository = mock(),
+    offenderRoleRepository = mock(),
+    staffRoleRepository = mock(),
   )
 
   @Nested

@@ -49,14 +49,16 @@ class Incident(
   val questions: MutableList<IncidentQuestion> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val offenderParties: MutableList<IncidentOffenderParty> = mutableListOf(),
+  @SortNatural
+  val offenderParties: SortedSet<IncidentOffenderParty> = sortedSetOf(),
+
+  @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @SortNatural
+  val staffParties: SortedSet<IncidentStaffParty> = sortedSetOf(),
 
   @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinColumn(name = "INCIDENT_CASE_ID", nullable = false)
   val incidentHistory: MutableList<IncidentHistory> = mutableListOf(),
-
-  @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val staffParties: MutableList<IncidentStaffParty> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   @SortNatural
