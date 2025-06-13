@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.SortedSet
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
 @Service
@@ -107,51 +108,25 @@ class IncidentService(
         status = status,
       )
       ).let {
-      upsertIncidentRequirements(it, request.requirements)
-      upsertParties(it, request.offenderParties, request.staffParties)
+      upsertIntoNomis(it, it.requirements, request.requirements, ::createIncidentRequirement, ::updateIncidentRequirement)
+      upsertIntoNomis(it, it.offenderParties, request.offenderParties, ::createOffenderParty, ::updateOffenderParty)
+      upsertIntoNomis(it, it.staffParties, request.staffParties, ::createStaffParty, ::updateStaffParty)
       incidentRepository.save(it)
     }
   }
 
-  private fun upsertIncidentRequirements(incident: Incident, request: List<UpsertIncidentRequirementRequest>) {
-    incident.requirements.retainAll(
-      request.mapIndexed { sequence, dpsRequirement ->
-        val newRequirement = createIncidentRequirement(incident, sequence, dpsRequirement)
-        incident.requirements.find { it == newRequirement }?.apply {
-          this.comment = newRequirement.comment
-          this.agency = newRequirement.agency
-          this.recordingStaff = newRequirement.recordingStaff
-          this.recordedDate = newRequirement.recordedDate
-        } ?: newRequirement.apply { incident.requirements.add(newRequirement) }
-      }.toSet(),
-    )
-  }
-
-  private fun upsertParties(
+  private fun <REQUEST, NOMIS> upsertIntoNomis(
     incident: Incident,
-    offenders: List<UpsertOffenderPartyRequest>,
-    staff: List<UpsertStaffPartyRequest>,
+    nomisSet: SortedSet<NOMIS>,
+    dpsList: List<REQUEST>,
+    createNew: (incident: Incident, sequence: Int, s: REQUEST) -> NOMIS,
+    updateExisting: (existing: NOMIS, created: NOMIS) -> Unit,
   ) {
-    incident.staffParties.retainAll(
-      staff.mapIndexed { sequence, dpsParty ->
-        val newParty = createStaffParty(incident, sequence + 1000, dpsParty)
-        incident.staffParties.find { it == newParty }?.apply {
-          this.comment = newParty.comment
-          this.role = newParty.role
-          this.staff = newParty.staff
-        } ?: newParty.apply { incident.staffParties.add(newParty) }
-      }.toSet(),
-    )
-
-    incident.offenderParties.retainAll(
-      offenders.mapIndexed { sequence, dpsParty ->
-        val newParty = createOffenderParty(incident, sequence + 2000, dpsParty)
-        incident.offenderParties.find { it == newParty }?.apply {
-          this.comment = newParty.comment
-          this.role = newParty.role
-          this.outcome = newParty.outcome
-          this.offenderBooking = newParty.offenderBooking
-        } ?: newParty.apply { incident.offenderParties.add(newParty) }
+    nomisSet.retainAll(
+      dpsList.mapIndexed { sequence, dpsRequest ->
+        val created: NOMIS = createNew(incident, sequence, dpsRequest)
+        nomisSet.find { it == created }
+          ?.apply { updateExisting(this, created) } ?: created.apply { nomisSet.add(created) }
       }.toSet(),
     )
   }
@@ -168,12 +143,19 @@ class IncidentService(
     recordedDate = dpsRequirement.date,
   )
 
+  private fun updateIncidentRequirement(nomisRequirement: IncidentRequirement, newRequirement: IncidentRequirement) {
+    nomisRequirement.comment = newRequirement.comment
+    nomisRequirement.agency = newRequirement.agency
+    nomisRequirement.recordingStaff = newRequirement.recordingStaff
+    nomisRequirement.recordedDate = newRequirement.recordedDate
+  }
+
   private fun createOffenderParty(
     incident: Incident,
     index: Int,
     dpsParty: UpsertOffenderPartyRequest,
   ): IncidentOffenderParty = IncidentOffenderParty(
-    id = IncidentPartyId(incidentId = incident.id, partySequence = index),
+    id = IncidentPartyId(incidentId = incident.id, partySequence = index + 2000),
     comment = dpsParty.comment,
     role = lookupOffenderRole(dpsParty.role),
     outcome = dpsParty.outcome?.let { lookupOutcome(dpsParty.outcome) },
@@ -185,11 +167,24 @@ class IncidentService(
     index: Int,
     dpsParty: UpsertStaffPartyRequest,
   ): IncidentStaffParty = IncidentStaffParty(
-    id = IncidentPartyId(incidentId = incident.id, partySequence = index),
+    id = IncidentPartyId(incidentId = incident.id, partySequence = index + 1000),
     comment = dpsParty.comment,
     role = lookupStaffRole(dpsParty.role),
     staff = lookupStaff(dpsParty.username).staff,
   )
+
+  private fun updateStaffParty(existing: IncidentStaffParty, newParty: IncidentStaffParty) {
+    existing.comment = newParty.comment
+    existing.role = newParty.role
+    existing.staff = newParty.staff
+  }
+
+  private fun updateOffenderParty(existing: IncidentOffenderParty, newParty: IncidentOffenderParty) {
+    existing.comment = newParty.comment
+    existing.role = newParty.role
+    existing.outcome = newParty.outcome
+    existing.offenderBooking = newParty.offenderBooking
+  }
 
   fun findIdsByFilter(pageRequest: Pageable, incidentFilter: IncidentFilter): Page<IncidentIdResponse> {
     log.info("Incident Id filter request : $incidentFilter with page request $pageRequest")
