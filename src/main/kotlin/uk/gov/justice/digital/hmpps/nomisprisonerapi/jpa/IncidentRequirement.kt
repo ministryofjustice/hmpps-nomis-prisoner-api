@@ -15,10 +15,10 @@ import java.time.LocalDateTime
 @Embeddable
 data class IncidentRequirementId(
   @Column(name = "INCIDENT_CASE_ID", nullable = false)
-  var incidentId: Long,
+  val incidentId: Long,
 
   @Column(name = "REQUIREMENT_SEQ", nullable = false)
-  var requirementSequence: Int,
+  val requirementSequence: Int,
 )
 
 @Entity

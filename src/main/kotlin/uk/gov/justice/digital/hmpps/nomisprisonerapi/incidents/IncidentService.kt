@@ -14,14 +14,18 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderPartyRole
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffPartyRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.closedStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companion.openStatusValues
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Outcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen.Companion.SPLASH_ALL_PRISONS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
@@ -30,6 +34,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentStatusRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -45,6 +50,9 @@ class IncidentService(
   private val incidentStatusRepository: IncidentStatusRepository,
   private val questionnaireRepository: QuestionnaireRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val outcomeRepository: ReferenceCodeRepository<Outcome>,
+  private val offenderRoleRepository: ReferenceCodeRepository<IncidentOffenderPartyRole>,
+  private val staffRoleRepository: ReferenceCodeRepository<IncidentStaffPartyRole>,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -71,7 +79,6 @@ class IncidentService(
         this.agency = agency
         this.questionnaire = questionnaire
 //      this.questions = mutableListOf<IncidentQuestion>()
-//      this.offenderParties = mutableListOf<IncidentOffenderParty>()
 //      this.incidentHistory = mutableListOf<IncidentHistory>()
 //      this.staffParties = mutableListOf<IncidentStaffParty>()
 //      this.requirements = mutableListOf<IncidentRequirement>()
@@ -88,9 +95,9 @@ class IncidentService(
         agency = agency,
         questionnaire = questionnaire,
         questions = mutableListOf<IncidentQuestion>(),
-        offenderParties = mutableListOf<IncidentOffenderParty>(),
+        offenderParties = sortedSetOf<IncidentOffenderParty>(),
         incidentHistory = mutableListOf<IncidentHistory>(),
-        staffParties = mutableListOf<IncidentStaffParty>(),
+        staffParties = sortedSetOf<IncidentStaffParty>(),
         requirements = sortedSetOf<IncidentRequirement>(),
         reportingStaff = reportedStaff.staff,
         reportedDate = request.reportedDateTime,
@@ -100,14 +107,15 @@ class IncidentService(
         status = status,
       )
       ).let {
-      upsertIncidentRequirements(it, request)
+      upsertIncidentRequirements(it, request.requirements)
+      upsertParties(it, request.offenderParties, request.staffParties)
       incidentRepository.save(it)
     }
   }
 
-  private fun upsertIncidentRequirements(incident: Incident, request: UpsertIncidentRequest) {
+  private fun upsertIncidentRequirements(incident: Incident, request: List<UpsertIncidentRequirementRequest>) {
     incident.requirements.retainAll(
-      request.requirements.mapIndexed { sequence, dpsRequirement ->
+      request.mapIndexed { sequence, dpsRequirement ->
         val newRequirement = createIncidentRequirement(incident, sequence, dpsRequirement)
         incident.requirements.find { it == newRequirement }?.apply {
           this.comment = newRequirement.comment
@@ -115,6 +123,35 @@ class IncidentService(
           this.recordingStaff = newRequirement.recordingStaff
           this.recordedDate = newRequirement.recordedDate
         } ?: newRequirement.apply { incident.requirements.add(newRequirement) }
+      }.toSet(),
+    )
+  }
+
+  private fun upsertParties(
+    incident: Incident,
+    offenders: List<UpsertOffenderPartyRequest>,
+    staff: List<UpsertStaffPartyRequest>,
+  ) {
+    incident.staffParties.retainAll(
+      staff.mapIndexed { sequence, dpsParty ->
+        val newParty = createStaffParty(incident, sequence + 1000, dpsParty)
+        incident.staffParties.find { it == newParty }?.apply {
+          this.comment = newParty.comment
+          this.role = newParty.role
+          this.staff = newParty.staff
+        } ?: newParty.apply { incident.staffParties.add(newParty) }
+      }.toSet(),
+    )
+
+    incident.offenderParties.retainAll(
+      offenders.mapIndexed { sequence, dpsParty ->
+        val newParty = createOffenderParty(incident, sequence + 2000, dpsParty)
+        incident.offenderParties.find { it == newParty }?.apply {
+          this.comment = newParty.comment
+          this.role = newParty.role
+          this.outcome = newParty.outcome
+          this.offenderBooking = newParty.offenderBooking
+        } ?: newParty.apply { incident.offenderParties.add(newParty) }
       }.toSet(),
     )
   }
@@ -129,6 +166,29 @@ class IncidentService(
     agency = findAgencyOrThrow(dpsRequirement.location),
     recordingStaff = lookupStaff(dpsRequirement.username).staff,
     recordedDate = dpsRequirement.date,
+  )
+
+  private fun createOffenderParty(
+    incident: Incident,
+    index: Int,
+    dpsParty: UpsertOffenderPartyRequest,
+  ): IncidentOffenderParty = IncidentOffenderParty(
+    id = IncidentPartyId(incidentId = incident.id, partySequence = index),
+    comment = dpsParty.comment,
+    role = lookupOffenderRole(dpsParty.role),
+    outcome = dpsParty.outcome?.let { lookupOutcome(dpsParty.outcome) },
+    offenderBooking = findBookingForPrisonerOrThrow(dpsParty.prisonNumber),
+  )
+
+  private fun createStaffParty(
+    incident: Incident,
+    index: Int,
+    dpsParty: UpsertStaffPartyRequest,
+  ): IncidentStaffParty = IncidentStaffParty(
+    id = IncidentPartyId(incidentId = incident.id, partySequence = index),
+    comment = dpsParty.comment,
+    role = lookupStaffRole(dpsParty.role),
+    staff = lookupStaff(dpsParty.username).staff,
   )
 
   fun findIdsByFilter(pageRequest: Pageable, incidentFilter: IncidentFilter): Page<IncidentIdResponse> {
@@ -185,6 +245,18 @@ class IncidentService(
 
   private fun lookupStaff(username: String): StaffUserAccount = staffUserAccountRepository.findByUsername(username)
     ?: throw BadDataException("Staff user account $username not found")
+
+  private fun lookupOffenderRole(code: String): IncidentOffenderPartyRole = offenderRoleRepository.findByIdOrNull(IncidentOffenderPartyRole.pk(code))
+    ?: throw BadDataException("Incident party role with code=$code does not exist")
+
+  private fun lookupStaffRole(code: String): IncidentStaffPartyRole = staffRoleRepository.findByIdOrNull(IncidentStaffPartyRole.pk(code))
+    ?: throw BadDataException("Incident party role with code=$code does not exist")
+
+  private fun lookupOutcome(code: String): Outcome = outcomeRepository.findByIdOrNull(Outcome.pk(code))
+    ?: throw BadDataException("Incident outcome with code=$code does not exist")
+
+  private fun findBookingForPrisonerOrThrow(prisonNumber: String) = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
+    ?: throw BadDataException("Offender booking for prison number=$prisonNumber does not exist")
 
   internal fun reconstructText(request: UpsertIncidentRequest): String? {
     var text = request.description
