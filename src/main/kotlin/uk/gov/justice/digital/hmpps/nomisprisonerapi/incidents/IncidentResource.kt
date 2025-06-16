@@ -366,6 +366,8 @@ data class UpsertIncidentRequest(
   val offenderParties: List<UpsertOffenderPartyRequest> = listOf(),
   @Schema(description = "Staff involved in the incident")
   val staffParties: List<UpsertStaffPartyRequest> = listOf(),
+  @Schema(description = "Questions asked for the incident")
+  val questions: List<UpsertIncidentQuestionRequest> = listOf(),
 )
 
 data class UpsertDescriptionAmendmentRequest(
@@ -410,6 +412,26 @@ data class UpsertStaffPartyRequest(
   val outcome: String?,
   @Schema(description = "General information about the incident")
   val comment: String?,
+)
+
+data class UpsertIncidentQuestionRequest(
+  @Schema(description = "The questionnaire question id")
+  val questionId: Long,
+  @Schema(description = "List of Responses to this question")
+  val responses: List<UpsertIncidentResponseRequest> = listOf(),
+)
+
+data class UpsertIncidentResponseRequest(
+  @Schema(description = "The text of the questionnaire question answer")
+  val response: String,
+  @Schema(description = "The answer text")
+  val answer: String?,
+  @Schema(description = "Comment added to the response by recording staff")
+  val comment: String?,
+  @Schema(description = "Response date added to the response by recording staff")
+  val responseDate: LocalDate?,
+  @Schema(description = "Recording staff")
+  val recordingUsername: String,
 )
 
 @Schema(description = "Incident Details")

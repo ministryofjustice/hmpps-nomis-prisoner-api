@@ -58,6 +58,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       reportedBy = reportingStaff1.accounts[0].username,
       requirements = emptyList(),
       offenderParties = emptyList(),
+      questions = emptyList(),
     )
   }
 
@@ -416,7 +417,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("questions.length()").isEqualTo(3)
         .jsonPath("incidentId").isEqualTo(incident1.id)
         .jsonPath("questions[0].questionId").isEqualTo(questionnaire1.questions[3].id)
-        .jsonPath("questions[0].sequence").isEqualTo(incident1.questions[0].id.questionSequence)
+        .jsonPath("questions[0].sequence").isEqualTo(incident1.questions.first.id.questionSequence)
         .jsonPath("questions[0].question").isEqualTo(questionnaire1.questions[3].questionText)
         .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
         .jsonPath("questions[0].createDateTime").isNotEmpty
@@ -1132,6 +1133,38 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderParties[0].comment").isEqualTo("a party with some data")
           .jsonPath("offenderParties.length()").isEqualTo(1)
       }
+
+      @Test
+      fun `will create an incident with questions`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with questions",
+                questions = listOf(
+                  UpsertIncidentQuestionRequest(
+                    questionId = questionnaire1.questions[0].id,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("title").isEqualTo("Something happened with questions")
+          .jsonPath("questions[0].questionId").isEqualTo(questionnaire1.questions[0].id)
+          .jsonPath("questions[0].sequence").isEqualTo("0")
+          .jsonPath("questions[0].question").isEqualTo(questionnaire1.questions[0].questionText)
+          .jsonPath("questions[0].question").isEqualTo("Q4: Any Damage amount?")
+          .jsonPath("questions.length()").isEqualTo(1)
+      }
     }
 
     @Nested
@@ -1300,6 +1333,38 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
           .jsonPath("offenderParties[0].comment").isEqualTo("a party with some data")
           .jsonPath("offenderParties.length()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will update an incident with incidents`() {
+        webTestClient.put().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with questions",
+                questions = listOf(
+                  UpsertIncidentQuestionRequest(
+                    questionId = questionnaire1.questions[0].id,
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident1.id)
+          .jsonPath("title").isEqualTo("Something happened with questions")
+          .jsonPath("questions[0].questionId").isEqualTo(questionnaire1.questions[0].id)
+          .jsonPath("questions[0].sequence").isEqualTo("0")
+          .jsonPath("questions[0].question").isEqualTo(questionnaire1.questions[0].questionText)
+          .jsonPath("questions[0].question").isEqualTo("Q4: Any Damage amount?")
+          .jsonPath("questions.length()").isEqualTo(1)
       }
     }
   }

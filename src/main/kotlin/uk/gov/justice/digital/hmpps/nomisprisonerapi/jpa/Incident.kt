@@ -46,7 +46,8 @@ class Incident(
   var questionnaire: Questionnaire,
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val questions: MutableList<IncidentQuestion> = mutableListOf(),
+  @SortNatural
+  val questions: SortedSet<IncidentQuestion> = sortedSetOf(),
 
   @OneToMany(mappedBy = "id.incidentId", cascade = [CascadeType.ALL], orphanRemoval = true)
   @SortNatural
