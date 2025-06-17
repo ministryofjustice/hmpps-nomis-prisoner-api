@@ -53,6 +53,17 @@ interface CourtCaseRepository : JpaRepository<CourtCase, Long> {
   )
   fun findAllCourtCaseIds(pageable: Pageable): Page<Long>
 
+  @Query(
+    """
+      select
+        courtCase.id
+      from CourtCase courtCase 
+      where courtCase.offenderBooking.offender.nomsId = :offenderNo
+      order by courtCase.id asc
+    """,
+  )
+  fun findCourtCaseIdsForOffender(offenderNo: String): List<Long>
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
   @Query("SELECT c FROM CourtCase c WHERE c.id = :id")

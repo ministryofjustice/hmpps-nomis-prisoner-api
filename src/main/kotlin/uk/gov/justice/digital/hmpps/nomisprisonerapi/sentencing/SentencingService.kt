@@ -188,6 +188,10 @@ class SentencingService(
     ).map { CourtCaseIdResponse(it) }
   }
 
+  fun findCourtCaseIdsByOffender(offenderNo: String): List<Long> = courtCaseRepository.findCourtCaseIdsForOffender(
+    offenderNo = offenderNo,
+  )
+
   // updates to charges are triggered by a separate endpoint
   @Audit
   fun createCourtAppearance(
