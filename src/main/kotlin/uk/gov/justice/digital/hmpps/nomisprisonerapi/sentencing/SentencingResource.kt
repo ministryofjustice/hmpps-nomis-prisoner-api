@@ -193,6 +193,54 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffender(offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/ids")
+  @Operation(
+    summary = "get court case ids for an offender",
+    description = "Requires role NOMIS_SENTENCING. Retrieves all court case ids by offender",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the list of court case ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtCaseIdsByOffender(
+    @Schema(description = "Offender No", example = "AA12345")
+    @PathVariable
+    offenderNo: String,
+  ): List<Long> = sentencingService.findCourtCaseIdsByOffender(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/post-merge")
   @Operation(
     summary = "Get court cases affected by the last prisoner merge of two prisoner records",
