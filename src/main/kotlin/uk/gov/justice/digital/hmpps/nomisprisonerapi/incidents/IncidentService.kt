@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderPartyRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestionId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus.Companio
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Outcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen.Companion.SPLASH_ALL_PRISONS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -79,10 +81,6 @@ class IncidentService(
         this.incidentType = questionnaire.code
         this.agency = agency
         this.questionnaire = questionnaire
-//      this.questions = mutableListOf<IncidentQuestion>()
-//      this.incidentHistory = mutableListOf<IncidentHistory>()
-//      this.staffParties = mutableListOf<IncidentStaffParty>()
-//      this.requirements = mutableListOf<IncidentRequirement>()
         this.reportingStaff = reportedStaff.staff
         this.reportedDate = request.reportedDateTime
         this.reportedTime = request.reportedDateTime
@@ -95,11 +93,6 @@ class IncidentService(
         incidentType = questionnaire.code,
         agency = agency,
         questionnaire = questionnaire,
-        questions = mutableListOf<IncidentQuestion>(),
-        offenderParties = sortedSetOf<IncidentOffenderParty>(),
-        incidentHistory = mutableListOf<IncidentHistory>(),
-        staffParties = sortedSetOf<IncidentStaffParty>(),
-        requirements = sortedSetOf<IncidentRequirement>(),
         reportingStaff = reportedStaff.staff,
         reportedDate = request.reportedDateTime,
         reportedTime = request.reportedDateTime,
@@ -111,6 +104,7 @@ class IncidentService(
       upsertIntoNomis(it, it.requirements, request.requirements, ::createIncidentRequirement, ::updateIncidentRequirement)
       upsertIntoNomis(it, it.offenderParties, request.offenderParties, ::createOffenderParty, ::updateOffenderParty)
       upsertIntoNomis(it, it.staffParties, request.staffParties, ::createStaffParty, ::updateStaffParty)
+      upsertIntoNomis(it, it.questions, request.questions, ::createIncidentQuestion, ::updateIncidentQuestion)
       incidentRepository.save(it)
     }
   }
@@ -162,6 +156,13 @@ class IncidentService(
     offenderBooking = findBookingForPrisonerOrThrow(dpsParty.prisonNumber),
   )
 
+  private fun updateOffenderParty(existing: IncidentOffenderParty, newParty: IncidentOffenderParty) {
+    existing.comment = newParty.comment
+    existing.role = newParty.role
+    existing.outcome = newParty.outcome
+    existing.offenderBooking = newParty.offenderBooking
+  }
+
   private fun createStaffParty(
     incident: Incident,
     index: Int,
@@ -179,11 +180,17 @@ class IncidentService(
     existing.staff = newParty.staff
   }
 
-  private fun updateOffenderParty(existing: IncidentOffenderParty, newParty: IncidentOffenderParty) {
-    existing.comment = newParty.comment
-    existing.role = newParty.role
-    existing.outcome = newParty.outcome
-    existing.offenderBooking = newParty.offenderBooking
+  private fun createIncidentQuestion(
+    incident: Incident,
+    index: Int,
+    dpsQuestion: UpsertIncidentQuestionRequest,
+  ): IncidentQuestion = IncidentQuestion(
+    id = IncidentQuestionId(incidentId = incident.id, questionSequence = index),
+    question = lookupQuestion(incident.questionnaire, dpsQuestion.questionId),
+  )
+
+  private fun updateIncidentQuestion(existing: IncidentQuestion, new: IncidentQuestion) {
+    existing.question = new.question
   }
 
   fun findIdsByFilter(pageRequest: Pageable, incidentFilter: IncidentFilter): Page<IncidentIdResponse> {
@@ -249,6 +256,9 @@ class IncidentService(
 
   private fun lookupOutcome(code: String): Outcome = outcomeRepository.findByIdOrNull(Outcome.pk(code))
     ?: throw BadDataException("Incident outcome with code=$code does not exist")
+
+  private fun lookupQuestion(questionnaire: Questionnaire, id: Long): QuestionnaireQuestion = questionnaire.questions.find { it.id == id }
+    ?: throw BadDataException("Incident questionnaire question with id=$id does not exist")
 
   private fun findBookingForPrisonerOrThrow(prisonNumber: String) = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
     ?: throw BadDataException("Offender booking for prison number=$prisonNumber does not exist")
