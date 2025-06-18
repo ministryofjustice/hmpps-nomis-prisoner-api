@@ -66,6 +66,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransactionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTrustAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
@@ -116,6 +117,7 @@ class Repository(
   val iwpTemplateRepository: IWPTemplateRepository,
   val offenderCaseNoteRepository: OffenderCaseNoteRepository,
   val transactionRepository: OffenderTransactionRepository,
+  val offenderTrustAccountRepository: OffenderTrustAccountRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -296,4 +298,5 @@ class Repository(
 
   fun getTransaction(pk: OffenderTransaction.Companion.Pk) = transactionRepository.findByIdOrNull(pk)
     ?.also { it.toString() }
+  fun deleteAllTransactions() = transactionRepository.deleteAll().also { offenderTrustAccountRepository.deleteAll() }
 }

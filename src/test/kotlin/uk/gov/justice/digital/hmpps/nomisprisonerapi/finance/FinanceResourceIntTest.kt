@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.data.Percentage
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
@@ -22,6 +23,11 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   private lateinit var service: FinanceService
 
   private lateinit var transaction: OffenderTransaction
+
+  @AfterEach
+  fun tearDown() {
+    repository.deleteAllTransactions()
+  }
 
   @Test
   fun getTransactionRepo() {
