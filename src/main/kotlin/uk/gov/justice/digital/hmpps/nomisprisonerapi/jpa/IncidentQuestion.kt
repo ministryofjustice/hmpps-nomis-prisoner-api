@@ -12,8 +12,10 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import org.hibernate.annotations.Generated
+import org.hibernate.annotations.SortNatural
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
+import java.util.SortedSet
 
 @Embeddable
 data class IncidentQuestionId(
@@ -37,8 +39,9 @@ class IncidentQuestion(
   var question: QuestionnaireQuestion,
 
   @OneToMany(mappedBy = "id.incidentQuestion", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @SortNatural
   @Fetch(FetchMode.SUBSELECT)
-  val responses: MutableList<IncidentResponse> = mutableListOf(),
+  val responses: SortedSet<IncidentResponse> = sortedSetOf(),
 ) : Comparable<IncidentQuestion> {
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)

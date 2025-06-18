@@ -17,21 +17,11 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Embeddable
-open class IncidentResponseId(
+data class IncidentResponseId(
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumns(
-    value = [
-      JoinColumn(
-        name = "INCIDENT_CASE_ID",
-        referencedColumnName = "INCIDENT_CASE_ID",
-        nullable = false,
-      ),
-      JoinColumn(
-        name = "QUESTION_SEQ",
-        referencedColumnName = "QUESTION_SEQ",
-        nullable = false,
-      ),
-    ],
+    JoinColumn(name = "INCIDENT_CASE_ID", referencedColumnName = "INCIDENT_CASE_ID", nullable = false),
+    JoinColumn(name = "QUESTION_SEQ", referencedColumnName = "QUESTION_SEQ", nullable = false),
   )
   val incidentQuestion: IncidentQuestion,
 
@@ -49,30 +39,18 @@ class IncidentResponse(
 
   @ManyToOne
   @JoinColumn(name = "QUESTIONNAIRE_ANS_ID", updatable = false)
-  val answer: QuestionnaireAnswer?,
+  var answer: QuestionnaireAnswer?,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "RECORD_STAFF_ID", updatable = false, nullable = false)
-  val recordingStaff: Staff,
+  @JoinColumn(name = "RECORD_STAFF_ID", nullable = false)
+  var recordingStaff: Staff,
 
   @Column(name = "RESPONSE_DATE")
-  val responseDate: LocalDate? = null,
+  var responseDate: LocalDate? = null,
 
   @Column(name = "RESPONSE_COMMENT_TEXT")
-  val comment: String? = null,
-
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  @Generated
-  var lastModifiedUsername: String? = null,
-
-  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
-  @Generated
-  var lastModifiedDateTime: LocalDateTime? = null,
-
-  // ---- NOT MAPPED columns ---- //
-  // All AUDIT data
-
-) {
+  var comment: String? = null,
+) : Comparable<IncidentResponse> {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
@@ -81,9 +59,21 @@ class IncidentResponse(
   @Generated
   lateinit var createDatetime: LocalDateTime
 
-  @Column(name = "RESPONSE_DATE", insertable = false, updatable = false)
+  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
   @Generated
-  lateinit var recordedDate: LocalDate // - is just the LocalDate for the createdDateTime - may not need this
+  var lastModifiedUsername: String? = null
+
+  @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
+  @Generated
+  var lastModifiedDateTime: LocalDateTime? = null
+
+  companion object {
+    private val COMPARATOR = compareBy<IncidentResponse>
+      { it.id.incidentQuestion }
+      .thenBy { it.id.responseSequence }
+  }
+
+  override fun compareTo(other: IncidentResponse) = COMPARATOR.compare(this, other)
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
