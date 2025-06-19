@@ -424,10 +424,6 @@ data class UpsertIncidentQuestionRequest(
 data class UpsertIncidentResponseRequest(
   @Schema(description = "The questionnaire answer id")
   val answerId: Long,
-  @Schema(description = "The text of the questionnaire question answer")
-  val response: String,
-  @Schema(description = "The answer text")
-  val answer: String?,
   @Schema(description = "Comment added to the response by recording staff")
   val comment: String?,
   @Schema(description = "Response date added to the response by recording staff")
