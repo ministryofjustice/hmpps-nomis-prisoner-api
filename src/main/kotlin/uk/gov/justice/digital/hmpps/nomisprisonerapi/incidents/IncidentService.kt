@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestionId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirementId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponseId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffPartyRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus
@@ -105,6 +106,7 @@ class IncidentService(
       upsertIntoNomis(it, it.offenderParties, request.offenderParties, ::createOffenderParty, ::updateOffenderParty)
       upsertIntoNomis(it, it.staffParties, request.staffParties, ::createStaffParty, ::updateStaffParty)
       upsertIntoNomis(it, it.questions, request.questions, ::createIncidentQuestion, ::updateIncidentQuestion)
+
       incidentRepository.save(it)
     }
   }
@@ -187,10 +189,33 @@ class IncidentService(
   ): IncidentQuestion = IncidentQuestion(
     id = IncidentQuestionId(incidentId = incident.id, questionSequence = index),
     question = lookupQuestion(incident.questionnaire, dpsQuestion.questionId),
-  )
+  ).apply {
+    this.responses.addAll(
+      dpsQuestion.responses.map { dpsRequest ->
+        uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponse(
+          id = IncidentResponseId(this, dpsRequest.sequence),
+          comment = dpsRequest.comment,
+          recordingStaff = lookupStaff(dpsRequest.recordingUsername).staff,
+          answer = this.question.answers.find { dpsRequest.answerId == it.id },
+          responseDate = dpsRequest.responseDate,
+        )
+      },
+    )
+  }
 
   private fun updateIncidentQuestion(existing: IncidentQuestion, new: IncidentQuestion) {
     existing.question = new.question
+    existing.responses.retainAll(
+      new.responses.map { created ->
+        existing.responses.find { it == created }
+          ?.apply {
+            this.comment = created.comment
+            this.recordingStaff = created.recordingStaff
+            this.answer = created.answer
+            this.responseDate = created.responseDate
+          } ?: created.apply { new.responses.add(created) }
+      }.toSet(),
+    )
   }
 
   fun findIdsByFilter(pageRequest: Pageable, incidentFilter: IncidentFilter): Page<IncidentIdResponse> {

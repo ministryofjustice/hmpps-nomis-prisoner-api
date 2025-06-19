@@ -36,6 +36,7 @@ class IncidentQuestionBuilder(
   private val incidentResponseBuilderFactory: IncidentResponseBuilderFactory,
 ) : IncidentQuestionDsl {
   private lateinit var incidentQuestion: IncidentQuestion
+  private lateinit var incident: Incident
 
   fun build(
     incident: Incident,
@@ -45,7 +46,10 @@ class IncidentQuestionBuilder(
     id = IncidentQuestionId(incident.id, questionSequence),
     question = question,
   )
-    .also { incidentQuestion = it }
+    .also {
+      this.incident = incident
+      incidentQuestion = it
+    }
 
   override fun response(
     answer: QuestionnaireAnswer?,
@@ -57,7 +61,7 @@ class IncidentQuestionBuilder(
     .let { builder ->
       builder.build(
         incidentQuestion = incidentQuestion,
-        answerSequence = incidentQuestion.responses.size + 1,
+        answerSequence = incident.questions.sumOf { it.responses.count() },
         answer = answer,
         comment = comment,
         responseDate = responseDate,
