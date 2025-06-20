@@ -1234,8 +1234,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("questions[0].answers[1].responseDate").doesNotExist()
           .jsonPath("questions[0].answers[1].sequence").isEqualTo(1)
           .jsonPath("questions[1].answers[0].answer").isEqualTo("Q2A1: Yes")
-          .jsonPath("questions[0].answers[0].comment").isEqualTo("a comment")
-          .jsonPath("questions[0].answers[0].responseDate").isEqualTo("2010-03-02")
+          .jsonPath("questions[1].answers[0].comment").isEqualTo("a comment")
+          .jsonPath("questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
           .jsonPath("questions[1].answers[0].sequence").isEqualTo(2)
           .jsonPath("questions.length()").isEqualTo(2)
       }
@@ -1470,10 +1470,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
                     ),
                   ),
                   UpsertIncidentQuestionRequest(
-                    questionId = questionnaire1.questions[1].id,
+                    questionId = questionnaire1.questions[2].id,
                     responses = listOf(
                       UpsertIncidentResponseRequest(
-                        answerId = questionnaire1.questions[1].answers[0].id,
+                        answerId = questionnaire1.questions[2].answers[0].id,
                         comment = "a comment",
                         responseDate = LocalDate.parse("2010-03-02"),
                         recordingUsername = responseRecordingStaff.accounts[0].username,
@@ -1505,8 +1505,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("questions[0].answers[1].responseDate").doesNotExist()
           .jsonPath("questions[0].answers[1].sequence").isEqualTo(1)
           .jsonPath("questions[1].answers[0].answer").isEqualTo("Q2A1: Yes")
-          .jsonPath("questions[0].answers[0].comment").isEqualTo("a comment")
-          .jsonPath("questions[0].answers[0].responseDate").isEqualTo("2010-03-02")
+          .jsonPath("questions[1].answers[0].comment").isEqualTo("a comment")
+          .jsonPath("questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
           .jsonPath("questions[1].answers[0].sequence").isEqualTo(2)
           .jsonPath("questions.length()").isEqualTo(2)
       }
