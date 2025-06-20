@@ -9,5 +9,5 @@ interface ServiceAgencySwitchesRepository : CrudRepository<ServiceAgencySwitch, 
   /** should only be called internally by checkServicePrison as need to pass in *ALL* too */
   fun existsByIdExternalServiceServiceNameAndIdAgencyLocationIdIn(serviceName: String, agencyLocationId: Collection<String>): Boolean
 
-  fun checkServicePrisonAndAll(serviceName: String, agencyLocationId: String): Boolean = existsByIdExternalServiceServiceNameAndIdAgencyLocationIdIn(serviceName, setOf(agencyLocationId, SERVICE_ALL_PRISONS))
+  fun checkServiceAgencyAndAll(serviceName: String, agencyLocationId: String): Boolean = existsByIdExternalServiceServiceNameAndIdAgencyLocationIdIn(serviceName, setOf(agencyLocationId, SERVICE_ALL_PRISONS))
 }

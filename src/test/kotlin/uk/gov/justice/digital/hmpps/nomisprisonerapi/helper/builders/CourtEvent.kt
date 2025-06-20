@@ -107,7 +107,7 @@ class CourtEventBuilder(
 
   fun build(
     commentText: String?,
-    prison: String,
+    agencyId: String,
     courtEventType: String,
     eventStatusCode: String,
     outcomeReasonCode: String?,
@@ -125,7 +125,7 @@ class CourtEventBuilder(
     courtEventType = repository.lookupCourtEventType(courtEventType),
     judgeName = judgeName,
     eventStatus = repository.lookupEventStatus(eventStatusCode),
-    court = repository.lookupAgency(prison),
+    court = repository.lookupAgency(agencyId),
     outcomeReasonCode = outcomeReasonCode?.let { repository.lookupOffenceResultCode(outcomeReasonCode) },
     commentText = commentText,
     orderRequestedFlag = orderRequestedFlag,

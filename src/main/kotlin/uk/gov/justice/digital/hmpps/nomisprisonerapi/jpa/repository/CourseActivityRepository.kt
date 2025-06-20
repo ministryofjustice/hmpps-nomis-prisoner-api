@@ -14,14 +14,14 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
 
   @Query(
     value = """
-    select ca.courseActivityId from CourseActivity ca 
-    join CourseScheduleRule csr on ca = csr.courseActivity
+    select ca.courseActivityId, count(csr) 
+    from CourseActivity ca 
+    left join CourseScheduleRule csr on ca = csr.courseActivity
     where ca.prison.id = :prisonId
     and ca.active = true
     and (ca.scheduleEndDate is null or ca.scheduleEndDate > current_date) 
     and ca.auditModuleName != 'DPS_SYNCHRONISATION'
     and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
-    and csr.id = (select max(id) from CourseScheduleRule where courseActivity = ca)
     and ca.courseActivityId in
       (
        select distinct(opp.courseActivity.courseActivityId) 
@@ -29,10 +29,11 @@ interface CourseActivityRepository : JpaRepository<CourseActivity, Long> {
        where opp.prison.id = :prisonId 
        and opp.startDate is not null
        and (opp.endDate is null or opp.endDate >= :oldestAllocation)
-      )   
+      )
+     group by ca.courseActivityId   
   """,
   )
-  fun findActiveActivities(prisonId: String, courseActivityId: Long?, pageRequest: Pageable, oldestAllocation: LocalDate = LocalDate.now().minusMonths(6)): Page<Long>
+  fun findActiveActivities(prisonId: String, courseActivityId: Long?, pageRequest: Pageable, oldestAllocation: LocalDate = LocalDate.now().minusMonths(6)): Page<Pair<Long, Int>>
 
   @Query(
     value = """

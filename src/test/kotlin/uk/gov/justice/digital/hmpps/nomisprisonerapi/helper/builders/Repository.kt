@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationI
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
@@ -64,6 +65,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProg
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransactionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTrustAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProgramServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.QuestionnaireRepository
@@ -113,6 +116,8 @@ class Repository(
   val csipReportRepository: CSIPReportRepository,
   val iwpTemplateRepository: IWPTemplateRepository,
   val offenderCaseNoteRepository: OffenderCaseNoteRepository,
+  val transactionRepository: OffenderTransactionRepository,
+  val offenderTrustAccountRepository: OffenderTrustAccountRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -290,4 +295,8 @@ class Repository(
   fun save(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.save(offenderCaseNote)
   fun delete(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.delete(offenderCaseNote)
   fun deleteCaseNotes() = offenderCaseNoteRepository.deleteAll()
+
+  fun getTransaction(pk: OffenderTransaction.Companion.Pk) = transactionRepository.findByIdOrNull(pk)
+    ?.also { it.toString() }
+  fun deleteAllTransactions() = transactionRepository.deleteAll().also { offenderTrustAccountRepository.deleteAll() }
 }

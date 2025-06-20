@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -186,7 +187,7 @@ interface BookingDsl {
     beginDate: LocalDate = LocalDate.now(),
     caseSequence: Int = 1,
     caseInfoNumber: String? = "AB1",
-    prisonId: String = "COURT1",
+    agencyId: String = "COURT1",
     combinedCase: CourtCase? = null,
     reportingStaff: Staff,
     statusUpdateStaff: Staff? = null,
@@ -346,6 +347,12 @@ interface BookingDsl {
     whoCreated: String? = null,
     dsl: OffenderBeliefDsl.() -> Unit = {},
   ): OffenderBelief
+
+  @OffenderTransactionDslMarker
+  fun transaction(
+    transactionType: String,
+    dsl: OffenderTransactionDsl.() -> Unit = {},
+  ): OffenderTransaction
 }
 
 @Component
@@ -383,6 +390,7 @@ class BookingBuilderFactory(
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
+  private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -407,6 +415,7 @@ class BookingBuilderFactory(
     offenderBookingImageBuilderFactory,
     offenderIdentifyingMarkBuilderFactory,
     offenderBeliefBuilderFactory,
+    offenderTransactionBuilderFactory,
   )
 }
 
@@ -433,6 +442,7 @@ class BookingBuilder(
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
+  private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -665,7 +675,7 @@ class BookingBuilder(
     beginDate: LocalDate,
     caseSequence: Int,
     caseInfoNumber: String?,
-    prisonId: String,
+    agencyId: String,
     combinedCase: CourtCase?,
     reportingStaff: Staff,
     statusUpdateStaff: Staff?,
@@ -687,7 +697,7 @@ class BookingBuilder(
         caseSequence = caseSequence,
         beginDate = beginDate,
         caseInfoNumber = caseInfoNumber,
-        prisonId = prisonId,
+        agencyId = agencyId,
         statusUpdateStaff = statusUpdateStaff,
         statusUpdateDate = statusUpdateDate,
         statusUpdateComment = statusUpdateComment,
@@ -1095,4 +1105,14 @@ class BookingBuilder(
     )
       .also { builder.apply(dsl) }
   }
+
+  override fun transaction(
+    transactionType: String,
+    dsl: OffenderTransactionDsl.() -> Unit,
+  ): OffenderTransaction = offenderTransactionBuilderFactory.builder().build(
+    offenderBooking,
+    offenderBooking.offender,
+    offenderBooking.location!!.id,
+    transactionType,
+  )
 }

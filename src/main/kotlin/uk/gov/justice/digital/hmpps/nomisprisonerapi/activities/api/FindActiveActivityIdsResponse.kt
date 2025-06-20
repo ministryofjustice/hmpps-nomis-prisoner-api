@@ -8,4 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class FindActiveActivityIdsResponse(
   @Schema(description = "Activity id", example = "1")
   val courseActivityId: Long,
+  @Schema(description = "Does the activity have schedule rules?", example = "true")
+  val hasScheduleRules: Boolean,
 )

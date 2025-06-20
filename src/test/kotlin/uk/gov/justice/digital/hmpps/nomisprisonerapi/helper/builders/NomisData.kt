@@ -176,6 +176,7 @@ class NomisData(
     }
 
   override fun incident(
+    id: Long,
     title: String,
     description: String,
     locationId: String,
@@ -189,6 +190,7 @@ class NomisData(
   ): Incident = incidentBuilderFactory!!.builder()
     .let { builder ->
       builder.build(
+        id = id,
         title = title,
         description = description,
         agencyId = locationId,
@@ -509,6 +511,7 @@ interface NomisDataDsl {
 
   @IncidentDslMarker
   fun incident(
+    id: Long,
     title: String = "An incident occurred",
     description: String = "Fighting and shouting occurred in the prisoner's cell and a chair was thrown.",
     locationId: String = "BXI",

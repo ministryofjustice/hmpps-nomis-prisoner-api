@@ -26,9 +26,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason.Companion.RECALL_BREACH_HEARING
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode.Companion.RECALL_TO_PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifierPK
@@ -186,6 +188,10 @@ class SentencingService(
     ).map { CourtCaseIdResponse(it) }
   }
 
+  fun findCourtCaseIdsByOffender(offenderNo: String): List<Long> = courtCaseRepository.findCourtCaseIdsForOffender(
+    offenderNo = offenderNo,
+  )
+
   // updates to charges are triggered by a separate endpoint
   @Audit
   fun createCourtAppearance(
@@ -296,6 +302,7 @@ class SentencingService(
   private fun associateChargesWithAppearance(
     courtEventChargesToUpdate: List<Long>,
     courtEvent: CourtEvent,
+    useCourtEventOutcome: Boolean = false,
   ) {
     val originalList = courtEvent.courtEventCharges
     val newChargeList = mutableListOf<CourtEventCharge>()
@@ -305,7 +312,11 @@ class SentencingService(
           newChargeList.add(existingCourtEventCharge)
         } ?: let {
         getOffenderCharge(requestChargeId).let { offenderCharge ->
-          val resultCode = offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
+          val resultCode = if (useCourtEventOutcome) {
+            courtEvent.outcomeReasonCode
+          } else {
+            offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
+          }
           newChargeList.add(
             CourtEventCharge(
               CourtEventChargeId(
@@ -977,6 +988,13 @@ class SentencingService(
     ).toSentenceTermResponse()
   }
 
+  fun getActiveRecallSentencesByBookingId(bookingId: Long): List<SentenceResponse> {
+    val offenderBooking = findOffenderBooking(id = bookingId)
+    return offenderBooking.sentences
+      .filter { it.isActiveRecallSentence() }
+      .map { it.toSentenceResponse() }
+  }
+
   fun getOffenderCharge(id: Long, offenderNo: String): OffenderChargeResponse {
     checkOffenderExists(offenderNo)
     return findOffenderCharge(offenderNo = offenderNo, id = id).toOffenderCharge()
@@ -1017,13 +1035,54 @@ class SentencingService(
     courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
   }
 
-  fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest) {
+  fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest): ConvertToRecallResponse {
     // It would be odd for the sentences to sit across bookings but give DPS is booking agnostic,
     // it would make sense to not make any assumptions
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
-    request.sentences.updateSentences()
+    val sentencesUpdated = request.sentences.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
+
+    // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence
+    val uniqueCourtCases = sentencesUpdated.mapNotNull { it.courtCase }.toSet()
+    // Create a new CourtEvent for each unique CourtCase
+    val courtEvents = uniqueCourtCases.map { courtCase ->
+      // Find all sentences associated with this court case that are being recalled
+      val sentencesForCase = sentencesUpdated.filter {
+        it.courtCase == courtCase
+      }
+
+      // Find the court from the last appearance
+      val court = courtCase.courtEvents.maxByOrNull(CourtEvent::eventDate)!!.court
+
+      // Create the court event
+      val courtEvent = CourtEvent(
+        offenderBooking = courtCase.offenderBooking,
+        courtCase = courtCase,
+        eventDate = request.recallRevocationDate,
+        startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT),
+        courtEventType = lookupMovementReasonType(RECALL_BREACH_HEARING),
+        eventStatus = determineEventStatus(
+          request.recallRevocationDate,
+          courtCase.offenderBooking,
+        ),
+        court = court,
+        outcomeReasonCode = lookupOffenceResultCode(RECALL_TO_PRISON),
+        directionCode = lookupDirectionType(DirectionType.OUT),
+      )
+
+      // Create CourtEventCharge for each offenderSentenceCharge in the OffenderSentence
+      val offenderChargeIds = sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
+      // Associate charges with the court event
+      associateChargesWithAppearance(
+        courtEventChargesToUpdate = offenderChargeIds.toList(),
+        courtEvent = courtEvent,
+        useCourtEventOutcome = true,
+      )
+
+      courtEventRepository.saveAndFlush(courtEvent)
+    }
+
     bookingIds.forEach { bookingId ->
       storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = bookingId,
@@ -1039,9 +1098,13 @@ class SentencingService(
       ),
       null,
     )
+
+    return ConvertToRecallResponse(
+      courtEventIds = courtEvents.map { it.id },
+    )
   }
 
-  fun updateRecallSentences(offenderNo: String, request: ConvertToRecallRequest) {
+  fun updateRecallSentences(offenderNo: String, request: UpdateRecallRequest) {
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
     request.sentences.updateSentences()
@@ -1052,12 +1115,45 @@ class SentencingService(
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
+    request.beachCourtEventIds.forEach {
+      courtEventRepository.findByIdOrNull(it)?.also { courtEvent ->
+        courtEvent.eventDate = request.recallRevocationDate
+        courtEvent.startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT)
+      }
+    }
     telemetryClient.trackEvent(
       "recall-sentences-updated",
       mapOf(
         "bookingId" to bookingIds.joinToString { it.toString() },
         "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
+        "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
+      ),
+      null,
+    )
+  }
+
+  fun revertRecallSentences(offenderNo: String, request: RevertRecallRequest) {
+    val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
+
+    request.sentences.updateSentences()
+    request.returnToCustody.createOrUpdateBooking(bookingIds)
+    bookingIds.forEach { bookingId ->
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
+    }
+
+    courtEventRepository.deleteAllById(request.beachCourtEventIds)
+
+    telemetryClient.trackEvent(
+      "recall-sentences-reverted",
+      mapOf(
+        "bookingId" to bookingIds.joinToString { it.toString() },
+        "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
+        "offenderNo" to offenderNo,
+        "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
       ),
       null,
     )
@@ -1075,12 +1171,14 @@ class SentencingService(
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
+    courtEventRepository.deleteAllById(request.beachCourtEventIds)
     telemetryClient.trackEvent(
       "recall-sentences-replaced",
       mapOf(
         "bookingId" to bookingIds.joinToString { it.toString() },
         "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
+        "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
       ),
       null,
     )
@@ -1115,18 +1213,16 @@ class SentencingService(
     }
   }
 
-  private fun List<RecallRelatedSentenceDetails>.updateSentences() {
-    this.forEach { sentence ->
-      val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
-      with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
-        category = lookupSentenceCategory(sentence.sentenceCategory)
-        calculationType = lookupSentenceCalculationType(
-          categoryCode = sentence.sentenceCategory,
-          calcType = sentence.sentenceCalcType,
-        )
-        status = if (sentence.active) "A" else "I"
-        offenderSentenceRepository.saveAndFlush(this)
-      }
+  private fun List<RecallRelatedSentenceDetails>.updateSentences(): List<OffenderSentence> = this.map { sentence ->
+    val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
+    with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
+      category = lookupSentenceCategory(sentence.sentenceCategory)
+      calculationType = lookupSentenceCalculationType(
+        categoryCode = sentence.sentenceCategory,
+        calcType = sentence.sentenceCalcType,
+      )
+      status = if (sentence.active) "A" else "I"
+      offenderSentenceRepository.saveAndFlush(this)
     }
   }
 

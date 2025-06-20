@@ -28,16 +28,10 @@ class IncidentStaffParty(
       ), JoinColumnOrFormula(column = JoinColumn(name = "PARTICIPATION_ROLE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val role: IncidentStaffPartyRole,
+  var role: IncidentStaffPartyRole,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "STAFF_ID")
-  val staff: Staff,
-) : IncidentParty(id, comment)
+  var staff: Staff,
 
-// ---- NOT MAPPED columns ---- //
-// PERSON_ID - all are null in prod
-// OFFENDER_BOOKING_ID - used in IncidentOffenderParty
-// OUTCOME_CODE - used in IncidentOffenderParty
-// RECORD_STAFF_ID - this is the staff Id for the create user Id
-// All AUDIT data
+) : IncidentParty(id, comment)

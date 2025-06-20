@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -16,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -29,9 +32,9 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(value = ["/incidents"], produces = [MediaType.APPLICATION_JSON_VALUE])
+@PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
 class IncidentResource(private val incidentService: IncidentService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/ids")
   @Operation(
     summary = "get incident IDs by filter",
@@ -88,7 +91,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/booking/{bookingId}")
   @Operation(
     summary = "Get a list of Incidents for a booking",
@@ -134,7 +136,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     bookingId: Long,
   ) = incidentService.getIncidentsForBooking(bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/{incidentId}")
   @Operation(
     summary = "Get incident details",
@@ -178,7 +179,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     @Schema(description = "Incident id") @PathVariable incidentId: Long,
   ) = incidentService.getIncident(incidentId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/reconciliation/agencies")
   @Operation(
     summary = "Retrieve a list of all agencies that have raised incidents)",
@@ -199,7 +199,6 @@ class IncidentResource(private val incidentService: IncidentService) {
   )
   fun getIncidentAgencies() = incidentService.findAllIncidentAgencies()
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/reconciliation/agency/{agencyId}/counts")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -239,7 +238,6 @@ class IncidentResource(private val incidentService: IncidentService) {
     agencyId: String,
   ) = incidentService.getIncidentCountsForReconciliation(agencyId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
   @GetMapping("/reconciliation/agency/{agencyId}/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -280,7 +278,161 @@ class IncidentResource(private val incidentService: IncidentService) {
     @PathVariable
     agencyId: String,
   ) = incidentService.getOpenIncidentIdsForReconciliation(agencyId, pageRequest)
+
+  @PutMapping("/{incidentId}")
+  @Operation(
+    summary = "create or update an incident using the specified id",
+    description = "Create or update an incident. Requires ROLE_NOMIS_INCIDENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Incident created or updated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_INCIDENTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Incident already exists",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun upsertIncident(
+    @Schema(description = "Incident id") @PathVariable incidentId: Long,
+    @RequestBody @Valid
+    request: UpsertIncidentRequest,
+  ) {
+    incidentService.upsertIncident(incidentId, request)
+  }
 }
+
+@Schema(description = "Incident Request")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpsertIncidentRequest(
+  @Schema(description = "A summary of the incident")
+  val title: String,
+  @Schema(description = "The incident details")
+  val description: String,
+  @Schema(description = "Amendments to the incident details")
+  val descriptionAmendments: List<UpsertDescriptionAmendmentRequest>,
+  @Schema(description = "Prison where the incident occurred")
+  val location: String,
+  @Schema(description = "Status details")
+  val statusCode: String,
+  @Schema(description = "The incident questionnaire type")
+  val typeCode: String,
+  @Schema(description = "The date and time of the incident")
+  val incidentDateTime: LocalDateTime,
+  @Schema(description = "The date and time the incident was reported")
+  val reportedDateTime: LocalDateTime,
+  @Schema(description = "The username of the person who reported the incident")
+  val reportedBy: String,
+  @Schema(description = "Requirements for completing the incident report")
+  val requirements: List<UpsertIncidentRequirementRequest> = listOf(),
+  @Schema(description = "Offenders involved in the incident")
+  val offenderParties: List<UpsertOffenderPartyRequest> = listOf(),
+  @Schema(description = "Staff involved in the incident")
+  val staffParties: List<UpsertStaffPartyRequest> = listOf(),
+  @Schema(description = "Questions asked for the incident")
+  val questions: List<UpsertIncidentQuestionRequest> = listOf(),
+)
+
+data class UpsertDescriptionAmendmentRequest(
+  @Schema(description = "When addendum was added", example = "2024-04-29T12:34:56.789012")
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "First name of person that added this addendum", example = "John")
+  val firstName: String,
+  @Schema(description = "Last name of person that added this addendum", example = "Doe")
+  val lastName: String,
+  @Schema(description = "Addendum text")
+  val text: String,
+)
+
+data class UpsertIncidentRequirementRequest(
+  @Schema(description = "The update required to the incident report")
+  val comment: String?,
+  @Schema(description = "Date the requirement was recorded")
+  val date: LocalDateTime,
+  @Schema(description = "The staff member who made the requirement request")
+  val username: String,
+  @Schema(description = "The reporting agency of the staff")
+  val location: String,
+)
+
+data class UpsertOffenderPartyRequest(
+  @Schema(description = "Offender involved in the incident")
+  val prisonNumber: String,
+  @Schema(description = "Offender role in the incident")
+  val role: String,
+  @Schema(description = "The outcome of the incident")
+  val outcome: String?,
+  @Schema(description = "General information about the incident")
+  val comment: String?,
+)
+
+data class UpsertStaffPartyRequest(
+  @Schema(description = "Staff involved in the incident")
+  val username: String,
+  @Schema(description = "Staff role in the incident")
+  val role: String,
+  @Schema(description = "The outcome of the incident")
+  val outcome: String?,
+  @Schema(description = "General information about the incident")
+  val comment: String?,
+)
+
+data class UpsertIncidentQuestionRequest(
+  @Schema(description = "The questionnaire question id")
+  val questionId: Long,
+  @Schema(description = "List of Responses to this question")
+  val responses: List<UpsertIncidentResponseRequest> = listOf(),
+)
+
+data class UpsertIncidentResponseRequest(
+  @Schema(description = "The questionnaire answer id")
+  val answerId: Long,
+  @Schema(description = "Comment added to the response by recording staff")
+  val comment: String?,
+  @Schema(description = "Response date added to the response by recording staff")
+  val responseDate: LocalDate?,
+  @Schema(description = "Recording staff")
+  val recordingUsername: String,
+  @Schema(description = "Sequence number across all responses for an incident")
+  val sequence: Int,
+)
 
 @Schema(description = "Incident Details")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -410,8 +562,8 @@ data class Requirement(
   val comment: String?,
   @Schema(description = "The sequence number of the requirement for this incident")
   val sequence: Int,
-  @Schema(description = "Date the requirement was recorded")
-  val date: LocalDate,
+  @Schema(description = "Date and time the requirement was recorded")
+  val recordedDate: LocalDateTime,
   @Schema(description = "The staff member who made the requirement request")
   val staff: Staff,
   @Schema(description = "The reporting agency of the staff")

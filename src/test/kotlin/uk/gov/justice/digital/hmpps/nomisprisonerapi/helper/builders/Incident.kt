@@ -47,6 +47,7 @@ interface IncidentDsl {
     comment: String = "Please update the name correct",
     recordingStaff: Staff,
     locationId: String,
+    recordedDate: LocalDateTime = LocalDateTime.now(),
     dsl: IncidentRequirementDsl.() -> Unit = {},
   ): IncidentRequirement
 
@@ -102,6 +103,7 @@ class IncidentBuilder(
   private lateinit var incident: Incident
 
   fun build(
+    id: Long,
     title: String,
     description: String,
     agencyId: String,
@@ -112,14 +114,15 @@ class IncidentBuilder(
     followUpDate: LocalDate,
     questionnaire: Questionnaire,
   ): Incident = Incident(
+    id = id,
     title = title,
     description = description,
     agency = repository.lookupAgency(agencyId),
     reportingStaff = reportingStaff,
-    reportedDate = reportedDateTime.toLocalDate(),
-    reportedTime = reportedDateTime.toLocalTime(),
-    incidentDate = incidentDateTime.toLocalDate(),
-    incidentTime = incidentDateTime.toLocalTime(),
+    reportedDate = reportedDateTime,
+    reportedTime = reportedDateTime,
+    incidentDate = incidentDateTime,
+    incidentTime = incidentDateTime,
     status = repository.lookupIncidentStatusCode(incidentStatus),
     followUpDate = followUpDate,
     questionnaire = questionnaire,
@@ -140,7 +143,7 @@ class IncidentBuilder(
         staff = staff,
         comment = comment,
         incident = incident,
-        partySequence = incident.partyCount() + 1,
+        partySequence = incident.staffParties.count() + 1000,
       )
         .also { incident.staffParties += it }
         .also { builder.apply(dsl) }
@@ -160,18 +163,17 @@ class IncidentBuilder(
         offenderBooking = offenderBooking,
         comment = comment,
         incident = incident,
-        index = incident.partyCount() + 1,
+        index = incident.offenderParties.count() + 2000,
       )
         .also { incident.offenderParties += it }
         .also { builder.apply(dsl) }
     }
 
-  private fun Incident.partyCount() = staffParties.size + offenderParties.size
-
   override fun requirement(
     comment: String,
     recordingStaff: Staff,
     agencyId: String,
+    recordedDate: LocalDateTime,
     dsl: IncidentRequirementDsl.() -> Unit,
   ): IncidentRequirement = incidentRequirementBuilderFactory.builder()
     .let { builder ->
@@ -180,7 +182,8 @@ class IncidentBuilder(
         incident = incident,
         recordingStaff = recordingStaff,
         agencyId = agencyId,
-        requirementSequence = incident.requirements.size + 1,
+        recordedDate = recordedDate,
+        requirementSequence = incident.requirements.size,
       )
         .also { incident.requirements += it }
         .also { builder.apply(dsl) }
