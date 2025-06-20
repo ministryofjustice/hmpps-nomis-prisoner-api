@@ -213,7 +213,7 @@ class IncidentService(
             this.recordingStaff = created.recordingStaff
             this.answer = created.answer
             this.responseDate = created.responseDate
-          } ?: created.apply { new.responses.add(created) }
+          } ?: created.apply { existing.responses.add(created) }
       }.toSet(),
     )
   }
