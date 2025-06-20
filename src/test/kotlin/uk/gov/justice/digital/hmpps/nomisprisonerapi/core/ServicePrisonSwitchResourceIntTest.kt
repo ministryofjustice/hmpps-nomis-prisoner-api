@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ExternalServiceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ServiceAgencySwitchesRepository
 
-class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
+class ServicePrisonSwitchResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var externalServiceRepository: ExternalServiceRepository
@@ -55,12 +55,12 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /agency-switches/{serviceCode}")
-  inner class GetServiceAgencies {
+  @DisplayName("GET /service-prisons/{serviceCode}")
+  inner class GetServicePrisons {
     @Test
     fun `should return unauthorised without an auth token`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE")
+        .uri("/service-prisons/SOME_SERVICE")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -68,7 +68,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a role`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE")
+        .uri("/service-prisons/SOME_SERVICE")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus().isForbidden
@@ -77,7 +77,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a valid role`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE")
+        .uri("/service-prisons/SOME_SERVICE")
         .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
         .exchange()
         .expectStatus().isForbidden
@@ -86,7 +86,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return not found if service does not exist`() {
       webTestClient.get()
-        .uri("/agency-switches/UNKNOWN_SERVICE")
+        .uri("/service-prisons/UNKNOWN_SERVICE")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
@@ -96,38 +96,38 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return a list of agencies for the service`() {
+    fun `should return a list of prisons for the service`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE")
+        .uri("/service-prisons/SOME_SERVICE")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.size()").isEqualTo(2)
-        .jsonPath("$[0].agencyId").isEqualTo("LEI")
-        .jsonPath("$[1].agencyId").isEqualTo("MDI")
+        .jsonPath("$[0].prisonId").isEqualTo("LEI")
+        .jsonPath("$[1].prisonId").isEqualTo("MDI")
     }
 
     @Test
-    fun `should return a list of agencies even if all are switched on`() {
+    fun `should return a list of prisons even if all are switched on`() {
       webTestClient.get()
-        .uri("/agency-switches/OTHER_SERVICE")
+        .uri("/service-prisons/OTHER_SERVICE")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.size()").isEqualTo(1)
-        .jsonPath("$[0].agencyId").isEqualTo("*ALL*")
+        .jsonPath("$[0].prisonId").isEqualTo("*ALL*")
     }
 
     @Test
-    fun `should return an empty list if no agencies`() {
+    fun `should return an empty list if no prisons`() {
       nomisDataBuilder.build {
         externalService(serviceName = "ANOTHER_SERVICE")
       }
 
       webTestClient.get()
-        .uri("/agency-switches/ANOTHER_SERVICE")
+        .uri("/service-prisons/ANOTHER_SERVICE")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
@@ -136,12 +136,12 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /agency-switches/{serviceCode}/agency/{agencyId}")
-  inner class GetServiceAgency {
+  @DisplayName("GET /service-prisons/{serviceCode}/prison/{prisonId}")
+  inner class GetServicePrison {
     @Test
     fun `should return unauthorised without an auth token`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -149,7 +149,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a role`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus().isForbidden
@@ -158,37 +158,37 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a valid role`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
         .exchange()
         .expectStatus().isForbidden
     }
 
     @Test
-    fun `should return not found if agency not turned on for service`() {
+    fun `should return not found if prison not turned on for service`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/agency/BXI")
+        .uri("/service-prisons/SOME_SERVICE/prison/BXI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Service SOME_SERVICE not turned on for agency BXI")
+          assertThat(it).contains("Service SOME_SERVICE not turned on for prison BXI")
         }
     }
 
     @Test
-    fun `should return 204 if service turned on for agency`() {
+    fun `should return 204 if service turned on for prison`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isEqualTo(NO_CONTENT)
     }
 
     @Test
-    fun `should return 204 if service turned on for all agencies`() {
+    fun `should return 204 if service turned on for all prisons`() {
       webTestClient.get()
-        .uri("/agency-switches/OTHER_SERVICE/agency/MDI")
+        .uri("/service-prisons/OTHER_SERVICE/prison/MDI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isEqualTo(NO_CONTENT)
@@ -196,12 +196,12 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("POST /agency-switches/{serviceCode}/agency/{agencyId}")
-  inner class CreateServiceAgency {
+  @DisplayName("POST /service-prisons/{serviceCode}/prison/{prisonId}")
+  inner class CreateServicePrison {
     @Test
     fun `should return unauthorised without an auth token`() {
       webTestClient.post()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -209,7 +209,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a role`() {
       webTestClient.post()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus().isForbidden
@@ -218,7 +218,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a valid role`() {
       webTestClient.post()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
         .exchange()
         .expectStatus().isForbidden
@@ -227,7 +227,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return not found if the service doesn't exist`() {
       webTestClient.post()
-        .uri("/agency-switches/UNKNOWN_SERVICE/agency/BXI")
+        .uri("/service-prisons/UNKNOWN_SERVICE/prison/BXI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isNotFound
@@ -237,49 +237,49 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return not found if the agency doesn't exist`() {
+    fun `should return not found if the prison doesn't exist`() {
       webTestClient.post()
-        .uri("/agency-switches/SOME_SERVICE/agency/UNKNOWN_AGENCY")
+        .uri("/service-prisons/SOME_SERVICE/prison/UNKNOWN_PRISON")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Agency UNKNOWN_AGENCY does not exist")
+          assertThat(it).contains("Agency UNKNOWN_PRISON does not exist")
         }
     }
 
     @Test
-    fun `should return created if agency NOT already turned on for service`() {
+    fun `should return created if prison NOT already turned on for service`() {
       webTestClient.post()
-        .uri("/agency-switches/SOME_SERVICE/agency/BXI")
+        .uri("/service-prisons/SOME_SERVICE/prison/BXI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isCreated
 
       val service = externalServiceRepository.findByIdOrNull("SOME_SERVICE") ?: throw NotFoundException("SOME_SERVICE not found")
       val agencyLocation = agencyLocationRepository.findByIdOrNull("BXI") ?: throw NotFoundException("BXI not found")
-      val serviceAgency = serviceAgencySwitchesRepository.findByIdOrNull(ServiceAgencySwitchId(service, agencyLocation))
-      assertThat(serviceAgency).isNotNull
+      val servicePrison = serviceAgencySwitchesRepository.findByIdOrNull(ServiceAgencySwitchId(service, agencyLocation))
+      assertThat(servicePrison).isNotNull
     }
 
     @Test
-    fun `should return created if agency IS already turned on for service`() {
+    fun `should return created if prison IS already turned on for service`() {
       webTestClient.post()
-        .uri("/agency-switches/SOME_SERVICE/agency/MDI")
+        .uri("/service-prisons/SOME_SERVICE/prison/MDI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
         .exchange()
         .expectStatus().isCreated
 
       val service = externalServiceRepository.findByIdOrNull("SOME_SERVICE") ?: throw NotFoundException("SOME_SERVICE not found")
       val agencyLocation = agencyLocationRepository.findByIdOrNull("MDI") ?: throw NotFoundException("BXI not found")
-      val serviceAgency = serviceAgencySwitchesRepository.findByIdOrNull(ServiceAgencySwitchId(service, agencyLocation))
-      assertThat(serviceAgency).isNotNull
+      val servicePrison = serviceAgencySwitchesRepository.findByIdOrNull(ServiceAgencySwitchId(service, agencyLocation))
+      assertThat(servicePrison).isNotNull
     }
   }
 
   @Nested
-  @DisplayName("GET /agency-switches/{serviceCode}/prisoner/{prisonNumber}")
-  inner class GetServiceAgencyForPrisoner {
+  @DisplayName("GET /service-prisons/{serviceCode}/prisoner/{prisonNumber}")
+  inner class GetServicePrisonForPrisoner {
 
     @BeforeEach
     internal fun createPrisoners() {
@@ -301,7 +301,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return unauthorised without an auth token`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/prisoner/A1234TT")
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -309,7 +309,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a role`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/prisoner/A1234TT")
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus().isForbidden
@@ -318,7 +318,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return forbidden without a valid role`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/prisoner/A1234TT")
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
         .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
         .exchange()
         .expectStatus().isForbidden
@@ -327,7 +327,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return not found if the service doesn't exist`() {
       webTestClient.get()
-        .uri("/agency-switches/UNKNOWN_SERVICE/prisoner/A1234SS")
+        .uri("/service-prisons/UNKNOWN_SERVICE/prisoner/A1234SS")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
@@ -339,7 +339,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return not found if the prisoner doesn't exist`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/prisoner/A9999BC")
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A9999BC")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
@@ -349,9 +349,9 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return not found if prisoner's agency not turned on for service`() {
+    fun `should return not found if prisoner's prison not turned on for service`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/prisoner/A1234TT")
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234TT")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
@@ -361,9 +361,9 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should return 204 if service turned on for prisoner's agency`() {
+    fun `should return 204 if service turned on for prisoner's prison`() {
       webTestClient.get()
-        .uri("/agency-switches/SOME_SERVICE/prisoner/A1234SS")
+        .uri("/service-prisons/SOME_SERVICE/prisoner/A1234SS")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isEqualTo(NO_CONTENT)

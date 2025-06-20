@@ -356,7 +356,7 @@ internal class VisitServiceTest {
         )
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -373,7 +373,7 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance decrement is saved correctly when available`() {
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -401,7 +401,7 @@ internal class VisitServiceTest {
         )
 
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -412,7 +412,7 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance decrement is not saved if DPS in charge of allocation`() {
       whenever(visitRepository.save(any())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -553,7 +553,7 @@ internal class VisitServiceTest {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
@@ -565,7 +565,7 @@ internal class VisitServiceTest {
           assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
         },
       )
-      verify(serviceAgencySwitchesService).checkServicePrison("VISIT_ALLOCATION", "MKI")
+      verify(serviceAgencySwitchesService).checkServiceAgency("VISIT_ALLOCATION", "MKI")
     }
 
     @Test
@@ -573,18 +573,18 @@ internal class VisitServiceTest {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
-      verify(serviceAgencySwitchesService).checkServicePrison("VISIT_ALLOCATION", "MKI")
+      verify(serviceAgencySwitchesService).checkServiceAgency("VISIT_ALLOCATION", "MKI")
     }
 
     @Test
     fun `privilege balance increment is saved correctly`() {
       whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(false)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
@@ -601,12 +601,12 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance increment is not saved if DPS in charge of balance`() {
       whenever(visitRepository.findById(VISIT_ID)).thenReturn(Optional.of(defaultVisit))
-      whenever(serviceAgencySwitchesService.checkServicePrison(any(), any())).thenReturn(true)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
       verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
-      verify(serviceAgencySwitchesService).checkServicePrison("VISIT_ALLOCATION", "MKI")
+      verify(serviceAgencySwitchesService).checkServiceAgency("VISIT_ALLOCATION", "MKI")
     }
 
     @Test

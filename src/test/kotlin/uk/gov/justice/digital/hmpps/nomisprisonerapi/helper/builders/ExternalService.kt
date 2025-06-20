@@ -14,7 +14,7 @@ interface ExternalServiceDsl {
 
   @ServiceAgencySwitchDslMarker
   fun serviceAgencySwitch(
-    prisonId: String = "BXI",
+    agencyId: String = "BXI",
   ): ServiceAgencySwitch
 }
 
@@ -49,10 +49,10 @@ class ExternalServiceBuilder(
     .also { externalService = it }
 
   override fun serviceAgencySwitch(
-    prisonId: String,
+    agencyId: String,
   ): ServiceAgencySwitch = serviceAgencySwitchBuilderFactory.builder().build(
     externalService,
-    prisonId,
+    agencyId,
   )
     .also { externalService.serviceAgencySwitches += it }
 }
