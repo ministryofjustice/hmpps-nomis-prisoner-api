@@ -56,9 +56,6 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       incidentDateTime = LocalDateTime.parse("2025-12-20T01:02:03"),
       reportedDateTime = LocalDateTime.parse("2025-12-20T01:02:03"),
       reportedBy = reportingStaff1.accounts[0].username,
-      requirements = emptyList(),
-      offenderParties = emptyList(),
-      questions = emptyList(),
     )
   }
 
@@ -1239,6 +1236,86 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("questions[1].answers[0].sequence").isEqualTo(2)
           .jsonPath("questions.length()").isEqualTo(2)
       }
+
+      @Test
+      fun `will create an incident with history`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with history",
+                history = listOf(
+                  UpsertIncidentHistoryRequest(
+                    typeCode = questionnaire1.code,
+                    incidentChangeDateTime = LocalDateTime.parse("2012-03-01T10:20:30"),
+                    incidentChangeUsername = reportingStaff2.accounts[0].username,
+                    questions = listOf(
+                      UpsertIncidentQuestionRequest(
+                        questionId = questionnaire1.questions[1].id,
+                        responses = listOf(
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[1].answers[0].id,
+                            comment = "a comment",
+                            responseDate = LocalDate.parse("2010-03-02"),
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 0,
+                          ),
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[1].answers[1].id,
+                            comment = null,
+                            responseDate = null,
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 1,
+                          ),
+                        ),
+                      ),
+                      UpsertIncidentQuestionRequest(
+                        questionId = questionnaire1.questions[2].id,
+                        responses = listOf(
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[2].answers[0].id,
+                            comment = "a comment",
+                            responseDate = LocalDate.parse("2010-03-02"),
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("title").isEqualTo("Something happened with history")
+          .jsonPath("history[0].questionnaireId").isEqualTo(questionnaire1.id)
+          .jsonPath("history[0].type").isEqualTo("ESCAPE_EST")
+          .jsonPath("history[0].description").isEqualTo("Escape Questionnaire")
+          .jsonPath("history[0].incidentChangeDateTime").isEqualTo("2012-03-01T10:20:30")
+          .jsonPath("history[0].incidentChangeStaff.username").isEqualTo("JANESTAFF")
+          .jsonPath("history[0].questions[0].questionId").isEqualTo(questionnaire1.questions[1].id)
+          .jsonPath("history[0].questions[0].sequence").isEqualTo(0)
+          .jsonPath("history[0].questions[0].answers[0].answer").isEqualTo("Q3A1: Wire cutters")
+          .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("a comment")
+          .jsonPath("history[0].questions[0].answers[0].responseDate").isEqualTo("2010-03-02")
+          .jsonPath("history[0].questions[0].answers[1].answer").isEqualTo("Q3A2: Spade")
+          .jsonPath("history[0].questions[0].answers[1].comment").doesNotExist()
+          .jsonPath("history[0].questions[0].answers[1].responseDate").doesNotExist()
+          .jsonPath("history[0].questions[1].answers[0].answer").isEqualTo("Q2A1: Yes")
+          .jsonPath("history[0].questions[1].answers[0].comment").isEqualTo("a comment")
+          .jsonPath("history[0].questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
+          .jsonPath("history[0].questions.length()").isEqualTo(2)
+          .jsonPath("history.length()").isEqualTo(1)
+      }
     }
 
     @Nested
@@ -1509,6 +1586,138 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
           .jsonPath("questions[1].answers[0].sequence").isEqualTo(2)
           .jsonPath("questions.length()").isEqualTo(2)
+      }
+
+      @Test
+      fun `will update an incident with history`() {
+        webTestClient.put().uri("/incidents/${incident2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with history",
+                history = listOf(
+                  UpsertIncidentHistoryRequest(
+                    typeCode = questionnaire2.code,
+                    incidentChangeDateTime = LocalDateTime.parse("2012-03-02T10:20:30"),
+                    incidentChangeUsername = reportingStaff2.accounts[0].username,
+                    questions = listOf(),
+                  ),
+                  UpsertIncidentHistoryRequest(
+                    typeCode = questionnaire1.code,
+                    incidentChangeDateTime = LocalDateTime.parse("2012-03-01T10:20:30"),
+                    incidentChangeUsername = reportingStaff2.accounts[0].username,
+                    questions = listOf(
+                      UpsertIncidentQuestionRequest(
+                        questionId = questionnaire1.questions[1].id,
+                        responses = listOf(
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[1].answers[0].id,
+                            comment = "a comment",
+                            responseDate = LocalDate.parse("2010-03-02"),
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 0,
+                          ),
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[1].answers[1].id,
+                            comment = null,
+                            responseDate = null,
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 1,
+                          ),
+                        ),
+                      ),
+                      UpsertIncidentQuestionRequest(
+                        questionId = questionnaire1.questions[2].id,
+                        responses = listOf(
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[2].answers[0].id,
+                            comment = "a comment",
+                            responseDate = LocalDate.parse("2010-03-02"),
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident2.id)
+          .jsonPath("title").isEqualTo("Something happened with history")
+          // history 0 unchanged
+          .jsonPath("history[0].type").isEqualTo("FIRE")
+          .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
+          .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
+          .jsonPath("history[0].questions[0].answers[0].answer").doesNotExist()
+          .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("one staff")
+          .jsonPath("history[0].questionnaireId").isEqualTo(questionnaire2.id)
+          // history 1 is new data
+          .jsonPath("history[1].questionnaireId").isEqualTo(questionnaire1.id)
+          .jsonPath("history[1].type").isEqualTo("ESCAPE_EST")
+          .jsonPath("history[1].description").isEqualTo("Escape Questionnaire")
+          .jsonPath("history[1].incidentChangeDateTime").isEqualTo("2012-03-01T10:20:30")
+          .jsonPath("history[1].incidentChangeStaff.username").isEqualTo("JANESTAFF")
+          .jsonPath("history[1].questions[0].questionId").isEqualTo(questionnaire1.questions[1].id)
+          .jsonPath("history[1].questions[0].sequence").isEqualTo(0)
+          .jsonPath("history[1].questions[0].answers[0].answer").isEqualTo("Q3A1: Wire cutters")
+          .jsonPath("history[1].questions[0].answers[0].comment").isEqualTo("a comment")
+          .jsonPath("history[1].questions[0].answers[0].responseDate").isEqualTo("2010-03-02")
+          .jsonPath("history[1].questions[0].answers[1].answer").isEqualTo("Q3A2: Spade")
+          .jsonPath("history[1].questions[0].answers[1].comment").doesNotExist()
+          .jsonPath("history[1].questions[0].answers[1].responseDate").doesNotExist()
+          .jsonPath("history[1].questions[1].answers[0].answer").isEqualTo("Q2A1: Yes")
+          .jsonPath("history[1].questions[1].answers[0].comment").isEqualTo("a comment")
+          .jsonPath("history[1].questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
+          .jsonPath("history[1].questions.length()").isEqualTo(2)
+          .jsonPath("history.length()").isEqualTo(2)
+      }
+
+      @Test
+      fun `will do nothing if an incident with history stays the same size`() {
+        webTestClient.put().uri("/incidents/${incident2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with history",
+                history = listOf(
+                  UpsertIncidentHistoryRequest(
+                    typeCode = questionnaire1.code,
+                    incidentChangeDateTime = LocalDateTime.parse("2012-03-02T10:20:30"),
+                    incidentChangeUsername = reportingStaff2.accounts[0].username,
+                    questions = listOf(),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident2.id)
+          .jsonPath("title").isEqualTo("Something happened with history")
+          // history 0 unchanged
+          .jsonPath("history[0].type").isEqualTo("FIRE")
+          .jsonPath("history[0].description").isEqualTo("Questionnaire for fire")
+          .jsonPath("history[0].questions[0].answers.length()").isEqualTo(1)
+          .jsonPath("history[0].questions[0].answers[0].answer").doesNotExist()
+          .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("one staff")
+          .jsonPath("history[0].questionnaireId").isEqualTo(questionnaire2.id)
+          .jsonPath("history.length()").isEqualTo(1)
       }
     }
   }
