@@ -368,6 +368,8 @@ data class UpsertIncidentRequest(
   val staffParties: List<UpsertStaffPartyRequest> = listOf(),
   @Schema(description = "Questions asked for the incident")
   val questions: List<UpsertIncidentQuestionRequest> = listOf(),
+  @Schema(description = "Historical questionnaire details for the incident")
+  val history: List<UpsertIncidentHistoryRequest> = listOf(),
 )
 
 data class UpsertDescriptionAmendmentRequest(
@@ -432,6 +434,17 @@ data class UpsertIncidentResponseRequest(
   val recordingUsername: String,
   @Schema(description = "Sequence number across all responses for an incident")
   val sequence: Int,
+)
+
+data class UpsertIncidentHistoryRequest(
+  @Schema(description = "The incident questionnaire type")
+  val typeCode: String,
+  @Schema(description = "When the questionnaire was changed")
+  val incidentChangeDateTime: LocalDateTime,
+  @Schema(description = "Who changed the questionnaire")
+  val incidentChangeUsername: String,
+  @Schema(description = "Questions asked for the questionnaire")
+  val questions: List<UpsertIncidentQuestionRequest>,
 )
 
 @Schema(description = "Incident Details")

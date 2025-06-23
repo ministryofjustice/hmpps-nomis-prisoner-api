@@ -1550,7 +1550,7 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   createdByUsername = this.createUsername,
   sentenceTerms = this.offenderSentenceTerms.map { it.toSentenceTermResponse() },
   offenderCharges = this.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
-  missingCourtOffenderChargeIds = getMissingCourtEventChargeIds(),
+  missingCourtOffenderChargeIds = emptyList(),
   prisonId = this.id.offenderBooking.location?.id ?: "OUT",
   recallCustodyDate = this.id.offenderBooking.fixedTermRecall?.takeIf { this.isActiveRecallSentence() }?.let {
     RecallCustodyDate(
@@ -1568,11 +1568,4 @@ fun SentenceCalculationType.isRecallSentence() = with(this.id.calculationType) {
   startsWith("LR") ||
     contains("FTR") ||
     this in listOf("CUR", "CUR_ORA", "HDR", "HDR_ORA")
-}
-
-private fun OffenderSentence.getMissingCourtEventChargeIds(): List<Long> {
-  val courtEventCharges = this.courtOrder?.courtEvent?.courtEventCharges ?: emptyList<CourtEventCharge>()
-  return this.offenderSentenceCharges.filter { sentenceCharge -> courtEventCharges.all { it.id.offenderCharge.id != sentenceCharge.id.offenderChargeId } }.map { missingSentenceCharge ->
-    missingSentenceCharge.id.offenderChargeId
-  }
 }
