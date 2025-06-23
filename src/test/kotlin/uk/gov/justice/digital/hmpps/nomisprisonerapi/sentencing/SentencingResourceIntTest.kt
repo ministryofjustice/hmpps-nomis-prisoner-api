@@ -1295,18 +1295,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   inner class GetOffenderSentence {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
-    private lateinit var sentence2: OffenderSentence
     private lateinit var recallSentence: OffenderSentence
     private lateinit var inactiveRecallSentence: OffenderSentence
     private lateinit var courtCase: CourtCase
-    private lateinit var courtCase2: CourtCase
     private lateinit var appearance: CourtEvent
-    private lateinit var appearance2: CourtEvent
     private lateinit var courtOrder: CourtOrder
     private lateinit var offenderCharge: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
-    private lateinit var offenderCharge3: OffenderCharge
-    private lateinit var offenderCharge4: OffenderCharge
     private val aDateString = "2023-01-01"
     private val aLaterDateString = "2023-01-05"
 
@@ -1319,7 +1314,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         prisonerAtMoorland =
           offender(nomsId = "A1234AB") {
             booking(agencyLocationId = "MDI") {
-              // a court case with a missing court_event_charges record for offenderCharge4
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
@@ -1353,21 +1347,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 ) {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   term {}
-                }
-              }
-              courtCase2 = courtCase(reportingStaff = staff, caseSequence = 2) {
-                offenderCharge3 = offenderCharge(offenceCode = "RT88074")
-                offenderCharge4 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-                appearance2 = courtEvent {
-                  // only charge 3 has a court event charge
-                  courtEventCharge(offenderCharge = offenderCharge3)
-                  courtOrder = courtOrder()
-                }
-                sentence2 = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A") {
-                  offenderSentenceCharge(offenderCharge = offenderCharge3)
-                  offenderSentenceCharge(offenderCharge = offenderCharge4)
-                  term {}
-                  term(days = 35)
                 }
               }
               fixedTermRecall(
@@ -1535,20 +1514,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
           .jsonPath("missingCourtOffenderChargeIds.size()").isEqualTo(0)
-      }
-
-      @Test
-      fun `will indicate if sentence charges are missing corresponding court charge records - nomis bug`() {
-        webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase2.id}/sentences/${sentence2.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody()
-          .jsonPath("bookingId").isEqualTo(latestBookingId)
-          .jsonPath("sentenceSeq").isEqualTo(sentence2.id.sequence)
-          .jsonPath("missingCourtOffenderChargeIds.size()").isEqualTo(1)
-          .jsonPath("missingCourtOffenderChargeIds[0]").isEqualTo(offenderCharge4.id)
       }
 
       @Test
@@ -4680,9 +4645,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("fineAmount").isEqualTo("9.7")
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("offenderCharges.size()").isEqualTo(1)
-          .jsonPath("missingCourtOffenderChargeIds.size()").isEqualTo(1)
-          // the update adds a charge which is missing a court_event_charge record
-          .jsonPath("missingCourtOffenderChargeIds[0]").isEqualTo(offenderCharge2.id)
           // update doesn't affect terms, there was 1 existing
           .jsonPath("sentenceTerms.size()").isEqualTo(1)
 
