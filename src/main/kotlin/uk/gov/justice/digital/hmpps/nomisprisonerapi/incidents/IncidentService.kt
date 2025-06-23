@@ -17,9 +17,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderPartyRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentPartyId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestion
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestionHistory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestionHistoryId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentQuestionId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentRequirementId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponseHistory
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponseHistoryId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponseId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStaffPartyRole
@@ -107,8 +111,46 @@ class IncidentService(
       upsertIntoNomis(it, it.staffParties, request.staffParties, ::createStaffParty, ::updateStaffParty)
       upsertIntoNomis(it, it.questions, request.questions, ::createIncidentQuestion, ::updateIncidentQuestion)
 
+      // history is immutable, so we can assume that there are no changes if the history size is unchanged
+      if (request.history.size > it.incidentHistory.size) {
+        insertHistory(it.incidentHistory, request.history.drop(it.incidentHistory.size))
+      }
       incidentRepository.save(it)
     }
+  }
+
+  private fun insertHistory(histories: MutableList<IncidentHistory>, requests: List<UpsertIncidentHistoryRequest>) {
+    histories.addAll(
+      requests.map {
+        val questionnaire = lookupQuestionnaire(it.typeCode)
+        IncidentHistory(
+          questionnaire = questionnaire,
+          incidentChangeDateTime = it.incidentChangeDateTime,
+          incidentChangeStaff = lookupStaff(it.incidentChangeUsername).staff,
+        ).apply {
+          this.questions.addAll(
+            it.questions.mapIndexed { sequence, question ->
+              IncidentQuestionHistory(
+                id = IncidentQuestionHistoryId(this, sequence),
+                question = lookupQuestion(questionnaire, question.questionId),
+              ).apply {
+                this.responses.addAll(
+                  question.responses.map { response ->
+                    IncidentResponseHistory(
+                      id = IncidentResponseHistoryId(this, response.sequence),
+                      answer = this.question.answers.find { response.answerId == it.id },
+                      recordingStaff = lookupStaff(response.recordingUsername).staff,
+                      responseDate = response.responseDate,
+                      comment = response.comment,
+                    )
+                  },
+                )
+              }
+            },
+          )
+        }
+      },
+    )
   }
 
   private fun <REQUEST, NOMIS> upsertIntoNomis(
