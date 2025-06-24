@@ -153,8 +153,8 @@ class VisitService(
   fun cancelVisit(offenderNo: String, visitId: Long, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
 
-    val visit = visitRepository.findById(visitId)
-      .orElseThrow(NotFoundException("Nomis visit id $visitId not found"))
+    val visit = visitRepository.findByIdForUpdate(visitId)
+      ?: throw NotFoundException("Nomis visit id $visitId not found")
 
     val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome))
       .orElseThrow(BadDataException("Invalid cancellation reason: ${visitDto.outcome}"))
