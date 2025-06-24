@@ -40,6 +40,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPersonRestrictRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRestrictionsRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonEmploymentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonIdentifierRepository
@@ -80,6 +81,7 @@ class ContactPersonService(
   private val restrictionTypeRepository: ReferenceCodeRepository<RestrictionType>,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val corporateRepository: CorporateRepository,
+  private val offenderRestrictionsRepository: OffenderRestrictionsRepository,
 ) {
   fun getPerson(personId: Long): ContactPerson = personRepository.findByIdOrNull(personId)?.let {
     ContactPerson(
@@ -293,6 +295,21 @@ class ContactPersonService(
   fun findPersonIdsFromId(personId: Long, pageSize: Int): PersonIdsWithLast = personRepository.findAllIdsFromId(personId = personId, pageSize = pageSize).let {
     PersonIdsWithLast(lastPersonId = it.lastOrNull() ?: 0, personIds = it)
   }
+
+  fun findOffenderRestrictionIdsByFilter(
+    pageRequest: Pageable,
+    restrictionFilter: RestrictionFilter,
+  ): Page<PrisonerRestrictionIdResponse> = if (restrictionFilter.toDate == null && restrictionFilter.fromDate == null) {
+    offenderRestrictionsRepository.findAllIds(
+      pageRequest,
+    )
+  } else {
+    offenderRestrictionsRepository.findAllIds(
+      fromDate = restrictionFilter.fromDate?.atStartOfDay(),
+      toDate = restrictionFilter.toDate?.atStartOfDay(),
+      pageRequest,
+    )
+  }.map { PrisonerRestrictionIdResponse(restrictionId = it.restrictionId) }
 
   fun createPerson(request: CreatePersonRequest): CreatePersonResponse {
     assertDoesNotExist(request)
@@ -721,6 +738,11 @@ class ContactPersonService(
 }
 
 data class PersonFilter(
+  val fromDate: LocalDate?,
+  val toDate: LocalDate?,
+)
+
+data class RestrictionFilter(
   val fromDate: LocalDate?,
   val toDate: LocalDate?,
 )

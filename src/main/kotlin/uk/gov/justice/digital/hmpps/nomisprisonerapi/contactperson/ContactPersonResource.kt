@@ -179,6 +179,64 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly, latestBookingOnly)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @GetMapping("/prisoners/restrictions/ids")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get all prisoner restriction Ids",
+    description = "Retrieves all restriction Ids - typically for a migration. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Page of restriction Ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerRestrictionIds(
+    @PageableDefault(size = 20, sort = ["restrictionId"], direction = Sort.Direction.ASC)
+    pageRequest: Pageable,
+    @RequestParam(value = "fromDate")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by restrictions that were created on or after the given date",
+      example = "2021-11-03",
+    )
+    fromDate: LocalDate?,
+    @RequestParam(value = "toDate")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(
+      description = "Filter results by restrictions that were created on or before the given date",
+      example = "2021-11-03",
+    )
+    toDate: LocalDate?,
+  ): Page<PrisonerRestrictionIdResponse> = contactPersonService.findOffenderRestrictionIdsByFilter(
+    pageRequest = pageRequest,
+    RestrictionFilter(
+      toDate = toDate,
+      fromDate = fromDate,
+    ),
+  )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/prisoners/{offenderNo}/restrictions")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -2434,6 +2492,11 @@ data class ContactRestrictionEnteredStaff(
 data class PersonIdResponse(
   @Schema(description = "The person Id")
   val personId: Long,
+)
+
+data class PrisonerRestrictionIdResponse(
+  @Schema(description = "The restriction Id")
+  val restrictionId: Long,
 )
 
 @Schema(description = "Request to create an person (aka DPS contact) in NOMIS")
