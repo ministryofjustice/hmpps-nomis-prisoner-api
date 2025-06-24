@@ -229,7 +229,8 @@ class IncidentService(
     index: Int,
     dpsQuestion: UpsertIncidentQuestionRequest,
   ): IncidentQuestion = IncidentQuestion(
-    id = IncidentQuestionId(incidentId = incident.id, questionSequence = index),
+    // incident question sequences start at 1, not 0
+    id = IncidentQuestionId(incidentId = incident.id, questionSequence = index + 1),
     question = lookupQuestion(incident.questionnaire, dpsQuestion.questionId),
   ).apply {
     this.responses.addAll(
