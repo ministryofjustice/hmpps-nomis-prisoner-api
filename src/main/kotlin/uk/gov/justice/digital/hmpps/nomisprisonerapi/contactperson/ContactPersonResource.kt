@@ -179,6 +179,56 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly, latestBookingOnly)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @GetMapping("/prisoners/{offenderNo}/restrictions")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets a prisoner's restrictions",
+    description = "Retrieves all restrictions across all bookings for a prisoner. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Restrictions Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerWithRestrictions(
+    @Schema(description = "Offender No aka prisoner number", example = "A1234KT")
+    @PathVariable
+    offenderNo: String,
+    @RequestParam(value = "latest-booking-only", required = false, defaultValue = "true")
+    @Parameter(
+      description = "When true only return restrictions that related to latest booking",
+      example = "false",
+    )
+    latestBookingOnly: Boolean,
+  ): PrisonerWithRestrictions = contactPersonService.getPrisonerWithRestrictions(offenderNo, latestBookingOnly)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/persons/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -2280,6 +2330,11 @@ data class PrisonerWithContacts(
   val contacts: List<PrisonerContact>,
 )
 
+data class PrisonerWithRestrictions(
+  @Schema(description = "List of restrictions for this prisoner")
+  val restrictions: List<PrisonerRestriction>,
+)
+
 @Schema(description = "The data held in NOMIS about a person's contact with a prisoner")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ContactForPerson(
@@ -2339,6 +2394,31 @@ data class ContactRestriction(
   val expiryDate: LocalDate?,
   @Schema(description = "Staff member who created the restriction")
   val enteredStaff: ContactRestrictionEnteredStaff,
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
+)
+
+@Schema(description = "The data held in NOMIS about a prisoner's visit restrictions")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PrisonerRestriction(
+  @Schema(description = "Unique NOMIS Id of the restriction")
+  val id: Long,
+  @Schema(description = "Unique NOMIS Id of booking associated with the contact")
+  val bookingId: Long,
+  @Schema(description = "Booking sequence this contact is related to. When 1 this indicates contact is for current term")
+  val bookingSequence: Long,
+  @Schema(description = "Restriction type")
+  val type: CodeDescription,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
+  @Schema(description = "Date restriction became active")
+  val effectiveDate: LocalDate,
+  @Schema(description = "Date restriction is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "Staff member who created the restriction")
+  val enteredStaff: ContactRestrictionEnteredStaff,
+  @Schema(description = "Staff member who authorised the restriction")
+  val authorisedStaff: ContactRestrictionEnteredStaff?,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )

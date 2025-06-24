@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttribu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderRestrictions
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
@@ -51,6 +52,19 @@ annotation class BookingDslMarker
 
 @NomisDataDslMarker
 interface BookingDsl {
+  @OffenderRestrictionsDslMarker
+  fun restriction(
+    restrictionType: String = "BAN",
+    enteredStaff: Staff,
+    authorisedStaff: Staff,
+    comment: String? = null,
+    effectiveDate: LocalDate = LocalDate.now(),
+    expiryDate: LocalDate? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
+    dsl: OffenderRestrictionsDsl.() -> Unit = {},
+  ): OffenderRestrictions
+
   @AdjudicationPartyDslMarker
   fun adjudicationParty(
     incident: AdjudicationIncident,
@@ -391,6 +405,7 @@ class BookingBuilderFactory(
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
+  private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -416,6 +431,7 @@ class BookingBuilderFactory(
     offenderIdentifyingMarkBuilderFactory,
     offenderBeliefBuilderFactory,
     offenderTransactionBuilderFactory,
+    offenderRestrictionsBuilderFactory,
   )
 }
 
@@ -443,6 +459,7 @@ class BookingBuilder(
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
+  private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -922,6 +939,32 @@ class BookingBuilder(
         builder.apply(dsl)
       }
     }
+
+  override fun restriction(
+    restrictionType: String,
+    enteredStaff: Staff,
+    authorisedStaff: Staff,
+    comment: String?,
+    effectiveDate: LocalDate,
+    expiryDate: LocalDate?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: OffenderRestrictionsDsl.() -> Unit,
+  ): OffenderRestrictions = offenderRestrictionsBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderBooking,
+      restrictionType = restrictionType,
+      enteredStaff = enteredStaff,
+      authorisedStaff = authorisedStaff,
+      comment = comment,
+      effectiveDate = effectiveDate,
+      expiryDate = expiryDate,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+      .also { offenderBooking.restrictions += it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun contact(
     person: Person,
