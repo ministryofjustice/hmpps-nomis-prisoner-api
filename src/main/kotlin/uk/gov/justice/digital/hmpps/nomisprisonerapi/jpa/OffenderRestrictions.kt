@@ -36,9 +36,10 @@ data class OffenderRestrictions(
   @JoinColumn(name = "ENTERED_STAFF_ID", nullable = false)
   var enteredStaff: Staff,
 
+  // nullable on database but no null rows
   @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "AUTHORISED_STAFF_ID", nullable = true)
-  var authorisedStaff: Staff? = null,
+  @JoinColumn(name = "AUTHORISED_STAFF_ID", nullable = false)
+  var authorisedStaff: Staff,
 
   @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumnsOrFormulas(

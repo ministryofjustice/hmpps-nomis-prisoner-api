@@ -46,7 +46,7 @@ class OffenderRestrictionsBuilderRepositoryBuilder(private val repository: Offen
     offenderBooking: OffenderBooking,
     restrictionType: String,
     enteredStaff: Staff,
-    authorisedStaff: Staff? = null,
+    authorisedStaff: Staff,
     comment: String? = null,
     effectiveDate: LocalDate,
     expiryDate: LocalDate? = null,

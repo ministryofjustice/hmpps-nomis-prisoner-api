@@ -269,7 +269,7 @@ class ContactPersonService(
             effectiveDate = restriction.effectiveDate,
             expiryDate = restriction.expiryDate,
             enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
-            authorisedStaff = restriction.authorisedStaff?.toContactRestrictionEnteredStaff(),
+            authorisedStaff = restriction.authorisedStaff.toContactRestrictionEnteredStaff(),
             audit = restriction.toAudit(),
           )
         }

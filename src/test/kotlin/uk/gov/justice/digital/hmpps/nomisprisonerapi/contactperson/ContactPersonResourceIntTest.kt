@@ -5494,6 +5494,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             restriction(
               restrictionType = "CCTV",
               enteredStaff = lsaStaffMember,
+              authorisedStaff = lsaStaffMember,
             )
           }
           booking {
@@ -5501,6 +5502,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             restriction(
               restrictionType = "BAN",
               enteredStaff = generalStaffMember,
+              authorisedStaff = lsaStaffMember,
               comment = "Banned on old booking",
               effectiveDate = LocalDate.now().minusDays(10),
               expiryDate = LocalDate.now().minusDays(5),
@@ -5624,7 +5626,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("restrictions[1].expiryDate").doesNotExist()
           .jsonPath("restrictions[1].enteredStaff.staffId").isEqualTo(lsaStaffMember.id)
           .jsonPath("restrictions[1].enteredStaff.username").isEqualTo("j.staff_gen")
-          .jsonPath("restrictions[1].authorisedStaff").doesNotExist()
+          .jsonPath("restrictions[1].authorisedStaff.username").isEqualTo("j.staff_gen")
           .jsonPath("restrictions[2].type.code").isEqualTo("BAN")
           .jsonPath("restrictions[2].type.description").isEqualTo("Banned")
           .jsonPath("restrictions[2].comment").isEqualTo("Banned on old booking")
@@ -5632,7 +5634,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("restrictions[2].expiryDate").isEqualTo(LocalDate.now().minusDays(5).toString())
           .jsonPath("restrictions[2].enteredStaff.staffId").isEqualTo(generalStaffMember.id)
           .jsonPath("restrictions[2].enteredStaff.username").isEqualTo("j.smith")
-          .jsonPath("restrictions[2].authorisedStaff").doesNotExist()
+          .jsonPath("restrictions[2].authorisedStaff.username").isEqualTo("j.staff_gen")
       }
     }
   }

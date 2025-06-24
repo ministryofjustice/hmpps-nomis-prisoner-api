@@ -56,7 +56,7 @@ interface BookingDsl {
   fun restriction(
     restrictionType: String = "BAN",
     enteredStaff: Staff,
-    authorisedStaff: Staff? = null,
+    authorisedStaff: Staff,
     comment: String? = null,
     effectiveDate: LocalDate = LocalDate.now(),
     expiryDate: LocalDate? = null,
@@ -943,7 +943,7 @@ class BookingBuilder(
   override fun restriction(
     restrictionType: String,
     enteredStaff: Staff,
-    authorisedStaff: Staff?,
+    authorisedStaff: Staff,
     comment: String?,
     effectiveDate: LocalDate,
     expiryDate: LocalDate?,
