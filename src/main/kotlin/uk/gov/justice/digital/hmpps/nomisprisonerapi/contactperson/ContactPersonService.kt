@@ -255,6 +255,26 @@ class ContactPersonService(
         }
     }.let { PrisonerWithContacts(contacts = it) }
 
+  fun getPrisonerWithRestrictions(offenderNo: String, latestBookingOnly: Boolean): PrisonerWithRestrictions = bookingRepository.findAllByOffenderNomsId(offenderNo)
+    .filter { !latestBookingOnly || it.bookingSequence == 1 }
+    .flatMap { booking ->
+      booking.restrictions
+        .map { restriction ->
+          PrisonerRestriction(
+            id = restriction.id,
+            bookingId = booking.bookingId,
+            bookingSequence = booking.bookingSequence.toLong(),
+            type = restriction.restrictionType.toCodeDescription(),
+            comment = restriction.comment,
+            effectiveDate = restriction.effectiveDate,
+            expiryDate = restriction.expiryDate,
+            enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
+            authorisedStaff = restriction.authorisedStaff?.toContactRestrictionEnteredStaff(),
+            audit = restriction.toAudit(),
+          )
+        }
+    }.let { PrisonerWithRestrictions(restrictions = it) }
+
   fun findPersonIdsByFilter(
     pageRequest: Pageable,
     personFilter: PersonFilter,

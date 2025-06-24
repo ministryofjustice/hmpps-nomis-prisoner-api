@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PersonAddressDsl.Companion.SHEFFIELD
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.GENERAL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -46,6 +47,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ContactPersonResourceIntTest : IntegrationTestBase() {
+  @Autowired
+  private lateinit var repository: Repository
 
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -5457,6 +5460,179 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           assertThat(prisoner.firstName).isEqualTo(existingOffender.firstName)
           assertThat(prisoner.lastName).isEqualTo(existingOffender.lastName)
         }
+      }
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/restrictions")
+  @Nested
+  inner class GetPrisonerWithRestrictions {
+    private lateinit var prisoner: Offender
+    private lateinit var generalStaffMember: Staff
+    private lateinit var lsaStaffMember: Staff
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        generalStaffMember = staff(firstName = "JANE", lastName = "SMITH") {
+          account(username = "j.smith")
+        }
+        lsaStaffMember = staff(firstName = "JOHN", lastName = "STAFF") {
+          account(username = "j.staff_gen", type = GENERAL)
+          account(username = "j.staff_adm", type = ADMIN)
+        }
+        prisoner = offender {
+          booking {
+            restriction(
+              restrictionType = "BAN",
+              enteredStaff = generalStaffMember,
+              authorisedStaff = lsaStaffMember,
+              comment = "Banned for life!",
+              effectiveDate = LocalDate.now(),
+              expiryDate = LocalDate.now().plusDays(10),
+            )
+            restriction(
+              restrictionType = "CCTV",
+              enteredStaff = lsaStaffMember,
+            )
+          }
+          booking {
+            release()
+            restriction(
+              restrictionType = "BAN",
+              enteredStaff = generalStaffMember,
+              comment = "Banned on old booking",
+              effectiveDate = LocalDate.now().minusDays(10),
+              expiryDate = LocalDate.now().minusDays(5),
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `list will be empty when no prisoner found`() {
+        webTestClient.get().uri("/prisoners/A1234ZZ/restrictions")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictions").isEmpty
+      }
+    }
+
+    @Nested
+    inner class Filtering {
+
+      @Test
+      fun `can include all bookings`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=false")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictions.length()").isEqualTo(3)
+      }
+
+      @Test
+      fun `can filter by latest booking only bookings`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=true")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictions.length()").isEqualTo(2)
+      }
+
+      @Test
+      fun `by default only latest booking restrictions are returned`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictions.length()").isEqualTo(2)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return restrictions for all bookings`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=false")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictions.length()").isEqualTo(3)
+      }
+
+      @Test
+      fun `will return details about the restrictions`() {
+        webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=false")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictions[0].type.code").isEqualTo("BAN")
+          .jsonPath("restrictions[0].type.description").isEqualTo("Banned")
+          .jsonPath("restrictions[0].comment").isEqualTo("Banned for life!")
+          .jsonPath("restrictions[0].effectiveDate").isEqualTo(LocalDate.now().toString())
+          .jsonPath("restrictions[0].expiryDate").isEqualTo(LocalDate.now().plusDays(10).toString())
+          .jsonPath("restrictions[0].enteredStaff.staffId").isEqualTo(generalStaffMember.id)
+          .jsonPath("restrictions[0].enteredStaff.username").isEqualTo("j.smith")
+          .jsonPath("restrictions[0].authorisedStaff.staffId").isEqualTo(lsaStaffMember.id)
+          .jsonPath("restrictions[0].authorisedStaff.username").isEqualTo("j.staff_gen")
+          .jsonPath("restrictions[1].type.code").isEqualTo("CCTV")
+          .jsonPath("restrictions[1].type.description").isEqualTo("CCTV")
+          .jsonPath("restrictions[1].comment").doesNotExist()
+          .jsonPath("restrictions[1].effectiveDate").isEqualTo(LocalDate.now().toString())
+          .jsonPath("restrictions[1].expiryDate").doesNotExist()
+          .jsonPath("restrictions[1].enteredStaff.staffId").isEqualTo(lsaStaffMember.id)
+          .jsonPath("restrictions[1].enteredStaff.username").isEqualTo("j.staff_gen")
+          .jsonPath("restrictions[1].authorisedStaff").doesNotExist()
+          .jsonPath("restrictions[2].type.code").isEqualTo("BAN")
+          .jsonPath("restrictions[2].type.description").isEqualTo("Banned")
+          .jsonPath("restrictions[2].comment").isEqualTo("Banned on old booking")
+          .jsonPath("restrictions[2].effectiveDate").isEqualTo(LocalDate.now().minusDays(10).toString())
+          .jsonPath("restrictions[2].expiryDate").isEqualTo(LocalDate.now().minusDays(5).toString())
+          .jsonPath("restrictions[2].enteredStaff.staffId").isEqualTo(generalStaffMember.id)
+          .jsonPath("restrictions[2].enteredStaff.username").isEqualTo("j.smith")
+          .jsonPath("restrictions[2].authorisedStaff").doesNotExist()
       }
     }
   }
