@@ -311,6 +311,27 @@ class ContactPersonService(
     )
   }.map { PrisonerRestrictionIdResponse(restrictionId = it.restrictionId) }
 
+  fun getPrisonerRestriction(restrictionId: Long): PrisonerRestriction = offenderRestrictionsRepository.findByIdOrNull(restrictionId)?.let { restriction ->
+    val booking = restriction.offenderBooking
+    PrisonerRestriction(
+      id = restriction.id,
+      bookingId = booking.bookingId,
+      bookingSequence = booking.bookingSequence.toLong(),
+      type = restriction.restrictionType.toCodeDescription(),
+      comment = restriction.comment,
+      effectiveDate = restriction.effectiveDate,
+      expiryDate = restriction.expiryDate,
+      enteredStaff = restriction.enteredStaff.toContactRestrictionEnteredStaff(),
+      authorisedStaff = restriction.authorisedStaff.let {
+        ContactRestrictionEnteredStaff(
+          staffId = it.id,
+          username = it.usernamePreferringGeneralAccount(),
+        )
+      },
+      audit = restriction.toAudit(),
+    )
+  } ?: throw NotFoundException("Restriction not found $restrictionId")
+
   fun createPerson(request: CreatePersonRequest): CreatePersonResponse {
     assertDoesNotExist(request)
 
