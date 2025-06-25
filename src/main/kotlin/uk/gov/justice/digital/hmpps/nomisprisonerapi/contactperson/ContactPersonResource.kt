@@ -179,6 +179,60 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly, latestBookingOnly)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @GetMapping("/prisoners/restrictions/{restrictionId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner restriction by ID",
+    description = "Retrieves a single restriction by its ID. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Restriction Information Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Restriction not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerRestriction(
+    @Schema(description = "Restriction Id", example = "12345")
+    @PathVariable
+    restrictionId: Long,
+  ): PrisonerRestriction = contactPersonService.getPrisonerRestriction(restrictionId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/prisoners/restrictions/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
