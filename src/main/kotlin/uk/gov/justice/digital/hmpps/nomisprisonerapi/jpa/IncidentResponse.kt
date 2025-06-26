@@ -38,7 +38,7 @@ class IncidentResponse(
   val id: IncidentResponseId,
 
   @ManyToOne
-  @JoinColumn(name = "QUESTIONNAIRE_ANS_ID", updatable = false)
+  @JoinColumn(name = "QUESTIONNAIRE_ANS_ID")
   var answer: QuestionnaireAnswer?,
 
   @ManyToOne(fetch = FetchType.LAZY)
