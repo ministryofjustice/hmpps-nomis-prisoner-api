@@ -84,7 +84,7 @@ interface CourtCaseDsl {
     startDate: LocalDate = LocalDate.of(2023, 1, 1),
     status: String = "I",
     sentenceLevel: String = "AGG",
-    consecSequence: Int? = 2,
+    consecSequence: Int? = null,
     courtOrder: CourtOrder,
     endDate: LocalDate = LocalDate.of(2023, 1, 5),
     commentText: String? = "a sentence comment",
