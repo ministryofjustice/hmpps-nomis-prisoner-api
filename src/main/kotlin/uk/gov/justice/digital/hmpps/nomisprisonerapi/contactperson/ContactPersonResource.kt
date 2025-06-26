@@ -188,11 +188,6 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ApiResponse(
         responseCode = "200",
         description = "Restriction Information Returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -300,11 +295,6 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ApiResponse(
         responseCode = "200",
         description = "Restrictions Information Returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "401",
