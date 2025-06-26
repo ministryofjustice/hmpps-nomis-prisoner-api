@@ -1295,6 +1295,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   inner class GetOffenderSentence {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
+    private lateinit var sentenceWithBadConsecutiveData: OffenderSentence
     private lateinit var recallSentence: OffenderSentence
     private lateinit var inactiveRecallSentence: OffenderSentence
     private lateinit var courtCase: CourtCase
@@ -1325,6 +1326,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A") {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
+                  term {}
+                  term(days = 35)
+                }
+
+                sentenceWithBadConsecutiveData = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A", consecSequence = 999) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
                   term {}
                   term(days = 35)
                 }
@@ -1443,7 +1450,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("startDate").isEqualTo(aDateString)
           .jsonPath("courtOrder.eventId").isEqualTo(appearance.id)
           .jsonPath("courtOrder.courtDate").isEqualTo(appearance.eventDate.toString())
-          .jsonPath("consecSequence").isEqualTo(2)
+          .jsonPath("consecSequence").doesNotExist()
           .jsonPath("endDate").isEqualTo(aLaterDateString)
           .jsonPath("commentText").isEqualTo("a sentence comment")
           .jsonPath("absenceCount").isEqualTo(2)
@@ -1514,6 +1521,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
           .jsonPath("missingCourtOffenderChargeIds.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `will return the offender sentence without the consecutive sequence if the target consecutive sentence does not exist `() {
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceWithBadConsecutiveData.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("consecSequence").doesNotExist()
       }
 
       @Test
@@ -4196,7 +4214,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Consecutive sentence for booking ${courtCase.offenderBooking.bookingId} and sentence sequence 234 not found")
+          .isEqualTo("Consecutive sentence with sequence 234 and booking ${courtCase.offenderBooking.bookingId} not found")
       }
     }
 
@@ -4591,6 +4609,27 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("developerMessage")
           .isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
+      }
+
+      @Test
+      internal fun `404 when consecutive sequence doesn't exist`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                consecSentenceSeq = 234,
+                eventId = courtEvent.id,
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Consecutive sentence with sequence 234 and booking ${courtCase.offenderBooking.bookingId} not found")
       }
     }
 

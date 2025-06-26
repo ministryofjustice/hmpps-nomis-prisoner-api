@@ -13,11 +13,14 @@ import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.apache.commons.lang3.builder.ToStringExclude
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import org.hibernate.type.YesNoConverter
 import java.io.Serializable
 import java.math.BigDecimal
@@ -64,6 +67,20 @@ data class OffenderSentence(
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ORDER_ID")
   var courtOrder: CourtOrder? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @ToStringExclude()
+  @JoinColumns(
+    JoinColumn(
+      name = "OFFENDER_BOOK_ID",
+      referencedColumnName = "OFFENDER_BOOK_ID",
+      insertable = false,
+      updatable = false,
+    ),
+    JoinColumn(name = "CONSEC_TO_SENTENCE_SEQ", referencedColumnName = "SENTENCE_SEQ", insertable = false, updatable = false),
+  )
+  var consecutiveSentence: OffenderSentence? = null,
 
   @Column(name = "CONSEC_TO_SENTENCE_SEQ")
   var consecSequence: Int? = null,
