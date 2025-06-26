@@ -1,12 +1,14 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
+import jakarta.persistence.DiscriminatorColumn
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.Inheritance
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
@@ -32,7 +34,9 @@ enum class EventClass {
 
 @Entity
 @Table(name = "OFFENDER_IND_SCHEDULES")
-class OffenderIndividualSchedule(
+@DiscriminatorColumn(name = "EVENT_CLASS")
+@Inheritance()
+abstract class OffenderIndividualSchedule(
 
   @Id
   @SequenceGenerator(name = "EVENT_ID", sequenceName = "EVENT_ID", allocationSize = 1)
@@ -50,17 +54,12 @@ class OffenderIndividualSchedule(
   @Column
   var startTime: LocalDateTime? = null,
 
-  @Column
-  var endTime: LocalDateTime? = null,
-
-  // INT_MOV only for now
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  val eventClass: EventClass = EventClass.INT_MOV,
+  @Column(name = "EVENT_CLASS", nullable = false, insertable = false, updatable = false)
+  open val eventClass: EventClass,
 
-  // APP for appointment
   @Column(nullable = false)
-  val eventType: String = "APP",
+  val eventType: String,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
@@ -94,14 +93,6 @@ class OffenderIndividualSchedule(
   @JoinColumn(name = "AGY_LOC_ID")
   val prison: AgencyLocation? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "TO_AGY_LOC_ID")
-  val toPrison: AgencyLocation? = null,
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "TO_INTERNAL_LOCATION_ID")
-  var internalLocation: AgencyInternalLocation? = null,
-
   @Column(name = "COMMENT_TEXT")
   var comment: String? = null,
 
@@ -120,6 +111,9 @@ class OffenderIndividualSchedule(
   @Column(name = "MODIFY_USER_ID", updatable = false, insertable = false)
   @LastModifiedBy
   val modifiedBy: String? = null,
+
+  @Column(name = "AUDIT_MODULE_NAME", updatable = false, insertable = false)
+  val auditModuleName: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
