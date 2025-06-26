@@ -130,7 +130,7 @@ data class OffenderBooking(
   val keyDateAdjustments: MutableList<OffenderKeyDateAdjustment> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  val offenderIndividualSchedules: MutableList<OffenderIndividualSchedule> = mutableListOf(),
+  val offenderAppointments: MutableList<OffenderAppointment> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   @SQLRestriction("OIC_INCIDENT_ID is not null")

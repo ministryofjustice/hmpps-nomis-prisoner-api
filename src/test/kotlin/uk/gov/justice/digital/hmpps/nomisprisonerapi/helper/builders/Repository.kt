@@ -22,10 +22,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
@@ -56,10 +56,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IWPTemplateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAppointmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -94,7 +94,7 @@ class Repository(
   val programServiceRepository: ProgramServiceRepository,
   val offenderProgramProfileRepository: OffenderProgramProfileRepository,
   val payBandRepository: ReferenceCodeRepository<PayBand>,
-  val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
+  val offenderAppointmentRepository: OffenderAppointmentRepository,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
@@ -161,9 +161,9 @@ class Repository(
 
   fun save(staff: Staff): Staff = staffRepository.save(staff)
 
-  fun save(offenderIndividualSchedule: OffenderIndividualSchedule): OffenderIndividualSchedule = offenderIndividualScheduleRepository.save(offenderIndividualSchedule)
+  fun save(offenderAppointment: OffenderAppointment): OffenderAppointment = offenderAppointmentRepository.save(offenderAppointment)
 
-  fun delete(offenderIndividualSchedule: OffenderIndividualSchedule) = offenderRepository.deleteById(offenderIndividualSchedule.eventId)
+  fun delete(offenderAppointment: OffenderAppointment) = offenderRepository.deleteById(offenderAppointment.eventId)
 
   fun delete(incident: AdjudicationIncident) = adjudicationIncidentRepository.deleteById(incident.id)
   fun deleteHearingByAdjudicationNumber(adjudicationNumber: Long) = adjudicationHearingRepository.deleteByAdjudicationNumber(adjudicationNumber)
@@ -242,7 +242,7 @@ class Repository(
     it.offenderExclusions.size
   }
 
-  fun getAppointment(id: Long): OffenderIndividualSchedule? = offenderIndividualScheduleRepository.findByIdOrNull(id)
+  fun getAppointment(id: Long): OffenderAppointment? = offenderAppointmentRepository.findByIdOrNull(id)
     ?.also {
       it.toString() // hydrate
       it.internalLocation?.toString()
