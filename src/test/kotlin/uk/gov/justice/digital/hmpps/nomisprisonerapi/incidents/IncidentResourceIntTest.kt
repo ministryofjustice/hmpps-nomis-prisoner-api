@@ -1529,6 +1529,18 @@ class IncidentResourceIntTest : IntegrationTestBase() {
                 title = "Something happened with responses",
                 questions = listOf(
                   UpsertIncidentQuestionRequest(
+                    questionId = questionnaire1.questions[2].id,
+                    responses = listOf(
+                      UpsertIncidentResponseRequest(
+                        answerId = questionnaire1.questions[2].answers[0].id,
+                        comment = "a comment",
+                        responseDate = LocalDate.parse("2010-03-02"),
+                        recordingUsername = responseRecordingStaff.accounts[0].username,
+                        sequence = 2,
+                      ),
+                    ),
+                  ),
+                  UpsertIncidentQuestionRequest(
                     questionId = questionnaire1.questions[1].id,
                     responses = listOf(
                       UpsertIncidentResponseRequest(
@@ -1547,18 +1559,6 @@ class IncidentResourceIntTest : IntegrationTestBase() {
                       ),
                     ),
                   ),
-                  UpsertIncidentQuestionRequest(
-                    questionId = questionnaire1.questions[2].id,
-                    responses = listOf(
-                      UpsertIncidentResponseRequest(
-                        answerId = questionnaire1.questions[2].answers[0].id,
-                        comment = "a comment",
-                        responseDate = LocalDate.parse("2010-03-02"),
-                        recordingUsername = responseRecordingStaff.accounts[0].username,
-                        sequence = 2,
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -1572,21 +1572,21 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
           .jsonPath("title").isEqualTo("Something happened with responses")
-          .jsonPath("questions[0].questionId").isEqualTo(questionnaire1.questions[1].id)
-          .jsonPath("questions[0].sequence").isEqualTo(1)
-          .jsonPath("questions[0].answers[0].answer").isEqualTo("Q3A1: Wire cutters")
-          .jsonPath("questions[0].answers[0].comment").isEqualTo("a comment")
-          .jsonPath("questions[0].answers[0].responseDate").isEqualTo("2010-03-02")
-          .jsonPath("questions[0].answers[0].sequence").isEqualTo(0)
-          .jsonPath("questions[0].answers[1].answer").isEqualTo("Q3A2: Spade")
-          .jsonPath("questions[0].answers[1].comment").doesNotExist()
-          .jsonPath("questions[0].answers[1].responseDate").doesNotExist()
-          .jsonPath("questions[0].answers[1].sequence").isEqualTo(1)
+          .jsonPath("questions[1].questionId").isEqualTo(questionnaire1.questions[1].id)
           .jsonPath("questions[1].sequence").isEqualTo(2)
-          .jsonPath("questions[1].answers[0].answer").isEqualTo("Q2A1: Yes")
+          .jsonPath("questions[1].answers[0].answer").isEqualTo("Q3A1: Wire cutters")
           .jsonPath("questions[1].answers[0].comment").isEqualTo("a comment")
           .jsonPath("questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
-          .jsonPath("questions[1].answers[0].sequence").isEqualTo(2)
+          .jsonPath("questions[1].answers[0].sequence").isEqualTo(0)
+          .jsonPath("questions[1].answers[1].answer").isEqualTo("Q3A2: Spade")
+          .jsonPath("questions[1].answers[1].comment").doesNotExist()
+          .jsonPath("questions[1].answers[1].responseDate").doesNotExist()
+          .jsonPath("questions[1].answers[1].sequence").isEqualTo(1)
+          .jsonPath("questions[0].sequence").isEqualTo(1)
+          .jsonPath("questions[0].answers[0].answer").isEqualTo("Q2A1: Yes")
+          .jsonPath("questions[0].answers[0].comment").isEqualTo("a comment")
+          .jsonPath("questions[0].answers[0].responseDate").isEqualTo("2010-03-02")
+          .jsonPath("questions[0].answers[0].sequence").isEqualTo(2)
           .jsonPath("questions.length()").isEqualTo(2)
       }
 
