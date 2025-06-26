@@ -4,17 +4,17 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import java.time.LocalDate
 
 @Repository
-interface OffenderIndividualScheduleRepository :
-  CrudRepository<OffenderIndividualSchedule, Long>,
-  JpaSpecificationExecutor<OffenderIndividualSchedule> {
+interface OffenderAppointmentRepository :
+  CrudRepository<OffenderAppointment, Long>,
+  JpaSpecificationExecutor<OffenderAppointment> {
 
   @Query(
-    "from OffenderIndividualSchedule ois where ois.offenderBooking.bookingId = :bookingId and ois.internalLocation.locationId = :locationId " +
-      "and ois.eventDate = :date and hour(ois.startTime) = :hour and minute(ois.startTime) = :minute",
+    "from OffenderAppointment oa where oa.offenderBooking.bookingId = :bookingId and oa.internalLocation.locationId = :locationId " +
+      "and oa.eventDate = :date and hour(oa.startTime) = :hour and minute(oa.startTime) = :minute",
   )
   fun findOneByBookingLocationDateAndStartTime(
     bookingId: Long,
@@ -22,7 +22,7 @@ interface OffenderIndividualScheduleRepository :
     date: LocalDate,
     hour: Int,
     minute: Int,
-  ): OffenderIndividualSchedule?
+  ): OffenderAppointment?
 
   @Query(
     """SELECT event_id FROM  (

@@ -11,10 +11,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAppointmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 @Transactional
 class AppointmentService(
   private val offenderBookingRepository: OffenderBookingRepository,
-  private val offenderIndividualScheduleRepository: OffenderIndividualScheduleRepository,
+  private val offenderAppointmentRepository: OffenderAppointmentRepository,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
@@ -41,10 +41,10 @@ class AppointmentService(
         null,
       )
     }
-    .let { CreateAppointmentResponse(offenderIndividualScheduleRepository.save(it).eventId) }
+    .let { CreateAppointmentResponse(offenderAppointmentRepository.save(it).eventId) }
 
   fun updateAppointment(eventId: Long, dto: UpdateAppointmentRequest) {
-    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+    offenderAppointmentRepository.findByIdOrNull(eventId)
       ?.apply {
         val location = dto.internalLocationId?.let {
           agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
@@ -81,7 +81,7 @@ class AppointmentService(
   }
 
   fun cancelAppointment(eventId: Long) {
-    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+    offenderAppointmentRepository.findByIdOrNull(eventId)
       ?.apply {
         eventStatus = eventStatusRepository.findById(EventStatus.CANCELLED).orElseThrow()
 
@@ -99,7 +99,7 @@ class AppointmentService(
   }
 
   fun uncancelAppointment(eventId: Long) {
-    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+    offenderAppointmentRepository.findByIdOrNull(eventId)
       ?.apply {
         eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow()
 
@@ -117,9 +117,9 @@ class AppointmentService(
   }
 
   fun deleteAppointment(eventId: Long) {
-    offenderIndividualScheduleRepository.findByIdOrNull(eventId)
+    offenderAppointmentRepository.findByIdOrNull(eventId)
       ?.also {
-        offenderIndividualScheduleRepository.delete(it)
+        offenderAppointmentRepository.delete(it)
         telemetryClient.trackEvent(
           "appointment-deleted",
           mapOf(
@@ -133,7 +133,7 @@ class AppointmentService(
       ?: throw NotFoundException("Appointment with event id $eventId not found")
   }
 
-  private fun mapModel(dto: CreateAppointmentRequest): OffenderIndividualSchedule {
+  private fun mapModel(dto: CreateAppointmentRequest): OffenderAppointment {
     val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)
       ?: throw BadDataException("Booking with id=${dto.bookingId} not found")
 
@@ -155,7 +155,7 @@ class AppointmentService(
     val eventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
       ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
 
-    return OffenderIndividualSchedule(
+    return OffenderAppointment(
       offenderBooking = offenderBooking,
       eventDate = dto.eventDate,
       startTime = LocalDateTime.of(dto.eventDate, dto.startTime),
@@ -168,7 +168,7 @@ class AppointmentService(
     )
   }
 
-  fun getAppointment(bookingId: Long, locationId: Long, date: LocalDateTime): AppointmentResponse = offenderIndividualScheduleRepository.findOneByBookingLocationDateAndStartTime(
+  fun getAppointment(bookingId: Long, locationId: Long, date: LocalDateTime): AppointmentResponse = offenderAppointmentRepository.findOneByBookingLocationDateAndStartTime(
     bookingId = bookingId,
     locationId = locationId,
     date = date.toLocalDate(),
@@ -179,7 +179,7 @@ class AppointmentService(
   }
     ?: throw NotFoundException("Appointment not found")
 
-  fun getAppointment(eventId: Long): AppointmentResponse = offenderIndividualScheduleRepository.findByIdOrNull(eventId)?.let {
+  fun getAppointment(eventId: Long): AppointmentResponse = offenderAppointmentRepository.findByIdOrNull(eventId)?.let {
     return mapModel(it)
   }
     ?: throw NotFoundException("Appointment not found")
@@ -188,12 +188,12 @@ class AppointmentService(
     val prisons = appointmentFilter.prisonIds
     val fromDate = appointmentFilter.fromDate ?: LocalDate.now().plusYears(-100)
     val toDate = appointmentFilter.toDate ?: LocalDate.now().plusYears(100)
-    val totalElements = offenderIndividualScheduleRepository.findAllCount(
+    val totalElements = offenderAppointmentRepository.findAllCount(
       prisons,
       fromDate,
       toDate,
     )
-    return offenderIndividualScheduleRepository.findAllByPage(
+    return offenderAppointmentRepository.findAllByPage(
       prisons,
       fromDate,
       toDate,
@@ -204,7 +204,7 @@ class AppointmentService(
       .map { AppointmentIdResponse(eventId = it) }
   }
 
-  fun findCountsByFilter(appointmentFilter: AppointmentFilter): List<AppointmentCountsResponse> = offenderIndividualScheduleRepository.findCountsByFilter(
+  fun findCountsByFilter(appointmentFilter: AppointmentFilter): List<AppointmentCountsResponse> = offenderAppointmentRepository.findCountsByFilter(
     appointmentFilter.prisonIds,
     appointmentFilter.fromDate ?: LocalDate.now().plusYears(-100),
     appointmentFilter.toDate ?: LocalDate.now().plusYears(100),
@@ -219,7 +219,7 @@ class AppointmentService(
     }
 }
 
-private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse = AppointmentResponse(
+private fun mapModel(entity: OffenderAppointment): AppointmentResponse = AppointmentResponse(
   bookingId = entity.offenderBooking.bookingId,
   offenderNo = entity.offenderBooking.offender.nomsId,
   startDateTime = entity.startTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
@@ -227,7 +227,7 @@ private fun mapModel(entity: OffenderIndividualSchedule): AppointmentResponse = 
   status = entity.eventStatus.code,
   subtype = entity.eventSubType.code,
   internalLocation = entity.internalLocation?.locationId,
-  prisonId = entity.prison?.id ?: entity.toPrison?.id,
+  prisonId = entity.prison?.id,
   comment = entity.comment,
   createdDate = entity.createdDate!!,
   createdBy = entity.createdBy!!,
