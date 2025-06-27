@@ -480,6 +480,8 @@ data class VisitBalanceAdjustmentResponse(
   val authorisedStaffId: Long? = null,
   @Schema(description = "Who created the adjustment")
   val createUsername: String,
+  @Schema(description = "Whether this adjustment is for the latest booking")
+  val latestBooking: Boolean,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -502,4 +504,5 @@ fun OffenderVisitBalanceAdjustment.toVisitBalanceAdjustmentResponse(): VisitBala
   expiryBalance = expiryBalance,
   expiryDate = expiryDate,
   createUsername = createUsername,
+  latestBooking = this.visitBalance.offenderBooking.bookingSequence == 1,
 )
