@@ -216,7 +216,7 @@ class CourtCaseBuilder(
     legalCaseType = repository.lookupCaseType(legalCaseType),
     offenderBooking = offenderBooking,
     court = repository.lookupAgency(agencyId),
-    combinedCase = combinedCase,
+    targetCombinedCase = combinedCase,
     statusUpdateStaff = statusUpdateStaff,
     statusUpdateDate = statusUpdateDate,
     statusUpdateComment = statusUpdateComment,
