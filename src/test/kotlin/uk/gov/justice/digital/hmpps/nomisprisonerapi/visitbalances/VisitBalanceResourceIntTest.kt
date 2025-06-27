@@ -994,6 +994,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     private lateinit var staffUser: Staff
     private lateinit var adjustmentMin: OffenderVisitBalanceAdjustment
     private lateinit var adjustment: OffenderVisitBalanceAdjustment
+    private lateinit var previousAdjustment: OffenderVisitBalanceAdjustment
 
     @BeforeEach
     fun setUp() {
@@ -1023,6 +1024,18 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
                 expiryBalance = 7,
                 expiryDate = LocalDate.parse("2027-11-30"),
                 endorsedStaffId = staffUser.id,
+                authorisedStaffId = staffUser.id,
+              )
+            }
+          }
+          booking {
+            visitBalance {
+              previousAdjustment = visitBalanceAdjustment(
+                visitOrderChange = 1,
+                previousVisitOrderCount = 2,
+                privilegedVisitOrderChange = 3,
+                previousPrivilegedVisitOrderCount = 4,
+                adjustmentDate = LocalDate.parse("2025-11-30"),
                 authorisedStaffId = staffUser.id,
               )
             }
@@ -1114,6 +1127,22 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           .jsonPath("comment").isEqualTo("this is a comment")
           .jsonPath("expiryBalance").isEqualTo(7)
           .jsonPath("expiryDate").isEqualTo("2027-11-30")
+          .jsonPath("latestBooking").isEqualTo(true)
+      }
+
+      @Test
+      fun `will return visit balance adjustment for previous booking`() {
+        webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${previousAdjustment.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("visitOrderChange").isEqualTo(1)
+          .jsonPath("previousVisitOrderCount").isEqualTo(2)
+          .jsonPath("privilegedVisitOrderChange").isEqualTo(3)
+          .jsonPath("previousPrivilegedVisitOrderCount").isEqualTo(4)
+          .jsonPath("latestBooking").isEqualTo(false)
       }
     }
   }
