@@ -2505,6 +2505,8 @@ data class ContactRestriction(
 data class PrisonerRestriction(
   @Schema(description = "Unique NOMIS Id of the restriction")
   val id: Long,
+  @Schema(description = "Offender no aka prisoner number", example = "A1234AA")
+  val offenderNo: String,
   @Schema(description = "Unique NOMIS Id of booking associated with the contact")
   val bookingId: Long,
   @Schema(description = "Booking sequence this contact is related to. When 1 this indicates contact is for current term")
@@ -2520,7 +2522,7 @@ data class PrisonerRestriction(
   @Schema(description = "Staff member who created the restriction")
   val enteredStaff: ContactRestrictionEnteredStaff,
   @Schema(description = "Staff member who authorised the restriction")
-  val authorisedStaff: ContactRestrictionEnteredStaff?,
+  val authorisedStaff: ContactRestrictionEnteredStaff,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
