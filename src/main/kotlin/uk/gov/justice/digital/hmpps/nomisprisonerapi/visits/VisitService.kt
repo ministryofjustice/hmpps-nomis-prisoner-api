@@ -42,6 +42,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
@@ -61,6 +62,7 @@ class VisitService(
   private val visitOrderRepository: VisitOrderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
+  private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
   private val visitOrderTypeRepository: ReferenceCodeRepository<VisitOrderType>,
@@ -373,7 +375,8 @@ class VisitService(
     offenderBooking: OffenderBooking,
     today: LocalDate,
   ) {
-    offenderBooking.visitBalance?.takeUnless {
+    // need to ensure that we can get a lock on the visit balance too
+    offenderVisitBalanceRepository.findByIdForUpdate(offenderBooking.bookingId)?.takeUnless {
       isDpsInChargeOfAllocation(offenderBooking)
     }?.let { offenderVisitBalance ->
       offenderVisitBalanceAdjustmentRepository.save(
