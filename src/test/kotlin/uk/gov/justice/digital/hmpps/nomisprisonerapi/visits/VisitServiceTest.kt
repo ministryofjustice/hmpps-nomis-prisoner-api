@@ -621,8 +621,8 @@ internal class VisitServiceTest {
         Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now().minusYears(16)))
       }
       whenever(personRepository.findById(47)).thenAnswer {
-        // 5 year old
-        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now().minusYears(5)))
+        // 18 year old minus a day
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now().minusYears(18).plusDays(1)))
       }
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(visitorPersonIds = listOf(45, 46, 47)))
