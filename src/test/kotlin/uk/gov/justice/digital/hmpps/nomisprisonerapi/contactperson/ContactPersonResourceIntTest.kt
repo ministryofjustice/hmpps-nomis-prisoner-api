@@ -5557,6 +5557,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("id").isEqualTo(restrictionId)
           .jsonPath("bookingId").isEqualTo(prisoner.latestBooking().bookingId)
           .jsonPath("bookingSequence").isEqualTo(1)
+          .jsonPath("offenderNo").isEqualTo(prisoner.nomsId)
           .jsonPath("type.code").isEqualTo("BAN")
           .jsonPath("type.description").isEqualTo("Banned")
           .jsonPath("comment").isEqualTo("Banned for life!")
