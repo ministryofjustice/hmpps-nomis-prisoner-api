@@ -2077,6 +2077,7 @@ data class CourtCaseResponse(
   val beginDate: LocalDate?,
   val courtId: String,
   val combinedCaseId: Long?,
+  val sourceCombinedCaseIds: List<Long>,
   val statusUpdateStaffId: Long?,
   val statusUpdateDate: LocalDate?,
   val statusUpdateComment: String?,

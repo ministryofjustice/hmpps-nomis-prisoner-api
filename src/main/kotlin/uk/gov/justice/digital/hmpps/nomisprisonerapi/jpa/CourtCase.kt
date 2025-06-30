@@ -9,7 +9,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -80,9 +79,12 @@ class CourtCase(
   @Column(name = "CASE_INFO_NUMBER")
   val primaryCaseInfoNumber: String? = null,
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "COMBINED_CASE_ID")
-  val combinedCase: CourtCase? = null,
+  val targetCombinedCase: CourtCase? = null,
+
+  @OneToMany(fetch = FetchType.LAZY, mappedBy = "targetCombinedCase")
+  val sourceCombinedCases: List<CourtCase> = mutableListOf(),
 
   val statusUpdateComment: String? = null,
 
