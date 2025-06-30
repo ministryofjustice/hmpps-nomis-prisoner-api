@@ -167,29 +167,29 @@ internal class VisitServiceTest {
       Optional.of(defaultOffenderBooking),
     )
     whenever(personRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There"))
+      Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There"))
     }
     whenever(visitTypeRepository.findById(VisitType.pk("SCON"))).thenReturn(Optional.of(visitType))
     whenever(visitStatusRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitStatus((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
+      Optional.of(VisitStatus((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(eventStatusRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(EventStatus((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
+      Optional.of(EventStatus((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(visitOrderAdjustmentReasonRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitOrderAdjustmentReason((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
+      Optional.of(VisitOrderAdjustmentReason((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(visitOrderTypeRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitOrderType((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
+      Optional.of(VisitOrderType((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(visitOutcomeRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(VisitOutcomeReason((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
+      Optional.of(VisitOutcomeReason((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(eventOutcomeRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(EventOutcome((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
+      Optional.of(EventOutcome((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(agencyLocationRepository.findById(any())).thenAnswer {
-      return@thenAnswer Optional.of(AgencyLocation(it.arguments[0] as String, "desc"))
+      Optional.of(AgencyLocation(it.arguments[0] as String, "desc"))
     }
 
     whenever(visitVisitorRepository.getEventId()).thenReturn(EVENT_ID)
@@ -207,7 +207,7 @@ internal class VisitServiceTest {
         any(),
       ),
     ).thenAnswer {
-      return@thenAnswer AgencyInternalLocation(
+      AgencyInternalLocation(
         locationId = 99,
         active = true,
         locationType = "AREA",
@@ -521,6 +521,117 @@ internal class VisitServiceTest {
         visitService.createVisit(OFFENDER_NO, createVisitRequest)
       }
       assertThat(thrown.message).isEqualTo("Prison with id=$PRISON_ID does not exist")
+    }
+
+    @Test
+    fun `lead visitor set to first person over 18`() {
+      defaultVisit.offenderBooking.visitBalance =
+        OffenderVisitBalance(
+          remainingVisitOrders = 3,
+          remainingPrivilegedVisitOrders = 0,
+          offenderBooking = OffenderBooking(
+            bookingId = OFFENDER_BOOKING_ID,
+            bookingBeginDate = LocalDateTime.now(),
+            offender = defaultOffender,
+          ),
+        )
+
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
+      whenever(personRepository.findById(45)).thenAnswer {
+        // child
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now()))
+      }
+      whenever(personRepository.findById(46)).thenAnswer {
+        // 18 year old
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now().minusYears(18)))
+      }
+      whenever(personRepository.findById(47)).thenAnswer {
+        // someone without birth date
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = null))
+      }
+
+      visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(visitorPersonIds = listOf(45, 46, 47)))
+
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.visitOrder?.visitors?.map { it.groupLeader }).containsExactly(false, true, false)
+        },
+      )
+    }
+
+    @Test
+    fun `lead visitor set to first person without date of birth`() {
+      defaultVisit.offenderBooking.visitBalance =
+        OffenderVisitBalance(
+          remainingVisitOrders = 3,
+          remainingPrivilegedVisitOrders = 0,
+          offenderBooking = OffenderBooking(
+            bookingId = OFFENDER_BOOKING_ID,
+            bookingBeginDate = LocalDateTime.now(),
+            offender = defaultOffender,
+          ),
+        )
+
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
+      whenever(personRepository.findById(45)).thenAnswer {
+        // child
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now()))
+      }
+      whenever(personRepository.findById(46)).thenAnswer {
+        // 16 year old
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now().minusYears(16)))
+      }
+      whenever(personRepository.findById(47)).thenAnswer {
+        // someone without birth date
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = null))
+      }
+
+      visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(visitorPersonIds = listOf(45, 46, 47)))
+
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.visitOrder?.visitors?.map { it.groupLeader }).containsExactly(false, false, true)
+        },
+      )
+    }
+
+    @Test
+    fun `lead visitor set to first visitor if all under 18`() {
+      defaultVisit.offenderBooking.visitBalance =
+        OffenderVisitBalance(
+          remainingVisitOrders = 3,
+          remainingPrivilegedVisitOrders = 0,
+          offenderBooking = OffenderBooking(
+            bookingId = OFFENDER_BOOKING_ID,
+            bookingBeginDate = LocalDateTime.now(),
+            offender = defaultOffender,
+          ),
+        )
+
+      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
+      whenever(personRepository.findById(45)).thenAnswer {
+        // child
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now()))
+      }
+      whenever(personRepository.findById(46)).thenAnswer {
+        // 16 year old
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now().minusYears(16)))
+      }
+      whenever(personRepository.findById(47)).thenAnswer {
+        // 5 year old
+        Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now().minusYears(5)))
+      }
+
+      visitService.createVisit(OFFENDER_NO, createVisitRequest.copy(visitorPersonIds = listOf(45, 46, 47)))
+
+      verify(visitRepository).save(
+        check { visit ->
+          assertThat(visit.visitOrder?.visitors?.map { it.groupLeader }).containsExactly(true, false, false)
+        },
+      )
     }
   }
 
