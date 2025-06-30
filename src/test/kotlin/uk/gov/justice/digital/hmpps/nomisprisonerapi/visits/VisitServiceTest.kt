@@ -49,6 +49,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
@@ -76,6 +77,7 @@ internal class VisitServiceTest {
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val personRepository: PersonRepository = mock()
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository = mock()
+  private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository = mock()
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus> = mock()
   private val visitTypeRepository: ReferenceCodeRepository<VisitType> = mock()
   private val visitOrderTypeRepository: ReferenceCodeRepository<VisitOrderType> = mock()
@@ -98,6 +100,7 @@ internal class VisitServiceTest {
     visitOrderRepository,
     offenderBookingRepository,
     offenderVisitBalanceAdjustmentRepository,
+    offenderVisitBalanceRepository,
     eventStatusRepository,
     visitTypeRepository,
     visitOrderTypeRepository,
@@ -553,6 +556,7 @@ internal class VisitServiceTest {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
+      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
@@ -573,6 +577,7 @@ internal class VisitServiceTest {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
+      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
@@ -584,6 +589,7 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance increment is saved correctly`() {
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
+      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
@@ -601,6 +607,7 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance increment is not saved if DPS in charge of balance`() {
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
+      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
