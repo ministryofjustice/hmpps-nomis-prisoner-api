@@ -1912,7 +1912,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       courseAllocations.forEach {
         with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
           assertThat(endDate).isEqualTo(today)
-          assertThat(programStatus.code).isEqualTo("END")
           assertThat(endReason?.code).isEqualTo("OTH")
           assertThat(endComment).isNull()
         }
@@ -1941,7 +1940,6 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
       with(repository.getOffenderProgramProfile(courseAllocation.offenderProgramReferenceId)) {
         assertThat(endDate).isEqualTo(today)
-        assertThat(programStatus.code).isEqualTo("END")
         assertThat(endReason?.code).isEqualTo("OTH")
         assertThat(endComment).isEqualTo("Migrated to DPS Activities")
       }

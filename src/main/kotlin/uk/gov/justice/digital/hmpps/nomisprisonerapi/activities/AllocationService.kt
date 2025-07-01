@@ -330,8 +330,8 @@ class AllocationService(
   fun endAllocation(courseAllocation: OffenderProgramProfile, date: LocalDate, endAllocationComment: String? = null) {
     courseAllocation.endDate = date
     courseAllocation.endReason = findEndReasonOrThrow("OTH")
-    courseAllocation.programStatus = findProgramStatus("END")
     endAllocationComment?.run { courseAllocation.endComment = endAllocationComment }
+    // Note that we don't set the programStatus to END, it's up to NOMIS to manage that status on the correct day
   }
 
   fun endAllocations(courseActivityIds: Collection<Long>, date: LocalDate) {

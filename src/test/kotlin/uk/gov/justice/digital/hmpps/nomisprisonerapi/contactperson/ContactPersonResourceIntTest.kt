@@ -5468,6 +5468,109 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /prisoners/restrictions/{restrictionId}")
+  @Nested
+  inner class GetPrisonerRestriction {
+    private lateinit var prisoner: Offender
+    private lateinit var generalStaffMember: Staff
+    private lateinit var lsaStaffMember: Staff
+    private var restrictionId: Long = 0
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        generalStaffMember = staff(firstName = "JANE", lastName = "SMITH") {
+          account(username = "j.smith")
+        }
+        lsaStaffMember = staff(firstName = "JOHN", lastName = "STAFF") {
+          account(username = "j.staff_gen", type = GENERAL)
+          account(username = "j.staff_adm", type = ADMIN)
+        }
+        prisoner = offender {
+          booking {
+            val restriction = restriction(
+              restrictionType = "BAN",
+              enteredStaff = generalStaffMember,
+              authorisedStaff = lsaStaffMember,
+              comment = "Banned for life!",
+              effectiveDate = LocalDate.now(),
+              expiryDate = LocalDate.now().plusDays(10),
+            )
+            restrictionId = restriction.id
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+      staffRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/restrictions/$restrictionId")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/restrictions/$restrictionId")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/restrictions/$restrictionId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `404 when restriction not found`() {
+        webTestClient.get().uri("/prisoners/restrictions/99999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return restriction details`() {
+        webTestClient.get().uri("/prisoners/restrictions/$restrictionId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("id").isEqualTo(restrictionId)
+          .jsonPath("bookingId").isEqualTo(prisoner.latestBooking().bookingId)
+          .jsonPath("bookingSequence").isEqualTo(1)
+          .jsonPath("offenderNo").isEqualTo(prisoner.nomsId)
+          .jsonPath("type.code").isEqualTo("BAN")
+          .jsonPath("type.description").isEqualTo("Banned")
+          .jsonPath("comment").isEqualTo("Banned for life!")
+          .jsonPath("effectiveDate").isEqualTo(LocalDate.now().toString())
+          .jsonPath("expiryDate").isEqualTo(LocalDate.now().plusDays(10).toString())
+          .jsonPath("enteredStaff.staffId").isEqualTo(generalStaffMember.id)
+          .jsonPath("enteredStaff.username").isEqualTo("j.smith")
+          .jsonPath("authorisedStaff.staffId").isEqualTo(lsaStaffMember.id)
+          .jsonPath("authorisedStaff.username").isEqualTo("j.staff_gen")
+      }
+    }
+  }
+
   @DisplayName("GET /prisoners/{offenderNo}/restrictions")
   @Nested
   inner class GetPrisonerWithRestrictions {

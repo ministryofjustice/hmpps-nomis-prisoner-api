@@ -1,9 +1,14 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
+import jakarta.persistence.LockModeType
+import jakarta.persistence.QueryHint
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.data.repository.CrudRepository
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 
@@ -23,4 +28,8 @@ interface OffenderVisitBalanceRepository : CrudRepository<OffenderVisitBalance, 
     """,
   )
   fun findForLatestBooking(prisonId: String? = null, pageable: Pageable): Page<OffenderVisitBalance>
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "20000")])
+  fun findByIdForUpdate(offenderBookingId: Long): OffenderVisitBalance? = findByIdOrNull(offenderBookingId)
 }

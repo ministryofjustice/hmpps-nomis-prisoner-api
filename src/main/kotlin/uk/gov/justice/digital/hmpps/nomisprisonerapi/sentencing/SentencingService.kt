@@ -535,8 +535,10 @@ class SentencingService(
   fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
 
     val offenderBooking = case.offenderBooking
+    checkConsecutiveSentenceExists(request, offenderBooking)
+    val newSequence = offenderSentenceRepository.getNextSequence(offenderBooking)
     val sentence = OffenderSentence(
-      id = SentenceId(offenderBooking, sequence = offenderSentenceRepository.getNextSequence(offenderBooking)),
+      id = SentenceId(offenderBooking, sequence = newSequence),
       category = lookupSentenceCategory(request.sentenceCategory),
       calculationType = lookupSentenceCalculationType(
         categoryCode = request.sentenceCategory,
@@ -555,12 +557,7 @@ class SentencingService(
       )
         ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}"),
       // this is the sentence sequence this sentence is consecutive to
-      consecSequence = request.consecutiveToSentenceSeq?.let {
-        findConsecutiveSentenceSequence(
-          it,
-          offenderBooking,
-        ).toInt()
-      },
+      consecSequence = request.consecutiveToSentenceSeq?.toInt(),
       lineSequence = offenderSentenceRepository.getNextLineSequence(offenderBooking).toInt(),
     )
 
@@ -599,17 +596,6 @@ class SentencingService(
         null,
       )
     }
-  }
-
-  private fun findConsecutiveSentenceSequence(sentenceSequence: Long, offenderBooking: OffenderBooking): Long {
-    val sentence = offenderSentenceRepository.findByIdOrNull(
-      SentenceId(
-        sequence = sentenceSequence,
-        offenderBooking = offenderBooking,
-      ),
-    )
-      ?: throw NotFoundException("Consecutive sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
-    return sentence.id.sequence
   }
 
   @Audit
@@ -741,6 +727,7 @@ class SentencingService(
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       findSentence(booking = case.offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
         val offenderBooking = case.offenderBooking
+        checkConsecutiveSentenceExists(request, offenderBooking)
         sentence.category = lookupSentenceCategory(request.sentenceCategory)
         sentence.calculationType = lookupSentenceCalculationType(
           categoryCode = request.sentenceCategory,
@@ -804,6 +791,21 @@ class SentencingService(
           null,
         )
       }
+    }
+  }
+
+  private fun checkConsecutiveSentenceExists(
+    request: CreateSentenceRequest,
+    offenderBooking: OffenderBooking,
+  ) {
+    request.consecutiveToSentenceSeq?.let {
+      offenderSentenceRepository.findByIdOrNull(
+        SentenceId(
+          sequence = it,
+          offenderBooking = offenderBooking,
+        ),
+      )
+        ?: throw NotFoundException("Consecutive sentence with sequence ${request.consecutiveToSentenceSeq} and booking ${offenderBooking.bookingId} not found")
     }
   }
 
@@ -1072,7 +1074,8 @@ class SentencingService(
       )
 
       // Create CourtEventCharge for each offenderSentenceCharge in the OffenderSentence
-      val offenderChargeIds = sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
+      val offenderChargeIds =
+        sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
       // Associate charges with the court event
       associateChargesWithAppearance(
         courtEventChargesToUpdate = offenderChargeIds.toList(),
@@ -1349,7 +1352,8 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   legalCaseType = this.legalCaseType.toCodeDescription(),
   beginDate = this.beginDate,
   courtId = this.court.id,
-  combinedCaseId = this.combinedCase?.id,
+  combinedCaseId = this.targetCombinedCase?.id,
+  sourceCombinedCaseIds = this.sourceCombinedCases.map { it.id },
   lidsCaseNumber = this.lidsCaseNumber,
   lidsCaseId = this.lidsCaseId,
   lidsCombinedCaseId = this.lidsCombinedCaseId,
@@ -1506,7 +1510,7 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   startDate = this.startDate,
   // no referential integrity on courtEvent
   courtOrder = this.courtOrder?.takeIf { it.courtEvent != null }?.toCourtOrder(),
-  consecSequence = this.consecSequence,
+  consecSequence = this.consecutiveSentence?.id?.sequence?.toInt(),
   endDate = this.endDate,
   commentText = this.commentText,
   absenceCount = this.absenceCount,

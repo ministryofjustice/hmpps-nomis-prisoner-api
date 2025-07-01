@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventClass
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIndividualSchedule
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -253,40 +253,40 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       val id = callCreateEndpoint(true, false)
 
       // Check the database
-      val offenderIndividualSchedule = repository.getAppointment(id)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
-      assertThat(offenderIndividualSchedule.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
-      assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-27"))
-      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
-      assertThat(offenderIndividualSchedule.endTime).isEqualTo(LocalDateTime.parse("2023-02-27T12:10"))
-      assertThat(offenderIndividualSchedule.eventClass).isEqualTo(EventClass.INT_MOV)
-      assertThat(offenderIndividualSchedule.eventType).isEqualTo("APP")
-      assertThat(offenderIndividualSchedule.eventSubType.code).isEqualTo("ACTI")
-      assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("SCH")
-      assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
-      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID)
+      with(repository.getAppointment(id)!!) {
+        assertThat(eventId).isEqualTo(id)
+        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-27"))
+        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
+        assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-27T12:10"))
+        assertThat(eventClass).isEqualTo(EventClass.INT_MOV)
+        assertThat(eventType).isEqualTo("APP")
+        assertThat(eventSubType.code).isEqualTo("ACTI")
+        assertThat(eventStatus.code).isEqualTo("SCH")
+        assertThat(prison?.id).isEqualTo("MDI")
+        assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID)
+      }
     }
 
     @Test
     fun `will create appointment with correct details - no end time`() {
       val id = callCreateEndpoint(false, false)
 
-      val offenderIndividualSchedule = repository.getAppointment(id)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
-      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
-      assertThat(offenderIndividualSchedule.endTime).isNull()
+      with(repository.getAppointment(id)!!) {
+        assertThat(eventId).isEqualTo(id)
+        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
+        assertThat(endTime).isNull()
+      }
     }
 
     @Test
     fun `will create appointment with correct details - in cell`() {
       val id = callCreateEndpoint(false, true)
 
-      val offenderIndividualSchedule = repository.getAppointment(id)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(id)
-      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009) // cell
+      with(repository.getAppointment(id)!!) {
+        assertThat(eventId).isEqualTo(id)
+        assertThat(internalLocation?.locationId).isEqualTo(-3009) // cell
+      }
     }
   }
 
@@ -432,19 +432,19 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       callUpdateEndpoint(eventId, true)
 
       // Check the database
-      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-      assertThat(offenderIndividualSchedule.offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
-      assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
-      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
-      assertThat(offenderIndividualSchedule.endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
-      assertThat(offenderIndividualSchedule.eventSubType.code).isEqualTo("CABA")
-      assertThat(offenderIndividualSchedule.prison?.id).isEqualTo("MDI")
-      assertThat(offenderIndividualSchedule.comment).isEqualTo("Some comment")
-      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
-      assertThat(offenderIndividualSchedule.modifiedBy).isEqualTo("SA")
-      assertThat(offenderIndividualSchedule.modifiedBy).isNotBlank()
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(eventId).isEqualTo(eventId)
+        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+        assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
+        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
+        assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
+        assertThat(eventSubType.code).isEqualTo("CABA")
+        assertThat(prison?.id).isEqualTo("MDI")
+        assertThat(comment).isEqualTo("Some comment")
+        assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
+        assertThat(modifiedBy).isEqualTo("SA")
+        assertThat(modifiedBy).isNotBlank()
+      }
     }
 
     @Test
@@ -453,12 +453,12 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       callUpdateEndpoint(eventId, false)
 
       // Check the database
-      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-      assertThat(offenderIndividualSchedule.eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
-      assertThat(offenderIndividualSchedule.startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
-      assertThat(offenderIndividualSchedule.endTime).isNull()
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(eventId).isEqualTo(eventId)
+        assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
+        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
+        assertThat(endTime).isNull()
+      }
     }
 
     @Test
@@ -467,10 +467,10 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       callUpdateEndpoint(eventId, false, true)
 
       // Check the database
-      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-      assertThat(offenderIndividualSchedule.internalLocation?.locationId).isEqualTo(-3009)
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(eventId).isEqualTo(eventId)
+        assertThat(internalLocation?.locationId).isEqualTo(-3009)
+      }
     }
 
     private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean, inCell: Boolean = false) {
@@ -533,10 +533,10 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
       callCancelEndpoint(eventId)
 
       // Check the database
-      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-      assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("CANC")
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(eventId).isEqualTo(eventId)
+        assertThat(eventStatus.code).isEqualTo("CANC")
+      }
     }
   }
 
@@ -581,10 +581,10 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
       callUncancelEndpoint(eventId)
 
       // Check the database
-      val offenderIndividualSchedule = repository.getAppointment(eventId)!!
-
-      assertThat(offenderIndividualSchedule.eventId).isEqualTo(eventId)
-      assertThat(offenderIndividualSchedule.eventStatus.code).isEqualTo("SCH")
+      with(repository.getAppointment(eventId)!!) {
+        assertThat(eventId).isEqualTo(eventId)
+        assertThat(eventStatus.code).isEqualTo("SCH")
+      }
     }
   }
 
@@ -643,12 +643,12 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
   @Nested
   inner class GetAppointmentById {
 
-    private lateinit var appointment1: OffenderIndividualSchedule
+    private lateinit var appointment1: OffenderAppointment
 
     @BeforeEach
     internal fun createAppointments() {
       appointment1 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtMoorlands.latestBooking(),
           eventDate = LocalDate.parse("2023-01-01"),
           startTime = LocalDateTime.parse("2020-01-01T10:00"),
@@ -726,15 +726,14 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
   @Nested
   inner class GetAppointmentIdsByFilterRequest {
 
-    private lateinit var appointment1: OffenderIndividualSchedule
-    private lateinit var appointment2: OffenderIndividualSchedule
-    private lateinit var appointment3: OffenderIndividualSchedule
-    private lateinit var appointment4: OffenderIndividualSchedule
+    private lateinit var appointment1: OffenderAppointment
+    private lateinit var appointment2: OffenderAppointment
+    private lateinit var appointment3: OffenderAppointment
 
     @BeforeEach
     internal fun createAppointments() {
       appointment1 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtMoorlands.latestBooking(),
           eventDate = LocalDate.parse("2023-01-01"),
           eventSubType = repository.lookupEventSubtype("MEDE"),
@@ -743,7 +742,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
         ),
       )
       appointment2 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtOtherPrison.latestBooking(),
           eventDate = LocalDate.parse("2023-01-02"),
           eventSubType = repository.lookupEventSubtype("MEDO"),
@@ -752,21 +751,12 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
         ),
       )
       appointment3 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtMoorlands.latestBooking(),
           eventDate = LocalDate.parse("2023-01-03"),
           eventSubType = repository.lookupEventSubtype("MEOP"),
           eventStatus = repository.lookupEventStatusCode("SCH"),
           prison = repository.lookupAgency("MDI"),
-        ),
-      )
-      appointment4 = repository.save(
-        OffenderIndividualSchedule(
-          offenderBooking = offenderAtMoorlands.latestBooking(),
-          eventSubType = repository.lookupEventSubtype("MEOP"),
-          eventStatus = repository.lookupEventStatusCode("SCH"),
-          // should never find this
-          eventType = "OTHER",
         ),
       )
     }
@@ -776,7 +766,6 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
       repository.delete(appointment1)
       repository.delete(appointment2)
       repository.delete(appointment3)
-      repository.delete(appointment4)
     }
 
     @Test
@@ -937,10 +926,10 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
   @Nested
   inner class GetAppointmentCounts {
 
-    private lateinit var appointment1: OffenderIndividualSchedule
-    private lateinit var appointment2: OffenderIndividualSchedule
-    private lateinit var appointment3: OffenderIndividualSchedule
-    private lateinit var appointment4: OffenderIndividualSchedule
+    private lateinit var appointment1: OffenderAppointment
+    private lateinit var appointment2: OffenderAppointment
+    private lateinit var appointment3: OffenderAppointment
+    private lateinit var appointment4: OffenderAppointment
     private val today = LocalDate.now()
     private val yesterday = today.minusDays(1)
     private val tomorrow = today.plusDays(1)
@@ -948,7 +937,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @BeforeEach
     internal fun createAppointments() {
       appointment1 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtMoorlands.latestBooking(),
           eventDate = today,
           eventSubType = repository.lookupEventSubtype("MEDE"),
@@ -957,7 +946,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
         ),
       )
       appointment2 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtOtherPrison.latestBooking(),
           eventDate = tomorrow,
           eventSubType = repository.lookupEventSubtype("MEDE"),
@@ -966,7 +955,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
         ),
       )
       appointment3 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtMoorlands.latestBooking(),
           eventDate = yesterday,
           eventSubType = repository.lookupEventSubtype("MEOP"),
@@ -975,7 +964,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
         ),
       )
       appointment4 = repository.save(
-        OffenderIndividualSchedule(
+        OffenderAppointment(
           offenderBooking = offenderAtMoorlands.latestBooking(),
           eventDate = tomorrow,
           eventSubType = repository.lookupEventSubtype("MEOP"),

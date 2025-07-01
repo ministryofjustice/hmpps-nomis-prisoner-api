@@ -42,6 +42,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
@@ -61,6 +62,7 @@ class VisitService(
   private val visitOrderRepository: VisitOrderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
+  private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
   private val visitOrderTypeRepository: ReferenceCodeRepository<VisitOrderType>,
@@ -321,12 +323,7 @@ class VisitService(
           expiryDate = visitDto.issueDate.plusDays(28),
           commentText = visitDto.visitOrderComment,
         ).apply {
-          this.visitors = visitDto.visitorPersonIds.mapIndexed { index, personId ->
-            this.createVisitor(
-              personId,
-              groupLeader = index == 0,
-            ) // randomly choose first visitor as lead since VSIP has to no concept of a lead visitor but we need it for data integrity
-          }.toMutableList()
+          this.visitors = createVisitors(visitDto.visitorPersonIds)
         }
       } else {
         if (!isDpsInChargeOfAllocation(offenderBooking)) {
@@ -353,27 +350,33 @@ class VisitService(
           expiryDate = visitDto.issueDate.plusDays(28),
           commentText = visitDto.visitOrderComment,
         ).apply {
-          this.visitors = visitDto.visitorPersonIds.mapIndexed { index, personId ->
-            this.createVisitor(personId, groupLeader = index == 0)
-          }.toMutableList()
+          this.visitors = createVisitors(visitDto.visitorPersonIds)
         }
       }
     }
   }
 
-  private fun VisitOrder.createVisitor(personId: Long, groupLeader: Boolean): VisitOrderVisitor = VisitOrderVisitor(
-    visitOrder = this,
-    person = personRepository.findById(personId)
-      .orElseThrow(BadDataException("Person with id=$personId does not exist")),
-    groupLeader = groupLeader,
-  )
+  private fun VisitOrder.createVisitors(visitorPersonIds: List<Long>): MutableList<VisitOrderVisitor> {
+    if (visitorPersonIds.isEmpty()) return mutableListOf()
+
+    val people = visitorPersonIds.map {
+      personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist"))
+    }
+    val lead = people.find { it.birthDate.is18OrOver() }
+      ?: people.find { it.birthDate == null }
+      ?: people.first()
+    return people.map {
+      VisitOrderVisitor(visitOrder = this, person = it, groupLeader = it == lead)
+    }.toMutableList()
+  }
 
   private fun cancelBalance(
     visitOrder: VisitOrder,
     offenderBooking: OffenderBooking,
     today: LocalDate,
   ) {
-    offenderBooking.visitBalance?.takeUnless {
+    // need to ensure that we can get a lock on the visit balance too
+    offenderVisitBalanceRepository.findByIdForUpdate(offenderBooking.bookingId)?.takeUnless {
       isDpsInChargeOfAllocation(offenderBooking)
     }?.let { offenderVisitBalance ->
       offenderVisitBalanceAdjustmentRepository.save(
@@ -625,3 +628,5 @@ class VisitService(
 }
 
 private fun VisitVisitor.isStatusRecord() = this.offenderBooking != null
+
+private fun LocalDate?.is18OrOver(): Boolean = this?.isAfter(LocalDate.now().minusYears(18)) == false

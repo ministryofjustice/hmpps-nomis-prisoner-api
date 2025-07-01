@@ -366,6 +366,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetCourtCaseForMigration {
     private lateinit var courtCase: CourtCase
+    private lateinit var sourceCourtCase1: CourtCase
+    private lateinit var sourceCourtCase2: CourtCase
+    private lateinit var sourceOfSourceCourtCase: CourtCase
     private lateinit var courtOrder: CourtOrder
     private lateinit var courtCaseTwo: CourtCase
     private lateinit var offenderCharge1: OffenderCharge
@@ -380,6 +383,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           offender(nomsId = "A1234AB") {
             booking(agencyLocationId = "MDI") {
               courtCase = courtCase(
+                caseSequence = 1,
                 reportingStaff = staff,
                 beginDate = LocalDate.parse(aDateString),
                 statusUpdateDate = LocalDate.parse(aDateString),
@@ -424,6 +428,45 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   nextEventDateTime = null,
                   orderRequestedFlag = null,
                 )
+              }
+              sourceCourtCase1 = courtCase(
+                caseSequence = 3,
+                reportingStaff = staff,
+                combinedCase = courtCase,
+              ) {
+                val offenderCharge = offenderCharge(offenceCode = "RT88074", plea = "G")
+                courtEvent {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge,
+                    plea = "NG",
+                  )
+                }
+              }
+              sourceCourtCase2 = courtCase(
+                caseSequence = 4,
+                reportingStaff = staff,
+                combinedCase = courtCase,
+              ) {
+                val offenderCharge = offenderCharge(offenceCode = "RT88074", plea = "G")
+                courtEvent {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge,
+                    plea = "NG",
+                  )
+                }
+              }
+              sourceOfSourceCourtCase = courtCase(
+                caseSequence = 5,
+                reportingStaff = staff,
+                combinedCase = sourceCourtCase2,
+              ) {
+                val offenderCharge = offenderCharge(offenceCode = "RT88074", plea = "G")
+                courtEvent {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge,
+                    plea = "NG",
+                  )
+                }
               }
             }
           }
@@ -479,6 +522,45 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
+      @Test
+      fun `target case will contain all source case ids`() {
+        val case: CourtCaseResponse = webTestClient.get().uri("/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+
+        assertThat(case.sourceCombinedCaseIds).containsExactlyInAnyOrder(sourceCourtCase1.id, sourceCourtCase2.id)
+      }
+
+      @Test
+      fun `each source case will contain target case ids`() {
+        val case1: CourtCaseResponse = webTestClient.get().uri("/court-cases/${sourceCourtCase1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+        assertThat(case1.combinedCaseId).isEqualTo(courtCase.id)
+
+        val case2: CourtCaseResponse = webTestClient.get().uri("/court-cases/${sourceCourtCase2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+        assertThat(case2.combinedCaseId).isEqualTo(courtCase.id)
+      }
+
+      @Test
+      fun `a case can be source and target so will contains both ids`() {
+        val case2: CourtCaseResponse = webTestClient.get().uri("/court-cases/${sourceCourtCase2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+        assertThat(case2.combinedCaseId).isEqualTo(courtCase.id)
+        assertThat(case2.sourceCombinedCaseIds).containsExactly(sourceOfSourceCourtCase.id)
+      }
+
       @Test
       fun `will return the court case and events`() {
         webTestClient.get().uri("/court-cases/${courtCase.id}")
@@ -1295,6 +1377,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   inner class GetOffenderSentence {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
+    private lateinit var sentenceWithBadConsecutiveData: OffenderSentence
     private lateinit var recallSentence: OffenderSentence
     private lateinit var inactiveRecallSentence: OffenderSentence
     private lateinit var courtCase: CourtCase
@@ -1325,6 +1408,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A") {
                   offenderSentenceCharge(offenderCharge = offenderCharge)
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
+                  term {}
+                  term(days = 35)
+                }
+
+                sentenceWithBadConsecutiveData = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A", consecSequence = 999) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
                   term {}
                   term(days = 35)
                 }
@@ -1443,7 +1532,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("startDate").isEqualTo(aDateString)
           .jsonPath("courtOrder.eventId").isEqualTo(appearance.id)
           .jsonPath("courtOrder.courtDate").isEqualTo(appearance.eventDate.toString())
-          .jsonPath("consecSequence").isEqualTo(2)
+          .jsonPath("consecSequence").doesNotExist()
           .jsonPath("endDate").isEqualTo(aLaterDateString)
           .jsonPath("commentText").isEqualTo("a sentence comment")
           .jsonPath("absenceCount").isEqualTo(2)
@@ -1514,6 +1603,17 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
           .jsonPath("missingCourtOffenderChargeIds.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `will return the offender sentence without the consecutive sequence if the target consecutive sentence does not exist `() {
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceWithBadConsecutiveData.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("consecSequence").doesNotExist()
       }
 
       @Test
@@ -4196,7 +4296,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Consecutive sentence for booking ${courtCase.offenderBooking.bookingId} and sentence sequence 234 not found")
+          .isEqualTo("Consecutive sentence with sequence 234 and booking ${courtCase.offenderBooking.bookingId} not found")
       }
     }
 
@@ -4591,6 +4691,27 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("developerMessage")
           .isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
+      }
+
+      @Test
+      internal fun `404 when consecutive sequence doesn't exist`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                consecSentenceSeq = 234,
+                eventId = courtEvent.id,
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Consecutive sentence with sequence 234 and booking ${courtCase.offenderBooking.bookingId} not found")
       }
     }
 

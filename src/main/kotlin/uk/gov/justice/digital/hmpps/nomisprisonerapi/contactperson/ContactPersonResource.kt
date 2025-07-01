@@ -179,6 +179,55 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly, latestBookingOnly)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @GetMapping("/prisoners/restrictions/{restrictionId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner restriction by ID",
+    description = "Retrieves a single restriction by its ID. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Restriction Information Returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Restriction not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerRestriction(
+    @Schema(description = "Restriction Id", example = "12345")
+    @PathVariable
+    restrictionId: Long,
+  ): PrisonerRestriction = contactPersonService.getPrisonerRestriction(restrictionId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/prisoners/restrictions/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -246,11 +295,6 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ApiResponse(
         responseCode = "200",
         description = "Restrictions Information Returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -2461,6 +2505,8 @@ data class ContactRestriction(
 data class PrisonerRestriction(
   @Schema(description = "Unique NOMIS Id of the restriction")
   val id: Long,
+  @Schema(description = "Offender no aka prisoner number", example = "A1234AA")
+  val offenderNo: String,
   @Schema(description = "Unique NOMIS Id of booking associated with the contact")
   val bookingId: Long,
   @Schema(description = "Booking sequence this contact is related to. When 1 this indicates contact is for current term")
@@ -2476,7 +2522,7 @@ data class PrisonerRestriction(
   @Schema(description = "Staff member who created the restriction")
   val enteredStaff: ContactRestrictionEnteredStaff,
   @Schema(description = "Staff member who authorised the restriction")
-  val authorisedStaff: ContactRestrictionEnteredStaff?,
+  val authorisedStaff: ContactRestrictionEnteredStaff,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
