@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderRestrictions
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTapOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
@@ -367,6 +368,21 @@ interface BookingDsl {
     transactionType: String,
     dsl: OffenderTransactionDsl.() -> Unit = {},
   ): OffenderTransaction
+
+  @OffenderScheduledTapOutDslMarker
+  fun scheduledTapOut(
+    eventDate: LocalDate = LocalDate.now(),
+    startTime: LocalDateTime = LocalDateTime.now(),
+    eventSubType: String = "C5",
+    eventStatus: String = "COMP",
+    comment: String? = "Tapped OUT",
+    escort: String = "A",
+    prison: String = "LEI",
+    transportType: String = "VAN",
+    returnDate: LocalDate = LocalDate.now().plusDays(1),
+    returnTime: LocalDateTime = LocalDateTime.now().plusHours(1),
+    dsl: OffenderScheduledTapOutDsl.() -> Unit = {},
+  ): OffenderScheduledTapOut
 }
 
 @Component
@@ -406,6 +422,7 @@ class BookingBuilderFactory(
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
+  private val offenderScheduledTapOutBuilderFactory: OffenderScheduledTapOutBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -432,6 +449,7 @@ class BookingBuilderFactory(
     offenderBeliefBuilderFactory,
     offenderTransactionBuilderFactory,
     offenderRestrictionsBuilderFactory,
+    offenderScheduledTapOutBuilderFactory,
   )
 }
 
@@ -460,6 +478,7 @@ class BookingBuilder(
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
+  private val offenderScheduledTapOutBuilderFactory: OffenderScheduledTapOutBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -1158,4 +1177,34 @@ class BookingBuilder(
     offenderBooking.location!!.id,
     transactionType,
   )
+
+  override fun scheduledTapOut(
+    eventDate: LocalDate,
+    startTime: LocalDateTime,
+    eventSubType: String,
+    eventStatus: String,
+    comment: String?,
+    escort: String,
+    prison: String,
+    transportType: String,
+    returnDate: LocalDate,
+    returnTime: LocalDateTime,
+    dsl: OffenderScheduledTapOutDsl.() -> Unit,
+  ): OffenderScheduledTapOut = offenderScheduledTapOutBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderBooking,
+      eventDate = eventDate,
+      startTime = startTime,
+      eventSubType = eventSubType,
+      eventStatus = eventStatus,
+      comment = comment,
+      escort = escort,
+      prison = prison,
+      transportType = transportType,
+      returnDate = returnDate,
+      returnTime = returnTime,
+    )
+      .also { offenderBooking.scheduledTapOuts += it }
+      .also { builder.apply(dsl) }
+  }
 }

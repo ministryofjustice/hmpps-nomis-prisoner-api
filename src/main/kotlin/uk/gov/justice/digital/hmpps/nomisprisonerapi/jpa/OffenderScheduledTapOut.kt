@@ -1,12 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import jakarta.persistence.Column
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -16,29 +15,19 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-abstract class OffenderScheduledExternalMovement(
+class OffenderScheduledTapOut(
   eventId: Long = 0,
   offenderBooking: OffenderBooking,
   eventDate: LocalDate? = null,
   startTime: LocalDateTime? = null,
-  eventType: EventType,
-
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'${MovementReason.MOVE_RSN}'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_SUB_TYPE", referencedColumnName = "code")),
-    ],
-  )
-  var eventSubType: MovementReason,
-
+  eventSubType: MovementReason,
   eventStatus: EventStatus,
   comment: String? = null,
+  escort: Escort,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "AGY_LOC_ID")
+  val prison: AgencyLocation,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
@@ -46,24 +35,33 @@ abstract class OffenderScheduledExternalMovement(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${Escort.ESCORT}'",
+          value = "'${TapTransportType.TAP_TRANSPORT_TYPE}'",
           referencedColumnName = "domain",
         ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "ESCORT_CODE", referencedColumnName = "code")),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val escort: Escort,
+  val transportType: TapTransportType,
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "DIRECTION_CODE")
-  val direction: MovementDirection,
-) : OffenderIndividualSchedule(
+  @JoinColumn(name = "RETURN_DATE")
+  val returnDate: LocalDate,
+
+  @JoinColumn(name = "RETURN_TIME")
+  val returnTime: LocalDateTime,
+
+  @OneToOne(mappedBy = "scheduledTapOut", cascade = [CascadeType.ALL])
+  var scheduledTapIn: OffenderScheduledTapIn? = null,
+
+  // TODO - OFFENDER_MOVEMENT_APP_ID, APPLICATION_TIME, TO_ADDRESS_OWNER_CLASS, TO_ADDRESS_ID
+) : OffenderScheduledExternalMovement(
   eventId = eventId,
   offenderBooking = offenderBooking,
   eventDate = eventDate,
   startTime = startTime,
-  eventClass = EventClass.EXT_MOV,
-  eventType = eventType,
+  eventType = EventType.TAP,
+  eventSubType = eventSubType,
   eventStatus = eventStatus,
   comment = comment,
+  escort = escort,
+  direction = MovementDirection.OUT,
 )
