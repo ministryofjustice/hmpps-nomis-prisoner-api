@@ -71,6 +71,7 @@ internal class IncentiveServiceTest {
     bookingId = OFFENDER_BOOKING_ID,
     offender = defaultOffender,
     bookingBeginDate = LocalDateTime.now(),
+    location = AgencyLocation(PRISON_ID, PRISON_DESCRIPTION),
   )
 
   @BeforeEach

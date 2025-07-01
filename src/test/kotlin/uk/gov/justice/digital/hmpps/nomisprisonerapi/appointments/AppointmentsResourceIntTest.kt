@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventClass
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import java.time.LocalDate
@@ -260,10 +261,10 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
         assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
         assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-27T12:10"))
         assertThat(eventClass).isEqualTo(EventClass.INT_MOV)
-        assertThat(eventType).isEqualTo("APP")
+        assertThat(eventType).isEqualTo(EventType.APP)
         assertThat(eventSubType.code).isEqualTo("ACTI")
         assertThat(eventStatus.code).isEqualTo("SCH")
-        assertThat(prison?.id).isEqualTo("MDI")
+        assertThat(prison.id).isEqualTo("MDI")
         assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID)
       }
     }
@@ -439,7 +440,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
         assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
         assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
         assertThat(eventSubType.code).isEqualTo("CABA")
-        assertThat(prison?.id).isEqualTo("MDI")
+        assertThat(prison.id).isEqualTo("MDI")
         assertThat(comment).isEqualTo("Some comment")
         assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
         assertThat(modifiedBy).isEqualTo("SA")

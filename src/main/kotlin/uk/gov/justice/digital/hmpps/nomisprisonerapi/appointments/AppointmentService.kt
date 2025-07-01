@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalScheduleReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAppointmentRepository
@@ -26,7 +26,7 @@ class AppointmentService(
   private val offenderAppointmentRepository: OffenderAppointmentRepository,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
-  private val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
+  private val internalScheduleReasonRepository: ReferenceCodeRepository<InternalScheduleReason>,
   private val telemetryClient: TelemetryClient,
 ) {
   fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse = mapModel(dto)
@@ -53,7 +53,7 @@ class AppointmentService(
           ?: offenderBooking.assignedLivingUnit
           ?: throw BadDataException("No location found for bookingId ${offenderBooking.bookingId}, appointment event=$eventId")
 
-        val subType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
+        val subType = internalScheduleReasonRepository.findByIdOrNull(InternalScheduleReason.pk(dto.eventSubType))
           ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
 
         if (dto.endTime != null && dto.endTime < dto.startTime) {
@@ -142,8 +142,8 @@ class AppointmentService(
         ?: throw BadDataException("Room with id=${dto.internalLocationId} does not exist")
     }
       ?.also {
-        if (it.agency.id != offenderBooking.location?.id) {
-          throw BadDataException("Room with id=${dto.internalLocationId} is in ${it.agency.id}, not in the offender's prison: ${offenderBooking.location?.id}")
+        if (it.agency.id != offenderBooking.location.id) {
+          throw BadDataException("Room with id=${dto.internalLocationId} is in ${it.agency.id}, not in the offender's prison: ${offenderBooking.location.id}")
         }
       }
       ?: offenderBooking.assignedLivingUnit
@@ -152,7 +152,7 @@ class AppointmentService(
       throw BadDataException("End time must be after start time")
     }
 
-    val eventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(dto.eventSubType))
+    val eventSubType = internalScheduleReasonRepository.findByIdOrNull(InternalScheduleReason.pk(dto.eventSubType))
       ?: throw BadDataException("EventSubType with code=${dto.eventSubType} does not exist")
 
     return OffenderAppointment(
@@ -227,7 +227,7 @@ private fun mapModel(entity: OffenderAppointment): AppointmentResponse = Appoint
   status = entity.eventStatus.code,
   subtype = entity.eventSubType.code,
   internalLocation = entity.internalLocation?.locationId,
-  prisonId = entity.prison?.id,
+  prisonId = entity.prison.id,
   comment = entity.comment,
   createdDate = entity.createdDate!!,
   createdBy = entity.createdBy!!,
