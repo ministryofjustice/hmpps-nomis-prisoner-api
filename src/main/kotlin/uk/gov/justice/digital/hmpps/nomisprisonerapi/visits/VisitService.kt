@@ -362,7 +362,7 @@ class VisitService(
     val people = visitorPersonIds.map {
       personRepository.findById(it).orElseThrow(BadDataException("Person with id=$it does not exist"))
     }
-    val lead = people.find { it.birthDate?.isAfter(LocalDate.now().minusYears(18)) == false }
+    val lead = people.find { it.birthDate.is18OrOver() }
       ?: people.find { it.birthDate == null }
       ?: people.first()
     return people.map {
@@ -628,3 +628,5 @@ class VisitService(
 }
 
 private fun VisitVisitor.isStatusRecord() = this.offenderBooking != null
+
+private fun LocalDate?.is18OrOver(): Boolean = this?.isAfter(LocalDate.now().minusYears(18)) == false
