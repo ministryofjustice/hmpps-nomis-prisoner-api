@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
-import jakarta.persistence.DiscriminatorColumn
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -14,6 +13,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -32,10 +32,21 @@ enum class EventClass {
   COMM,
 }
 
+enum class EventType {
+  APP,
+}
+
 @Entity
 @Table(name = "OFFENDER_IND_SCHEDULES")
-@DiscriminatorColumn(name = "EVENT_CLASS")
-@Inheritance()
+@DiscriminatorFormula(
+  """
+    case
+        when EVENT_CLASS = 'INT_MOV' then 'OffenderAppointment'
+        else 'Unknown'
+    end
+""",
+)
+@Inheritance
 abstract class OffenderIndividualSchedule(
 
   @Id
@@ -55,25 +66,12 @@ abstract class OffenderIndividualSchedule(
   var startTime: LocalDateTime? = null,
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "EVENT_CLASS", nullable = false, insertable = false, updatable = false)
+  @Column(name = "EVENT_CLASS")
   open val eventClass: EventClass,
 
-  @Column(nullable = false)
-  val eventType: String,
-
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'${EventSubType.INT_SCH_RSN}'",
-          referencedColumnName = "domain",
-        ),
-      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_SUB_TYPE", referencedColumnName = "code")),
-    ],
-  )
-  var eventSubType: EventSubType,
+  @Enumerated(EnumType.STRING)
+  @Column(name = "EVENT_TYPE")
+  val eventType: EventType,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
@@ -88,10 +86,6 @@ abstract class OffenderIndividualSchedule(
     ],
   )
   var eventStatus: EventStatus,
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "AGY_LOC_ID")
-  val prison: AgencyLocation? = null,
 
   @Column(name = "COMMENT_TEXT")
   var comment: String? = null,

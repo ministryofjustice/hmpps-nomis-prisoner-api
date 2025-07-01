@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -512,6 +513,7 @@ fun caseNote(
       lastName = "Last",
     ),
     bookingBeginDate = LocalDateTime.now(),
+    location = AgencyLocation(id = "MDI", description = "Moorland"),
   ),
   occurrenceDate = LocalDate.parse("2024-03-04"),
   occurrenceDateTime = LocalDateTime.now(),

@@ -10,6 +10,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.INACTIVE
@@ -124,6 +125,7 @@ private fun booking(bookingSequence: Int = 1): OffenderBooking = OffenderBooking
   bookingSequence = bookingSequence,
   bookingBeginDate = LocalDateTime.now(),
   offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),
+  location = AgencyLocation("LEI", "Leeds"),
 )
 
 private fun alert(

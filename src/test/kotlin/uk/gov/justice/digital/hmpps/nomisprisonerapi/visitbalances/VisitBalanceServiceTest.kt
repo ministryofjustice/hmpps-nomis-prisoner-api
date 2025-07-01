@@ -18,6 +18,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -635,4 +636,5 @@ private fun booking(bookingSequence: Int = 1): OffenderBooking = OffenderBooking
   bookingSequence = bookingSequence,
   bookingBeginDate = LocalDateTime.parse("2025-03-13T01:02:03"),
   offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),
+  location = AgencyLocation(id = "MDI", description = "Moorland HMP"),
 )
