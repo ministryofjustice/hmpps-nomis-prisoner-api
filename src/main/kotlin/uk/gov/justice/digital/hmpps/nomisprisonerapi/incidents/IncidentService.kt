@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.SplashScreenService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
@@ -34,7 +33,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Outcome
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.QuestionnaireQuestion
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen.Companion.SPLASH_ALL_PRISONS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
@@ -53,7 +51,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 class IncidentService(
   private val incidentRepository: IncidentRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
-  private val splashScreenService: SplashScreenService,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val incidentStatusRepository: IncidentStatusRepository,
   private val questionnaireRepository: QuestionnaireRepository,
@@ -285,16 +282,7 @@ class IncidentService(
     ?.let { incidentRepository.findAllIncidentsByBookingId(bookingId).map { it.toIncidentResponse() } }
     ?: throw NotFoundException("Prisoner with booking $bookingId not found")
 
-  fun findAllIncidentAgencies(): List<IncidentAgencyId> {
-    val blockedPrisonIds = splashScreenService.getBlockedPrisons(INCIDENT_REPORTING_SCREEN_ID).map { it.prisonId }
-    return if (blockedPrisonIds.contains(SPLASH_ALL_PRISONS)) {
-      listOf()
-    } else {
-      incidentRepository.findAllIncidentAgencies()
-        .filter { it !in blockedPrisonIds }
-        .map { IncidentAgencyId(it) }
-    }
-  }
+  fun findAllIncidentAgencyIds(): List<IncidentAgencyId> = incidentRepository.findAllIncidentAgencies().map { IncidentAgencyId(it) }
 
   fun getIncidentCountsForReconciliation(agencyId: String): IncidentsReconciliationResponse = IncidentsReconciliationResponse(
     agencyId = agencyId,

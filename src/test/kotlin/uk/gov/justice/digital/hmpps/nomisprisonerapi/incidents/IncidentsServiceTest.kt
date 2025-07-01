@@ -13,7 +13,6 @@ class IncidentsServiceTest {
   private val incidentsService = IncidentService(
     incidentRepository = mock(),
     offenderBookingRepository = mock(),
-    splashScreenService = mock(),
     agencyLocationRepository = mock(),
     incidentStatusRepository = mock(),
     questionnaireRepository = mock(),

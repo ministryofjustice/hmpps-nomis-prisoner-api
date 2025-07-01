@@ -181,8 +181,8 @@ class IncidentResource(private val incidentService: IncidentService) {
 
   @GetMapping("/reconciliation/agencies")
   @Operation(
-    summary = "Retrieve a list of all agencies that have raised incidents)",
-    description = "Retrieve a list of all agencies that have raised incidents, including prisons and PECS. Requires authorised access",
+    summary = "Retrieve a list of all agencies by id that have raised incidents)",
+    description = "Retrieve a list of all agencies by id that have raised incidents, including prisons and PECS. Requires authorised access",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -197,7 +197,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
     ],
   )
-  fun getIncidentAgencies() = incidentService.findAllIncidentAgencies()
+  fun getIncidentAgencies() = incidentService.findAllIncidentAgencyIds()
 
   @GetMapping("/reconciliation/agency/{agencyId}/counts")
   @ResponseStatus(HttpStatus.OK)

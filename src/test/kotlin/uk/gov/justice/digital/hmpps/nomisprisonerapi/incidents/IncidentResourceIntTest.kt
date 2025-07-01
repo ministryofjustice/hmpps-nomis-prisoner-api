@@ -11,7 +11,6 @@ import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents.IncidentService.Companion.INCIDENT_REPORTING_SCREEN_ID
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -64,10 +63,6 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       setUpStaffAndOffenders()
       setUpQuestionnaires()
-
-      splashScreen(moduleName = INCIDENT_REPORTING_SCREEN_ID, accessBlockedCode = "COND") {
-        splashCondition(prisonId = "HAZLWD", accessBlocked = true)
-      }
 
       incident1 = incident(
         id = ++currentId,
@@ -185,7 +180,6 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     repository.deleteAllQuestionnaires()
     repository.deleteStaff()
     repository.deleteOffenders()
-    repository.deleteAllSplashScreens()
   }
 
   @Nested
@@ -685,23 +679,6 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("size()").isEqualTo(2)
         .jsonPath("[0].agencyId").isEqualTo("BXI")
         .jsonPath("[1].agencyId").isEqualTo("MDI")
-    }
-
-    @Test
-    fun `will not get agencies excluded from incident agency service list`() {
-      nomisDataBuilder.build {
-        incident(id = ++currentId, locationId = "HAZLWD", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
-        incident(id = ++currentId, locationId = "LEI", reportingStaff = reportingStaff2, questionnaire = questionnaire1)
-      }
-      webTestClient.get().uri("/incidents/reconciliation/agencies")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("size()").isEqualTo(3)
-        .jsonPath("[0].agencyId").isEqualTo("BXI")
-        .jsonPath("[1].agencyId").isEqualTo("LEI")
-        .jsonPath("[2].agencyId").isEqualTo("MDI")
     }
   }
 
