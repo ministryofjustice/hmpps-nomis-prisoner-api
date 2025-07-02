@@ -7,21 +7,21 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTapIn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTapOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class OffenderScheduledTapInDslMarker
+annotation class OffenderScheduledTemporaryAbsenceReturnDslMarker
 
 @NomisDataDslMarker
-interface OffenderScheduledTapInDsl
+interface OffenderScheduledTemporaryAbsenceReturnDsl
 
 @Component
-class OffenderScheduledTapInBuilderRepository(
+class OffenderScheduledTemporaryAbsenceReturnBuilderRepository(
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
@@ -34,13 +34,13 @@ class OffenderScheduledTapInBuilderRepository(
 }
 
 @Component
-class OffenderScheduledTapInBuilderFactory(
-  private val repository: OffenderScheduledTapInBuilderRepository,
+class OffenderScheduledTemporaryAbsenceReturnBuilderFactory(
+  private val repository: OffenderScheduledTemporaryAbsenceReturnBuilderRepository,
 ) {
-  fun builder() = OffenderScheduledTapInBuilder(repository)
+  fun builder() = OffenderScheduledTemporaryAbsenceReturnBuilder(repository)
 }
 
-class OffenderScheduledTapInBuilder(private val repository: OffenderScheduledTapInBuilderRepository) : OffenderScheduledTapInDsl {
+class OffenderScheduledTemporaryAbsenceReturnBuilder(private val repository: OffenderScheduledTemporaryAbsenceReturnBuilderRepository) : OffenderScheduledTemporaryAbsenceReturnDsl {
   fun build(
     offenderBooking: OffenderBooking,
     eventDate: LocalDate? = null,
@@ -50,8 +50,8 @@ class OffenderScheduledTapInBuilder(private val repository: OffenderScheduledTap
     comment: String? = null,
     escort: String,
     toPrison: String,
-    scheduledTapOut: OffenderScheduledTapOut,
-  ): OffenderScheduledTapIn = OffenderScheduledTapIn(
+    scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence,
+  ): OffenderScheduledTemporaryAbsenceReturn = OffenderScheduledTemporaryAbsenceReturn(
     offenderBooking = offenderBooking,
     eventDate = eventDate,
     startTime = startTime,
@@ -60,6 +60,6 @@ class OffenderScheduledTapInBuilder(private val repository: OffenderScheduledTap
     comment = comment,
     escort = repository.escortOf(escort),
     toPrison = repository.agencyLocationOf(toPrison),
-    scheduledTapOut = scheduledTapOut,
+    scheduledTemporaryAbsence = scheduledTemporaryAbsence,
   )
 }

@@ -164,7 +164,7 @@ data class OffenderBooking(
   val restrictions: MutableList<OffenderRestrictions> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  val scheduledTapOuts: MutableList<OffenderScheduledTapOut> = mutableListOf(),
+  val temporaryAbsenceApplications: MutableList<OffenderMovementApplication> = mutableListOf(),
 ) {
   fun getNextSequence(): Long = incentives.maxOfOrNull { it.id.sequence }?.let { it + 1 } ?: 1
 
