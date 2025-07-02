@@ -31,12 +31,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
@@ -66,6 +68,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository
+
+  @Autowired
+  lateinit var offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository
 
   @Autowired
   lateinit var linkCaseTxnRepository: LinkCaseTxnRepository
@@ -1570,7 +1575,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("cjaAct").isEqualTo("A")
           .jsonPath("sled2Calc").isEqualTo("2023-01-20")
           .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
-          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location!!.id)
+          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location.id)
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(2)
@@ -6082,6 +6087,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var offenderCharge2: OffenderCharge
       private lateinit var offenderCharge3: OffenderCharge
       private lateinit var request: ConvertToRecallRequest
+      private lateinit var remandAdjustment: OffenderSentenceAdjustment
+      private lateinit var taggedBailAdjustment: OffenderSentenceAdjustment
 
       @Nested
       open inner class FirstFixedTermRecall {
@@ -6115,6 +6122,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     ) {
                       offenderSentenceCharge(offenderCharge = offenderCharge1)
                       term(days = 35, sentenceTermType = "IMP")
+                      remandAdjustment = adjustment(adjustmentTypeCode = "RX")
                     }
                     sentence2 = sentence(
                       category = "2020",
@@ -6135,6 +6143,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2023-05-02"))
                     }
                     sentence3 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      taggedBailAdjustment = adjustment(adjustmentTypeCode = "S240A")
                       offenderSentenceCharge(offenderCharge = offenderCharge3)
                       term(days = 35, sentenceTermType = "IMP")
                     }
@@ -6260,6 +6269,44 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
+        }
+
+        @Test
+        fun `will update remand adjustment to recall remand`() {
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(remandAdjustment.id)!!) {
+            assertThat(this.sentenceAdjustment.id).isEqualTo("RX")
+          }
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(remandAdjustment.id)!!) {
+            assertThat(this.sentenceAdjustment.id).isEqualTo("RSR")
+          }
+        }
+
+        @Test
+        fun `will update tagged bail adjustment to recall tagged bail`() {
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(taggedBailAdjustment.id)!!) {
+            assertThat(this.sentenceAdjustment.id).isEqualTo("S240A")
+          }
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(taggedBailAdjustment.id)!!) {
+            assertThat(this.sentenceAdjustment.id).isEqualTo("RST")
+          }
         }
 
         @Test
