@@ -261,8 +261,38 @@ class SentencingAdjustmentService(
 
   @Transactional(propagation = Propagation.MANDATORY)
   fun convertAdjustmentsToRecallEquivalents(sentences: List<OffenderSentence>) {
-    sentences.forEach { sentence -> sentence.adjustments.filter { it.sentenceAdjustment.id == REMAND_CODE }.forEach { it.sentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(RECALL_REMAND_CODE)!! } }
-    sentences.forEach { sentence -> sentence.adjustments.filter { it.sentenceAdjustment.id == TAGGED_BAIL_CODE }.forEach { it.sentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(RECALL_TAGGED_BAIL_CODE)!! } }
+    convertAdjustments(
+      sentences = sentences,
+      sourceAdjustments = listOf(REMAND_CODE, TAGGED_BAIL_CODE),
+      targetAdjustments = listOf(RECALL_REMAND_CODE, RECALL_TAGGED_BAIL_CODE),
+    )
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  fun convertAdjustmentsToPreRecallEquivalents(sentences: List<OffenderSentence>) {
+    convertAdjustments(
+      sentences = sentences,
+      sourceAdjustments = listOf(RECALL_REMAND_CODE, RECALL_TAGGED_BAIL_CODE),
+      targetAdjustments = listOf(REMAND_CODE, TAGGED_BAIL_CODE),
+    )
+  }
+
+  private fun convertAdjustments(
+    sentences: List<OffenderSentence>,
+    sourceAdjustments: List<String>,
+    targetAdjustments: List<String>,
+  ) {
+    check(sourceAdjustments.size == targetAdjustments.size) {
+      "Source and target adjustments must be the same size"
+    }
+
+    sourceAdjustments.zip(targetAdjustments).forEach { (source, target) ->
+      sentences.forEach { sentence ->
+        sentence.adjustments
+          .filter { it.sentenceAdjustment.id == source }
+          .forEach { it.sentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(target)!! }
+      }
+    }
   }
 }
 

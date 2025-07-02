@@ -1166,7 +1166,8 @@ class SentencingService(
   fun replaceRecallSentences(offenderNo: String, request: DeleteRecallRequest) {
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
-    request.sentences.updateSentences()
+    val sentencesUpdated = request.sentences.updateSentences()
+    sentencingAdjustmentService.convertAdjustmentsToPreRecallEquivalents(sentencesUpdated)
     bookingIds.forEach { bookingId ->
       findOffenderBooking(bookingId).fixedTermRecall = null
       offenderFixedTermRecallRepository.deleteById(bookingId)
