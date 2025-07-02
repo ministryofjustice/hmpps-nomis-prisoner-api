@@ -15,7 +15,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-class OffenderScheduledTapOut(
+class OffenderScheduledTemporaryAbsence(
   eventId: Long = 0,
   offenderBooking: OffenderBooking,
   eventDate: LocalDate? = null,
@@ -35,13 +35,13 @@ class OffenderScheduledTapOut(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${TapTransportType.TAP_TRANSPORT_TYPE}'",
+          value = "'${TemporaryAbsenceTransportType.TAP_TRANSPORT_TYPE}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val transportType: TapTransportType,
+  val transportType: TemporaryAbsenceTransportType,
 
   @JoinColumn(name = "RETURN_DATE")
   val returnDate: LocalDate,
@@ -49,10 +49,14 @@ class OffenderScheduledTapOut(
   @JoinColumn(name = "RETURN_TIME")
   val returnTime: LocalDateTime,
 
-  @OneToOne(mappedBy = "scheduledTapOut", cascade = [CascadeType.ALL])
-  var scheduledTapIn: OffenderScheduledTapIn? = null,
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "OFFENDER_MOVEMENT_APP_ID")
+  val temporaryAbsenceApplication: OffenderMovementApplication,
 
-  // TODO - OFFENDER_MOVEMENT_APP_ID, APPLICATION_TIME, TO_ADDRESS_OWNER_CLASS, TO_ADDRESS_ID
+  @OneToOne(mappedBy = "scheduledTemporaryAbsence", cascade = [CascadeType.ALL])
+  var scheduledReturn: OffenderScheduledTemporaryAbsenceReturn? = null,
+
+  // TODO - APPLICATION_TIME, TO_ADDRESS_OWNER_CLASS, TO_ADDRESS_ID
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
   offenderBooking = offenderBooking,

@@ -6,22 +6,22 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTapIn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTapOut
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapTransportType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceTransportType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class OffenderScheduledTapOutDslMarker
+annotation class OffenderScheduledTemporaryAbsenceDslMarker
 
 @NomisDataDslMarker
-interface OffenderScheduledTapOutDsl {
-  @OffenderScheduledTapInDslMarker
-  fun scheduledTapIn(
+interface OffenderScheduledTemporaryAbsenceDsl {
+  @OffenderScheduledTemporaryAbsenceReturnDslMarker
+  fun scheduledReturn(
     eventDate: LocalDate = LocalDate.now().plusDays(1),
     startTime: LocalDateTime = LocalDateTime.now().plusDays(1),
     eventSubType: String = "R25",
@@ -29,41 +29,41 @@ interface OffenderScheduledTapOutDsl {
     comment: String? = "Tapped IN",
     escort: String = "U",
     toPrison: String = "LEI",
-  ): OffenderScheduledTapIn
+  ): OffenderScheduledTemporaryAbsenceReturn
 }
 
 @Component
-class OffenderScheduledTapOutBuilderRepository(
+class OffenderScheduledTemporaryAbsenceBuilderRepository(
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
-  private val tapTransportTypeRepository: ReferenceCodeRepository<TapTransportType>,
+  private val temporaryAbsenceTransportTypeRepository: ReferenceCodeRepository<TemporaryAbsenceTransportType>,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
   fun eventStatusOf(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
   fun movementReasonOf(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
   fun escortOf(code: String): Escort = escortRepository.findByIdOrNull(Escort.pk(code))!!
-  fun tapTransportTypeOf(code: String): TapTransportType = tapTransportTypeRepository.findByIdOrNull(TapTransportType.pk(code))!!
+  fun temporaryAbsenceTransportTypeOf(code: String): TemporaryAbsenceTransportType = temporaryAbsenceTransportTypeRepository.findByIdOrNull(TemporaryAbsenceTransportType.pk(code))!!
   fun agencyLocationOf(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id) ?: throw RuntimeException("Agency location with id=$id not found")
 }
 
 @Component
-class OffenderScheduledTapOutBuilderFactory(
-  private val repository: OffenderScheduledTapOutBuilderRepository,
-  private val tapInBuilderFactory: OffenderScheduledTapInBuilderFactory,
+class OffenderScheduledTemporaryAbsenceBuilderFactory(
+  private val repository: OffenderScheduledTemporaryAbsenceBuilderRepository,
+  private val returnBuilderFactory: OffenderScheduledTemporaryAbsenceReturnBuilderFactory,
 ) {
-  fun builder() = OffenderScheduledTapOutBuilder(repository, tapInBuilderFactory)
+  fun builder() = OffenderScheduledTemporaryAbsenceBuilder(repository, returnBuilderFactory)
 }
 
-class OffenderScheduledTapOutBuilder(
-  private val repository: OffenderScheduledTapOutBuilderRepository,
-  private val tapInBuilderFactory: OffenderScheduledTapInBuilderFactory,
-) : OffenderScheduledTapOutDsl {
+class OffenderScheduledTemporaryAbsenceBuilder(
+  private val repository: OffenderScheduledTemporaryAbsenceBuilderRepository,
+  private val temporaryAbsenceReturnBuilderFactory: OffenderScheduledTemporaryAbsenceReturnBuilderFactory,
+) : OffenderScheduledTemporaryAbsenceDsl {
 
-  private lateinit var scheduledTapOut: OffenderScheduledTapOut
+  private lateinit var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
 
   fun build(
-    offenderBooking: OffenderBooking,
+    temporaryAbsenceApplication: OffenderMovementApplication,
     eventDate: LocalDate?,
     startTime: LocalDateTime?,
     eventSubType: String,
@@ -74,8 +74,9 @@ class OffenderScheduledTapOutBuilder(
     transportType: String,
     returnDate: LocalDate,
     returnTime: LocalDateTime,
-  ): OffenderScheduledTapOut = OffenderScheduledTapOut(
-    offenderBooking = offenderBooking,
+  ): OffenderScheduledTemporaryAbsence = OffenderScheduledTemporaryAbsence(
+    temporaryAbsenceApplication = temporaryAbsenceApplication,
+    offenderBooking = temporaryAbsenceApplication.offenderBooking,
     eventDate = eventDate,
     startTime = startTime,
     eventSubType = repository.movementReasonOf(eventSubType),
@@ -83,13 +84,13 @@ class OffenderScheduledTapOutBuilder(
     comment = comment,
     escort = repository.escortOf(escort),
     prison = repository.agencyLocationOf(prison),
-    transportType = repository.tapTransportTypeOf(transportType),
+    transportType = repository.temporaryAbsenceTransportTypeOf(transportType),
     returnDate = returnDate,
     returnTime = returnTime,
   )
-    .also { scheduledTapOut = it }
+    .also { scheduledTemporaryAbsence = it }
 
-  override fun scheduledTapIn(
+  override fun scheduledReturn(
     eventDate: LocalDate,
     startTime: LocalDateTime,
     eventSubType: String,
@@ -97,9 +98,9 @@ class OffenderScheduledTapOutBuilder(
     comment: String?,
     escort: String,
     toPrison: String,
-  ): OffenderScheduledTapIn = tapInBuilderFactory.builder().build(
-    offenderBooking = scheduledTapOut.offenderBooking,
-    scheduledTapOut = scheduledTapOut,
+  ): OffenderScheduledTemporaryAbsenceReturn = temporaryAbsenceReturnBuilderFactory.builder().build(
+    offenderBooking = scheduledTemporaryAbsence.offenderBooking,
+    scheduledTemporaryAbsence = scheduledTemporaryAbsence,
     eventDate = eventDate,
     startTime = startTime,
     eventSubType = eventSubType,
@@ -108,5 +109,5 @@ class OffenderScheduledTapOutBuilder(
     escort = escort,
     toPrison = toPrison,
   )
-    .also { scheduledTapOut.scheduledTapIn = it }
+    .also { scheduledTemporaryAbsence.scheduledReturn = it }
 }
