@@ -9,7 +9,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-class OffenderScheduledTapIn(
+class OffenderScheduledTemporaryAbsenceReturn(
   eventId: Long = 0,
   offenderBooking: OffenderBooking,
   eventDate: LocalDate? = null,
@@ -25,7 +25,7 @@ class OffenderScheduledTapIn(
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PARENT_EVENT_ID")
-  val scheduledTapOut: OffenderScheduledTapOut,
+  val scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence,
 
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,

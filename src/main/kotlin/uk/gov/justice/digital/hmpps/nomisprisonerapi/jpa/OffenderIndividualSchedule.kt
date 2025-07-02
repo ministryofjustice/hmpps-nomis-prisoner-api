@@ -43,8 +43,8 @@ enum class EventType {
   """
     case
         when EVENT_CLASS = 'INT_MOV' then 'OffenderAppointment'
-        when EVENT_CLASS = 'EXT_MOV' and EVENT_TYPE = 'TAP' and DIRECTION_CODE = 'OUT' then 'OffenderScheduledTapOut'
-        when EVENT_CLASS = 'EXT_MOV' and EVENT_TYPE = 'TAP' and DIRECTION_CODE = 'IN' then 'OffenderScheduledTapIn'
+        when EVENT_CLASS = 'EXT_MOV' and EVENT_TYPE = 'TAP' and DIRECTION_CODE = 'OUT' then 'OffenderScheduledTemporaryAbsence'
+        when EVENT_CLASS = 'EXT_MOV' and EVENT_TYPE = 'TAP' and DIRECTION_CODE = 'IN' then 'OffenderScheduledTemporaryAbsenceReturn'
         else 'Unknown'
     end
 """,
