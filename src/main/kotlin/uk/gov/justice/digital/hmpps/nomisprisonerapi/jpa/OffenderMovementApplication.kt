@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
@@ -107,7 +108,7 @@ class OffenderMovementApplication(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${TemporaryAbsenceTransportType.TAP_TRANSPORT_TYPE}'",
+          value = "'${TemporaryAbsenceTransportType.TA_TRANSPORT}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
@@ -176,4 +177,7 @@ class OffenderMovementApplication(
 
   @OneToOne(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL])
   var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
+
+  @OneToMany(mappedBy = "offenderMovementApplication", cascade = [CascadeType.ALL])
+  val movements: MutableList<OffenderMovementApplicationMulti> = mutableListOf(),
 )

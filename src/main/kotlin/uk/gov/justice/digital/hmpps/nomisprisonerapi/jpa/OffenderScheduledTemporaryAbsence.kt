@@ -35,7 +35,7 @@ class OffenderScheduledTemporaryAbsence(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${TemporaryAbsenceTransportType.TAP_TRANSPORT_TYPE}'",
+          value = "'${TemporaryAbsenceTransportType.TA_TRANSPORT}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
