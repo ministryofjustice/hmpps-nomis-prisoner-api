@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceTransportType
@@ -37,6 +38,21 @@ interface OffenderTemporaryAbsenceApplicationDsl {
     returnTime: LocalDateTime = LocalDateTime.now().plusHours(1),
     dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit = {},
   ): OffenderScheduledTemporaryAbsence
+
+  @OffenderTemporaryAbsenceApplicationMovementsDslMarker
+  fun movement(
+    eventSubType: String = "C5",
+    fromDate: LocalDate = LocalDate.now(),
+    releaseTime: LocalDateTime = LocalDateTime.now(),
+    toDate: LocalDate = LocalDate.now().plusDays(1),
+    returnTime: LocalDateTime = LocalDateTime.now().plusDays(1),
+    comment: String? = "Movement comment",
+    toAgency: String? = "HAZLWD",
+    contactPersonName: String? = "Contact Person",
+    temporaryAbsenceType: String? = "RR",
+    temporaryAbsenceSubType: String? = "RDR",
+    dsl: OffenderTemporaryAbsenceApplicationMovementsDsl.() -> Unit = {},
+  ): OffenderMovementApplicationMulti
 }
 
 @Component
@@ -64,13 +80,15 @@ class OffenderTemporaryAbsenceApplicationBuilderRepository(
 class OffenderTemporaryAbsenceApplicationBuilderFactory(
   private val repository: OffenderTemporaryAbsenceApplicationBuilderRepository,
   private val scheduledTemporaryAbsenceBuilderFactory: OffenderScheduledTemporaryAbsenceBuilderFactory,
+  private val movementsBuilderFactory: OffenderTemporaryAbsenceApplicationMovementsBuilderFactory,
 ) {
-  fun builder() = OffenderTemporaryAbsenceApplicationBuilder(repository, scheduledTemporaryAbsenceBuilderFactory)
+  fun builder() = OffenderTemporaryAbsenceApplicationBuilder(repository, scheduledTemporaryAbsenceBuilderFactory, movementsBuilderFactory)
 }
 
 class OffenderTemporaryAbsenceApplicationBuilder(
   private val repository: OffenderTemporaryAbsenceApplicationBuilderRepository,
   private val scheduleTemporaryAbsenceBuilderFactory: OffenderScheduledTemporaryAbsenceBuilderFactory,
+  private val movementsBuilderFactory: OffenderTemporaryAbsenceApplicationMovementsBuilderFactory,
 ) : OffenderTemporaryAbsenceApplicationDsl {
 
   private lateinit var temporaryAbsenceApplication: OffenderMovementApplication
@@ -148,5 +166,34 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     )
       .also { temporaryAbsenceApplication.scheduledTemporaryAbsence = it }
       .also { builder.apply(dsl) }
+  }
+
+  override fun movement(
+    eventSubType: String,
+    fromDate: LocalDate,
+    releaseTime: LocalDateTime,
+    toDate: LocalDate,
+    returnTime: LocalDateTime,
+    comment: String?,
+    toAgency: String?,
+    contactPersonName: String?,
+    temporaryAbsenceType: String?,
+    temporaryAbsenceSubType: String?,
+    dsl: OffenderTemporaryAbsenceApplicationMovementsDsl.() -> Unit,
+  ): OffenderMovementApplicationMulti = movementsBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderMovementApplication = temporaryAbsenceApplication,
+      eventSubType = eventSubType,
+      fromDate = fromDate,
+      releaseTime = releaseTime,
+      toDate = toDate,
+      returnTime = returnTime,
+      comment = comment,
+      toAgency = toAgency,
+      contactPersonName = contactPersonName,
+      temporaryAbsenceType = temporaryAbsenceType,
+      temporaryAbsenceSubType = temporaryAbsenceSubType,
+    )
+      .also { temporaryAbsenceApplication.movements.add(it) }
   }
 }
