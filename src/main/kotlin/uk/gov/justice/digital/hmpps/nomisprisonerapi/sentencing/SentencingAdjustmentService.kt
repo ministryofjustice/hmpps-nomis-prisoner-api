@@ -6,12 +6,18 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment.Companion.RECALL_REMAND_CODE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment.Companion.RECALL_TAGGED_BAIL_CODE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment.Companion.REMAND_CODE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceAdjustment.Companion.TAGGED_BAIL_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.hasBeenReleased
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -252,6 +258,12 @@ class SentencingAdjustmentService(
         .map { it.toAdjustmentResponse() },
     )
   } ?: throw NotFoundException("Booking $bookingId not found")
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  fun convertAdjustmentsToRecallEquivalents(sentences: List<OffenderSentence>) {
+    sentences.forEach { sentence -> sentence.adjustments.filter { it.sentenceAdjustment.id == REMAND_CODE }.forEach { it.sentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(RECALL_REMAND_CODE)!! } }
+    sentences.forEach { sentence -> sentence.adjustments.filter { it.sentenceAdjustment.id == TAGGED_BAIL_CODE }.forEach { it.sentenceAdjustment = sentenceAdjustmentRepository.findByIdOrNull(RECALL_TAGGED_BAIL_CODE)!! } }
+  }
 }
 
 private fun OffenderKeyDateAdjustment.toAdjustmentResponse() = KeyDateAdjustmentResponse(
@@ -267,7 +279,7 @@ private fun OffenderKeyDateAdjustment.toAdjustmentResponse() = KeyDateAdjustment
   active = this.active,
   offenderNo = this.offenderBooking.offender.nomsId,
   hasBeenReleased = this.offenderBooking.hasBeenReleased(),
-  prisonId = this.offenderBooking.location?.id ?: "OUT",
+  prisonId = this.offenderBooking.location.id,
 )
 
 private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustmentResponse(
@@ -285,7 +297,7 @@ private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustme
   hiddenFromUsers = this.offenderKeyDateAdjustmentId != null,
   offenderNo = this.offenderBooking.offender.nomsId,
   hasBeenReleased = this.offenderBooking.hasBeenReleased(),
-  prisonId = this.offenderBooking.location?.id ?: "OUT",
+  prisonId = this.offenderBooking.location.id,
 )
 
 // dates are inclusive so a 1-day remand starts and end on dame day - unless zero days so have no toDate else it would be the day before
