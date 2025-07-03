@@ -1044,6 +1044,7 @@ class SentencingService(
 
     val sentencesUpdated = request.sentences.updateSentences()
     sentencingAdjustmentService.convertAdjustmentsToRecallEquivalents(sentencesUpdated)
+    sentencingAdjustmentService.activateAllAdjustment(sentencesUpdated)
     request.returnToCustody.createOrUpdateBooking(bookingIds)
 
     // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence

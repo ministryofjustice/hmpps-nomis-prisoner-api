@@ -6089,6 +6089,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var request: ConvertToRecallRequest
       private lateinit var remandAdjustment: OffenderSentenceAdjustment
       private lateinit var taggedBailAdjustment: OffenderSentenceAdjustment
+      private lateinit var unusedRemandAdjustment: OffenderSentenceAdjustment
 
       @Nested
       open inner class FirstFixedTermRecall {
@@ -6122,7 +6123,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     ) {
                       offenderSentenceCharge(offenderCharge = offenderCharge1)
                       term(days = 35, sentenceTermType = "IMP")
-                      remandAdjustment = adjustment(adjustmentTypeCode = "RX")
+                      remandAdjustment = adjustment(adjustmentTypeCode = "RX", active = false)
                     }
                     sentence2 = sentence(
                       category = "2020",
@@ -6143,7 +6144,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2023-05-02"))
                     }
                     sentence3 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
-                      taggedBailAdjustment = adjustment(adjustmentTypeCode = "S240A")
+                      taggedBailAdjustment = adjustment(adjustmentTypeCode = "S240A", active = false)
+                      unusedRemandAdjustment = adjustment(adjustmentTypeCode = "UR", active = false)
                       offenderSentenceCharge(offenderCharge = offenderCharge3)
                       term(days = 35, sentenceTermType = "IMP")
                     }
@@ -6272,9 +6274,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
 
         @Test
-        fun `will update remand adjustment to recall remand`() {
+        fun `will update remand adjustment to recall remand and activate`() {
           with(offenderSentenceAdjustmentRepository.findByIdOrNull(remandAdjustment.id)!!) {
-            assertThat(this.sentenceAdjustment.id).isEqualTo("RX")
+            assertThat(sentenceAdjustment.id).isEqualTo("RX")
+            assertThat(active).isFalse
           }
 
           webTestClient.post()
@@ -6286,14 +6289,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           with(offenderSentenceAdjustmentRepository.findByIdOrNull(remandAdjustment.id)!!) {
-            assertThat(this.sentenceAdjustment.id).isEqualTo("RSR")
+            assertThat(sentenceAdjustment.id).isEqualTo("RSR")
+            assertThat(active).isTrue
           }
         }
 
         @Test
         fun `will update tagged bail adjustment to recall tagged bail`() {
           with(offenderSentenceAdjustmentRepository.findByIdOrNull(taggedBailAdjustment.id)!!) {
-            assertThat(this.sentenceAdjustment.id).isEqualTo("S240A")
+            assertThat(sentenceAdjustment.id).isEqualTo("S240A")
+            assertThat(active).isFalse
           }
 
           webTestClient.post()
@@ -6305,7 +6310,29 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           with(offenderSentenceAdjustmentRepository.findByIdOrNull(taggedBailAdjustment.id)!!) {
-            assertThat(this.sentenceAdjustment.id).isEqualTo("RST")
+            assertThat(sentenceAdjustment.id).isEqualTo("RST")
+            assertThat(active).isTrue
+          }
+        }
+
+        @Test
+        fun `will activate all sentence adjustments`() {
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(unusedRemandAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UR")
+            assertThat(active).isFalse
+          }
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(unusedRemandAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UR")
+            assertThat(active).isTrue
           }
         }
 
