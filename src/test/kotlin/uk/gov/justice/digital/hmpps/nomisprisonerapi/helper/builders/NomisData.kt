@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -41,6 +42,7 @@ class NomisDataBuilder(
   private val personBuilderFactory: PersonBuilderFactory? = null,
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
+  private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
 ) {
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -60,6 +62,7 @@ class NomisDataBuilder(
     personBuilderFactory,
     corporateBuilderFactory,
     linkCaseTxnBuilderFactory,
+    agencyAddressBuilderFactory,
   ).apply(dsl)
 }
 
@@ -79,6 +82,7 @@ class NomisData(
   private val personBuilderFactory: PersonBuilderFactory? = null,
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
+  private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
 ) : NomisDataDsl {
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
@@ -441,6 +445,58 @@ class NomisData(
           builder.apply(dsl)
         }
     }
+
+  // TODO - I chickened out of mapping AGENCY_LOCATIONS because AGY_LOC_ID is everywhere. Left it for the person who migrates agencies.
+  override fun agencyAddress(
+    agencyLocationId: String,
+    type: String?,
+    premise: String?,
+    street: String?,
+    locality: String?,
+    flat: String?,
+    postcode: String?,
+    city: String?,
+    county: String?,
+    country: String?,
+    validatedPAF: Boolean,
+    noFixedAddress: Boolean?,
+    primaryAddress: Boolean,
+    mailAddress: Boolean,
+    comment: String?,
+    startDate: String?,
+    endDate: String?,
+    isServices: Boolean,
+    businessHours: String?,
+    contactPersonName: String?,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+    dsl: AgencyAddressDsl.() -> Unit,
+  ): AgencyAddress = agencyAddressBuilderFactory!!.builder().let { builder ->
+    builder.build(
+      agencyLocationId = agencyLocationId,
+      type = type,
+      premise = premise,
+      street = street,
+      locality = locality,
+      flat = flat,
+      postcode = postcode,
+      city = city,
+      county = county,
+      country = country,
+      validatedPAF = validatedPAF,
+      noFixedAddress = noFixedAddress,
+      primaryAddress = primaryAddress,
+      mailAddress = mailAddress,
+      comment = comment,
+      startDate = startDate?.let { LocalDate.parse(startDate) },
+      endDate = endDate?.let { LocalDate.parse(endDate) },
+      isServices = isServices,
+      businessHours = businessHours,
+      contactPersonName = contactPersonName,
+      whenCreated = whenCreated,
+      whoCreated = whoCreated,
+    )
+  }
 }
 
 @NomisDataDslMarker
@@ -628,6 +684,33 @@ interface NomisDataDsl {
     whenCreated: LocalDateTime? = null,
     dsl: LinkCaseTxnDsl.() -> Unit = {},
   ): LinkCaseTxn
+
+  @AgencyAddressDslMarker
+  fun agencyAddress(
+    agencyLocationId: String = "LEI",
+    type: String? = null,
+    premise: String? = "2",
+    street: String? = "Gloucester Terrace",
+    locality: String? = "Stanningley",
+    flat: String? = null,
+    postcode: String? = null,
+    city: String? = null,
+    county: String? = null,
+    country: String? = null,
+    validatedPAF: Boolean = false,
+    noFixedAddress: Boolean? = null,
+    primaryAddress: Boolean = false,
+    mailAddress: Boolean = false,
+    comment: String? = null,
+    startDate: String? = null,
+    endDate: String? = null,
+    isServices: Boolean = false,
+    businessHours: String? = null,
+    contactPersonName: String? = null,
+    whenCreated: LocalDateTime? = null,
+    whoCreated: String? = null,
+    dsl: AgencyAddressDsl.() -> Unit = {},
+  ): AgencyAddress
 }
 
 @DslMarker

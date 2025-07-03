@@ -7,7 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
@@ -233,6 +236,45 @@ class TemporaryAbsenceIntTest(
         assertThat(contactPersonName).isEqualTo("Contact Person 2")
         assertThat(temporaryAbsenceType?.code).isEqualTo("SR")
         assertThat(temporaryAbsenceSubType?.code).isEqualTo("ROR")
+      }
+    }
+
+    @Test
+    fun `Should save and load application address`() {
+      lateinit var corporateAddress: CorporateAddress
+      lateinit var offenderAddress: OffenderAddress
+      lateinit var agencyAddress: AgencyAddress
+      lateinit var application1: OffenderMovementApplication
+      lateinit var application2: OffenderMovementApplication
+      lateinit var application3: OffenderMovementApplication
+      nomisDataBuilder.build {
+        corporate("Kwikfit") {
+          corporateAddress = address()
+        }
+        agencyAddress = agencyAddress()
+        offender {
+          offenderAddress = address()
+          booking = booking {
+            application1 = temporaryAbsenceApplication(toAddress = corporateAddress)
+            application2 = temporaryAbsenceApplication(toAddress = offenderAddress)
+            application3 = temporaryAbsenceApplication(toAddress = agencyAddress)
+          }
+        }
+      }
+
+      with(movementApplicationRepository.findByIdOrNull(application1.movementApplicationId)!!) {
+        assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("CORP")
+      }
+
+      with(movementApplicationRepository.findByIdOrNull(application2.movementApplicationId)!!) {
+        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("OFF")
+      }
+
+      with(movementApplicationRepository.findByIdOrNull(application3.movementApplicationId)!!) {
+        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("AGY")
       }
     }
   }

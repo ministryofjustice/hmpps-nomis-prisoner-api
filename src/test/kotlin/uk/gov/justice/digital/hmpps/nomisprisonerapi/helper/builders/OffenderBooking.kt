@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -382,8 +383,7 @@ interface BookingDsl {
     escort: String? = "L",
     transportType: String? = "VAN",
     comment: String? = "Some application comment",
-//    toAddressOwnerClass: String?,
-//    toAddressId: Long?,
+    toAddress: Address? = null,
     prison: String? = "LEI",
     toAgency: String? = "HAZLWD",
     contactPersonName: String? = null,
@@ -1199,8 +1199,7 @@ class BookingBuilder(
     escort: String?,
     transportType: String?,
     comment: String?,
-//    toAddressOwnerClass: String?,
-//    toAddressId: Long?,
+    toAddress: Address?,
     prison: String?,
     toAgency: String?,
     contactPersonName: String?,
@@ -1222,6 +1221,7 @@ class BookingBuilder(
       escort = escort,
       transportType = transportType,
       comment = comment,
+      toAddress = toAddress,
       prison = prison,
       toAgency = toAgency,
       contactPersonName = contactPersonName,
