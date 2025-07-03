@@ -277,6 +277,11 @@ class SentencingAdjustmentService(
     )
   }
 
+  @Transactional(propagation = Propagation.MANDATORY)
+  fun activateAllAdjustment(sentences: List<OffenderSentence>) {
+    sentences.forEach { it.adjustments.forEach { it.active = true } }
+  }
+
   private fun convertAdjustments(
     sentences: List<OffenderSentence>,
     sourceAdjustments: List<String>,
