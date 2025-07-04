@@ -100,7 +100,7 @@ class SentencingService(
   private val mergeTransactionRepository: MergeTransactionRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository,
-
+  private val sentencingAdjustmentService: SentencingAdjustmentService,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -1043,6 +1043,8 @@ class SentencingService(
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
     val sentencesUpdated = request.sentences.updateSentences()
+    sentencingAdjustmentService.convertAdjustmentsToRecallEquivalents(sentencesUpdated)
+    sentencingAdjustmentService.activateAllAdjustment(sentencesUpdated)
     request.returnToCustody.createOrUpdateBooking(bookingIds)
 
     // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence
@@ -1165,7 +1167,8 @@ class SentencingService(
   fun replaceRecallSentences(offenderNo: String, request: DeleteRecallRequest) {
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
-    request.sentences.updateSentences()
+    val sentencesUpdated = request.sentences.updateSentences()
+    sentencingAdjustmentService.convertAdjustmentsToPreRecallEquivalents(sentencesUpdated)
     bookingIds.forEach { bookingId ->
       findOffenderBooking(bookingId).fixedTermRecall = null
       offenderFixedTermRecallRepository.deleteById(bookingId)
@@ -1496,7 +1499,7 @@ private fun OffenderSentenceTerm.toSentenceTermResponse(): SentenceTermResponse 
   endDate = this.endDate,
   lifeSentenceFlag = this.lifeSentenceFlag,
   sentenceTermType = this.sentenceTermType.toCodeDescription(),
-  prisonId = this.id.offenderBooking.location?.id ?: "OUT",
+  prisonId = this.id.offenderBooking.location.id,
 )
 
 fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
@@ -1555,7 +1558,7 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   sentenceTerms = this.offenderSentenceTerms.map { it.toSentenceTermResponse() },
   offenderCharges = this.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
   missingCourtOffenderChargeIds = emptyList(),
-  prisonId = this.id.offenderBooking.location?.id ?: "OUT",
+  prisonId = this.id.offenderBooking.location.id,
   recallCustodyDate = this.id.offenderBooking.fixedTermRecall?.takeIf { this.isActiveRecallSentence() }?.let {
     RecallCustodyDate(
       returnToCustodyDate = it.returnToCustodyDate,

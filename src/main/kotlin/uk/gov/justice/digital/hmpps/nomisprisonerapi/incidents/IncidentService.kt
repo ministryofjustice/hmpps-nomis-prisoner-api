@@ -335,6 +335,10 @@ class IncidentService(
     } else {
       substring(0, MAX_INCIDENT_LENGTH_BYTES - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
     }
+
+  fun deleteIncident(incidentId: Long) {
+    incidentRepository.deleteById(incidentId)
+  }
 }
 
 private const val MAX_INCIDENT_LENGTH_BYTES: Int = 4000

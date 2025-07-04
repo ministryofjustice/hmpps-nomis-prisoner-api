@@ -1700,4 +1700,68 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("DELETE /incidents/{incidentId}")
+  @Nested
+  inner class DeleteIncident {
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/incidents/${incident1.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class NoValidation {
+      @Test
+      fun `return 204 even when does not exist`() {
+        webTestClient.delete().uri("/incidents/99999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the incident`() {
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+        webTestClient.delete().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectStatus()
+          .isNotFound
+      }
+    }
+  }
 }

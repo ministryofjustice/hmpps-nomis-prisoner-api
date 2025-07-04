@@ -355,6 +355,7 @@ internal class VisitServiceTest {
             bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
+            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
           ),
         )
 
@@ -400,6 +401,7 @@ internal class VisitServiceTest {
             bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
+            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
           ),
         )
 
@@ -433,6 +435,7 @@ internal class VisitServiceTest {
             bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
+            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
           ),
         )
 
@@ -533,6 +536,7 @@ internal class VisitServiceTest {
             bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
+            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
           ),
         )
 
@@ -570,6 +574,7 @@ internal class VisitServiceTest {
             bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
+            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
           ),
         )
 
@@ -607,6 +612,7 @@ internal class VisitServiceTest {
             bookingId = OFFENDER_BOOKING_ID,
             bookingBeginDate = LocalDateTime.now(),
             offender = defaultOffender,
+            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
           ),
         )
 

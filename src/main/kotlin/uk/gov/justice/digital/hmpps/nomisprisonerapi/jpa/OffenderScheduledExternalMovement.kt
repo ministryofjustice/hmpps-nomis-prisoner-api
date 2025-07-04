@@ -1,29 +1,62 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-// TODO SDIT-2872 This isn't being used yet and is missing some details - it will hopefully become abstract with subclasses for the various types of external movement
 @Entity
-@DiscriminatorValue("EXT_MOV")
-class OffenderScheduledExternalMovement(
+abstract class OffenderScheduledExternalMovement(
   eventId: Long = 0,
   offenderBooking: OffenderBooking,
   eventDate: LocalDate? = null,
   startTime: LocalDateTime? = null,
-  eventType: String, // One of TRN (transfers), TAP (temporary absence) or CRT (court)
-  eventSubType: EventSubType,
+  eventType: EventType,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'${MovementReason.MOVE_RSN}'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_SUB_TYPE", referencedColumnName = "code")),
+    ],
+  )
+  var eventSubType: MovementReason,
+
   eventStatus: EventStatus,
-  prison: AgencyLocation? = null,
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "TO_AGY_LOC_ID")
-  val toPrison: AgencyLocation? = null,
   comment: String? = null,
+
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @NotFound(action = NotFoundAction.IGNORE)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'${Escort.ESCORT}'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "ESCORT_CODE", referencedColumnName = "code")),
+    ],
+  )
+  val escort: Escort,
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "DIRECTION_CODE")
+  val direction: MovementDirection,
 ) : OffenderIndividualSchedule(
   eventId = eventId,
   offenderBooking = offenderBooking,
@@ -31,8 +64,6 @@ class OffenderScheduledExternalMovement(
   startTime = startTime,
   eventClass = EventClass.EXT_MOV,
   eventType = eventType,
-  eventSubType = eventSubType,
   eventStatus = eventStatus,
-  prison = prison,
   comment = comment,
 )

@@ -4,6 +4,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
@@ -86,6 +87,28 @@ class AddressPhoneBuilderRepositoryBuilder(private val repository: AddressPhoneB
 
   fun build(
     address: CorporateAddress,
+    phoneType: String,
+    phoneNo: String,
+    extNo: String? = null,
+    whenCreated: LocalDateTime?,
+    whoCreated: String?,
+  ): AddressPhone = AddressPhone(
+    address = address,
+    phoneNo = phoneNo,
+    phoneType = repository.phoneUsageOf(phoneType),
+    extNo = extNo,
+  ).let { repository.save(it) }
+    .also {
+      if (whenCreated != null) {
+        repository.updateCreateDatetime(it, whenCreated)
+      }
+      if (whoCreated != null) {
+        repository.updateCreateUsername(it, whoCreated)
+      }
+    }
+
+  fun build(
+    address: AgencyAddress,
     phoneType: String,
     phoneNo: String,
     extNo: String? = null,

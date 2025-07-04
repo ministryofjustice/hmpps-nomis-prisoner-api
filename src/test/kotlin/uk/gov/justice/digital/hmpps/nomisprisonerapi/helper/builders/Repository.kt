@@ -17,10 +17,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseSchedule
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalScheduleReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -96,7 +96,7 @@ class Repository(
   val payBandRepository: ReferenceCodeRepository<PayBand>,
   val offenderAppointmentRepository: OffenderAppointmentRepository,
   val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
-  val eventSubTypeRepository: ReferenceCodeRepository<EventSubType>,
+  val internalScheduleReasonRepository: ReferenceCodeRepository<InternalScheduleReason>,
   val offenderCourseAttendanceRepository: OffenderCourseAttendanceRepository,
   val courseScheduleRepository: CourseScheduleRepository,
   val adjudicationIncidentRepository: AdjudicationIncidentRepository,
@@ -197,7 +197,7 @@ class Repository(
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
 
   fun lookupEventStatusCode(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
-  fun lookupEventSubtype(code: String): EventSubType = eventSubTypeRepository.findByIdOrNull(EventSubType.pk(code))!!
+  fun lookupEventSubtype(code: String): InternalScheduleReason = internalScheduleReasonRepository.findByIdOrNull(InternalScheduleReason.pk(code))!!
 
   // Test Helpers
 
