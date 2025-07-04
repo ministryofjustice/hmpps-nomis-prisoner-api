@@ -1044,7 +1044,7 @@ class SentencingService(
 
     val sentencesUpdated = request.sentences.updateSentences()
     sentencingAdjustmentService.convertAdjustmentsToRecallEquivalents(sentencesUpdated)
-    sentencingAdjustmentService.activateAllAdjustment(sentencesUpdated)
+    val adjustmentsUpdated = sentencingAdjustmentService.activateAllAdjustment(sentencesUpdated)
     request.returnToCustody.createOrUpdateBooking(bookingIds)
 
     // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence
@@ -1106,6 +1106,15 @@ class SentencingService(
 
     return ConvertToRecallResponse(
       courtEventIds = courtEvents.map { it.id },
+      sentenceAdjustmentsActivated = adjustmentsUpdated.filter { it.adjustmentIds.isNotEmpty() }.map {
+        SentenceIdAndAdjustmentIds(
+          sentenceId = SentenceId(
+            offenderBookingId = it.sentenceId.offenderBooking.bookingId,
+            sentenceSequence = it.sentenceId.sequence,
+          ),
+          adjustmentIds = it.adjustmentIds,
+        )
+      },
     )
   }
 
