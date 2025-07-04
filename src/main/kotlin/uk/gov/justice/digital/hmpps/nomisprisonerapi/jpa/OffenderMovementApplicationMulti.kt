@@ -88,8 +88,9 @@ class OffenderMovementApplicationMulti(
   @Column(name = "TO_ADDRESS_OWNER_CLASS")
   val toAddressOwnerClass: String? = null,
 
-  @Column(name = "TO_ADDRESS_ID")
-  val toAddressId: Long? = null,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "TO_ADDRESS_ID")
+  val toAddress: Address? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_AGY_LOC_ID")

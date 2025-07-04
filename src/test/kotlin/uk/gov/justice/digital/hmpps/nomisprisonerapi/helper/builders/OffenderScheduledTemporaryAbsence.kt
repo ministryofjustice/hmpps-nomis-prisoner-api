@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import jakarta.persistence.DiscriminatorValue
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -62,6 +64,9 @@ class OffenderScheduledTemporaryAbsenceBuilder(
 
   private lateinit var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
 
+  // I think I'll need this when writing to NOMIS during the sync... can't get access to the OWNER_CLASS column because it's a discriminator.
+  private fun Address?.toAddressOwnerClass() = this?.javaClass?.getAnnotation(DiscriminatorValue::class.java)?.value
+
   fun build(
     temporaryAbsenceApplication: OffenderMovementApplication,
     eventDate: LocalDate?,
@@ -74,6 +79,7 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     transportType: String,
     returnDate: LocalDate,
     returnTime: LocalDateTime,
+    toAddress: Address?,
   ): OffenderScheduledTemporaryAbsence = OffenderScheduledTemporaryAbsence(
     temporaryAbsenceApplication = temporaryAbsenceApplication,
     offenderBooking = temporaryAbsenceApplication.offenderBooking,
@@ -87,6 +93,8 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     transportType = repository.temporaryAbsenceTransportTypeOf(transportType),
     returnDate = returnDate,
     returnTime = returnTime,
+    toAddress = toAddress,
+    toAddressOwnerClass = toAddress.toAddressOwnerClass(),
   )
     .also { scheduledTemporaryAbsence = it }
 

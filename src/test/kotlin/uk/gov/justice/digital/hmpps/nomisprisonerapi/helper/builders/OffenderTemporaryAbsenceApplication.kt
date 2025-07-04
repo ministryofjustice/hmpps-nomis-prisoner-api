@@ -38,11 +38,12 @@ interface OffenderTemporaryAbsenceApplicationDsl {
     transportType: String = "VAN",
     returnDate: LocalDate = LocalDate.now().plusDays(1),
     returnTime: LocalDateTime = LocalDateTime.now().plusHours(1),
+    toAddress: Address? = null,
     dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit = {},
   ): OffenderScheduledTemporaryAbsence
 
   @OffenderTemporaryAbsenceApplicationMovementsDslMarker
-  fun movement(
+  fun outsideMovement(
     eventSubType: String = "C5",
     fromDate: LocalDate = LocalDate.now(),
     releaseTime: LocalDateTime = LocalDateTime.now(),
@@ -50,6 +51,7 @@ interface OffenderTemporaryAbsenceApplicationDsl {
     returnTime: LocalDateTime = LocalDateTime.now().plusDays(1),
     comment: String? = "Movement comment",
     toAgency: String? = "HAZLWD",
+    toAddress: Address? = null,
     contactPersonName: String? = "Contact Person",
     temporaryAbsenceType: String? = "RR",
     temporaryAbsenceSubType: String? = "RDR",
@@ -153,6 +155,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     transportType: String,
     returnDate: LocalDate,
     returnTime: LocalDateTime,
+    toAddress: Address?,
     dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit,
   ): OffenderScheduledTemporaryAbsence = scheduleTemporaryAbsenceBuilderFactory.builder().let { builder ->
     builder.build(
@@ -167,12 +170,13 @@ class OffenderTemporaryAbsenceApplicationBuilder(
       transportType = transportType,
       returnDate = returnDate,
       returnTime = returnTime,
+      toAddress = toAddress,
     )
       .also { temporaryAbsenceApplication.scheduledTemporaryAbsence = it }
       .also { builder.apply(dsl) }
   }
 
-  override fun movement(
+  override fun outsideMovement(
     eventSubType: String,
     fromDate: LocalDate,
     releaseTime: LocalDateTime,
@@ -180,6 +184,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     returnTime: LocalDateTime,
     comment: String?,
     toAgency: String?,
+    toAddress: Address?,
     contactPersonName: String?,
     temporaryAbsenceType: String?,
     temporaryAbsenceSubType: String?,
@@ -194,6 +199,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
       returnTime = returnTime,
       comment = comment,
       toAgency = toAgency,
+      toAddress = toAddress,
       contactPersonName = contactPersonName,
       temporaryAbsenceType = temporaryAbsenceType,
       temporaryAbsenceSubType = temporaryAbsenceSubType,
