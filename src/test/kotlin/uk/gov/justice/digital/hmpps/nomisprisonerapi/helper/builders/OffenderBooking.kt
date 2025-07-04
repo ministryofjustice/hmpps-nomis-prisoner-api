@@ -373,7 +373,7 @@ interface BookingDsl {
   @OffenderTemporaryAbsenceApplicationDslMarker
   fun temporaryAbsenceApplication(
     eventSubType: String = "C5",
-    applicationDate: LocalDate = LocalDate.now(),
+    applicationDate: LocalDateTime = LocalDateTime.now(),
     applicationTime: LocalDateTime = LocalDateTime.now(),
     fromDate: LocalDate = LocalDate.now(),
     releaseTime: LocalDateTime = LocalDateTime.now(),
@@ -1189,7 +1189,7 @@ class BookingBuilder(
 
   override fun temporaryAbsenceApplication(
     eventSubType: String,
-    applicationDate: LocalDate,
+    applicationDate: LocalDateTime,
     applicationTime: LocalDateTime,
     fromDate: LocalDate,
     releaseTime: LocalDateTime,

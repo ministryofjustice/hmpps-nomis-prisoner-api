@@ -95,6 +95,8 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     returnTime = returnTime,
     toAddress = toAddress,
     toAddressOwnerClass = toAddress.toAddressOwnerClass(),
+    applicationDate = temporaryAbsenceApplication.applicationDate,
+    applicationTime = temporaryAbsenceApplication.applicationTime,
   )
     .also { scheduledTemporaryAbsence = it }
 

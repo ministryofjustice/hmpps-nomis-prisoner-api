@@ -47,7 +47,7 @@ class TemporaryAbsenceIntTest(
           booking = booking {
             application = temporaryAbsenceApplication(
               eventSubType = "C5",
-              applicationDate = LocalDate.now(),
+              applicationDate = LocalDateTime.now(),
               applicationTime = LocalDateTime.now(),
               fromDate = LocalDate.now(),
               releaseTime = LocalDateTime.now(),
@@ -74,7 +74,7 @@ class TemporaryAbsenceIntTest(
         assertThat(eventClass).isEqualTo("EXT_MOV")
         assertThat(eventType).isEqualTo(EventType.TAP)
         assertThat(eventSubType.code).isEqualTo("C5")
-        assertThat(applicationDate).isEqualTo(LocalDate.now())
+        assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
         assertThat(applicationTime.toLocalDate()).isEqualTo(LocalDate.now())
         assertThat(fromDate).isEqualTo(LocalDate.now())
         assertThat(releaseTime.toLocalDate()).isEqualTo(LocalDate.now())
@@ -98,7 +98,10 @@ class TemporaryAbsenceIntTest(
       nomisDataBuilder.build {
         offender {
           booking = booking {
-            application = temporaryAbsenceApplication {
+            application = temporaryAbsenceApplication(
+              applicationDate = LocalDateTime.now(),
+              applicationTime = LocalDateTime.now(),
+            ) {
               scheduledAbsence = scheduledTemporaryAbsence(
                 eventDate = LocalDate.now(),
                 startTime = LocalDateTime.now(),
@@ -130,6 +133,8 @@ class TemporaryAbsenceIntTest(
         assertThat(transportType.code).isEqualTo("VAN")
         assertThat(returnDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(returnTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(applicationTime?.toLocalDate()).isEqualTo(LocalDate.now())
       }
     }
 
