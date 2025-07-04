@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
@@ -29,6 +30,7 @@ class TemporaryAbsenceIntTest(
   @Autowired private val movementApplicationMultiRepository: OffenderMovementApplicationMultiRepository,
   @Autowired private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   @Autowired private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
+  @Autowired private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTestBase() {
   // SDIT-2872 This is a temporary test class to prove that the database is modeled correctly - to be replaced by full integration tests later
   @Nested
@@ -176,7 +178,7 @@ class TemporaryAbsenceIntTest(
         offender {
           booking = booking {
             application = temporaryAbsenceApplication {
-              movement1 = movement(
+              movement1 = outsideMovement(
                 eventSubType = "C5",
                 fromDate = LocalDate.now(),
                 releaseTime = LocalDateTime.now(),
@@ -188,7 +190,7 @@ class TemporaryAbsenceIntTest(
                 temporaryAbsenceType = "RR",
                 temporaryAbsenceSubType = "RDR",
               )
-              movement2 = movement(
+              movement2 = outsideMovement(
                 eventSubType = "C6",
                 fromDate = LocalDate.now().plusDays(2),
                 releaseTime = LocalDateTime.now().plusDays(2),
@@ -247,6 +249,7 @@ class TemporaryAbsenceIntTest(
       lateinit var application1: OffenderMovementApplication
       lateinit var application2: OffenderMovementApplication
       lateinit var application3: OffenderMovementApplication
+
       nomisDataBuilder.build {
         corporate("Kwikfit") {
           corporateAddress = address()
@@ -275,6 +278,121 @@ class TemporaryAbsenceIntTest(
       with(movementApplicationRepository.findByIdOrNull(application3.movementApplicationId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("AGY")
+      }
+    }
+
+    @Test
+    fun `should save and load an application's outside movement addresses`() {
+      lateinit var corporateAddress: CorporateAddress
+      lateinit var offenderAddress: OffenderAddress
+      lateinit var agencyAddress: AgencyAddress
+      lateinit var movement1: OffenderMovementApplicationMulti
+      lateinit var movement2: OffenderMovementApplicationMulti
+      lateinit var movement3: OffenderMovementApplicationMulti
+
+      nomisDataBuilder.build {
+        corporate("Kwikfit") {
+          corporateAddress = address()
+        }
+        agencyAddress = agencyAddress()
+        offender {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              movement1 = outsideMovement(toAddress = corporateAddress)
+              movement2 = outsideMovement(toAddress = offenderAddress)
+              movement3 = outsideMovement(toAddress = agencyAddress)
+            }
+          }
+        }
+      }
+
+      val movements = movementApplicationMultiRepository.findByOffenderMovementApplication(application)
+      assertThat(movements).hasSize(3)
+
+      with(movements.first { it.movementApplicationMultiId == movement1.movementApplicationMultiId }) {
+        assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("CORP")
+      }
+
+      with(movements.first { it.movementApplicationMultiId == movement2.movementApplicationMultiId }) {
+        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("OFF")
+      }
+
+      with(movements.first { it.movementApplicationMultiId == movement3.movementApplicationMultiId }) {
+        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("AGY")
+      }
+    }
+
+    @Test
+    fun `should save and load TAP OUT addresses`() {
+      lateinit var corporateAddress: CorporateAddress
+      lateinit var offenderAddress: OffenderAddress
+      lateinit var agencyAddress: AgencyAddress
+      lateinit var scheduledAbsence2: OffenderScheduledTemporaryAbsence
+      lateinit var scheduledAbsence3: OffenderScheduledTemporaryAbsence
+
+      nomisDataBuilder.build {
+        corporate("Kwikfit") {
+          corporateAddress = address()
+        }
+        agencyAddress = agencyAddress()
+        offender {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledAbsence = scheduledTemporaryAbsence(toAddress = corporateAddress)
+            }
+            application = temporaryAbsenceApplication {
+              scheduledAbsence2 = scheduledTemporaryAbsence(toAddress = offenderAddress)
+            }
+            application = temporaryAbsenceApplication {
+              scheduledAbsence3 = scheduledTemporaryAbsence(toAddress = agencyAddress)
+            }
+          }
+        }
+      }
+
+      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence.eventId)!!) {
+        assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("CORP")
+      }
+
+      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence2.eventId)!!) {
+        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("OFF")
+      }
+
+      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence3.eventId)!!) {
+        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("AGY")
+      }
+    }
+
+    // This models some strange data in NOMIS where the to address owner class appears to be incorrectly set as the agency location id.
+    // Just need to make sure we can read that data from the table
+    @Test
+    fun `should load a temporary absence application with where address class is the agency id`() {
+      lateinit var agencyAddress: AgencyAddress
+
+      nomisDataBuilder.build {
+        agencyAddress = agencyAddress()
+        offender {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledAbsence = scheduledTemporaryAbsence(toAddress = agencyAddress)
+            }
+          }
+        }
+      }
+
+      jdbcTemplate.update("update offender_ind_schedules set TO_ADDRESS_OWNER_CLASS='${agencyAddress.agencyLocationId}'")
+
+      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence.eventId)!!) {
+        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo(agencyAddress.agencyLocationId)
       }
     }
   }
