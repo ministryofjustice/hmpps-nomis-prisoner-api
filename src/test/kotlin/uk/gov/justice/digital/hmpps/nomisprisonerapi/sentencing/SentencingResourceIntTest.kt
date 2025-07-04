@@ -6322,18 +6322,29 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(active).isFalse
           }
 
-          webTestClient.post()
+          val response: ConvertToRecallResponse = webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
-            .expectStatus().isOk
+            .expectStatus().isOk.expectBodyResponse()
 
           with(offenderSentenceAdjustmentRepository.findByIdOrNull(unusedRemandAdjustment.id)!!) {
             assertThat(sentenceAdjustment.id).isEqualTo("UR")
             assertThat(active).isTrue
           }
+
+          assertThat(response.sentenceAdjustmentsActivated).hasSize(2)
+          assertThat(response.sentenceAdjustmentsActivated[0].sentenceId.offenderBookingId).isEqualTo(sentence1.id.offenderBooking.bookingId)
+          assertThat(response.sentenceAdjustmentsActivated[0].sentenceId.sentenceSequence).isEqualTo(sentence1.id.sequence)
+          assertThat(response.sentenceAdjustmentsActivated[0].adjustmentIds).hasSize(1)
+          assertThat(response.sentenceAdjustmentsActivated[0].adjustmentIds[0]).isEqualTo(remandAdjustment.id)
+          assertThat(response.sentenceAdjustmentsActivated[1].sentenceId.offenderBookingId).isEqualTo(sentence3.id.offenderBooking.bookingId)
+          assertThat(response.sentenceAdjustmentsActivated[1].sentenceId.sentenceSequence).isEqualTo(sentence3.id.sequence)
+          assertThat(response.sentenceAdjustmentsActivated[1].adjustmentIds).hasSize(2)
+          assertThat(response.sentenceAdjustmentsActivated[1].adjustmentIds[0]).isEqualTo(taggedBailAdjustment.id)
+          assertThat(response.sentenceAdjustmentsActivated[1].adjustmentIds[1]).isEqualTo(unusedRemandAdjustment.id)
         }
 
         @Test

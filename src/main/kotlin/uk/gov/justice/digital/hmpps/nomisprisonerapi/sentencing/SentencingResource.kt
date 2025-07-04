@@ -2487,6 +2487,14 @@ data class RevertRecallRequest(
 data class ConvertToRecallResponse(
   @Schema(description = "the breach court appearance ids created")
   val courtEventIds: List<Long>,
+  @Schema(description = "the sentence adjustments and parent sentence that have been activate by the recall")
+  val sentenceAdjustmentsActivated: List<SentenceIdAndAdjustmentIds>,
+)
+
+@Schema(description = "Recall convert response")
+data class SentenceIdAndAdjustmentIds(
+  val sentenceId: SentenceId,
+  val adjustmentIds: List<Long>,
 )
 
 @Schema(description = "Delete recall sentence request")

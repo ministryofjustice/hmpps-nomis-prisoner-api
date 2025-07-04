@@ -278,8 +278,16 @@ class SentencingAdjustmentService(
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
-  fun activateAllAdjustment(sentences: List<OffenderSentence>) {
-    sentences.forEach { it.adjustments.forEach { it.active = true } }
+  fun activateAllAdjustment(sentences: List<OffenderSentence>): List<SentenceIdAndAdjustments> = sentences.map { sentence ->
+    val adjustmentIds = sentence.adjustments.map {
+      // mutate and make active
+      it.active = true
+      it.id
+    }
+    SentenceIdAndAdjustments(
+      sentenceId = sentence.id,
+      adjustmentIds = adjustmentIds,
+    )
   }
 
   private fun convertAdjustments(
@@ -337,3 +345,8 @@ private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustme
 
 // dates are inclusive so a 1-day remand starts and end on dame day - unless zero days so have no toDate else it would be the day before
 private fun LocalDate?.asToDate(adjustmentDays: Long) = this?.takeIf { adjustmentDays > 0 }?.plusDays(adjustmentDays - 1)
+
+data class SentenceIdAndAdjustments(
+  val sentenceId: SentenceId,
+  val adjustmentIds: List<Long>,
+)
