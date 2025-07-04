@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
@@ -336,6 +337,54 @@ class IncidentResource(private val incidentService: IncidentService) {
     request: UpsertIncidentRequest,
   ) {
     incidentService.upsertIncident(incidentId, request)
+  }
+
+  @DeleteMapping("/{incidentId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete an incident using the specified id",
+    description = "Delete an incident. Requires ROLE_NOMIS_INCIDENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Incident delete",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_INCIDENTS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Incident does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteIncident(
+    @Schema(description = "Incident id") @PathVariable incidentId: Long,
+  ) {
+    incidentService.deleteIncident(incidentId)
   }
 }
 
