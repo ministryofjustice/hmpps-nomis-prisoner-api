@@ -64,7 +64,11 @@ class OffenderScheduledTemporaryAbsence(
   @JoinColumn(name = "TO_ADDRESS_ID")
   val toAddress: Address? = null,
 
-  // TODO - APPLICATION_TIME
+  @Column(name = "APPLICATION_DATE")
+  val applicationDate: LocalDateTime,
+
+  @Column(name = "APPLICATION_TIME")
+  val applicationTime: LocalDateTime? = null,
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
   offenderBooking = offenderBooking,

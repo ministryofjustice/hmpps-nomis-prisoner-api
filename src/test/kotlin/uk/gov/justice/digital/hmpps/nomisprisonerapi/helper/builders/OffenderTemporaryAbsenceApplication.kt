@@ -103,7 +103,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
   fun build(
     offenderBooking: OffenderBooking,
     eventSubType: String,
-    applicationDate: LocalDate,
+    applicationDate: LocalDateTime,
     applicationTime: LocalDateTime,
     fromDate: LocalDate,
     releaseTime: LocalDateTime,

@@ -57,7 +57,7 @@ class OffenderMovementApplication(
   val eventSubType: MovementReason,
 
   @Column(name = "APPLICATION_DATE")
-  val applicationDate: LocalDate,
+  val applicationDate: LocalDateTime,
 
   @Column(name = "APPLICATION_TIME")
   val applicationTime: LocalDateTime,
