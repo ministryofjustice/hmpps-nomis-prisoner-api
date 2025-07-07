@@ -2,7 +2,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
@@ -10,7 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -36,12 +40,21 @@ class OffenderExternalMovementBuilderRepository(
   val movementTypeRepository: ReferenceCodeRepository<MovementType>,
   val agencyLocationRepository: AgencyLocationRepository,
   val offenderExternalMovementRepository: OffenderExternalMovementRepository,
+  val arrestAgencyRepository: ReferenceCodeRepository<ArrestAgency>,
+  val escortRepository: ReferenceCodeRepository<Escort>,
+  val cityRepository: ReferenceCodeRepository<City>,
 ) {
-  fun lookupMovementReason(code: String): MovementReason = movementReasonRepository.findByIdOrNull(Pk(MovementReason.MOVE_RSN, code))!!
+  fun lookupMovementReason(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
 
-  fun lookupMovementType(code: String): MovementType = movementTypeRepository.findByIdOrNull(Pk(MovementType.MOVE_TYPE, code))!!
+  fun lookupMovementType(code: String): MovementType = movementTypeRepository.findByIdOrNull(MovementType.pk(code))!!
 
   fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)!!
+
+  fun lookupArrestAgency(arrestAgencyId: String): ArrestAgency = arrestAgencyRepository.findByIdOrNull(ArrestAgency.pk(arrestAgencyId))!!
+
+  fun lookupEscort(escortCode: String): Escort = escortRepository.findByIdOrNull(Escort.pk(escortCode))!!
+
+  fun lookupCity(cityCode: String): City = cityRepository.findByIdOrNull(City.pk(cityCode))!!
 
   fun save(movement: OffenderExternalMovement): OffenderExternalMovement = offenderExternalMovementRepository.save(movement)
 }
@@ -135,6 +148,44 @@ class OffenderExternalMovementBuilder(
     offenderBooking.location = offenderBooking.location
     offenderBooking.active = true
     offenderBooking.bookingEndDate = null
+  }
+
+  fun buildTemporaryAbsence(
+    date: LocalDateTime,
+    offenderBooking: OffenderBooking,
+    fromPrisonId: String,
+    movementReason: String,
+    arrestAgency: String?,
+    escort: String?,
+    escortText: String?,
+    comment: String?,
+    toCity: String?,
+    toAddress: Address?,
+    scheduledMovement: OffenderScheduledTemporaryAbsence? = null,
+  ): OffenderExternalMovement = repository.save(
+    OffenderExternalMovement(
+      id = OffenderExternalMovementId(
+        offenderBooking,
+        offenderBooking.externalMovements.size + 1L,
+      ),
+      movementDate = date.toLocalDate(),
+      movementTime = date,
+      movementDirection = OUT,
+      movementType = repository.lookupMovementType("TAP"),
+      movementReason = repository.lookupMovementReason(movementReason),
+      arrestAgency = arrestAgency?.let { repository.lookupArrestAgency(arrestAgency) },
+      escort = escort?.let { repository.lookupEscort(escort) },
+      escortText = escortText,
+      fromAgency = repository.lookupAgency(fromPrisonId),
+      active = true,
+      commentText = comment,
+      toCity = toCity?.let { repository.lookupCity(toCity) },
+      toAddress = toAddress,
+      scheduledMovement = scheduledMovement,
+    ),
+  ).also {
+    offenderBooking.inOutStatus = "OUT"
+    offenderBooking.location = repository.lookupAgency("OUT")
   }
 
   fun build(

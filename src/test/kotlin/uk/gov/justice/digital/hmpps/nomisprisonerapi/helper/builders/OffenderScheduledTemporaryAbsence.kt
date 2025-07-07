@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
@@ -32,6 +33,19 @@ interface OffenderScheduledTemporaryAbsenceDsl {
     escort: String = "U",
     toPrison: String = "LEI",
   ): OffenderScheduledTemporaryAbsenceReturn
+
+  @OffenderExternalMovementDslMarker
+  fun externalMovement(
+    date: LocalDateTime = LocalDateTime.now(),
+    fromPrisonId: String = "BXI",
+    movementReason: String = "C5",
+    arrestAgency: String? = null,
+    escort: String? = null,
+    escortText: String? = null,
+    comment: String? = null,
+    toCity: String? = null,
+    toAddress: Address? = null,
+  ): OffenderExternalMovement
 }
 
 @Component
@@ -53,13 +67,15 @@ class OffenderScheduledTemporaryAbsenceBuilderRepository(
 class OffenderScheduledTemporaryAbsenceBuilderFactory(
   private val repository: OffenderScheduledTemporaryAbsenceBuilderRepository,
   private val returnBuilderFactory: OffenderScheduledTemporaryAbsenceReturnBuilderFactory,
+  private val externalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) {
-  fun builder() = OffenderScheduledTemporaryAbsenceBuilder(repository, returnBuilderFactory)
+  fun builder() = OffenderScheduledTemporaryAbsenceBuilder(repository, returnBuilderFactory, externalMovementBuilderFactory)
 }
 
 class OffenderScheduledTemporaryAbsenceBuilder(
   private val repository: OffenderScheduledTemporaryAbsenceBuilderRepository,
   private val temporaryAbsenceReturnBuilderFactory: OffenderScheduledTemporaryAbsenceReturnBuilderFactory,
+  private val externalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) : OffenderScheduledTemporaryAbsenceDsl {
 
   private lateinit var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
@@ -120,4 +136,34 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     toPrison = toPrison,
   )
     .also { scheduledTemporaryAbsence.scheduledReturn = it }
+
+  override fun externalMovement(
+    date: LocalDateTime,
+    fromPrisonId: String,
+    movementReason: String,
+    arrestAgency: String?,
+    escort: String?,
+    escortText: String?,
+    comment: String?,
+    toCity: String?,
+    toAddress: Address?,
+  ): OffenderExternalMovement = externalMovementBuilderFactory.builder()
+    .let { builder ->
+      builder.buildTemporaryAbsence(
+        offenderBooking = scheduledTemporaryAbsence.offenderBooking,
+        date = date,
+        fromPrisonId = fromPrisonId,
+        movementReason = movementReason,
+        arrestAgency = arrestAgency,
+        escort = escort,
+        escortText = escortText,
+        comment = comment,
+        toCity = toCity,
+        toAddress = toAddress,
+      )
+        .also {
+          scheduledTemporaryAbsence.externalMovement = it
+          scheduledTemporaryAbsence.offenderBooking.externalMovements += it
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Basic
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Embeddable
@@ -11,6 +12,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
@@ -79,6 +81,36 @@ class OffenderExternalMovement(
   @Enumerated(EnumType.STRING)
   var movementDirection: MovementDirection,
 
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + ArrestAgency.ARREST_AGY + "'",
+          referencedColumnName = "domain",
+        ),
+      ),
+      JoinColumnOrFormula(column = JoinColumn(name = "ARREST_AGENCY_LOC_ID", referencedColumnName = "code")),
+    ],
+  )
+  val arrestAgency: ArrestAgency? = null,
+
+  @ManyToOne(optional = false, fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'${Escort.ESCORT}'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "ESCORT_CODE", referencedColumnName = "code")),
+    ],
+  )
+  val escort: Escort? = null,
+
+  @Column(name = "ESCORT_TEXT")
+  val escortText: String? = null,
+
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "FROM_AGY_LOC_ID")
   val fromAgency: AgencyLocation? = null,
@@ -94,6 +126,43 @@ class OffenderExternalMovement(
   @Column(name = "COMMENT_TEXT")
   var commentText: String? = null,
 
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + City.CITY + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "FROM_CITY", referencedColumnName = "code")),
+    ],
+  )
+  var fromCity: City? = null,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + City.CITY + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "TO_CITY", referencedColumnName = "code")),
+    ],
+  )
+  var toCity: City? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "FROM_ADDRESS_ID")
+  val fromAddress: Address? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "TO_ADDRESS_ID")
+  val toAddress: Address? = null,
+
+  @OneToOne(cascade = [CascadeType.ALL])
+  @JoinColumn(name = "EVENT_ID")
+  var scheduledMovement: OffenderScheduledExternalMovement? = null,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
