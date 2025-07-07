@@ -204,6 +204,6 @@ class OffenderTemporaryAbsenceApplicationBuilder(
       temporaryAbsenceType = temporaryAbsenceType,
       temporaryAbsenceSubType = temporaryAbsenceSubType,
     )
-      .also { temporaryAbsenceApplication.movements.add(it) }
+      .also { temporaryAbsenceApplication.outsideMovements.add(it) }
   }
 }

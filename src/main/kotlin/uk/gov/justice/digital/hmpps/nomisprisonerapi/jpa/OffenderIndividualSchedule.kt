@@ -23,6 +23,7 @@ import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedBy
 import org.springframework.data.annotation.LastModifiedDate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -37,6 +38,7 @@ enum class EventType {
   TAP,
 }
 
+@EntityOpen
 @Entity
 @Table(name = "OFFENDER_IND_SCHEDULES")
 @DiscriminatorFormula(
@@ -70,7 +72,7 @@ abstract class OffenderIndividualSchedule(
 
   @Enumerated(EnumType.STRING)
   @Column(name = "EVENT_CLASS")
-  open val eventClass: EventClass,
+  val eventClass: EventClass,
 
   @Enumerated(EnumType.STRING)
   @Column(name = "EVENT_TYPE")
