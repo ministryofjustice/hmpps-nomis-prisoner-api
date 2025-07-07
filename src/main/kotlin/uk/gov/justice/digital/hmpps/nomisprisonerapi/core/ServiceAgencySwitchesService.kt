@@ -19,11 +19,6 @@ class ServiceAgencySwitchesService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val bookingRepository: OffenderBookingRepository,
 ) {
-
-  fun getServicePrisons(serviceCode: String): List<PrisonDetails> = findExternalServiceOrThrow(serviceCode)
-    .serviceAgencySwitches
-    .map { PrisonDetails(it.id.agencyLocation.id, it.id.agencyLocation.description) }
-
   fun getServiceAgencies(serviceCode: String): List<AgencyDetails> = findExternalServiceOrThrow(serviceCode)
     .serviceAgencySwitches
     .map { AgencyDetails(it.id.agencyLocation.id, it.id.agencyLocation.description) }
