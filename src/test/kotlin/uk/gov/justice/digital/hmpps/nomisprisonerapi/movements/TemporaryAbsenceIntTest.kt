@@ -6,17 +6,21 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
@@ -30,6 +34,7 @@ class TemporaryAbsenceIntTest(
   @Autowired private val movementApplicationMultiRepository: OffenderMovementApplicationMultiRepository,
   @Autowired private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   @Autowired private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
+  @Autowired private val externalMovementRepository: OffenderExternalMovementRepository,
   @Autowired private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTestBase() {
   // SDIT-2872 This is a temporary test class to prove that the database is modeled correctly - to be replaced by full integration tests later
@@ -39,6 +44,7 @@ class TemporaryAbsenceIntTest(
     lateinit var application: OffenderMovementApplication
     lateinit var scheduledAbsence: OffenderScheduledTemporaryAbsence
     lateinit var scheduledReturn: OffenderScheduledTemporaryAbsenceReturn
+    lateinit var externalMovement: OffenderExternalMovement
 
     @Test
     fun `should save and load movement application`() {
@@ -398,6 +404,87 @@ class TemporaryAbsenceIntTest(
       with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence.eventId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo(agencyAddress.agencyLocationId)
+      }
+    }
+
+    @Test
+    fun `should save and load external movement from scheduled temporary absence`() {
+      lateinit var offenderAddress: OffenderAddress
+
+      nomisDataBuilder.build {
+        offender {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledAbsence = scheduledTemporaryAbsence {
+                externalMovement = externalMovement(
+                  date = LocalDateTime.now(),
+                  fromPrisonId = "BXI",
+                  movementReason = "C5",
+                  arrestAgency = "POL",
+                  escort = "U",
+                  escortText = "SE",
+                  comment = "TAP OUT comment",
+                  toCity = SHEFFIELD,
+                  toAddress = offenderAddress,
+                )
+              }
+            }
+          }
+        }
+      }
+
+      with(externalMovementRepository.findByIdOrNull(externalMovement.id)!!) {
+        assertThat(movementDate).isEqualTo(LocalDate.now())
+        assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(movementType?.code).isEqualTo("TAP")
+        assertThat(movementReason.code).isEqualTo("C5")
+        assertThat(movementDirection).isEqualTo(OUT)
+        assertThat(arrestAgency?.code).isEqualTo("POL")
+        assertThat(escort?.code).isEqualTo("U")
+        assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("BXI")
+        assertThat(commentText).isEqualTo("TAP OUT comment")
+        assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
+        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+      }
+    }
+
+    @Test
+    fun `should save and load external movement without schedule`() {
+      lateinit var offenderAddress: OffenderAddress
+
+      nomisDataBuilder.build {
+        offender {
+          offenderAddress = address()
+          booking = booking {
+            externalMovement = temporaryAbsence(
+              date = LocalDateTime.now(),
+              fromPrisonId = "BXI",
+              movementReason = "C5",
+              arrestAgency = "POL",
+              escort = "U",
+              escortText = "SE",
+              comment = "Tap OUT comment",
+              toCity = SHEFFIELD,
+              toAddress = offenderAddress,
+            )
+          }
+        }
+      }
+
+      with(externalMovementRepository.findByIdOrNull(externalMovement.id)!!) {
+        assertThat(movementDate).isEqualTo(LocalDate.now())
+        assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(movementType?.code).isEqualTo("TAP")
+        assertThat(movementReason.code).isEqualTo("C5")
+        assertThat(movementDirection).isEqualTo(OUT)
+        assertThat(arrestAgency?.code).isEqualTo("POL")
+        assertThat(escort?.code).isEqualTo("U")
+        assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("BXI")
+        assertThat(commentText).isEqualTo("Tap OUT comment")
+        assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
       }
     }
   }

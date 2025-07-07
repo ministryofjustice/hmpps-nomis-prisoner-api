@@ -347,7 +347,7 @@ class CSIPService(
               interviewee = request.interviewee
               interviewDate = request.date
               role = lookupInterviewRoleType(request.roleCode)
-              comments = request.comments
+              comments = request.comments?.truncateToUtf8Length(4000)
             }
             ?: throw BadDataException("Attempting to update csip report $id with a csip interview id (${request.id}) that does not exist")
         } ?: CSIPInterview(
@@ -355,7 +355,7 @@ class CSIPService(
           interviewee = request.interviewee,
           interviewDate = request.date,
           role = lookupInterviewRoleType(request.roleCode),
-          comments = request.comments,
+          comments = request.comments?.truncateToUtf8Length(4000),
         ),
       )
     }

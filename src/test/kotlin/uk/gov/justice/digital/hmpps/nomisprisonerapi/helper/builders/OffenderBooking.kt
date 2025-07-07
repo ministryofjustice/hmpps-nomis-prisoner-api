@@ -296,6 +296,19 @@ interface BookingDsl {
     date: LocalDateTime = LocalDateTime.now(),
   ): OffenderExternalMovement
 
+  @OffenderExternalMovementDslMarker
+  fun temporaryAbsence(
+    date: LocalDateTime = LocalDateTime.now(),
+    fromPrisonId: String = "BXI",
+    movementReason: String = "C5",
+    arrestAgency: String? = null,
+    escort: String? = null,
+    escortText: String? = null,
+    comment: String? = null,
+    toCity: String? = null,
+    toAddress: Address? = null,
+  ): OffenderExternalMovement
+
   @VisitBalanceDslMarker
   fun visitBalance(
     remainingVisitOrders: Int? = 7,
@@ -925,6 +938,33 @@ class BookingBuilder(
       builder.buildReceive(
         offenderBooking = offenderBooking,
         date = date,
+      )
+        .also { offenderBooking.externalMovements += it }
+    }
+
+  override fun temporaryAbsence(
+    date: LocalDateTime,
+    fromPrisonId: String,
+    movementReason: String,
+    arrestAgency: String?,
+    escort: String?,
+    escortText: String?,
+    comment: String?,
+    toCity: String?,
+    toAddress: Address?,
+  ): OffenderExternalMovement = offenderExternalMovementBuilderFactory.builder()
+    .let { builder ->
+      builder.buildTemporaryAbsence(
+        offenderBooking = offenderBooking,
+        date = date,
+        fromPrisonId = fromPrisonId,
+        movementReason = movementReason,
+        arrestAgency = arrestAgency,
+        escort = escort,
+        escortText = escortText,
+        comment = comment,
+        toCity = toCity,
+        toAddress = toAddress,
       )
         .also { offenderBooking.externalMovements += it }
     }

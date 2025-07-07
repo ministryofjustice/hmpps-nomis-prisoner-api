@@ -257,7 +257,7 @@ class CSIPResource(private val csipService: CSIPService) {
     ],
   )
   fun deleteCSIP(
-    @Schema(description = "CSIP Factor Id", example = "12345")
+    @Schema(description = "CSIP Report Id", example = "12345")
     @PathVariable
     csipId: Long,
   ): Unit = csipService.deleteCSIP(csipId)

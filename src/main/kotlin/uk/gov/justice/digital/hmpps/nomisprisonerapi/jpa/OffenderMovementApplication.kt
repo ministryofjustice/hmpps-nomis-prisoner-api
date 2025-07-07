@@ -180,5 +180,5 @@ class OffenderMovementApplication(
   var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
 
   @OneToMany(mappedBy = "offenderMovementApplication", cascade = [CascadeType.ALL])
-  val movements: MutableList<OffenderMovementApplicationMulti> = mutableListOf(),
+  val outsideMovements: MutableList<OffenderMovementApplicationMulti> = mutableListOf(),
 )
