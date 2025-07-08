@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -8,20 +9,24 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
@@ -31,7 +36,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemp
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class TemporaryAbsenceIntTest(
+class TemporaryAbsenceRepositoryIntTest(
   @Autowired private val nomisDataBuilder: NomisDataBuilder,
   @Autowired private val movementApplicationRepository: OffenderMovementApplicationRepository,
   @Autowired private val movementApplicationMultiRepository: OffenderMovementApplicationMultiRepository,
@@ -39,11 +44,14 @@ class TemporaryAbsenceIntTest(
   @Autowired private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
   @Autowired private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
   @Autowired private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
+  @Autowired private val offenderBookingRepository: OffenderBookingRepository,
+  @Autowired private val repository: Repository,
   @Autowired private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTestBase() {
-  // SDIT-2872 This is a temporary test class to prove that the database is modeled correctly - to be replaced by full integration tests later
+
   @Nested
   inner class TemporaryAbsenceRepositoryTest {
+    lateinit var offender: Offender
     lateinit var booking: OffenderBooking
     lateinit var application: OffenderMovementApplication
     lateinit var scheduledAbsence: OffenderScheduledTemporaryAbsence
@@ -51,10 +59,15 @@ class TemporaryAbsenceIntTest(
     lateinit var absenceMovement: OffenderTemporaryAbsence
     lateinit var absenceReturnMovement: OffenderTemporaryAbsenceReturn
 
+    @AfterEach
+    fun `reset data`() {
+      repository.delete(offender)
+    }
+
     @Test
     fun `should save and load movement application`() {
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           booking = booking {
             application = temporaryAbsenceApplication(
               eventSubType = "C5",
@@ -107,7 +120,7 @@ class TemporaryAbsenceIntTest(
     @Test
     fun `should save and load TAP OUT`() {
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           booking = booking {
             application = temporaryAbsenceApplication(
               applicationDate = LocalDateTime.now(),
@@ -118,7 +131,8 @@ class TemporaryAbsenceIntTest(
                 startTime = LocalDateTime.now(),
                 eventSubType = "C5",
                 eventStatus = "SCH",
-                prison = "LEI",
+                fromPrison = "LEI",
+                toAgency = "HAZLWD",
                 comment = "Some comment",
                 escort = "U",
                 transportType = "VAN",
@@ -138,7 +152,8 @@ class TemporaryAbsenceIntTest(
         assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now())
         assertThat(eventSubType.code).isEqualTo("C5")
         assertThat(eventStatus.code).isEqualTo("SCH")
-        assertThat(prison.id).isEqualTo("LEI")
+        assertThat(fromAgency?.id).isEqualTo("LEI")
+        assertThat(toAgency?.id).isEqualTo("HAZLWD")
         assertThat(comment).isEqualTo("Some comment")
         assertThat(escort.code).isEqualTo("U")
         assertThat(transportType.code).isEqualTo("VAN")
@@ -152,7 +167,7 @@ class TemporaryAbsenceIntTest(
     @Test
     fun `should save and load linked TAP OUT and TAP IN`() {
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           booking = booking {
             temporaryAbsenceApplication {
               scheduledAbsence = scheduledTemporaryAbsence {
@@ -163,6 +178,7 @@ class TemporaryAbsenceIntTest(
                   eventStatus = "SCH",
                   comment = "Some comment IN",
                   escort = "U",
+                  fromAgency = "HAZLWD",
                   toPrison = "LEI",
                 )
               }
@@ -179,7 +195,8 @@ class TemporaryAbsenceIntTest(
         assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(eventSubType.code).isEqualTo("R25")
         assertThat(eventStatus.code).isEqualTo("SCH")
-        assertThat(toPrison.id).isEqualTo("LEI")
+        assertThat(toAgency?.id).isEqualTo("LEI")
+        assertThat(fromAgency?.id).isEqualTo("HAZLWD")
         assertThat(comment).isEqualTo("Some comment IN")
         assertThat(escort.code).isEqualTo("U")
       }
@@ -191,7 +208,7 @@ class TemporaryAbsenceIntTest(
       lateinit var movement2: OffenderMovementApplicationMulti
 
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           booking = booking {
             application = temporaryAbsenceApplication {
               movement1 = outsideMovement(
@@ -271,7 +288,7 @@ class TemporaryAbsenceIntTest(
           corporateAddress = address()
         }
         agencyAddress = agencyAddress()
-        offender {
+        offender = offender {
           offenderAddress = address()
           booking = booking {
             application1 = temporaryAbsenceApplication(toAddress = corporateAddress)
@@ -311,7 +328,7 @@ class TemporaryAbsenceIntTest(
           corporateAddress = address()
         }
         agencyAddress = agencyAddress()
-        offender {
+        offender = offender {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
@@ -355,7 +372,7 @@ class TemporaryAbsenceIntTest(
           corporateAddress = address()
         }
         agencyAddress = agencyAddress()
-        offender {
+        offender = offender {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
@@ -395,7 +412,7 @@ class TemporaryAbsenceIntTest(
 
       nomisDataBuilder.build {
         agencyAddress = agencyAddress()
-        offender {
+        offender = offender {
           booking = booking {
             application = temporaryAbsenceApplication {
               scheduledAbsence = scheduledTemporaryAbsence(toAddress = agencyAddress)
@@ -417,14 +434,15 @@ class TemporaryAbsenceIntTest(
       lateinit var offenderAddress: OffenderAddress
 
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
               scheduledAbsence = scheduledTemporaryAbsence {
                 absenceMovement = externalMovement(
                   date = LocalDateTime.now(),
-                  fromPrisonId = "BXI",
+                  fromPrison = "BXI",
+                  toAgency = "HAZLWD",
                   movementReason = "C5",
                   arrestAgency = "POL",
                   escort = "U",
@@ -449,6 +467,7 @@ class TemporaryAbsenceIntTest(
         assertThat(escort?.code).isEqualTo("U")
         assertThat(escortText).isEqualTo("SE")
         assertThat(fromAgency?.id).isEqualTo("BXI")
+        assertThat(toAgency?.id).isEqualTo("HAZLWD")
         assertThat(commentText).isEqualTo("TAP OUT comment")
         assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
         assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
@@ -460,12 +479,13 @@ class TemporaryAbsenceIntTest(
       lateinit var offenderAddress: OffenderAddress
 
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           offenderAddress = address()
           booking = booking {
             absenceMovement = temporaryAbsence(
               date = LocalDateTime.now(),
-              fromPrisonId = "BXI",
+              fromPrison = "BXI",
+              toAgency = "HAZLWD",
               movementReason = "C5",
               arrestAgency = "POL",
               escort = "U",
@@ -488,6 +508,7 @@ class TemporaryAbsenceIntTest(
         assertThat(escort?.code).isEqualTo("U")
         assertThat(escortText).isEqualTo("SE")
         assertThat(fromAgency?.id).isEqualTo("BXI")
+        assertThat(toAgency?.id).isEqualTo("HAZLWD")
         assertThat(commentText).isEqualTo("Tap OUT comment")
         assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
       }
@@ -498,7 +519,7 @@ class TemporaryAbsenceIntTest(
       lateinit var offenderAddress: OffenderAddress
 
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           offenderAddress = address()
           booking {
             temporaryAbsenceApplication {
@@ -507,7 +528,8 @@ class TemporaryAbsenceIntTest(
                 scheduledReturn = scheduledReturn {
                   absenceReturnMovement = externalMovement(
                     date = LocalDateTime.now().plusDays(1),
-                    toPrisonId = "BXI",
+                    fromAgency = "HAZLWD",
+                    toPrison = "BXI",
                     movementReason = "C5",
                     escort = "U",
                     escortText = "SE",
@@ -534,6 +556,7 @@ class TemporaryAbsenceIntTest(
         assertThat(movementDirection).isEqualTo(IN)
         assertThat(escort?.code).isEqualTo("U")
         assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("HAZLWD")
         assertThat(toAgency?.id).isEqualTo("BXI")
         assertThat(commentText).isEqualTo("TAP IN comment")
         assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
@@ -550,13 +573,14 @@ class TemporaryAbsenceIntTest(
       lateinit var offenderAddress: OffenderAddress
 
       nomisDataBuilder.build {
-        offender {
+        offender = offender {
           offenderAddress = address()
           booking = booking {
             temporaryAbsence()
             absenceReturnMovement = temporaryAbsenceReturn(
               date = LocalDateTime.now().plusDays(1),
-              toPrisonId = "BXI",
+              fromAgency = "HAZLWD",
+              toPrison = "BXI",
               movementReason = "C5",
               escort = "U",
               escortText = "SE",
@@ -576,12 +600,43 @@ class TemporaryAbsenceIntTest(
         assertThat(movementDirection).isEqualTo(IN)
         assertThat(escort?.code).isEqualTo("U")
         assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("HAZLWD")
         assertThat(toAgency?.id).isEqualTo("BXI")
         assertThat(commentText).isEqualTo("TAP IN comment")
         assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
         assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
         assertThat(scheduledTemporaryAbsenceReturn).isNull()
         assertThat(scheduledTemporaryAbsence?.eventId).isNull()
+      }
+    }
+
+    @Test
+    fun `should handle missing direction for TAP external movements (bad data exists in NOMIS)`() {
+      nomisDataBuilder.build {
+        offender = offender {
+          booking = booking()
+        }
+      }
+
+      jdbcTemplate.update(
+        """
+        insert into OFFENDER_EXTERNAL_MOVEMENTS
+        (OFFENDER_BOOK_ID, MOVEMENT_SEQ, MOVEMENT_DATE, MOVEMENT_TIME, MOVEMENT_TYPE, MOVEMENT_REASON_CODE, DIRECTION_CODE)
+        values (${booking.bookingId}, 2, '${LocalDate.now()}', '${LocalDateTime.now()}', 'TAP', 'C5', 'OUT'),
+               (${booking.bookingId}, 3, '${LocalDate.now()}', '${LocalDateTime.now()}', 'TAP', 'C5', 'IN'),
+               (${booking.bookingId}, 4, '${LocalDate.now()}', '${LocalDateTime.now()}', 'TAP', 'C5', null),
+               (${booking.bookingId}, 5, '${LocalDate.now()}', '${LocalDateTime.now()}', 'TRN', 'NOTR', 'OUT')
+        """.trimIndent(),
+      )
+
+      repository.runInTransaction {
+        with(offenderBookingRepository.findByIdOrNull(booking.bookingId)!!) {
+          assertThat(externalMovements.find { it.id.sequence == 2L }).isExactlyInstanceOf(OffenderTemporaryAbsence::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 3L }).isExactlyInstanceOf(OffenderTemporaryAbsenceReturn::class.java)
+          // The TAP missing a direction still comes out as an external movement
+          assertThat(externalMovements.find { it.id.sequence == 4L }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 5L }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
+        }
       }
     }
   }

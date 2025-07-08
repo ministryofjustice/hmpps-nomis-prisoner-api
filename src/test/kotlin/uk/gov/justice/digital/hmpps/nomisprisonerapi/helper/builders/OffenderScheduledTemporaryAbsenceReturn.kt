@@ -25,7 +25,8 @@ interface OffenderScheduledTemporaryAbsenceReturnDsl {
   @OffenderExternalMovementDslMarker
   fun externalMovement(
     date: LocalDateTime = LocalDateTime.now(),
-    toPrisonId: String = "BXI",
+    fromAgency: String? = null,
+    toPrison: String = "BXI",
     movementReason: String = "C5",
     escort: String? = null,
     escortText: String? = null,
@@ -71,6 +72,7 @@ class OffenderScheduledTemporaryAbsenceReturnBuilder(
     eventStatus: String,
     comment: String? = null,
     escort: String,
+    fromAgency: String?,
     toPrison: String,
     scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence,
   ): OffenderScheduledTemporaryAbsenceReturn = OffenderScheduledTemporaryAbsenceReturn(
@@ -81,6 +83,7 @@ class OffenderScheduledTemporaryAbsenceReturnBuilder(
     eventStatus = repository.eventStatusOf(eventStatus),
     comment = comment,
     escort = repository.escortOf(escort),
+    fromAgency = fromAgency?.let { repository.agencyLocationOf(fromAgency) },
     toPrison = repository.agencyLocationOf(toPrison),
     scheduledTemporaryAbsence = scheduledTemporaryAbsence,
   )
@@ -88,7 +91,8 @@ class OffenderScheduledTemporaryAbsenceReturnBuilder(
 
   override fun externalMovement(
     date: LocalDateTime,
-    toPrisonId: String,
+    fromAgency: String?,
+    toPrison: String,
     movementReason: String,
     escort: String?,
     escortText: String?,
@@ -99,7 +103,8 @@ class OffenderScheduledTemporaryAbsenceReturnBuilder(
     .buildTemporaryAbsenceReturn(
       offenderBooking = scheduledTemporaryAbsenceReturn.offenderBooking,
       date = date,
-      toPrisonId = toPrisonId,
+      fromAgency = fromAgency,
+      toPrison = toPrison,
       movementReason = movementReason,
       escort = escort,
       escortText = escortText,
