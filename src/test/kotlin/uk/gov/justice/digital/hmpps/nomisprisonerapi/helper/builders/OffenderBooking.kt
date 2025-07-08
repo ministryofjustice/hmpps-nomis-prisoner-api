@@ -36,6 +36,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderRestrictions
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -307,7 +309,19 @@ interface BookingDsl {
     comment: String? = null,
     toCity: String? = null,
     toAddress: Address? = null,
-  ): OffenderExternalMovement
+  ): OffenderTemporaryAbsence
+
+  @OffenderExternalMovementDslMarker
+  fun temporaryAbsenceReturn(
+    date: LocalDateTime = LocalDateTime.now(),
+    toPrisonId: String = "BXI",
+    movementReason: String = "C5",
+    escort: String? = null,
+    escortText: String? = null,
+    comment: String? = null,
+    fromCity: String? = null,
+    fromAddress: Address? = null,
+  ): OffenderTemporaryAbsenceReturn
 
   @VisitBalanceDslMarker
   fun visitBalance(
@@ -952,22 +966,43 @@ class BookingBuilder(
     comment: String?,
     toCity: String?,
     toAddress: Address?,
-  ): OffenderExternalMovement = offenderExternalMovementBuilderFactory.builder()
-    .let { builder ->
-      builder.buildTemporaryAbsence(
-        offenderBooking = offenderBooking,
-        date = date,
-        fromPrisonId = fromPrisonId,
-        movementReason = movementReason,
-        arrestAgency = arrestAgency,
-        escort = escort,
-        escortText = escortText,
-        comment = comment,
-        toCity = toCity,
-        toAddress = toAddress,
-      )
-        .also { offenderBooking.externalMovements += it }
-    }
+  ): OffenderTemporaryAbsence = offenderExternalMovementBuilderFactory.builder()
+    .buildTemporaryAbsence(
+      offenderBooking = offenderBooking,
+      date = date,
+      fromPrisonId = fromPrisonId,
+      movementReason = movementReason,
+      arrestAgency = arrestAgency,
+      escort = escort,
+      escortText = escortText,
+      comment = comment,
+      toCity = toCity,
+      toAddress = toAddress,
+    )
+    .also { offenderBooking.externalMovements += it }
+
+  override fun temporaryAbsenceReturn(
+    date: LocalDateTime,
+    toPrisonId: String,
+    movementReason: String,
+    escort: String?,
+    escortText: String?,
+    comment: String?,
+    fromCity: String?,
+    fromAddress: Address?,
+  ): OffenderTemporaryAbsenceReturn = offenderExternalMovementBuilderFactory.builder()
+    .buildTemporaryAbsenceReturn(
+      offenderBooking = offenderBooking,
+      date = date,
+      toPrisonId = toPrisonId,
+      movementReason = movementReason,
+      escort = escort,
+      escortText = escortText,
+      comment = comment,
+      fromCity = fromCity,
+      fromAddress = fromAddress,
+    )
+    .also { offenderBooking.externalMovements += it }
 
   override fun visitBalance(
     remainingVisitOrders: Int?,

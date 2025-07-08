@@ -15,6 +15,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -161,31 +164,62 @@ class OffenderExternalMovementBuilder(
     comment: String?,
     toCity: String?,
     toAddress: Address?,
-    scheduledMovement: OffenderScheduledTemporaryAbsence? = null,
-  ): OffenderExternalMovement = repository.save(
-    OffenderExternalMovement(
-      id = OffenderExternalMovementId(
-        offenderBooking,
-        offenderBooking.externalMovements.size + 1L,
-      ),
-      movementDate = date.toLocalDate(),
-      movementTime = date,
-      movementDirection = OUT,
-      movementType = repository.lookupMovementType("TAP"),
-      movementReason = repository.lookupMovementReason(movementReason),
-      arrestAgency = arrestAgency?.let { repository.lookupArrestAgency(arrestAgency) },
-      escort = escort?.let { repository.lookupEscort(escort) },
-      escortText = escortText,
-      fromAgency = repository.lookupAgency(fromPrisonId),
-      active = true,
-      commentText = comment,
-      toCity = toCity?.let { repository.lookupCity(toCity) },
-      toAddress = toAddress,
-      scheduledMovement = scheduledMovement,
+    scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
+  ): OffenderTemporaryAbsence = OffenderTemporaryAbsence(
+    id = OffenderExternalMovementId(
+      offenderBooking,
+      offenderBooking.externalMovements.size + 1L,
     ),
+    movementDate = date.toLocalDate(),
+    movementTime = date,
+    movementType = repository.lookupMovementType("TAP"),
+    movementReason = repository.lookupMovementReason(movementReason),
+    arrestAgency = arrestAgency?.let { repository.lookupArrestAgency(arrestAgency) },
+    escort = escort?.let { repository.lookupEscort(escort) },
+    escortText = escortText,
+    fromPrison = repository.lookupAgency(fromPrisonId),
+    active = true,
+    commentText = comment,
+    toCity = toCity?.let { repository.lookupCity(toCity) },
+    toAddress = toAddress,
+    scheduledTemporaryAbsence = scheduledTemporaryAbsence,
   ).also {
     offenderBooking.inOutStatus = "OUT"
     offenderBooking.location = repository.lookupAgency("OUT")
+  }
+
+  fun buildTemporaryAbsenceReturn(
+    date: LocalDateTime,
+    offenderBooking: OffenderBooking,
+    toPrisonId: String,
+    movementReason: String,
+    escort: String?,
+    escortText: String?,
+    comment: String?,
+    fromCity: String?,
+    fromAddress: Address?,
+    scheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn? = null,
+  ): OffenderTemporaryAbsenceReturn = OffenderTemporaryAbsenceReturn(
+    id = OffenderExternalMovementId(
+      offenderBooking,
+      offenderBooking.externalMovements.size + 1L,
+    ),
+    movementDate = date.toLocalDate(),
+    movementTime = date,
+    movementType = repository.lookupMovementType("TAP"),
+    movementReason = repository.lookupMovementReason(movementReason),
+    escort = escort?.let { repository.lookupEscort(escort) },
+    escortText = escortText,
+    toPrison = repository.lookupAgency(toPrisonId),
+    active = true,
+    commentText = comment,
+    fromCity = fromCity?.let { repository.lookupCity(fromCity) },
+    fromAddress = fromAddress,
+    scheduledTemporaryAbsenceReturn = scheduledTemporaryAbsenceReturn,
+    scheduledTemporaryAbsence = scheduledTemporaryAbsenceReturn?.scheduledTemporaryAbsence,
+  ).also {
+    offenderBooking.inOutStatus = "IN"
+    offenderBooking.location = it.toAgency!!
   }
 
   fun build(

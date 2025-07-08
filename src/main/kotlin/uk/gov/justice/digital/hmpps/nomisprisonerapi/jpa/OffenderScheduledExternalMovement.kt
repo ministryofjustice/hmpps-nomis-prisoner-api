@@ -7,7 +7,6 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -60,10 +59,6 @@ abstract class OffenderScheduledExternalMovement(
   @Enumerated(EnumType.STRING)
   @Column(name = "DIRECTION_CODE")
   val direction: MovementDirection,
-
-  @OneToOne(mappedBy = "scheduledMovement", fetch = FetchType.LAZY)
-  @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
-  var externalMovement: OffenderExternalMovement? = null,
 ) : OffenderIndividualSchedule(
   eventId = eventId,
   offenderBooking = offenderBooking,

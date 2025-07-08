@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
@@ -27,6 +28,9 @@ class OffenderScheduledTemporaryAbsenceReturn(
   @JoinColumn(name = "PARENT_EVENT_ID")
   val scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence,
 
+  @OneToOne(mappedBy = "scheduledTemporaryAbsenceReturn", cascade = [CascadeType.ALL])
+  @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
+  var temporaryAbsenceReturn: OffenderTemporaryAbsenceReturn? = null,
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
   offenderBooking = offenderBooking,

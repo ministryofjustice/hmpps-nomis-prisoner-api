@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Basic
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Embeddable
@@ -10,11 +9,12 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType.LAZY
+import jakarta.persistence.Inheritance
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
@@ -38,6 +38,16 @@ data class OffenderExternalMovementId(
 @EntityOpen
 @Entity
 @Table(name = "OFFENDER_EXTERNAL_MOVEMENTS")
+@DiscriminatorFormula(
+  """
+    case
+        when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'OUT' then 'OffenderTemporaryAbsence'
+        when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'IN' then 'OffenderTemporaryAbsenceReturn'
+        else 'OffenderExternalMovement'
+    end
+""",
+)
+@Inheritance
 class OffenderExternalMovement(
   @EmbeddedId
   val id: OffenderExternalMovementId,
@@ -159,10 +169,6 @@ class OffenderExternalMovement(
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "TO_ADDRESS_ID")
   val toAddress: Address? = null,
-
-  @OneToOne(cascade = [CascadeType.ALL])
-  @JoinColumn(name = "EVENT_ID")
-  var scheduledMovement: OffenderScheduledExternalMovement? = null,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
