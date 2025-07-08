@@ -8,10 +8,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceTransportType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -32,6 +32,7 @@ interface OffenderScheduledTemporaryAbsenceDsl {
     comment: String? = "Tapped IN",
     escort: String = "U",
     toPrison: String = "LEI",
+    dsl: OffenderScheduledTemporaryAbsenceReturnDsl.() -> Unit = {},
   ): OffenderScheduledTemporaryAbsenceReturn
 
   @OffenderExternalMovementDslMarker
@@ -45,7 +46,7 @@ interface OffenderScheduledTemporaryAbsenceDsl {
     comment: String? = null,
     toCity: String? = null,
     toAddress: Address? = null,
-  ): OffenderExternalMovement
+  ): OffenderTemporaryAbsence
 }
 
 @Component
@@ -124,18 +125,22 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     comment: String?,
     escort: String,
     toPrison: String,
-  ): OffenderScheduledTemporaryAbsenceReturn = temporaryAbsenceReturnBuilderFactory.builder().build(
-    offenderBooking = scheduledTemporaryAbsence.offenderBooking,
-    scheduledTemporaryAbsence = scheduledTemporaryAbsence,
-    eventDate = eventDate,
-    startTime = startTime,
-    eventSubType = eventSubType,
-    eventStatus = eventStatus,
-    comment = comment,
-    escort = escort,
-    toPrison = toPrison,
-  )
-    .also { scheduledTemporaryAbsence.scheduledReturn = it }
+    dsl: OffenderScheduledTemporaryAbsenceReturnDsl.() -> Unit,
+  ): OffenderScheduledTemporaryAbsenceReturn = temporaryAbsenceReturnBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = scheduledTemporaryAbsence.offenderBooking,
+      scheduledTemporaryAbsence = scheduledTemporaryAbsence,
+      eventDate = eventDate,
+      startTime = startTime,
+      eventSubType = eventSubType,
+      eventStatus = eventStatus,
+      comment = comment,
+      escort = escort,
+      toPrison = toPrison,
+    )
+      .also { scheduledTemporaryAbsence.scheduledTemporaryAbsenceReturn = it }
+      .also { builder.apply(dsl) }
+  }
 
   override fun externalMovement(
     date: LocalDateTime,
@@ -147,23 +152,22 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     comment: String?,
     toCity: String?,
     toAddress: Address?,
-  ): OffenderExternalMovement = externalMovementBuilderFactory.builder()
-    .let { builder ->
-      builder.buildTemporaryAbsence(
-        offenderBooking = scheduledTemporaryAbsence.offenderBooking,
-        date = date,
-        fromPrisonId = fromPrisonId,
-        movementReason = movementReason,
-        arrestAgency = arrestAgency,
-        escort = escort,
-        escortText = escortText,
-        comment = comment,
-        toCity = toCity,
-        toAddress = toAddress,
-      )
-        .also {
-          scheduledTemporaryAbsence.externalMovement = it
-          scheduledTemporaryAbsence.offenderBooking.externalMovements += it
-        }
+  ): OffenderTemporaryAbsence = externalMovementBuilderFactory.builder()
+    .buildTemporaryAbsence(
+      offenderBooking = scheduledTemporaryAbsence.offenderBooking,
+      date = date,
+      fromPrisonId = fromPrisonId,
+      movementReason = movementReason,
+      arrestAgency = arrestAgency,
+      escort = escort,
+      escortText = escortText,
+      comment = comment,
+      toCity = toCity,
+      toAddress = toAddress,
+      scheduledTemporaryAbsence = scheduledTemporaryAbsence,
+    )
+    .also {
+      scheduledTemporaryAbsence.temporaryAbsence = it
+      scheduledTemporaryAbsence.offenderBooking.externalMovements += it
     }
 }
