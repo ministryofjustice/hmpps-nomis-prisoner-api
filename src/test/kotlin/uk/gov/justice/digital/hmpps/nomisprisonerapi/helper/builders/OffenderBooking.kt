@@ -301,7 +301,8 @@ interface BookingDsl {
   @OffenderExternalMovementDslMarker
   fun temporaryAbsence(
     date: LocalDateTime = LocalDateTime.now(),
-    fromPrisonId: String = "BXI",
+    fromPrison: String = "BXI",
+    toAgency: String? = null,
     movementReason: String = "C5",
     arrestAgency: String? = null,
     escort: String? = null,
@@ -314,7 +315,8 @@ interface BookingDsl {
   @OffenderExternalMovementDslMarker
   fun temporaryAbsenceReturn(
     date: LocalDateTime = LocalDateTime.now(),
-    toPrisonId: String = "BXI",
+    fromAgency: String? = null,
+    toPrison: String = "BXI",
     movementReason: String = "C5",
     escort: String? = null,
     escortText: String? = null,
@@ -958,7 +960,8 @@ class BookingBuilder(
 
   override fun temporaryAbsence(
     date: LocalDateTime,
-    fromPrisonId: String,
+    fromPrison: String,
+    toAgency: String?,
     movementReason: String,
     arrestAgency: String?,
     escort: String?,
@@ -970,7 +973,8 @@ class BookingBuilder(
     .buildTemporaryAbsence(
       offenderBooking = offenderBooking,
       date = date,
-      fromPrisonId = fromPrisonId,
+      fromPrison = fromPrison,
+      toAgency = toAgency,
       movementReason = movementReason,
       arrestAgency = arrestAgency,
       escort = escort,
@@ -983,7 +987,8 @@ class BookingBuilder(
 
   override fun temporaryAbsenceReturn(
     date: LocalDateTime,
-    toPrisonId: String,
+    fromAgency: String?,
+    toPrison: String,
     movementReason: String,
     escort: String?,
     escortText: String?,
@@ -994,7 +999,8 @@ class BookingBuilder(
     .buildTemporaryAbsenceReturn(
       offenderBooking = offenderBooking,
       date = date,
-      toPrisonId = toPrisonId,
+      fromAgency = fromAgency,
+      toPrison = toPrison,
       movementReason = movementReason,
       escort = escort,
       escortText = escortText,

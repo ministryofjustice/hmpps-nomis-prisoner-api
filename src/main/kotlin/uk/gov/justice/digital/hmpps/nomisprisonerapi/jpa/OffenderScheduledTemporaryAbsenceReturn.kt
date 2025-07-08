@@ -4,7 +4,6 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -19,10 +18,8 @@ class OffenderScheduledTemporaryAbsenceReturn(
   eventStatus: EventStatus,
   comment: String? = null,
   escort: Escort,
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "TO_AGY_LOC_ID")
-  val toPrison: AgencyLocation,
+  fromAgency: AgencyLocation? = null,
+  toPrison: AgencyLocation? = null,
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PARENT_EVENT_ID")
@@ -42,4 +39,6 @@ class OffenderScheduledTemporaryAbsenceReturn(
   comment = comment,
   escort = escort,
   direction = MovementDirection.IN,
+  fromAgency = fromAgency,
+  toAgency = toPrison,
 )

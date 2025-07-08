@@ -25,6 +25,14 @@ abstract class OffenderScheduledExternalMovement(
   startTime: LocalDateTime? = null,
   eventType: EventType,
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "AGY_LOC_ID")
+  val fromAgency: AgencyLocation? = null,
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "TO_AGY_LOC_ID")
+  val toAgency: AgencyLocation? = null,
+
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(

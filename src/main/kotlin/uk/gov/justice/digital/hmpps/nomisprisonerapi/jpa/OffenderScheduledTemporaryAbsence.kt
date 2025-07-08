@@ -25,10 +25,8 @@ class OffenderScheduledTemporaryAbsence(
   eventStatus: EventStatus,
   comment: String? = null,
   escort: Escort,
-
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "AGY_LOC_ID")
-  val prison: AgencyLocation,
+  fromPrison: AgencyLocation,
+  toAgency: AgencyLocation? = null,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
@@ -85,4 +83,6 @@ class OffenderScheduledTemporaryAbsence(
   comment = comment,
   escort = escort,
   direction = MovementDirection.OUT,
+  fromAgency = fromPrison,
+  toAgency = toAgency,
 )
