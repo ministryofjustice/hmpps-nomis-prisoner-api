@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
-import jakarta.persistence.DiscriminatorValue
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
@@ -98,9 +97,6 @@ class OffenderTemporaryAbsenceApplicationBuilder(
 
   private lateinit var temporaryAbsenceApplication: OffenderMovementApplication
 
-  // I think I'll need this when writing to NOMIS during the sync... can't get access to the OWNER_CLASS column because it's a discriminator.
-  private fun Address?.toAddressOwnerClass() = this?.javaClass?.getAnnotation(DiscriminatorValue::class.java)?.value
-
   fun build(
     offenderBooking: OffenderBooking,
     eventSubType: String,
@@ -135,7 +131,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     transportType = transportType?.let { repository.transportTypeOf(it) },
     comment = comment,
     toAddress = toAddress,
-    toAddressOwnerClass = toAddress.toAddressOwnerClass(),
+    toAddressOwnerClass = toAddress?.addressOwnerClass,
     prison = prison?.let { repository.agencyLocationOf(it) },
     toAgency = toAgency?.let { repository.agencyLocationOf(it) },
     contactPersonName = contactPersonName,
