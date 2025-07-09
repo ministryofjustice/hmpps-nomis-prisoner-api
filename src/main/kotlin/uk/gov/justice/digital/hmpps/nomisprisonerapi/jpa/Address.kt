@@ -4,6 +4,7 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.DiscriminatorColumn
+import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
@@ -155,6 +156,9 @@ abstract class Address(
   @GeneratedValue(generator = "ADDRESS_ID")
   @Column(name = "ADDRESS_ID", nullable = false)
   val addressId: Long = 0
+
+  @Transient
+  val addressOwnerClass: String = this.javaClass.getAnnotation(DiscriminatorValue::class.java)?.value ?: ""
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

@@ -2,7 +2,9 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -43,4 +45,8 @@ class OffenderTemporaryAbsence(
   commentText = commentText,
   toCity = toCity,
   toAddress = toAddress,
-)
+) {
+  @ManyToOne(optional = false, fetch = LAZY)
+  @JoinColumn(name = "OFFENDER_BOOK_ID", updatable = false, insertable = false, nullable = false)
+  val offenderBooking: OffenderBooking = id.offenderBooking
+}
