@@ -1073,6 +1073,36 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will create an incident with requirements comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with requirements",
+                requirements = listOf(
+                  UpsertIncidentRequirementRequest(
+                    comment = "a".repeat(241),
+                    date = LocalDateTime.parse("2024-12-30T13:45:00"),
+                    username = reportingStaff1.accounts[0].username,
+                    location = "MDI",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("requirements[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
+      }
+
+      @Test
       fun `will create an incident with parties`() {
         webTestClient.put().uri("/incidents/${++currentId}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
@@ -1086,6 +1116,13 @@ class IncidentResourceIntTest : IntegrationTestBase() {
                     prisonNumber = offender1.nomsId,
                     role = "VICT",
                     outcome = "POR",
+                  ),
+                ),
+                staffParties = listOf(
+                  UpsertStaffPartyRequest(
+                    comment = "b party with some data",
+                    username = reportingStaff2.accounts[0].username,
+                    role = "INPOS",
                   ),
                 ),
               ),
@@ -1110,6 +1147,52 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
           .jsonPath("offenderParties[0].comment").isEqualTo("a party with some data")
           .jsonPath("offenderParties.length()").isEqualTo(1)
+          .jsonPath("staffParties[0].staff.username").isEqualTo("JANESTAFF")
+          .jsonPath("staffParties[0].staff.firstName").isEqualTo("JANE")
+          .jsonPath("staffParties[0].staff.lastName").isEqualTo("STAFF")
+          .jsonPath("staffParties[0].sequence").isEqualTo(1000)
+          .jsonPath("staffParties[0].role.code").isEqualTo("INPOS")
+          .jsonPath("staffParties[0].role.description").isEqualTo("In Possession")
+          .jsonPath("staffParties[0].comment").isEqualTo("b party with some data")
+          .jsonPath("staffParties.length()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will create an incident with parties comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with parties",
+                offenderParties = listOf(
+                  UpsertOffenderPartyRequest(
+                    comment = "a".repeat(241),
+                    prisonNumber = offender1.nomsId,
+                    role = "VICT",
+                    outcome = "POR",
+                  ),
+                ),
+                staffParties = listOf(
+                  UpsertStaffPartyRequest(
+                    comment = "b".repeat(241),
+                    username = reportingStaff1.accounts[0].username,
+                    role = "INV",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("offenderParties[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
+          .jsonPath("staffParties[0].comment").isEqualTo("${"b".repeat(215)}... see DPS for full text")
       }
 
       @Test
@@ -1216,6 +1299,42 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will create an incident with responses comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with responses",
+                questions = listOf(
+                  UpsertIncidentQuestionRequest(
+                    questionId = questionnaire1.questions[1].id,
+                    responses = listOf(
+                      UpsertIncidentResponseRequest(
+                        answerId = questionnaire1.questions[1].answers[0].id,
+                        comment = "a".repeat(241),
+                        responseDate = LocalDate.parse("2010-03-02"),
+                        recordingUsername = responseRecordingStaff.accounts[0].username,
+                        sequence = 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("questions[0].answers[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
+      }
+
+      @Test
       fun `will create an incident with history`() {
         webTestClient.put().uri("/incidents/${++currentId}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
@@ -1293,6 +1412,50 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("history[0].questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
           .jsonPath("history[0].questions.length()").isEqualTo(2)
           .jsonPath("history.length()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will create an incident with history comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with history",
+                history = listOf(
+                  UpsertIncidentHistoryRequest(
+                    typeCode = questionnaire1.code,
+                    incidentChangeDateTime = LocalDateTime.parse("2012-03-01T10:20:30"),
+                    incidentChangeUsername = reportingStaff2.accounts[0].username,
+                    questions = listOf(
+                      UpsertIncidentQuestionRequest(
+                        questionId = questionnaire1.questions[1].id,
+                        responses = listOf(
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[1].answers[0].id,
+                            comment = "a".repeat(241),
+                            responseDate = LocalDate.parse("2010-03-02"),
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("title").isEqualTo("Something happened with history")
+          .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
       }
     }
 
@@ -1425,6 +1588,37 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will update an incident with requirements comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with requirements",
+                description = "and people had a fight",
+                requirements = listOf(
+                  UpsertIncidentRequirementRequest(
+                    comment = "a".repeat(241),
+                    date = LocalDateTime.parse("2024-12-30T13:45:00"),
+                    username = requirementRecordingStaff.accounts[0].username,
+                    location = "MDI",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident1.id)
+          .jsonPath("requirements[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
+      }
+
+      @Test
       fun `will update an incident with parties`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
@@ -1438,6 +1632,13 @@ class IncidentResourceIntTest : IntegrationTestBase() {
                     prisonNumber = offender2.nomsId,
                     role = "VICT",
                     outcome = "POR",
+                  ),
+                ),
+                staffParties = listOf(
+                  UpsertStaffPartyRequest(
+                    comment = "b party with some data",
+                    username = reportingStaff2.accounts[0].username,
+                    role = "INPOS",
                   ),
                 ),
               ),
@@ -1462,6 +1663,52 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderParties[0].role.description").isEqualTo("Victim")
           .jsonPath("offenderParties[0].comment").isEqualTo("a party with some data")
           .jsonPath("offenderParties.length()").isEqualTo(1)
+          .jsonPath("staffParties[0].staff.username").isEqualTo("JANESTAFF")
+          .jsonPath("staffParties[0].staff.firstName").isEqualTo("JANE")
+          .jsonPath("staffParties[0].staff.lastName").isEqualTo("STAFF")
+          .jsonPath("staffParties[0].sequence").isEqualTo(1000)
+          .jsonPath("staffParties[0].role.code").isEqualTo("INPOS")
+          .jsonPath("staffParties[0].role.description").isEqualTo("In Possession")
+          .jsonPath("staffParties[0].comment").isEqualTo("b party with some data")
+          .jsonPath("staffParties.length()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will update an incident with parties comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with parties",
+                offenderParties = listOf(
+                  UpsertOffenderPartyRequest(
+                    comment = "a".repeat(241),
+                    prisonNumber = offender2.nomsId,
+                    role = "VICT",
+                    outcome = "POR",
+                  ),
+                ),
+                staffParties = listOf(
+                  UpsertStaffPartyRequest(
+                    comment = "b".repeat(241),
+                    username = reportingStaff1.accounts[0].username,
+                    role = "INV",
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident1.id)
+          .jsonPath("offenderParties[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
+          .jsonPath("staffParties[0].comment").isEqualTo("${"b".repeat(215)}... see DPS for full text")
       }
 
       @Test
@@ -1568,6 +1815,42 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will update an incident with responses comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with responses",
+                questions = listOf(
+                  UpsertIncidentQuestionRequest(
+                    questionId = questionnaire1.questions[2].id,
+                    responses = listOf(
+                      UpsertIncidentResponseRequest(
+                        answerId = questionnaire1.questions[2].answers[0].id,
+                        comment = "a".repeat(241),
+                        responseDate = LocalDate.parse("2010-03-02"),
+                        recordingUsername = responseRecordingStaff.accounts[0].username,
+                        sequence = 0,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident1.id)
+          .jsonPath("questions[0].answers[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
+      }
+
+      @Test
       fun `will update an incident with history`() {
         webTestClient.put().uri("/incidents/${incident2.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
@@ -1659,6 +1942,56 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("history[1].questions[1].answers[0].responseDate").isEqualTo("2010-03-02")
           .jsonPath("history[1].questions.length()").isEqualTo(2)
           .jsonPath("history.length()").isEqualTo(2)
+      }
+
+      @Test
+      fun `will update an incident with history comment over 240 chars`() {
+        webTestClient.put().uri("/incidents/${incident2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened with history",
+                history = listOf(
+                  UpsertIncidentHistoryRequest(
+                    typeCode = questionnaire2.code,
+                    incidentChangeDateTime = LocalDateTime.parse("2012-03-02T10:20:30"),
+                    incidentChangeUsername = reportingStaff2.accounts[0].username,
+                    questions = listOf(),
+                  ),
+                  UpsertIncidentHistoryRequest(
+                    typeCode = questionnaire1.code,
+                    incidentChangeDateTime = LocalDateTime.parse("2012-03-01T10:20:30"),
+                    incidentChangeUsername = reportingStaff2.accounts[0].username,
+                    questions = listOf(
+                      UpsertIncidentQuestionRequest(
+                        questionId = questionnaire1.questions[1].id,
+                        responses = listOf(
+                          UpsertIncidentResponseRequest(
+                            answerId = questionnaire1.questions[1].answers[0].id,
+                            comment = "a".repeat(241),
+                            responseDate = LocalDate.parse("2010-03-02"),
+                            recordingUsername = responseRecordingStaff.accounts[0].username,
+                            sequence = 0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident2.id)
+          // history 1 is new data
+          .jsonPath("history[1].questions[0].answers[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
       }
 
       @Test
