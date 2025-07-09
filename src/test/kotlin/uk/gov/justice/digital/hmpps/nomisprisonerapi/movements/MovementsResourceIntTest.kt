@@ -37,6 +37,7 @@ class MovementsResourceIntTest(
   private lateinit var unscheduledTemporaryAbsence: OffenderTemporaryAbsence
   private lateinit var unscheduledTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
 
+  private val offenderNo = "D6347ED"
   private val today: LocalDateTime = LocalDateTime.now().roundToNearestSecond()
   private val yesterday: LocalDateTime = today.minusDays(1)
   private val twoDaysAgo: LocalDateTime = today.minusDays(2)
@@ -55,7 +56,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should return unauthorised for missing token`() {
       webTestClient.get()
-        .uri("/movements/A1234BC/temporary-absences")
+        .uri("/movements/$offenderNo/temporary-absences")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -63,7 +64,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should return forbidden for missing role`() {
       webTestClient.get()
-        .uri("/movements/A1234BC/temporary-absences")
+        .uri("/movements/$offenderNo/temporary-absences")
         .headers(setAuthorisation())
         .exchange()
         .expectStatus().isForbidden
@@ -72,7 +73,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should return forbidden for wrong role`() {
       webTestClient.get()
-        .uri("/movements/A1234BC/temporary-absences")
+        .uri("/movements/$offenderNo/temporary-absences")
         .headers(setAuthorisation("ROLE_INVALID"))
         .exchange()
         .expectStatus().isForbidden
@@ -81,19 +82,19 @@ class MovementsResourceIntTest(
     @Test
     fun `should return not found if offender not found`() {
       webTestClient.get()
-        .uri("/movements/A1234BC/temporary-absences")
+        .uri("/movements/$offenderNo/temporary-absences")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Offender with nomsId=A1234BC not found")
+          assertThat(it).contains("Offender with nomsId=$offenderNo not found")
         }
     }
 
     @Test
     fun `should retrieve application`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication(
@@ -153,7 +154,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve scheduled temporary absence`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
@@ -199,7 +200,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve scheduled temporary absence's external movements`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
@@ -244,7 +245,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve scheduled temporary absences return`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
@@ -285,7 +286,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve scheduled temporary absence return's external movements`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
@@ -332,7 +333,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve unscheduled temporary absence external movements`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             unscheduledTemporaryAbsence = temporaryAbsence(
@@ -372,7 +373,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve unscheduled temporary absences return external movements`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             unscheduledTemporaryAbsence = temporaryAbsence()
@@ -413,7 +414,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve all temporary absences and external movements`() {
       nomisDataBuilder.build {
-        offender = offender {
+        offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
