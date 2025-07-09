@@ -1,0 +1,11 @@
+build
+doc
+docker-compose*.y*
+dps-gradle-spring-boot-suppressions.xml
+helm_deploy
+LICENSE
+README.md
+renovate.json
+sonar-project.properties
+src/test
+volume

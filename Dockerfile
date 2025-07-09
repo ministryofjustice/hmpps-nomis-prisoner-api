@@ -6,9 +6,7 @@ ENV BUILD_NUMBER=${BUILD_NUMBER:-1_0_0}
 WORKDIR /builder
 ADD . .
 RUN ./gradlew --no-daemon assemble
-
-ARG JAR_FILE=build/libs/hmpps-nomis-prisoner-api*.jar
-COPY ${JAR_FILE} app.jar
+RUN cp build/libs/hmpps-nomis-prisoner-api-${BUILD_NUMBER}.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 
 FROM eclipse-temurin:21-jre-jammy
