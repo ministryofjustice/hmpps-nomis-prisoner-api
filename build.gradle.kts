@@ -52,3 +52,40 @@ tasks {
 allOpen {
   annotation("uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen")
 }
+
+data class ModelConfiguration(val name: String) {
+  fun toTestTaskName(): String = "test${nameToCamel()}"
+  private val snakeRegex = "-[a-zA-Z]".toRegex()
+  private fun nameToCamel(): String = snakeRegex.replace(name) {
+    it.value.replace("-", "").uppercase()
+  }.replaceFirstChar { it.uppercase() }
+}
+
+val testPackages = listOf(
+  ModelConfiguration("activities"),
+  ModelConfiguration("adjudications"),
+  ModelConfiguration("sentencing"),
+  ModelConfiguration("visitbalances"),
+  ModelConfiguration("visits"),
+)
+
+testPackages.forEach {
+  val task = tasks.register(it.toTestTaskName(), Test::class) {
+    group = "Run tests"
+    description = "Run tests for ${it.name}"
+    shouldRunAfter("test")
+    useJUnitPlatform()
+    filter {
+      includeTestsMatching("uk.gov.justice.digital.hmpps.nomisprisonerapi.${it.name}.*")
+    }
+  }
+  tasks.check { dependsOn(task) }
+}
+
+tasks.test {
+  filter {
+    testPackages.forEach {
+      excludeTestsMatching("uk.gov.justice.digital.hmpps.nomisprisonerapi.${it.name}.*")
+    }
+  }
+}
