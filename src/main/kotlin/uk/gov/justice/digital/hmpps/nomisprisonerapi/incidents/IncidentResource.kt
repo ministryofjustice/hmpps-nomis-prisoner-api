@@ -459,8 +459,6 @@ data class UpsertStaffPartyRequest(
   val username: String,
   @Schema(description = "Staff role in the incident")
   val role: String,
-  @Schema(description = "The outcome of the incident")
-  val outcome: String?,
   @Schema(description = "General information about the incident")
   val comment: String?,
 )

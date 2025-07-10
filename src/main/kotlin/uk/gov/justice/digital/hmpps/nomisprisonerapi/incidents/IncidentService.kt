@@ -138,7 +138,7 @@ class IncidentService(
                       answer = this.question.answers.find { response.answerId == it.id },
                       recordingStaff = lookupStaff(response.recordingUsername).staff,
                       responseDate = response.responseDate,
-                      comment = response.comment,
+                      comment = response.comment.truncateComment(),
                     )
                   },
                 )
@@ -172,14 +172,14 @@ class IncidentService(
     dpsRequirement: UpsertIncidentRequirementRequest,
   ): IncidentRequirement = IncidentRequirement(
     id = IncidentRequirementId(incidentId = incident.id, requirementSequence = index),
-    comment = dpsRequirement.comment,
+    comment = dpsRequirement.comment.truncateComment(),
     agency = findAgencyOrThrow(dpsRequirement.location),
     recordingStaff = lookupStaff(dpsRequirement.username).staff,
     recordedDate = dpsRequirement.date,
   )
 
   private fun updateIncidentRequirement(nomisRequirement: IncidentRequirement, newRequirement: IncidentRequirement) {
-    nomisRequirement.comment = newRequirement.comment
+    nomisRequirement.comment = newRequirement.comment.truncateComment()
     nomisRequirement.agency = newRequirement.agency
     nomisRequirement.recordingStaff = newRequirement.recordingStaff
     nomisRequirement.recordedDate = newRequirement.recordedDate
@@ -191,14 +191,14 @@ class IncidentService(
     dpsParty: UpsertOffenderPartyRequest,
   ): IncidentOffenderParty = IncidentOffenderParty(
     id = IncidentPartyId(incidentId = incident.id, partySequence = index + 2000),
-    comment = dpsParty.comment,
+    comment = dpsParty.comment.truncateComment(),
     role = lookupOffenderRole(dpsParty.role),
     outcome = dpsParty.outcome?.let { lookupOutcome(dpsParty.outcome) },
     offenderBooking = findBookingForPrisonerOrThrow(dpsParty.prisonNumber),
   )
 
   private fun updateOffenderParty(existing: IncidentOffenderParty, newParty: IncidentOffenderParty) {
-    existing.comment = newParty.comment
+    existing.comment = newParty.comment.truncateComment()
     existing.role = newParty.role
     existing.outcome = newParty.outcome
     existing.offenderBooking = newParty.offenderBooking
@@ -210,13 +210,13 @@ class IncidentService(
     dpsParty: UpsertStaffPartyRequest,
   ): IncidentStaffParty = IncidentStaffParty(
     id = IncidentPartyId(incidentId = incident.id, partySequence = index + 1000),
-    comment = dpsParty.comment,
+    comment = dpsParty.comment.truncateComment(),
     role = lookupStaffRole(dpsParty.role),
     staff = lookupStaff(dpsParty.username).staff,
   )
 
   private fun updateStaffParty(existing: IncidentStaffParty, newParty: IncidentStaffParty) {
-    existing.comment = newParty.comment
+    existing.comment = newParty.comment.truncateComment()
     existing.role = newParty.role
     existing.staff = newParty.staff
   }
@@ -234,7 +234,7 @@ class IncidentService(
       dpsQuestion.responses.map { dpsRequest ->
         uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentResponse(
           id = IncidentResponseId(this, dpsRequest.sequence),
-          comment = dpsRequest.comment,
+          comment = dpsRequest.comment.truncateComment(),
           recordingStaff = lookupStaff(dpsRequest.recordingUsername).staff,
           answer = this.question.answers.find { dpsRequest.answerId == it.id },
           responseDate = dpsRequest.responseDate,
@@ -249,7 +249,7 @@ class IncidentService(
       new.responses.map { created ->
         existing.responses.find { it == created }
           ?.apply {
-            this.comment = created.comment
+            this.comment = created.comment.truncateComment()
             this.recordingStaff = created.recordingStaff
             this.answer = created.answer
             this.responseDate = created.responseDate
@@ -305,10 +305,10 @@ class IncidentService(
     ?: throw BadDataException("Staff user account $username not found")
 
   private fun lookupOffenderRole(code: String): IncidentOffenderPartyRole = offenderRoleRepository.findByIdOrNull(IncidentOffenderPartyRole.pk(code))
-    ?: throw BadDataException("Incident party role with code=$code does not exist")
+    ?: throw BadDataException("Incident offender party role with code=$code does not exist")
 
   private fun lookupStaffRole(code: String): IncidentStaffPartyRole = staffRoleRepository.findByIdOrNull(IncidentStaffPartyRole.pk(code))
-    ?: throw BadDataException("Incident party role with code=$code does not exist")
+    ?: throw BadDataException("Incident staff party role with code=$code does not exist")
 
   private fun lookupOutcome(code: String): Outcome = outcomeRepository.findByIdOrNull(Outcome.pk(code))
     ?: throw BadDataException("Incident outcome with code=$code does not exist")
@@ -326,14 +326,17 @@ class IncidentService(
       text += "User:${amendment.lastName},${amendment.firstName} Date:$timestamp${amendment.text}"
     }
 
-    return text.truncate()
+    return text.truncateDescription()
   }
 
-  private fun String.truncate(): String = // encodedLength always >= length
-    if (Utf8.encodedLength(this) <= MAX_INCIDENT_LENGTH_BYTES) {
+  private fun String?.truncateComment(): String? = this?.truncate(MAX_INCIDENT_COMMENT_LENGTH_BYTES)
+  private fun String.truncateDescription(): String = this.truncate(MAX_INCIDENT_DESCRIPTION_LENGTH_BYTES)
+
+  private fun String.truncate(truncateLength: Int): String = // encodedLength always >= length
+    if (Utf8.encodedLength(this) <= truncateLength) {
       this
     } else {
-      substring(0, MAX_INCIDENT_LENGTH_BYTES - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
+      substring(0, truncateLength - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
     }
 
   fun deleteIncident(incidentId: Long) {
@@ -341,7 +344,8 @@ class IncidentService(
   }
 }
 
-private const val MAX_INCIDENT_LENGTH_BYTES: Int = 4000
+private const val MAX_INCIDENT_DESCRIPTION_LENGTH_BYTES: Int = 4000
+private const val MAX_INCIDENT_COMMENT_LENGTH_BYTES: Int = 240
 
 private fun Incident.toIncidentResponse(): IncidentResponse = IncidentResponse(
   incidentId = id,
