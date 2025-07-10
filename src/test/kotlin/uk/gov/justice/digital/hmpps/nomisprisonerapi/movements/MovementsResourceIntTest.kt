@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
@@ -30,6 +31,7 @@ class MovementsResourceIntTest(
   private lateinit var offenderAddress: OffenderAddress
   private lateinit var booking: OffenderBooking
   private lateinit var application: OffenderMovementApplication
+  private lateinit var applicationOutsideMovement: OffenderMovementApplicationMulti
   private lateinit var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
   private lateinit var scheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
   private lateinit var temporaryAbsence: OffenderTemporaryAbsence
@@ -147,8 +149,52 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].contactPersonName").isEqualTo("Derek")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceType").isEqualTo("RR")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceSubType").isEqualTo("RDR")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressId").isEqualTo(offenderAddress.addressId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+    }
+
+    @Test
+    fun `should retrieve application's outside movements`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              applicationOutsideMovement = outsideMovement(
+                eventSubType = "C5",
+                fromDate = twoDaysAgo.toLocalDate(),
+                releaseTime = twoDaysAgo,
+                toDate = yesterday.toLocalDate(),
+                returnTime = yesterday,
+                comment = "Some comment application movement",
+                toAgency = "HAZLWD",
+                toAddress = offenderAddress,
+                contactPersonName = "Derek",
+                temporaryAbsenceType = "RR",
+                temporaryAbsenceSubType = "RDR",
+              )
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].outsideMovementId").isEqualTo(applicationOutsideMovement.movementApplicationMultiId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].temporaryAbsenceType").isEqualTo("RR")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].temporaryAbsenceSubType").isEqualTo("RDR")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].eventSubType").isEqualTo("C5")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].fromDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].releaseTime").isEqualTo("$twoDaysAgo")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].toDate").isEqualTo("${yesterday.toLocalDate()}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].returnTime").isEqualTo("$yesterday")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].comment").isEqualTo("Some comment application movement")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].toAgencyId").isEqualTo("HAZLWD")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].toAddressId").isEqualTo(offenderAddress.addressId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].contactPersonName").isEqualTo("Derek")
     }
 
     @Test
@@ -418,6 +464,7 @@ class MovementsResourceIntTest(
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
+              applicationOutsideMovement = outsideMovement()
               scheduledTemporaryAbsence = scheduledTemporaryAbsence {
                 temporaryAbsence = externalMovement()
                 scheduledTemporaryAbsenceReturn = scheduledReturn {
@@ -439,6 +486,8 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications.length()").isEqualTo(1)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(1)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].outsideMovementId").isEqualTo(applicationOutsideMovement.movementApplicationMultiId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.sequence").isEqualTo(temporaryAbsence.id.sequence)
