@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -98,6 +99,9 @@ data class TemporaryAbsenceApplication(
 
   @Schema(description = "Outside movements")
   val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "Temporary absence application outside movement response")
@@ -140,6 +144,9 @@ data class TemporaryAbsenceApplicationOutsideMovement(
 
   @Schema(description = "Contact person name")
   val contactPersonName: String?,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "Scheduled temporary absence response")
@@ -191,6 +198,9 @@ data class ScheduledTemporaryAbsence(
 
   @Schema(description = "Application time")
   val applicationTime: LocalDateTime?,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "Scheduled temporary absence return response")
@@ -221,6 +231,9 @@ data class ScheduledTemporaryAbsenceReturn(
 
   @Schema(description = "To prison")
   val toPrison: String?,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "Temporary absence response")
@@ -260,6 +273,9 @@ data class TemporaryAbsence(
 
   @Schema(description = "To address owner class")
   val toAddressOwnerClass: String?,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )
 
 @Schema(description = "Temporary absence return response")
@@ -296,4 +312,7 @@ data class TemporaryAbsenceReturn(
 
   @Schema(description = "From address owner class")
   val fromAddressOwnerClass: String?,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )

@@ -110,10 +110,7 @@ abstract class OffenderIndividualSchedule(
   @Column(name = "MODIFY_USER_ID", updatable = false, insertable = false)
   @LastModifiedBy
   val modifiedBy: String? = null,
-
-  @Column(name = "AUDIT_MODULE_NAME", updatable = false, insertable = false)
-  val auditModuleName: String? = null,
-) {
+) : NomisAuditableEntity() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
