@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTrustAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTrustAccountId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransactionType
@@ -20,7 +22,14 @@ import java.time.LocalDateTime
 annotation class OffenderTransactionDslMarker
 
 @NomisDataDslMarker
-interface OffenderTransactionDsl
+interface OffenderTransactionDsl {
+  @GeneralLedgerTransactionDslMarker
+  fun generalLedgerTransaction(
+    generalLedgerEntrySequence: Int,
+    accountCode: Int,
+    dsl: GeneralLedgerTransactionDsl.() -> Unit = {},
+  ): GeneralLedgerTransaction
+}
 
 @Component
 class OffenderTransactionBuilderRepository(
@@ -28,8 +37,8 @@ class OffenderTransactionBuilderRepository(
   private val transactionTypeRepository: TransactionTypeRepository,
   private val trustAccountRepository: OffenderTrustAccountRepository,
 ) {
-  fun lookupTrustAccount(prisonId: String, offenderId: Long): OffenderTrustAccount? = trustAccountRepository
-    .findByIdOrNull(OffenderTrustAccount.Companion.Pk(prisonId, offenderId))
+  fun lookupTrustAccount(prisonId: String, offender: Offender): OffenderTrustAccount? = trustAccountRepository
+    .findByIdOrNull(OffenderTrustAccountId(prisonId, offender))
 
   fun lookupTransactionType(type: String): TransactionType = transactionTypeRepository
     .findByIdOrNull(type)!!
@@ -42,13 +51,18 @@ class OffenderTransactionBuilderRepository(
 }
 
 @Component
-class OffenderTransactionBuilderFactory(val repository: OffenderTransactionBuilderRepository) {
-  fun builder() = OffenderTransactionBuilder(repository)
+class OffenderTransactionBuilderFactory(
+  val repository: OffenderTransactionBuilderRepository,
+  val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory,
+) {
+  fun builder() = OffenderTransactionBuilder(repository, generalLedgerTransactionBuilderFactory)
 }
 
 class OffenderTransactionBuilder(
   private val repository: OffenderTransactionBuilderRepository,
+  private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory,
 ) : OffenderTransactionDsl {
+  lateinit var transaction: OffenderTransaction
 
   fun build(
     booking: OffenderBooking,
@@ -69,14 +83,41 @@ class OffenderTransactionBuilder(
     modifyDate = LocalDateTime.now(),
     postingType = PostingType.CR,
   )
-    .let { repository.save(it) }
+    .let {
+      transaction = repository.save(it)
+      return transaction
+    }
+
+  override fun generalLedgerTransaction(
+    generalLedgerEntrySequence: Int,
+    accountCode: Int,
+    dsl: GeneralLedgerTransactionDsl.() -> Unit,
+  ): GeneralLedgerTransaction = generalLedgerTransactionBuilderFactory.builder().build(
+    transaction.transactionId,
+    transaction.transactionEntrySequence,
+    generalLedgerEntrySequence,
+    transaction.trustAccount.id.offender,
+    transaction.trustAccount.id.prisonId,
+    transaction.transactionType.type,
+    accountCode,
+    transaction.postingType,
+    transaction.entryDate.atTime(0, 0),
+    transaction.transactionReferenceNumber,
+    transaction.entryAmount,
+  )
 
   private fun lookupOrCreateTrustAccount(
     prisonId: String,
     offender: Offender,
   ): OffenderTrustAccount = repository
-    .lookupTrustAccount(prisonId, offender.id)
+    .lookupTrustAccount(prisonId, offender)
     ?: repository.save(
-      OffenderTrustAccount(prisonId, offender.id, false, BigDecimal(9.99), BigDecimal(11.11), LocalDateTime.now()),
+      OffenderTrustAccount(
+        OffenderTrustAccountId(prisonId, offender),
+        false,
+        BigDecimal(9.99),
+        BigDecimal(11.11),
+        LocalDateTime.now(),
+      ),
     )
 }
