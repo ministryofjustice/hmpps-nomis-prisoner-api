@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
@@ -71,6 +72,7 @@ class MovementsService(
     temporaryAbsence = scheduledTemporaryAbsence?.temporaryAbsence?.toResponse(),
     temporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturn?.temporaryAbsenceReturn?.toResponse(),
     outsideMovements = outsideMovements.map { it.toResponse() },
+    audit = toAudit(),
   )
 
   private fun OffenderMovementApplicationMulti.toResponse() = TemporaryAbsenceApplicationOutsideMovement(
@@ -87,6 +89,7 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     contactPersonName = contactPersonName,
+    audit = toAudit(),
   )
 
   private fun OffenderScheduledTemporaryAbsence.toResponse() = ScheduledTemporaryAbsence(
@@ -106,6 +109,7 @@ class MovementsService(
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     applicationDate = applicationDate,
     applicationTime = applicationTime,
+    audit = toAudit(),
   )
 
   private fun OffenderScheduledTemporaryAbsenceReturn.toResponse() = ScheduledTemporaryAbsenceReturn(
@@ -118,6 +122,7 @@ class MovementsService(
     escort = escort.code,
     fromAgency = fromAgency?.id,
     toPrison = toAgency?.id,
+    audit = toAudit(),
   )
 
   private fun OffenderTemporaryAbsence.toResponse() = TemporaryAbsence(
@@ -133,6 +138,7 @@ class MovementsService(
     commentText = commentText,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
+    audit = toAudit(),
   )
 
   private fun OffenderTemporaryAbsenceReturn.toResponse() = TemporaryAbsenceReturn(
@@ -147,6 +153,7 @@ class MovementsService(
     commentText = commentText,
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
+    audit = toAudit(),
   )
 
   private fun OffenderExternalMovement.toTemporaryAbsenceResponse() = TemporaryAbsence(
@@ -162,6 +169,7 @@ class MovementsService(
     commentText = commentText,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
+    audit = toAudit(),
   )
 
   private fun OffenderExternalMovement.toTemporaryAbsenceReturnResponse() = TemporaryAbsenceReturn(
@@ -176,5 +184,6 @@ class MovementsService(
     commentText = commentText,
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
+    audit = toAudit(),
   )
 }

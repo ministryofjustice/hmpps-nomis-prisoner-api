@@ -98,4 +98,4 @@ class OffenderMovementApplicationMulti(
 
   @Column(name = "CONTACT_PERSON_NAME")
   val contactPersonName: String? = null,
-)
+) : NomisAuditableEntity()
