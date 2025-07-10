@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.aasentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityManager

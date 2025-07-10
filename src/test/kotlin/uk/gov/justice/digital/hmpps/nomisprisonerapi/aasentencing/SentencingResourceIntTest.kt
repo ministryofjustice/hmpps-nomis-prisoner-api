@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.aasentencing
 
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
@@ -6757,7 +6757,20 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceId = SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = 99)) })))
+          .body(
+            BodyInserters.fromValue(
+              request.copy(
+                sentences = request.sentences.map {
+                  it.copy(
+                    sentenceId = SentenceId(
+                      offenderBookingId = booking.bookingId,
+                      sentenceSequence = 99,
+                    ),
+                  )
+                },
+              ),
+            ),
+          )
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -7125,7 +7138,20 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceId = SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = 99)) })))
+          .body(
+            BodyInserters.fromValue(
+              request.copy(
+                sentences = request.sentences.map {
+                  it.copy(
+                    sentenceId = SentenceId(
+                      offenderBookingId = booking.bookingId,
+                      sentenceSequence = 99,
+                    ),
+                  )
+                },
+              ),
+            ),
+          )
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -7501,7 +7527,20 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceId = SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = 99)) })))
+          .body(
+            BodyInserters.fromValue(
+              request.copy(
+                sentences = request.sentences.map {
+                  it.copy(
+                    sentenceId = SentenceId(
+                      offenderBookingId = booking.bookingId,
+                      sentenceSequence = 99,
+                    ),
+                  )
+                },
+              ),
+            ),
+          )
           .exchange()
           .expectStatus().isNotFound
           .expectBody()

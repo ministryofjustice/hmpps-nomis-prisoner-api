@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.aasentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
