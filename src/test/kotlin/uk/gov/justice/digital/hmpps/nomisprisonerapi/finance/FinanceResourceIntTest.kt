@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 
@@ -22,17 +23,19 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var service: FinanceService
 
+  private lateinit var offender: Offender
   private lateinit var transaction: OffenderTransaction
 
   @AfterEach
   fun tearDown() {
     repository.deleteAllTransactions()
+    repository.delete(offender)
   }
 
   @Test
   fun getTransactionRepo() {
     nomisDataBuilder.build {
-      offender {
+      offender = offender {
         booking {
           transaction = transaction("DPST")
         }
@@ -64,7 +67,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   @Test
   fun getTransaction() {
     nomisDataBuilder.build {
-      offender {
+      offender = offender {
         booking {
           transaction = transaction("DPST")
         }
