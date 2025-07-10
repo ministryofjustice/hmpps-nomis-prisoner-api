@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
@@ -32,7 +33,7 @@ class MovementsService(
 
     return OffenderTemporaryAbsencesResponse(
       bookings = bookings.map { booking: OffenderBooking ->
-        BookingTemporaryAbsencesResponse(
+        BookingTemporaryAbsences(
           bookingId = booking.bookingId,
           temporaryAbsenceApplications = booking.temporaryAbsenceApplications.map { app: OffenderMovementApplication -> app.toResponse() },
           unscheduledTemporaryAbsences = temporaryAbsenceRepository.findByOffenderBookingAndScheduledTemporaryAbsenceIsNull(booking)
@@ -44,7 +45,7 @@ class MovementsService(
     )
   }
 
-  private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplicationResponse(
+  private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate,
@@ -69,9 +70,26 @@ class MovementsService(
     scheduledTemporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturn?.toResponse(),
     temporaryAbsence = scheduledTemporaryAbsence?.temporaryAbsence?.toResponse(),
     temporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturn?.temporaryAbsenceReturn?.toResponse(),
+    outsideMovements = outsideMovements.map { it.toResponse() },
   )
 
-  private fun OffenderScheduledTemporaryAbsence.toResponse() = ScheduledTemporaryAbsenceResponse(
+  private fun OffenderMovementApplicationMulti.toResponse() = TemporaryAbsenceApplicationOutsideMovement(
+    outsideMovementId = movementApplicationMultiId,
+    temporaryAbsenceType = temporaryAbsenceType?.code,
+    temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
+    eventSubType = eventSubType.code,
+    fromDate = fromDate,
+    releaseTime = releaseTime,
+    toDate = toDate,
+    returnTime = returnTime,
+    comment = comment,
+    toAgencyId = toAgency?.id,
+    toAddressId = toAddress?.addressId,
+    toAddressOwnerClass = toAddress?.addressOwnerClass,
+    contactPersonName = contactPersonName,
+  )
+
+  private fun OffenderScheduledTemporaryAbsence.toResponse() = ScheduledTemporaryAbsence(
     eventId = eventId,
     eventDate = eventDate,
     startTime = startTime,
@@ -90,7 +108,7 @@ class MovementsService(
     applicationTime = applicationTime,
   )
 
-  private fun OffenderScheduledTemporaryAbsenceReturn.toResponse() = ScheduledTemporaryAbsenceReturnResponse(
+  private fun OffenderScheduledTemporaryAbsenceReturn.toResponse() = ScheduledTemporaryAbsenceReturn(
     eventId = eventId,
     eventDate = eventDate,
     startTime = startTime,
@@ -102,7 +120,7 @@ class MovementsService(
     toPrison = toAgency?.id,
   )
 
-  private fun OffenderTemporaryAbsence.toResponse() = TemporaryAbsenceResponse(
+  private fun OffenderTemporaryAbsence.toResponse() = TemporaryAbsence(
     sequence = id.sequence,
     movementDate = movementDate,
     movementTime = movementTime,
@@ -117,7 +135,7 @@ class MovementsService(
     toAddressOwnerClass = toAddress?.addressOwnerClass,
   )
 
-  private fun OffenderTemporaryAbsenceReturn.toResponse() = TemporaryAbsenceReturnResponse(
+  private fun OffenderTemporaryAbsenceReturn.toResponse() = TemporaryAbsenceReturn(
     sequence = id.sequence,
     movementDate = movementDate,
     movementTime = movementTime,
@@ -131,7 +149,7 @@ class MovementsService(
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
   )
 
-  private fun OffenderExternalMovement.toTemporaryAbsenceResponse() = TemporaryAbsenceResponse(
+  private fun OffenderExternalMovement.toTemporaryAbsenceResponse() = TemporaryAbsence(
     sequence = id.sequence,
     movementDate = movementDate,
     movementTime = movementTime,
@@ -146,7 +164,7 @@ class MovementsService(
     toAddressOwnerClass = toAddress?.addressOwnerClass,
   )
 
-  private fun OffenderExternalMovement.toTemporaryAbsenceReturnResponse() = TemporaryAbsenceReturnResponse(
+  private fun OffenderExternalMovement.toTemporaryAbsenceReturnResponse() = TemporaryAbsenceReturn(
     sequence = id.sequence,
     movementDate = movementDate,
     movementTime = movementTime,

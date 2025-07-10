@@ -7,26 +7,26 @@ import java.time.LocalDateTime
 @Schema(description = "Offender temporary absences by booking, including applications and scheduled absences")
 data class OffenderTemporaryAbsencesResponse(
   @Schema(description = "List of bookings with their temporary absences and external movements")
-  val bookings: List<BookingTemporaryAbsencesResponse>,
+  val bookings: List<BookingTemporaryAbsences>,
 )
 
 @Schema(description = "Booking temporary absences")
-data class BookingTemporaryAbsencesResponse(
+data class BookingTemporaryAbsences(
   @Schema(description = "Booking ID")
   val bookingId: Long,
 
   @Schema(description = "Temporary absence applications")
-  val temporaryAbsenceApplications: List<TemporaryAbsenceApplicationResponse>,
+  val temporaryAbsenceApplications: List<TemporaryAbsenceApplication>,
 
   @Schema(description = "Unscheduled temporary absences OUT - those without an application or a schedule")
-  val unscheduledTemporaryAbsences: List<TemporaryAbsenceResponse>,
+  val unscheduledTemporaryAbsences: List<TemporaryAbsence>,
 
   @Schema(description = "Unscheduled temporary absences IN - those without an application or a schedule")
-  val unscheduledTemporaryAbsenceReturns: List<TemporaryAbsenceReturnResponse>,
+  val unscheduledTemporaryAbsenceReturns: List<TemporaryAbsenceReturn>,
 )
 
 @Schema(description = "Temporary absence application response")
-data class TemporaryAbsenceApplicationResponse(
+data class TemporaryAbsenceApplication(
   @Schema(description = "Movement application ID")
   val movementApplicationId: Long,
 
@@ -85,20 +85,65 @@ data class TemporaryAbsenceApplicationResponse(
   val temporaryAbsenceSubType: String?,
 
   @Schema(description = "Scheduled temporary absence")
-  val scheduledTemporaryAbsence: ScheduledTemporaryAbsenceResponse? = null,
+  val scheduledTemporaryAbsence: ScheduledTemporaryAbsence? = null,
 
   @Schema(description = "Scheduled temporary absence return")
-  val scheduledTemporaryAbsenceReturn: ScheduledTemporaryAbsenceReturnResponse? = null,
+  val scheduledTemporaryAbsenceReturn: ScheduledTemporaryAbsenceReturn? = null,
 
   @Schema(description = "Temporary absence")
-  val temporaryAbsence: TemporaryAbsenceResponse? = null,
+  val temporaryAbsence: TemporaryAbsence? = null,
 
   @Schema(description = "Temporary absence return")
-  val temporaryAbsenceReturn: TemporaryAbsenceReturnResponse? = null,
+  val temporaryAbsenceReturn: TemporaryAbsenceReturn? = null,
+
+  @Schema(description = "Outside movements")
+  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>,
+)
+
+@Schema(description = "Temporary absence application outside movement response")
+data class TemporaryAbsenceApplicationOutsideMovement(
+  @Schema(description = "Movement application ID")
+  val outsideMovementId: Long,
+
+  @Schema(description = "Temporary absence type")
+  val temporaryAbsenceType: String?,
+
+  @Schema(description = "Temporary absence sub type")
+  val temporaryAbsenceSubType: String?,
+
+  @Schema(description = "Event sub type")
+  val eventSubType: String,
+
+  @Schema(description = "From date")
+  val fromDate: LocalDate,
+
+  @Schema(description = "Release time")
+  val releaseTime: LocalDateTime,
+
+  @Schema(description = "To date")
+  val toDate: LocalDate,
+
+  @Schema(description = "Return time")
+  val returnTime: LocalDateTime,
+
+  @Schema(description = "Comment")
+  val comment: String?,
+
+  @Schema(description = "To agency ID")
+  val toAgencyId: String?,
+
+  @Schema(description = "To address ID")
+  val toAddressId: Long?,
+
+  @Schema(description = "To address owner class")
+  val toAddressOwnerClass: String?,
+
+  @Schema(description = "Contact person name")
+  val contactPersonName: String?,
 )
 
 @Schema(description = "Scheduled temporary absence response")
-data class ScheduledTemporaryAbsenceResponse(
+data class ScheduledTemporaryAbsence(
   @Schema(description = "Event ID")
   val eventId: Long,
 
@@ -149,7 +194,7 @@ data class ScheduledTemporaryAbsenceResponse(
 )
 
 @Schema(description = "Scheduled temporary absence return response")
-data class ScheduledTemporaryAbsenceReturnResponse(
+data class ScheduledTemporaryAbsenceReturn(
   @Schema(description = "Event ID")
   val eventId: Long,
 
@@ -179,7 +224,7 @@ data class ScheduledTemporaryAbsenceReturnResponse(
 )
 
 @Schema(description = "Temporary absence response")
-data class TemporaryAbsenceResponse(
+data class TemporaryAbsence(
   @Schema(description = "Movement sequence")
   val sequence: Long,
 
@@ -218,7 +263,7 @@ data class TemporaryAbsenceResponse(
 )
 
 @Schema(description = "Temporary absence return response")
-data class TemporaryAbsenceReturnResponse(
+data class TemporaryAbsenceReturn(
   @Schema(description = "Movement sequence")
   val sequence: Long,
 
