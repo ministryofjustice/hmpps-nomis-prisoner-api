@@ -737,6 +737,83 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /incidents/reconciliation/ids/all-from-id")
+  inner class GetOpenIncidentIds {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed for correct role`() {
+        webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private var id5: Long = 0
+      private var id6: Long = 0
+
+      @BeforeEach
+      internal fun createIncidents() {
+        nomisDataBuilder.build {
+          id5 = incident(id = ++currentId, reportingStaff = reportingStaff2, questionnaire = questionnaire1).id
+          id6 = incident(id = ++currentId, reportingStaff = reportingStaff2, questionnaire = questionnaire1).id
+        }
+      }
+
+      @Test
+      fun `will return first page of incidents ordered by incidentId ASC`() {
+        webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id?pageSize=2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.incidentIds.size()").isEqualTo("2")
+          .jsonPath("$.incidentIds[0]").isEqualTo(incident1.id)
+          .jsonPath("$.incidentIds[1]").isEqualTo(incident2.id)
+          .jsonPath("$.lastIncidentId").isEqualTo(incident2.id)
+      }
+
+      @Test
+      fun `will return second page of incidents ordered by incidentId ASC`() {
+        webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id?pageSize=2&incidentId=$id5")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.incidentIds.size()").isEqualTo("1")
+          .jsonPath("$.incidentIds[0]").isEqualTo(id6.toString())
+          .jsonPath("$.lastIncidentId").isEqualTo(id6.toString())
+      }
+    }
+  }
+
+  @Nested
   @DisplayName("GET /incidents/reconciliation/agency/{agencyId}/ids")
   inner class GetOpenIncidentIdsAtAgency {
     @Nested

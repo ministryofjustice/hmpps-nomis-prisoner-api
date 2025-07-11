@@ -61,7 +61,6 @@ class IncidentService(
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
-    const val INCIDENT_REPORTING_SCREEN_ID = "OIDINCRS"
   }
 
   private val seeDps = "... see DPS for full text"
@@ -291,6 +290,13 @@ class IncidentService(
   )
 
   fun getOpenIncidentIdsForReconciliation(agencyId: String, pageRequest: Pageable): Page<IncidentIdResponse> = incidentRepository.findAllIncidentIdsByAgencyAndStatus(agencyId, openStatusValues, pageRequest).map { IncidentIdResponse(it) }
+
+  fun getOpenIncidentIdsFromId(lastIncidentId: Long, pageSize: Int): IncidentIdsWithLast = incidentRepository.findAllIncidentIdsByStatus(openStatusValues, lastIncidentId, pageSize).let {
+    return IncidentIdsWithLast(
+      it,
+      it.lastOrNull() ?: 0,
+    )
+  }
 
   private fun findAgencyOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw BadDataException("Agency with id=$agencyId does not exist")

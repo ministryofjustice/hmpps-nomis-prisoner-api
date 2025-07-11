@@ -280,6 +280,52 @@ class IncidentResource(private val incidentService: IncidentService) {
     agencyId: String,
   ) = incidentService.getOpenIncidentIdsForReconciliation(agencyId, pageRequest)
 
+  @GetMapping("/reconciliation/ids/all-from-id")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Gets open incident Ids from a given id number",
+    description = """Retrieves paged ids for open incidents - used for reconciliation
+      Gets the specified number of open incidents starting after the given id number.
+      Clients can iterate through all incidents by calling this endpoint using the id from the last call (omit for first call).
+      Iteration ends when the returned incidentIds list has size less than the requested page size.
+      Requires role NOMIS_INCIDENTS""",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Pageable list of reconciliation ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getOpenIncidentIdsFromId(
+    @Schema(description = "If supplied get incidents starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "incidentId", defaultValue = "0")
+    lastIncidentId: Long,
+    @Schema(description = "Number of incidents to get", required = false, defaultValue = "10")
+    @RequestParam(value = "pageSize", defaultValue = "10")
+    pageSize: Int,
+  ) = incidentService.getOpenIncidentIdsFromId(lastIncidentId, pageSize)
+
   @PutMapping("/{incidentId}")
   @Operation(
     summary = "create or update an incident using the specified id",
@@ -746,4 +792,8 @@ data class IncidentsCount(
   val openIncidents: Long,
   @Schema(description = "A count for the number of closed or duplicate incidents", example = "2")
   val closedIncidents: Long,
+)
+data class IncidentIdsWithLast(
+  val incidentIds: List<Long>,
+  val lastIncidentId: Long,
 )
