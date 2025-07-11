@@ -81,6 +81,23 @@ interface IncidentRepository :
   ): Page<Long>
 
   @Query(
+    """     
+      select * from (
+        select
+          INCIDENT_CASE_ID as incidentId
+        from INCIDENT_CASES incident
+        where 
+            INCIDENT_CASE_ID > :lastIncidentId and
+         INCIDENT_STATUS in :statusValues
+        order by INCIDENT_CASE_ID
+      )
+      where rownum <= :pageSize
+    """,
+    nativeQuery = true,
+  )
+  fun findAllIncidentIdsByStatus(statusValues: List<String>, lastIncidentId: Long, pageSize: Int): List<Long>
+
+  @Query(
     """
       select 
         incident
