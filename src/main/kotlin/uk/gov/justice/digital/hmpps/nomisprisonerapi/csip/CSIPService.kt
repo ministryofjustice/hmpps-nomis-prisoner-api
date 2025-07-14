@@ -196,8 +196,8 @@ class CSIPService(
     currentRequest.reportDetailRequest?.let { reportDetailRequest ->
       involvement = reportDetailRequest.involvementCode?.let { lookupInvolvement(it) }
       concernDescription = reportDetailRequest.concern?.truncateToUtf8Length(4000)
-      knownReasons = reportDetailRequest.knownReasons
-      otherInformation = reportDetailRequest.otherInformation
+      knownReasons = reportDetailRequest.knownReasons?.truncateToUtf8Length(4000)
+      otherInformation = reportDetailRequest.otherInformation?.truncateToUtf8Length(4000)
       saferCustodyTeamInformed = reportDetailRequest.saferCustodyTeamInformed
       referralComplete = reportDetailRequest.referralComplete
       referralCompletedBy = findByStaffUserNameOrNullIfNotExists(reportDetailRequest.referralCompletedBy)
@@ -218,8 +218,8 @@ class CSIPService(
       evidenceSecured = investigationRequest.evidenceSecured?.truncateToUtf8Length(4000)
       reasonOccurred = investigationRequest.reasonOccurred?.truncateToUtf8Length(4000)
       usualBehaviour = investigationRequest.usualBehaviour?.truncateToUtf8Length(4000)
-      trigger = investigationRequest.trigger
-      protectiveFactors = investigationRequest.protectiveFactors
+      trigger = investigationRequest.trigger?.truncateToUtf8Length(4000)
+      protectiveFactors = investigationRequest.protectiveFactors?.truncateToUtf8Length(4000)
       investigationRequest.interviews?.let {
         addOrUpdateInterviews(investigationRequest.interviews)
       }
@@ -245,7 +245,7 @@ class CSIPService(
         factors.find { it.id == factorRequest.id }
           ?.also {
             it.type = lookupFactorType(factorRequest.typeCode)
-            it.comment = factorRequest.comment
+            it.comment = factorRequest.comment?.truncateToUtf8Length(4000)
             newFactorList.add(it)
           }
           ?: throw BadDataException("Attempting to update csip report $id with a csip factor id (${factorRequest.id}) that does not exist")
@@ -253,7 +253,7 @@ class CSIPService(
         val factor = CSIPFactor(
           csipReport = this,
           type = lookupFactorType(factorRequest.typeCode),
-          comment = factorRequest.comment,
+          comment = factorRequest.comment?.truncateToUtf8Length(4000),
         )
         newFactorList.add(factor)
       }
@@ -391,13 +391,13 @@ class CSIPService(
   }
 
   private fun CSIPReport.updateDecisionData(decision: DecisionRequest) {
-    conclusion = decision.conclusion
+    conclusion = decision.conclusion?.truncateToUtf8Length(4000)
     decisionOutcome = decision.decisionOutcomeCode?.let { lookupOutcome(it) }
     signedOffRole = decision.signedOffRoleCode?.let { lookupSignedOffRole(it) }
     recordedBy = decision.recordedBy
     recordedDate = decision.recordedDate
-    nextSteps = decision.nextSteps
-    otherDetails = decision.otherDetails
+    nextSteps = decision.nextSteps?.truncateToUtf8Length(4000)
+    otherDetails = decision.otherDetails?.truncateToUtf8Length(4000)
     openCSIPAlert = decision.actions.openCSIPAlert
     nonAssociationsUpdated = decision.actions.nonAssociationsUpdated
     observationBook = decision.actions.observationBook
