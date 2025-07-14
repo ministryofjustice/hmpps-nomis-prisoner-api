@@ -6,4 +6,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction.Companion.Pk
 
 @Repository
-interface OffenderTransactionRepository : JpaRepository<OffenderTransaction, Pk>
+interface OffenderTransactionRepository : JpaRepository<OffenderTransaction, Pk> {
+  fun findByTransactionId(id: Long): List<OffenderTransaction>
+}

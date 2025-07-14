@@ -53,6 +53,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.GeneralLedgerTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IWPTemplateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
@@ -116,7 +117,8 @@ class Repository(
   val csipReportRepository: CSIPReportRepository,
   val iwpTemplateRepository: IWPTemplateRepository,
   val offenderCaseNoteRepository: OffenderCaseNoteRepository,
-  val transactionRepository: OffenderTransactionRepository,
+  val offenderTransactionRepository: OffenderTransactionRepository,
+  val generalLedgerTransactionRepository: GeneralLedgerTransactionRepository,
   val offenderTrustAccountRepository: OffenderTrustAccountRepository,
 ) {
   @Autowired
@@ -296,7 +298,11 @@ class Repository(
   fun delete(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.delete(offenderCaseNote)
   fun deleteCaseNotes() = offenderCaseNoteRepository.deleteAll()
 
-  fun getTransaction(pk: OffenderTransaction.Companion.Pk) = transactionRepository.findByIdOrNull(pk)
+  fun getTransaction(pk: OffenderTransaction.Companion.Pk) = offenderTransactionRepository.findByIdOrNull(pk)
     ?.also { it.toString() }
-  fun deleteAllTransactions() = transactionRepository.deleteAll().also { offenderTrustAccountRepository.deleteAll() }
+  fun deleteAllTransactions() = generalLedgerTransactionRepository
+    .deleteAll().also {
+      offenderTransactionRepository.deleteAll()
+      offenderTrustAccountRepository.deleteAll()
+    }
 }
