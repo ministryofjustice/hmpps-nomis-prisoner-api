@@ -33,4 +33,29 @@ class TruncateToUtf8LengthTest {
   fun `will truncate when too big with huge byte characters at end`() {
     assertThat("123456789😀".truncateToUtf8Length(10)).isEqualTo("123456789")
   }
+
+  @Test
+  fun `will truncate when dps suffix and too big with huge byte characters at beginning`() {
+    assertThat("😀12345678901234567890123456789".truncateToUtf8Length(31, true)).isEqualTo("😀12$SEE_DPS")
+  }
+
+  @Test
+  fun `will not truncate when text and no dps suffix needed`() {
+    assertThat("1234".truncateToUtf8Length(30, true)).isEqualTo("1234")
+  }
+
+  @Test
+  fun `will not truncate when text fits exactly`() {
+    assertThat("12345".truncateToUtf8Length(5, true)).isEqualTo("12345")
+  }
+
+  @Test
+  fun `will truncate when text fits too big`() {
+    assertThat("1234567890123456789012345678901".truncateToUtf8Length(30, true)).isEqualTo("12345$SEE_DPS")
+  }
+
+  @Test
+  fun `will truncate when dps suffix and too big with huge byte characters at end`() {
+    assertThat("12345678901234567890123456789😀".truncateToUtf8Length(30, true)).isEqualTo("12345$SEE_DPS")
+  }
 }

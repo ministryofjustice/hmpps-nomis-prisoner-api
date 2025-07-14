@@ -135,15 +135,16 @@ class IncidentsServiceTest {
 
     @Test
     fun `truncation with unicode too long unicode at end`() {
-      val textTooLong = "s".repeat(3995) + TWO_UNICODE_CHARS
+      // ... see DPS for full text = 25 chars TWO_UNICODE_CHARS have length 6 chars
+      val textTooLong = "s".repeat(3967) + TWO_UNICODE_CHARS.repeat(6)
       val result = incidentsService.reconstructText(
         upsertIncidentRequest().copy(
           description = textTooLong,
           descriptionAmendments = emptyList(),
         ),
       )
-      assertThat(result).isEqualTo("${"s".repeat(3971)}... see DPS for full text")
-      assertThat(Utf8.encodedLength(result!!)).isEqualTo(3996) // shorter than 4000 because some unicode has been truncated
+      assertThat(Utf8.encodedLength(result!!)).isEqualTo(3998) // shorter than 4000 because some unicode has been truncated
+      assertThat(result).isEqualTo("${"s".repeat(3967) + TWO_UNICODE_CHARS}... see DPS for full text")
     }
 
     @Test
