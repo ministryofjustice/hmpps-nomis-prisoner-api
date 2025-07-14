@@ -82,8 +82,8 @@ data class OffenderTransaction(
   @OneToMany
   @JoinColumns(
     value = [
-      JoinColumn(name = "TXN_ID", referencedColumnName = "TXN_ID", nullable = false),
-      JoinColumn(name = "TXN_ENTRY_SEQ", referencedColumnName = "TXN_ENTRY_SEQ", nullable = false),
+      JoinColumn(name = "TXN_ID", referencedColumnName = "TXN_ID", nullable = false, insertable = false, updatable = false),
+      JoinColumn(name = "TXN_ENTRY_SEQ", referencedColumnName = "TXN_ENTRY_SEQ", nullable = false, insertable = false, updatable = false),
     ],
   )
   val generalLedgerTransactions: MutableList<GeneralLedgerTransaction> = mutableListOf(),

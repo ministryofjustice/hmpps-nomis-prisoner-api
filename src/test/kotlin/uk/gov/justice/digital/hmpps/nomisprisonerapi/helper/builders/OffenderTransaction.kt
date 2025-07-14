@@ -97,7 +97,7 @@ class OffenderTransactionBuilder(
     transaction.transactionEntrySequence,
     generalLedgerEntrySequence,
     transaction.trustAccount.id.offender,
-    transaction.trustAccount.id.prisonId,
+    transaction.trustAccount.id.caseloadId,
     transaction.transactionType.type,
     accountCode,
     transaction.postingType,

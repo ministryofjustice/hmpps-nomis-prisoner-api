@@ -36,6 +36,9 @@ data class GeneralLedgerTransaction(
   @Column(name = "GL_ENTRY_SEQ")
   val generalLedgerEntrySequence: Int,
 
+  @Column(nullable = false)
+  val accountPeriodId: Long,
+
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "ACCOUNT_CODE", nullable = false)
   val accountCode: AccountCode,
@@ -70,16 +73,9 @@ data class GeneralLedgerTransaction(
   @Column(name = "TXN_ENTRY_AMOUNT", nullable = false)
   val entryAmount: BigDecimal,
 
-  /*
-Transaction id
-Case load
-Details of the transaction (amount, type, credit/debit, date and time, reference number)
-Prisoner it affects - just NOMIS ID, no personal details
-Accounts involved in the transaction
-Description of transactions as shown for statement line items
-Include the final balances of the two accounts involved in this transaction as part of the data provided
-Include offender transaction id that triggered it where possible
-   */
+  // A redundant copy of CREATE_DATETIME truncated to day but not nullable!
+  @Column(nullable = false)
+  val createDate: LocalDate,
 ) : NomisAuditableEntity() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

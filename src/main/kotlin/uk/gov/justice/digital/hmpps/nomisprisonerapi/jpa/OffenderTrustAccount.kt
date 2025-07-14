@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 @Embeddable
 class OffenderTrustAccountId(
   @Column(name = "CASELOAD_ID", nullable = false, insertable = false, updatable = false)
-  val prisonId: String,
+  val caseloadId: String,
 
   @JoinColumn(name = "OFFENDER_ID", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -56,14 +56,14 @@ data class OffenderTrustAccount(
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
     other as OffenderTrustAccount
-    return id.prisonId == other.id.prisonId && id.offender.id == other.id.offender.id
+    return id.caseloadId == other.id.caseloadId && id.offender.id == other.id.offender.id
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
 
   companion object {
     data class Pk(
-      val prisonId: String? = null,
+      val caseloadId: String? = null,
       val offenderId: Long? = null,
     ) : Serializable
   }

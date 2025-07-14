@@ -1261,12 +1261,15 @@ class BookingBuilder(
   override fun transaction(
     transactionType: String,
     dsl: OffenderTransactionDsl.() -> Unit,
-  ): OffenderTransaction = offenderTransactionBuilderFactory.builder().build(
-    offenderBooking,
-    offenderBooking.offender,
-    offenderBooking.location.id,
-    transactionType,
-  )
+  ): OffenderTransaction = offenderTransactionBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking,
+      offenderBooking.offender,
+      offenderBooking.location.id,
+      transactionType,
+    )
+      .also { builder.apply(dsl) }
+  }
 
   override fun temporaryAbsenceApplication(
     eventSubType: String,

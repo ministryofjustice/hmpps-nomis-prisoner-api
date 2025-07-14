@@ -52,7 +52,7 @@ class TransactionsResource(
     transactionId: Long,
   ): List<OffenderTransactionDto> = transactionsService.getOffenderTransactions(transactionId)
 
-  @GetMapping("/transactions/{transactionId}/gl")
+  @GetMapping("/transactions/{transactionId}/general-ledger")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get a transaction by id and sequence number",

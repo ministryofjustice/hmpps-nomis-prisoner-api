@@ -35,7 +35,7 @@ class TransactionsService(
         offenderNo = it.trustAccount.id.offender.nomsId,
         offenderId = it.trustAccount.id.offender.id,
         bookingId = it.offenderBooking?.bookingId,
-        caseloadId = it.trustAccount.id.prisonId,
+        caseloadId = it.trustAccount.id.caseloadId,
         entryDate = it.entryDate,
         reference = it.transactionReferenceNumber,
         clientReference = it.clientUniqueRef,
