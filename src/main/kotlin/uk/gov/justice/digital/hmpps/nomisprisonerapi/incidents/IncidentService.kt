@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents
 
-import com.google.common.base.Utf8
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -10,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentOffenderParty
@@ -63,7 +63,6 @@ class IncidentService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val seeDps = "... see DPS for full text"
   private val amendmentDateTimeFormat = DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm")
 
   fun getIncident(incidentId: Long): IncidentResponse? = incidentRepository.findByIdOrNull(incidentId)?.toIncidentResponse()
@@ -332,18 +331,10 @@ class IncidentService(
       text += "User:${amendment.lastName},${amendment.firstName} Date:$timestamp${amendment.text}"
     }
 
-    return text.truncateDescription()
+    return text.truncateToUtf8Length(MAX_INCIDENT_DESCRIPTION_LENGTH_BYTES, true)
   }
 
-  private fun String?.truncateComment(): String? = this?.truncate(MAX_INCIDENT_COMMENT_LENGTH_BYTES)
-  private fun String.truncateDescription(): String = this.truncate(MAX_INCIDENT_DESCRIPTION_LENGTH_BYTES)
-
-  private fun String.truncate(truncateLength: Int): String = // encodedLength always >= length
-    if (Utf8.encodedLength(this) <= truncateLength) {
-      this
-    } else {
-      substring(0, truncateLength - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
-    }
+  private fun String?.truncateComment(): String? = this?.truncateToUtf8Length(MAX_INCIDENT_COMMENT_LENGTH_BYTES, true)
 
   fun deleteIncident(incidentId: Long) {
     incidentRepository.deleteById(incidentId)

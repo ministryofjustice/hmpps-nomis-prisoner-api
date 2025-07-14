@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.casenotes
 
-import com.google.common.base.Utf8
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -8,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskSubType
@@ -33,7 +33,6 @@ class CaseNotesService(
   private val taskSubTypeRepository: ReferenceCodeRepository<TaskSubType>,
   private val workRepository: WorkRepository,
 ) {
-  private val seeDps = "... see DPS for full text"
   private val amendmentDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
   private val dpsModules = listOf("PRISON_API", "ELITE2_API")
 
@@ -77,7 +76,7 @@ class CaseNotesService(
         occurrenceDateTime = request.occurrenceDateTime,
         author = staffUserAccount.staff,
         agencyLocation = offenderBooking.location,
-        caseNoteText = request.caseNoteText.truncate(),
+        caseNoteText = request.caseNoteText.truncateToUtf8Length(MAX_CASENOTE_LENGTH_BYTES, true),
         amendmentFlag = false,
         dateCreation = request.creationDateTime.truncatedTo(ChronoUnit.DAYS),
         timeCreation = request.creationDateTime,
@@ -207,15 +206,8 @@ class CaseNotesService(
       text += " ...[${amendment.authorUsername} updated the case notes on $timestamp] ${amendment.text}"
     }
 
-    return text.truncate()
+    return text.truncateToUtf8Length(MAX_CASENOTE_LENGTH_BYTES, true)
   }
-
-  private fun String.truncate(): String = // encodedLength always >= length
-    if (Utf8.encodedLength(this) <= MAX_CASENOTE_LENGTH_BYTES) {
-      this
-    } else {
-      substring(0, MAX_CASENOTE_LENGTH_BYTES - (Utf8.encodedLength(this) - length) - seeDps.length) + seeDps
-    }
 }
 
 private const val MAX_CASENOTE_LENGTH_BYTES: Int = 4000
