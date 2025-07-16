@@ -312,6 +312,10 @@ class ContactPersonService(
     )
   }.map { PrisonerRestrictionIdResponse(restrictionId = it.restrictionId) }
 
+  fun findOffenderRestrictionIdsFromId(restrictionId: Long, pageSize: Int): RestrictionIdsWithLast = offenderRestrictionsRepository.findAllIdsFromId(restrictionId = restrictionId, pageSize = pageSize).let {
+    RestrictionIdsWithLast(lastRestrictionId = it.lastOrNull() ?: 0, restrictionIds = it)
+  }
+
   fun getPrisonerRestriction(restrictionId: Long): PrisonerRestriction = offenderRestrictionsRepository.findByIdOrNull(restrictionId)?.let { restriction ->
     val booking = restriction.offenderBooking
     PrisonerRestriction(

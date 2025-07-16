@@ -285,6 +285,39 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     ),
   )
 
+  @PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/prisoners/restrictions/ids/all-from-id")
+  @Operation(
+    summary = "Gets the identifier for all prisoner restrictions.",
+    description = """Gets the specified number of restrictions starting after the given id number.
+      Clients can iterate through all restrictions by calling this endpoint using the id from the last call (omit for first call).
+      Iteration ends when the returned restrictionIds list has size less than the requested page size.
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of prisoner restriction ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerRestrictionIdsFromId(
+    @Schema(description = "If supplied get restriction starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "restrictionId", defaultValue = "0")
+    restrictionId: Long,
+    @Schema(description = "Number of restrictions to get", required = false, defaultValue = "10")
+    @RequestParam(value = "pageSize", defaultValue = "10")
+    pageSize: Int,
+  ): RestrictionIdsWithLast = contactPersonService.findOffenderRestrictionIdsFromId(restrictionId, pageSize)
+
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @GetMapping("/prisoners/{offenderNo}/restrictions")
   @ResponseStatus(HttpStatus.OK)
@@ -2843,4 +2876,8 @@ data class UpdateContactPersonRestrictionRequest(
 data class PersonIdsWithLast(
   val personIds: List<Long>,
   val lastPersonId: Long,
+)
+data class RestrictionIdsWithLast(
+  val restrictionIds: List<Long>,
+  val lastRestrictionId: Long,
 )
