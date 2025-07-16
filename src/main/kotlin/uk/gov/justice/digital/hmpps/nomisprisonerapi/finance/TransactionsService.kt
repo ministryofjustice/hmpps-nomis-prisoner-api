@@ -6,7 +6,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.GeneralLedgerTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransactionRepository
 import java.math.BigDecimal
@@ -31,7 +33,7 @@ class TransactionsService(
         transactionEntrySequence = it.transactionEntrySequence,
         amount = it.entryAmount,
         type = it.transactionType.type,
-        postingType = it.postingType.name,
+        postingType = it.postingType,
         offenderNo = it.trustAccount.id.offender.nomsId,
         offenderId = it.trustAccount.id.offender.id,
         bookingId = it.offenderBooking?.bookingId,
@@ -39,7 +41,7 @@ class TransactionsService(
         entryDate = it.entryDate,
         reference = it.transactionReferenceNumber,
         clientReference = it.clientUniqueRef,
-        subAccountType = it.subAccountType.name,
+        subAccountType = it.subAccountType,
         description = it.entryDescription ?: "",
         createdAt = it.createDatetime,
         createdBy = it.createUsername,
@@ -65,6 +67,7 @@ private fun mapGL(gl: GeneralLedgerTransaction): GeneralLedgerTransactionDto = G
   caseloadId = gl.caseloadId,
   amount = gl.entryAmount,
   type = gl.transactionType.type,
+  postingType = gl.postUsage,
   accountCode = gl.accountCode.accountCode,
   description = gl.entryDescription ?: "",
   transactionTimestamp = gl.entryDate.atTime(gl.entryTime),
@@ -107,10 +110,10 @@ data class OffenderTransactionDto(
   @Schema(description = "The transaction type defined in the TRANSACTION_TYPES table", example = "CANT")
   val type: String,
 
-  @Schema(description = "Whether credit or debit", allowableValues = ["CR", "DR"])
-  val postingType: String,
+  @Schema(description = "Whether credit or debit")
+  val postingType: PostingType,
 
-  @Schema(description = "A description of the transaction entry", example = "???")
+  @Schema(description = "A description of the transaction entry", example = "Television")
   val description: String,
 
   @Schema(description = "The transaction date", example = "2025-06-14")
@@ -122,8 +125,8 @@ data class OffenderTransactionDto(
   @Schema(description = "The transaction reference", example = "1423558449")
   val reference: String?,
 
-  @Schema(description = "The account type", allowableValues = ["REG", "SAV", "SPND"])
-  val subAccountType: String,
+  @Schema(description = "The account type")
+  val subAccountType: SubAccountType,
 
   @Schema(description = "Dependent GL transaction entries")
   val generalLedgerTransactions: List<GeneralLedgerTransactionDto>,
@@ -157,6 +160,9 @@ data class GeneralLedgerTransactionDto(
 
   @Schema(description = "The transaction type defined in the TRANSACTION_TYPES table", example = "CANT")
   val type: String,
+
+  @Schema(description = "Whether credit or debit")
+  val postingType: PostingType,
 
   @Schema(description = "The account code", example = "21020")
   val accountCode: Int,
