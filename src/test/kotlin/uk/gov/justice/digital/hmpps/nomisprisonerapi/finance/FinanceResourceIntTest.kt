@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.data.Percentage
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -54,6 +55,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /transactions/{transactionId}")
   inner class OffenderTests {
     @Nested
     inner class Security {
@@ -128,6 +130,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /transactions/{transactionId}/general-ledger")
   inner class GL {
     @Nested
     inner class Security {
@@ -171,6 +174,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           assertThat(it).isCloseTo(glTransaction1.entryAmount.toDouble(), Percentage.withPercentage(0.1))
         }
         .jsonPath("$[0].type").isEqualTo(glTransaction1.transactionType.type)
+        .jsonPath("$[0].postingType").isEqualTo(glTransaction1.postUsage.name)
         .jsonPath("$[0].accountCode").isEqualTo(glTransaction1.accountCode.accountCode)
         .jsonPath("$[0].description").isEqualTo(glTransaction1.entryDescription!!)
         .jsonPath("$[0].transactionTimestamp").isEqualTo(glTransaction1.entryDate.atTime(glTransaction2.entryTime))
@@ -183,6 +187,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           assertThat(it).isCloseTo(glTransaction2.entryAmount.toDouble(), Percentage.withPercentage(0.1))
         }
         .jsonPath("$[1].type").isEqualTo(glTransaction2.transactionType.type)
+        .jsonPath("$[1].postingType").isEqualTo(glTransaction2.postUsage.name)
         .jsonPath("$[1].accountCode").isEqualTo(glTransaction2.accountCode.accountCode)
         .jsonPath("$[1].description").isEqualTo(glTransaction2.entryDescription!!)
         .jsonPath("$[1].transactionTimestamp").isEqualTo(glTransaction2.entryDate.atTime(glTransaction2.entryTime))
