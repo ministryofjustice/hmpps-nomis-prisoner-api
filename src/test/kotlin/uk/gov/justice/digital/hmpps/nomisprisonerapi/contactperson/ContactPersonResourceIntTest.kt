@@ -6002,4 +6002,133 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         .jsonPath("content[59].restrictionId").isEqualTo(highestRestrictionId)
     }
   }
+
+  @DisplayName("GET /prisoners/restrictions/ids/all-from-id")
+  @Nested
+  inner class GetPrisonerRestrictionIdsFromId {
+    private var lowestPrisonerRestrictionId = 0L
+    private var highestPrisonerRestrictionId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        val staffMember = staff(firstName = "JANE", lastName = "SMITH") {
+          account(username = "j.smith")
+        }
+
+        val restrictionIds = (10..69).map {
+          var restrictionId: Long = 0
+          offender(nomsId = "A00${it}KT") {
+            booking {
+              restrictionId = restriction(
+                restrictionType = "CCTV",
+                enteredStaff = staffMember,
+                authorisedStaff = staffMember,
+              ).id
+            }
+          }
+          restrictionId
+        }
+        lowestPrisonerRestrictionId = restrictionIds.first()
+        highestPrisonerRestrictionId = restrictionIds.last()
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+      staffRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/restrictions/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/restrictions/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/restrictions/ids/all-from-id")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return first 10 or all restrictions`() {
+        webTestClient.get().uri {
+          it.path("/prisoners/restrictions/ids/all-from-id")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictionIds.size()").isEqualTo(10)
+          .jsonPath("lastRestrictionId").isEqualTo(lowestPrisonerRestrictionId + 9)
+      }
+
+      @Test
+      fun `can set page size`() {
+        webTestClient.get().uri {
+          it.path("/prisoners/restrictions/ids/all-from-id")
+            .queryParam("pageSize", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictionIds.size()").isEqualTo(1)
+          .jsonPath("lastRestrictionId").isEqualTo(lowestPrisonerRestrictionId)
+      }
+
+      @Test
+      fun `can set request another page`() {
+        webTestClient.get().uri {
+          it.path("/prisoners/restrictions/ids/all-from-id")
+            .queryParam("pageSize", "10")
+            .queryParam("restrictionId", lowestPrisonerRestrictionId + 9)
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictionIds.size()").isEqualTo(10)
+          .jsonPath("restrictionIds[0]").isEqualTo(lowestPrisonerRestrictionId + 10)
+          .jsonPath("restrictionIds[9]").isEqualTo(lowestPrisonerRestrictionId + 19)
+          .jsonPath("lastRestrictionId").isEqualTo(lowestPrisonerRestrictionId + 19)
+      }
+
+      @Test
+      fun `will order by restrictionId ascending`() {
+        webTestClient.get().uri {
+          it.path("/prisoners/restrictions/ids/all-from-id")
+            .queryParam("pageSize", "60")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("restrictionIds.size()").isEqualTo(60)
+          .jsonPath("lastRestrictionId").isEqualTo(highestPrisonerRestrictionId)
+      }
+    }
+  }
 }

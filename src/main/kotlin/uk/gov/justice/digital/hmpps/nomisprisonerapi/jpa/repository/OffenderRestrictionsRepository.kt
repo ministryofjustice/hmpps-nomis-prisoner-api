@@ -36,6 +36,19 @@ interface OffenderRestrictionsRepository : JpaRepository<OffenderRestrictions, L
     toDate: LocalDateTime?,
     pageable: Pageable,
   ): Page<RestrictionIdProjection>
+
+  @Query(
+    """
+      select 
+       OFFENDER_RESTRICTION_ID 
+      from OFFENDER_RESTRICTIONS
+      where  OFFENDER_RESTRICTION_ID > :restrictionId
+        and rownum <= :pageSize
+      order by OFFENDER_RESTRICTION_ID
+    """,
+    nativeQuery = true,
+  )
+  fun findAllIdsFromId(restrictionId: Long, pageSize: Int): List<Long>
 }
 
 interface RestrictionIdProjection {
