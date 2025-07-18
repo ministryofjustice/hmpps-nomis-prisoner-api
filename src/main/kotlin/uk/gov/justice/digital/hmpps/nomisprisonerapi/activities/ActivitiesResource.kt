@@ -539,7 +539,8 @@ class ActivitiesResource(
     @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): Page<FindActiveAllocationIdsResponse> = allocationService.findActiveAllocations(pageRequest, prisonId, courseActivityId)
+    @Schema(description = "Allocations must be active on this date to be included. For migrations this is the date we switch to DPS. Defaults to tomorrow.") @RequestParam activeOnDate: LocalDate?,
+  ): Page<FindActiveAllocationIdsResponse> = allocationService.findActiveAllocations(pageRequest, prisonId, courseActivityId, activeOnDate ?: LocalDate.now().plusDays(1))
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/suspended")
@@ -577,7 +578,8 @@ class ActivitiesResource(
   fun findSuspendedAllocations(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): List<FindSuspendedAllocationsResponse> = allocationService.findSuspendedAllocations(prisonId, courseActivityId)
+    @Schema(description = "Allocations must be active on this date to be included. For migrations this is the date we switch to DPS. Defaults to tomorrow.") @RequestParam activeOnDate: LocalDate?,
+  ): List<FindSuspendedAllocationsResponse> = allocationService.findSuspendedAllocations(prisonId, courseActivityId, activeOnDate ?: LocalDate.now().plusDays(1))
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/missing-pay-bands")
@@ -615,7 +617,8 @@ class ActivitiesResource(
   fun findAllocationsWithMissingPayBands(
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
-  ): List<FindAllocationsMissingPayBandsResponse> = allocationService.findAllocationsMissingPayBands(prisonId, courseActivityId)
+    @Schema(description = "Allocations must be active on this date to be included. For migrations this is the date we switch to DPS. Defaults to tomorrow.") @RequestParam activeOnDate: LocalDate?,
+  ): List<FindAllocationsMissingPayBandsResponse> = allocationService.findAllocationsMissingPayBands(prisonId, courseActivityId, activeOnDate ?: LocalDate.now().plusDays(1))
 
   @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @GetMapping("/allocations/{allocationId}")
