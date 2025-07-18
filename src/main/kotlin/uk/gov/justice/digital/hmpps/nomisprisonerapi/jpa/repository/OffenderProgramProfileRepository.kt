@@ -46,7 +46,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        join CourseScheduleRule csr on ca = csr.courseActivity
        where opp.prison.id = :prisonId 
        and opp.programStatus.code = 'ALLOC'
-       and (opp.endDate is null or opp.endDate > current_date)
+       and (opp.endDate is null or opp.endDate >= :activeOnDate)
        and ob.active = true
        and ob.location.id = :prisonId
        and ca.prison.id = :prisonId
@@ -57,7 +57,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
   """,
   )
-  fun findActiveAllocations(prisonId: String, courseActivityId: Long?, pageable: Pageable): Page<Long>
+  fun findActiveAllocations(prisonId: String, courseActivityId: Long?, activeOnDate: LocalDate, pageable: Pageable): Page<Long>
 
   @Query(
     value = """
@@ -72,7 +72,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        join CourseScheduleRule csr on ca = csr.courseActivity
        where opp.prison.id = :prisonId 
        and opp.programStatus.code = 'ALLOC'
-       and (opp.endDate is null or opp.endDate > current_date)
+       and (opp.endDate is null or opp.endDate >= :activeOnDate)
        and opp.suspended = true
        and ob.active = true
        and ob.location.id = :prisonId
@@ -84,7 +84,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and (:courseActivityId is null or ca.courseActivityId = :courseActivityId)
   """,
   )
-  fun findSuspendedAllocations(prisonId: String, courseActivityId: Long?): List<SuspendedAllocations>
+  fun findSuspendedAllocations(prisonId: String, courseActivityId: Long?, activeOnDate: LocalDate): List<SuspendedAllocations>
 
   @Query(
     value = """
@@ -103,7 +103,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        left join CourseActivityPayRate capr on ca = capr.id.courseActivity and capr.payBand.code = oppb.payBand.code and capr.iepLevel.code = i.iepLevel.code and (capr.endDate is null or capr.endDate > current_date)
        where opp.prison.id = :prisonId 
        and opp.programStatus.code = 'ALLOC'
-       and (opp.endDate is null or opp.endDate > current_date)
+       and (opp.endDate is null or opp.endDate >= :activeOnDate)
        and ob.active = true
        and ob.location.id = :prisonId
        and ca.prison.id = :prisonId
@@ -118,7 +118,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
        and 0 < (select count(*) from CourseActivityPayRate capr2 where capr2.id.courseActivity = ca)
   """,
   )
-  fun findAllocationsMissingPayBands(prisonId: String, courseActivityId: Long?): List<AllocationsMissingPayRates>
+  fun findAllocationsMissingPayBands(prisonId: String, courseActivityId: Long?, activeOnDate: LocalDate): List<AllocationsMissingPayRates>
 
   @Suppress("SqlNoDataSourceInspection")
   @Modifying

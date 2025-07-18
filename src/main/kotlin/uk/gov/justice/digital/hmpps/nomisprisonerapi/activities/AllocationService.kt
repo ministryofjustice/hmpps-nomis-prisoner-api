@@ -67,12 +67,12 @@ class AllocationService(
       }
   }
 
-  fun findActiveAllocations(pageRequest: Pageable, prisonId: String, courseActivityId: Long?): Page<FindActiveAllocationIdsResponse> = findPrisonOrThrow(prisonId)
-    .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, courseActivityId, pageRequest) }
+  fun findActiveAllocations(pageRequest: Pageable, prisonId: String, courseActivityId: Long?, activeOnDate: LocalDate): Page<FindActiveAllocationIdsResponse> = findPrisonOrThrow(prisonId)
+    .let { offenderProgramProfileRepository.findActiveAllocations(prisonId, courseActivityId, activeOnDate, pageRequest) }
     .map { FindActiveAllocationIdsResponse(it) }
 
-  fun findSuspendedAllocations(prisonId: String, courseActivityId: Long?): List<FindSuspendedAllocationsResponse> = findPrisonOrThrow(prisonId)
-    .let { offenderProgramProfileRepository.findSuspendedAllocations(prisonId, courseActivityId) }
+  fun findSuspendedAllocations(prisonId: String, courseActivityId: Long?, activeOnDate: LocalDate): List<FindSuspendedAllocationsResponse> = findPrisonOrThrow(prisonId)
+    .let { offenderProgramProfileRepository.findSuspendedAllocations(prisonId, courseActivityId, activeOnDate) }
     .map {
       FindSuspendedAllocationsResponse(
         offenderNo = it.getNomsId(),
@@ -81,8 +81,8 @@ class AllocationService(
       )
     }
 
-  fun findAllocationsMissingPayBands(prisonId: String, courseActivityId: Long?): List<FindAllocationsMissingPayBandsResponse> = findPrisonOrThrow(prisonId)
-    .let { offenderProgramProfileRepository.findAllocationsMissingPayBands(prisonId, courseActivityId) }
+  fun findAllocationsMissingPayBands(prisonId: String, courseActivityId: Long?, activeOnDate: LocalDate): List<FindAllocationsMissingPayBandsResponse> = findPrisonOrThrow(prisonId)
+    .let { offenderProgramProfileRepository.findAllocationsMissingPayBands(prisonId, courseActivityId, activeOnDate) }
     .map {
       FindAllocationsMissingPayBandsResponse(
         offenderNo = it.getNomsId(),

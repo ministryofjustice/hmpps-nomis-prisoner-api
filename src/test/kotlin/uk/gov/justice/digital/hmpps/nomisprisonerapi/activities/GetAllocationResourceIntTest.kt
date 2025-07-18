@@ -29,6 +29,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
   private val today = LocalDate.now()
   private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
+  private val twoDaysTime = today.plusDays(2)
 
   @BeforeEach
   fun setup() {
@@ -303,6 +304,43 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
           .jsonPath("$.size()").isEqualTo(0)
 
         webTestClient.getAllocationsWithMissingPayBands()
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+      }
+
+      @Test
+      fun `should not include active allocations that end before a future activity start date`() {
+        nomisDataBuilder.build {
+          programService {
+            courseActivity = courseActivity(startDate = "$twoDaysTime", createdByDps = false)
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$yesterday", endDate = "$tomorrow")
+            }
+          }
+          offender {
+            booking {
+              courseAllocation(courseActivity = courseActivity, startDate = "$yesterday", endDate = "$tomorrow", suspended = true)
+            }
+          }
+          offender {
+            booking {
+              incentive(iepLevelCode = "BAS")
+              courseAllocation(courseActivity = courseActivity, startDate = "$yesterday", endDate = "$tomorrow")
+            }
+          }
+        }
+
+        webTestClient.getActiveAllocations(activeOnDate = twoDaysTime)
+          .expectBody()
+          .jsonPath("content.size()").isEqualTo(0)
+
+        webTestClient.getSuspendedAllocations(activeOnDate = twoDaysTime)
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(0)
+
+        webTestClient.getAllocationsWithMissingPayBands(activeOnDate = twoDaysTime)
           .expectBody()
           .jsonPath("$.size()").isEqualTo(0)
       }
@@ -789,12 +827,14 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       page: Int = 0,
       prison: String = "BXI",
       courseActivityId: Long? = null,
+      activeOnDate: LocalDate? = null,
     ): WebTestClient.ResponseSpec = get().uri {
       it.path("/allocations/ids")
         .queryParam("prisonId", prison)
         .queryParam("size", pageSize)
         .queryParam("page", page)
         .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+        .apply { activeOnDate?.run { queryParam("activeOnDate", activeOnDate) } }
         .build()
     }
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
@@ -872,10 +912,12 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
   private fun WebTestClient.getSuspendedAllocations(
     prison: String = "BXI",
     courseActivityId: Long? = null,
+    activeOnDate: LocalDate? = null,
   ): WebTestClient.ResponseSpec = get().uri {
     it.path("/allocations/suspended")
       .queryParam("prisonId", prison)
       .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+      .apply { activeOnDate?.run { queryParam("activeOnDate", activeOnDate) } }
       .build()
   }
     .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
@@ -1129,10 +1171,12 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
   private fun WebTestClient.getAllocationsWithMissingPayBands(
     prison: String = "BXI",
     courseActivityId: Long? = null,
+    activeOnDate: LocalDate? = null,
   ): WebTestClient.ResponseSpec = get().uri {
     it.path("/allocations/missing-pay-bands")
       .queryParam("prisonId", prison)
       .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
+      .apply { activeOnDate?.run { queryParam("activeOnDate", activeOnDate) } }
       .build()
   }
     .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
