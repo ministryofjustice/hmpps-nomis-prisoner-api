@@ -179,7 +179,7 @@ data class ScheduledTemporaryAbsence(
   val toAgency: String?,
 
   @Schema(description = "Transport type")
-  val transportType: String,
+  val transportType: String?,
 
   @Schema(description = "Return date")
   val returnDate: LocalDate,

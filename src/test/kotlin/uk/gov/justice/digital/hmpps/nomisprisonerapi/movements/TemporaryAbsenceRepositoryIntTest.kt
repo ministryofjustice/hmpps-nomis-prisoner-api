@@ -156,7 +156,7 @@ class TemporaryAbsenceRepositoryIntTest(
         assertThat(toAgency?.id).isEqualTo("HAZLWD")
         assertThat(comment).isEqualTo("Some comment")
         assertThat(escort.code).isEqualTo("U")
-        assertThat(transportType.code).isEqualTo("VAN")
+        assertThat(transportType?.code).isEqualTo("VAN")
         assertThat(returnDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(returnTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
