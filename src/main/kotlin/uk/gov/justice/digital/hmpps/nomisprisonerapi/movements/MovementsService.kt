@@ -102,7 +102,7 @@ class MovementsService(
     escort = escort.code,
     fromPrison = fromAgency?.id,
     toAgency = toAgency?.id,
-    transportType = transportType.code,
+    transportType = transportType?.code,
     returnDate = returnDate,
     returnTime = returnTime,
     toAddressId = toAddress?.addressId,

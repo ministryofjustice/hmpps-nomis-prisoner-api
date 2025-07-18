@@ -40,7 +40,7 @@ class OffenderScheduledTemporaryAbsence(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val transportType: TemporaryAbsenceTransportType,
+  val transportType: TemporaryAbsenceTransportType? = null,
 
   @JoinColumn(name = "RETURN_DATE")
   val returnDate: LocalDate,
