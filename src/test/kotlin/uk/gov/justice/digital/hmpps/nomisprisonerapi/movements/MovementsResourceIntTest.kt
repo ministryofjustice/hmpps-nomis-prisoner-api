@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.jdbc.core.JdbcTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -25,6 +26,7 @@ import java.time.LocalDateTime
 class MovementsResourceIntTest(
   @Autowired val nomisDataBuilder: NomisDataBuilder,
   @Autowired val repository: Repository,
+  @Autowired private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTestBase() {
 
   private lateinit var offender: Offender
@@ -497,6 +499,101 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].sequence").isEqualTo(unscheduledTemporaryAbsence.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns.length()").isEqualTo(1)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence").isEqualTo(unscheduledTemporaryAbsenceReturn.id.sequence)
+    }
+
+    @Test
+    fun `should retrieve all temporary absences and external movements from a merged prisoner`() {
+      lateinit var mergedBooking: OffenderBooking
+      lateinit var mergedApplication: OffenderMovementApplication
+      lateinit var mergedApplicationOutsideMovement: OffenderMovementApplicationMulti
+      lateinit var mergedScheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
+      lateinit var mergedScheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
+      lateinit var mergedTemporaryAbsence: OffenderTemporaryAbsence
+      lateinit var mergedTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
+
+      // Simulate a scenario where a prisoner is merged into another
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          // This booking was moved from the old prisoner during the merge
+          mergedBooking = booking(bookingSequence = 2) {
+            receive(twoDaysAgo)
+            mergedApplication = temporaryAbsenceApplication {
+              mergedApplicationOutsideMovement = outsideMovement()
+              mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                mergedTemporaryAbsence = externalMovement()
+                mergedScheduledTemporaryAbsenceReturn = scheduledReturn {
+                  mergedTemporaryAbsenceReturn = externalMovement()
+                }
+              }
+            }
+            release(yesterday)
+          }
+          // This the latest booking
+          booking = booking(bookingSequence = 1) {
+            receive(yesterday)
+            // these are the only details copied from the merged booking during the merge
+            application = temporaryAbsenceApplication {
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                scheduledTemporaryAbsenceReturn = scheduledReturn()
+              }
+            }
+          }
+        }
+      }
+
+      // Corrupt the data copied during the merge in the same way as NOMIS does
+
+      // the type and subtype are null after copying from the merged booking
+      jdbcTemplate.update(
+        """
+        update OFFENDER_MOVEMENT_APPS set 
+          TAP_ABS_TYPE=null,
+          TAP_ABS_SUBTYPE=null
+        where OFFENDER_MOVEMENT_APP_ID = ${application.movementApplicationId}
+        """.trimIndent(),
+      )
+
+      /*
+       * the scheduled TAP return is corrupted by:
+       * - pointing at the original booking's scheduled TAP instead of its own
+       * - pointing at the new application, whereas the original scheduled return has null application
+       */
+      jdbcTemplate.update(
+        """
+        update OFFENDER_IND_SCHEDULES set 
+          PARENT_EVENT_ID=${mergedScheduledTemporaryAbsence.eventId},
+          OFFENDER_MOVEMENT_APP_ID=${application.movementApplicationId},
+          CREATE_USER_ID='SYS'
+        where EVENT_ID = ${scheduledTemporaryAbsenceReturn.eventId}
+        """.trimIndent(),
+      )
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        // The TAP from the merged booking exists with correct child entities
+        .jsonPath("$.bookings[0].bookingId").isEqualTo(mergedBooking.bookingId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications.length()").isEqualTo(1)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(mergedApplication.movementApplicationId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(1)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].outsideMovementId").isEqualTo(mergedApplicationOutsideMovement.movementApplicationMultiId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
+        // The TAP copied onto the latest booking exists with correct child entities
+        .jsonPath("$.bookings[1].bookingId").isEqualTo(booking.bookingId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications.length()").isEqualTo(1)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsenceType").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsenceSubType").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(0)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsence").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsenceReturn").isEmpty
     }
   }
 }

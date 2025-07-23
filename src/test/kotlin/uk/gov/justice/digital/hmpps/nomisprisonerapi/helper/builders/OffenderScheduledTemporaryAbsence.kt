@@ -140,7 +140,7 @@ class OffenderScheduledTemporaryAbsenceBuilder(
       fromAgency = fromAgency,
       toPrison = toPrison,
     )
-      .also { scheduledTemporaryAbsence.scheduledTemporaryAbsenceReturn = it }
+      .also { scheduledTemporaryAbsence.scheduledTemporaryAbsenceReturns += it }
       .also { builder.apply(dsl) }
   }
 

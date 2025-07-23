@@ -32,6 +32,8 @@ class MovementsService(
 
     val bookings = offenderBookingRepository.findAllByOffenderNomsId(offenderNo)
 
+    bookings.fixMergedSchedules()
+
     return OffenderTemporaryAbsencesResponse(
       bookings = bookings.map { booking: OffenderBooking ->
         BookingTemporaryAbsences(
@@ -46,6 +48,27 @@ class MovementsService(
     )
   }
 
+  private fun List<OffenderBooking>.fixMergedSchedules() {
+    // find any scheduled returns on the wrong application and remove them (these are created during merges)
+    val scheduledReturnsWithWrongParent = this.flatMap { booking ->
+      booking.temporaryAbsenceApplications.map { application ->
+        application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns
+          ?.filter { it.temporaryAbsenceApplication != null && it.temporaryAbsenceApplication != application }
+          ?.also { application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.removeAll(it) }
+          ?: emptyList()
+      }
+    }.flatten()
+
+    // put the scheduled returns onto the correct application
+    scheduledReturnsWithWrongParent.forEach { mergedReturn ->
+      this.flatMap { booking -> booking.temporaryAbsenceApplications }
+        .find { it.movementApplicationId == mergedReturn.temporaryAbsenceApplication?.movementApplicationId }
+        ?.scheduledTemporaryAbsence
+        ?.scheduledTemporaryAbsenceReturns += mergedReturn
+      mergedReturn.temporaryAbsenceApplication = null
+    }
+  }
+
   private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
@@ -58,7 +81,6 @@ class MovementsService(
     escortCode = escort?.code,
     transportType = transportType?.code,
     comment = comment,
-    // TODO is ID and class enough or do we need the full address here?
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     prisonId = prison?.id,
@@ -68,9 +90,9 @@ class MovementsService(
     temporaryAbsenceType = temporaryAbsenceType?.code,
     temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
     scheduledTemporaryAbsence = scheduledTemporaryAbsence?.toResponse(),
-    scheduledTemporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturn?.toResponse(),
+    scheduledTemporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.firstOrNull()?.toResponse(),
     temporaryAbsence = scheduledTemporaryAbsence?.temporaryAbsence?.toResponse(),
-    temporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturn?.temporaryAbsenceReturn?.toResponse(),
+    temporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
     outsideMovements = outsideMovements.map { it.toResponse() },
     audit = toAudit(),
   )
