@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Language
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MaritalStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPersonRestrict
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderRestrictions
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonEmploymentPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonIdentifierPK
@@ -694,6 +695,21 @@ class ContactPersonService(
 
     personContactRestrictionRepository.deleteById(contactRestrictionId)
   }
+
+  fun createPrisonerRestriction(
+    offenderNo: String,
+    request: CreatePrisonerRestrictionRequest,
+  ): CreatePrisonerRestrictionResponse = offenderRestrictionsRepository.saveAndFlush(
+    OffenderRestrictions(
+      offenderBooking = bookingRepository.findLatestByOffenderNomsId(offenderNo) ?: throw NotFoundException("Prisoner with nomisId=$offenderNo does not exist"),
+      restrictionType = restrictionTypeOf(request.typeCode),
+      comment = request.comment,
+      effectiveDate = request.effectiveDate,
+      expiryDate = request.expiryDate,
+      enteredStaff = staffOf(username = request.enteredStaffUsername),
+      authorisedStaff = staffOf(username = request.authorisedStaffUsername),
+    ),
+  ).let { CreatePrisonerRestrictionResponse(id = it.id) }
 
   fun assertDoesNotExist(request: CreatePersonRequest) {
     request.personId?.takeIf { it != 0L }

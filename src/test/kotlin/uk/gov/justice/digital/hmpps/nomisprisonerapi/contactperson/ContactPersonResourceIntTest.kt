@@ -5119,6 +5119,148 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("POST /prisoners/{offenderNo}/restriction")
+  @Nested
+  inner class CreatePrisonerRestriction {
+    private val restrictionRequest = CreatePrisonerRestrictionRequest(
+      typeCode = "BAN",
+      comment = "Banned for life",
+      effectiveDate = LocalDate.parse("2020-01-01"),
+      expiryDate = LocalDate.parse("2026-01-02"),
+      enteredStaffUsername = "KOFEADDY_GEN",
+      authorisedStaffUsername = "KOFEADDY_ADM",
+    )
+
+    private lateinit var staff: Staff
+    private lateinit var existingPrisoner: Offender
+    private var existingPrisonerBookingId: Long = 0
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+          account(username = "KOFEADDY_ADM", type = ADMIN)
+        }
+        existingPrisoner = offender(nomsId = "A1234AA", firstName = "JOHN", lastName = "SMITH") {
+          existingPrisonerBookingId = booking {}.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRestrictionsRepository.deleteAll()
+      offenderRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
+          .bodyValue(restrictionRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when prisoner does not exist`() {
+        webTestClient.post().uri("/prisoners/Z9999ZZ/restriction")
+          .bodyValue(restrictionRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when restriction type code does not exist`() {
+        webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
+          .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when entered staff username code does not exist`() {
+        webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
+          .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when authorised staff username code does not exist`() {
+        webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
+          .bodyValue(restrictionRequest.copy(authorisedStaffUsername = "ZZZZZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a restriction`() {
+        val response: CreatePrisonerRestrictionResponse = webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
+          .bodyValue(
+            restrictionRequest.copy(
+              comment = "Banned for life",
+              typeCode = "BAN",
+              effectiveDate = LocalDate.parse("2020-01-01"),
+              expiryDate = LocalDate.parse("2026-01-02"),
+              enteredStaffUsername = "KOFEADDY_GEN",
+              authorisedStaffUsername = "KOFEADDY_ADM",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreatePrisonerRestrictionResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val restriction = offenderRestrictionsRepository.findByIdOrNull(response.id)!!
+
+        with(restriction) {
+          assertThat(comment).isEqualTo("Banned for life")
+          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+          assertThat(restrictionType.description).isEqualTo("Banned")
+          assertThat(enteredStaff.id).isEqualTo(staff.id)
+          assertThat(authorisedStaff.id).isEqualTo(staff.id)
+          assertThat(offenderBooking.bookingId).isEqualTo(existingPrisonerBookingId)
+        }
+      }
+    }
+  }
+
   @DisplayName("PUT /persons/{personId}/restriction/{restrictionId}")
   @Nested
   inner class UpdatePersonRestriction {
