@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPersonRestrictRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRestrictionsRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonEmploymentRepository
@@ -83,6 +84,7 @@ class ContactPersonService(
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val corporateRepository: CorporateRepository,
   private val offenderRestrictionsRepository: OffenderRestrictionsRepository,
+  private val offenderRepository: OffenderRepository,
 ) {
   fun getPerson(personId: Long): ContactPerson = personRepository.findByIdOrNull(personId)?.let {
     ContactPerson(
@@ -710,6 +712,28 @@ class ContactPersonService(
       authorisedStaff = staffOf(username = request.authorisedStaffUsername),
     ),
   ).let { CreatePrisonerRestrictionResponse(id = it.id) }
+
+  fun updatePrisonerRestriction(
+    offenderNo: String,
+    prisonerRestrictionId: Long,
+    request: UpdatePrisonerRestrictionRequest,
+  ) {
+    val restriction = offenderRestrictionsRepository.findByIdOrNull(prisonerRestrictionId)
+      ?: throw NotFoundException("Restriction with id: $prisonerRestrictionId not found")
+
+    if (restriction.offenderBooking.offender.nomsId != offenderNo) {
+      throw BadDataException("Restriction with id: $prisonerRestrictionId does not belong to prisoner with nomisId=$offenderNo")
+    }
+
+    with(request) {
+      restriction.restrictionType = restrictionTypeOf(typeCode)
+      restriction.comment = comment
+      restriction.effectiveDate = effectiveDate
+      restriction.expiryDate = expiryDate
+      restriction.enteredStaff = staffOf(username = enteredStaffUsername)
+      restriction.authorisedStaff = staffOf(username = authorisedStaffUsername)
+    }
+  }
 
   fun assertDoesNotExist(request: CreatePersonRequest) {
     request.personId?.takeIf { it != 0L }

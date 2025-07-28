@@ -1226,6 +1226,69 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ): CreatePrisonerRestrictionResponse = contactPersonService.createPrisonerRestriction(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PutMapping("/prisoners/{offenderNo}/restriction/{prisonerRestrictionId}")
+  @Operation(
+    summary = "Updates a prisoner restriction",
+    description = "Updates a prisoner restriction. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prisoner Restriction Updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data or the restriction does not belong to the prisoner",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner or Restriction does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePrisonerRestriction(
+    @Schema(description = "Offender No aka prisoner number", example = "A1234KT")
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Prisoner restriction Id", example = "12345")
+    @PathVariable
+    prisonerRestrictionId: Long,
+    @RequestBody @Valid
+    request: UpdatePrisonerRestrictionRequest,
+  ) = contactPersonService.updatePrisonerRestriction(offenderNo, prisonerRestrictionId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/address")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -2959,6 +3022,23 @@ data class CreatePrisonerRestrictionRequest(
 data class CreatePrisonerRestrictionResponse(
   @param:Schema(description = "Unique NOMIS Id of the restriction")
   val id: Long,
+)
+
+@Schema(description = "Request to update a prisoner in NOMIS")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdatePrisonerRestrictionRequest(
+  @Schema(description = "Restriction type")
+  val typeCode: String,
+  @Schema(description = "Free format comment text")
+  val comment: String?,
+  @Schema(description = "Date restriction became active")
+  val effectiveDate: LocalDate,
+  @Schema(description = "Date restriction is no longer active")
+  val expiryDate: LocalDate?,
+  @Schema(description = "Username Staff member who updated the restriction")
+  val enteredStaffUsername: String,
+  @Schema(description = "Username Staff member who authorised the restriction")
+  val authorisedStaffUsername: String,
 )
 
 data class PersonIdsWithLast(
