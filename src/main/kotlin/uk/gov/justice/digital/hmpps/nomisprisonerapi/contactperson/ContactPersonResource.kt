@@ -1289,6 +1289,58 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   ) = contactPersonService.updatePrisonerRestriction(offenderNo, prisonerRestrictionId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @DeleteMapping("/prisoners/{offenderNo}/restriction/{prisonerRestrictionId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Deletes a prisoner restriction",
+    description = "Deletes a prisoner restriction. Requires ROLE_NOMIS_CONTACTPERSONS",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Prisoner Restriction Deleted",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The restriction does not belong to the prisoner",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deletePrisonerRestriction(
+    @Schema(description = "Offender No aka prisoner number", example = "A1234KT")
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Prisoner restriction Id", example = "12345")
+    @PathVariable
+    prisonerRestrictionId: Long,
+  ) = contactPersonService.deletePrisonerRestriction(offenderNo, prisonerRestrictionId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
   @PostMapping("/persons/{personId}/address")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
