@@ -6420,4 +6420,96 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("DELETE /prisoners/{offenderNo}/restriction/{prisonerRestrictionId}")
+  @Nested
+  inner class DeletePrisonerRestriction {
+    private lateinit var staff: Staff
+    private lateinit var existingPrisoner: Offender
+    private var existingRestrictionId: Long = 0
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+        }
+        existingPrisoner = offender(nomsId = "A1234AA", firstName = "JOHN", lastName = "SMITH") {
+          booking {
+            existingRestrictionId = restriction(
+              restrictionType = "CCTV",
+              enteredStaff = staff,
+              authorisedStaff = staff,
+            ).id
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 400 when restriction exists but not for this prisoner`() {
+        webTestClient.delete().uri("/prisoners/A1234KT/restriction/$existingRestrictionId")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when restriction does not exist`() {
+        webTestClient.delete().uri("/prisoners/${existingPrisoner.nomsId}/restriction/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a restriction`() {
+        assertThat(offenderRestrictionsRepository.existsById(existingRestrictionId)).isTrue()
+
+        webTestClient.delete().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
+          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(offenderRestrictionsRepository.existsById(existingRestrictionId)).isFalse()
+      }
+    }
+  }
 }

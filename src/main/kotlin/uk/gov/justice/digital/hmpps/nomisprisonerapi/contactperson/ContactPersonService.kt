@@ -735,6 +735,19 @@ class ContactPersonService(
     }
   }
 
+  fun deletePrisonerRestriction(
+    offenderNo: String,
+    prisonerRestrictionId: Long,
+  ) {
+    offenderRestrictionsRepository.findByIdOrNull(prisonerRestrictionId)?.also {
+      if (it.offenderBooking.offender.nomsId != offenderNo) {
+        throw BadDataException("Restriction with id: $prisonerRestrictionId does not belong to prisoner with nomisId=$offenderNo")
+      }
+    }
+
+    offenderRestrictionsRepository.deleteById(prisonerRestrictionId)
+  }
+
   fun assertDoesNotExist(request: CreatePersonRequest) {
     request.personId?.takeIf { it != 0L }
       ?.run {
