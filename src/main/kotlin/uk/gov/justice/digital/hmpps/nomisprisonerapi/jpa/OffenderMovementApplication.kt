@@ -17,8 +17,6 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -42,8 +40,7 @@ class OffenderMovementApplication(
   @Enumerated(EnumType.STRING)
   val eventType: EventType = EventType.TAP,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -74,8 +71,7 @@ class OffenderMovementApplication(
   @Column(name = "RETURN_TIME")
   val returnTime: LocalDateTime,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -88,8 +84,7 @@ class OffenderMovementApplication(
   )
   val applicationStatus: MovementApplicationStatus,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -102,8 +97,7 @@ class OffenderMovementApplication(
   )
   val escort: Escort? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -137,7 +131,7 @@ class OffenderMovementApplication(
   @Column(name = "CONTACT_PERSON_NAME")
   val contactPersonName: String? = null,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -150,7 +144,7 @@ class OffenderMovementApplication(
   )
   val applicationType: MovementApplicationType,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -163,7 +157,7 @@ class OffenderMovementApplication(
   )
   val temporaryAbsenceType: TemporaryAbsenceType? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(

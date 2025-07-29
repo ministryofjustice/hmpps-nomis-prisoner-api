@@ -30,7 +30,7 @@ class OffenderMovementApplicationMulti(
   @JoinColumn(name = "OFFENDER_MOVEMENT_APP_ID", nullable = false)
   val offenderMovementApplication: OffenderMovementApplication,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -43,7 +43,7 @@ class OffenderMovementApplicationMulti(
   )
   val temporaryAbsenceType: TemporaryAbsenceType? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -56,7 +56,7 @@ class OffenderMovementApplicationMulti(
   )
   val temporaryAbsenceSubType: TemporaryAbsenceSubType? = null,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
