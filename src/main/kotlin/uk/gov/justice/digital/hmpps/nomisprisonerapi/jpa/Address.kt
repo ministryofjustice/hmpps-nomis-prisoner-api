@@ -150,7 +150,7 @@ abstract class Address(
   SPECIAL_NEEDS_CODE - always null
   CITY_NAME - always null
    */
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
   @Id
   @SequenceGenerator(name = "ADDRESS_ID", sequenceName = "ADDRESS_ID", allocationSize = 1)
   @GeneratedValue(generator = "ADDRESS_ID")

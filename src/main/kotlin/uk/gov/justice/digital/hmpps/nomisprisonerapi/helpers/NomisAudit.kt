@@ -2,7 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntity
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntityBasic
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntityWithStaff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDateTime
 
@@ -14,11 +15,11 @@ data class NomisAudit(
   @Schema(description = "Username of person that created the record (might also be a system) ")
   val createUsername: String,
   @Schema(description = "Real name of person that created the record (might by null for system users)")
-  val createDisplayName: String?,
+  val createDisplayName: String? = null,
   @Schema(description = "Username of person that last modified the record (might also be a system)")
   val modifyUserId: String? = null,
   @Schema(description = "Real name of person that modified the record (might by null for system users)")
-  val modifyDisplayName: String?,
+  val modifyDisplayName: String? = null,
   @Schema(description = "Date time record was last modified")
   val modifyDatetime: LocalDateTime? = null,
   @Schema(description = "Audit Date time")
@@ -37,7 +38,7 @@ data class NomisAudit(
   val auditAdditionalInfo: String? = null,
 )
 
-fun NomisAuditableEntity.toAudit() = NomisAudit(
+fun NomisAuditableEntityWithStaff.toAudit() = NomisAudit(
   createDatetime = createDatetime,
   createUsername = createUsername,
   createDisplayName = createStaffUserAccount?.staff.asDisplayName(),
@@ -52,4 +53,13 @@ fun NomisAuditableEntity.toAudit() = NomisAudit(
   auditClientUserId = auditClientUserId,
   auditClientWorkstationName = auditClientWorkstationName,
 )
+
+fun NomisAuditableEntityBasic.toAudit() = NomisAudit(
+  createDatetime = createDatetime,
+  createUsername = createUsername,
+  modifyDatetime = modifyDatetime,
+  modifyUserId = modifyUserId,
+  auditModuleName = auditModuleName,
+)
+
 fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }

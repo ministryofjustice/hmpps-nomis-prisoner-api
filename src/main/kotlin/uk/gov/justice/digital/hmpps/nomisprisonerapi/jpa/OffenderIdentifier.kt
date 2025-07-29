@@ -57,7 +57,7 @@ class OffenderIdentifier(
 
   @Column(name = "CASELOAD_TYPE")
   private val caseloadType: String = "INST",
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

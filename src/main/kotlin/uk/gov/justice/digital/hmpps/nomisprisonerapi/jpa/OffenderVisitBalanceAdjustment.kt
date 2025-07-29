@@ -83,7 +83,7 @@ data class OffenderVisitBalanceAdjustment(
 
   @Column(name = "EXPIRY_DATE")
   val expiryDate: LocalDate? = null,
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false, insertable = false, updatable = false)

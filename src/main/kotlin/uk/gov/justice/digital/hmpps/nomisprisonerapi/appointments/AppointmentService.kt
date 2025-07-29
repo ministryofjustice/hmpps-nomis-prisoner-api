@@ -229,8 +229,8 @@ private fun mapModel(entity: OffenderAppointment): AppointmentResponse = Appoint
   internalLocation = entity.internalLocation?.locationId,
   prisonId = entity.prison.id,
   comment = entity.comment,
-  createdDate = entity.createdDate!!,
-  createdBy = entity.createdBy!!,
-  modifiedDate = entity.modifiedDate,
-  modifiedBy = entity.modifiedBy,
+  createdDate = entity.createDatetime,
+  createdBy = entity.createUsername,
+  modifiedDate = entity.modifyDatetime,
+  modifiedBy = entity.modifyUserId,
 )

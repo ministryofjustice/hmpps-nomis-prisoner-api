@@ -103,7 +103,7 @@ data class OffenderContactPerson(
   AWARE_OF_CHARGES_FLAG - always default of N
   CAN_BE_CONTACTED_FLAG - always default of N
    */
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
