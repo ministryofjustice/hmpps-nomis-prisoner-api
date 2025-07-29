@@ -1,12 +1,12 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.JdbcTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
@@ -26,7 +26,7 @@ import java.time.LocalDateTime
 class MovementsResourceIntTest(
   @Autowired val nomisDataBuilder: NomisDataBuilder,
   @Autowired val repository: Repository,
-  @Autowired private val jdbcTemplate: JdbcTemplate,
+  @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
   private lateinit var offender: Offender
@@ -539,34 +539,21 @@ class MovementsResourceIntTest(
             }
           }
         }
+
+        /*
+         * Corrupt the data copied during the merge in the same way as NOMIS does
+         * - pointing at the original booking's scheduled TAP instead of its own
+         * - pointing at the new application, whereas the original scheduled return has null application
+         */
+        entityManager.createQuery(
+          """
+            update OffenderScheduledTemporaryAbsenceReturn ostr
+            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence.eventId}),
+            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
+            where eventId = ${scheduledTemporaryAbsenceReturn.eventId}
+          """.trimIndent(),
+        ).executeUpdate()
       }
-
-      // Corrupt the data copied during the merge in the same way as NOMIS does
-
-      // the type and subtype are null after copying from the merged booking
-      jdbcTemplate.update(
-        """
-        update OFFENDER_MOVEMENT_APPS set 
-          TAP_ABS_TYPE=null,
-          TAP_ABS_SUBTYPE=null
-        where OFFENDER_MOVEMENT_APP_ID = ${application.movementApplicationId}
-        """.trimIndent(),
-      )
-
-      /*
-       * the scheduled TAP return is corrupted by:
-       * - pointing at the original booking's scheduled TAP instead of its own
-       * - pointing at the new application, whereas the original scheduled return has null application
-       */
-      jdbcTemplate.update(
-        """
-        update OFFENDER_IND_SCHEDULES set 
-          PARENT_EVENT_ID=${mergedScheduledTemporaryAbsence.eventId},
-          OFFENDER_MOVEMENT_APP_ID=${application.movementApplicationId},
-          CREATE_USER_ID='SYS'
-        where EVENT_ID = ${scheduledTemporaryAbsenceReturn.eventId}
-        """.trimIndent(),
-      )
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
@@ -587,8 +574,6 @@ class MovementsResourceIntTest(
         // The TAP copied onto the latest booking exists with correct child entities
         .jsonPath("$.bookings[1].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications.length()").isEqualTo(1)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsenceType").isEmpty
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsenceSubType").isEmpty
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(0)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsence").isEmpty
