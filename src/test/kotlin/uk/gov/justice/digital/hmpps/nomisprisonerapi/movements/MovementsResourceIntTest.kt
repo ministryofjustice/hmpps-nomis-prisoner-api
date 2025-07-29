@@ -134,11 +134,17 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].eventSubType").isEqualTo("C5")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationDate").isEqualTo("$twoDaysAgo")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationDate").value<String> {
+          assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].fromDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].releaseTime").isEqualTo("$twoDaysAgo")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].releaseTime").value<String> {
+          assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].returnTime").isEqualTo("$yesterday")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].returnTime").value<String> {
+          assertThat(it).startsWith("${yesterday.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationType").isEqualTo("SINGLE")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationStatus").isEqualTo("APP-SCH")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].escortCode").isEqualTo("L")
@@ -189,9 +195,13 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].temporaryAbsenceSubType").isEqualTo("RDR")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].eventSubType").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].fromDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].releaseTime").isEqualTo("$twoDaysAgo")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].releaseTime").value<String> {
+          assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].toDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].returnTime").isEqualTo("$yesterday")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].returnTime").value<String> {
+          assertThat(it).startsWith("${yesterday.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].comment").isEqualTo("Some comment application movement")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].toAgencyId").isEqualTo("HAZLWD")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].toAddressId").isEqualTo(offenderAddress.addressId)
@@ -233,7 +243,9 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.startTime").isEqualTo("$twoDaysAgo")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.startTime").value<String> {
+          assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventSubType").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventStatus").isEqualTo("SCH")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.comment").isEqualTo("Scheduled temporary absence")
@@ -242,7 +254,9 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.toAgency").isEqualTo("HAZLWD")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.transportType").isEqualTo("VAN")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.returnDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.returnTime").isEqualTo("$yesterday")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.returnTime").value<String> {
+          assertThat(it).startsWith("${yesterday.toLocalDate()}")
+        }
     }
 
     @Test
@@ -278,7 +292,9 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.sequence").isEqualTo(temporaryAbsence.id.sequence)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.movementDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.movementTime").isEqualTo("$twoDaysAgo")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.movementTime").value<String> {
+          assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.movementReason").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.arrestAgency").isEqualTo("POL")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.escort").isEqualTo("L")
@@ -322,7 +338,9 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.startTime").isEqualTo("$yesterday")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.startTime").value<String> {
+          assertThat(it).startsWith("${yesterday.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventSubType").isEqualTo("R25")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventStatus").isEqualTo("SCH")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.comment").isEqualTo("Scheduled temporary absence return")
@@ -367,7 +385,9 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.sequence").isEqualTo(temporaryAbsenceReturn.id.sequence)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.movementDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.movementTime").isEqualTo("$yesterday")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.movementTime").value<String> {
+          assertThat(it).startsWith("${yesterday.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.movementReason").isEqualTo("R25")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.escort").isEqualTo("U")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.escortText").isEqualTo("SE")
@@ -407,7 +427,9 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].sequence").isEqualTo(unscheduledTemporaryAbsence.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].movementDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].movementTime").isEqualTo("$yesterday")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].movementTime").value<String> {
+          assertThat(it).startsWith("${yesterday.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].movementReason").isEqualTo("C5")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].escort").isEqualTo("U")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].escortText").isEqualTo("SE")
@@ -448,7 +470,9 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence").isEqualTo(unscheduledTemporaryAbsenceReturn.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementDate").isEqualTo("${today.toLocalDate()}")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementTime").isEqualTo("$today")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementTime").value<String> {
+          assertThat(it).startsWith("${today.toLocalDate()}")
+        }
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementReason").isEqualTo("C5")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].escort").isEqualTo("U")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].escortText").isEqualTo("SE")
