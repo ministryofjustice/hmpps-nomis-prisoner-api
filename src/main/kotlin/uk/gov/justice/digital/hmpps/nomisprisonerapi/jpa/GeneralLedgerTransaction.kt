@@ -76,7 +76,7 @@ data class GeneralLedgerTransaction(
   // A redundant copy of CREATE_DATETIME truncated to day but not nullable!
   @Column(nullable = false)
   val createDate: LocalDate,
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

@@ -19,10 +19,6 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
-import org.springframework.data.annotation.CreatedBy
-import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.LastModifiedBy
-import org.springframework.data.annotation.LastModifiedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -94,23 +90,7 @@ abstract class OffenderIndividualSchedule(
 
   @Column(name = "COMMENT_TEXT")
   var comment: String? = null,
-
-  @Column(name = "CREATE_DATETIME", nullable = false, updatable = false, insertable = false)
-  @CreatedDate
-  val createdDate: LocalDateTime? = null,
-
-  @Column(name = "CREATE_USER_ID", nullable = false, updatable = false, insertable = false)
-  @CreatedBy
-  val createdBy: String? = null,
-
-  @Column(name = "MODIFY_DATETIME", updatable = false, insertable = false)
-  @LastModifiedDate
-  val modifiedDate: LocalDateTime? = null,
-
-  @Column(name = "MODIFY_USER_ID", updatable = false, insertable = false)
-  @LastModifiedBy
-  val modifiedBy: String? = null,
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

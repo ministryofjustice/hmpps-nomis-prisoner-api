@@ -9,9 +9,13 @@ import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
 
+/*
+ * This includes a join on the staff user accounts table that causes n+1 queries.
+ * Consider using NomisAuditableEntityBasic instead.
+ */
 @MappedSuperclass
 @EntityOpen
-class NomisAuditableEntity {
+class NomisAuditableEntityWithStaff {
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
   var createStaffUserAccount: StaffUserAccount? = null

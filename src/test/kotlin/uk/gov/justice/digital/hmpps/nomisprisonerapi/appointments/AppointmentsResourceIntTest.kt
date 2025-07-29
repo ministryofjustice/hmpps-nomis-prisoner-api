@@ -443,8 +443,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
         assertThat(prison.id).isEqualTo("MDI")
         assertThat(comment).isEqualTo("Some comment")
         assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
-        assertThat(modifiedBy).isEqualTo("SA")
-        assertThat(modifiedBy).isNotBlank()
+        assertThat(modifyUserId).isEqualTo("SA")
+        assertThat(modifyUserId).isNotBlank()
       }
     }
 

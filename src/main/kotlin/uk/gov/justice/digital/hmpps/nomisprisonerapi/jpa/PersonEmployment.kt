@@ -59,7 +59,7 @@ class PersonEmployment(
   ADDRESS_1 - always null
   SUPERVISOR_NAME - always null
    */
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

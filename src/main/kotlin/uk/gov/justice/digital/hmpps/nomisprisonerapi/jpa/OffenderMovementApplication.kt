@@ -181,4 +181,4 @@ class OffenderMovementApplication(
 
   @OneToMany(mappedBy = "offenderMovementApplication", cascade = [CascadeType.ALL])
   val outsideMovements: MutableList<OffenderMovementApplicationMulti> = mutableListOf(),
-) : NomisAuditableEntity()
+) : NomisAuditableEntityBasic()

@@ -36,7 +36,7 @@ abstract class Phone(
   open var phoneNo: String,
   @Column(name = "EXT_NO")
   open var extNo: String? = null,
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
   @Id
   @SequenceGenerator(name = "PHONE_ID", sequenceName = "PHONE_ID", allocationSize = 1)
   @GeneratedValue(generator = "PHONE_ID")

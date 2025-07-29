@@ -43,7 +43,7 @@ class CorporateType(
   )
   val type: CorporateOrganisationType,
 
-) : NomisAuditableEntity() {
+) : NomisAuditableEntityWithStaff() {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
