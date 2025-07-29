@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourseAttendance
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
@@ -61,6 +62,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAppo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -120,6 +122,7 @@ class Repository(
   val offenderTransactionRepository: OffenderTransactionRepository,
   val generalLedgerTransactionRepository: GeneralLedgerTransactionRepository,
   val offenderTrustAccountRepository: OffenderTrustAccountRepository,
+  val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -305,4 +308,6 @@ class Repository(
       offenderTransactionRepository.deleteAll()
       offenderTrustAccountRepository.deleteAll()
     }
+
+  fun delete(offenderMovementApplication: OffenderMovementApplication) = offenderMovementApplicationRepository.delete(offenderMovementApplication)
 }

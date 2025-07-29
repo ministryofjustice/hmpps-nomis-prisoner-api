@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
@@ -12,7 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTempor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
@@ -21,7 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemp
 @Transactional(readOnly = true)
 class MovementsService(
   private val offenderRepository: OffenderRepository,
-  private val offenderBookingRepository: OffenderBookingRepository,
+  private val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
   private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
   private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
 ) {
@@ -30,39 +29,43 @@ class MovementsService(
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
     }
 
-    val bookings = offenderBookingRepository.findAllByOffenderNomsId(offenderNo)
-
-    bookings.fixMergedSchedules()
+    val movementApplications = offenderMovementApplicationRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
+      .also { it.fixMergedSchedules() }
+    val unscheduledTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceIsNull(offenderNo)
+    val unscheduledTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceIsNull(offenderNo)
+    val bookingIds = (
+      movementApplications.map { it.offenderBooking.bookingId } +
+        unscheduledTemporaryAbsences.map { it.offenderBooking.bookingId } +
+        unscheduledTemporaryAbsenceReturns.map { it.offenderBooking.bookingId }
+      ).toSet()
 
     return OffenderTemporaryAbsencesResponse(
-      bookings = bookings.map { booking: OffenderBooking ->
+      bookings = bookingIds.map { bookingId ->
         BookingTemporaryAbsences(
-          bookingId = booking.bookingId,
-          temporaryAbsenceApplications = booking.temporaryAbsenceApplications.map { app: OffenderMovementApplication -> app.toResponse() },
-          unscheduledTemporaryAbsences = temporaryAbsenceRepository.findByOffenderBookingAndScheduledTemporaryAbsenceIsNull(booking)
+          bookingId = bookingId,
+          temporaryAbsenceApplications = movementApplications.filter { it.offenderBooking.bookingId == bookingId }
+            .map { it.toResponse() },
+          unscheduledTemporaryAbsences = unscheduledTemporaryAbsences.filter { it.offenderBooking.bookingId == bookingId }
             .map { mov -> mov.toTemporaryAbsenceResponse() },
-          unscheduledTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findByOffenderBookingAndScheduledTemporaryAbsenceIsNull(booking)
+          unscheduledTemporaryAbsenceReturns = unscheduledTemporaryAbsenceReturns.filter { it.offenderBooking.bookingId == bookingId }
             .map { mov -> mov.toTemporaryAbsenceReturnResponse() },
         )
       },
     )
   }
 
-  private fun List<OffenderBooking>.fixMergedSchedules() {
+  private fun List<OffenderMovementApplication>.fixMergedSchedules() {
     // find any scheduled returns on the wrong application and remove them (these are created during merges)
-    val scheduledReturnsWithWrongParent = this.flatMap { booking ->
-      booking.temporaryAbsenceApplications.map { application ->
-        application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns
-          ?.filter { it.temporaryAbsenceApplication != null && it.temporaryAbsenceApplication != application }
-          ?.also { application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.removeAll(it) }
-          ?: emptyList()
-      }
-    }.flatten()
+    val scheduledReturnsWithWrongParent = this.flatMap { application ->
+      application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns
+        ?.filter { it.temporaryAbsenceApplication != null && it.temporaryAbsenceApplication != application }
+        ?.also { application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.removeAll(it) }
+        ?: emptyList()
+    }
 
     // put the scheduled returns onto the correct application
     scheduledReturnsWithWrongParent.forEach { mergedReturn ->
-      this.flatMap { booking -> booking.temporaryAbsenceApplications }
-        .find { it.movementApplicationId == mergedReturn.temporaryAbsenceApplication?.movementApplicationId }
+      this.find { it.movementApplicationId == mergedReturn.temporaryAbsenceApplication?.movementApplicationId }
         ?.scheduledTemporaryAbsence
         ?.scheduledTemporaryAbsenceReturns += mergedReturn
       mergedReturn.temporaryAbsenceApplication = null
