@@ -1,12 +1,10 @@
-FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk-jammy AS builder
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jre-jammy AS builder
 
 ARG BUILD_NUMBER
 ENV BUILD_NUMBER=${BUILD_NUMBER:-1_0_0}
 
 WORKDIR /builder
-ADD . .
-RUN ./gradlew --no-daemon assemble
-RUN cp build/libs/hmpps-nomis-prisoner-api-${BUILD_NUMBER}.jar app.jar
+COPY hmpps-nomis-prisoner-api-*.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 
 FROM eclipse-temurin:21-jre-jammy
@@ -26,9 +24,9 @@ RUN addgroup --gid 2000 --system appgroup && \
     adduser --uid 2000 --system appuser --gid 2000
 
 WORKDIR /app
-COPY --from=builder --chown=appuser:appgroup /builder/applicationinsights.json ./
-COPY --from=builder --chown=appuser:appgroup /builder/applicationinsights.dev.json ./
-COPY --from=builder --chown=appuser:appgroup /builder/build/libs/applicationinsights-agent*.jar ./agent.jar
+COPY --chown=appuser:appgroup applicationinsights.json ./
+COPY --chown=appuser:appgroup applicationinsights.dev.json ./
+COPY --chown=appuser:appgroup applicationinsights-agent*.jar ./agent.jar
 COPY --from=builder --chown=appuser:appgroup /builder/extracted/dependencies/ ./
 COPY --from=builder --chown=appuser:appgroup /builder/extracted/spring-boot-loader/ ./
 COPY --from=builder --chown=appuser:appgroup /builder/extracted/snapshot-dependencies/ ./
