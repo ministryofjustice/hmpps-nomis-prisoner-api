@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
@@ -398,29 +397,6 @@ interface BookingDsl {
     transactionType: String,
     dsl: OffenderTransactionDsl.() -> Unit = {},
   ): OffenderTransaction
-
-  @OffenderTemporaryAbsenceApplicationDslMarker
-  fun temporaryAbsenceApplication(
-    eventSubType: String = "C5",
-    applicationDate: LocalDateTime = LocalDateTime.now(),
-    applicationTime: LocalDateTime = LocalDateTime.now(),
-    fromDate: LocalDate = LocalDate.now(),
-    releaseTime: LocalDateTime = LocalDateTime.now(),
-    toDate: LocalDate = LocalDate.now().plusDays(1),
-    returnTime: LocalDateTime = LocalDateTime.now().plusDays(1),
-    applicationStatus: String = "APP-SCH",
-    escort: String? = "L",
-    transportType: String? = "VAN",
-    comment: String? = "Some application comment",
-    toAddress: Address? = null,
-    prison: String? = "LEI",
-    toAgency: String? = "HAZLWD",
-    contactPersonName: String? = null,
-    applicationType: String = "SINGLE",
-    temporaryAbsenceType: String? = "RR",
-    temporaryAbsenceSubType: String? = "RDR",
-    dsl: OffenderTemporaryAbsenceApplicationDsl.() -> Unit = {},
-  ): OffenderMovementApplication
 }
 
 @Component
@@ -460,7 +436,6 @@ class BookingBuilderFactory(
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
-  private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -487,7 +462,6 @@ class BookingBuilderFactory(
     offenderBeliefBuilderFactory,
     offenderTransactionBuilderFactory,
     offenderRestrictionsBuilderFactory,
-    offenderTemporaryAbsenceApplicationBuilderFactory,
   )
 }
 
@@ -516,7 +490,6 @@ class BookingBuilder(
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
-  private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -1268,52 +1241,6 @@ class BookingBuilder(
       offenderBooking.location.id,
       transactionType,
     )
-      .also { builder.apply(dsl) }
-  }
-
-  override fun temporaryAbsenceApplication(
-    eventSubType: String,
-    applicationDate: LocalDateTime,
-    applicationTime: LocalDateTime,
-    fromDate: LocalDate,
-    releaseTime: LocalDateTime,
-    toDate: LocalDate,
-    returnTime: LocalDateTime,
-    applicationStatus: String,
-    escort: String?,
-    transportType: String?,
-    comment: String?,
-    toAddress: Address?,
-    prison: String?,
-    toAgency: String?,
-    contactPersonName: String?,
-    applicationType: String,
-    temporaryAbsenceType: String?,
-    temporaryAbsenceSubType: String?,
-    dsl: OffenderTemporaryAbsenceApplicationDsl.() -> Unit,
-  ): OffenderMovementApplication = offenderTemporaryAbsenceApplicationBuilderFactory.builder().let { builder ->
-    builder.build(
-      offenderBooking = offenderBooking,
-      eventSubType = eventSubType,
-      applicationDate = applicationDate,
-      applicationTime = applicationTime,
-      fromDate = fromDate,
-      releaseTime = releaseTime,
-      toDate = toDate,
-      returnTime = returnTime,
-      applicationStatus = applicationStatus,
-      escort = escort,
-      transportType = transportType,
-      comment = comment,
-      toAddress = toAddress,
-      prison = prison,
-      toAgency = toAgency,
-      contactPersonName = contactPersonName,
-      applicationType = applicationType,
-      temporaryAbsenceType = temporaryAbsenceType,
-      temporaryAbsenceSubType = temporaryAbsenceSubType,
-    )
-      .also { offenderBooking.temporaryAbsenceApplications += it }
       .also { builder.apply(dsl) }
   }
 }

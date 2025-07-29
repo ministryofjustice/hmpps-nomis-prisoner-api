@@ -53,7 +53,7 @@ class TemporaryAbsenceRepositoryIntTest(
   inner class TemporaryAbsenceRepositoryTest {
     lateinit var offender: Offender
     lateinit var booking: OffenderBooking
-    lateinit var application: OffenderMovementApplication
+    val applications = mutableListOf<OffenderMovementApplication>()
     lateinit var scheduledAbsence: OffenderScheduledTemporaryAbsence
     lateinit var scheduledReturn: OffenderScheduledTemporaryAbsenceReturn
     lateinit var absenceMovement: OffenderTemporaryAbsence
@@ -61,6 +61,7 @@ class TemporaryAbsenceRepositoryIntTest(
 
     @AfterEach
     fun `reset data`() {
+      applications.forEach { repository.delete(it) }.also { applications.clear() }
       repository.delete(offender)
     }
 
@@ -68,31 +69,31 @@ class TemporaryAbsenceRepositoryIntTest(
     fun `should save and load movement application`() {
       nomisDataBuilder.build {
         offender = offender {
-          booking = booking {
-            application = temporaryAbsenceApplication(
-              eventSubType = "C5",
-              applicationDate = LocalDateTime.now(),
-              applicationTime = LocalDateTime.now(),
-              fromDate = LocalDate.now(),
-              releaseTime = LocalDateTime.now(),
-              toDate = LocalDate.now().plusDays(1),
-              returnTime = LocalDateTime.now().plusDays(1),
-              applicationType = "SINGLE",
-              applicationStatus = "APP-SCH",
-              escort = "L",
-              transportType = "VAN",
-              comment = "Some comment application",
-              prison = "LEI",
-              toAgency = "HAZLWD",
-              contactPersonName = "Derek",
-              temporaryAbsenceType = "RR",
-              temporaryAbsenceSubType = "RDR",
-            )
-          }
+          booking = booking()
         }
+        applications += temporaryAbsenceApplication(
+          offenderBooking = booking,
+          eventSubType = "C5",
+          applicationDate = LocalDateTime.now(),
+          applicationTime = LocalDateTime.now(),
+          fromDate = LocalDate.now(),
+          releaseTime = LocalDateTime.now(),
+          toDate = LocalDate.now().plusDays(1),
+          returnTime = LocalDateTime.now().plusDays(1),
+          applicationType = "SINGLE",
+          applicationStatus = "APP-SCH",
+          escort = "L",
+          transportType = "VAN",
+          comment = "Some comment application",
+          prison = "LEI",
+          toAgency = "HAZLWD",
+          contactPersonName = "Derek",
+          temporaryAbsenceType = "RR",
+          temporaryAbsenceSubType = "RDR",
+        )
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+      with(movementApplicationRepository.findByIdOrNull(applications[0].movementApplicationId)!!) {
         assertThat(movementApplicationId).isGreaterThan(0L)
         assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
         assertThat(eventClass).isEqualTo("EXT_MOV")
@@ -121,26 +122,26 @@ class TemporaryAbsenceRepositoryIntTest(
     fun `should save and load TAP OUT`() {
       nomisDataBuilder.build {
         offender = offender {
-          booking = booking {
-            application = temporaryAbsenceApplication(
-              applicationDate = LocalDateTime.now(),
-              applicationTime = LocalDateTime.now(),
-            ) {
-              scheduledAbsence = scheduledTemporaryAbsence(
-                eventDate = LocalDate.now(),
-                startTime = LocalDateTime.now(),
-                eventSubType = "C5",
-                eventStatus = "SCH",
-                fromPrison = "LEI",
-                toAgency = "HAZLWD",
-                comment = "Some comment",
-                escort = "U",
-                transportType = "VAN",
-                returnDate = LocalDate.now().plusDays(1),
-                returnTime = LocalDateTime.now().plusDays(1),
-              )
-            }
-          }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(
+          offenderBooking = booking,
+          applicationDate = LocalDateTime.now(),
+          applicationTime = LocalDateTime.now(),
+        ) {
+          scheduledAbsence = scheduledTemporaryAbsence(
+            eventDate = LocalDate.now(),
+            startTime = LocalDateTime.now(),
+            eventSubType = "C5",
+            eventStatus = "SCH",
+            fromPrison = "LEI",
+            toAgency = "HAZLWD",
+            comment = "Some comment",
+            escort = "U",
+            transportType = "VAN",
+            returnDate = LocalDate.now().plusDays(1),
+            returnTime = LocalDateTime.now().plusDays(1),
+          )
         }
       }
 
@@ -168,21 +169,20 @@ class TemporaryAbsenceRepositoryIntTest(
     fun `should save and load linked TAP OUT and TAP IN`() {
       nomisDataBuilder.build {
         offender = offender {
-          booking = booking {
-            temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence {
-                scheduledReturn = scheduledReturn(
-                  eventDate = LocalDate.now().plusDays(1),
-                  startTime = LocalDateTime.now().plusDays(1),
-                  eventSubType = "R25",
-                  eventStatus = "SCH",
-                  comment = "Some comment IN",
-                  escort = "U",
-                  fromAgency = "HAZLWD",
-                  toPrison = "LEI",
-                )
-              }
-            }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledAbsence = scheduledTemporaryAbsence {
+            scheduledReturn = scheduledReturn(
+              eventDate = LocalDate.now().plusDays(1),
+              startTime = LocalDateTime.now().plusDays(1),
+              eventSubType = "R25",
+              eventStatus = "SCH",
+              comment = "Some comment IN",
+              escort = "U",
+              fromAgency = "HAZLWD",
+              toPrison = "LEI",
+            )
           }
         }
       }
@@ -209,43 +209,42 @@ class TemporaryAbsenceRepositoryIntTest(
 
       nomisDataBuilder.build {
         offender = offender {
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              movement1 = outsideMovement(
-                eventSubType = "C5",
-                fromDate = LocalDate.now(),
-                releaseTime = LocalDateTime.now(),
-                toDate = LocalDate.now().plusDays(1),
-                returnTime = LocalDateTime.now().plusDays(1),
-                comment = "First movement",
-                toAgency = "HAZLWD",
-                contactPersonName = "Contact Person 1",
-                temporaryAbsenceType = "RR",
-                temporaryAbsenceSubType = "RDR",
-              )
-              movement2 = outsideMovement(
-                eventSubType = "C6",
-                fromDate = LocalDate.now().plusDays(2),
-                releaseTime = LocalDateTime.now().plusDays(2),
-                toDate = LocalDate.now().plusDays(3),
-                returnTime = LocalDateTime.now().plusDays(3),
-                comment = "Second movement",
-                toAgency = "ARNOLD",
-                contactPersonName = "Contact Person 2",
-                temporaryAbsenceType = "SR",
-                temporaryAbsenceSubType = "ROR",
-              )
-            }
-          }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          movement1 = outsideMovement(
+            eventSubType = "C5",
+            fromDate = LocalDate.now(),
+            releaseTime = LocalDateTime.now(),
+            toDate = LocalDate.now().plusDays(1),
+            returnTime = LocalDateTime.now().plusDays(1),
+            comment = "First movement",
+            toAgency = "HAZLWD",
+            contactPersonName = "Contact Person 1",
+            temporaryAbsenceType = "RR",
+            temporaryAbsenceSubType = "RDR",
+          )
+          movement2 = outsideMovement(
+            eventSubType = "C6",
+            fromDate = LocalDate.now().plusDays(2),
+            releaseTime = LocalDateTime.now().plusDays(2),
+            toDate = LocalDate.now().plusDays(3),
+            returnTime = LocalDateTime.now().plusDays(3),
+            comment = "Second movement",
+            toAgency = "ARNOLD",
+            contactPersonName = "Contact Person 2",
+            temporaryAbsenceType = "SR",
+            temporaryAbsenceSubType = "ROR",
+          )
         }
       }
 
-      val movements = movementApplicationMultiRepository.findByOffenderMovementApplication(application)
+      val movements = movementApplicationMultiRepository.findByOffenderMovementApplication(applications[0])
       assertThat(movements).hasSize(2)
 
       with(movements.first { it.movementApplicationMultiId == movement1.movementApplicationMultiId }) {
         assertThat(movementApplicationMultiId).isGreaterThan(0L)
-        assertThat(offenderMovementApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+        assertThat(offenderMovementApplication.movementApplicationId).isEqualTo(applications[0].movementApplicationId)
         assertThat(eventSubType.code).isEqualTo("C5")
         assertThat(fromDate).isEqualTo(LocalDate.now())
         assertThat(releaseTime.toLocalDate()).isEqualTo(LocalDate.now())
@@ -260,7 +259,7 @@ class TemporaryAbsenceRepositoryIntTest(
 
       with(movements.first { it.movementApplicationMultiId == movement2.movementApplicationMultiId }) {
         assertThat(movementApplicationMultiId).isGreaterThan(0L)
-        assertThat(offenderMovementApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+        assertThat(offenderMovementApplication.movementApplicationId).isEqualTo(applications[0].movementApplicationId)
         assertThat(eventSubType.code).isEqualTo("C6")
         assertThat(fromDate).isEqualTo(LocalDate.now().plusDays(2))
         assertThat(releaseTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(2))
@@ -279,9 +278,6 @@ class TemporaryAbsenceRepositoryIntTest(
       lateinit var corporateAddress: CorporateAddress
       lateinit var offenderAddress: OffenderAddress
       lateinit var agencyAddress: AgencyAddress
-      lateinit var application1: OffenderMovementApplication
-      lateinit var application2: OffenderMovementApplication
-      lateinit var application3: OffenderMovementApplication
 
       nomisDataBuilder.build {
         corporate("Kwikfit") {
@@ -290,25 +286,24 @@ class TemporaryAbsenceRepositoryIntTest(
         agencyAddress = agencyAddress()
         offender = offender {
           offenderAddress = address()
-          booking = booking {
-            application1 = temporaryAbsenceApplication(toAddress = corporateAddress)
-            application2 = temporaryAbsenceApplication(toAddress = offenderAddress)
-            application3 = temporaryAbsenceApplication(toAddress = agencyAddress)
-          }
+          booking = booking()
         }
+        applications += temporaryAbsenceApplication(offenderBooking = booking, toAddress = corporateAddress)
+        applications += temporaryAbsenceApplication(offenderBooking = booking, toAddress = offenderAddress)
+        applications += temporaryAbsenceApplication(offenderBooking = booking, toAddress = agencyAddress)
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application1.movementApplicationId)!!) {
+      with(movementApplicationRepository.findByIdOrNull(applications[0].movementApplicationId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("CORP")
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application2.movementApplicationId)!!) {
+      with(movementApplicationRepository.findByIdOrNull(applications[1].movementApplicationId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("OFF")
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application3.movementApplicationId)!!) {
+      with(movementApplicationRepository.findByIdOrNull(applications[2].movementApplicationId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("AGY")
       }
@@ -330,17 +325,16 @@ class TemporaryAbsenceRepositoryIntTest(
         agencyAddress = agencyAddress()
         offender = offender {
           offenderAddress = address()
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              movement1 = outsideMovement(toAddress = corporateAddress)
-              movement2 = outsideMovement(toAddress = offenderAddress)
-              movement3 = outsideMovement(toAddress = agencyAddress)
-            }
-          }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          movement1 = outsideMovement(toAddress = corporateAddress)
+          movement2 = outsideMovement(toAddress = offenderAddress)
+          movement3 = outsideMovement(toAddress = agencyAddress)
         }
       }
 
-      val movements = movementApplicationMultiRepository.findByOffenderMovementApplication(application)
+      val movements = movementApplicationMultiRepository.findByOffenderMovementApplication(applications[0])
       assertThat(movements).hasSize(3)
 
       with(movements.first { it.movementApplicationMultiId == movement1.movementApplicationMultiId }) {
@@ -374,17 +368,16 @@ class TemporaryAbsenceRepositoryIntTest(
         agencyAddress = agencyAddress()
         offender = offender {
           offenderAddress = address()
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence(toAddress = corporateAddress)
-            }
-            application = temporaryAbsenceApplication {
-              scheduledAbsence2 = scheduledTemporaryAbsence(toAddress = offenderAddress)
-            }
-            application = temporaryAbsenceApplication {
-              scheduledAbsence3 = scheduledTemporaryAbsence(toAddress = agencyAddress)
-            }
-          }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledAbsence = scheduledTemporaryAbsence(toAddress = corporateAddress)
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledAbsence2 = scheduledTemporaryAbsence(toAddress = offenderAddress)
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledAbsence3 = scheduledTemporaryAbsence(toAddress = agencyAddress)
         }
       }
 
@@ -413,11 +406,10 @@ class TemporaryAbsenceRepositoryIntTest(
       nomisDataBuilder.build {
         agencyAddress = agencyAddress()
         offender = offender {
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence(toAddress = agencyAddress)
-            }
-          }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledAbsence = scheduledTemporaryAbsence(toAddress = agencyAddress)
         }
       }
 
@@ -436,23 +428,22 @@ class TemporaryAbsenceRepositoryIntTest(
       nomisDataBuilder.build {
         offender = offender {
           offenderAddress = address()
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence {
-                absenceMovement = externalMovement(
-                  date = LocalDateTime.now(),
-                  fromPrison = "BXI",
-                  toAgency = "HAZLWD",
-                  movementReason = "C5",
-                  arrestAgency = "POL",
-                  escort = "U",
-                  escortText = "SE",
-                  comment = "TAP OUT comment",
-                  toCity = SHEFFIELD,
-                  toAddress = offenderAddress,
-                )
-              }
-            }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledAbsence = scheduledTemporaryAbsence {
+            absenceMovement = externalMovement(
+              date = LocalDateTime.now(),
+              fromPrison = "BXI",
+              toAgency = "HAZLWD",
+              movementReason = "C5",
+              arrestAgency = "POL",
+              escort = "U",
+              escortText = "SE",
+              comment = "TAP OUT comment",
+              toCity = SHEFFIELD,
+              toAddress = offenderAddress,
+            )
           }
         }
       }
@@ -521,26 +512,28 @@ class TemporaryAbsenceRepositoryIntTest(
       nomisDataBuilder.build {
         offender = offender {
           offenderAddress = address()
-          booking {
-            temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence {
-                absenceMovement = externalMovement()
-                scheduledReturn = scheduledReturn {
-                  absenceReturnMovement = externalMovement(
-                    date = LocalDateTime.now().plusDays(1),
-                    fromAgency = "HAZLWD",
-                    toPrison = "BXI",
-                    movementReason = "C5",
-                    escort = "U",
-                    escortText = "SE",
-                    comment = "TAP IN comment",
-                    fromCity = SHEFFIELD,
-                    fromAddress = offenderAddress,
-                  )
-                }
-              }
+          booking = booking()
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledAbsence = scheduledTemporaryAbsence {
+            absenceMovement = externalMovement()
+            scheduledReturn = scheduledReturn {
+              absenceReturnMovement = externalMovement(
+                date = LocalDateTime.now().plusDays(1),
+                fromAgency = "HAZLWD",
+                toPrison = "BXI",
+                movementReason = "C5",
+                escort = "U",
+                escortText = "SE",
+                comment = "TAP IN comment",
+                fromCity = SHEFFIELD,
+                fromAddress = offenderAddress,
+              )
             }
           }
+        }
+        applications += temporaryAbsenceApplication(offenderBooking = booking) {
+          scheduledTemporaryAbsence()
         }
       }
 

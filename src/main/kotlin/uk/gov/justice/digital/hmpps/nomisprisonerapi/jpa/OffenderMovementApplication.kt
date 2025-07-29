@@ -10,6 +10,9 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
+import jakarta.persistence.NamedSubgraph
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
@@ -17,11 +20,60 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@EntityOpen
 @Entity
 @Table(name = "OFFENDER_MOVEMENT_APPS")
+@NamedEntityGraph(
+  name = "offender-movement-app",
+  attributeNodes = [
+    NamedAttributeNode(value = "offenderBooking"),
+    NamedAttributeNode(value = "scheduledTemporaryAbsence", subgraph = "scheduled-temporary-absence"),
+    NamedAttributeNode(value = "eventSubType"),
+    NamedAttributeNode(value = "applicationStatus"),
+    NamedAttributeNode(value = "escort"),
+    NamedAttributeNode(value = "transportType"),
+    NamedAttributeNode(value = "applicationType"),
+    NamedAttributeNode(value = "temporaryAbsenceType"),
+    NamedAttributeNode(value = "temporaryAbsenceSubType"),
+  ],
+  subgraphs = [
+    NamedSubgraph(
+      name = "scheduled-temporary-absence",
+      attributeNodes = [
+        NamedAttributeNode(value = "scheduledTemporaryAbsenceReturns", subgraph = "scheduled-temporary-absence-return"),
+        NamedAttributeNode(value = "temporaryAbsence", subgraph = "external-movement"),
+        NamedAttributeNode(value = "transportType"),
+        NamedAttributeNode(value = "escort"),
+        NamedAttributeNode(value = "eventStatus"),
+        NamedAttributeNode(value = "eventSubType"),
+      ],
+    ),
+    NamedSubgraph(
+      name = "scheduled-temporary-absence-return",
+      attributeNodes = [
+        NamedAttributeNode(value = "temporaryAbsenceReturn", subgraph = "external-movement"),
+        NamedAttributeNode(value = "escort"),
+        NamedAttributeNode(value = "eventStatus"),
+        NamedAttributeNode(value = "eventSubType"),
+      ],
+    ),
+    NamedSubgraph(
+      name = "external-movement",
+      attributeNodes = [
+        NamedAttributeNode(value = "movementType"),
+        NamedAttributeNode(value = "movementReason"),
+        NamedAttributeNode(value = "arrestAgency"),
+        NamedAttributeNode(value = "escort"),
+        NamedAttributeNode(value = "fromCity"),
+        NamedAttributeNode(value = "toCity"),
+      ],
+    ),
+  ],
+)
 class OffenderMovementApplication(
   @SequenceGenerator(name = "OFFENDER_MOVEMENT_APP_ID", sequenceName = "OFFENDER_MOVEMENT_APP_ID", allocationSize = 1)
   @GeneratedValue(generator = "OFFENDER_MOVEMENT_APP_ID")
