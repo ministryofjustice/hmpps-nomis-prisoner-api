@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -15,9 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MergeTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
@@ -46,7 +43,6 @@ class NomisDataBuilder(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
-  private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory? = null,
 ) {
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -67,7 +63,6 @@ class NomisDataBuilder(
     corporateBuilderFactory,
     linkCaseTxnBuilderFactory,
     agencyAddressBuilderFactory,
-    offenderTemporaryAbsenceApplicationBuilderFactory,
   ).apply(dsl)
 }
 
@@ -88,7 +83,6 @@ class NomisData(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
-  private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory? = null,
 ) : NomisDataDsl {
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
@@ -503,52 +497,6 @@ class NomisData(
       whoCreated = whoCreated,
     )
   }
-
-  override fun temporaryAbsenceApplication(
-    offenderBooking: OffenderBooking,
-    eventSubType: String,
-    applicationDate: LocalDateTime,
-    applicationTime: LocalDateTime,
-    fromDate: LocalDate,
-    releaseTime: LocalDateTime,
-    toDate: LocalDate,
-    returnTime: LocalDateTime,
-    applicationStatus: String,
-    escort: String?,
-    transportType: String?,
-    comment: String?,
-    toAddress: Address?,
-    prison: String?,
-    toAgency: String?,
-    contactPersonName: String?,
-    applicationType: String,
-    temporaryAbsenceType: String?,
-    temporaryAbsenceSubType: String?,
-    dsl: OffenderTemporaryAbsenceApplicationDsl.() -> Unit,
-  ): OffenderMovementApplication = offenderTemporaryAbsenceApplicationBuilderFactory!!.builder().let { builder ->
-    builder.build(
-      offenderBooking = offenderBooking,
-      eventSubType = eventSubType,
-      applicationDate = applicationDate,
-      applicationTime = applicationTime,
-      fromDate = fromDate,
-      releaseTime = releaseTime,
-      toDate = toDate,
-      returnTime = returnTime,
-      applicationStatus = applicationStatus,
-      escort = escort,
-      transportType = transportType,
-      comment = comment,
-      toAddress = toAddress,
-      prison = prison,
-      toAgency = toAgency,
-      contactPersonName = contactPersonName,
-      applicationType = applicationType,
-      temporaryAbsenceType = temporaryAbsenceType,
-      temporaryAbsenceSubType = temporaryAbsenceSubType,
-    )
-      .also { builder.apply(dsl) }
-  }
 }
 
 @NomisDataDslMarker
@@ -763,30 +711,6 @@ interface NomisDataDsl {
     whoCreated: String? = null,
     dsl: AgencyAddressDsl.() -> Unit = {},
   ): AgencyAddress
-
-  @OffenderTemporaryAbsenceApplicationDslMarker
-  fun temporaryAbsenceApplication(
-    offenderBooking: OffenderBooking,
-    eventSubType: String = "C5",
-    applicationDate: LocalDateTime = LocalDateTime.now(),
-    applicationTime: LocalDateTime = LocalDateTime.now(),
-    fromDate: LocalDate = LocalDate.now(),
-    releaseTime: LocalDateTime = LocalDateTime.now(),
-    toDate: LocalDate = LocalDate.now().plusDays(1),
-    returnTime: LocalDateTime = LocalDateTime.now().plusDays(1),
-    applicationStatus: String = "APP-SCH",
-    escort: String? = "L",
-    transportType: String? = "VAN",
-    comment: String? = "Some application comment",
-    toAddress: Address? = null,
-    prison: String? = "LEI",
-    toAgency: String? = "HAZLWD",
-    contactPersonName: String? = null,
-    applicationType: String = "SINGLE",
-    temporaryAbsenceType: String? = "RR",
-    temporaryAbsenceSubType: String? = "RDR",
-    dsl: OffenderTemporaryAbsenceApplicationDsl.() -> Unit = {},
-  ): OffenderMovementApplication
 }
 
 @DslMarker

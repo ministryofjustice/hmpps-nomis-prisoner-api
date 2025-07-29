@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceTransportType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -62,7 +61,6 @@ interface OffenderTemporaryAbsenceApplicationDsl {
 
 @Component
 class OffenderTemporaryAbsenceApplicationBuilderRepository(
-  private val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   private val applicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
@@ -72,7 +70,6 @@ class OffenderTemporaryAbsenceApplicationBuilderRepository(
   private val temporaryAbsenceSubTypeRepository: ReferenceCodeRepository<TemporaryAbsenceSubType>,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
-  fun save(application: OffenderMovementApplication) = offenderMovementApplicationRepository.save(application)
   fun movementReasonOf(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
   fun applicationStatusOf(code: String): MovementApplicationStatus = applicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(code))!!
   fun escortOf(code: String): Escort = escortRepository.findByIdOrNull(Escort.pk(code))!!
@@ -142,7 +139,6 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     temporaryAbsenceType = temporaryAbsenceType?.let { repository.temporaryAbsenceTypeOf(it) },
     temporaryAbsenceSubType = temporaryAbsenceSubType?.let { repository.temporaryAbsenceSubTypeOf(it) },
   )
-    .let { repository.save(it) }
     .also { temporaryAbsenceApplication = it }
 
   override fun scheduledTemporaryAbsence(

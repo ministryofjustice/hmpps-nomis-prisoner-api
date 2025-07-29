@@ -32,7 +32,7 @@ class MovementsResourceIntTest(
   private lateinit var offender: Offender
   private lateinit var offenderAddress: OffenderAddress
   private lateinit var booking: OffenderBooking
-  private val applications = mutableListOf<OffenderMovementApplication>()
+  private lateinit var application: OffenderMovementApplication
   private lateinit var applicationOutsideMovement: OffenderMovementApplicationMulti
   private lateinit var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
   private lateinit var scheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
@@ -48,9 +48,6 @@ class MovementsResourceIntTest(
 
   @AfterEach
   fun `tear down`() {
-    applications.forEach {
-      repository.delete(it)
-    }.also { applications.clear() }
     if (this::offender.isInitialized) {
       repository.delete(offender)
     }
@@ -103,29 +100,29 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
-          booking = booking()
+          booking = booking {
+            application = temporaryAbsenceApplication(
+              eventSubType = "C5",
+              applicationDate = twoDaysAgo,
+              applicationTime = twoDaysAgo,
+              fromDate = twoDaysAgo.toLocalDate(),
+              releaseTime = twoDaysAgo,
+              toDate = yesterday.toLocalDate(),
+              returnTime = yesterday,
+              applicationType = "SINGLE",
+              applicationStatus = "APP-SCH",
+              escort = "L",
+              transportType = "VAN",
+              comment = "Some comment application",
+              prison = "LEI",
+              toAgency = "HAZLWD",
+              toAddress = offenderAddress,
+              contactPersonName = "Derek",
+              temporaryAbsenceType = "RR",
+              temporaryAbsenceSubType = "RDR",
+            )
+          }
         }
-        applications += temporaryAbsenceApplication(
-          offenderBooking = booking,
-          eventSubType = "C5",
-          applicationDate = twoDaysAgo,
-          applicationTime = twoDaysAgo,
-          fromDate = twoDaysAgo.toLocalDate(),
-          releaseTime = twoDaysAgo,
-          toDate = yesterday.toLocalDate(),
-          returnTime = yesterday,
-          applicationType = "SINGLE",
-          applicationStatus = "APP-SCH",
-          escort = "L",
-          transportType = "VAN",
-          comment = "Some comment application",
-          prison = "LEI",
-          toAgency = "HAZLWD",
-          toAddress = offenderAddress,
-          contactPersonName = "Derek",
-          temporaryAbsenceType = "RR",
-          temporaryAbsenceSubType = "RDR",
-        )
       }
 
       webTestClient.get()
@@ -135,7 +132,7 @@ class MovementsResourceIntTest(
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(applications[0].movementApplicationId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].eventSubType").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationDate").isEqualTo("$twoDaysAgo")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].fromDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
@@ -161,22 +158,23 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
-          booking = booking()
-        }
-        applications += temporaryAbsenceApplication(offenderBooking = booking) {
-          applicationOutsideMovement = outsideMovement(
-            eventSubType = "C5",
-            fromDate = twoDaysAgo.toLocalDate(),
-            releaseTime = twoDaysAgo,
-            toDate = yesterday.toLocalDate(),
-            returnTime = yesterday,
-            comment = "Some comment application movement",
-            toAgency = "HAZLWD",
-            toAddress = offenderAddress,
-            contactPersonName = "Derek",
-            temporaryAbsenceType = "RR",
-            temporaryAbsenceSubType = "RDR",
-          )
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              applicationOutsideMovement = outsideMovement(
+                eventSubType = "C5",
+                fromDate = twoDaysAgo.toLocalDate(),
+                releaseTime = twoDaysAgo,
+                toDate = yesterday.toLocalDate(),
+                returnTime = yesterday,
+                comment = "Some comment application movement",
+                toAgency = "HAZLWD",
+                toAddress = offenderAddress,
+                contactPersonName = "Derek",
+                temporaryAbsenceType = "RR",
+                temporaryAbsenceSubType = "RDR",
+              )
+            }
+          }
         }
       }
 
@@ -206,23 +204,24 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
-          booking = booking()
-        }
-        applications += temporaryAbsenceApplication(offenderBooking = booking) {
-          scheduledTemporaryAbsence = scheduledTemporaryAbsence(
-            eventDate = twoDaysAgo.toLocalDate(),
-            startTime = twoDaysAgo,
-            eventSubType = "C5",
-            eventStatus = "SCH",
-            comment = "Scheduled temporary absence",
-            escort = "L",
-            fromPrison = "LEI",
-            toAgency = "HAZLWD",
-            transportType = "VAN",
-            returnDate = yesterday.toLocalDate(),
-            returnTime = yesterday,
-            toAddress = offenderAddress,
-          )
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence(
+                eventDate = twoDaysAgo.toLocalDate(),
+                startTime = twoDaysAgo,
+                eventSubType = "C5",
+                eventStatus = "SCH",
+                comment = "Scheduled temporary absence",
+                escort = "L",
+                fromPrison = "LEI",
+                toAgency = "HAZLWD",
+                transportType = "VAN",
+                returnDate = yesterday.toLocalDate(),
+                returnTime = yesterday,
+                toAddress = offenderAddress,
+              )
+            }
+          }
         }
       }
 
@@ -251,21 +250,22 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
-          booking = booking()
-        }
-        applications += temporaryAbsenceApplication(offenderBooking = booking) {
-          scheduledTemporaryAbsence = scheduledTemporaryAbsence {
-            temporaryAbsence = externalMovement(
-              date = twoDaysAgo,
-              fromPrison = "LEI",
-              toAgency = "HAZLWD",
-              movementReason = "C5",
-              arrestAgency = "POL",
-              escort = "L",
-              escortText = "SE",
-              comment = "Tap OUT comment for scheduled absence",
-              toAddress = offenderAddress,
-            )
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                temporaryAbsence = externalMovement(
+                  date = twoDaysAgo,
+                  fromPrison = "LEI",
+                  toAgency = "HAZLWD",
+                  movementReason = "C5",
+                  arrestAgency = "POL",
+                  escort = "L",
+                  escortText = "SE",
+                  comment = "Tap OUT comment for scheduled absence",
+                  toAddress = offenderAddress,
+                )
+              }
+            }
           }
         }
       }
@@ -295,20 +295,21 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
-          booking = booking()
-        }
-        applications += temporaryAbsenceApplication(offenderBooking = booking) {
-          scheduledTemporaryAbsence = scheduledTemporaryAbsence {
-            scheduledTemporaryAbsenceReturn = scheduledReturn(
-              eventDate = yesterday.toLocalDate(),
-              startTime = yesterday,
-              eventSubType = "R25",
-              eventStatus = "SCH",
-              comment = "Scheduled temporary absence return",
-              escort = "U",
-              fromAgency = "HAZLWD",
-              toPrison = "LEI",
-            )
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                scheduledTemporaryAbsenceReturn = scheduledReturn(
+                  eventDate = yesterday.toLocalDate(),
+                  startTime = yesterday,
+                  eventSubType = "R25",
+                  eventStatus = "SCH",
+                  comment = "Scheduled temporary absence return",
+                  escort = "U",
+                  fromAgency = "HAZLWD",
+                  toPrison = "LEI",
+                )
+              }
+            }
           }
         }
       }
@@ -335,23 +336,24 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
-          booking = booking()
-        }
-        applications += temporaryAbsenceApplication(offenderBooking = booking) {
-          scheduledTemporaryAbsence = scheduledTemporaryAbsence {
-            temporaryAbsence = externalMovement()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                temporaryAbsence = externalMovement()
 
-            scheduledTemporaryAbsenceReturn = scheduledReturn {
-              temporaryAbsenceReturn = externalMovement(
-                date = yesterday,
-                fromAgency = "HAZLWD",
-                toPrison = "LEI",
-                movementReason = "R25",
-                escort = "U",
-                escortText = "SE",
-                comment = "Tap IN comment",
-                fromAddress = offenderAddress,
-              )
+                scheduledTemporaryAbsenceReturn = scheduledReturn {
+                  temporaryAbsenceReturn = externalMovement(
+                    date = yesterday,
+                    fromAgency = "HAZLWD",
+                    toPrison = "LEI",
+                    movementReason = "R25",
+                    escort = "U",
+                    escortText = "SE",
+                    comment = "Tap IN comment",
+                    fromAddress = offenderAddress,
+                  )
+                }
+              }
             }
           }
         }
@@ -463,17 +465,17 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
+            application = temporaryAbsenceApplication {
+              applicationOutsideMovement = outsideMovement()
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                temporaryAbsence = externalMovement()
+                scheduledTemporaryAbsenceReturn = scheduledReturn {
+                  temporaryAbsenceReturn = externalMovement()
+                }
+              }
+            }
             unscheduledTemporaryAbsence = temporaryAbsence()
             unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn()
-          }
-        }
-        applications += temporaryAbsenceApplication(offenderBooking = booking) {
-          applicationOutsideMovement = outsideMovement()
-          scheduledTemporaryAbsence = scheduledTemporaryAbsence {
-            temporaryAbsence = externalMovement()
-            scheduledTemporaryAbsenceReturn = scheduledReturn {
-              temporaryAbsenceReturn = externalMovement()
-            }
           }
         }
       }
@@ -488,7 +490,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications.length()").isEqualTo(1)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(1)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].outsideMovementId").isEqualTo(applicationOutsideMovement.movementApplicationMultiId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(applications[0].movementApplicationId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.sequence").isEqualTo(temporaryAbsence.id.sequence)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
@@ -502,6 +504,7 @@ class MovementsResourceIntTest(
     @Test
     fun `should retrieve all temporary absences and external movements from a merged prisoner`() {
       lateinit var mergedBooking: OffenderBooking
+      lateinit var mergedApplication: OffenderMovementApplication
       lateinit var mergedApplicationOutsideMovement: OffenderMovementApplicationMulti
       lateinit var mergedScheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
       lateinit var mergedScheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
@@ -514,26 +517,26 @@ class MovementsResourceIntTest(
           // This booking was moved from the old prisoner during the merge
           mergedBooking = booking(bookingSequence = 2) {
             receive(twoDaysAgo)
+            mergedApplication = temporaryAbsenceApplication {
+              mergedApplicationOutsideMovement = outsideMovement()
+              mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                mergedTemporaryAbsence = externalMovement()
+                mergedScheduledTemporaryAbsenceReturn = scheduledReturn {
+                  mergedTemporaryAbsenceReturn = externalMovement()
+                }
+              }
+            }
             release(yesterday)
           }
           // This the latest booking
           booking = booking(bookingSequence = 1) {
             receive(yesterday)
-          }
-        }
-        applications += temporaryAbsenceApplication(offenderBooking = mergedBooking) {
-          mergedApplicationOutsideMovement = outsideMovement()
-          mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence {
-            mergedTemporaryAbsence = externalMovement()
-            mergedScheduledTemporaryAbsenceReturn = scheduledReturn {
-              mergedTemporaryAbsenceReturn = externalMovement()
+            // these are the only details copied from the merged booking during the merge
+            application = temporaryAbsenceApplication {
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence {
+                scheduledTemporaryAbsenceReturn = scheduledReturn()
+              }
             }
-          }
-        }
-        // these are the only details copied from the merged booking during the merge
-        applications += temporaryAbsenceApplication(offenderBooking = booking) {
-          scheduledTemporaryAbsence = scheduledTemporaryAbsence {
-            scheduledTemporaryAbsenceReturn = scheduledReturn()
           }
         }
 
@@ -546,7 +549,7 @@ class MovementsResourceIntTest(
           """
             update OffenderScheduledTemporaryAbsenceReturn ostr
             set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence.eventId}),
-            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${applications[1].movementApplicationId})
+            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
             where eventId = ${scheduledTemporaryAbsenceReturn.eventId}
           """.trimIndent(),
         ).executeUpdate()
@@ -561,7 +564,7 @@ class MovementsResourceIntTest(
         // The TAP from the merged booking exists with correct child entities
         .jsonPath("$.bookings[0].bookingId").isEqualTo(mergedBooking.bookingId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications.length()").isEqualTo(1)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(applications[0].movementApplicationId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(mergedApplication.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(1)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].outsideMovementId").isEqualTo(mergedApplicationOutsideMovement.movementApplicationMultiId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence.eventId)
