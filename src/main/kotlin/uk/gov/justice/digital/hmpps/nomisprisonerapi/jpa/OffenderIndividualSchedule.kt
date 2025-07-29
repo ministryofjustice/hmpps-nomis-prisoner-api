@@ -17,8 +17,6 @@ import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -74,8 +72,7 @@ abstract class OffenderIndividualSchedule(
   @Column(name = "EVENT_TYPE")
   val eventType: EventType,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(

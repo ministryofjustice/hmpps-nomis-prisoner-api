@@ -155,7 +155,7 @@ class TemporaryAbsenceRepositoryIntTest(
         assertThat(fromAgency?.id).isEqualTo("LEI")
         assertThat(toAgency?.id).isEqualTo("HAZLWD")
         assertThat(comment).isEqualTo("Some comment")
-        assertThat(escort.code).isEqualTo("U")
+        assertThat(escort?.code).isEqualTo("U")
         assertThat(transportType?.code).isEqualTo("VAN")
         assertThat(returnDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(returnTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
@@ -198,7 +198,7 @@ class TemporaryAbsenceRepositoryIntTest(
         assertThat(toAgency?.id).isEqualTo("LEI")
         assertThat(fromAgency?.id).isEqualTo("HAZLWD")
         assertThat(comment).isEqualTo("Some comment IN")
-        assertThat(escort.code).isEqualTo("U")
+        assertThat(escort?.code).isEqualTo("U")
       }
     }
 

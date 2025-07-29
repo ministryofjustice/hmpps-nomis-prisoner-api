@@ -10,8 +10,6 @@ import jakarta.persistence.ManyToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -33,8 +31,7 @@ abstract class OffenderScheduledExternalMovement(
   @JoinColumn(name = "TO_AGY_LOC_ID")
   val toAgency: AgencyLocation? = null,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -50,8 +47,7 @@ abstract class OffenderScheduledExternalMovement(
   eventStatus: EventStatus,
   comment: String? = null,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -62,7 +58,7 @@ abstract class OffenderScheduledExternalMovement(
       ), JoinColumnOrFormula(column = JoinColumn(name = "ESCORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val escort: Escort,
+  val escort: Escort? = null,
 
   @Enumerated(EnumType.STRING)
   @Column(name = "DIRECTION_CODE")

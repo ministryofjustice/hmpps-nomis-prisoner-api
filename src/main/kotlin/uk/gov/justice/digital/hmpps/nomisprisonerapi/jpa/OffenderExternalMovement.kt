@@ -104,7 +104,7 @@ class OffenderExternalMovement(
   )
   val arrestAgency: ArrestAgency? = null,
 
-  @ManyToOne(optional = false, fetch = LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -161,11 +161,11 @@ class OffenderExternalMovement(
   )
   var toCity: City? = null,
 
-  @ManyToOne(fetch = LAZY)
+  @ManyToOne
   @JoinColumn(name = "FROM_ADDRESS_ID")
   val fromAddress: Address? = null,
 
-  @ManyToOne(fetch = LAZY)
+  @ManyToOne
   @JoinColumn(name = "TO_ADDRESS_ID")
   val toAddress: Address? = null,
 ) : NomisAuditableEntityBasic() {

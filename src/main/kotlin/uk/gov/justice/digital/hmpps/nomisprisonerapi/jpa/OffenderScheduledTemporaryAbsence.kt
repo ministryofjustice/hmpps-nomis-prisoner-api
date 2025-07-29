@@ -11,8 +11,6 @@ import jakarta.persistence.OneToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -29,8 +27,7 @@ class OffenderScheduledTemporaryAbsence(
   fromPrison: AgencyLocation,
   toAgency: AgencyLocation? = null,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(

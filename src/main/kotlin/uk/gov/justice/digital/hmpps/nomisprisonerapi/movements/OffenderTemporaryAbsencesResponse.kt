@@ -170,7 +170,7 @@ data class ScheduledTemporaryAbsence(
   val comment: String?,
 
   @Schema(description = "Escort")
-  val escort: String,
+  val escort: String?,
 
   @Schema(description = "From prison")
   val fromPrison: String?,
@@ -224,7 +224,7 @@ data class ScheduledTemporaryAbsenceReturn(
   val comment: String?,
 
   @Schema(description = "Escort")
-  val escort: String,
+  val escort: String?,
 
   @Schema(description = "From agency")
   val fromAgency: String?,
