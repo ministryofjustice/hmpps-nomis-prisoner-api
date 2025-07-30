@@ -126,7 +126,7 @@ interface OffenderProgramProfileRepository : JpaRepository<OffenderProgramProfil
     nativeQuery = true,
     value = """
       update offender_program_profiles opp
-      set opp.offender_end_date = :date, opp.offender_end_reason = 'OTH', opp.offender_program_status = 'END'
+      set opp.offender_end_date = :date, opp.offender_end_reason = 'OTH'
       where opp.crs_acty_id in :courseActivityIds
       and opp.offender_program_status = 'ALLOC'
       and (opp.offender_end_date is null or opp.offender_end_date >= current_date)

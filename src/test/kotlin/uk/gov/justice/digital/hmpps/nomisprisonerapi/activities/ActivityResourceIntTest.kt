@@ -2132,7 +2132,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       courseAllocations.forEach {
         with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
           assertThat(endDate).isEqualTo(today)
-          assertThat(programStatus.code).isEqualTo("END")
+          // Do not change status to END - that prevents attendances being created if the end date is in the future
+          assertThat(programStatus.code).isEqualTo("ALLOC")
           assertThat(endReason?.code).isEqualTo("OTH")
           assertThat(endComment).isNull()
         }
@@ -2164,7 +2165,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       courseAllocations.forEach {
         with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
           assertThat(endDate).isEqualTo(tomorrow)
-          assertThat(programStatus.code).isEqualTo("END")
+          assertThat(programStatus.code).isEqualTo("ALLOC")
           assertThat(endReason?.code).isEqualTo("OTH")
           assertThat(endComment).isNull()
         }
@@ -2324,7 +2325,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       courseAllocations.forEach {
         with(repository.getOffenderProgramProfile(it.offenderProgramReferenceId)) {
           assertThat(endDate).isEqualTo(today)
-          assertThat(programStatus.code).isEqualTo("END")
+          assertThat(programStatus.code).isEqualTo("ALLOC")
           assertThat(endReason?.code).isEqualTo("OTH")
           assertThat(endComment).isNull()
         }
