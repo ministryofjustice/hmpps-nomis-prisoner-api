@@ -1350,6 +1350,64 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): CreateCourtCaseResponse = sentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PostMapping("/prisoners/booking-id/{bookingId}/sentencing/court-cases/clone")
+  @Operation(
+    summary = "Clones court cases from the supplied booking to the current booking",
+    description = "Required role NOMIS_SENTENCING. Court cases and all child elements including adjustments are copied to the current booking",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Created Court cases",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Booking id supplied is already the latest booking",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun cloneCourtCasesFromBooking(
+    @Schema(description = "Booking id", example = "1233", required = true)
+    @PathVariable
+    bookingId: Long,
+  ): BookingCourtCaseCloneResponse = sentencingService.cloneCourtCasesToLatestBookingFrom(bookingId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -2558,4 +2616,18 @@ data class PostPrisonerMergeCaseChanges(
   val courtCasesCreated: List<CourtCaseResponse> = emptyList(),
   @Schema(description = "Court cases and related child entities deactivated due to the merge after being cloned from a previous booking")
   val courtCasesDeactivated: List<CourtCaseResponse> = emptyList(),
+)
+
+@Schema(description = "Court Cases created due to a booking clone operation")
+data class ClonedCourtCaseResponse(
+  @Schema(description = "Created court case and children")
+  val courtCase: CourtCaseResponse,
+  @Schema(description = "The id of the source court case used for the clone")
+  val sourceCaseId: Long,
+)
+
+@Schema(description = "Response for Court Cases bookig clone operations")
+data class BookingCourtCaseCloneResponse(
+  @Schema(description = "Court Cases created")
+  val courtCases: List<ClonedCourtCaseResponse>,
 )
