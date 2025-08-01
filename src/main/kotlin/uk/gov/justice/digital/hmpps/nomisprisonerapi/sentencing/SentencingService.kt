@@ -1338,6 +1338,18 @@ class SentencingService(
 
   private fun findStaffByUsername(username: String): Staff = staffUserAccountRepository.findByUsername(username)?.staff
     ?: throw BadDataException("Username $username not found")
+
+  fun cloneCourtCasesToLatestBookingFrom(@Suppress("unused") bookingId: Long): BookingCourtCaseCloneResponse {
+    val booking = offenderBookingRepository.findByIdOrNull(bookingId) ?: throw NotFoundException("Booking $bookingId not found")
+    val latestBooking = findLatestBooking(booking.offender.nomsId)
+
+    if (booking == latestBooking) {
+      throw BadDataException("Cannot clone court cased from the latest booking $bookingId on to itself")
+    }
+    return BookingCourtCaseCloneResponse(
+      courtCases = emptyList(),
+    )
+  }
 }
 
 private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest = ExistingOffenderChargeRequest(

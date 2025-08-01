@@ -1890,6 +1890,95 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("POST /prisoners/booking-id/{bookingId}/sentencing/court-cases/clone")
+  inner class CloneCourtCases {
+    private var latestBookingId: Long = 0
+    private var previousBookingId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisonerAndSentence() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A1234KT") {
+          latestBookingId = booking {
+          }.bookingId
+          previousBookingId = booking {
+            release()
+          }.bookingId
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when booking does not exist`() {
+        webTestClient.post().uri("/prisoners/booking-id/99999/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Booking 99999 not found")
+      }
+
+      @Test
+      internal fun `400 when supplied booking is the latest booking`() {
+        webTestClient.post().uri("/prisoners/booking-id/$latestBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Cannot clone court cased from the latest booking $latestBookingId on to itself")
+      }
+    }
+
+    @Nested
+    inner class WhenNoCourtCasesInBooking {
+      @Test
+      internal fun `200 when supplied booking is the latest booking`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(response.courtCases).isEmpty()
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.deleteOffenders()
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+      repository.deleteOffenderChargeByBooking(previousBookingId)
+    }
+  }
+
+  @Nested
   @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances")
   inner class CreateCourtAppearance {
     private val offenderNo: String = "A1234AB"
