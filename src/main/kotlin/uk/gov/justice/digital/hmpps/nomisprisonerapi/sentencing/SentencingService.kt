@@ -1347,17 +1347,28 @@ class SentencingService(
       throw BadDataException("Cannot clone court cased from the latest booking $bookingId on to itself")
     }
 
-    val clonedCasesWithSource = booking.courtCases.map {
+    val clonedCasesWithSource = booking.courtCases.map { sourceCase ->
       courtCaseRepository.saveAndFlush(
         CourtCase(
           offenderBooking = latestBooking,
-          legalCaseType = it.legalCaseType,
-          beginDate = it.beginDate,
-          caseStatus = it.caseStatus,
-          court = it.court,
-          primaryCaseInfoNumber = it.primaryCaseInfoNumber,
+          legalCaseType = sourceCase.legalCaseType,
+          beginDate = sourceCase.beginDate,
+          caseStatus = sourceCase.caseStatus,
+          court = sourceCase.court,
+          primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
-        ),
+          caseInfoNumbers = mutableListOf(),
+        ).also { clonedCase ->
+          clonedCase.caseInfoNumbers += sourceCase.caseInfoNumbers.map { caseInfoNumber ->
+            OffenderCaseIdentifier(
+              id = OffenderCaseIdentifierPK(
+                identifierType = caseInfoNumber.id.identifierType,
+                reference = caseInfoNumber.id.reference,
+                courtCase = clonedCase,
+              ),
+            )
+          }
+        },
       )
     }.zip(booking.courtCases)
 
