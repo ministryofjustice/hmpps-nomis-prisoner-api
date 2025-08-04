@@ -37,6 +37,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
@@ -75,6 +76,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Autowired
   lateinit var linkCaseTxnRepository: LinkCaseTxnRepository
 
+  @Autowired
+  lateinit var offenderBookingRepository: OffenderBookingRepository
+
   private var aLocationInMoorland = 0L
   private lateinit var staff: Staff
   private lateinit var prisonerAtMoorland: Offender
@@ -84,6 +88,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
   @MockitoSpyBean
   private lateinit var spRepository: StoredProcedureRepository
+
+  private fun <T> transaction(block: () -> T): T = nomisDataBuilder.runInTransaction(block)
 
   @BeforeEach
   fun setUp() {
@@ -1892,24 +1898,35 @@ class SentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("POST /prisoners/booking-id/{bookingId}/sentencing/court-cases/clone")
   inner class CloneCourtCases {
-    private var latestBookingId: Long = 0
-    private var previousBookingId: Long = 0
-
-    @BeforeEach
-    internal fun createPrisonerAndSentence() {
-      nomisDataBuilder.build {
-        offender(nomsId = "A1234KT") {
-          latestBookingId = booking {
-          }.bookingId
-          previousBookingId = booking {
-            release()
-          }.bookingId
-        }
-      }
-    }
 
     @Nested
     inner class Security {
+      private var previousBookingId: Long = 0
+
+      @BeforeEach
+      internal fun createPrisonerAndSentence() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          offender(nomsId = "A1234KT") {
+            booking {
+            }.bookingId
+            previousBookingId = booking {
+              courtCase(reportingStaff = staff) {
+                val charge = offenderCharge()
+                courtEvent {
+                  courtEventCharge(
+                    offenderCharge = charge,
+                  )
+                }
+              }
+              release()
+            }.bookingId
+          }
+        }
+      }
+
       @Test
       fun `access forbidden when no role`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
@@ -1936,6 +1953,21 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class Validation {
+      private var latestBookingId: Long = 0
+
+      @BeforeEach
+      internal fun createPrisonerAndSentence() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          offender(nomsId = "A1234KT") {
+            latestBookingId = booking {
+            }.bookingId
+          }
+        }
+      }
+
       @Test
       internal fun `404 when booking does not exist`() {
         webTestClient.post().uri("/prisoners/booking-id/99999/sentencing/court-cases/clone")
@@ -1959,22 +1991,251 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class WhenNoCourtCasesInBooking {
+      private var noCasesBookingId: Long = 0
+      private var latestBookingId: Long = 0
+
+      @BeforeEach
+      internal fun createPrisonerAndSentence() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          offender(nomsId = "A1234KT") {
+            latestBookingId = booking {
+              courtCase(reportingStaff = staff) {
+                val charge = offenderCharge()
+                courtEvent {
+                  courtEventCharge(
+                    offenderCharge = charge,
+                  )
+                }
+              }
+            }.bookingId
+            noCasesBookingId = booking {
+              release()
+            }.bookingId
+          }
+        }
+      }
+
       @Test
-      internal fun `200 when supplied booking is the latest booking`() {
-        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+      internal fun `No cases returned when nothing copied`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$noCasesBookingId/sentencing/court-cases/clone")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectBodyResponse()
 
         assertThat(response.courtCases).isEmpty()
       }
+
+      @Test
+      internal fun `booking has no cases copied`() {
+        transaction {
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(1)
+        }
+
+        webTestClient.post().uri("/prisoners/booking-id/$noCasesBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(1)
+        }
+      }
+    }
+
+    @Nested
+    inner class WithCourtCasesInBooking {
+      private var previousBookingId: Long = 0
+      private var latestBookingId: Long = 0
+
+      @BeforeEach
+      internal fun createPrisonerAndSentence() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          lateinit var courtOrder: CourtOrder
+          offender(nomsId = "A1234KT") {
+            latestBookingId = booking {
+              courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse("2025-01-01"),
+                statusUpdateDate = LocalDate.parse("2025-01-01"),
+                statusUpdateStaff = staff,
+                caseInfoNumber = "A0001",
+                caseSequence = 1,
+              ) {
+                val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = "2006")
+                courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "4506") {
+                  courtEventCharge(
+                    resultCode1 = "4506",
+                    offenderCharge = charge,
+                  )
+                }
+              }
+            }.bookingId
+            previousBookingId = booking {
+              courtCase(
+                agencyId = "LEICYC",
+                legalCaseType = "Y",
+                caseStatus = "I",
+                reportingStaff = staff,
+                beginDate = LocalDate.parse("2021-01-02"),
+                statusUpdateDate = LocalDate.parse("2021-01-02"),
+                statusUpdateStaff = staff,
+                caseInfoNumber = "X0001",
+                caseSequence = 2,
+              ) {
+                val charge = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "2006")
+                courtEvent(eventDateTime = LocalDateTime.parse("2021-01-02T10:00"), outcomeReasonCode = "2006") {
+                  courtEventCharge(
+                    resultCode1 = "2006",
+                    offenderCharge = charge,
+                  )
+                }
+              }
+
+              courtCase(
+                agencyId = "LEEDYC",
+                legalCaseType = "A",
+                caseStatus = "A",
+                reportingStaff = staff,
+                beginDate = LocalDate.parse("2021-01-01"),
+                statusUpdateDate = LocalDate.parse("2022-01-01"),
+                statusUpdateStaff = staff,
+                caseInfoNumber = "X0002",
+                caseSequence = 1,
+              ) {
+                offenderCaseIdentifier(reference = "X0002")
+                offenderCaseIdentifier(reference = "X0003")
+                val horseDrawnVehicleCharge = offenderCharge(offenceCode = "RT88074", plea = "G", resultCode1 = "1002")
+                val drunkCharge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "2006")
+                courtEvent(eventDateTime = LocalDateTime.parse("2022-01-01T10:00"), outcomeReasonCode = "4506") {
+                  courtEventCharge(
+                    resultCode1 = "4506",
+                    offenderCharge = horseDrawnVehicleCharge,
+                  )
+                  courtEventCharge(
+                    resultCode1 = "4506",
+                    offenderCharge = drunkCharge,
+                  )
+                }
+                courtEvent(eventDateTime = LocalDateTime.parse("2022-02-01T10:00"), outcomeReasonCode = "1002") {
+                  courtEventCharge(
+                    resultCode1 = "1002",
+                    offenderCharge = horseDrawnVehicleCharge,
+                  )
+                  courtEventCharge(
+                    resultCode1 = "2006",
+                    offenderCharge = drunkCharge,
+                  )
+                  courtOrder = courtOrder(courtDate = LocalDate.parse("2022-01-01")) {
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                }
+                sentence(
+                  courtOrder = courtOrder,
+                  calculationType = "ADIMP_ORA",
+                  category = "2003",
+                ) {
+                  offenderSentenceCharge(horseDrawnVehicleCharge)
+                  term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                  adjustment(adjustmentTypeCode = "RX", adjustmentDate = LocalDate.parse("2022-01-01"), adjustmentNumberOfDays = 30)
+                }
+              }
+              release()
+            }.bookingId
+            booking {
+              courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse("2020-01-01"),
+                statusUpdateDate = LocalDate.parse("2020-01-01"),
+                statusUpdateStaff = staff,
+              ) {
+                val charge = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "2006")
+                courtEvent(eventDateTime = LocalDateTime.parse("2020-01-01T10:00"), outcomeReasonCode = "2006") {
+                  courtEventCharge(
+                    resultCode1 = "2006",
+                    offenderCharge = charge,
+                  )
+                }
+              }
+              release()
+            }
+          }
+        }
+      }
+
+      @Test
+      internal fun `cases copied are returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(response.courtCases).hasSize(2)
+      }
+
+      @Test
+      internal fun `cases are merged into the booking along with existing cases`() {
+        transaction {
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(1)
+        }
+
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(3)
+        }
+      }
+
+      @Test
+      internal fun `core cases details copied are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          with(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0001" }!!) {
+            assertThat(primaryCaseInfoNumber).isEqualTo("X0001")
+            assertThat(caseSequence).isGreaterThan(1)
+            assertThat(beginDate).isEqualTo(LocalDate.parse("2021-01-02"))
+            assertThat(court.id).isEqualTo("LEICYC")
+            assertThat(legalCaseType.code).isEqualTo("Y")
+            assertThat(caseStatus.code).isEqualTo("I")
+            assertThat(targetCombinedCase).isNull()
+            assertThat(sourceCombinedCases).isEmpty()
+
+            // TODO use default values - no copy for now - but double check this is ok given they are not held in DPS
+            assertThat(statusUpdateDate).isNull()
+            assertThat(statusUpdateStaff).isNull()
+            assertThat(statusUpdateComment).isNull()
+            assertThat(statusUpdateReason).isNull()
+            assertThat(lidsCaseNumber).isEqualTo(1)
+          }
+          with(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!) {
+            assertThat(primaryCaseInfoNumber).isEqualTo("X0002")
+            assertThat(caseSequence).isGreaterThan(1)
+            assertThat(beginDate).isEqualTo(LocalDate.parse("2021-01-01"))
+            assertThat(court.id).isEqualTo("LEEDYC")
+            assertThat(legalCaseType.code).isEqualTo("A")
+            assertThat(caseStatus.code).isEqualTo("A")
+            assertThat(targetCombinedCase).isNull()
+            assertThat(sourceCombinedCases).isEmpty()
+          }
+        }
+      }
     }
 
     @AfterEach
     internal fun deletePrisoner() {
       repository.deleteOffenders()
-      repository.deleteOffenderChargeByBooking(latestBookingId)
-      repository.deleteOffenderChargeByBooking(previousBookingId)
     }
   }
 
