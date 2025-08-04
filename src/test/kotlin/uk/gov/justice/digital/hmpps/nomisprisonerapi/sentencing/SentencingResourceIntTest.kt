@@ -2109,7 +2109,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseSequence = 1,
               ) {
                 offenderCaseIdentifier(reference = "X0002")
-                offenderCaseIdentifier(reference = "X0003")
+                offenderCaseIdentifier(reference = "CCC0003", type = "CCC")
                 val horseDrawnVehicleCharge = offenderCharge(offenceCode = "RT88074", plea = "G", resultCode1 = "1002")
                 val drunkCharge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "2006")
                 courtEvent(eventDateTime = LocalDateTime.parse("2022-01-01T10:00"), outcomeReasonCode = "4506") {
@@ -2229,6 +2229,44 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(targetCombinedCase).isNull()
             assertThat(sourceCombinedCases).isEmpty()
           }
+        }
+      }
+
+      @Test
+      internal fun `case identifiers are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val case = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.caseInfoNumbers).hasSize(2)
+          with(case.caseInfoNumbers.find { it.id.reference == "X0002" }!!) {
+            assertThat(id.reference).isEqualTo("X0002")
+            assertThat(id.identifierType).isEqualTo("CASE/INFO#")
+          }
+          with(case.caseInfoNumbers.find { it.id.reference == "CCC0003" }!!) {
+            assertThat(id.reference).isEqualTo("CCC0003")
+            assertThat(id.identifierType).isEqualTo("CCC")
+          }
+        }
+      }
+
+      @Test
+      internal fun `DPS case identifiers are returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(response.courtCases).hasSize(2)
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        assertThat(case.caseInfoNumbers).hasSize(1)
+        with(case.caseInfoNumbers[0]) {
+          assertThat(reference).isEqualTo("X0002")
+          assertThat(type).isEqualTo("CASE/INFO#")
         }
       }
     }
