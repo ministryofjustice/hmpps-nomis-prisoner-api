@@ -530,6 +530,35 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `should allow ended allocation to be suspended`() {
+      nomisDataBuilder.build {
+        offender = offender {
+          bookingId = booking {
+            courseAllocation(courseActivity, startDate = "2022-11-11", endDate = "2022-11-12", programStatusCode = "END")
+            courseAllocation(courseActivity, startDate = "2022-11-14", endDate = "$yesterday", programStatusCode = "END")
+          }.bookingId
+        }
+      }
+
+      val request = upsertRequest()
+        .withStartDate("2022-11-14")
+        .withAdditionalJson(
+          """
+        "suspended": true,
+        "suspendedComment": "Suspended in DPS"
+          """.trimMargin(),
+        )
+      val response = upsertAllocationIsOk(request)
+
+      with(repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)) {
+        assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
+        assertThat(suspended).isTrue()
+        assertThat(endComment).isEqualTo("Suspended in DPS")
+        assertThat(programStatus.code).isEqualTo("ALLOC")
+      }
+    }
+
+    @Test
     fun `should update with ended details when allocation is suspended and then ended`() {
       val suspendRequest = upsertRequest().withAdditionalJson(
         """

@@ -125,6 +125,15 @@ class AllocationService(
         request.bookingId,
         "ALLOC",
       )
+        ?: let {
+          // SDIT-2957 Allow updating ended allocations to suspended
+          if (request.suspended == true) {
+            offenderProgramProfileRepository.findByCourseActivityCourseActivityIdAndOffenderBookingBookingId(courseActivityId, request.bookingId)
+              .find { allocation -> allocation.programStatus.code == "END" && allocation.startDate == request.startDate }
+          } else {
+            null
+          }
+        }
 
     // If the request is to end the allocation, check if it has already been ended, e.g. by a prison still using NOMIS
     if (existingAllocation == null && request.programStatusCode == "END") {
@@ -181,8 +190,8 @@ class AllocationService(
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
 
-    if (courseActivity.prison.id != offenderBooking.location?.id && newAllocation) {
-      throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
+    if (courseActivity.prison.id != offenderBooking.location.id && newAllocation) {
+      throw BadDataException("Prisoner is at prison=${offenderBooking.location.id}, not the Course activity prison=${courseActivity.prison.id}")
     }
 
     requestedPayBand?.run {
