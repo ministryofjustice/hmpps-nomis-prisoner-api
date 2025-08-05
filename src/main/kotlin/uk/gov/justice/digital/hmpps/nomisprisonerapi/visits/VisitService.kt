@@ -185,7 +185,8 @@ class VisitService(
 
     visit.visitStatus = cancelledVisitStatus
 
-    visit.visitors.forEach {
+    // Ensure visit visitors are locked before updating
+    visitVisitorRepository.findAllByIdIn(visit.visitors.map { it.id }).forEach {
       it.eventOutcome = absenceEventOutcome
       it.eventStatus = cancelledEventStatus
       it.outcomeReasonCode = visitOutcome.code
@@ -375,8 +376,7 @@ class VisitService(
     offenderBooking: OffenderBooking,
     today: LocalDate,
   ) {
-    // need to ensure that we can get a lock on the visit balance too
-    offenderVisitBalanceRepository.findByIdForUpdate(offenderBooking.bookingId)?.takeUnless {
+    offenderVisitBalanceRepository.findByIdOrNull(offenderBooking.bookingId)?.takeUnless {
       isDpsInChargeOfAllocation(offenderBooking)
     }?.let { offenderVisitBalance ->
       offenderVisitBalanceAdjustmentRepository.save(
