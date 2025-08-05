@@ -1368,7 +1368,30 @@ class SentencingService(
               ),
             )
           }
+          clonedCase.offenderCharges += sourceCase.offenderCharges.map { offenderCharge ->
+            OffenderCharge(
+              offenderBooking = latestBooking,
+              offence = offenderCharge.offence,
+              courtCase = clonedCase,
+              offencesCount = offenderCharge.offencesCount,
+              offenceDate = offenderCharge.offenceDate,
+              offenceEndDate = offenderCharge.offenceEndDate,
+              plea = offenderCharge.plea,
+              propertyValue = offenderCharge.propertyValue,
+              totalPropertyValue = offenderCharge.totalPropertyValue,
+              cjitCode1 = offenderCharge.cjitCode1,
+              cjitCode2 = offenderCharge.cjitCode2,
+              cjitCode3 = offenderCharge.cjitCode3,
+              chargeStatus = offenderCharge.chargeStatus,
+              resultCode1 = offenderCharge.resultCode1,
+              resultCode2 = offenderCharge.resultCode2,
+              resultCode1Indicator = offenderCharge.resultCode1Indicator,
+              resultCode2Indicator = offenderCharge.resultCode2Indicator,
+              mostSeriousFlag = offenderCharge.mostSeriousFlag,
+            )
+          }
         },
+
       )
     }.zip(booking.courtCases)
 

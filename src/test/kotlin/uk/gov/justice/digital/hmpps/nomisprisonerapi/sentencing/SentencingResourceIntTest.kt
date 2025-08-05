@@ -2110,7 +2110,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               ) {
                 offenderCaseIdentifier(reference = "X0002")
                 offenderCaseIdentifier(reference = "CCC0003", type = "CCC")
-                val horseDrawnVehicleCharge = offenderCharge(offenceCode = "RT88074", plea = "G", resultCode1 = "1002")
+                val horseDrawnVehicleCharge = offenderCharge(
+                  offenceCode = "RT88074",
+                  plea = "G",
+                  resultCode1 = "1002",
+                  propertyValue = BigDecimal.valueOf(1),
+                  totalPropertyValue = BigDecimal.valueOf(2),
+                  resultCode2 = "1003",
+                  offencesCount = 3,
+                  offenceDate = LocalDate.parse("2020-01-02"),
+                  offenceEndDate = LocalDate.parse("2020-12-02"),
+                  mostSeriousFlag = true,
+
+                )
                 val drunkCharge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "2006")
                 courtEvent(eventDateTime = LocalDateTime.parse("2022-01-01T10:00"), outcomeReasonCode = "4506") {
                   courtEventCharge(
@@ -2268,6 +2280,58 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           assertThat(reference).isEqualTo("X0002")
           assertThat(type).isEqualTo("CASE/INFO#")
         }
+      }
+
+      @Test
+      internal fun `offender charges are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val sourceCase = offenderBookingRepository.findByIdOrNull(previousBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+
+          val case = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.offenderCharges).hasSize(2)
+          with(case.offenderCharges.find { it.offence.id.offenceCode == "RT88074" }!!) {
+            val sourceCharge = sourceCase.offenderCharges.find { it.offence.id.offenceCode == "RT88074" }!!
+
+            assertThat(offence.id.offenceCode).isEqualTo("RT88074")
+            assertThat(resultCode1?.code).isEqualTo("1002")
+            assertThat(resultCode2?.code).isEqualTo("1003")
+            assertThat(offencesCount).isEqualTo(3)
+            assertThat(propertyValue).isEqualTo(BigDecimal.valueOf(1))
+            assertThat(totalPropertyValue).isEqualTo(BigDecimal.valueOf(2))
+            assertThat(offenceDate).isEqualTo(LocalDate.parse("2020-01-02"))
+            assertThat(offenceEndDate).isEqualTo(LocalDate.parse("2020-12-02"))
+            assertThat(plea?.code).isEqualTo("G")
+
+            // TODO - check whether this should be set my NOMIS trigger
+            assertThat(mostSeriousFlag).isTrue
+
+            // derived fields
+            assertThat(chargeStatus).isEqualTo(sourceCharge.chargeStatus)
+            assertThat(resultCode1Indicator).isEqualTo(sourceCharge.resultCode1Indicator)
+            assertThat(resultCode2Indicator).isEqualTo(sourceCharge.resultCode2Indicator)
+          }
+          with(case.offenderCharges.find { it.offence.id.offenceCode == "LG72004" }!!) {
+            assertThat(offence.id.offenceCode).isEqualTo("LG72004")
+          }
+        }
+      }
+
+      @Test
+      internal fun `Offender charges are returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        assertThat(case.offenderCharges).hasSize(2)
+        assertThat(case.offenderCharges[0].id).isGreaterThan(0)
+        assertThat(case.offenderCharges[1].id).isGreaterThan(0)
       }
     }
 
