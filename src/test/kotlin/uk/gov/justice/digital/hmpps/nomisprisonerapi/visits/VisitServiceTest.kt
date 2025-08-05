@@ -649,6 +649,7 @@ internal class VisitServiceTest {
     @Test
     fun `visit data is amended correctly`() {
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
+      whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
 
@@ -673,7 +674,8 @@ internal class VisitServiceTest {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
+      whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
+      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
@@ -694,7 +696,7 @@ internal class VisitServiceTest {
       defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
 
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
+      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
@@ -706,7 +708,8 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance increment is saved correctly`() {
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
+      whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
+      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
@@ -724,7 +727,8 @@ internal class VisitServiceTest {
     @Test
     fun `privilege balance increment is not saved if DPS in charge of balance`() {
       whenever(visitRepository.findByIdForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(offenderVisitBalanceRepository.findByIdForUpdate(OFFENDER_BOOKING_ID)).thenReturn(defaultOffenderBooking.visitBalance)
+      whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
+      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
