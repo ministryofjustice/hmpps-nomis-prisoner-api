@@ -131,6 +131,7 @@ class CourtEventBuilder(
     orderRequestedFlag = orderRequestedFlag,
     nextEventStartTime = nextEventDateTime,
     nextEventDate = nextEventDateTime?.toLocalDate(),
+    nextEventRequestFlag = nextEventDateTime != null,
     directionCode = repository.lookupDirectionType(DirectionType.OUT),
   )
     .let { repository.save(it) }

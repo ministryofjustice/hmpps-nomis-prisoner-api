@@ -1390,6 +1390,26 @@ class SentencingService(
               mostSeriousFlag = offenderCharge.mostSeriousFlag,
             )
           }
+          clonedCase.courtEvents += sourceCase.courtEvents.map { courtEvent ->
+            CourtEvent(
+              offenderBooking = latestBooking,
+              courtCase = clonedCase,
+              eventDate = courtEvent.eventDate,
+              startTime = courtEvent.startTime,
+              courtEventType = courtEvent.courtEventType,
+              judgeName = courtEvent.judgeName,
+              eventStatus = courtEvent.eventStatus,
+              court = courtEvent.court,
+              outcomeReasonCode = courtEvent.outcomeReasonCode,
+              commentText = courtEvent.commentText,
+              nextEventRequestFlag = courtEvent.nextEventRequestFlag,
+              orderRequestedFlag = courtEvent.orderRequestedFlag,
+              nextEventDate = courtEvent.nextEventDate,
+              nextEventStartTime = courtEvent.nextEventStartTime,
+              directionCode = courtEvent.directionCode,
+              holdFlag = courtEvent.holdFlag,
+            )
+          }
         },
 
       )

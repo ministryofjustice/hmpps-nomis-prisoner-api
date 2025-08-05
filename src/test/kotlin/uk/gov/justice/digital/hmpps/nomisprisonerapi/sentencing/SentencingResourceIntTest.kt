@@ -2124,7 +2124,15 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
                 )
                 val drunkCharge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "2006")
-                courtEvent(eventDateTime = LocalDateTime.parse("2022-01-01T10:00"), outcomeReasonCode = "4506") {
+                courtEvent(
+                  eventDateTime = LocalDateTime.parse("2022-01-01T10:00"),
+                  outcomeReasonCode = "4506",
+                  commentText = "Good date",
+                  agencyId = "LEEDYC",
+                  courtEventType = "CRT",
+                  eventStatusCode = "EXP",
+                  nextEventDateTime = LocalDateTime.parse("2022-02-01T10:00"),
+                ) {
                   courtEventCharge(
                     resultCode1 = "4506",
                     offenderCharge = horseDrawnVehicleCharge,
@@ -2134,7 +2142,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     offenderCharge = drunkCharge,
                   )
                 }
-                courtEvent(eventDateTime = LocalDateTime.parse("2022-02-01T10:00"), outcomeReasonCode = "1002") {
+                courtEvent(
+                  eventDateTime = LocalDateTime.parse("2022-02-01T10:00"),
+                  nextEventDateTime = null,
+                  outcomeReasonCode = "1002",
+                ) {
                   courtEventCharge(
                     resultCode1 = "1002",
                     offenderCharge = horseDrawnVehicleCharge,
@@ -2332,6 +2344,56 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(case.offenderCharges).hasSize(2)
         assertThat(case.offenderCharges[0].id).isGreaterThan(0)
         assertThat(case.offenderCharges[1].id).isGreaterThan(0)
+      }
+
+      @Test
+      internal fun `court appearances are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val sourceCase = offenderBookingRepository.findByIdOrNull(previousBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+
+          val case = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.courtEvents).hasSize(2)
+          with(case.courtEvents.find { it.eventDate == LocalDate.parse("2022-01-01") }!!) {
+            val sourceEvent = sourceCase.courtEvents.find { it.eventDate == LocalDate.parse("2022-01-01") }!!
+
+            assertThat(eventDate).isEqualTo(LocalDate.parse("2022-01-01"))
+            assertThat(startTime).isEqualTo(LocalDateTime.parse("2022-01-01T10:00"))
+            assertThat(courtEventType.code).isEqualTo("CRT")
+            assertThat(eventStatus.code).isEqualTo("EXP")
+            assertThat(court.id).isEqualTo("LEEDYC")
+            assertThat(outcomeReasonCode?.code).isEqualTo("4506")
+            assertThat(commentText).isEqualTo("Good date")
+
+            assertThat(nextEventDate).isEqualTo(LocalDate.parse("2022-02-01"))
+            assertThat(nextEventStartTime).isEqualTo(LocalDateTime.parse("2022-02-01T10:00"))
+
+            // derived fields
+            assertThat(nextEventRequestFlag).isTrue
+            assertThat(directionCode).isEqualTo(sourceEvent.directionCode)
+          }
+          with(case.courtEvents.find { it.eventDate == LocalDate.parse("2022-02-01") }!!) {
+            assertThat(nextEventRequestFlag).isFalse
+            assertThat(outcomeReasonCode?.code).isEqualTo("1002")
+          }
+        }
+      }
+
+      @Test
+      internal fun `Court appearances are returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        assertThat(case.courtEvents).hasSize(2)
+        assertThat(case.courtEvents[0].id).isGreaterThan(0)
+        assertThat(case.courtEvents[1].id).isGreaterThan(0)
       }
     }
 
