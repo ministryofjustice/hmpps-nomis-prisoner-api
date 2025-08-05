@@ -266,7 +266,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(true)
           .jsonPath("courtEvents[0].nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
           .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
@@ -611,7 +611,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[0].holdFlag").isEqualTo(false)
-          .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].nextEventRequestFlag").isEqualTo(true)
           .jsonPath("courtEvents[0].nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("courtEvents[0].createdDateTime").isNotEmpty
           .jsonPath("courtEvents[0].createdByUsername").isNotEmpty
@@ -3878,7 +3878,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("commentText").isEqualTo("Court event comment")
           .jsonPath("orderRequestedFlag").isEqualTo(false)
           .jsonPath("holdFlag").isEqualTo(false)
-          .jsonPath("nextEventRequestFlag").isEqualTo(false)
+          .jsonPath("nextEventRequestFlag").isEqualTo(true)
           .jsonPath("nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("createdByUsername").isNotEmpty
