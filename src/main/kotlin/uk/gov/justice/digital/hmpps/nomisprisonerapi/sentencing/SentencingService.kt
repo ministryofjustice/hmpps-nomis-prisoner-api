@@ -1390,29 +1390,56 @@ class SentencingService(
               mostSeriousFlag = offenderCharge.mostSeriousFlag,
             )
           }
-          clonedCase.courtEvents += sourceCase.courtEvents.map { courtEvent ->
-            CourtEvent(
-              offenderBooking = latestBooking,
-              courtCase = clonedCase,
-              eventDate = courtEvent.eventDate,
-              startTime = courtEvent.startTime,
-              courtEventType = courtEvent.courtEventType,
-              judgeName = courtEvent.judgeName,
-              eventStatus = courtEvent.eventStatus,
-              court = courtEvent.court,
-              outcomeReasonCode = courtEvent.outcomeReasonCode,
-              commentText = courtEvent.commentText,
-              nextEventRequestFlag = courtEvent.nextEventRequestFlag,
-              orderRequestedFlag = courtEvent.orderRequestedFlag,
-              nextEventDate = courtEvent.nextEventDate,
-              nextEventStartTime = courtEvent.nextEventStartTime,
-              directionCode = courtEvent.directionCode,
-              holdFlag = courtEvent.holdFlag,
-            )
-          }
         },
-
-      )
+      ).also { clonedCase ->
+        // now that offenderCharges have been persisted we can now save the courtEventCharges
+        clonedCase.courtEvents += sourceCase.courtEvents.map { courtEvent ->
+          CourtEvent(
+            offenderBooking = latestBooking,
+            courtCase = clonedCase,
+            eventDate = courtEvent.eventDate,
+            startTime = courtEvent.startTime,
+            courtEventType = courtEvent.courtEventType,
+            judgeName = courtEvent.judgeName,
+            eventStatus = courtEvent.eventStatus,
+            court = courtEvent.court,
+            outcomeReasonCode = courtEvent.outcomeReasonCode,
+            commentText = courtEvent.commentText,
+            nextEventRequestFlag = courtEvent.nextEventRequestFlag,
+            orderRequestedFlag = courtEvent.orderRequestedFlag,
+            nextEventDate = courtEvent.nextEventDate,
+            nextEventStartTime = courtEvent.nextEventStartTime,
+            directionCode = courtEvent.directionCode,
+            holdFlag = courtEvent.holdFlag,
+          ).also { clonedCourtEvent ->
+            clonedCourtEvent.courtEventCharges += courtEvent.courtEventCharges.map { courtEventCharge ->
+              CourtEventCharge(
+                id = CourtEventChargeId(
+                  offenderCharge = clonedCase.offenderCharges[sourceCase.offenderCharges.indexOf(courtEventCharge.id.offenderCharge)],
+                  courtEvent = clonedCourtEvent,
+                ),
+                offencesCount = courtEventCharge.offencesCount,
+                offenceDate = courtEventCharge.offenceDate,
+                offenceEndDate = courtEventCharge.offenceEndDate,
+                plea = courtEventCharge.plea,
+                propertyValue = courtEventCharge.propertyValue,
+                totalPropertyValue = courtEventCharge.totalPropertyValue,
+                cjitCode1 = courtEventCharge.cjitCode1,
+                cjitCode2 = courtEventCharge.cjitCode2,
+                cjitCode3 = courtEventCharge.cjitCode3,
+                resultCode1 = courtEventCharge.resultCode1,
+                resultCode2 = courtEventCharge.resultCode2,
+                resultCode1Indicator = courtEventCharge.resultCode1Indicator,
+                resultCode2Indicator = courtEventCharge.resultCode2Indicator,
+                mostSeriousFlag = courtEventCharge.mostSeriousFlag,
+              )
+            }
+          }
+        }
+      }.let {
+        // save again before returning result
+        courtCaseRepository.saveAndFlush(it)
+      }
     }.zip(booking.courtCases)
 
     return BookingCourtCaseCloneResponse(

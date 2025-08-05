@@ -2135,10 +2135,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 ) {
                   courtEventCharge(
                     resultCode1 = "4506",
+                    resultCode2 = "4507",
                     offenderCharge = horseDrawnVehicleCharge,
+                    offencesCount = 99,
+                    offenceDate = LocalDate.parse("2001-01-01"),
+                    offenceEndDate = LocalDate.parse("2002-01-01"),
+                    plea = "NG",
+                    propertyValue = BigDecimal.TEN,
+                    totalPropertyValue = BigDecimal.TWO,
                   )
                   courtEventCharge(
                     resultCode1 = "4506",
+                    resultCode2 = null,
                     offenderCharge = drunkCharge,
                   )
                 }
@@ -2394,6 +2402,44 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(case.courtEvents).hasSize(2)
         assertThat(case.courtEvents[0].id).isGreaterThan(0)
         assertThat(case.courtEvents[1].id).isGreaterThan(0)
+      }
+
+      @Test
+      internal fun `court appearance charges are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val case = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.courtEvents).hasSize(2)
+          with(case.courtEvents.find { it.eventDate == LocalDate.parse("2022-01-01") }!!) {
+            assertThat(courtEventCharges).hasSize(2)
+            val horseDrawnVehicleCharge = courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "RT88074" }!!
+
+            assertThat(horseDrawnVehicleCharge.resultCode1?.code).isEqualTo("4506")
+            assertThat(horseDrawnVehicleCharge.resultCode2?.code).isEqualTo("4507")
+            assertThat(horseDrawnVehicleCharge.offencesCount).isEqualTo(99)
+            assertThat(horseDrawnVehicleCharge.offenceDate).isEqualTo(LocalDate.parse("2001-01-01"))
+            assertThat(horseDrawnVehicleCharge.offenceEndDate).isEqualTo(LocalDate.parse("2002-01-01"))
+            assertThat(horseDrawnVehicleCharge.plea?.code).isEqualTo("NG")
+            assertThat(horseDrawnVehicleCharge.propertyValue).isEqualTo(BigDecimal.TEN)
+            assertThat(horseDrawnVehicleCharge.totalPropertyValue).isEqualTo(BigDecimal.TWO)
+
+            val drunkCharge = courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }!!
+            assertThat(drunkCharge.resultCode1?.code).isEqualTo("4506")
+            assertThat(drunkCharge.resultCode2).isNull()
+          }
+          with(case.courtEvents.find { it.eventDate == LocalDate.parse("2022-02-01") }!!) {
+            assertThat(courtEventCharges).hasSize(2)
+
+            val horseDrawnVehicleCharge = courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "RT88074" }!!
+            assertThat(horseDrawnVehicleCharge.resultCode1?.code).isEqualTo("1002")
+            val drunkCharge = courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }!!
+            assertThat(drunkCharge.resultCode1?.code).isEqualTo("2006")
+          }
+        }
       }
     }
 
