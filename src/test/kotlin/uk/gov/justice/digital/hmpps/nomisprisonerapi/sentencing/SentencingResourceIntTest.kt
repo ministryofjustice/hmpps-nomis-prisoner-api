@@ -2056,7 +2056,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           staff = staff {
             account {}
           }
-          lateinit var courtOrder: CourtOrder
           offender(nomsId = "A1234KT") {
             latestBookingId = booking {
               courtCase(
@@ -2068,11 +2067,36 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseSequence = 1,
               ) {
                 val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = "2006")
+                lateinit var courtOrder: CourtOrder
                 courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "4506") {
+                  courtOrder = courtOrder(
+                    courtDate = LocalDate.parse("2022-01-01"),
+                    issuingCourt = "LEEDYC",
+                    orderType = "AUTO",
+                    orderStatus = "A",
+                    requestDate = LocalDate.parse("2022-02-02"),
+                    dueDate = LocalDate.parse("2022-02-03"),
+                    courtInfoId = null,
+                    seriousnessLevel = "HIGH",
+                    nonReportFlag = true,
+                  ) {
+                    sentencePurpose(purposeCode = "PUNISH", orderPartyCode = "CRT")
+                  }
                   courtEventCharge(
                     resultCode1 = "4506",
                     offenderCharge = charge,
                   )
+                }
+                sentence(
+                  courtOrder = courtOrder,
+                  calculationType = "ADIMP_ORA",
+                  category = "2003",
+                  startDate = LocalDate.parse("2022-02-01"),
+                  lineSequence = 20,
+                ) {
+                  offenderSentenceCharge(charge)
+                  term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                  adjustment(adjustmentTypeCode = "RX", adjustmentDate = LocalDate.parse("2022-01-01"), adjustmentNumberOfDays = 30)
                 }
               }
             }.bookingId
@@ -2108,6 +2132,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "X0002",
                 caseSequence = 1,
               ) {
+                lateinit var courtOrder: CourtOrder
                 offenderCaseIdentifier(reference = "X0002")
                 offenderCaseIdentifier(reference = "CCC0003", type = "CCC")
                 val horseDrawnVehicleCharge = offenderCharge(
@@ -2181,6 +2206,43 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   courtOrder = courtOrder,
                   calculationType = "ADIMP_ORA",
                   category = "2003",
+                  startDate = LocalDate.parse("2022-02-01"),
+                  status = "I",
+                  sentenceLevel = "IND",
+                  consecSequence = null,
+                  endDate = LocalDate.parse("2024-02-01"),
+                  etdCalculatedDate = LocalDate.parse("2024-02-02"),
+                  mtdCalculatedDate = LocalDate.parse("2024-02-03"),
+                  ltdCalculatedDate = LocalDate.parse("2024-02-04"),
+                  ardCalculatedDate = LocalDate.parse("2024-02-05"),
+                  crdCalculatedDate = LocalDate.parse("2024-02-06"),
+                  pedCalculatedDate = LocalDate.parse("2024-02-07"),
+                  npdCalculatedDate = LocalDate.parse("2024-02-08"),
+                  ledCalculatedDate = LocalDate.parse("2024-02-09"),
+                  sedCalculatedDate = LocalDate.parse("2024-02-10"),
+                  prrdCalculatedDate = LocalDate.parse("2024-02-11"),
+                  tariffCalculatedDate = LocalDate.parse("2024-02-12"),
+                  dprrdCalculatedDate = LocalDate.parse("2024-02-13"),
+                  tusedCalculatedDate = LocalDate.parse("2024-02-14"),
+                  aggAdjustDays = 267,
+                  aggSentenceSequence = 99,
+                  extendedDays = 822,
+                  counts = 2,
+                  statusUpdateReason = "A",
+                  statusUpdateComment = "Reopened",
+                  statusUpdateDate = LocalDate.parse("2024-02-15"),
+                  statusUpdateStaff = staff,
+                  fineAmount = BigDecimal.TWO,
+                  dischargeDate = LocalDate.parse("2024-02-16"),
+                  nomSentDetailRef = 1,
+                  nomConsToSentDetailRef = 2,
+                  nomConsFromSentDetailRef = 3,
+                  nomConsWithSentDetailRef = 4,
+                  lineSequence = 99,
+                  hdcExclusionFlag = true,
+                  hdcExclusionReason = "ABDR",
+                  sled2Calc = LocalDate.parse("2024-02-17"),
+                  startDate2Calc = LocalDate.parse("2024-02-18"),
                 ) {
                   offenderSentenceCharge(horseDrawnVehicleCharge)
                   term(startDate = LocalDate.parse("2022-01-01"), years = 2)
@@ -2514,6 +2576,86 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(case.courtEvents[0].courtOrders).hasSize(0)
         assertThat(case.courtEvents[1].courtOrders).hasSize(1)
         assertThat(case.courtEvents[1].courtOrders[0].id).isGreaterThan(0)
+      }
+
+      @Test
+      internal fun `sentences are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val yetToBeSentencedCase =
+            offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0001" }!!
+          assertThat(yetToBeSentencedCase.sentences).isEmpty()
+
+          val case =
+            offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.sentences).hasSize(1)
+          val courtAppearanceSentencedAt = case.courtEvents.find { it.eventDate == LocalDate.parse("2022-02-01") }!!
+          with(case.sentences[0]) {
+            assertThat(courtOrder?.id).isEqualTo(courtAppearanceSentencedAt.courtOrders.first().id)
+            assertThat(calculationType.id.calculationType).isEqualTo("ADIMP_ORA")
+            assertThat(calculationType.id.category).isEqualTo("2003")
+            assertThat(startDate).isEqualTo(LocalDate.parse("2022-02-01"))
+            assertThat(endDate).isEqualTo(LocalDate.parse("2024-02-01"))
+            // inactive sentence made action
+            assertThat(status).isEqualTo("A")
+            assertThat(sentenceLevel).isEqualTo("IND")
+            // will be tested separately
+            assertThat(consecSequence).isNull()
+            assertThat(etdCalculatedDate).isEqualTo(LocalDate.parse("2024-02-02"))
+            assertThat(mtdCalculatedDate).isEqualTo(LocalDate.parse("2024-02-03"))
+            assertThat(ltdCalculatedDate).isEqualTo(LocalDate.parse("2024-02-04"))
+            assertThat(ardCalculatedDate).isEqualTo(LocalDate.parse("2024-02-05"))
+            assertThat(crdCalculatedDate).isEqualTo(LocalDate.parse("2024-02-06"))
+            assertThat(pedCalculatedDate).isEqualTo(LocalDate.parse("2024-02-07"))
+            assertThat(npdCalculatedDate).isEqualTo(LocalDate.parse("2024-02-08"))
+            assertThat(ledCalculatedDate).isEqualTo(LocalDate.parse("2024-02-09"))
+            assertThat(sedCalculatedDate).isEqualTo(LocalDate.parse("2024-02-10"))
+            assertThat(prrdCalculatedDate).isEqualTo(LocalDate.parse("2024-02-11"))
+            assertThat(tariffCalculatedDate).isEqualTo(LocalDate.parse("2024-02-12"))
+            assertThat(dprrdCalculatedDate).isEqualTo(LocalDate.parse("2024-02-13"))
+            assertThat(tusedCalculatedDate).isEqualTo(LocalDate.parse("2024-02-14"))
+            assertThat(sled2Calc).isEqualTo(LocalDate.parse("2024-02-17"))
+            assertThat(startDate2Calc).isEqualTo(LocalDate.parse("2024-02-18"))
+            assertThat(aggAdjustDays).isEqualTo(267)
+            // TODO - this would be overwritten by sentence calculation - but should it be left using source sequence
+            assertThat(aggSentenceSequence).isEqualTo(99)
+            assertThat(extendedDays).isEqualTo(822)
+            assertThat(counts).isEqualTo(2)
+            assertThat(statusUpdateReason).isEqualTo("A")
+            assertThat(statusUpdateComment).isEqualTo("Reopened")
+            assertThat(statusUpdateDate).isEqualTo(LocalDate.parse("2024-02-15"))
+            assertThat(statusUpdateStaff).isEqualTo(staff)
+            assertThat(fineAmount).isEqualTo(BigDecimal.TWO)
+            assertThat(nomSentDetailRef).isEqualTo(1)
+            assertThat(nomConsToSentDetailRef).isEqualTo(2)
+            assertThat(nomConsFromSentDetailRef).isEqualTo(3)
+            assertThat(nomConsWithSentDetailRef).isEqualTo(4)
+            assertThat(hdcExclusionFlag).isTrue
+            assertThat(hdcExclusionReason).isEqualTo("ABDR")
+
+            //  booking already has a single sentenc with line 20
+            assertThat(lineSequence).isEqualTo(21)
+            // booking already has a single sentence
+            assertThat(id.sequence).isEqualTo(2)
+          }
+        }
+      }
+
+      @Test
+      internal fun `sentences are returned with IDs`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        assertThat(case.sentences).hasSize(1)
+        assertThat(case.sentences[0].sentenceSeq).isEqualTo(2)
+        assertThat(case.sentences[0].lineSequence).isEqualTo(21)
       }
     }
 

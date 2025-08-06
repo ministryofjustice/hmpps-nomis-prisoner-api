@@ -1464,6 +1464,74 @@ class SentencingService(
             }
           }
         }
+        clonedCase.sentences += sourceCase.sentences.map { offenderSentence ->
+          val lineSequence = offenderSentenceRepository.getNextLineSequence(latestBooking).toInt()
+          val newSequence = offenderSentenceRepository.getNextSequence(latestBooking)
+          val sourceCourtOrders = sourceCase.courtEvents.flatMap { it.courtOrders }
+          val clonedCourtOrders = clonedCase.courtEvents.flatMap { it.courtOrders }
+          offenderSentenceRepository.saveAndFlush(
+            OffenderSentence(
+              id = SentenceId(
+                offenderBooking = latestBooking,
+                sequence = newSequence,
+              ),
+              // make active
+              status = "A",
+              calculationType = offenderSentence.calculationType,
+              courtOrder = clonedCourtOrders[sourceCourtOrders.indexOf(offenderSentence.courtOrder)],
+              startDate = offenderSentence.startDate,
+              // Tested separately
+              consecutiveSentence = null,
+              // Tested separately
+              consecSequence = null,
+              endDate = offenderSentence.endDate,
+              commentText = offenderSentence.commentText,
+              absenceCount = offenderSentence.absenceCount,
+              courtCase = clonedCase,
+              etdCalculatedDate = offenderSentence.etdCalculatedDate,
+              mtdCalculatedDate = offenderSentence.mtdCalculatedDate,
+              ltdCalculatedDate = offenderSentence.ltdCalculatedDate,
+              ardCalculatedDate = offenderSentence.ardCalculatedDate,
+              crdCalculatedDate = offenderSentence.crdCalculatedDate,
+              pedCalculatedDate = offenderSentence.pedCalculatedDate,
+              npdCalculatedDate = offenderSentence.npdCalculatedDate,
+              ledCalculatedDate = offenderSentence.ledCalculatedDate,
+              sedCalculatedDate = offenderSentence.sedCalculatedDate,
+              prrdCalculatedDate = offenderSentence.prrdCalculatedDate,
+              tariffCalculatedDate = offenderSentence.tariffCalculatedDate,
+              dprrdCalculatedDate = offenderSentence.dprrdCalculatedDate,
+              tusedCalculatedDate = offenderSentence.tusedCalculatedDate,
+              aggSentenceSequence = offenderSentence.aggSentenceSequence,
+              aggAdjustDays = offenderSentence.aggAdjustDays,
+              sentenceLevel = offenderSentence.sentenceLevel,
+              extendedDays = offenderSentence.extendedDays,
+              counts = offenderSentence.counts,
+              statusUpdateReason = offenderSentence.statusUpdateReason,
+              statusUpdateComment = offenderSentence.statusUpdateComment,
+              statusUpdateDate = offenderSentence.statusUpdateDate,
+              statusUpdateStaff = offenderSentence.statusUpdateStaff,
+              category = offenderSentence.category,
+              fineAmount = offenderSentence.fineAmount,
+              dischargeDate = offenderSentence.dischargeDate,
+              nomSentDetailRef = offenderSentence.nomSentDetailRef,
+              nomConsToSentDetailRef = offenderSentence.nomConsToSentDetailRef,
+              nomConsFromSentDetailRef = offenderSentence.nomConsFromSentDetailRef,
+              nomConsWithSentDetailRef = offenderSentence.nomConsWithSentDetailRef,
+              lineSequence = lineSequence,
+              hdcExclusionFlag = offenderSentence.hdcExclusionFlag,
+              hdcExclusionReason = offenderSentence.hdcExclusionReason,
+              cjaAct = offenderSentence.cjaAct,
+              sled2Calc = offenderSentence.sled2Calc,
+              startDate2Calc = offenderSentence.startDate2Calc,
+              // TODO
+              adjustments = mutableListOf(),
+              // TODO
+              offenderSentenceCharges = mutableListOf(),
+              // TODO
+              offenderSentenceTerms = mutableListOf(),
+            ),
+          )
+        }
       }.let {
         // save again before returning result
         courtCaseRepository.saveAndFlush(it)
