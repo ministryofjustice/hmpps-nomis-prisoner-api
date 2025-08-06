@@ -46,6 +46,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCategoryType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurpose
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentencePurposeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceTermType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -1392,7 +1393,7 @@ class SentencingService(
           }
         },
       ).also { clonedCase ->
-        // now that offenderCharges have been persisted we can now save the courtEventCharges
+        // now that offenderCharges have been persisted, we can now save the courtEventCharges
         clonedCase.courtEvents += sourceCase.courtEvents.map { courtEvent ->
           CourtEvent(
             offenderBooking = latestBooking,
@@ -1412,6 +1413,33 @@ class SentencingService(
             directionCode = courtEvent.directionCode,
             holdFlag = courtEvent.holdFlag,
           ).also { clonedCourtEvent ->
+            clonedCourtEvent.courtOrders += courtEvent.courtOrders.map { courtOrder ->
+              CourtOrder(
+                offenderBooking = latestBooking,
+                courtCase = clonedCase,
+                courtEvent = clonedCourtEvent,
+                courtDate = courtOrder.courtDate,
+                issuingCourt = courtOrder.issuingCourt,
+                courtInfoId = courtOrder.courtInfoId,
+                orderType = courtOrder.orderType,
+                orderStatus = courtOrder.orderStatus,
+                dueDate = courtOrder.dueDate,
+                seriousnessLevel = courtOrder.seriousnessLevel,
+                requestDate = courtOrder.requestDate,
+                nonReportFlag = courtOrder.nonReportFlag,
+                commentText = courtOrder.commentText,
+              ).also { clonedCourtOrder ->
+                clonedCourtOrder.sentencePurposes += courtOrder.sentencePurposes.map { sentencePurpose ->
+                  SentencePurpose(
+                    id = SentencePurposeId(
+                      order = clonedCourtOrder,
+                      orderPartyCode = sentencePurpose.id.orderPartyCode,
+                      purposeCode = sentencePurpose.id.purposeCode,
+                    ),
+                  )
+                }
+              }
+            }
             clonedCourtEvent.courtEventCharges += courtEvent.courtEventCharges.map { courtEventCharge ->
               CourtEventCharge(
                 id = CourtEventChargeId(
@@ -1605,7 +1633,7 @@ private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
 )
 
 private fun SentencePurpose.toSentencePurpose(): SentencePurposeResponse = SentencePurposeResponse(
-  orderId = this.id.orderId,
+  orderId = this.id.order.id,
   orderPartyCode = this.id.orderPartyCode,
   purposeCode = this.id.purposeCode,
 )

@@ -95,7 +95,7 @@ class CourtOrder(
   // not used since 2018
   val commentText: String? = null,
 
-  @OneToMany(mappedBy = "id.orderId", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "id.order", cascade = [CascadeType.ALL], orphanRemoval = true)
   val sentencePurposes: MutableList<SentencePurpose> = mutableListOf(),
 
   /* COLUMNS NOT MAPPED

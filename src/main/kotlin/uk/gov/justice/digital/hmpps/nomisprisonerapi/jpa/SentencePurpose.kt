@@ -4,6 +4,9 @@ import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
@@ -13,7 +16,9 @@ import java.time.LocalDateTime
 
 @Embeddable
 class SentencePurposeId(
-  var orderId: Long,
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "ORDER_ID", nullable = false)
+  var order: CourtOrder,
   // always 'CRT' on prod
   var orderPartyCode: String,
   var purposeCode: String,
