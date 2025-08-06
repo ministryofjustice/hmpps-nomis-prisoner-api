@@ -2163,8 +2163,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     resultCode1 = "2006",
                     offenderCharge = drunkCharge,
                   )
-                  courtOrder = courtOrder(courtDate = LocalDate.parse("2022-01-01")) {
-                    sentencePurpose(purposeCode = "PUNISH")
+                  courtOrder = courtOrder(
+                    courtDate = LocalDate.parse("2022-01-01"),
+                    issuingCourt = "LEEDYC",
+                    orderType = "AUTO",
+                    orderStatus = "A",
+                    requestDate = LocalDate.parse("2022-02-02"),
+                    dueDate = LocalDate.parse("2022-02-03"),
+                    courtInfoId = null,
+                    seriousnessLevel = "HIGH",
+                    nonReportFlag = true,
+                  ) {
+                    sentencePurpose(purposeCode = "PUNISH", orderPartyCode = "CRT")
                   }
                 }
                 sentence(
@@ -2440,6 +2450,70 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(drunkCharge.resultCode1?.code).isEqualTo("2006")
           }
         }
+      }
+
+      @Test
+      internal fun `Court appearances charges are returned with IDs`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        assertThat(case.courtEvents).hasSize(2)
+        assertThat(case.courtEvents[0].courtEventCharges).hasSize(2)
+        assertThat(case.courtEvents[0].courtEventCharges[0].offenderCharge.id).isGreaterThan(0)
+        assertThat(case.courtEvents[0].courtEventCharges[1].offenderCharge.id).isGreaterThan(0)
+        assertThat(case.courtEvents[1].courtEventCharges).hasSize(2)
+        assertThat(case.courtEvents[1].courtEventCharges[0].offenderCharge.id).isGreaterThan(0)
+        assertThat(case.courtEvents[1].courtEventCharges[1].offenderCharge.id).isGreaterThan(0)
+      }
+
+      @Test
+      internal fun `court appearances orders are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val sourceCase = offenderBookingRepository.findByIdOrNull(previousBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+
+          val case = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.courtEvents).hasSize(2)
+          with(case.courtEvents.find { it.eventDate == LocalDate.parse("2022-01-01") }!!) {
+            val sourceEvent = sourceCase.courtEvents.find { it.eventDate == LocalDate.parse("2022-01-01") }!!
+            assertThat(courtOrders).hasSize(0)
+          }
+          with(case.courtEvents.find { it.eventDate == LocalDate.parse("2022-02-01") }!!) {
+            assertThat(courtOrders).hasSize(1)
+            assertThat(courtOrders[0].courtDate).isEqualTo(LocalDate.parse("2022-01-01"))
+            assertThat(courtOrders[0].issuingCourt.id).isEqualTo("LEEDYC")
+            assertThat(courtOrders[0].orderType).isEqualTo("AUTO")
+            assertThat(courtOrders[0].orderStatus).isEqualTo("A")
+            assertThat(courtOrders[0].requestDate).isEqualTo(LocalDate.parse("2022-02-02"))
+            assertThat(courtOrders[0].dueDate).isEqualTo(LocalDate.parse("2022-02-03"))
+            assertThat(courtOrders[0].seriousnessLevel?.code).isEqualTo("HIGH")
+            assertThat(courtOrders[0].nonReportFlag).isTrue
+            assertThat(courtOrders[0].sentencePurposes).hasSize(1)
+            assertThat(courtOrders[0].sentencePurposes[0].id.purposeCode).isEqualTo("PUNISH")
+            assertThat(courtOrders[0].sentencePurposes[0].id.orderPartyCode).isEqualTo("CRT")
+          }
+        }
+      }
+
+      @Test
+      internal fun `Court appearances orders are returned with IDs`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        assertThat(case.courtEvents).hasSize(2)
+        assertThat(case.courtEvents[0].courtOrders).hasSize(0)
+        assertThat(case.courtEvents[1].courtOrders).hasSize(1)
+        assertThat(case.courtEvents[1].courtOrders[0].id).isGreaterThan(0)
       }
     }
 

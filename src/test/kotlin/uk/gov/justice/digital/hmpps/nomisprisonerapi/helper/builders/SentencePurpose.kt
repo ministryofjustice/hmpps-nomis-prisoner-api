@@ -24,7 +24,7 @@ class SentencePurposeBuilder : SentencePurposeDsl {
     orderPartyCode: String,
     purposeCode: String,
   ): SentencePurpose = SentencePurpose(
-    id = SentencePurposeId(orderPartyCode = orderPartyCode, purposeCode = purposeCode, orderId = courtOrder.id),
+    id = SentencePurposeId(orderPartyCode = orderPartyCode, purposeCode = purposeCode, order = courtOrder),
   )
     .also { sentencePurpose = it }
 }
