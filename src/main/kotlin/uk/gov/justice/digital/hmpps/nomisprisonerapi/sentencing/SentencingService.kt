@@ -1480,9 +1480,7 @@ class SentencingService(
               calculationType = offenderSentence.calculationType,
               courtOrder = clonedCourtOrders[sourceCourtOrders.indexOf(offenderSentence.courtOrder)],
               startDate = offenderSentence.startDate,
-              // Tested separately
-              consecutiveSentence = null,
-              // Tested separately
+              // set to null then reset to real value once all cases have been cloned
               consecSequence = null,
               endDate = offenderSentence.endDate,
               commentText = offenderSentence.commentText,
@@ -1532,10 +1530,21 @@ class SentencingService(
             ),
           )
         }
-      }.let {
-        // save again before returning result
-        courtCaseRepository.saveAndFlush(it)
       }
+    }.let { clonedCases ->
+      // fix up consecutive sequence numbers
+      val sourceSentences = booking.courtCases.flatMap { it.sentences }
+      val clonedSentences = clonedCases.flatMap { it.sentences }
+
+      sourceSentences.forEachIndexed { index, sourceSentence ->
+        if (sourceSentence.consecutiveSentence != null) {
+          val clonedSentence = clonedSentences[index]
+          val nextSentenceIndex = sourceSentences.indexOf(sourceSentence.consecutiveSentence)
+          clonedSentence.consecutiveSentence = clonedSentences[nextSentenceIndex]
+          clonedSentence.consecSequence = clonedSentence.consecutiveSentence!!.id.sequence.toInt()
+        }
+      }
+      courtCaseRepository.saveAllAndFlush(clonedCases)
     }.zip(booking.courtCases)
 
     return BookingCourtCaseCloneResponse(

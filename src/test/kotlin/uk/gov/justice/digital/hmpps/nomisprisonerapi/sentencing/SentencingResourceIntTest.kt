@@ -2049,6 +2049,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class WithCourtCasesInBooking {
       private var previousBookingId: Long = 0
       private var latestBookingId: Long = 0
+      private var bookingIdWithConsecutiveSentences: Long = 0
 
       @BeforeEach
       internal fun createPrisonerAndSentence() {
@@ -2268,6 +2269,64 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               }
               release()
             }
+            bookingIdWithConsecutiveSentences = booking {
+              lateinit var consecutiveSentence: OffenderSentence
+              courtCase(
+                reportingStaff = staff,
+                statusUpdateStaff = staff,
+                caseInfoNumber = "CON0001",
+                caseSequence = 1,
+              ) {
+                val charge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
+                lateinit var courtOrder: CourtOrder
+                courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "1002") {
+                  courtOrder = courtOrder {
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                  courtEventCharge(
+                    resultCode1 = "1002",
+                    offenderCharge = charge,
+                  )
+                }
+                consecutiveSentence = sentence(
+                  courtOrder = courtOrder,
+                  calculationType = "ADIMP_ORA",
+                  category = "2003",
+                  lineSequence = 1,
+                ) {
+                  offenderSentenceCharge(charge)
+                  term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                }
+              }
+              courtCase(
+                reportingStaff = staff,
+                statusUpdateStaff = staff,
+                caseInfoNumber = "CON0002",
+                caseSequence = 2,
+              ) {
+                val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = "1002")
+                lateinit var courtOrder: CourtOrder
+                courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "1002") {
+                  courtOrder = courtOrder {
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                  courtEventCharge(
+                    resultCode1 = "1002",
+                    offenderCharge = charge,
+                  )
+                }
+                sentence(
+                  courtOrder = courtOrder,
+                  calculationType = "ADIMP_ORA",
+                  category = "2003",
+                  lineSequence = 2,
+                  consecSequence = consecutiveSentence.id.sequence.toInt(),
+                ) {
+                  offenderSentenceCharge(charge)
+                  term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                }
+              }
+            }.bookingId
           }
         }
       }
@@ -2643,6 +2702,48 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(id.sequence).isEqualTo(2)
           }
         }
+      }
+
+      @Test
+      internal fun `consecutive sentences are linked correctly`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithConsecutiveSentences/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val caseForConsecutiveSentence =
+            offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "CON0001" }!!
+          assertThat(caseForConsecutiveSentence.sentences).hasSize(1)
+
+          val consecutiveSentence = caseForConsecutiveSentence.sentences[0]
+          assertThat(consecutiveSentence.id.sequence).isEqualTo(2)
+          assertThat(consecutiveSentence.id.offenderBooking.bookingId).isEqualTo(latestBookingId)
+          assertThat(consecutiveSentence.consecutiveSentence).isNull()
+
+          val case =
+            offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "CON0002" }!!
+          assertThat(case.sentences).hasSize(1)
+
+          val nextSentence = case.sentences[0]
+          assertThat(nextSentence.id.sequence).isEqualTo(3)
+          assertThat(nextSentence.id.offenderBooking.bookingId).isEqualTo(latestBookingId)
+          assertThat(nextSentence.consecutiveSentence).isEqualTo(consecutiveSentence)
+        }
+      }
+
+      @Test
+      internal fun `consecutive sentence ids are returned correctly`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithConsecutiveSentences/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val caseForConsecutiveSentence = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "CON0001" }!!
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "CON0002" }!!
+        val consecutiveSentence = caseForConsecutiveSentence.sentences[0]
+        val nextSentence = case.sentences[0]
+        assertThat(nextSentence.consecSequence).isNotNull.isEqualTo(consecutiveSentence.sentenceSeq)
       }
 
       @Test
