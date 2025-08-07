@@ -2246,7 +2246,23 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   startDate2Calc = LocalDate.parse("2024-02-18"),
                 ) {
                   offenderSentenceCharge(horseDrawnVehicleCharge)
-                  term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                  // obviously the term durations make no sense - but fien for testing
+                  term(
+                    endDate = LocalDate.parse("2024-01-01"),
+                    years = 2,
+                    months = 24,
+                    weeks = 104,
+                    days = 10111,
+                    hours = 3,
+                    sentenceTermType = "SEC86",
+                    lifeSentenceFlag = true,
+                  )
+                  term(
+                    endDate = LocalDate.parse("2026-01-01"),
+                    years = 4,
+                    sentenceTermType = "LIC",
+                    lifeSentenceFlag = false,
+                  )
                   adjustment(adjustmentTypeCode = "RX", adjustmentDate = LocalDate.parse("2022-01-01"), adjustmentNumberOfDays = 30)
                 }
               }
@@ -2789,6 +2805,56 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         val sentence = case.sentences[0]
         assertThat(sentence.offenderCharges).hasSize(1)
         assertThat(sentence.offenderCharges[0].id).isGreaterThan(0)
+      }
+
+      @Test
+      internal fun `sentences terms are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val case =
+            offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.sentences).hasSize(1)
+          with(case.sentences[0]) {
+            assertThat(offenderSentenceTerms).hasSize(2)
+            with(offenderSentenceTerms[0]) {
+              assertThat(id.termSequence).isEqualTo(1)
+              assertThat(startDate).isEqualTo(LocalDate.parse("2022-01-01"))
+              assertThat(endDate).isEqualTo(LocalDate.parse("2024-01-01"))
+              assertThat(years).isEqualTo(2)
+              assertThat(months).isEqualTo(24)
+              assertThat(weeks).isEqualTo(104)
+              assertThat(days).isEqualTo(10111)
+              assertThat(hours).isEqualTo(3)
+              assertThat(sentenceTermType.code).isEqualTo("SEC86")
+              assertThat(lifeSentenceFlag).isTrue
+            }
+            with(offenderSentenceTerms[1]) {
+              assertThat(id.termSequence).isEqualTo(2)
+              assertThat(endDate).isEqualTo(LocalDate.parse("2026-01-01"))
+              assertThat(years).isEqualTo(4)
+              assertThat(sentenceTermType.code).isEqualTo("LIC")
+              assertThat(lifeSentenceFlag).isFalse
+            }
+          }
+        }
+      }
+
+      @Test
+      internal fun `sentences terms are returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        val sentence = case.sentences[0]
+        assertThat(sentence.sentenceTerms).hasSize(2)
+        assertThat(sentence.sentenceTerms[0].termSequence).isEqualTo(1)
+        assertThat(sentence.sentenceTerms[1].termSequence).isEqualTo(2)
       }
     }
 
