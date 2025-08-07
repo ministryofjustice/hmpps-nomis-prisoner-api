@@ -1523,8 +1523,6 @@ class SentencingService(
               startDate2Calc = offenderSentence.startDate2Calc,
               // TODO
               adjustments = mutableListOf(),
-              // TODO
-              offenderSentenceTerms = mutableListOf(),
             ).also { clonedSentence ->
               // TODO - do we have an issue here with a charge that is associated with two linked court cases?
               clonedSentence.offenderSentenceCharges += offenderSentence.offenderSentenceCharges.map { sourceOffenderSentenceCharge ->
@@ -1540,7 +1538,33 @@ class SentencingService(
                 )
               }
             },
-          )
+          ).also { clonedSentence ->
+            clonedSentence.offenderSentenceTerms += offenderSentence.offenderSentenceTerms.map { sourceOffenderSentenceTerm ->
+              val termSequence = offenderSentenceTermRepository.getNextTermSequence(
+                offenderBookId = latestBooking.bookingId,
+                sentenceSeq = clonedSentence.id.sequence,
+              )
+              offenderSentenceTermRepository.saveAndFlush(
+                OffenderSentenceTerm(
+                  id = OffenderSentenceTermId(
+                    offenderBooking = latestBooking,
+                    sentenceSequence = clonedSentence.id.sequence,
+                    termSequence = termSequence,
+                  ),
+                  years = sourceOffenderSentenceTerm.years,
+                  months = sourceOffenderSentenceTerm.months,
+                  weeks = sourceOffenderSentenceTerm.weeks,
+                  days = sourceOffenderSentenceTerm.days,
+                  hours = sourceOffenderSentenceTerm.hours,
+                  lifeSentenceFlag = sourceOffenderSentenceTerm.lifeSentenceFlag,
+                  offenderSentence = clonedSentence,
+                  startDate = sourceOffenderSentenceTerm.startDate,
+                  endDate = sourceOffenderSentenceTerm.endDate,
+                  sentenceTermType = sourceOffenderSentenceTerm.sentenceTermType,
+                ),
+              )
+            }
+          }
         }
       }
     }.let { clonedCases ->
