@@ -2758,6 +2758,38 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(case.sentences[0].sentenceSeq).isEqualTo(2)
         assertThat(case.sentences[0].lineSequence).isEqualTo(21)
       }
+
+      @Test
+      internal fun `sentences charges are copied`() {
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val case =
+            offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.find { it.primaryCaseInfoNumber == "X0002" }!!
+          assertThat(case.sentences).hasSize(1)
+          val charge = case.offenderCharges.find { it.offence.id.offenceCode == "RT88074" }
+          with(case.sentences[0]) {
+            assertThat(offenderSentenceCharges).hasSize(1)
+            assertThat(offenderSentenceCharges[0].offenderCharge).isEqualTo(charge)
+          }
+        }
+      }
+
+      @Test
+      internal fun `sentences charges are returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        val case = response.courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == "X0002" }!!
+        val sentence = case.sentences[0]
+        assertThat(sentence.offenderCharges).hasSize(1)
+        assertThat(sentence.offenderCharges[0].id).isGreaterThan(0)
+      }
     }
 
     @AfterEach

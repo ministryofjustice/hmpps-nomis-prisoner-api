@@ -1524,10 +1524,22 @@ class SentencingService(
               // TODO
               adjustments = mutableListOf(),
               // TODO
-              offenderSentenceCharges = mutableListOf(),
-              // TODO
               offenderSentenceTerms = mutableListOf(),
-            ),
+            ).also { clonedSentence ->
+              // TODO - do we have an issue here with a charge that is associated with two linked court cases?
+              clonedSentence.offenderSentenceCharges += offenderSentence.offenderSentenceCharges.map { sourceOffenderSentenceCharge ->
+                val clonedOffenderSentenceCharge = clonedCase.offenderCharges[offenderSentence.offenderSentenceCharges.indexOf(sourceOffenderSentenceCharge)]
+                OffenderSentenceCharge(
+                  id = OffenderSentenceChargeId(
+                    offenderBooking = latestBooking,
+                    sequence = clonedSentence.id.sequence,
+                    offenderChargeId = clonedOffenderSentenceCharge.id,
+                  ),
+                  offenderSentence = clonedSentence,
+                  offenderCharge = clonedOffenderSentenceCharge,
+                )
+              }
+            },
           )
         }
       }
