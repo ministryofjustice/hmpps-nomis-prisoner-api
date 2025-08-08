@@ -2622,8 +2622,8 @@ data class PostPrisonerMergeCaseChanges(
 data class ClonedCourtCaseResponse(
   @Schema(description = "Created court case and children")
   val courtCase: CourtCaseResponse,
-  @Schema(description = "The id of the source court case used for the clone")
-  val sourceCaseId: Long,
+  @Schema(description = "Source court case and children that the cases were cloned from")
+  val sourceCourtCase: CourtCaseResponse,
 )
 
 @Schema(description = "Response for Court Cases bookig clone operations")

@@ -1348,7 +1348,10 @@ class SentencingService(
       throw BadDataException("Cannot clone court cased from the latest booking $bookingId on to itself")
     }
 
-    val clonedCasesWithSource = booking.courtCases.map { sourceCase ->
+    return cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases)
+  }
+  private fun cloneCourtCasesToLatestBookingFrom(latestBooking: OffenderBooking, sourceCourtCases: List<CourtCase>): BookingCourtCaseCloneResponse {
+    val clonedCasesWithSource = sourceCourtCases.map { sourceCase ->
       courtCaseRepository.saveAndFlush(
         CourtCase(
           offenderBooking = latestBooking,
@@ -1569,7 +1572,7 @@ class SentencingService(
       }
     }.let { clonedCases ->
       // fix up consecutive sequence numbers
-      val sourceSentences = booking.courtCases.flatMap { it.sentences }
+      val sourceSentences = sourceCourtCases.flatMap { it.sentences }
       val clonedSentences = clonedCases.flatMap { it.sentences }
 
       sourceSentences.forEachIndexed { index, sourceSentence ->
@@ -1581,13 +1584,13 @@ class SentencingService(
         }
       }
       courtCaseRepository.saveAllAndFlush(clonedCases)
-    }.zip(booking.courtCases)
+    }.zip(sourceCourtCases)
 
     return BookingCourtCaseCloneResponse(
       courtCases = clonedCasesWithSource.map { (cloned, source) ->
         ClonedCourtCaseResponse(
           courtCase = cloned.toCourtCaseResponse(),
-          sourceCaseId = source.id,
+          sourceCourtCase = source.toCourtCaseResponse(),
         )
       },
     )
