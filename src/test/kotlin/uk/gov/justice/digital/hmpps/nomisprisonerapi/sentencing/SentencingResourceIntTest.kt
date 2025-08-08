@@ -2134,7 +2134,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseSequence = 1,
               ) {
                 lateinit var courtOrder: CourtOrder
-                offenderCaseIdentifier(reference = "X0002")
+                offenderCaseIdentifier(reference = "X0002", type = "CASE/INFO#")
+                offenderCaseIdentifier(reference = "X0022", type = "CASE/INFO#")
+                offenderCaseIdentifier(reference = "X0021", type = "CASE/INFO")
                 offenderCaseIdentifier(reference = "CCC0003", type = "CCC")
                 val horseDrawnVehicleCharge = offenderCharge(
                   offenceCode = "RT88074",
@@ -2437,7 +2439,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      internal fun `case identifiers are copied`() {
+      internal fun `case identifiers, except primary case number, are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
@@ -2445,10 +2447,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         transaction {
           val case = offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("X0002")
-          assertThat(case.caseInfoNumbers).hasSize(2)
-          with(case.caseInfoNumbers.find { it.id.reference == "X0002" }!!) {
-            assertThat(id.reference).isEqualTo("X0002")
+          assertThat(case.caseInfoNumbers).hasSize(3)
+          // "CASE/INFO#" type taht macth primary case number are not copied since that is done by NOMIS trigger
+          assertThat(case.caseInfoNumbers.find { it.id.reference == "X0002#" }).isNull()
+          with(case.caseInfoNumbers.find { it.id.reference == "X0022" }!!) {
+            assertThat(id.reference).isEqualTo("X0022")
             assertThat(id.identifierType).isEqualTo("CASE/INFO#")
+          }
+          with(case.caseInfoNumbers.find { it.id.reference == "X0021" }!!) {
+            assertThat(id.reference).isEqualTo("X0021")
+            assertThat(id.identifierType).isEqualTo("CASE/INFO")
           }
           with(case.caseInfoNumbers.find { it.id.reference == "CCC0003" }!!) {
             assertThat(id.reference).isEqualTo("CCC0003")
@@ -2469,7 +2477,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         val case = response.getByCaseInfoNumber("X0002")
         assertThat(case.caseInfoNumbers).hasSize(1)
         with(case.caseInfoNumbers[0]) {
-          assertThat(reference).isEqualTo("X0002")
+          assertThat(reference).isEqualTo("X0022")
           assertThat(type).isEqualTo("CASE/INFO#")
         }
       }
