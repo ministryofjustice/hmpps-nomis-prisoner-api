@@ -1583,7 +1583,12 @@ class SentencingService(
           clonedSentence.consecSequence = clonedSentence.consecutiveSentence!!.id.sequence.toInt()
         }
       }
-      courtCaseRepository.saveAllAndFlush(clonedCases)
+      courtCaseRepository.saveAllAndFlush(clonedCases).also {
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          bookingId = latestBooking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+        )
+      }
     }.zip(sourceCourtCases)
 
     return BookingCourtCaseCloneResponse(
