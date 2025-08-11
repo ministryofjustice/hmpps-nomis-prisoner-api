@@ -57,16 +57,20 @@ class MovementsService(
   private fun List<OffenderMovementApplication>.fixMergedSchedules() {
     // find any scheduled returns on the wrong application and remove them (these are created during merges)
     val scheduledReturnsWithWrongParent = this.flatMap { application ->
-      application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns
-        ?.filter { it.temporaryAbsenceApplication != null && it.temporaryAbsenceApplication != application }
-        ?.also { application.scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.removeAll(it) }
-        ?: emptyList()
+      application.scheduledTemporaryAbsences.flatMap { it.scheduledTemporaryAbsenceReturns }
+        .filter { it.temporaryAbsenceApplication != null && it.temporaryAbsenceApplication != application }
+    }
+
+    // detach the scheduled returns with wrong application from their scheduled absence
+    this.flatMap { it.scheduledTemporaryAbsences }.forEach {
+      it.scheduledTemporaryAbsenceReturns.removeAll(scheduledReturnsWithWrongParent)
     }
 
     // put the scheduled returns onto the correct application
     scheduledReturnsWithWrongParent.forEach { mergedReturn ->
       this.find { it.movementApplicationId == mergedReturn.temporaryAbsenceApplication?.movementApplicationId }
-        ?.scheduledTemporaryAbsence
+        ?.scheduledTemporaryAbsences
+        ?.first { absence -> absence.scheduledTemporaryAbsenceReturns.isEmpty() }
         ?.scheduledTemporaryAbsenceReturns += mergedReturn
       mergedReturn.temporaryAbsenceApplication = null
     }
@@ -92,10 +96,14 @@ class MovementsService(
     applicationType = applicationType.code,
     temporaryAbsenceType = temporaryAbsenceType?.code,
     temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
-    scheduledTemporaryAbsence = scheduledTemporaryAbsence?.toResponse(),
-    scheduledTemporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.firstOrNull()?.toResponse(),
-    temporaryAbsence = scheduledTemporaryAbsence?.temporaryAbsence?.toResponse(),
-    temporaryAbsenceReturn = scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns?.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
+    absences = scheduledTemporaryAbsences.map {
+      Absence(
+        scheduledTemporaryAbsence = it.toResponse(),
+        scheduledTemporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.toResponse(),
+        temporaryAbsence = it.temporaryAbsence?.toResponse(),
+        temporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
+      )
+    },
     outsideMovements = outsideMovements.map { it.toResponse() },
     audit = toAudit(),
   )
