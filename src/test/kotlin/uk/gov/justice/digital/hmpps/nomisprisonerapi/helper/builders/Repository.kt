@@ -56,6 +56,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.GeneralLedgerTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IWPTemplateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAppointmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
@@ -120,6 +121,7 @@ class Repository(
   val offenderTransactionRepository: OffenderTransactionRepository,
   val generalLedgerTransactionRepository: GeneralLedgerTransactionRepository,
   val offenderTrustAccountRepository: OffenderTrustAccountRepository,
+  val linkCaseTxnRepository: LinkCaseTxnRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -174,6 +176,7 @@ class Repository(
   fun delete(courtEvent: CourtEvent) = courtEventRepository.deleteById(courtEvent.id)
 
   fun deleteOffenderChargeByBooking(bookingId: Long) = offenderChargeRepository.deleteByOffenderBookingBookingId(bookingId = bookingId)
+  fun deleteAllOffenderLinkedTransactions() = linkCaseTxnRepository.deleteAll()
 
   fun delete(sentence: OffenderSentence) = offenderSentenceRepository.deleteById(sentence.id)
 

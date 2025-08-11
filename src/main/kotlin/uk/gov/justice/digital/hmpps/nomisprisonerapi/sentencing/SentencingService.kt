@@ -1447,6 +1447,7 @@ class SentencingService(
             clonedCourtEvent.courtEventCharges += courtEvent.courtEventCharges.map { courtEventCharge ->
               CourtEventCharge(
                 id = CourtEventChargeId(
+                  // TODO - if this is a linked case the charge might not be on this case, so grab from the courtEvent instead maybe
                   offenderCharge = clonedCase.offenderCharges[sourceCase.offenderCharges.indexOf(courtEventCharge.id.offenderCharge)],
                   courtEvent = clonedCourtEvent,
                 ),

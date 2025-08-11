@@ -2050,6 +2050,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       private var previousBookingId: Long = 0
       private var latestBookingId: Long = 0
       private var bookingIdWithConsecutiveSentences: Long = 0
+      private var bookingIdWithLinkedCases: Long = 0
 
       @BeforeEach
       internal fun createPrisonerAndSentence() {
@@ -2344,6 +2345,58 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   term(startDate = LocalDate.parse("2022-01-01"), years = 2)
                 }
               }
+            }.bookingId
+            bookingIdWithLinkedCases = booking {
+              lateinit var sourceCase: CourtCase
+              lateinit var targetCase: CourtCase
+              lateinit var targetCaseEvent: CourtEvent
+              sourceCase = courtCase(
+                reportingStaff = staff,
+                statusUpdateStaff = staff,
+                caseInfoNumber = "SOURCE",
+                caseSequence = 1,
+              ) {
+                lateinit var courtOrder: CourtOrder
+                val sentencedCharge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
+                val chargedThatWillBeLinked = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "4506")
+                courtEvent(eventDateTime = LocalDateTime.parse("2021-01-02T10:00"), outcomeReasonCode = "4506") {
+                  courtOrder = courtOrder {
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                  courtEventCharge(
+                    resultCode1 = "4506",
+                    offenderCharge = chargedThatWillBeLinked,
+                  )
+                  courtEventCharge(
+                    resultCode1 = "1002",
+                    offenderCharge = sentencedCharge,
+                  )
+                }
+                sentence(
+                  courtOrder = courtOrder,
+                  calculationType = "ADIMP_ORA",
+                  category = "2003",
+                  lineSequence = 1,
+                ) {
+                  offenderSentenceCharge(sentencedCharge)
+                  term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                }
+              }
+              targetCase = courtCase(
+                reportingStaff = staff,
+                statusUpdateStaff = staff,
+                caseInfoNumber = "TARGET",
+                caseSequence = 2,
+              ) {
+                val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
+                targetCaseEvent = courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "2006") {
+                  courtEventCharge(
+                    resultCode1 = "4506",
+                    offenderCharge = charge,
+                  )
+                }
+              }
+              linkCases(sourceCourtCase = sourceCase, targetCourtCase = targetCase, targetCourtEvent = targetCaseEvent)
             }.bookingId
           }
         }
@@ -2885,6 +2938,46 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(sentence.sentenceTerms).hasSize(2)
         assertThat(sentence.sentenceTerms[0].termSequence).isEqualTo(1)
         assertThat(sentence.sentenceTerms[1].termSequence).isEqualTo(2)
+      }
+
+      @Test
+      internal fun `linked cases are should be linked correctly - but correctly fail with a 500 error`() {
+        transaction {
+          val originalSourceCase =
+            offenderBookingRepository.findByIdOrNull(bookingIdWithLinkedCases).getByCaseInfoNumber("SOURCE")
+          val originalTargetCase =
+            offenderBookingRepository.findByIdOrNull(bookingIdWithLinkedCases).getByCaseInfoNumber("TARGET")
+
+          // only the uninked sentence charge remains since link moves charge the other case even though it remains linked to the appearance
+          assertThat(originalSourceCase.offenderCharges).hasSize(1)
+          assertThat(originalSourceCase.offenderCharges.find { it.offence.id.offenceCode == "AN81016" }).isNotNull
+          assertThat(originalSourceCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNull()
+
+          assertThat(originalSourceCase.courtEvents).hasSize(1)
+          assertThat(originalSourceCase.courtEvents[0].courtEventCharges).hasSize(2)
+          assertThat(originalSourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "AN81016" }).isNotNull
+          assertThat(originalSourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+
+          assertThat(originalTargetCase.offenderCharges).hasSize(2)
+          assertThat(originalTargetCase.offenderCharges.find { it.offence.id.offenceCode == "LG72004" }).isNotNull
+          assertThat(originalTargetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNotNull
+
+          assertThat(originalTargetCase.courtEvents).hasSize(1)
+          assertThat(originalTargetCase.courtEvents[0].courtEventCharges).hasSize(2)
+          assertThat(originalTargetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }).isNotNull
+          assertThat(originalTargetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+        }
+
+        // currently doesn't work - hence the point of the test tp expose the bug
+        webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithLinkedCases/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().is5xxServerError
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.deleteAllOffenderLinkedTransactions()
       }
     }
 

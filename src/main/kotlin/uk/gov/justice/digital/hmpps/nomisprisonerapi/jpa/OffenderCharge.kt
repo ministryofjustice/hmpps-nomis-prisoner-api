@@ -126,7 +126,7 @@ class OffenderCharge(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CASE_ID")
-  val courtCase: CourtCase,
+  var courtCase: CourtCase,
 
   // always populated in prod but presumably won't be by DPS
   val lidsOffenceNumber: Int? = null,

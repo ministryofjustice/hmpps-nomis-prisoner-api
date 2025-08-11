@@ -74,14 +74,14 @@ class CourtCase(
       JoinColumnOrFormula(column = JoinColumn(name = "CASE_STATUS", referencedColumnName = "code")),
     ],
   )
-  val caseStatus: CaseStatus,
+  var caseStatus: CaseStatus,
 
   @Column(name = "CASE_INFO_NUMBER")
   val primaryCaseInfoNumber: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "COMBINED_CASE_ID")
-  val targetCombinedCase: CourtCase? = null,
+  var targetCombinedCase: CourtCase? = null,
 
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "targetCombinedCase")
   val sourceCombinedCases: List<CourtCase> = mutableListOf(),
