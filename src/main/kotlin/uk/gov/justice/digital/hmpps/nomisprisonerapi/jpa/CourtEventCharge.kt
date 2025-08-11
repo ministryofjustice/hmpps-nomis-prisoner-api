@@ -95,7 +95,7 @@ class CourtEventCharge(
   var mostSeriousFlag: Boolean = false,
 
   @OneToOne(mappedBy = "courtEventCharge", fetch = FetchType.LAZY)
-  val linkedCaseTransaction: LinkCaseTxn? = null,
+  var linkedCaseTransaction: LinkCaseTxn? = null,
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated

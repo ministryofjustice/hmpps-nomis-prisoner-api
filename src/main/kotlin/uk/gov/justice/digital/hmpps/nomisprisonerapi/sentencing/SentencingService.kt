@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxnId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason.Companion.RECALL_BREACH_HEARING
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offence
@@ -66,6 +67,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.LinkCaseTxnRepositorySql
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.time.LocalDate
@@ -102,6 +104,7 @@ class SentencingService(
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository,
   private val sentencingAdjustmentService: SentencingAdjustmentService,
+  private val linkCaseTxnRepositorySql: LinkCaseTxnRepositorySql,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -1397,7 +1400,6 @@ class SentencingService(
           }
         },
       ).also { clonedCase ->
-        // now that offenderCharges have been persisted, we can now save the courtEventCharges
         clonedCase.courtEvents += sourceCase.courtEvents.map { courtEvent ->
           CourtEvent(
             offenderBooking = latestBooking,
@@ -1443,29 +1445,6 @@ class SentencingService(
                   )
                 }
               }
-            }
-            clonedCourtEvent.courtEventCharges += courtEvent.courtEventCharges.map { courtEventCharge ->
-              CourtEventCharge(
-                id = CourtEventChargeId(
-                  // TODO - if this is a linked case the charge might not be on this case, so grab from the courtEvent instead maybe
-                  offenderCharge = clonedCase.offenderCharges[sourceCase.offenderCharges.indexOf(courtEventCharge.id.offenderCharge)],
-                  courtEvent = clonedCourtEvent,
-                ),
-                offencesCount = courtEventCharge.offencesCount,
-                offenceDate = courtEventCharge.offenceDate,
-                offenceEndDate = courtEventCharge.offenceEndDate,
-                plea = courtEventCharge.plea,
-                propertyValue = courtEventCharge.propertyValue,
-                totalPropertyValue = courtEventCharge.totalPropertyValue,
-                cjitCode1 = courtEventCharge.cjitCode1,
-                cjitCode2 = courtEventCharge.cjitCode2,
-                cjitCode3 = courtEventCharge.cjitCode3,
-                resultCode1 = courtEventCharge.resultCode1,
-                resultCode2 = courtEventCharge.resultCode2,
-                resultCode1Indicator = courtEventCharge.resultCode1Indicator,
-                resultCode2Indicator = courtEventCharge.resultCode2Indicator,
-                mostSeriousFlag = courtEventCharge.mostSeriousFlag,
-              )
             }
           }
         }
@@ -1529,7 +1508,6 @@ class SentencingService(
               // TODO
               adjustments = mutableListOf(),
             ).also { clonedSentence ->
-              // TODO - do we have an issue here with a charge that is associated with two linked court cases?
               clonedSentence.offenderSentenceCharges += offenderSentence.offenderSentenceCharges.map { sourceOffenderSentenceCharge ->
                 val clonedOffenderSentenceCharge = clonedCase.offenderCharges[offenderSentence.offenderSentenceCharges.indexOf(sourceOffenderSentenceCharge)]
                 OffenderSentenceCharge(
@@ -1572,7 +1550,74 @@ class SentencingService(
           }
         }
       }
-    }.let { clonedCases ->
+    }.let {
+      val clonedCases = courtCaseRepository.saveAllAndFlush(it)
+      // fix linked case
+      clonedCases.forEachIndexed { caseIndex, clonedCase ->
+        val sourceCase = sourceCourtCases[caseIndex]
+        if (sourceCase.targetCombinedCase != null) {
+          clonedCase.targetCombinedCase = clonedCases[sourceCourtCases.indexOf(sourceCase.targetCombinedCase)]
+        }
+      }
+
+      // copy court event charges since we can have some pointing at a linked case that is only copied to booking after all cases are copied
+      val sourceOffenderCharges = sourceCourtCases.flatMap { it.offenderCharges }
+      val clonedOffenderCharges = clonedCases.flatMap { it.offenderCharges }
+      val linkCaseTxns = mutableListOf<LinkCaseTxn>()
+      clonedCases.forEachIndexed { caseIndex, clonedCase ->
+        clonedCase.courtEvents.forEachIndexed { courtEventIndex, clonedCourtEvent ->
+          val sourceCourtEvent = sourceCourtCases[caseIndex].courtEvents[courtEventIndex]
+
+          clonedCourtEvent.courtEventCharges += sourceCourtEvent.courtEventCharges.map { sourceCourtEventCharge ->
+            CourtEventCharge(
+              id = CourtEventChargeId(
+                offenderCharge = clonedOffenderCharges[sourceOffenderCharges.indexOf(sourceCourtEventCharge.id.offenderCharge)],
+                courtEvent = clonedCourtEvent,
+              ),
+              offencesCount = sourceCourtEventCharge.offencesCount,
+              offenceDate = sourceCourtEventCharge.offenceDate,
+              offenceEndDate = sourceCourtEventCharge.offenceEndDate,
+              plea = sourceCourtEventCharge.plea,
+              propertyValue = sourceCourtEventCharge.propertyValue,
+              totalPropertyValue = sourceCourtEventCharge.totalPropertyValue,
+              cjitCode1 = sourceCourtEventCharge.cjitCode1,
+              cjitCode2 = sourceCourtEventCharge.cjitCode2,
+              cjitCode3 = sourceCourtEventCharge.cjitCode3,
+              resultCode1 = sourceCourtEventCharge.resultCode1,
+              resultCode2 = sourceCourtEventCharge.resultCode2,
+              resultCode1Indicator = sourceCourtEventCharge.resultCode1Indicator,
+              resultCode2Indicator = sourceCourtEventCharge.resultCode2Indicator,
+              mostSeriousFlag = sourceCourtEventCharge.mostSeriousFlag,
+            ).also { clonedCourtEventCharge ->
+              if (sourceCourtEventCharge.linkedCaseTransaction != null) {
+                clonedCourtEventCharge.linkedCaseTransaction = sourceCourtEventCharge.linkedCaseTransaction.let { sourceLinkedCaseTransaction ->
+                  val sourceLinkedCase = clonedCases[sourceCourtCases.indexOf(sourceLinkedCaseTransaction!!.sourceCase)]
+                  val linkCaseTxnId = LinkCaseTxnId(
+                    caseId = sourceLinkedCase.id,
+                    combinedCaseId = clonedCase.id,
+                    offenderChargeId = clonedCourtEventCharge.id.offenderCharge.id,
+                  )
+                  LinkCaseTxn(
+                    id = linkCaseTxnId,
+                    sourceCase = sourceLinkedCase,
+                    targetCase = clonedCase,
+                    offenderCharge = clonedCourtEventCharge.id.offenderCharge,
+                    courtEventCharge = clonedCourtEventCharge,
+                    courtEvent = clonedCourtEvent,
+                  ).also { linkCaseTxn ->
+                    // add to list of links that need inserting using SQL since JPA can not handle the pointers between
+                    // siblings related to multiple parents due to offenderCharges being associated to a case which is pointed
+                    // at by a court event charge owned by another case
+                    // NB this is added as child of the courtEventCharge but with no cascade so that we can control the order of the inserts
+                    linkCaseTxns.add(linkCaseTxn)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
       // fix up consecutive sequence numbers
       val sourceSentences = sourceCourtCases.flatMap { it.sentences }
       val clonedSentences = clonedCases.flatMap { it.sentences }
@@ -1586,6 +1631,7 @@ class SentencingService(
         }
       }
       courtCaseRepository.saveAllAndFlush(clonedCases).also {
+        linkCaseTxns.forEach { linkCaseTxnRepositorySql.insert(it) }
         storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = latestBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
