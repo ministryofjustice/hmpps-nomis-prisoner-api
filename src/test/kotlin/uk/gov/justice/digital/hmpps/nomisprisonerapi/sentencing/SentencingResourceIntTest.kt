@@ -2355,6 +2355,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateStaff = staff,
                 caseInfoNumber = "SOURCE",
                 caseSequence = 1,
+                caseStatus = "I",
               ) {
                 lateinit var courtOrder: CourtOrder
                 val sentencedCharge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
@@ -2387,6 +2388,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateStaff = staff,
                 caseInfoNumber = "TARGET",
                 caseSequence = 2,
+                caseStatus = "I",
               ) {
                 val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
                 targetCaseEvent = courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "2006") {
@@ -2943,36 +2945,91 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `linked cases are should be linked correctly - but correctly fail with a 500 error`() {
         transaction {
-          val originalSourceCase =
+          // this describes the state before the clone on  the sourtce booking
+          val sourceCase =
             offenderBookingRepository.findByIdOrNull(bookingIdWithLinkedCases).getByCaseInfoNumber("SOURCE")
-          val originalTargetCase =
+          val targetCase =
             offenderBookingRepository.findByIdOrNull(bookingIdWithLinkedCases).getByCaseInfoNumber("TARGET")
 
-          // only the uninked sentence charge remains since link moves charge the other case even though it remains linked to the appearance
-          assertThat(originalSourceCase.offenderCharges).hasSize(1)
-          assertThat(originalSourceCase.offenderCharges.find { it.offence.id.offenceCode == "AN81016" }).isNotNull
-          assertThat(originalSourceCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNull()
+          assertThat(sourceCase.targetCombinedCase).isEqualTo(targetCase)
+          // only the uninked sentence charge remains at case level since link moves charge the other case even though it remains linked to the appearance
+          assertThat(sourceCase.offenderCharges).hasSize(1)
+          assertThat(sourceCase.offenderCharges.find { it.offence.id.offenceCode == "AN81016" }).isNotNull
+          assertThat(sourceCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNull()
 
-          assertThat(originalSourceCase.courtEvents).hasSize(1)
-          assertThat(originalSourceCase.courtEvents[0].courtEventCharges).hasSize(2)
-          assertThat(originalSourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "AN81016" }).isNotNull
-          assertThat(originalSourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+          // court appearance has both charges even though adjourned HP09006 charge has been copied to target case
+          assertThat(sourceCase.courtEvents).hasSize(1)
+          assertThat(sourceCase.courtEvents[0].courtEventCharges).hasSize(2)
+          assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "AN81016" }).isNotNull
+          assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+          // court appearance points to a offender charge that points to the target case
+          assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }!!.id.offenderCharge.courtCase).isEqualTo(targetCase)
 
-          assertThat(originalTargetCase.offenderCharges).hasSize(2)
-          assertThat(originalTargetCase.offenderCharges.find { it.offence.id.offenceCode == "LG72004" }).isNotNull
-          assertThat(originalTargetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNotNull
+          // target case has link back to source case and two charge, one copied from the source case
+          assertThat(targetCase.sourceCombinedCases).containsExactly(sourceCase)
+          assertThat(targetCase.offenderCharges).hasSize(2)
+          assertThat(targetCase.offenderCharges.find { it.offence.id.offenceCode == "LG72004" }).isNotNull
+          assertThat(targetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNotNull
 
-          assertThat(originalTargetCase.courtEvents).hasSize(1)
-          assertThat(originalTargetCase.courtEvents[0].courtEventCharges).hasSize(2)
-          assertThat(originalTargetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }).isNotNull
-          assertThat(originalTargetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+          // single appearance where the case was combioned
+          assertThat(targetCase.courtEvents).hasSize(1)
+
+          // appearance has also now has charge from from the source case
+          assertThat(targetCase.courtEvents[0].courtEventCharges).hasSize(2)
+
+          // charge that was always on this case has no links
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }).isNotNull
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }?.linkedCaseTransaction).isNull()
+
+          // charge copied from source case is linked
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction).isNotNull()
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction?.sourceCase).isEqualTo(sourceCase)
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction?.targetCase).isEqualTo(targetCase)
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction?.offenderCharge)
+            .isEqualTo(targetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" })
         }
 
-        // currently doesn't work - hence the point of the test tp expose the bug
         webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithLinkedCases/sentencing/court-cases/clone")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
-          .expectStatus().is5xxServerError
+          .expectStatus().isOk
+
+        transaction {
+          // state of cases cloned should mirror the source booking
+          val sourceCase =
+            offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("SOURCE")
+          val targetCase =
+            offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("TARGET")
+
+          // only the uninked sentence charge remains since link moves charge the other case even though it remains linked to the appearance
+          assertThat(sourceCase.targetCombinedCase).isEqualTo(targetCase)
+          assertThat(sourceCase.offenderCharges).hasSize(1)
+          assertThat(sourceCase.offenderCharges.find { it.offence.id.offenceCode == "AN81016" }).isNotNull
+          assertThat(sourceCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNull()
+
+          assertThat(sourceCase.courtEvents).hasSize(1)
+          assertThat(sourceCase.courtEvents[0].courtEventCharges).hasSize(2)
+          assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "AN81016" }).isNotNull
+          assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+          assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }!!.id.offenderCharge.courtCase).isEqualTo(targetCase)
+
+          assertThat(targetCase.sourceCombinedCases).containsExactly(sourceCase)
+          assertThat(targetCase.offenderCharges).hasSize(2)
+          assertThat(targetCase.offenderCharges.find { it.offence.id.offenceCode == "LG72004" }).isNotNull
+          assertThat(targetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNotNull
+
+          assertThat(targetCase.courtEvents).hasSize(1)
+          assertThat(targetCase.courtEvents[0].courtEventCharges).hasSize(2)
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }).isNotNull
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }?.linkedCaseTransaction).isNull()
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction).isNotNull()
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction?.sourceCase).isEqualTo(sourceCase)
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction?.targetCase).isEqualTo(targetCase)
+          assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction?.offenderCharge)
+            .isEqualTo(targetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" })
+        }
       }
 
       @AfterEach
