@@ -12,11 +12,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPDocument
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
@@ -217,6 +219,13 @@ interface BookingDsl {
     lidsCombinedCaseId: Int? = 3,
     dsl: CourtCaseDsl.() -> Unit = { },
   ): CourtCase
+
+  fun linkCases(
+    sourceCourtCase: CourtCase,
+    targetCourtCase: CourtCase,
+    targetCourtEvent: CourtEvent,
+    whenCreated: LocalDateTime = LocalDateTime.now(),
+  ): List<LinkCaseTxn>
 
   @OffenderFixedTermRecallDslMarker
   fun fixedTermRecall(
@@ -461,6 +470,7 @@ class BookingBuilderFactory(
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
+  private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -488,6 +498,7 @@ class BookingBuilderFactory(
     offenderTransactionBuilderFactory,
     offenderRestrictionsBuilderFactory,
     offenderTemporaryAbsenceApplicationBuilderFactory,
+    linkCaseTxnBuilderFactory,
   )
 }
 
@@ -517,6 +528,7 @@ class BookingBuilder(
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
+  private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -784,6 +796,18 @@ class BookingBuilder(
           builder.apply(dsl)
         }
     }
+
+  override fun linkCases(
+    sourceCourtCase: CourtCase,
+    targetCourtCase: CourtCase,
+    targetCourtEvent: CourtEvent,
+    whenCreated: LocalDateTime,
+  ): List<LinkCaseTxn> = linkCaseTxnBuilderFactory.builder().linkCases(
+    sourceCase = sourceCourtCase,
+    targetCase = targetCourtCase,
+    courtEvent = targetCourtEvent,
+    whenCreated = whenCreated,
+  )
 
   override fun fixedTermRecall(
     returnToCustodyDate: LocalDate,
