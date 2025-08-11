@@ -14,7 +14,6 @@ import jakarta.persistence.NamedAttributeNode
 import jakarta.persistence.NamedEntityGraph
 import jakarta.persistence.NamedSubgraph
 import jakarta.persistence.OneToMany
-import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -31,7 +30,7 @@ import java.time.LocalDateTime
   name = "offender-movement-app",
   attributeNodes = [
     NamedAttributeNode(value = "offenderBooking"),
-    NamedAttributeNode(value = "scheduledTemporaryAbsence", subgraph = "scheduled-temporary-absence"),
+    NamedAttributeNode(value = "scheduledTemporaryAbsences", subgraph = "scheduled-temporary-absence"),
     NamedAttributeNode(value = "eventSubType"),
     NamedAttributeNode(value = "applicationStatus"),
     NamedAttributeNode(value = "escort"),
@@ -44,18 +43,8 @@ import java.time.LocalDateTime
     NamedSubgraph(
       name = "scheduled-temporary-absence",
       attributeNodes = [
-        NamedAttributeNode(value = "scheduledTemporaryAbsenceReturns", subgraph = "scheduled-temporary-absence-return"),
         NamedAttributeNode(value = "temporaryAbsence", subgraph = "external-movement"),
         NamedAttributeNode(value = "transportType"),
-        NamedAttributeNode(value = "escort"),
-        NamedAttributeNode(value = "eventStatus"),
-        NamedAttributeNode(value = "eventSubType"),
-      ],
-    ),
-    NamedSubgraph(
-      name = "scheduled-temporary-absence-return",
-      attributeNodes = [
-        NamedAttributeNode(value = "temporaryAbsenceReturn", subgraph = "external-movement"),
         NamedAttributeNode(value = "escort"),
         NamedAttributeNode(value = "eventStatus"),
         NamedAttributeNode(value = "eventSubType"),
@@ -222,8 +211,8 @@ class OffenderMovementApplication(
   )
   val temporaryAbsenceSubType: TemporaryAbsenceSubType? = null,
 
-  @OneToOne(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL])
-  var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
+  @OneToMany(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL])
+  var scheduledTemporaryAbsences: MutableList<OffenderScheduledTemporaryAbsence> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderMovementApplication", cascade = [CascadeType.ALL])
   val outsideMovements: MutableList<OffenderMovementApplicationMulti> = mutableListOf(),

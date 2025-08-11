@@ -85,6 +85,19 @@ data class TemporaryAbsenceApplication(
   @Schema(description = "Temporary absence sub type")
   val temporaryAbsenceSubType: String?,
 
+  @Schema(description = "All scheduled temporary absences")
+  val absences: List<Absence> = mutableListOf(),
+
+  @Schema(description = "Outside movements")
+  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
+)
+
+@Schema(description = "A single instance of a scheduled temporary absence including return")
+data class Absence(
+
   @Schema(description = "Scheduled temporary absence")
   val scheduledTemporaryAbsence: ScheduledTemporaryAbsence? = null,
 
@@ -96,12 +109,6 @@ data class TemporaryAbsenceApplication(
 
   @Schema(description = "Temporary absence return")
   val temporaryAbsenceReturn: TemporaryAbsenceReturn? = null,
-
-  @Schema(description = "Outside movements")
-  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>,
-
-  @Schema(description = "Audit data associated with the records")
-  val audit: NomisAudit,
 )
 
 @Schema(description = "Temporary absence application outside movement response")

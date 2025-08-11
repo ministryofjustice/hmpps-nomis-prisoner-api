@@ -171,7 +171,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
       returnTime = returnTime,
       toAddress = toAddress,
     )
-      .also { temporaryAbsenceApplication.scheduledTemporaryAbsence = it }
+      .also { temporaryAbsenceApplication.scheduledTemporaryAbsences += it }
       .also { builder.apply(dsl) }
   }
 

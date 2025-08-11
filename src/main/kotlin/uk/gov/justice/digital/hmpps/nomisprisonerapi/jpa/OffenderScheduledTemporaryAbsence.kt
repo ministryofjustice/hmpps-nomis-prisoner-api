@@ -46,7 +46,7 @@ class OffenderScheduledTemporaryAbsence(
   @JoinColumn(name = "RETURN_TIME")
   val returnTime: LocalDateTime,
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_MOVEMENT_APP_ID")
   val temporaryAbsenceApplication: OffenderMovementApplication,
 
@@ -65,7 +65,7 @@ class OffenderScheduledTemporaryAbsence(
 
   // There should only be a single return, but due to a bug in merges there might be more
   // The current strategy is to move the incorrect returns to the correct parent before mapping to the DTO
-  @OneToMany(mappedBy = "scheduledTemporaryAbsence", cascade = [CascadeType.ALL])
+  @OneToMany(mappedBy = "scheduledTemporaryAbsence", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   var scheduledTemporaryAbsenceReturns: MutableList<OffenderScheduledTemporaryAbsenceReturn> = mutableListOf(),
 
   @OneToOne(mappedBy = "scheduledTemporaryAbsence", cascade = [CascadeType.ALL])

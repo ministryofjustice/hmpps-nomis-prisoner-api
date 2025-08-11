@@ -241,20 +241,20 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.startTime").value<String> {
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.startTime").value<String> {
           assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
         }
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventSubType").isEqualTo("C5")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventStatus").isEqualTo("SCH")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.comment").isEqualTo("Scheduled temporary absence")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.escort").isEqualTo("L")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.fromPrison").isEqualTo("LEI")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.toAgency").isEqualTo("HAZLWD")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.transportType").isEqualTo("VAN")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.returnDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.returnTime").value<String> {
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventSubType").isEqualTo("C5")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventStatus").isEqualTo("SCH")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.comment").isEqualTo("Scheduled temporary absence")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.escort").isEqualTo("L")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.fromPrison").isEqualTo("LEI")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAgency").isEqualTo("HAZLWD")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.transportType").isEqualTo("VAN")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.returnDate").isEqualTo("${yesterday.toLocalDate()}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.returnTime").value<String> {
           assertThat(it).startsWith("${yesterday.toLocalDate()}")
         }
     }
@@ -290,20 +290,20 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.sequence").isEqualTo(temporaryAbsence.id.sequence)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.movementDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.movementTime").value<String> {
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(temporaryAbsence.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.movementDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.movementTime").value<String> {
           assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
         }
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.movementReason").isEqualTo("C5")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.arrestAgency").isEqualTo("POL")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.escort").isEqualTo("L")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.escortText").isEqualTo("SE")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.fromPrison").isEqualTo("LEI")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.toAgency").isEqualTo("HAZLWD")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.commentText").isEqualTo("Tap OUT comment for scheduled absence")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.toAddressId").isEqualTo(offenderAddress.addressId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.movementReason").isEqualTo("C5")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.arrestAgency").isEqualTo("POL")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.escort").isEqualTo("L")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.escortText").isEqualTo("SE")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.fromPrison").isEqualTo("LEI")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAgency").isEqualTo("HAZLWD")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.commentText").isEqualTo("Tap OUT comment for scheduled absence")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo(offenderAddress.addressId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
     }
 
     @Test
@@ -336,17 +336,17 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.startTime").value<String> {
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventDate").isEqualTo("${yesterday.toLocalDate()}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.startTime").value<String> {
           assertThat(it).startsWith("${yesterday.toLocalDate()}")
         }
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventSubType").isEqualTo("R25")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventStatus").isEqualTo("SCH")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.comment").isEqualTo("Scheduled temporary absence return")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.escort").isEqualTo("U")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.fromAgency").isEqualTo("HAZLWD")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.toPrison").isEqualTo("LEI")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventSubType").isEqualTo("R25")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventStatus").isEqualTo("SCH")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.comment").isEqualTo("Scheduled temporary absence return")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.escort").isEqualTo("U")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.fromAgency").isEqualTo("HAZLWD")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.toPrison").isEqualTo("LEI")
     }
 
     @Test
@@ -383,19 +383,19 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.sequence").isEqualTo(temporaryAbsenceReturn.id.sequence)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.movementDate").isEqualTo("${yesterday.toLocalDate()}")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.movementTime").value<String> {
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(temporaryAbsenceReturn.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.movementDate").isEqualTo("${yesterday.toLocalDate()}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.movementTime").value<String> {
           assertThat(it).startsWith("${yesterday.toLocalDate()}")
         }
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.movementReason").isEqualTo("R25")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.escort").isEqualTo("U")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.escortText").isEqualTo("SE")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.fromAgency").isEqualTo("HAZLWD")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.toPrison").isEqualTo("LEI")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.commentText").isEqualTo("Tap IN comment")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.fromAddressId").isEqualTo(offenderAddress.addressId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.movementReason").isEqualTo("R25")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.escort").isEqualTo("U")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.escortText").isEqualTo("SE")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAgency").isEqualTo("HAZLWD")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.toPrison").isEqualTo("LEI")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.commentText").isEqualTo("Tap IN comment")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo(offenderAddress.addressId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
     }
 
     @Test
@@ -515,10 +515,11 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(1)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].outsideMovementId").isEqualTo(applicationOutsideMovement.movementApplicationMultiId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.sequence").isEqualTo(temporaryAbsence.id.sequence)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.sequence").isEqualTo(temporaryAbsenceReturn.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences.length()").isEqualTo(1)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(temporaryAbsence.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(temporaryAbsenceReturn.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences.length()").isEqualTo(1)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].sequence").isEqualTo(unscheduledTemporaryAbsence.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns.length()").isEqualTo(1)
@@ -535,6 +536,13 @@ class MovementsResourceIntTest(
       lateinit var mergedTemporaryAbsence: OffenderTemporaryAbsence
       lateinit var mergedTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
 
+      lateinit var scheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
+      lateinit var scheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
+      lateinit var mergedScheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
+      lateinit var mergedScheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
+      lateinit var mergedTemporaryAbsence2: OffenderTemporaryAbsence
+      lateinit var mergedTemporaryAbsenceReturn2: OffenderTemporaryAbsenceReturn
+
       // Simulate a scenario where a prisoner is merged into another
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
@@ -549,6 +557,12 @@ class MovementsResourceIntTest(
                   mergedTemporaryAbsenceReturn = externalMovement()
                 }
               }
+              mergedScheduledTemporaryAbsence2 = scheduledTemporaryAbsence {
+                mergedTemporaryAbsence2 = externalMovement()
+                mergedScheduledTemporaryAbsenceReturn2 = scheduledReturn {
+                  mergedTemporaryAbsenceReturn2 = externalMovement()
+                }
+              }
             }
             release(yesterday)
           }
@@ -560,10 +574,15 @@ class MovementsResourceIntTest(
               scheduledTemporaryAbsence = scheduledTemporaryAbsence {
                 scheduledTemporaryAbsenceReturn = scheduledReturn()
               }
+              scheduledTemporaryAbsence2 = scheduledTemporaryAbsence {
+                scheduledTemporaryAbsenceReturn2 = scheduledReturn()
+              }
             }
           }
         }
+      }
 
+      repository.runInTransaction {
         /*
          * Corrupt the data copied during the merge in the same way as NOMIS does
          * - pointing at the original booking's scheduled TAP instead of its own
@@ -577,6 +596,16 @@ class MovementsResourceIntTest(
             where eventId = ${scheduledTemporaryAbsenceReturn.eventId}
           """.trimIndent(),
         ).executeUpdate()
+
+        // Also corrupt the same data for the 2nd scheduled absence from the application to test repeating applications
+        entityManager.createQuery(
+          """
+            update OffenderScheduledTemporaryAbsenceReturn ostr
+            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence2.eventId}),
+            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
+            where eventId = ${scheduledTemporaryAbsenceReturn2.eventId}
+          """.trimIndent(),
+        ).executeUpdate()
       }
 
       webTestClient.get()
@@ -585,24 +614,35 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        // The TAP from the merged booking exists with correct child entities
         .jsonPath("$.bookings[0].bookingId").isEqualTo(mergedBooking.bookingId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications.length()").isEqualTo(1)
+        // The TAP from the 1st merged booking exists with correct child entities
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(mergedApplication.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(1)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].outsideMovements[0].outsideMovementId").isEqualTo(mergedApplicationOutsideMovement.movementApplicationMultiId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence.id.sequence)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
         // The TAP copied onto the latest booking exists with correct child entities
         .jsonPath("$.bookings[1].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications.length()").isEqualTo(1)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(0)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsence").isEmpty
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].temporaryAbsenceReturn").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsence").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn").isEmpty
+        // The TAP from the 2nd merged booking exists with correct child entities
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence2.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence2.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn2.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn2.id.sequence)
+        // The TAP copied onto the latest booking exists with correct child entities
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(0)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence2.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsence").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsenceReturn").isEmpty
     }
   }
 }
