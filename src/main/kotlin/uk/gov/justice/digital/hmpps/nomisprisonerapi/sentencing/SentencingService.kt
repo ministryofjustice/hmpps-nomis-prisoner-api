@@ -235,6 +235,7 @@ class SentencingService(
         )
         return CreateCourtAppearanceResponse(
           id = createdCourtEvent.id,
+          clonedCourtCases = null,
         ).also { response ->
           telemetryClient.trackEvent(
             "court-appearance-created",

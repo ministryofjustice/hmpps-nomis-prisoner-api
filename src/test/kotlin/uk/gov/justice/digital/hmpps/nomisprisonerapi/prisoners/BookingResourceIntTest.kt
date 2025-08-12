@@ -174,4 +174,4 @@ class BookingResourceIntTest : IntegrationTestBase() {
   }
 }
 
-inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectStatus().isOk.expectBody(B::class.java).returnResult().responseBody!!
+inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectStatus().is2xxSuccessful.expectBody(B::class.java).returnResult().responseBody!!
