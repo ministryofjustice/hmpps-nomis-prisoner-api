@@ -249,7 +249,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("statusUpdateReason").isEqualTo("a reason")
           .jsonPath("statusUpdateDate").isEqualTo(aDateString)
           .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
-          .jsonPath("lidsCaseNumber").isEqualTo(1)
           .jsonPath("lidsCaseId").isEqualTo(2)
           .jsonPath("lidsCombinedCaseId").isEqualTo(3)
           .jsonPath("createdByUsername").isNotEmpty
@@ -342,7 +341,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("statusUpdateReason").doesNotExist()
           .jsonPath("statusUpdateDate").doesNotExist()
           .jsonPath("statusUpdateStaffId").doesNotExist()
-          .jsonPath("lidsCaseNumber").isEqualTo(1)
           .jsonPath("lidsCaseId").doesNotExist()
           .jsonPath("lidsCombinedCaseId").doesNotExist()
           .jsonPath("createdByUsername").isNotEmpty
@@ -592,7 +590,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("statusUpdateReason").isEqualTo("a reason")
           .jsonPath("statusUpdateDate").isEqualTo(aDateString)
           .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
-          .jsonPath("lidsCaseNumber").isEqualTo(1)
           .jsonPath("lidsCaseId").isEqualTo(2)
           .jsonPath("lidsCombinedCaseId").isEqualTo(3)
           .jsonPath("createdByUsername").isNotEmpty
@@ -2111,6 +2108,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 beginDate = LocalDate.parse("2021-01-02"),
                 statusUpdateDate = LocalDate.parse("2021-01-02"),
                 statusUpdateStaff = staff,
+                statusUpdateComment = "nice",
+                statusUpdateReason = "Update",
                 caseInfoNumber = "X0001",
                 caseSequence = 2,
               ) {
@@ -2462,11 +2461,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(targetCombinedCase).isNull()
             assertThat(sourceCombinedCases).isEmpty()
 
-            // TODO use default values - no copy for now - but double check this is ok given they are not held in DPS
-            assertThat(statusUpdateDate).isNull()
-            assertThat(statusUpdateStaff).isNull()
-            assertThat(statusUpdateComment).isNull()
-            assertThat(statusUpdateReason).isNull()
+            assertThat(statusUpdateDate).isEqualTo(LocalDate.parse("2021-01-02"))
+            assertThat(statusUpdateStaff).isEqualTo(staff)
+            assertThat(statusUpdateComment).isEqualTo("nice")
+            assertThat(statusUpdateReason).isEqualTo("Update")
           }
           with(offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("X0002")) {
             assertThat(primaryCaseInfoNumber).isEqualTo("X0002")

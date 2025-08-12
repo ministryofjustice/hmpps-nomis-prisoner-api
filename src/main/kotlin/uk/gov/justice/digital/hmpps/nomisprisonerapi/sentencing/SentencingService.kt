@@ -1366,6 +1366,11 @@ class SentencingService(
           primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
+          statusUpdateDate = sourceCase.statusUpdateDate,
+          statusUpdateStaff = sourceCase.statusUpdateStaff,
+          statusUpdateComment = sourceCase.statusUpdateComment,
+          statusUpdateReason = sourceCase.statusUpdateReason,
+
         ).also { clonedCase ->
           // NOMIS trigger will insert primaryCaseInfoNumber - so exclude from our manually insert else we will have duplicate keys
           clonedCase.caseInfoNumbers += sourceCase.caseInfoNumbers.filterNot { it.id.identifierType == "CASE/INFO#" && it.id.reference == sourceCase.primaryCaseInfoNumber }.map { caseInfoNumber ->
