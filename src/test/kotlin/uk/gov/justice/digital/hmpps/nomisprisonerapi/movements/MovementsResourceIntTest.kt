@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTempor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails.roundToNearestSecond
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class MovementsResourceIntTest(
@@ -543,6 +544,9 @@ class MovementsResourceIntTest(
       lateinit var mergedTemporaryAbsence2: OffenderTemporaryAbsence
       lateinit var mergedTemporaryAbsenceReturn2: OffenderTemporaryAbsenceReturn
 
+      val today = LocalDate.now()
+      val tomorrow = today.plusDays(1)
+
       // Simulate a scenario where a prisoner is merged into another
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
@@ -551,15 +555,15 @@ class MovementsResourceIntTest(
             receive(twoDaysAgo)
             mergedApplication = temporaryAbsenceApplication {
               mergedApplicationOutsideMovement = outsideMovement()
-              mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence {
+              mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence(eventDate = today) {
                 mergedTemporaryAbsence = externalMovement()
-                mergedScheduledTemporaryAbsenceReturn = scheduledReturn {
+                mergedScheduledTemporaryAbsenceReturn = scheduledReturn(eventDate = today) {
                   mergedTemporaryAbsenceReturn = externalMovement()
                 }
               }
-              mergedScheduledTemporaryAbsence2 = scheduledTemporaryAbsence {
+              mergedScheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
                 mergedTemporaryAbsence2 = externalMovement()
-                mergedScheduledTemporaryAbsenceReturn2 = scheduledReturn {
+                mergedScheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow) {
                   mergedTemporaryAbsenceReturn2 = externalMovement()
                 }
               }
@@ -571,11 +575,12 @@ class MovementsResourceIntTest(
             receive(yesterday)
             // these are the only details copied from the merged booking during the merge
             application = temporaryAbsenceApplication {
-              scheduledTemporaryAbsence = scheduledTemporaryAbsence {
-                scheduledTemporaryAbsenceReturn = scheduledReturn()
+              // make the schedules out of order to prove that date handling works
+              scheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
+                scheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow)
               }
-              scheduledTemporaryAbsence2 = scheduledTemporaryAbsence {
-                scheduledTemporaryAbsenceReturn2 = scheduledReturn()
+              scheduledTemporaryAbsence = scheduledTemporaryAbsence(eventDate = today) {
+                scheduledTemporaryAbsenceReturn = scheduledReturn(eventDate = today)
               }
             }
           }
@@ -624,25 +629,25 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence.id.sequence)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
-        // The TAP copied onto the latest booking exists with correct child entities
+        // The TAP copied onto the latest booking exists with correct child entities (absences[1] because we deliberately made them out of order)
         .jsonPath("$.bookings[1].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications.length()").isEqualTo(1)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(0)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsence").isEmpty
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(0)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsence").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsenceReturn").isEmpty
         // The TAP from the 2nd merged booking exists with correct child entities
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence2.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence2.id.sequence)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn2.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn2.id.sequence)
-        // The TAP copied onto the latest booking exists with correct child entities
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].outsideMovements.length()").isEqualTo(0)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence2.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsence").isEmpty
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsenceReturn").isEmpty
+        // The TAP copied onto the latest booking exists with correct child entities (absences[1] because we deliberately made them out of order)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence2.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsence").isEmpty
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
+        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn").isEmpty
     }
   }
 }
