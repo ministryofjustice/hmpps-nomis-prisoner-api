@@ -25,7 +25,7 @@ interface OffenderScheduledTemporaryAbsenceDsl {
   @OffenderScheduledTemporaryAbsenceReturnDslMarker
   fun scheduledReturn(
     eventDate: LocalDate = LocalDate.now().plusDays(1),
-    startTime: LocalDateTime = LocalDateTime.now().plusDays(1),
+    startTime: LocalDateTime = eventDate.atTime(18, 0),
     eventSubType: String = "R25",
     eventStatus: String = "SCH",
     comment: String? = "Tapped IN",

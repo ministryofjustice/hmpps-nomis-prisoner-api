@@ -28,7 +28,7 @@ interface OffenderTemporaryAbsenceApplicationDsl {
   @OffenderScheduledTemporaryAbsenceDslMarker
   fun scheduledTemporaryAbsence(
     eventDate: LocalDate = LocalDate.now(),
-    startTime: LocalDateTime = LocalDateTime.now(),
+    startTime: LocalDateTime = eventDate.atTime(12, 0),
     eventSubType: String = "C5",
     eventStatus: String = "COMP",
     comment: String? = "Tapped OUT",
@@ -36,8 +36,8 @@ interface OffenderTemporaryAbsenceApplicationDsl {
     fromPrison: String = "LEI",
     toAgency: String? = null,
     transportType: String = "VAN",
-    returnDate: LocalDate = LocalDate.now().plusDays(1),
-    returnTime: LocalDateTime = LocalDateTime.now().plusHours(1),
+    returnDate: LocalDate = eventDate,
+    returnTime: LocalDateTime = startTime.plusHours(1),
     toAddress: Address? = null,
     dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit = {},
   ): OffenderScheduledTemporaryAbsence

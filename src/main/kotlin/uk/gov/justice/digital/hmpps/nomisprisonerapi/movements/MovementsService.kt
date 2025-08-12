@@ -66,11 +66,11 @@ class MovementsService(
       it.scheduledTemporaryAbsenceReturns.removeAll(scheduledReturnsWithWrongParent)
     }
 
-    // put the scheduled returns onto the correct application
+    // put the scheduled returns onto the correct application and schedule
     scheduledReturnsWithWrongParent.forEach { mergedReturn ->
       this.find { it.movementApplicationId == mergedReturn.temporaryAbsenceApplication?.movementApplicationId }
         ?.scheduledTemporaryAbsences
-        ?.first { absence -> absence.scheduledTemporaryAbsenceReturns.isEmpty() }
+        ?.firstOrNull { absence -> absence.scheduledTemporaryAbsenceReturns.isEmpty() && absence.returnDate == mergedReturn.eventDate }
         ?.scheduledTemporaryAbsenceReturns += mergedReturn
       mergedReturn.temporaryAbsenceApplication = null
     }
