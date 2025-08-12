@@ -223,7 +223,6 @@ class CourtCaseBuilder(
     statusUpdateReason = statusUpdateReason,
     lidsCaseId = lidsCaseId,
     lidsCombinedCaseId = lidsCombinedCaseId,
-    lidsCaseNumber = lidsCaseNumber,
   )
     .let { repository.save(it) }
     .also { courtCase = it }

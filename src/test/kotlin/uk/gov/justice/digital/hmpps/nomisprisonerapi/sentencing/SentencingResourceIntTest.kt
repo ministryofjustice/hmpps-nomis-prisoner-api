@@ -249,7 +249,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("statusUpdateReason").isEqualTo("a reason")
           .jsonPath("statusUpdateDate").isEqualTo(aDateString)
           .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
-          .jsonPath("lidsCaseNumber").isEqualTo(1)
           .jsonPath("lidsCaseId").isEqualTo(2)
           .jsonPath("lidsCombinedCaseId").isEqualTo(3)
           .jsonPath("createdByUsername").isNotEmpty
@@ -342,7 +341,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("statusUpdateReason").doesNotExist()
           .jsonPath("statusUpdateDate").doesNotExist()
           .jsonPath("statusUpdateStaffId").doesNotExist()
-          .jsonPath("lidsCaseNumber").isEqualTo(1)
           .jsonPath("lidsCaseId").doesNotExist()
           .jsonPath("lidsCombinedCaseId").doesNotExist()
           .jsonPath("createdByUsername").isNotEmpty
@@ -592,7 +590,6 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("statusUpdateReason").isEqualTo("a reason")
           .jsonPath("statusUpdateDate").isEqualTo(aDateString)
           .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
-          .jsonPath("lidsCaseNumber").isEqualTo(1)
           .jsonPath("lidsCaseId").isEqualTo(2)
           .jsonPath("lidsCombinedCaseId").isEqualTo(3)
           .jsonPath("createdByUsername").isNotEmpty
@@ -2111,6 +2108,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 beginDate = LocalDate.parse("2021-01-02"),
                 statusUpdateDate = LocalDate.parse("2021-01-02"),
                 statusUpdateStaff = staff,
+                statusUpdateComment = "nice",
+                statusUpdateReason = "Update",
                 caseInfoNumber = "X0001",
                 caseSequence = 2,
               ) {
@@ -2457,16 +2456,15 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(beginDate).isEqualTo(LocalDate.parse("2021-01-02"))
             assertThat(court.id).isEqualTo("LEICYC")
             assertThat(legalCaseType.code).isEqualTo("Y")
-            assertThat(caseStatus.code).isEqualTo("I")
+            // made active
+            assertThat(caseStatus.code).isEqualTo("A")
             assertThat(targetCombinedCase).isNull()
             assertThat(sourceCombinedCases).isEmpty()
 
-            // TODO use default values - no copy for now - but double check this is ok given they are not held in DPS
-            assertThat(statusUpdateDate).isNull()
-            assertThat(statusUpdateStaff).isNull()
-            assertThat(statusUpdateComment).isNull()
-            assertThat(statusUpdateReason).isNull()
-            assertThat(lidsCaseNumber).isEqualTo(1)
+            assertThat(statusUpdateDate).isEqualTo(LocalDate.parse("2021-01-02"))
+            assertThat(statusUpdateStaff).isEqualTo(staff)
+            assertThat(statusUpdateComment).isEqualTo("nice")
+            assertThat(statusUpdateReason).isEqualTo("Update")
           }
           with(offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("X0002")) {
             assertThat(primaryCaseInfoNumber).isEqualTo("X0002")
@@ -3067,6 +3065,36 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "HP09006" }).isNotNull
         assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "HP09006" }?.linkedCaseDetails).isNotNull()
         assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "HP09006" }?.linkedCaseDetails?.caseId).isEqualTo(sourceCase.id)
+      }
+
+      @Test
+      internal fun `inactive cases are activated except if it is a linked case source`() {
+        transaction {
+          // this describes the state before the clone on  the sourtce booking
+          val sourceCase =
+            offenderBookingRepository.findByIdOrNull(bookingIdWithLinkedCases).getByCaseInfoNumber("SOURCE")
+          val targetCase =
+            offenderBookingRepository.findByIdOrNull(bookingIdWithLinkedCases).getByCaseInfoNumber("TARGET")
+
+          assertThat(sourceCase.caseStatus.code).isEqualTo("I")
+          assertThat(targetCase.caseStatus.code).isEqualTo("I")
+        }
+
+        webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithLinkedCases/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          // state of cases cloned should mirror the source booking
+          val sourceCase =
+            offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("SOURCE")
+          val targetCase =
+            offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("TARGET")
+
+          assertThat(sourceCase.caseStatus.code).isEqualTo("I")
+          assertThat(targetCase.caseStatus.code).isEqualTo("A")
+        }
       }
 
       @AfterEach

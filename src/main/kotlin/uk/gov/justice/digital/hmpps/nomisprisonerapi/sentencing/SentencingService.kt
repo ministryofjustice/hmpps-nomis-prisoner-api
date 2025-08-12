@@ -1360,11 +1360,17 @@ class SentencingService(
           offenderBooking = latestBooking,
           legalCaseType = sourceCase.legalCaseType,
           beginDate = sourceCase.beginDate,
-          caseStatus = sourceCase.caseStatus,
+          // make case active unless this is a source of a linked case
+          caseStatus = if (sourceCase.targetCombinedCase != null) sourceCase.caseStatus else lookupCaseStatus("A"),
           court = sourceCase.court,
           primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
+          statusUpdateDate = sourceCase.statusUpdateDate,
+          statusUpdateStaff = sourceCase.statusUpdateStaff,
+          statusUpdateComment = sourceCase.statusUpdateComment,
+          statusUpdateReason = sourceCase.statusUpdateReason,
+
         ).also { clonedCase ->
           // NOMIS trigger will insert primaryCaseInfoNumber - so exclude from our manually insert else we will have duplicate keys
           clonedCase.caseInfoNumbers += sourceCase.caseInfoNumbers.filterNot { it.id.identifierType == "CASE/INFO#" && it.id.reference == sourceCase.primaryCaseInfoNumber }.map { caseInfoNumber ->
@@ -1564,7 +1570,6 @@ class SentencingService(
       // copy court event charges since we can have some pointing at a linked case that is only copied to booking after all cases are copied
       val sourceOffenderCharges = sourceCourtCases.flatMap { it.offenderCharges }
       val clonedOffenderCharges = clonedCases.flatMap { it.offenderCharges }
-      val linkCaseTxns = mutableListOf<LinkCaseTxn>()
       clonedCases.forEachIndexed { caseIndex, clonedCase ->
         clonedCase.courtEvents.forEachIndexed { courtEventIndex, clonedCourtEvent ->
           val sourceCourtEvent = sourceCourtCases[caseIndex].courtEvents[courtEventIndex]
@@ -1675,7 +1680,6 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   courtId = this.court.id,
   combinedCaseId = this.targetCombinedCase?.id,
   sourceCombinedCaseIds = this.sourceCombinedCases.map { it.id },
-  lidsCaseNumber = this.lidsCaseNumber,
   lidsCaseId = this.lidsCaseId,
   lidsCombinedCaseId = this.lidsCombinedCaseId,
   statusUpdateReason = this.statusUpdateReason,

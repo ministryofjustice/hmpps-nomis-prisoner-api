@@ -2142,7 +2142,6 @@ data class CourtCaseResponse(
   val statusUpdateReason: String?,
   val lidsCaseId: Int?,
   val lidsCombinedCaseId: Int?,
-  val lidsCaseNumber: Int,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
   val courtEvents: List<CourtEventResponse>,

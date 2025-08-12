@@ -97,9 +97,6 @@ class CourtCase(
   @JoinColumn(name = "STATUS_UPDATE_STAFF_ID")
   val statusUpdateStaff: Staff? = null,
 
-  // always has a value
-  val lidsCaseNumber: Int = 1,
-
   @Column(name = "NOMLEGALCASEREF")
   val lidsCaseId: Int? = null,
 
