@@ -2943,7 +2943,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      internal fun `linked cases are should be linked correctly - but correctly fail with a 500 error`() {
+      internal fun `linked cases are should be linked correctly along with charge linking`() {
         transaction {
           // this describes the state before the clone on  the sourtce booking
           val sourceCase =
@@ -3030,6 +3030,43 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }?.linkedCaseTransaction?.offenderCharge)
             .isEqualTo(targetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" })
         }
+      }
+
+      @Test
+      internal fun `linked cases should be returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithLinkedCases/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange().expectBodyResponse()
+
+        // state of cases cloned should mirror the source booking
+        val sourceCase =
+          response.getByCaseInfoNumber("SOURCE")
+        val targetCase =
+          response.getByCaseInfoNumber("TARGET")
+
+        // only the uninked sentence charge remains since link moves charge the other case even though it remains linked to the appearance
+        assertThat(sourceCase.combinedCaseId).isEqualTo(targetCase.id)
+        assertThat(sourceCase.offenderCharges).hasSize(1)
+        assertThat(sourceCase.offenderCharges.find { it.offence.offenceCode == "AN81016" }).isNotNull
+        assertThat(sourceCase.offenderCharges.find { it.offence.offenceCode == "HP09006" }).isNull()
+
+        assertThat(sourceCase.courtEvents).hasSize(1)
+        assertThat(sourceCase.courtEvents[0].courtEventCharges).hasSize(2)
+        assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "AN81016" }).isNotNull
+        assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "HP09006" }).isNotNull
+
+        assertThat(targetCase.sourceCombinedCaseIds).containsExactly(sourceCase.id)
+        assertThat(targetCase.offenderCharges).hasSize(2)
+        assertThat(targetCase.offenderCharges.find { it.offence.offenceCode == "LG72004" }).isNotNull
+        assertThat(targetCase.offenderCharges.find { it.offence.offenceCode == "HP09006" }).isNotNull
+
+        assertThat(targetCase.courtEvents).hasSize(1)
+        assertThat(targetCase.courtEvents[0].courtEventCharges).hasSize(2)
+        assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "LG72004" }).isNotNull
+        assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "LG72004" }?.linkedCaseDetails).isNull()
+        assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "HP09006" }).isNotNull
+        assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "HP09006" }?.linkedCaseDetails).isNotNull()
+        assertThat(targetCase.courtEvents[0].courtEventCharges.find { it.offenderCharge.offence.offenceCode == "HP09006" }?.linkedCaseDetails?.caseId).isEqualTo(sourceCase.id)
       }
 
       @AfterEach

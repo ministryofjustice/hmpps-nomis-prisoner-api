@@ -8,7 +8,6 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.MapsId
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -35,20 +34,8 @@ data class LinkCaseTxn(
   @EmbeddedId
   val id: LinkCaseTxnId,
 
-  @MapsId("caseId")
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "CASE_ID", nullable = false)
-  var sourceCase: CourtCase,
-
-  @MapsId("combinedCaseId")
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "COMBINED_CASE_ID", nullable = false)
-  var targetCase: CourtCase,
-
-  @MapsId("offenderChargeId")
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "OFFENDER_CHARGE_ID", nullable = false)
-  var offenderCharge: OffenderCharge,
+  @Column(name = "EVENT_ID")
+  var courtEventId: Long,
 
   @OneToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumns(
@@ -59,9 +46,22 @@ data class LinkCaseTxn(
   )
   var courtEventCharge: CourtEventCharge,
 
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "CASE_ID", nullable = false, insertable = false, updatable = false)
+  var sourceCase: CourtCase,
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "COMBINED_CASE_ID", nullable = false, insertable = false, updatable = false)
+  var targetCase: CourtCase,
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "OFFENDER_CHARGE_ID", nullable = false, insertable = false, updatable = false)
+  var offenderCharge: OffenderCharge,
+
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "EVENT_ID")
+  @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
   var courtEvent: CourtEvent,
+
 ) : NomisAuditableEntityWithStaff() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

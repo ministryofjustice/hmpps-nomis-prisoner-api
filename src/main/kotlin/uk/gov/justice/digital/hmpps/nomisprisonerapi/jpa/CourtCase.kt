@@ -84,7 +84,7 @@ class CourtCase(
   var targetCombinedCase: CourtCase? = null,
 
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "targetCombinedCase")
-  val sourceCombinedCases: List<CourtCase> = mutableListOf(),
+  val sourceCombinedCases: MutableList<CourtCase> = mutableListOf(),
 
   val statusUpdateComment: String? = null,
 
