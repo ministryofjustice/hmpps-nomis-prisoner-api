@@ -3237,7 +3237,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `can add a new court appearance to a case`() {
-        val courtAppearanceResponse =
+        val courtAppearanceResponse: CreateCourtAppearanceResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
             .contentType(MediaType.APPLICATION_JSON)
@@ -3251,11 +3251,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 ),
               ),
             )
-            .exchange()
-            .expectStatus().isCreated.expectBody(CreateCourtAppearanceResponse::class.java)
-            .returnResult().responseBody!!
+            .exchange().expectStatus().isCreated.expectBodyResponse()
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
+        assertThat(courtAppearanceResponse.clonedCourtCases).isNull()
 
 // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
