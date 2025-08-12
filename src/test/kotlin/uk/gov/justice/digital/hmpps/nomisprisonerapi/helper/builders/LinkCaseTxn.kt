@@ -43,9 +43,7 @@ class LinkCaseTxnBuilderRepository(
       offenderChargeId = offenderCharge.id,
     ),
   )!!
-  fun insert(linkCaseTxn: LinkCaseTxn) {
-    jdbcTemplate.update("insert into LINK_CASE_TXNS (CASE_ID, COMBINED_CASE_ID, OFFENDER_CHARGE_ID, EVENT_ID) values (?, ?, ?, ?) ", linkCaseTxn.id.caseId, linkCaseTxn.id.combinedCaseId, linkCaseTxn.id.offenderChargeId, linkCaseTxn.courtEvent.id)
-  }
+  fun save(linkCaseTxn: LinkCaseTxn) = repository.saveAndFlush(linkCaseTxn)
   fun updateCreateDatetime(linkCaseTxn: LinkCaseTxn, whenCreated: LocalDateTime) {
     jdbcTemplate.update("update LINK_CASE_TXNS set CREATE_DATETIME = ? where LINK_CASE_TXNS.CASE_ID = ? and LINK_CASE_TXNS.COMBINED_CASE_ID = ? and LINK_CASE_TXNS.OFFENDER_CHARGE_ID = ?", whenCreated, linkCaseTxn.id.caseId, linkCaseTxn.id.combinedCaseId, linkCaseTxn.id.offenderChargeId)
   }
@@ -114,17 +112,15 @@ class LinkCaseTxnBuilder(
       combinedCaseId = targetCase.id,
       offenderChargeId = offenderCharge.id,
     ),
+    courtEventId = courtEvent.id,
+    courtEventCharge = courtEvent.courtEventCharges.find { it.id.offenderCharge == offenderCharge }!!,
     sourceCase = sourceCase,
     targetCase = targetCase,
     offenderCharge = offenderCharge,
-    courtEventCharge = courtEvent.courtEventCharges.find { it.id.offenderCharge == offenderCharge }!!,
     courtEvent = courtEvent,
   )
     .let {
-      // cannot get JPA to work without throwing detached entity exceptions
-      // so insert using SQL but then load using JPA
-      repository.insert(it)
-      repository.get(sourceCase, targetCase, offenderCharge)
+      repository.save(it)
     }
     .also {
       if (whenCreated != null) {
