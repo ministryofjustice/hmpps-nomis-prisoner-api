@@ -53,6 +53,7 @@ class OffenderCaseNoteBuilder(
     caseNoteText: String,
     amendmentFlag: Boolean,
     noteSourceCode: NoteSourceCode,
+    // TODO provide dateCreation too!
     timeCreation: LocalDateTime?,
   ): OffenderCaseNote = OffenderCaseNote(
     offenderBooking = offenderBooking,

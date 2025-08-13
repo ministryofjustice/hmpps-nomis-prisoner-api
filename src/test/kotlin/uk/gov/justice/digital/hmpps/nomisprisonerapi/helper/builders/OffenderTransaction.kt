@@ -69,6 +69,7 @@ class OffenderTransactionBuilder(
     offender: Offender,
     prisonId: String,
     transactionType: String,
+    entryDate: LocalDate,
   ): OffenderTransaction = OffenderTransaction(
     offenderBooking = booking,
     transactionEntrySequence = 1,
@@ -77,7 +78,7 @@ class OffenderTransactionBuilder(
     transactionType = repository.lookupTransactionType(transactionType),
     transactionReferenceNumber = "FG1/12",
     clientUniqueRef = "clientUniqueRef",
-    entryDate = LocalDate.parse("2025-06-01"),
+    entryDate = entryDate,
     entryDescription = "entryDescription",
     entryAmount = BigDecimal.valueOf(2.34),
     modifyDate = LocalDateTime.now(),
