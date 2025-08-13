@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ExternalService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
@@ -17,10 +18,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -43,6 +46,8 @@ class NomisDataBuilder(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
+  // private val repository: OffenderTransactionBuilderRepository,
+  private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
 ) {
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -63,6 +68,7 @@ class NomisDataBuilder(
     corporateBuilderFactory,
     linkCaseTxnBuilderFactory,
     agencyAddressBuilderFactory,
+    generalLedgerTransactionBuilderFactory,
   ).apply(dsl)
 }
 
@@ -83,6 +89,8 @@ class NomisData(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
+  // private val repository: OffenderTransactionBuilderRepository,
+  private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
 ) : NomisDataDsl {
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
@@ -497,6 +505,30 @@ class NomisData(
       whoCreated = whoCreated,
     )
   }
+
+  override fun generalLedgerTransaction(
+    transactionId: Long,
+    transactionEntrySequence: Int,
+    generalLedgerEntrySequence: Int,
+    transactionType: String,
+    accountCode: Int,
+    postUsage: PostingType,
+    entryDateTime: LocalDateTime,
+    entryAmount: BigDecimal,
+    dsl: GeneralLedgerTransactionDsl.() -> Unit,
+  ): GeneralLedgerTransaction = generalLedgerTransactionBuilderFactory!!.builder().build(
+    transactionId = transactionId,
+    transactionEntrySequence = transactionEntrySequence,
+    generalLedgerEntrySequence = generalLedgerEntrySequence,
+    offender = null,
+    caseloadId = "BXI",
+    transactionType = transactionType,
+    accountCode = accountCode,
+    postUsage = postUsage,
+    entryDateTime = entryDateTime,
+    transactionReferenceNumber = null,
+    entryAmount = entryAmount,
+  )
 }
 
 @NomisDataDslMarker
@@ -711,6 +743,19 @@ interface NomisDataDsl {
     whoCreated: String? = null,
     dsl: AgencyAddressDsl.() -> Unit = {},
   ): AgencyAddress
+
+  @GeneralLedgerTransactionDslMarker
+  fun generalLedgerTransaction(
+    transactionId: Long,
+    transactionEntrySequence: Int,
+    generalLedgerEntrySequence: Int,
+    transactionType: String = "SPEN",
+    accountCode: Int = 2000,
+    postUsage: PostingType = PostingType.CR,
+    entryDateTime: LocalDateTime = LocalDateTime.parse("2025-08-08T12:13:14"),
+    entryAmount: BigDecimal = BigDecimal.TWO,
+    dsl: GeneralLedgerTransactionDsl.() -> Unit = {},
+  ): GeneralLedgerTransaction
 }
 
 @DslMarker

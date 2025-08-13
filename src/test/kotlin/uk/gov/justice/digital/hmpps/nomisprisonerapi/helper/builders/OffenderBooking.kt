@@ -405,6 +405,7 @@ interface BookingDsl {
   @OffenderTransactionDslMarker
   fun transaction(
     transactionType: String,
+    entryDate: LocalDate = LocalDate.parse("2025-06-01"),
     dsl: OffenderTransactionDsl.() -> Unit = {},
   ): OffenderTransaction
 
@@ -1284,6 +1285,7 @@ class BookingBuilder(
 
   override fun transaction(
     transactionType: String,
+    entryDate: LocalDate,
     dsl: OffenderTransactionDsl.() -> Unit,
   ): OffenderTransaction = offenderTransactionBuilderFactory.builder().let { builder ->
     builder.build(
@@ -1291,6 +1293,7 @@ class BookingBuilder(
       offenderBooking.offender,
       offenderBooking.location.id,
       transactionType,
+      entryDate,
     )
       .also { builder.apply(dsl) }
   }

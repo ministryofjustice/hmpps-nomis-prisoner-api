@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransactio
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
+import java.time.LocalDate
 
 @WithMockAuthUser
 class FinanceResourceIntTest : IntegrationTestBase() {
@@ -40,7 +41,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
             glTransaction1 = generalLedgerTransaction(1, 2000)
             glTransaction2 = generalLedgerTransaction(2, 2100)
           }
-          transaction2 = transaction("SPEN") {
+          transaction2 = transaction("SPEN", LocalDate.parse("2025-08-11")) {
             glTransaction3 = generalLedgerTransaction(1, 2101)
           }
         }
@@ -203,6 +204,181 @@ class FinanceResourceIntTest : IntegrationTestBase() {
         .isOk
         .expectBody()
         .json("[]")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /transactions/{date}/first")
+  inner class GetIdAtDate {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/transactions/2025-01-01/first")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/transactions/2025-01-01/first")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/transactions/2025-01-01/first")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun getTransactionId() {
+      val id = webTestClient.get().uri("/transactions/2025-08-11/first")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody(Long::class.java)
+        .returnResult().responseBody!!
+      assertThat(id).isEqualTo(transaction2.transactionId)
+    }
+
+    @Test
+    fun `none found`() {
+      webTestClient.get().uri("/transactions/2025-08-12/first")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .exchange()
+        .expectStatus()
+        .isNotFound
+        .expectBody()
+        .jsonPath("developerMessage").isEqualTo("No transactions found with date 2025-08-12")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /transactions/from/{transactionId}/all")
+  inner class NonOffenderTransactionsFromId {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/transactions/from/99/1/1")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/transactions/from/99/1/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/transactions/from/99/1/1")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          generalLedgerTransaction(10, 1, 1)
+          generalLedgerTransaction(10, 1, 2)
+          generalLedgerTransaction(11, 1, 1)
+          generalLedgerTransaction(11, 1, 2)
+          generalLedgerTransaction(11, 2, 1)
+          generalLedgerTransaction(11, 2, 2)
+          generalLedgerTransaction(12, 1, 1)
+        }
+      }
+
+      @Test
+      fun getAll() {
+        webTestClient.get().uri("/transactions/from/9/99/99")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(7)
+      }
+
+      @Test
+      fun `get transactions limited by pagesize`() {
+        webTestClient.get().uri("/transactions/from/9/99/99?pageSize=2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$[0].transactionId").isEqualTo(10)
+          .jsonPath("$[0].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[0].generalLedgerEntrySequence").isEqualTo(1)
+          .jsonPath("$[1].transactionId").isEqualTo(10)
+          .jsonPath("$[1].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[1].generalLedgerEntrySequence").isEqualTo(2)
+          .jsonPath("$.length()").isEqualTo(2)
+      }
+
+      @Test
+      fun `get transactions starting midway through seq`() {
+        webTestClient.get().uri("/transactions/from/11/1/2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$[0].transactionId").isEqualTo(11)
+          .jsonPath("$[0].transactionEntrySequence").isEqualTo(2)
+          .jsonPath("$[0].generalLedgerEntrySequence").isEqualTo(1)
+          .jsonPath("$[1].transactionId").isEqualTo(11)
+          .jsonPath("$[1].transactionEntrySequence").isEqualTo(2)
+          .jsonPath("$[1].generalLedgerEntrySequence").isEqualTo(2)
+          .jsonPath("$[2].transactionId").isEqualTo(12)
+          .jsonPath("$[2].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[2].generalLedgerEntrySequence").isEqualTo(1)
+          .jsonPath("$.length()").isEqualTo(3)
+      }
+
+      @Test
+      fun `get transactions starting midway through GL seq`() {
+        webTestClient.get().uri("/transactions/from/11/2/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$[0].transactionId").isEqualTo(11)
+          .jsonPath("$[0].transactionEntrySequence").isEqualTo(2)
+          .jsonPath("$[0].generalLedgerEntrySequence").isEqualTo(2)
+          .jsonPath("$[1].transactionId").isEqualTo(12)
+          .jsonPath("$[1].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[1].generalLedgerEntrySequence").isEqualTo(1)
+          .jsonPath("$.length()").isEqualTo(2)
+      }
+
+      @Test
+      fun `none found`() {
+        webTestClient.get().uri("/transactions/from/20/1/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .json("[]")
+      }
     }
   }
 }

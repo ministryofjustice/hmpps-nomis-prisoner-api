@@ -3,8 +3,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Limit
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
@@ -58,6 +60,21 @@ class TransactionsService(
   ): List<GeneralLedgerTransactionDto> = generalLedgerTransactionRepository
     .findByTransactionId(transactionId)
     .map(::mapGL)
+
+  fun getFirstTransactionIdOn(date: LocalDate): Long = generalLedgerTransactionRepository
+    .findMinTransactionIdByEntryDate(date)
+    ?: throw NotFoundException("No transactions found with date $date")
+
+  fun findNonOffenderTransactionsFromId(
+    transactionId: Long,
+    transactionEntrySequence: Int,
+    generalLedgerEntrySequence: Int,
+    pageSize: Int,
+  ): List<GeneralLedgerTransactionDto> {
+    val data = generalLedgerTransactionRepository
+      .findNonOffenderByTransactionIdGreaterThan(transactionId, transactionEntrySequence, generalLedgerEntrySequence, Limit.of(pageSize))
+    return data.map(::mapGL)
+  }
 }
 
 private fun mapGL(gl: GeneralLedgerTransaction): GeneralLedgerTransactionDto = GeneralLedgerTransactionDto(
