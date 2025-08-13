@@ -2414,7 +2414,7 @@ data class CreateCourtAppearanceResponse(
   val id: Long,
   val courtEventChargesIds: List<OffenderChargeIdResponse> = listOf(),
   @Schema(description = "Result of a clone court case operation when the appearance is added to a previous booking. Else null")
-  val clonedCourtCases: ClonedCourtCaseResponse?,
+  val clonedCourtCases: BookingCourtCaseCloneResponse?,
 )
 
 @Schema(description = "Create adjustment response")
