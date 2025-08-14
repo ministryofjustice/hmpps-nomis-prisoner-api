@@ -631,11 +631,11 @@ class TemporaryAbsenceRepositoryIntTest(
 
       repository.runInTransaction {
         with(offenderBookingRepository.findByIdOrNull(booking.bookingId)!!) {
-          assertThat(externalMovements.find { it.id.sequence == 2L }).isExactlyInstanceOf(OffenderTemporaryAbsence::class.java)
-          assertThat(externalMovements.find { it.id.sequence == 3L }).isExactlyInstanceOf(OffenderTemporaryAbsenceReturn::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 2 }).isExactlyInstanceOf(OffenderTemporaryAbsence::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 3 }).isExactlyInstanceOf(OffenderTemporaryAbsenceReturn::class.java)
           // The TAP missing a direction still comes out as an external movement
-          assertThat(externalMovements.find { it.id.sequence == 4L }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
-          assertThat(externalMovements.find { it.id.sequence == 5L }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 4 }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 5 }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
         }
       }
     }
