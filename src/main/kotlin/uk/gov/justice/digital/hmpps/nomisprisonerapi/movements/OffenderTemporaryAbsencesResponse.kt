@@ -246,7 +246,7 @@ data class ScheduledTemporaryAbsenceReturn(
 @Schema(description = "Temporary absence response")
 data class TemporaryAbsence(
   @Schema(description = "Movement sequence")
-  val sequence: Long,
+  val sequence: Int,
 
   @Schema(description = "Movement date")
   val movementDate: LocalDate,
@@ -288,7 +288,7 @@ data class TemporaryAbsence(
 @Schema(description = "Temporary absence return response")
 data class TemporaryAbsenceReturn(
   @Schema(description = "Movement sequence")
-  val sequence: Long,
+  val sequence: Int,
 
   @Schema(description = "Movement date")
   val movementDate: LocalDate,

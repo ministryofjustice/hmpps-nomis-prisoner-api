@@ -31,7 +31,7 @@ data class OffenderExternalMovementId(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "MOVEMENT_SEQ", nullable = false)
-  val sequence: Long,
+  val sequence: Int,
 ) : Serializable
 
 @EntityOpen

@@ -74,7 +74,7 @@ class OffenderExternalMovementBuilder(
     OffenderExternalMovement(
       id = OffenderExternalMovementId(
         offenderBooking,
-        offenderBooking.externalMovements.size + 1L,
+        offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
       movementTime = date,
@@ -89,7 +89,7 @@ class OffenderExternalMovementBuilder(
     OffenderExternalMovement(
       id = OffenderExternalMovementId(
         offenderBooking,
-        offenderBooking.externalMovements.size + 1L,
+        offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
       movementTime = date.plusSeconds(1),
@@ -108,7 +108,7 @@ class OffenderExternalMovementBuilder(
     OffenderExternalMovement(
       id = OffenderExternalMovementId(
         offenderBooking,
-        offenderBooking.externalMovements.size + 1L,
+        offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
       movementTime = date,
@@ -135,7 +135,7 @@ class OffenderExternalMovementBuilder(
     OffenderExternalMovement(
       id = OffenderExternalMovementId(
         offenderBooking,
-        offenderBooking.externalMovements.size + 1L,
+        offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
       movementTime = date,
@@ -169,7 +169,7 @@ class OffenderExternalMovementBuilder(
   ): OffenderTemporaryAbsence = OffenderTemporaryAbsence(
     id = OffenderExternalMovementId(
       offenderBooking,
-      offenderBooking.externalMovements.size + 1L,
+      offenderBooking.externalMovements.size + 1,
     ),
     movementDate = date.toLocalDate(),
     movementTime = date,
@@ -205,7 +205,7 @@ class OffenderExternalMovementBuilder(
   ): OffenderTemporaryAbsenceReturn = OffenderTemporaryAbsenceReturn(
     id = OffenderExternalMovementId(
       offenderBooking,
-      offenderBooking.externalMovements.size + 1L,
+      offenderBooking.externalMovements.size + 1,
     ),
     movementDate = date.toLocalDate(),
     movementTime = date,
@@ -237,7 +237,7 @@ class OffenderExternalMovementBuilder(
     OffenderExternalMovement(
       id = OffenderExternalMovementId(
         offenderBooking,
-        offenderBooking.externalMovements.size + 1L,
+        offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
       movementTime = date,
