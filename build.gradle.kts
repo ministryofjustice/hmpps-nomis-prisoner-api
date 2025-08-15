@@ -2,6 +2,7 @@ plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.5"
   kotlin("plugin.spring") version "2.2.0"
   kotlin("plugin.jpa") version "2.2.0"
+  id("org.owasp.dependencycheck") version "12.1.3"
   idea
 }
 
@@ -88,4 +89,8 @@ tasks.test {
       excludeTestsMatching("uk.gov.justice.digital.hmpps.nomisprisonerapi.${it.name}.*")
     }
   }
+}
+
+dependencyCheck {
+  nvd.datafeedUrl = "/opt/vulnz/cache"
 }
