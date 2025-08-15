@@ -12,6 +12,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
@@ -3117,6 +3118,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private var latestBookingId: Long = 0
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
+    private lateinit var previousBookingCourtCase: CourtCase
+    private var previousBookingId: Long = 0
+    private lateinit var previousBookingOffenderCharge1: OffenderCharge
+    private lateinit var previousBookingOffenderCharge2: OffenderCharge
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -3125,7 +3130,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           account {}
         }
         prisonerAtMoorland = offender(nomsId = offenderNo) {
-          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
+          latestBookingId = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
             courtCase = courtCase(
               reportingStaff = staff,
               statusUpdateStaff = staff,
@@ -3147,10 +3152,33 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
-          }
+          }.bookingId
+          previousBookingId = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.parse("2022-01-01T10:00")) {
+            release(date = LocalDateTime.parse("2022-02-28T10:00"))
+            previousBookingCourtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            ) {
+              previousBookingOffenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              previousBookingOffenderCharge2 = offenderCharge(resultCode1 = "1067")
+              courtEvent {
+// overrides from the parent offender charge fields
+                courtEventCharge(
+                  offenderCharge = previousBookingOffenderCharge1,
+                  plea = "NG",
+                )
+                courtEventCharge(
+                  offenderCharge = previousBookingOffenderCharge2,
+                )
+                courtOrder {
+                  sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+            }
+          }.bookingId
         }
       }
-      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
     }
 
     @Nested
@@ -3233,7 +3261,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class CreateCourtAppearanceSuccess {
+    inner class CreateCourtAppearanceOnLatestBooking {
 
       @Test
       fun `can add a new court appearance to a case`() {
@@ -3329,6 +3357,83 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("court", "ABDRCT")
             assertThat(it).containsEntry("courtEventId", createResponse.id.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class CreateCourtAppearanceOnPreviousBooking {
+
+      @Test
+      fun `can add a new court appearance to the cloned case`() {
+        val courtAppearanceResponse: CreateCourtAppearanceResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtAppearanceRequest(
+                  courtEventCharges = mutableListOf(
+                    previousBookingOffenderCharge1.id,
+                    previousBookingOffenderCharge2.id,
+                  ),
+                ),
+              ),
+            )
+            .exchange().expectStatus().isCreated.expectBodyResponse()
+
+        assertThat(courtAppearanceResponse.id).isGreaterThan(0)
+        assertThat(courtAppearanceResponse.clonedCourtCases).isNotNull()
+
+        // imprisonment statu, s stored procedure is called - but on latest booking where the appearance was added
+        verify(spRepository, times(2)).imprisonmentStatusUpdate(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
+        )
+        val sourceCourtCaseResponse: CourtCaseResponse = webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse<CourtCaseResponse>()
+
+        // we requested it be added to this case but was added to a cloned case below
+        assertThat(sourceCourtCaseResponse.offenderNo).isEqualTo(offenderNo)
+        assertThat(sourceCourtCaseResponse.courtEvents).hasSize(1)
+
+        val clonedCourtCaseResponse: CourtCaseResponse = webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtAppearanceResponse.clonedCourtCases!!.courtCases[0].courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse<CourtCaseResponse>()
+
+        assertThat(clonedCourtCaseResponse.offenderNo).isEqualTo(offenderNo)
+        assertThat(clonedCourtCaseResponse.courtEvents).hasSize(2)
+        assertThat(clonedCourtCaseResponse.courtEvents[1].eventDateTime).isEqualTo(LocalDateTime.parse("2023-01-05T09:00:00"))
+        assertThat(clonedCourtCaseResponse.courtEvents[1].courtEventCharges).hasSize(2)
+      }
+
+      @Test
+      fun `will track telemetry for the create`() {
+        val courtAppearanceResponse: CreateCourtAppearanceResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(),
+            ),
+          )
+          .exchange().expectStatus().isCreated.expectBodyResponse()
+
+        verify(telemetryClient).trackEvent(
+          eq("court-appearance-created"),
+          check {
+            assertThat(it).containsEntry("courtCaseId", previousBookingCourtCase.id.toString())
+            assertThat(it).containsEntry("clonedCourtCaseId", courtAppearanceResponse.clonedCourtCases!!.courtCases[0].courtCase.id.toString())
+            assertThat(it).containsEntry("courtCaseCloned", "true")
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("court", "ABDRCT")
+            assertThat(it).containsEntry("courtEventId", courtAppearanceResponse.id.toString())
           },
           isNull(),
         )

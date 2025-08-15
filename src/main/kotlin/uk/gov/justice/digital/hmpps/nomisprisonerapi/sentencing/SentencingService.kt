@@ -258,13 +258,30 @@ class SentencingService(
   }
 
   data class ClonedCaseCreateAppearance(val courtCase: CourtCase, val courtAppearanceRequest: CourtAppearanceRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)
-  private fun cloneCasesIfRequired(courtCase: CourtCase, courtAppearanceRequest: CourtAppearanceRequest): ClonedCaseCreateAppearance = ClonedCaseCreateAppearance(
-    // this will switch the case that has been created by the clone if it was cloned
-    courtCase = courtCase,
-    // this will return a modified version of request with the new nomis charge ids
-    courtAppearanceRequest = courtAppearanceRequest,
-    clonedCourtCases = null,
-  )
+  private fun cloneCasesIfRequired(courtCase: CourtCase, courtAppearanceRequest: CourtAppearanceRequest): ClonedCaseCreateAppearance = if (courtCase.offenderBooking.bookingSequence == 1) {
+    ClonedCaseCreateAppearance(
+      courtCase = courtCase,
+      courtAppearanceRequest = courtAppearanceRequest,
+      clonedCourtCases = null,
+    )
+  } else {
+    cloneCourtCasesToLatestBookingFrom(bookingId = courtCase.offenderBooking.bookingId).let {
+      val sourceCase = it.courtCases.find { cases -> cases.sourceCourtCase.id == courtCase.id }!!
+      val indexOfSourceCase = it.courtCases.indexOf(sourceCase)
+      val clonedCourtCase = findCourtCase(id = it.courtCases[indexOfSourceCase].courtCase.id, sourceCase.sourceCourtCase.offenderNo)
+      val offenderChargesIndexes = courtAppearanceRequest.courtEventCharges.map { courtEventChargeId -> courtCase.offenderCharges.indexOf(courtCase.offenderCharges.find { offenderCharge -> offenderCharge.id == courtEventChargeId }) }
+      val convertedOffenderChargeIds = offenderChargesIndexes.map { index -> clonedCourtCase.offenderCharges[index].id }
+      ClonedCaseCreateAppearance(
+        // this will switch the case that has been created by the clone if it was cloned
+        courtCase = clonedCourtCase,
+        // offender charges in request now point at the newly created ones
+        courtAppearanceRequest = courtAppearanceRequest.copy(
+          courtEventCharges = convertedOffenderChargeIds,
+        ),
+        clonedCourtCases = it,
+      )
+    }
+  }
 
   // creates offender charge without associating with a Court Event
   fun createCourtCharge(
