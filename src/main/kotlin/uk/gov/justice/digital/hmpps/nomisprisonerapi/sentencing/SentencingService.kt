@@ -201,10 +201,12 @@ class SentencingService(
   fun createCourtAppearance(
     offenderNo: String,
     caseId: Long,
-    courtAppearanceRequest: CourtAppearanceRequest,
+    request: CourtAppearanceRequest,
   ): CreateCourtAppearanceResponse {
     checkOffenderExists(offenderNo)
-    findCourtCase(caseId, offenderNo).let { courtCase ->
+    findCourtCase(caseId, offenderNo).let {
+      val (courtCase, courtAppearanceRequest, clonedCourtCases) = cloneCasesIfRequired(it, request)
+
       val courtEvent = CourtEvent(
         offenderBooking = courtCase.offenderBooking,
         courtCase = courtCase,
@@ -235,12 +237,14 @@ class SentencingService(
         )
         return CreateCourtAppearanceResponse(
           id = createdCourtEvent.id,
-          clonedCourtCases = null,
+          clonedCourtCases = clonedCourtCases,
         ).also { response ->
           telemetryClient.trackEvent(
             "court-appearance-created",
             mapOf(
               "courtCaseId" to caseId.toString(),
+              "clonedCourtCaseId" to courtCase.id.toString(),
+              "courtCaseCloned" to (caseId != courtCase.id).toString(),
               "bookingId" to courtCase.offenderBooking.bookingId.toString(),
               "offenderNo" to offenderNo,
               "court" to courtAppearanceRequest.courtId,
@@ -252,6 +256,15 @@ class SentencingService(
       }
     }
   }
+
+  data class ClonedCaseCreateAppearance(val courtCase: CourtCase, val courtAppearanceRequest: CourtAppearanceRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)
+  private fun cloneCasesIfRequired(courtCase: CourtCase, courtAppearanceRequest: CourtAppearanceRequest): ClonedCaseCreateAppearance = ClonedCaseCreateAppearance(
+    // this will switch the case that has been created by the clone if it was cloned
+    courtCase = courtCase,
+    // this will return a modified version of request with the new nomis charge ids
+    courtAppearanceRequest = courtAppearanceRequest,
+    clonedCourtCases = null,
+  )
 
   // creates offender charge without associating with a Court Event
   fun createCourtCharge(

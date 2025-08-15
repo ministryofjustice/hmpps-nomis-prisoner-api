@@ -3323,6 +3323,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           eq("court-appearance-created"),
           check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
+            assertThat(it).containsEntry("clonedCourtCaseId", courtCase.id.toString())
+            assertThat(it).containsEntry("courtCaseCloned", "false")
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("court", "ABDRCT")
