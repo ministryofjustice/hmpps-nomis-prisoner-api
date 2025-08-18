@@ -1398,10 +1398,6 @@ class SentencingService(
           primaryCaseInfoNumber = null,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
-          statusUpdateDate = sourceCase.statusUpdateDate,
-          statusUpdateStaff = sourceCase.statusUpdateStaff,
-          statusUpdateComment = sourceCase.statusUpdateComment,
-          statusUpdateReason = sourceCase.statusUpdateReason,
 
         ).also { clonedCase ->
           clonedCase.offenderCharges += sourceCase.offenderCharges.map { offenderCharge ->

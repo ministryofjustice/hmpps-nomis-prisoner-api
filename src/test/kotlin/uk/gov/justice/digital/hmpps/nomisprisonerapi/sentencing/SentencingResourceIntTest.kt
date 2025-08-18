@@ -2464,10 +2464,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(targetCombinedCase).isNull()
             assertThat(sourceCombinedCases).isEmpty()
 
-            assertThat(statusUpdateDate).isEqualTo(LocalDate.parse("2021-01-02"))
-            assertThat(statusUpdateStaff).isEqualTo(staff)
-            assertThat(statusUpdateComment).isEqualTo("nice")
-            assertThat(statusUpdateReason).isEqualTo("Update")
+            // not copied so this has it's own staus lifecycle
+            assertThat(statusUpdateDate).isNull()
+            assertThat(statusUpdateStaff).isNull()
+            assertThat(statusUpdateComment).isNull()
+            assertThat(statusUpdateReason).isNull()
           }
           with(offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("X0002")) {
             assertThat(primaryCaseInfoNumber).isEqualTo("X0002")
