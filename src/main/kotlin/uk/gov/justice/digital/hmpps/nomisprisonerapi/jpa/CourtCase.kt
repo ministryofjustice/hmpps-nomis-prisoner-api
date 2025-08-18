@@ -77,7 +77,7 @@ class CourtCase(
   var caseStatus: CaseStatus,
 
   @Column(name = "CASE_INFO_NUMBER")
-  val primaryCaseInfoNumber: String? = null,
+  var primaryCaseInfoNumber: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "COMBINED_CASE_ID")

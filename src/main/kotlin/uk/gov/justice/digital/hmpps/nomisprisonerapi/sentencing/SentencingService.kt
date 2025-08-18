@@ -1394,7 +1394,8 @@ class SentencingService(
           // make case active unless this is a source of a linked case
           caseStatus = if (sourceCase.targetCombinedCase != null) sourceCase.caseStatus else lookupCaseStatus("A"),
           court = sourceCase.court,
-          primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber,
+          // set this later as the last update to offender case to prevent NOMIS trigger adding ti identifiers table
+          primaryCaseInfoNumber = null,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
           statusUpdateDate = sourceCase.statusUpdateDate,
@@ -1403,16 +1404,6 @@ class SentencingService(
           statusUpdateReason = sourceCase.statusUpdateReason,
 
         ).also { clonedCase ->
-          // NOMIS trigger will insert primaryCaseInfoNumber - so exclude from our manually insert else we will have duplicate keys
-          clonedCase.caseInfoNumbers += sourceCase.caseInfoNumbers.filterNot { it.id.identifierType == "CASE/INFO#" && it.id.reference == sourceCase.primaryCaseInfoNumber }.map { caseInfoNumber ->
-            OffenderCaseIdentifier(
-              id = OffenderCaseIdentifierPK(
-                identifierType = caseInfoNumber.id.identifierType,
-                reference = caseInfoNumber.id.reference,
-                courtCase = clonedCase,
-              ),
-            )
-          }
           clonedCase.offenderCharges += sourceCase.offenderCharges.map { offenderCharge ->
             OffenderCharge(
               offenderBooking = latestBooking,
@@ -1666,6 +1657,26 @@ class SentencingService(
           clonedSentence.consecSequence = clonedSentence.consecutiveSentence!!.id.sequence.toInt()
         }
       }
+
+      // fix up case identifiers; this needs doing at the end to avoid NOMIS trigger seeing an insert and update to offender cases and trying
+      // to insert the primary identifier into the case identifier table twice
+      courtCaseRepository.saveAllAndFlush(clonedCases).also { clonedCases ->
+        clonedCases.forEachIndexed { caseIndex, clonedCase ->
+          val sourceCase = sourceCourtCases[caseIndex]
+          clonedCase.primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber
+          // NOMIS trigger will insert primaryCaseInfoNumber - so exclude from our manually insert else we will have duplicate keys
+          clonedCase.caseInfoNumbers += sourceCase.caseInfoNumbers.filterNot { caseIdentifier -> caseIdentifier.id.identifierType == "CASE/INFO#" && caseIdentifier.id.reference == sourceCase.primaryCaseInfoNumber }.map { caseInfoNumber ->
+            OffenderCaseIdentifier(
+              id = OffenderCaseIdentifierPK(
+                identifierType = caseInfoNumber.id.identifierType,
+                reference = caseInfoNumber.id.reference,
+                courtCase = clonedCase,
+              ),
+            )
+          }
+        }
+      }
+
       courtCaseRepository.saveAllAndFlush(clonedCases).also {
         storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = latestBooking.bookingId,

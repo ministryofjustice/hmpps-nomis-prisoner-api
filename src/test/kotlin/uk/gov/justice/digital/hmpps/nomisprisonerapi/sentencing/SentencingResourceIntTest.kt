@@ -2357,6 +2357,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseSequence = 1,
                 caseStatus = "I",
               ) {
+                offenderCaseIdentifier(reference = "SOURCE", type = "CASE/INFO#")
                 lateinit var courtOrder: CourtOrder
                 val sentencedCharge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
                 val chargedThatWillBeLinked = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "4506")
@@ -2390,6 +2391,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseSequence = 2,
                 caseStatus = "I",
               ) {
+                offenderCaseIdentifier(reference = "TARGET", type = "CASE/INFO#")
                 val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
                 targetCaseEvent = courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "2006") {
                   courtEventCharge(
