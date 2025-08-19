@@ -3016,6 +3016,9 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }!!.id.offenderCharge.courtCase).isEqualTo(targetCase)
 
           assertThat(targetCase.sourceCombinedCases).containsExactly(sourceCase)
+          assertThat(targetCase.statusUpdateReason).isEqualTo("A")
+          assertThat(targetCase.statusUpdateDate).isEqualTo(LocalDate.now())
+
           assertThat(targetCase.offenderCharges).hasSize(2)
           assertThat(targetCase.offenderCharges.find { it.offence.id.offenceCode == "LG72004" }).isNotNull
           assertThat(targetCase.offenderCharges.find { it.offence.id.offenceCode == "HP09006" }).isNotNull
