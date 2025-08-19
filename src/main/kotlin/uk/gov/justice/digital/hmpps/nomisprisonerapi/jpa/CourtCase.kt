@@ -86,16 +86,16 @@ class CourtCase(
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "targetCombinedCase")
   val sourceCombinedCases: MutableList<CourtCase> = mutableListOf(),
 
-  val statusUpdateComment: String? = null,
+  var statusUpdateComment: String? = null,
 
   // no matching reference domain
-  val statusUpdateReason: String? = null,
+  var statusUpdateReason: String? = null,
 
-  val statusUpdateDate: LocalDate? = null,
+  var statusUpdateDate: LocalDate? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "STATUS_UPDATE_STAFF_ID")
-  val statusUpdateStaff: Staff? = null,
+  var statusUpdateStaff: Staff? = null,
 
   @Column(name = "NOMLEGALCASEREF")
   val lidsCaseId: Int? = null,

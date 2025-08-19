@@ -1398,6 +1398,10 @@ class SentencingService(
           primaryCaseInfoNumber = null,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
+          statusUpdateDate = sourceCase.statusUpdateDate,
+          statusUpdateStaff = sourceCase.statusUpdateStaff,
+          statusUpdateComment = sourceCase.statusUpdateComment,
+          statusUpdateReason = sourceCase.statusUpdateReason,
 
         ).also { clonedCase ->
           clonedCase.offenderCharges += sourceCase.offenderCharges.map { offenderCharge ->
@@ -1582,6 +1586,10 @@ class SentencingService(
         if (sourceCase.targetCombinedCase != null) {
           clonedCase.targetCombinedCase = clonedCases[sourceCourtCases.indexOf(sourceCase.targetCombinedCase)]
           clonedCase.targetCombinedCase!!.sourceCombinedCases += clonedCase
+          clonedCase.statusUpdateDate = LocalDate.now()
+          clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
+          clonedCase.statusUpdateComment = sourceCase.statusUpdateComment
+          clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: "LINKED"
         }
       }
 
