@@ -168,7 +168,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return not found if agency not turned on for service`() {
       webTestClient.get()
         .uri("/agency-switches/SOME_SERVICE/agency/BXI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -180,7 +180,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return 204 if service turned on for agency`() {
       webTestClient.get()
         .uri("/agency-switches/SOME_SERVICE/agency/MDI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isEqualTo(NO_CONTENT)
     }
@@ -228,7 +228,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return not found if the service doesn't exist`() {
       webTestClient.post()
         .uri("/agency-switches/UNKNOWN_SERVICE/agency/BXI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -240,7 +240,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return not found if the agency doesn't exist`() {
       webTestClient.post()
         .uri("/agency-switches/SOME_SERVICE/agency/UNKNOWN_AGENCY")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -252,7 +252,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return created if agency NOT already turned on for service`() {
       webTestClient.post()
         .uri("/agency-switches/SOME_SERVICE/agency/BXI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isCreated
 
@@ -266,7 +266,7 @@ class ServiceAgencySwitchResourceIntTest : IntegrationTestBase() {
     fun `should return created if agency IS already turned on for service`() {
       webTestClient.post()
         .uri("/agency-switches/SOME_SERVICE/agency/MDI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isCreated
 
