@@ -1586,18 +1586,16 @@ class SentencingService(
         if (sourceCase.targetCombinedCase != null) {
           clonedCase.targetCombinedCase = clonedCases[sourceCourtCases.indexOf(sourceCase.targetCombinedCase)]
           clonedCase.targetCombinedCase!!.sourceCombinedCases += clonedCase
-          clonedCase.statusUpdateDate = LocalDate.now()
-          clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
-          clonedCase.statusUpdateComment = sourceCase.statusUpdateComment
-          clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: "LINKED"
 
           with(clonedCase.targetCombinedCase!!) {
             // update target case so trigger for status update is ok
             this.statusUpdateDate = LocalDate.now()
             this.statusUpdateReason = if (this.caseStatus.code == "A") {
-              "ACTIVE"
+              // active
+              "A"
             } else {
-              "INACTIVE"
+              // inactive
+              "D"
             }
             this.statusUpdateStaff = findStaffByUsername(clonedCase.createUsername)
           }
