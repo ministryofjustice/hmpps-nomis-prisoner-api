@@ -265,7 +265,7 @@ class SentencingService(
       clonedCourtCases = null,
     )
   } else {
-    cloneCourtCasesToLatestBookingFrom(bookingId = courtCase.offenderBooking.bookingId).let {
+    cloneCourtCasesToLatestBookingFrom(courtCase).let {
       val sourceCase = it.courtCases.find { cases -> cases.sourceCourtCase.id == courtCase.id }!!
       val indexOfSourceCase = it.courtCases.indexOf(sourceCase)
       val clonedCourtCase = findCourtCase(id = it.courtCases[indexOfSourceCase].courtCase.id, sourceCase.sourceCourtCase.offenderNo)
@@ -1374,12 +1374,22 @@ class SentencingService(
   private fun findStaffByUsername(username: String): Staff = staffUserAccountRepository.findByUsername(username)?.staff
     ?: throw BadDataException("Username $username not found")
 
-  fun cloneCourtCasesToLatestBookingFrom(@Suppress("unused") bookingId: Long): BookingCourtCaseCloneResponse {
+  fun cloneCourtCasesToLatestBookingFrom(bookingId: Long): BookingCourtCaseCloneResponse {
     val booking = offenderBookingRepository.findByIdOrNull(bookingId) ?: throw NotFoundException("Booking $bookingId not found")
     val latestBooking = findLatestBooking(booking.offender.nomsId)
 
     if (booking == latestBooking) {
       throw BadDataException("Cannot clone court cased from the latest booking $bookingId on to itself")
+    }
+
+    return cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases)
+  }
+  fun cloneCourtCasesToLatestBookingFrom(case: CourtCase): BookingCourtCaseCloneResponse {
+    val booking = offenderBookingRepository.findByIdOrNull(case.offenderBooking.bookingId)!!
+    val latestBooking = findLatestBooking(booking.offender.nomsId)
+
+    if (booking == latestBooking) {
+      throw BadDataException("Cannot clone court cased from the latest booking ${booking.bookingId} on to itself")
     }
 
     return cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases)
