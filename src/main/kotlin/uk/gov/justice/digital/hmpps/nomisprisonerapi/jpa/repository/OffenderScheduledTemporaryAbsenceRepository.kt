@@ -5,4 +5,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 
 @Repository
-interface OffenderScheduledTemporaryAbsenceRepository : JpaRepository<OffenderScheduledTemporaryAbsence, Long>
+interface OffenderScheduledTemporaryAbsenceRepository : JpaRepository<OffenderScheduledTemporaryAbsence, Long> {
+  @Suppress("ktlint:standard:function-naming")
+  fun findByEventIdAndOffenderBooking_Offender_NomsId(eventId: Long, offenderNo: String): OffenderScheduledTemporaryAbsence?
+}

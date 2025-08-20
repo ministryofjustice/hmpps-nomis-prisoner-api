@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenc
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
 
@@ -23,6 +24,7 @@ class MovementsService(
   private val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
   private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
   private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
+  private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
 ) {
   fun getTemporaryAbsencesAndMovements(offenderNo: String): OffenderTemporaryAbsencesResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -87,10 +89,21 @@ class MovementsService(
     return application.toSingleResponse()
   }
 
+  fun getScheduledTemporaryAbsence(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Offender with nomsId=$offenderNo not found")
+    }
+
+    val scheduledAbsence = scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offenderNo)
+      ?: throw NotFoundException("Scheduled temporary absence with eventId=$eventId not found for offender with nomsId=$offenderNo")
+
+    return scheduledAbsence.toSingleResponse()
+  }
+
   private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
-    applicationDate = applicationDate,
+    applicationDate = applicationDate.toLocalDate(),
     fromDate = fromDate,
     releaseTime = releaseTime,
     toDate = toDate,
@@ -235,7 +248,7 @@ class MovementsService(
     bookingId = offenderBooking.bookingId,
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
-    applicationDate = applicationDate,
+    applicationDate = applicationDate.toLocalDate(),
     fromDate = fromDate,
     releaseTime = releaseTime,
     toDate = toDate,
@@ -252,6 +265,28 @@ class MovementsService(
     applicationType = applicationType.code,
     temporaryAbsenceType = temporaryAbsenceType?.code,
     temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
+    audit = toAudit(),
+  )
+
+  private fun OffenderScheduledTemporaryAbsence.toSingleResponse() = ScheduledTemporaryAbsenceResponse(
+    bookingId = offenderBooking.bookingId,
+    movementApplicationId = temporaryAbsenceApplication.movementApplicationId,
+    eventId = eventId,
+    eventDate = eventDate,
+    startTime = startTime,
+    eventSubType = eventSubType.code,
+    eventStatus = eventStatus.code,
+    comment = comment,
+    escort = escort?.code,
+    fromPrison = fromAgency?.id,
+    toAgency = toAgency?.id,
+    transportType = transportType?.code,
+    returnDate = returnDate,
+    returnTime = returnTime,
+    toAddressId = toAddress?.addressId,
+    toAddressOwnerClass = toAddress?.addressOwnerClass,
+    applicationDate = applicationDate,
+    applicationTime = applicationTime,
     audit = toAudit(),
   )
 }
