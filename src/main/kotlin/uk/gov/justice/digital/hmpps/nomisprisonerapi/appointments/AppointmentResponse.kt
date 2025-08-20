@@ -12,13 +12,13 @@ data class AppointmentResponse(
   val bookingId: Long,
   @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)
   val offenderNo: String,
-  @Schema(description = "Prison where the appointment occurs", required = true)
+  @Schema(description = "Prison where the appointment occurs")
   val prisonId: String? = null,
-  @Schema(description = "NOMIS room id", required = true)
+  @Schema(description = "NOMIS room id")
   val internalLocation: Long? = null,
-  @Schema(description = "Start date and time", required = true)
+  @Schema(description = "Start date and time")
   val startDateTime: LocalDateTime? = null,
-  @Schema(description = "End date and time", required = true)
+  @Schema(description = "End date and time")
   val endDateTime: LocalDateTime? = null,
   @Schema(description = "Comment")
   @field:Length(max = 4000)
