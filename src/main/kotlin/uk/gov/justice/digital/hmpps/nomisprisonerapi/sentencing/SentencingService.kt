@@ -1386,14 +1386,41 @@ class SentencingService(
   }
   fun cloneCourtCasesToLatestBookingFrom(case: CourtCase): BookingCourtCaseCloneResponse {
     val booking = offenderBookingRepository.findByIdOrNull(case.offenderBooking.bookingId)!!
+    val relevantCourtCases = findRelatedCasesFrom(case)
     val latestBooking = findLatestBooking(booking.offender.nomsId)
 
     if (booking == latestBooking) {
       throw BadDataException("Cannot clone court cased from the latest booking ${booking.bookingId} on to itself")
     }
 
-    return cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases)
+    return cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases.filter { relevantCourtCases.contains(it) })
   }
+
+  private fun findRelatedCasesFrom(rootCase: CourtCase): Set<CourtCase> = rootCase.linkedOrConsecutiveSentenceLinked(mutableSetOf(rootCase)).toSet()
+
+  private fun CourtCase.linkedOrConsecutiveSentenceLinked(alreadyRelatedCases: Set<CourtCase>): Set<CourtCase> {
+    val casesLinkedFromThisCase = sourceCombinedCases.toMutableList()
+    val casesLinkedFromToCase = targetCombinedCase?.let { mutableListOf(it) } ?: mutableListOf()
+    val casesLinkedViaConsecutiveSentencesFromThisCase = sentences
+      .mapNotNull { it.consecutiveSentence }
+      .filter { it.courtCase != this }
+      .mapNotNull { it.courtCase }
+    val casesLinkedViaConsecutiveSentencesToThisCase = this.offenderBooking.courtCases
+      .flatMap { it.sentences }
+      .filter { it.consecutiveSentence?.courtCase == this && it.courtCase != this }
+      .mapNotNull { it.consecutiveSentence?.courtCase }
+
+    val casesLinked = mutableSetOf<CourtCase>()
+    casesLinked += casesLinkedViaConsecutiveSentencesFromThisCase
+    casesLinked += casesLinkedViaConsecutiveSentencesToThisCase
+    casesLinked += casesLinkedFromThisCase
+    casesLinked += casesLinkedFromToCase
+
+    val newCasesLinked = casesLinked.filter { !alreadyRelatedCases.contains(it) }.toSet()
+
+    return alreadyRelatedCases + newCasesLinked.flatMap { it.linkedOrConsecutiveSentenceLinked(alreadyRelatedCases + newCasesLinked) }
+  }
+
   private fun cloneCourtCasesToLatestBookingFrom(latestBooking: OffenderBooking, sourceCourtCases: List<CourtCase>): BookingCourtCaseCloneResponse {
     val clonedCasesWithSource = sourceCourtCases.map { sourceCase ->
       courtCaseRepository.saveAndFlush(

@@ -49,6 +49,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.collections.find
 
 class SentencingResourceIntTest : IntegrationTestBase() {
   private val aDateString = "2023-01-01"
@@ -3504,6 +3505,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         transaction {
           assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(1)
           assertThat(offenderBookingRepository.findByIdOrNull(previousBookingId)!!.courtCases).hasSize(4)
+          assertThat(offenderBookingRepository.findByIdOrNull(previousBookingId)!!.findByCaseInfoNumber("NOT_INVOLVED")).isNotNull()
         }
 
         webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
@@ -3522,7 +3524,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .exchange().expectStatus().isCreated
 
         transaction {
-          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(5)
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(4)
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.findByCaseInfoNumber("NOT_INVOLVED")).isNull()
         }
       }
 
@@ -9136,4 +9139,5 @@ private fun BookingCourtCaseCloneResponse.findSourceByCaseInfoNumberOrNull(refer
 private fun BookingCourtCaseCloneResponse.findByCaseInfoNumberOrNull(reference: String) = courtCases.map { it.courtCase }.find { it.primaryCaseInfoNumber == reference }
 private fun BookingCourtCaseCloneResponse.getByCaseInfoNumber(reference: String) = findByCaseInfoNumberOrNull(reference)!!
 private fun OffenderBooking?.getByCaseInfoNumber(reference: String) = this!!.courtCases.getByCaseInfoNumber(reference)
+private fun OffenderBooking?.findByCaseInfoNumber(reference: String) = this!!.courtCases.find { it.primaryCaseInfoNumber == reference }
 private fun List<CourtCase>.getByCaseInfoNumber(reference: String) = this.find { it.primaryCaseInfoNumber == reference }!!
