@@ -17,7 +17,7 @@ data class TemporaryAbsenceApplicationResponse(
   val eventSubType: String,
 
   @Schema(description = "Application date")
-  val applicationDate: LocalDateTime,
+  val applicationDate: LocalDate,
 
   @Schema(description = "From date")
   val fromDate: LocalDate,
