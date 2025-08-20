@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -648,6 +649,138 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsence").isEmpty
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn").isEmpty
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /movements/{offenderNo}/temporary-absences/application/{applicationId}")
+  inner class GetTemporaryAbsencesApplication {
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication(
+              eventSubType = "C5",
+              applicationDate = twoDaysAgo,
+              applicationTime = twoDaysAgo,
+              fromDate = twoDaysAgo.toLocalDate(),
+              releaseTime = twoDaysAgo,
+              toDate = yesterday.toLocalDate(),
+              returnTime = yesterday,
+              applicationType = "SINGLE",
+              applicationStatus = "APP-SCH",
+              escort = "L",
+              transportType = "VAN",
+              comment = "Some comment application",
+              prison = "LEI",
+              toAgency = "HAZLWD",
+              toAddress = offenderAddress,
+              contactPersonName = "Derek",
+              temporaryAbsenceType = "RR",
+              temporaryAbsenceSubType = "RDR",
+            ) {
+              outsideMovement()
+              scheduledTemporaryAbsence {
+                externalMovement()
+                scheduledReturn {
+                  externalMovement()
+                }
+              }
+            }
+            temporaryAbsence()
+            temporaryAbsenceReturn()
+          }
+        }
+      }
+    }
+
+    @Test
+    fun `should return unauthorised for missing token`() {
+      webTestClient.get()
+        .uri("/movements/$offenderNo/temporary-absences/application/1")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden for missing role`() {
+      webTestClient.get()
+        .uri("/movements/$offenderNo/temporary-absences/application/1")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden for wrong role`() {
+      webTestClient.get()
+        .uri("/movements/$offenderNo/temporary-absences/application/1")
+        .headers(setAuthorisation("ROLE_INVALID"))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return not found if offender not found`() {
+      webTestClient.get()
+        .uri("/movements/UNKNOWN/temporary-absences/application/1")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("UNKNOWN").contains("not found")
+        }
+    }
+
+    @Test
+    fun `should return not found if application not found`() {
+      webTestClient.get()
+        .uri("/movements/$offenderNo/temporary-absences/application/9999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("9999").contains("not found")
+        }
+    }
+
+    @Test
+    fun `should retrieve application`() {
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences/application/{applicationId}", application.movementApplicationId)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("bookingId").isEqualTo(booking.bookingId)
+        .jsonPath("movementApplicationId").isEqualTo(application.movementApplicationId)
+        .jsonPath("eventSubType").isEqualTo("C5")
+        .jsonPath("applicationDate").value<String> {
+          assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
+        }
+        .jsonPath("fromDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
+        .jsonPath("releaseTime").value<String> {
+          assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
+        }
+        .jsonPath("toDate").isEqualTo("${yesterday.toLocalDate()}")
+        .jsonPath("returnTime").value<String> {
+          assertThat(it).startsWith("${yesterday.toLocalDate()}")
+        }
+        .jsonPath("applicationType").isEqualTo("SINGLE")
+        .jsonPath("applicationStatus").isEqualTo("APP-SCH")
+        .jsonPath("escortCode").isEqualTo("L")
+        .jsonPath("transportType").isEqualTo("VAN")
+        .jsonPath("comment").isEqualTo("Some comment application")
+        .jsonPath("prisonId").isEqualTo("LEI")
+        .jsonPath("toAgencyId").isEqualTo("HAZLWD")
+        .jsonPath("toAddressId").isEqualTo(offenderAddress.addressId)
+        .jsonPath("toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("contactPersonName").isEqualTo("Derek")
+        .jsonPath("temporaryAbsenceType").isEqualTo("RR")
+        .jsonPath("temporaryAbsenceSubType").isEqualTo("RDR")
     }
   }
 }

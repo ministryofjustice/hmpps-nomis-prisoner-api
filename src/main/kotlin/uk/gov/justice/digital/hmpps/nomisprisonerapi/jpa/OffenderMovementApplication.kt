@@ -63,6 +63,20 @@ import java.time.LocalDateTime
     ),
   ],
 )
+@NamedEntityGraph(
+  name = "application-only",
+  attributeNodes = [
+    NamedAttributeNode(value = "offenderBooking"),
+    NamedAttributeNode(value = "eventSubType"),
+    NamedAttributeNode(value = "applicationStatus"),
+    NamedAttributeNode(value = "escort"),
+    NamedAttributeNode(value = "transportType"),
+    NamedAttributeNode(value = "applicationType"),
+    NamedAttributeNode(value = "temporaryAbsenceType"),
+    NamedAttributeNode(value = "temporaryAbsenceSubType"),
+    NamedAttributeNode(value = "toAddress"),
+  ],
+)
 class OffenderMovementApplication(
   @SequenceGenerator(name = "OFFENDER_MOVEMENT_APP_ID", sequenceName = "OFFENDER_MOVEMENT_APP_ID", allocationSize = 1)
   @GeneratedValue(generator = "OFFENDER_MOVEMENT_APP_ID")
