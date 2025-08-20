@@ -3158,25 +3158,107 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               }
             }
           }.bookingId
-          previousBookingId = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.parse("2022-01-01T10:00")) {
-            release(date = LocalDateTime.parse("2022-02-28T10:00"))
+          previousBookingId = booking {
+            lateinit var sourceCase: CourtCase
+            lateinit var targetCaseEvent: CourtEvent
+            lateinit var consecutiveSentence: OffenderSentence
+            courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+              caseInfoNumber = "CON0001",
+              caseSequence = 1,
+            ) {
+              val charge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
+              lateinit var courtOrder: CourtOrder
+              courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "1002") {
+                courtOrder = courtOrder {
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+                courtEventCharge(
+                  resultCode1 = "1002",
+                  offenderCharge = charge,
+                )
+              }
+              consecutiveSentence = sentence(
+                courtOrder = courtOrder,
+                calculationType = "ADIMP_ORA",
+                category = "2003",
+                lineSequence = 1,
+              ) {
+                offenderSentenceCharge(charge)
+                term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+              }
+            }
+
+            sourceCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+              caseInfoNumber = "SOURCE",
+              caseSequence = 2,
+              caseStatus = "I",
+            ) {
+              offenderCaseIdentifier(reference = "SOURCE", type = "CASE/INFO#")
+              lateinit var courtOrder: CourtOrder
+              val sentencedCharge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
+              val chargedThatWillBeLinked = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "4506")
+              courtEvent(eventDateTime = LocalDateTime.parse("2021-01-02T10:00"), outcomeReasonCode = "4506") {
+                courtOrder = courtOrder {
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+                courtEventCharge(
+                  resultCode1 = "4506",
+                  offenderCharge = chargedThatWillBeLinked,
+                )
+                courtEventCharge(
+                  resultCode1 = "1002",
+                  offenderCharge = sentencedCharge,
+                )
+              }
+              sentence(
+                courtOrder = courtOrder,
+                calculationType = "ADIMP_ORA",
+                category = "2003",
+                lineSequence = 1,
+                consecSequence = consecutiveSentence.id.sequence.toInt(),
+              ) {
+                offenderSentenceCharge(sentencedCharge)
+                term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+              }
+            }
             previousBookingCourtCase = courtCase(
               reportingStaff = staff,
               statusUpdateStaff = staff,
+              caseInfoNumber = "TARGET",
+              caseSequence = 3,
+              caseStatus = "I",
             ) {
-              previousBookingOffenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
-              previousBookingOffenderCharge2 = offenderCharge(resultCode1 = "1067")
-              courtEvent {
-// overrides from the parent offender charge fields
+              offenderCaseIdentifier(reference = "TARGET", type = "CASE/INFO#")
+              previousBookingOffenderCharge1 = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
+              previousBookingOffenderCharge2 = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
+              targetCaseEvent = courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "2006") {
                 courtEventCharge(
+                  resultCode1 = "4506",
                   offenderCharge = previousBookingOffenderCharge1,
-                  plea = "NG",
                 )
                 courtEventCharge(
+                  resultCode1 = "4506",
                   offenderCharge = previousBookingOffenderCharge2,
                 )
+              }
+            }
+            linkCases(sourceCourtCase = sourceCase, targetCourtCase = previousBookingCourtCase, targetCourtEvent = targetCaseEvent)
+            courtCase(
+              caseInfoNumber = "NOT_INVOLVED",
+              caseSequence = 4,
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            ) {
+              val offenderCharge = offenderCharge(resultCode1 = "1067")
+              courtEvent {
+                courtEventCharge(
+                  offenderCharge = offenderCharge,
+                )
                 courtOrder {
-                  sentencePurpose(purposeCode = "REPAIR")
                   sentencePurpose(purposeCode = "PUNISH")
                 }
               }
@@ -3406,7 +3488,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(sourceCourtCaseResponse.offenderNo).isEqualTo(offenderNo)
         assertThat(sourceCourtCaseResponse.courtEvents).hasSize(1)
 
-        val clonedCourtCaseResponse: CourtCaseResponse = webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtAppearanceResponse.clonedCourtCases!!.courtCases[0].courtCase.id}")
+        val clonedCourtCaseResponse: CourtCaseResponse = webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtAppearanceResponse.clonedCourtCases!!.findByCaseInfoNumberOrNull("TARGET")!!.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
           .expectBodyResponse<CourtCaseResponse>()
@@ -3415,6 +3497,33 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(clonedCourtCaseResponse.courtEvents).hasSize(2)
         assertThat(clonedCourtCaseResponse.courtEvents[1].eventDateTime).isEqualTo(LocalDateTime.parse("2023-01-05T09:00:00"))
         assertThat(clonedCourtCaseResponse.courtEvents[1].courtEventCharges).hasSize(2)
+      }
+
+      @Test
+      fun `will move all related cases to the latest booking`() {
+        transaction {
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(1)
+          assertThat(offenderBookingRepository.findByIdOrNull(previousBookingId)!!.courtCases).hasSize(4)
+        }
+
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtEventCharges = mutableListOf(
+                  previousBookingOffenderCharge1.id,
+                  previousBookingOffenderCharge2.id,
+                ),
+              ),
+            ),
+          )
+          .exchange().expectStatus().isCreated
+
+        transaction {
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(5)
+        }
       }
 
       @Test
@@ -3433,7 +3542,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           eq("court-appearance-created"),
           check {
             assertThat(it).containsEntry("courtCaseId", previousBookingCourtCase.id.toString())
-            assertThat(it).containsEntry("clonedCourtCaseId", courtAppearanceResponse.clonedCourtCases!!.courtCases[0].courtCase.id.toString())
+            assertThat(it).containsEntry("clonedCourtCaseId", courtAppearanceResponse.clonedCourtCases!!.findByCaseInfoNumberOrNull("TARGET")!!.id.toString())
             assertThat(it).containsEntry("courtCaseCloned", "true")
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
@@ -3447,8 +3556,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
+      repository.deleteAllOffenderLinkedTransactions()
       repository.delete(prisonerAtMoorland)
       repository.deleteOffenderChargeByBooking(latestBookingId)
+      repository.deleteOffenderChargeByBooking(previousBookingId)
     }
   }
 
