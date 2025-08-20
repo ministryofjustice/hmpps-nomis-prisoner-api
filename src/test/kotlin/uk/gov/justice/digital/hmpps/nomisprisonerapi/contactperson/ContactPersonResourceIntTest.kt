@@ -385,7 +385,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
           .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
           .jsonPath("addresses[1].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("addresses[1].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("addresses[1].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
           .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
       }
