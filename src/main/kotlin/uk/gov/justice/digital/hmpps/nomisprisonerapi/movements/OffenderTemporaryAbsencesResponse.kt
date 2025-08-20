@@ -17,13 +17,13 @@ data class BookingTemporaryAbsences(
   val bookingId: Long,
 
   @Schema(description = "Temporary absence applications")
-  val temporaryAbsenceApplications: List<TemporaryAbsenceApplication>,
+  val temporaryAbsenceApplications: List<TemporaryAbsenceApplication> = emptyList(),
 
   @Schema(description = "Unscheduled temporary absences OUT - those without an application or a schedule")
-  val unscheduledTemporaryAbsences: List<TemporaryAbsence>,
+  val unscheduledTemporaryAbsences: List<TemporaryAbsence> = emptyList(),
 
   @Schema(description = "Unscheduled temporary absences IN - those without an application or a schedule")
-  val unscheduledTemporaryAbsenceReturns: List<TemporaryAbsenceReturn>,
+  val unscheduledTemporaryAbsenceReturns: List<TemporaryAbsenceReturn> = emptyList(),
 )
 
 @Schema(description = "Temporary absence application response")
@@ -89,7 +89,7 @@ data class TemporaryAbsenceApplication(
   val absences: List<Absence> = mutableListOf(),
 
   @Schema(description = "Outside movements")
-  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>,
+  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>? = mutableListOf(),
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,

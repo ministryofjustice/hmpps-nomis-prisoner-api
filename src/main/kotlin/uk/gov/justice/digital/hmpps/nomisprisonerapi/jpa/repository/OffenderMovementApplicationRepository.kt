@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import org.springframework.data.jpa.repository.EntityGraph
@@ -8,7 +10,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplica
 
 @Repository
 interface OffenderMovementApplicationRepository : JpaRepository<OffenderMovementApplication, Long> {
-  @Suppress("ktlint:standard:function-naming")
   @EntityGraph(type = EntityGraphType.FETCH, value = "offender-movement-app")
   fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderMovementApplication>
+
+  @EntityGraph(type = EntityGraphType.FETCH, value = "application-only")
+  fun findByMovementApplicationIdAndOffenderBooking_Offender_NomsId(applicationId: Long, offenderNo: String): OffenderMovementApplication?
 }

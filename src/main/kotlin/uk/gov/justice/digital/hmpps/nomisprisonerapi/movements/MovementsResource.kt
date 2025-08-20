@@ -55,4 +55,42 @@ class MovementsResource(
   fun getTemporaryAbsencesAndMovements(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
   ): OffenderTemporaryAbsencesResponse = movementsService.getTemporaryAbsencesAndMovements(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_MOVEMENTS')")
+  @GetMapping("/movements/{offenderNo}/temporary-absences/application/{applicationId}")
+  @Operation(
+    summary = "Get a specific temporary absence application for an offender",
+    description = "Get a specific temporary absence application for an offender. Note that this does not include any children such as the scheduled or actual movements. Requires role NOMIS_MOVEMENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender temporary absence application returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or application not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getTemporaryAbsenceApplication(
+    @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
+    @Schema(description = "Application ID", example = "123") @PathVariable applicationId: Long,
+  ) = movementsService.getTemporaryAbsenceApplication(offenderNo, applicationId)
 }

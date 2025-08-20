@@ -76,7 +76,27 @@ class MovementsService(
     }
   }
 
-  private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
+  fun getTemporaryAbsenceApplication(offenderNo: String, applicationId: Long): OffenderTemporaryAbsencesResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Offender with nomsId=$offenderNo not found")
+    }
+
+    val application = offenderMovementApplicationRepository.findByMovementApplicationIdAndOffenderBooking_Offender_NomsId(applicationId, offenderNo)
+      ?: throw NotFoundException("Temporary absence application with id=$applicationId not found for offender with nomsId=$offenderNo")
+
+    return OffenderTemporaryAbsencesResponse(
+      bookings = listOf(
+        BookingTemporaryAbsences(
+          bookingId = application.offenderBooking.bookingId,
+          temporaryAbsenceApplications = listOf(
+            application.toResponse(includeChildren = false),
+          ),
+        ),
+      ),
+    )
+  }
+
+  private fun OffenderMovementApplication.toResponse(includeChildren: Boolean = true) = TemporaryAbsenceApplication(
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate,
@@ -96,15 +116,19 @@ class MovementsService(
     applicationType = applicationType.code,
     temporaryAbsenceType = temporaryAbsenceType?.code,
     temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
-    absences = scheduledTemporaryAbsences.map {
-      Absence(
-        scheduledTemporaryAbsence = it.toResponse(),
-        scheduledTemporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.toResponse(),
-        temporaryAbsence = it.temporaryAbsence?.toResponse(),
-        temporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
-      )
+    absences = if (includeChildren) {
+      scheduledTemporaryAbsences.map {
+        Absence(
+          scheduledTemporaryAbsence = it.toResponse(),
+          scheduledTemporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.toResponse(),
+          temporaryAbsence = it.temporaryAbsence?.toResponse(),
+          temporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
+        )
+      }
+    } else {
+      emptyList()
     },
-    outsideMovements = outsideMovements.map { it.toResponse() },
+    outsideMovements = if (includeChildren) outsideMovements.map { it.toResponse() } else emptyList(),
     audit = toAudit(),
   )
 
