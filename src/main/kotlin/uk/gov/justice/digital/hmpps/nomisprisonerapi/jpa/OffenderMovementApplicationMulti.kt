@@ -7,6 +7,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -19,6 +21,15 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "OFFENDER_MOVEMENT_APPS_MULTI")
+@NamedEntityGraph(
+  name = "multi-only",
+  attributeNodes = [
+    NamedAttributeNode(value = "temporaryAbsenceType"),
+    NamedAttributeNode(value = "temporaryAbsenceSubType"),
+    NamedAttributeNode(value = "eventSubType"),
+    NamedAttributeNode(value = "toAddress"),
+  ],
+)
 class OffenderMovementApplicationMulti(
   @SequenceGenerator(name = "OFF_MOVEMENT_APPS_MULTI_ID", sequenceName = "OFF_MOVEMENT_APPS_MULTI_ID", allocationSize = 1)
   @GeneratedValue(generator = "OFF_MOVEMENT_APPS_MULTI_ID")
