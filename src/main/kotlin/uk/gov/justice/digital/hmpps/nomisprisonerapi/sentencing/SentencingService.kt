@@ -1622,7 +1622,7 @@ class SentencingService(
         val sourceCase = sourceCourtCases[caseIndex]
         if (sourceCase.targetCombinedCase != null) {
           clonedCase.statusUpdateDate = sourceCase.statusUpdateDate ?: LocalDate.now()
-          clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: "LINKED"
+          clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: sourceCase.deriveStatusUpdateReason()
           clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
           clonedCase.targetCombinedCase = clonedCases[sourceCourtCases.indexOf(sourceCase.targetCombinedCase)]
           clonedCase.targetCombinedCase!!.sourceCombinedCases += clonedCase
@@ -1630,13 +1630,7 @@ class SentencingService(
           with(clonedCase.targetCombinedCase!!) {
             // update target case so trigger for status update is ok
             this.statusUpdateDate = LocalDate.now()
-            this.statusUpdateReason = if (this.caseStatus.code == "A") {
-              // active
-              "A"
-            } else {
-              // inactive
-              "D"
-            }
+            this.statusUpdateReason = this.deriveStatusUpdateReason()
             this.statusUpdateStaff = findStaffByUsername(clonedCase.createUsername)
           }
         }
@@ -1717,6 +1711,10 @@ class SentencingService(
         clonedCases.forEachIndexed { caseIndex, clonedCase ->
           val sourceCase = sourceCourtCases[caseIndex]
           clonedCase.primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber
+          clonedCase.statusUpdateDate = sourceCase.statusUpdateDate ?: LocalDate.now()
+          clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: sourceCase.deriveStatusUpdateReason()
+          clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
+
           // NOMIS trigger will insert primaryCaseInfoNumber - so exclude from our manually insert else we will have duplicate keys
           clonedCase.caseInfoNumbers += sourceCase.caseInfoNumbers.filterNot { caseIdentifier -> caseIdentifier.id.identifierType == "CASE/INFO#" && caseIdentifier.id.reference == sourceCase.primaryCaseInfoNumber }.map { caseInfoNumber ->
             OffenderCaseIdentifier(
@@ -1747,6 +1745,16 @@ class SentencingService(
       },
     )
   }
+}
+
+private fun CourtCase.deriveStatusUpdateReason() = if (this.targetCombinedCase != null) {
+  "LINKED"
+} else if (this.caseStatus.code == "A") {
+  // active
+  "A"
+} else {
+  // inactive
+  "D"
 }
 
 private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest = ExistingOffenderChargeRequest(
