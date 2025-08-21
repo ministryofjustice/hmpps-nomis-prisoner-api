@@ -131,4 +131,42 @@ class MovementsResource(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
     @Schema(description = "Event ID", example = "123") @PathVariable eventId: Long,
   ) = movementsService.getScheduledTemporaryAbsence(offenderNo, eventId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_MOVEMENTS')")
+  @GetMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence-return/{eventId}")
+  @Operation(
+    summary = "Get a specific scheduled temporary absence return for an offender",
+    description = "Get a specific scheduled temporary absence return for an offender by event ID. Requires role NOMIS_MOVEMENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender scheduled temporary absence return returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or scheduled temporary absence return not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getScheduledTemporaryAbsenceReturn(
+    @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
+    @Schema(description = "Event ID", example = "123") @PathVariable eventId: Long,
+  ) = movementsService.getScheduledTemporaryAbsenceReturn(offenderNo, eventId)
 }
