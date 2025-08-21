@@ -19,10 +19,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 
 @RestController
 @Validated
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 @RequestMapping("/agency-switches/", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{serviceCode}")
   @Operation(
     summary = "Retrieve a list of agencies switched on for the service code",
@@ -61,7 +61,6 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
     @Schema(description = "The code of the service from the EXTERNAL_SERVICES table") @PathVariable serviceCode: String,
   ): List<AgencyDetails> = service.getServiceAgencies(serviceCode)
 
-  @PreAuthorize("hasAnyRole('ROLE_NOMIS_ACTIVITIES', 'ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{serviceCode}/agency/{agencyId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
@@ -71,7 +70,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
     This endpoint also takes into account the special `*ALL*` agency id - if the service code has a agency entry of
     `*ALL*` then the service is deemed to be switched on for all agencies and will therefore return 204 irrespective of the
     agency id that is passed in.
-    Requires role NOMIS_ACTIVITIES or ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
+    Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(responseCode = "204", description = "Service is switched on for the service code and agency id."),
       ApiResponse(
@@ -111,7 +110,6 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
     }
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{serviceCode}/prisoner/{prisonNumber}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
@@ -161,12 +159,11 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
     }
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
   @PostMapping("{serviceCode}/agency/{agencyId}")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Turn on a service for a agency",
-    description = "Turn on a service for a agency. Requires role NOMIS_ACTIVITIES",
+    description = "Turn on a service for a agency. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -188,7 +185,7 @@ class ServiceAgencySwitchesResource(private val service: ServiceAgencySwitchesSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
