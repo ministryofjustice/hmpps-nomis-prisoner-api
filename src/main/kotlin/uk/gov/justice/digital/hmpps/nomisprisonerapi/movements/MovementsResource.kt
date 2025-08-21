@@ -169,4 +169,42 @@ class MovementsResource(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
     @Schema(description = "Event ID", example = "123") @PathVariable eventId: Long,
   ) = movementsService.getScheduledTemporaryAbsenceReturn(offenderNo, eventId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_MOVEMENTS')")
+  @GetMapping("/movements/{offenderNo}/temporary-absences/outside-movement/{appMultiId}")
+  @Operation(
+    summary = "Get a specific temporary absence application outside movement for an offender",
+    description = "Get a specific temporary absence application outside movement for an offender by application multi ID. Requires role NOMIS_MOVEMENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender temporary absence application outside movement returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or outside movement not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getTemporaryAbsenceApplicationOutsideMovement(
+    @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
+    @Schema(description = "Application Multi ID", example = "123") @PathVariable appMultiId: Long,
+  ) = movementsService.getTemporaryAbsenceApplicationOutsideMovement(offenderNo, appMultiId)
 }

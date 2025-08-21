@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTempor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
@@ -27,6 +28,7 @@ class MovementsService(
   private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
+  private val offenderMovementApplicationMultiRepository: OffenderMovementApplicationMultiRepository,
 ) {
   fun getTemporaryAbsencesAndMovements(offenderNo: String): OffenderTemporaryAbsencesResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -111,6 +113,17 @@ class MovementsService(
       ?: throw NotFoundException("Scheduled temporary absence return with eventId=$eventId not found for offender with nomsId=$offenderNo")
 
     return scheduledAbsenceReturn.toSingleResponse()
+  }
+
+  fun getTemporaryAbsenceApplicationOutsideMovement(offenderNo: String, appMultiId: Long): TemporaryAbsenceApplicationOutsideMovementResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Offender with nomsId=$offenderNo not found")
+    }
+
+    val outsideMovement = offenderMovementApplicationMultiRepository.findByMovementApplicationMultiIdAndOffenderMovementApplication_OffenderBooking_Offender_NomsId(appMultiId, offenderNo)
+      ?: throw NotFoundException("Temporary absence application outside movement with id=$appMultiId not found for offender with nomsId=$offenderNo")
+
+    return outsideMovement.toSingleResponse()
   }
 
   private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
@@ -315,6 +328,25 @@ class MovementsService(
     escort = escort?.code,
     fromAgency = fromAgency?.id,
     toPrison = toAgency?.id,
+    audit = toAudit(),
+  )
+
+  private fun OffenderMovementApplicationMulti.toSingleResponse() = TemporaryAbsenceApplicationOutsideMovementResponse(
+    bookingId = offenderMovementApplication.offenderBooking.bookingId,
+    movementApplicationId = offenderMovementApplication.movementApplicationId,
+    outsideMovementId = movementApplicationMultiId,
+    temporaryAbsenceType = temporaryAbsenceType?.code,
+    temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
+    eventSubType = eventSubType.code,
+    fromDate = fromDate,
+    releaseTime = releaseTime,
+    toDate = toDate,
+    returnTime = returnTime,
+    comment = comment,
+    toAgencyId = toAgency?.id,
+    toAddressId = toAddress?.addressId,
+    toAddressOwnerClass = toAddress?.addressOwnerClass,
+    contactPersonName = contactPersonName,
     audit = toAudit(),
   )
 }
