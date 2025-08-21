@@ -1621,6 +1621,9 @@ class SentencingService(
       clonedCases.forEachIndexed { caseIndex, clonedCase ->
         val sourceCase = sourceCourtCases[caseIndex]
         if (sourceCase.targetCombinedCase != null) {
+          sourceCase.statusUpdateDate = sourceCase.statusUpdateDate ?: LocalDate.now()
+          sourceCase.statusUpdateReason = sourceCase.statusUpdateReason ?: "LINKED"
+          sourceCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
           clonedCase.targetCombinedCase = clonedCases[sourceCourtCases.indexOf(sourceCase.targetCombinedCase)]
           clonedCase.targetCombinedCase!!.sourceCombinedCases += clonedCase
 
