@@ -2055,7 +2055,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun createPrisonerAndSentence() {
         nomisDataBuilder.build {
           staff = staff {
-            account {}
+            account(username = "T_SMITH")
           }
           offender(nomsId = "A1234KT") {
             latestBookingId = booking {
@@ -2293,9 +2293,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               lateinit var consecutiveSentence: OffenderSentence
               courtCase(
                 reportingStaff = staff,
-                statusUpdateStaff = staff,
                 caseInfoNumber = "CON0001",
                 caseSequence = 1,
+                statusUpdateReason = null,
+                statusUpdateDate = null,
+                statusUpdateStaff = null,
               ) {
                 val charge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
                 lateinit var courtOrder: CourtOrder
@@ -2321,6 +2323,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
               courtCase(
                 reportingStaff = staff,
                 statusUpdateStaff = staff,
+                statusUpdateReason = "UNLINKED",
+                statusUpdateDate = LocalDate.parse("2020-01-01"),
                 caseInfoNumber = "CON0002",
                 caseSequence = 2,
               ) {
@@ -2357,6 +2361,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "SOURCE",
                 caseSequence = 1,
                 caseStatus = "I",
+                statusUpdateReason = null,
               ) {
                 offenderCaseIdentifier(reference = "SOURCE", type = "CASE/INFO#")
                 lateinit var courtOrder: CourtOrder
@@ -2391,6 +2396,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "TARGET",
                 caseSequence = 2,
                 caseStatus = "I",
+                statusUpdateReason = null,
               ) {
                 offenderCaseIdentifier(reference = "TARGET", type = "CASE/INFO#")
                 val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
@@ -2496,6 +2502,29 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `status update columns are set to allow NOMIS trigger to add to case status table`() {
+        webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithConsecutiveSentences/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val caseWithNoStatusSet = offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("CON0001")
+
+          assertThat(caseWithNoStatusSet.statusUpdateDate).isEqualTo(LocalDate.now())
+          assertThat(caseWithNoStatusSet.statusUpdateReason).isEqualTo("A")
+          // default to staff ralted to system user
+          assertThat(caseWithNoStatusSet.statusUpdateStaff?.accounts?.map { it.username }).contains("PRISON_API_USER")
+
+          val caseWithStatusAlreadySet = offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("CON0002")
+
+          assertThat(caseWithStatusAlreadySet.statusUpdateDate).isEqualTo(LocalDate.parse("2020-01-01"))
+          assertThat(caseWithStatusAlreadySet.statusUpdateReason).isEqualTo("UNLINKED")
+          assertThat(caseWithStatusAlreadySet.statusUpdateStaff?.accounts?.map { it.username }).contains("T_SMITH")
+        }
+      }
+
+      @Test
       internal fun `case identifiers, except primary case number, are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
@@ -2505,7 +2534,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         transaction {
           val case = offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("X0002")
           assertThat(case.caseInfoNumbers).hasSize(3)
-          // "CASE/INFO#" type taht macth primary case number are not copied since that is done by NOMIS trigger
+          // "CASE/INFO#" type that match primary case number are not copied since that is done by NOMIS trigger
           assertThat(case.caseInfoNumbers.find { it.id.reference == "X0002#" }).isNull()
           with(case.caseInfoNumbers.find { it.id.reference == "X0022" }!!) {
             assertThat(id.reference).isEqualTo("X0022")
@@ -3015,10 +3044,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "AN81016" }).isNotNull
           assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }).isNotNull
           assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }!!.id.offenderCharge.courtCase).isEqualTo(targetCase)
+          assertThat(sourceCase.statusUpdateReason).isEqualTo("LINKED")
 
           assertThat(targetCase.sourceCombinedCases).containsExactly(sourceCase)
-          assertThat(targetCase.statusUpdateReason).isEqualTo("A")
-          assertThat(targetCase.statusUpdateDate).isEqualTo(LocalDate.now())
+          assertThat(targetCase.statusUpdateReason).isEqualTo("D")
 
           assertThat(targetCase.offenderCharges).hasSize(2)
           assertThat(targetCase.offenderCharges.find { it.offence.id.offenceCode == "LG72004" }).isNotNull
