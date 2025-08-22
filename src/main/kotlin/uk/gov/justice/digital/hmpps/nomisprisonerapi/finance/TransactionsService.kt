@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
@@ -29,31 +30,7 @@ class TransactionsService(
 
   fun getOffenderTransactions(transactionId: Long): List<OffenderTransactionDto> = offenderTransactionRepository
     .findByTransactionId(transactionId)
-    .map {
-      OffenderTransactionDto(
-        transactionId = it.transactionId,
-        transactionEntrySequence = it.transactionEntrySequence,
-        amount = it.entryAmount,
-        type = it.transactionType.type,
-        postingType = it.postingType,
-        offenderNo = it.trustAccount.id.offender.nomsId,
-        offenderId = it.trustAccount.id.offender.id,
-        bookingId = it.offenderBooking?.bookingId,
-        caseloadId = it.trustAccount.id.caseloadId,
-        entryDate = it.entryDate,
-        reference = it.transactionReferenceNumber,
-        clientReference = it.clientUniqueRef,
-        subAccountType = it.subAccountType,
-        description = it.entryDescription ?: "",
-        createdAt = it.createDatetime,
-        createdBy = it.createUsername,
-        createdByDisplayName = getDisplayName(it.createStaffUserAccount),
-        lastModifiedAt = it.modifyDatetime,
-        lastModifiedBy = it.modifyUserId,
-        lastModifiedByDisplayName = getDisplayName(it.modifyStaffUserAccount),
-        generalLedgerTransactions = it.generalLedgerTransactions.map(::mapGL),
-      )
-    }
+    .map(::mapOT)
 
   fun getGeneralLedgerTransactions(
     transactionId: Long,
@@ -65,17 +42,56 @@ class TransactionsService(
     .findMinTransactionIdByEntryDate(date)
     ?: throw NotFoundException("No transactions found with date $date")
 
-  fun findNonOffenderTransactionsFromId(
+  fun findOrphanTransactionsFromId(
     transactionId: Long,
     transactionEntrySequence: Int,
     generalLedgerEntrySequence: Int,
     pageSize: Int,
   ): List<GeneralLedgerTransactionDto> {
     val data = generalLedgerTransactionRepository
-      .findNonOffenderByTransactionIdGreaterThan(transactionId, transactionEntrySequence, generalLedgerEntrySequence, Limit.of(pageSize))
+      .findNonOffenderByTransactionIdGreaterThan(
+        transactionId,
+        transactionEntrySequence,
+        generalLedgerEntrySequence,
+        Limit.of(pageSize),
+      )
     return data.map(::mapGL)
   }
+
+  fun findOffenderTransactionsFromId(
+    transactionId: Long,
+    transactionEntrySequence: Int,
+    pageSize: Int,
+  ): List<OffenderTransactionDto> {
+    val data = offenderTransactionRepository
+      .findByTransactionIdGreaterThan(transactionId, transactionEntrySequence, Limit.of(pageSize))
+    return data.map(::mapOT)
+  }
 }
+
+private fun mapOT(transaction: OffenderTransaction): OffenderTransactionDto = OffenderTransactionDto(
+  transactionId = transaction.transactionId,
+  transactionEntrySequence = transaction.transactionEntrySequence,
+  amount = transaction.entryAmount,
+  type = transaction.transactionType.type,
+  postingType = transaction.postingType,
+  offenderNo = transaction.trustAccount.id.offender.nomsId,
+  offenderId = transaction.trustAccount.id.offender.id,
+  bookingId = transaction.offenderBooking?.bookingId,
+  caseloadId = transaction.trustAccount.id.caseloadId,
+  entryDate = transaction.entryDate,
+  reference = transaction.transactionReferenceNumber,
+  clientReference = transaction.clientUniqueRef,
+  subAccountType = transaction.subAccountType,
+  description = transaction.entryDescription ?: "",
+  createdAt = transaction.createDatetime,
+  createdBy = transaction.createUsername,
+  createdByDisplayName = getDisplayName(transaction.createStaffUserAccount),
+  lastModifiedAt = transaction.modifyDatetime,
+  lastModifiedBy = transaction.modifyUserId,
+  lastModifiedByDisplayName = getDisplayName(transaction.modifyStaffUserAccount),
+  generalLedgerTransactions = transaction.generalLedgerTransactions.map(::mapGL),
+)
 
 private fun mapGL(gl: GeneralLedgerTransaction): GeneralLedgerTransactionDto = GeneralLedgerTransactionDto(
   transactionId = gl.transactionId,
