@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
@@ -7,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenc
 
 @Repository
 interface OffenderTemporaryAbsenceReturnRepository : JpaRepository<OffenderTemporaryAbsenceReturn, OffenderExternalMovementId> {
-  @Suppress("ktlint:standard:function-naming")
   fun findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceIsNull(offenderNo: String): List<OffenderTemporaryAbsenceReturn>
+
+  fun findByOffenderBooking_BookingIdAndId_Sequence(bookingId: Long, sequence: Int): OffenderTemporaryAbsenceReturn?
 }
