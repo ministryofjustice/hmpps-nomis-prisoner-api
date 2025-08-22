@@ -70,7 +70,10 @@ val testPackages = listOf(
 )
 
 testPackages.forEach {
-  val task = tasks.register(it.toTestTaskName(), Test::class) {
+  val test by testing.suites.existing(JvmTestSuite::class)
+  val task = tasks.register<Test>(it.toTestTaskName()) {
+    testClassesDirs = files(test.map { it.sources.output.classesDirs })
+    classpath = files(test.map { it.sources.runtimeClasspath })
     group = "Run tests"
     description = "Run tests for ${it.name}"
     shouldRunAfter("test")
