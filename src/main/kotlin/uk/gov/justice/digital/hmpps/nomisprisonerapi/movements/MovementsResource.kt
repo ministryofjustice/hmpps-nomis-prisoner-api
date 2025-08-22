@@ -207,4 +207,43 @@ class MovementsResource(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
     @Schema(description = "Application Multi ID", example = "123") @PathVariable appMultiId: Long,
   ) = movementsService.getTemporaryAbsenceApplicationOutsideMovement(offenderNo, appMultiId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_MOVEMENTS')")
+  @GetMapping("/movements/{offenderNo}/temporary-absences/temporary-absence/{bookingId}/{movementSeq}")
+  @Operation(
+    summary = "Get a specific temporary absence for an offender",
+    description = "Get a specific temporary absence for an offender by booking ID and movement sequence. Requires role NOMIS_MOVEMENTS",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender temporary absence returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or temporary absence not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getTemporaryAbsence(
+    @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
+    @Schema(description = "Booking ID", example = "123") @PathVariable bookingId: Long,
+    @Schema(description = "Movement Sequence", example = "1") @PathVariable movementSeq: Int,
+  ) = movementsService.getTemporaryAbsence(offenderNo, bookingId, movementSeq)
 }
