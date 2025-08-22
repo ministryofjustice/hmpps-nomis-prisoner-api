@@ -126,6 +126,17 @@ class MovementsService(
     return outsideMovement.toSingleResponse()
   }
 
+  fun getTemporaryAbsence(offenderNo: String, bookingId: Long, movementSeq: Int): TemporaryAbsenceResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Offender with nomsId=$offenderNo not found")
+    }
+
+    val temporaryAbsence = temporaryAbsenceRepository.findByOffenderBooking_BookingIdAndId_Sequence(bookingId, movementSeq)
+      ?: throw NotFoundException("Temporary absence with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
+
+    return temporaryAbsence.toSingleResponse()
+  }
+
   private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
@@ -347,6 +358,25 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     contactPersonName = contactPersonName,
+    audit = toAudit(),
+  )
+
+  private fun OffenderTemporaryAbsence.toSingleResponse() = TemporaryAbsenceResponse(
+    bookingId = id.offenderBooking.bookingId,
+    sequence = id.sequence,
+    scheduledTemporaryAbsenceId = scheduledTemporaryAbsence?.eventId,
+    movementApplicationId = scheduledTemporaryAbsence?.temporaryAbsenceApplication?.movementApplicationId,
+    movementDate = movementDate,
+    movementTime = movementTime,
+    movementReason = movementReason.code,
+    arrestAgency = arrestAgency?.code,
+    escort = escort?.code,
+    escortText = escortText,
+    fromPrison = fromAgency?.id,
+    toAgency = toAgency?.id,
+    commentText = commentText,
+    toAddressId = toAddress?.addressId,
+    toAddressOwnerClass = toAddress?.addressOwnerClass,
     audit = toAudit(),
   )
 }
