@@ -1736,11 +1736,26 @@ class SentencingService(
       }
     }.zip(sourceCourtCases)
 
+    val sourceSentences = clonedCasesWithSource.flatMap { (_, source) -> source.sentences }
+    val clonedSentences = clonedCasesWithSource.flatMap { (cloned, _) -> cloned.sentences }
+
     return BookingCourtCaseCloneResponse(
       courtCases = clonedCasesWithSource.map { (cloned, source) ->
         ClonedCourtCaseResponse(
           courtCase = cloned.toCourtCaseResponse(),
           sourceCourtCase = source.toCourtCaseResponse(),
+        )
+      },
+      sentenceAdjustments = sentencingAdjustmentService.copyAllAdjustment(
+        fromSentences = sourceSentences,
+        toSentences = clonedSentences,
+      ).map {
+        SentenceIdAndAdjustmentsCreated(
+          sentenceId = SentenceId(
+            offenderBookingId = it.sentenceId.offenderBooking.bookingId,
+            sentenceSequence = it.sentenceId.sequence,
+          ),
+          adjustmentIds = it.adjustmentIds,
         )
       },
     )

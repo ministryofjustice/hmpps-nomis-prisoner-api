@@ -2627,8 +2627,15 @@ data class ClonedCourtCaseResponse(
   val sourceCourtCase: CourtCaseResponse,
 )
 
-@Schema(description = "Response for Court Cases bookig clone operations")
+@Schema(description = "Response for Court Cases booking clone operations")
 data class BookingCourtCaseCloneResponse(
   @Schema(description = "Court Cases created")
   val courtCases: List<ClonedCourtCaseResponse>,
+  @Schema(description = "Sentence adjustments created")
+  val sentenceAdjustments: List<SentenceIdAndAdjustmentsCreated>,
+)
+
+data class SentenceIdAndAdjustmentsCreated(
+  val sentenceId: SentenceId,
+  val adjustmentIds: List<Long>,
 )
