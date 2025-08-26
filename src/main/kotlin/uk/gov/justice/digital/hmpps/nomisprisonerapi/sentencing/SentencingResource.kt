@@ -222,17 +222,32 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ApiResponse(
         responseCode = "400",
         description = "The request is invalid, see response for details",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = uk.gov.justice.hmpps.kotlin.common.ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = uk.gov.justice.hmpps.kotlin.common.ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Access forbidden to this endpoint. Requires role NOMIS_COURT_SENTENCING",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = uk.gov.justice.hmpps.kotlin.common.ErrorResponse::class))],
+        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
     ],
   )
