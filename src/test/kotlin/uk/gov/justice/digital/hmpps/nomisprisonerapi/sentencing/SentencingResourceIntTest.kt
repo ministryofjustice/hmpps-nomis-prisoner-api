@@ -49,7 +49,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import kotlin.collections.find
 
 class SentencingResourceIntTest : IntegrationTestBase() {
   private val aDateString = "2023-01-01"
@@ -1081,6 +1080,135 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("$[0].bookingId").isEqualTo(prisoner1Booking2.bookingId)
           .jsonPath("$[1].offenderNo").isEqualTo(prisoner1.nomsId)
           .jsonPath("$[1].bookingId").isEqualTo(prisoner1Booking.bookingId)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.deleteOffenders()
+      repository.delete(staff)
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/get-list")
+  @Nested
+  inner class GetCourtCasesByOffenderAndCaseIds {
+    private lateinit var prisoner1: Offender
+    private lateinit var prisoner1Booking: OffenderBooking
+    private lateinit var prisoner1Booking2: OffenderBooking
+    private lateinit var prisoner2: Offender
+    private lateinit var prisoner1CourtCase: CourtCase
+    private lateinit var prisoner1CourtCase2: CourtCase
+    private lateinit var prisoner2CourtCase: CourtCase
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisoner1 =
+          offender(nomsId = "A1234AB") {
+            prisoner1Booking = booking(agencyLocationId = "MDI") {
+              prisoner1CourtCase = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
+            alias {
+              prisoner1Booking2 = booking(agencyLocationId = "MDI") {
+                prisoner1CourtCase2 = courtCase(
+                  reportingStaff = staff,
+                ) {}
+              }
+            }
+          }
+        prisoner2 =
+          offender(nomsId = "A1234AC") {
+            booking(agencyLocationId = "MDI") {
+              prisoner2CourtCase = courtCase(
+                reportingStaff = staff,
+              ) {}
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/get-list")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              listOf<Long>(prisoner1CourtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/get-list")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              listOf<Long>(prisoner1CourtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/get-list")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              listOf<Long>(prisoner1CourtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.post().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/get-list")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              listOf<Long>(prisoner1CourtCase.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the specified court cases for the offender`() {
+        webTestClient.post().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/get-list")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              listOf<Long>(prisoner1CourtCase2.id),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+          .jsonPath("$[0].offenderNo").isEqualTo(prisoner1.nomsId)
+          .jsonPath("$[0].id").isEqualTo(prisoner1CourtCase2.id)
       }
     }
 
