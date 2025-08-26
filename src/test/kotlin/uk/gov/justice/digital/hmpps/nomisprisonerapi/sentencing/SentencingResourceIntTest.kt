@@ -2097,7 +2097,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 ) {
                   offenderSentenceCharge(charge)
                   term(startDate = LocalDate.parse("2022-01-01"), years = 2)
-                  adjustment(adjustmentTypeCode = "RX", adjustmentDate = LocalDate.parse("2022-01-01"), adjustmentNumberOfDays = 30)
+                  adjustment(adjustmentTypeCode = "RSR", adjustmentDate = LocalDate.parse("2022-01-01"), adjustmentNumberOfDays = 30)
                 }
               }
             }.bookingId
@@ -2250,7 +2250,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   startDate2Calc = LocalDate.parse("2024-02-18"),
                 ) {
                   offenderSentenceCharge(horseDrawnVehicleCharge)
-                  // obviously the term durations make no sense - but fien for testing
+                  // obviously, the term durations make no sense - but fine for testing
                   term(
                     endDate = LocalDate.parse("2024-01-01"),
                     years = 2,
@@ -2268,6 +2268,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     lifeSentenceFlag = false,
                   )
                   adjustment(adjustmentTypeCode = "RX", adjustmentDate = LocalDate.parse("2022-01-01"), adjustmentNumberOfDays = 30)
+                  adjustment(adjustmentTypeCode = "S240A")
                 }
               }
               release()
@@ -2971,6 +2972,43 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(sentence.sentenceTerms).hasSize(2)
         assertThat(sentence.sentenceTerms[0].termSequence).isEqualTo(1)
         assertThat(sentence.sentenceTerms[1].termSequence).isEqualTo(2)
+      }
+
+      @Test
+      internal fun `sentence adjustments copied and their IDs are returned`() {
+        val response: BookingCourtCaseCloneResponse = webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(response.sentenceAdjustments).hasSize(1)
+        assertThat(response.sentenceAdjustments[0].sentenceId.offenderBookingId).isEqualTo(latestBookingId)
+        assertThat(response.sentenceAdjustments[0].sentenceId.sentenceSequence).isGreaterThan(0)
+        assertThat(response.sentenceAdjustments[0].adjustmentIds).hasSize(2)
+        assertThat(response.sentenceAdjustments[0].adjustmentIds[0]).isGreaterThan(0)
+        assertThat(response.sentenceAdjustments[0].adjustmentIds[1]).isGreaterThan(0)
+      }
+
+      @Test
+      internal fun `sentence adjustments associated with sentences are copied`() {
+        transaction {
+          assertThat(offenderSentenceAdjustmentRepository.findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(offenderBookingRepository.findByIdOrNull(latestBookingId)!!)).hasSize(1)
+        }
+
+        webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .exchange()
+          .expectStatus().isOk
+
+        transaction {
+          val createdAdjustments = offenderSentenceAdjustmentRepository.findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(offenderBookingRepository.findByIdOrNull(latestBookingId)!!)
+          assertThat(createdAdjustments).hasSize(3)
+          with(createdAdjustments.find { it.sentenceAdjustment.id == "RX" }!!) {
+            assertThat(adjustmentDate).isEqualTo(LocalDate.parse("2022-01-01"))
+            assertThat(active).isTrue
+            assertThat(adjustmentNumberOfDays).isEqualTo(30)
+          }
+        }
       }
 
       @Test

@@ -290,6 +290,32 @@ class SentencingAdjustmentService(
     )
   }
 
+  @Transactional(propagation = Propagation.MANDATORY)
+  fun copyAllAdjustment(fromSentences: List<OffenderSentence>, toSentences: List<OffenderSentence>): List<SentenceIdAndAdjustments> = fromSentences.zip(toSentences).map { (fromSentence, toSentence) ->
+    fromSentence.adjustments.map { sourceAdjustment ->
+      createSentenceAdjustment(
+        toSentence.id.offenderBooking.bookingId,
+        toSentence.id.sequence,
+        CreateSentenceAdjustmentRequest(
+          adjustmentTypeCode = sourceAdjustment.sentenceAdjustment.id,
+          adjustmentDate = sourceAdjustment.adjustmentDate,
+          adjustmentDays = sourceAdjustment.adjustmentNumberOfDays,
+          adjustmentFromDate = sourceAdjustment.fromDate,
+          comment = sourceAdjustment.comment,
+          active = true,
+        ),
+      )
+    }.let { adjustment ->
+      SentenceIdAndAdjustments(
+        sentenceId = SentenceId(
+          offenderBooking = toSentence.id.offenderBooking,
+          sequence = toSentence.id.sequence,
+        ),
+        adjustmentIds = adjustment.map { it.id },
+      )
+    }
+  }
+
   private fun convertAdjustments(
     sentences: List<OffenderSentence>,
     sourceAdjustments: List<String>,
