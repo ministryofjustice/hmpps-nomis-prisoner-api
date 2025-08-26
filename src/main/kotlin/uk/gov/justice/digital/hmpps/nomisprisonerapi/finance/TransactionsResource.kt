@@ -160,6 +160,62 @@ class TransactionsResource(
       transactionEntrySequence,
       pageSize,
     )
+
+  @GetMapping("/transactions/from/{transactionId}/{transactionEntrySequence}/{generalLedgerEntrySequence}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "get a transaction by id and sequence number",
+    description = "Retrieves a prisoner transaction. Requires NOMIS_TRANSACTIONS",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_TRANSACTIONS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Transaction does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun findNonOffenderTransactionsFromId(
+    @Schema(description = "Id of last transaction before intended start", example = "123456789")
+    @PathVariable
+    transactionId: Long,
+    @Schema(description = "Sequence of last transaction before intended start", example = "3")
+    @PathVariable
+    transactionEntrySequence: Int,
+    @Schema(description = "GL Sequence of last transaction before intended start", example = "1")
+    @PathVariable
+    generalLedgerEntrySequence: Int,
+    @Schema(
+      description = """Number of GL transaction records to get. The first record returned will be the first one *after*
+        the given id/seq/glseq combination.
+        
+        Note that slightly fewer records than requested will usually 
+        be returned as there are several records per transaction id (potentially over 2000), so the records of the 
+        last id will be trimmed.
+        The assumption is that they are an incomplete or truncated set for that transaction id""",
+      example = "500",
+      required = false,
+      defaultValue = "100",
+    )
+    @RequestParam(required = false, defaultValue = "100")
+    pageSize: Int,
+  ): List<GeneralLedgerTransactionDto> = transactionsService
+    .findOrphanTransactionsFromId(
+      transactionId,
+      transactionEntrySequence,
+      generalLedgerEntrySequence,
+      pageSize,
+    )
 }
 
 enum class SourceSystem { DPS, NOMIS }
