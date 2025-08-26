@@ -3,9 +3,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -191,6 +193,55 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @PathVariable
     offenderNo: String,
   ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffender(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/get-list")
+  @Tag(name = "Multiple Court case lookup")
+  @Operation(
+    summary = "Retrieves a specified list of court cases for an offender",
+    description = "Requires role <b>NOMIS_SENTENCING</b>",
+    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          array = ArraySchema(schema = Schema(implementation = Long::class)),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "List of Court case responses returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = CourtCaseResponse::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request is invalid, see response for details",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = uk.gov.justice.hmpps.kotlin.common.ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = uk.gov.justice.hmpps.kotlin.common.ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Access forbidden to this endpoint. Requires role NOMIS_COURT_SENTENCING",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = uk.gov.justice.hmpps.kotlin.common.ErrorResponse::class))],
+      ),
+    ],
+  )
+  suspend fun getCourtCasesByOffender(
+    @Schema(description = "Offender No", example = "AA12345")
+    @PathVariable
+    offenderNo: String,
+    @RequestBody nomisCaseIds: List<Long>,
+  ): List<CourtCaseResponse> = sentencingService.getCourtCases(offenderNo = offenderNo, idList = nomisCaseIds)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/ids")

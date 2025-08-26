@@ -127,6 +127,8 @@ class SentencingService(
       courtCase.toCourtCaseResponse()
     }
 
+  fun getCourtCases(offenderNo: String, idList: List<Long>): List<CourtCaseResponse> = getCourtCasesByOffender(offenderNo).filter { it.id in idList }
+
   fun getCourtCasesChangedByMergePrisoners(offenderNo: String): PostPrisonerMergeCaseChanges {
     val lastMerge = mergeTransactionRepository.findLatestByNomsId(offenderNo)
       ?: throw BadDataException("Prisoner $offenderNo has no merges")
