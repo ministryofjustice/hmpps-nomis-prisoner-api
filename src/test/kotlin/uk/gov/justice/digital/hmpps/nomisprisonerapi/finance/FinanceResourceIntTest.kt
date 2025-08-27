@@ -37,13 +37,14 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender = offender {
         booking {
-          transaction1 = transaction("DPST") {
+          transaction1 = transaction(transactionId = 2, transactionType = "DPST") {
             glTransaction1 = generalLedgerTransaction(1, 2000)
             glTransaction2 = generalLedgerTransaction(2, 2100)
           }
-          transaction2 = transaction("SPEN", LocalDate.parse("2025-08-11")) {
+          transaction2 = transaction(transactionId = 3, transactionType = "SPEN", entryDate = LocalDate.parse("2025-08-11")) {
             glTransaction3 = generalLedgerTransaction(1, 2101)
           }
+          transaction(transactionId = 3, transactionEntrySequence = 2, transactionType = "DPST")
         }
       }
     }
@@ -86,7 +87,6 @@ class FinanceResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getTransaction() {
-      println(" 1= ${transaction1.transactionId}, 2 = ${transaction2.transactionId}")
       webTestClient.get().uri("/transactions/${transaction1.transactionId}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
         .exchange()
@@ -304,7 +304,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           generalLedgerTransaction(12, 1, 1)
           offender {
             booking {
-              transaction1 = transaction("DPST") {
+              transaction1 = transaction(transactionType = "DPST") {
                 glTransaction1 = generalLedgerTransaction(1, 2000) // should be ignored
               }
             }
@@ -424,61 +424,58 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-
         }
       }
 
       @Test
       fun getAll() {
-        webTestClient.get().uri("/transactions/from/9/99")
+        webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}/99")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(7)
-      }
-
-      @Test
-      fun `get transactions limited by pagesize`() {
-        webTestClient.get().uri("/transactions/from/9/99?pageSize=2")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("$[0].transactionId").isEqualTo(10)
-          .jsonPath("$[0].transactionEntrySequence").isEqualTo(1)
-          .jsonPath("$[0].generalLedgerEntrySequence").isEqualTo(1)
-          .jsonPath("$[1].transactionId").isEqualTo(10)
-          .jsonPath("$[1].transactionEntrySequence").isEqualTo(1)
-          .jsonPath("$[1].generalLedgerEntrySequence").isEqualTo(2)
-          .jsonPath("$.length()").isEqualTo(2)
-      }
-
-      @Test
-      fun `get transactions starting midway through seq`() {
-        webTestClient.get().uri("/transactions/from/11/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("$[0].transactionId").isEqualTo(11)
-          .jsonPath("$[0].transactionEntrySequence").isEqualTo(2)
-          .jsonPath("$[0].generalLedgerEntrySequence").isEqualTo(1)
-          .jsonPath("$[1].transactionId").isEqualTo(11)
-          .jsonPath("$[1].transactionEntrySequence").isEqualTo(2)
-          .jsonPath("$[1].generalLedgerEntrySequence").isEqualTo(2)
-          .jsonPath("$[2].transactionId").isEqualTo(12)
-          .jsonPath("$[2].transactionEntrySequence").isEqualTo(1)
-          .jsonPath("$[2].generalLedgerEntrySequence").isEqualTo(1)
           .jsonPath("$.length()").isEqualTo(3)
       }
 
       @Test
+      fun `get transactions limited by pagesize`() {
+        webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}/99?pageSize=1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(1)
+          .jsonPath("$[0].transactionId").isEqualTo(transaction1.transactionId)
+          .jsonPath("$[0].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[0].generalLedgerTransactions.length()").isEqualTo(2)
+          .jsonPath("$[0].generalLedgerTransactions[0].transactionId").isEqualTo(glTransaction1.transactionId)
+          .jsonPath("$[0].generalLedgerTransactions[0].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[0].generalLedgerTransactions[0].generalLedgerEntrySequence").isEqualTo(1)
+      }
+
+      @Test
+      fun `get transactions starting midway through seq`() {
+        webTestClient.get().uri("/transactions/from/2/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(2)
+          .jsonPath("$[0].transactionId").isEqualTo(3)
+          .jsonPath("$[0].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[0].generalLedgerTransactions.length()").isEqualTo(1)
+          .jsonPath("$[0].generalLedgerTransactions[0].generalLedgerEntrySequence").isEqualTo(1)
+          .jsonPath("$[1].transactionId").isEqualTo(3)
+          .jsonPath("$[1].transactionEntrySequence").isEqualTo(2)
+          .jsonPath("$[1].generalLedgerTransactions.length()").isEqualTo(0)
+      }
+
+      @Test
       fun `none found`() {
-        webTestClient.get().uri("/transactions/from/20/1")
+        webTestClient.get().uri("/transactions/from/9999/1")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
           .exchange()
           .expectStatus()
