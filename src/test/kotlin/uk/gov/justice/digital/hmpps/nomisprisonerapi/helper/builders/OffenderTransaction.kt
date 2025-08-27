@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.TransactionT
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.random.Random
 
 @DslMarker
 annotation class OffenderTransactionDslMarker
@@ -65,19 +66,22 @@ class OffenderTransactionBuilder(
   lateinit var transaction: OffenderTransaction
 
   fun build(
+    transactionId: Long,
+    transactionEntrySequence: Int,
     booking: OffenderBooking,
     offender: Offender,
     prisonId: String,
     transactionType: String,
     entryDate: LocalDate,
   ): OffenderTransaction = OffenderTransaction(
+    transactionId = transactionId,
+    transactionEntrySequence = transactionEntrySequence,
     offenderBooking = booking,
-    transactionEntrySequence = 1,
     trustAccount = lookupOrCreateTrustAccount(prisonId, offender),
     subAccountType = SubAccountType.REG,
     transactionType = repository.lookupTransactionType(transactionType),
     transactionReferenceNumber = "FG1/12",
-    clientUniqueRef = "clientUniqueRef",
+    clientUniqueRef = "clientUniqueRef" + Random.nextInt(),
     entryDate = entryDate,
     entryDescription = "entryDescription",
     entryAmount = BigDecimal.valueOf(2.34),

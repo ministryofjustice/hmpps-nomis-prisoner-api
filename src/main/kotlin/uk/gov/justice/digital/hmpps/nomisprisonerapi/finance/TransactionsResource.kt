@@ -114,6 +114,53 @@ class TransactionsResource(
     date: LocalDate,
   ): Long = transactionsService.getFirstTransactionIdOn(date)
 
+  @GetMapping("/transactions/from/{transactionId}/{transactionEntrySequence}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "get a page of orphan GL transactions starting from an id,seq,glseq onwards",
+    description = "Retrieves transactions to be iterated over. Requires NOMIS_TRANSACTIONS",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_TRANSACTIONS",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Transaction does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun findOffenderTransactionsFromId(
+    @Schema(description = "Id of last transaction before intended start", example = "123456789")
+    @PathVariable
+    transactionId: Long,
+    @Schema(description = "Sequence of last transaction before intended start", example = "3")
+    @PathVariable
+    transactionEntrySequence: Int,
+    @Schema(
+      description = """Number of Offender transaction records to get. The first record returned will be the first one *after*
+        the given id/seq combination.""",
+      example = "500",
+      required = false,
+      defaultValue = "100",
+    )
+    @RequestParam(required = false, defaultValue = "100")
+    pageSize: Int,
+  ): List<OffenderTransactionDto> = transactionsService
+    .findOffenderTransactionsFromId(
+      transactionId,
+      transactionEntrySequence,
+      pageSize,
+    )
+
   @GetMapping("/transactions/from/{transactionId}/{transactionEntrySequence}/{generalLedgerEntrySequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -163,19 +210,12 @@ class TransactionsResource(
     @RequestParam(required = false, defaultValue = "100")
     pageSize: Int,
   ): List<GeneralLedgerTransactionDto> = transactionsService
-    .findNonOffenderTransactionsFromId(
+    .findOrphanTransactionsFromId(
       transactionId,
       transactionEntrySequence,
       generalLedgerEntrySequence,
       pageSize,
     )
-  // TODO not sure if needed at some point:
-//    if (all.size < pageSize) {
-//      return all
-//    }
-//    val maxId = all.last().transactionId // all.maxBy { it.transactionId }.transactionId
-//    return all
-//      .filter { it.transactionId < maxId }
 }
 
 enum class SourceSystem { DPS, NOMIS }

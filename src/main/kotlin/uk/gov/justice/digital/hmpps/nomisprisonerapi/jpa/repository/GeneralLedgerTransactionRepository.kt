@@ -22,7 +22,6 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
             or (gl.transactionId = :transactionId and gl.transactionEntrySequence > :transactionEntrySequence)
             or (gl.transactionId = :transactionId and gl.transactionEntrySequence = :transactionEntrySequence and gl.generalLedgerEntrySequence > :generalLedgerEntrySequence)
           )
-        and gl.offenderId is null
         and ot.transactionId is null
       order by gl.transactionId, gl.transactionEntrySequence, gl.generalLedgerEntrySequence
     """,
