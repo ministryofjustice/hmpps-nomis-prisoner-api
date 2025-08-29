@@ -285,6 +285,14 @@ class SentencingService(
     }
   }
 
+  data class ClonedCaseConvertToRecall(val convertToRecallRequest: ConvertToRecallRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)
+
+  // TODO - check if cloning is required and clone here
+  private fun cloneCasesIfRequired(convertToRecallRequest: ConvertToRecallRequest): ClonedCaseConvertToRecall = ClonedCaseConvertToRecall(
+    convertToRecallRequest = convertToRecallRequest,
+    clonedCourtCases = null,
+  )
+
   // creates offender charge without associating with a Court Event
   fun createCourtCharge(
     offenderNo: String,
@@ -1075,14 +1083,16 @@ class SentencingService(
   }
 
   fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest): ConvertToRecallResponse {
-    // It would be odd for the sentences to sit across bookings but give DPS is booking agnostic,
-    // it would make sense to not make any assumptions
-    val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
+    val (convertToRecallRequest, clonedCourtCases) = cloneCasesIfRequired(request)
 
-    val sentencesUpdated = request.sentences.updateSentences()
+    // It would be odd for the sentences to sit across bookings but given DPS is booking agnostic,
+    // it would make sense to not make any assumptions
+    val bookingIds = convertToRecallRequest.sentences.map { it.sentenceId.offenderBookingId }.toSet()
+
+    val sentencesUpdated = convertToRecallRequest.sentences.updateSentences()
     sentencingAdjustmentService.convertAdjustmentsToRecallEquivalents(sentencesUpdated)
     val adjustmentsUpdated = sentencingAdjustmentService.activateAllAdjustment(sentencesUpdated)
-    request.returnToCustody.createOrUpdateBooking(bookingIds)
+    convertToRecallRequest.returnToCustody.createOrUpdateBooking(bookingIds)
 
     // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence
     val uniqueCourtCases = sentencesUpdated.mapNotNull { it.courtCase }.toSet()
@@ -1100,11 +1110,11 @@ class SentencingService(
       val courtEvent = CourtEvent(
         offenderBooking = courtCase.offenderBooking,
         courtCase = courtCase,
-        eventDate = request.recallRevocationDate,
-        startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT),
+        eventDate = convertToRecallRequest.recallRevocationDate,
+        startTime = LocalDateTime.of(convertToRecallRequest.recallRevocationDate, LocalTime.MIDNIGHT),
         courtEventType = lookupMovementReasonType(RECALL_BREACH_HEARING),
         eventStatus = determineEventStatus(
-          request.recallRevocationDate,
+          convertToRecallRequest.recallRevocationDate,
           courtCase.offenderBooking,
         ),
         court = court,
@@ -1135,7 +1145,7 @@ class SentencingService(
       "sentences-recalled",
       mapOf(
         "bookingId" to bookingIds.joinToString { it.toString() },
-        "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
+        "sentenceSequences" to convertToRecallRequest.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
       ),
       null,
@@ -1152,6 +1162,7 @@ class SentencingService(
           adjustmentIds = it.adjustmentIds,
         )
       },
+      clonedCourtCases = clonedCourtCases,
     )
   }
 
