@@ -2614,6 +2614,8 @@ data class ConvertToRecallResponse(
   val courtEventIds: List<Long>,
   @Schema(description = "the sentence adjustments and parent sentence that have been activate by the recall")
   val sentenceAdjustmentsActivated: List<SentenceIdAndAdjustmentIds>,
+  @Schema(description = "Result of a clone court case operation when the recall sentences is added to a previous booking. Else null")
+  val clonedCourtCases: BookingCourtCaseCloneResponse?,
 )
 
 @Schema(description = "Recall convert response")
