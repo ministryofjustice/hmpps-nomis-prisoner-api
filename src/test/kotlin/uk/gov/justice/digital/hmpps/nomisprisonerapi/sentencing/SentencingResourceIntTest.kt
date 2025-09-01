@@ -8309,6 +8309,238 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             prisoner =
               offender(nomsId = "A1234AB") {
                 booking = booking(agencyLocationId = "MDI") {
+                }
+                previousBooking = booking(agencyLocationId = "MDI") {
+                  release(date = LocalDateTime.parse("2022-06-02T10:00"))
+                  courtCase1 = courtCase(reportingStaff = staff, agencyId = "LEICYC", caseSequence = 1) {
+                    lateinit var courtOrder: CourtOrder
+                    offenderCharge1 = offenderCharge(offenceCode = "RT88074")
+                    courtEvent(eventDateTime = LocalDateTime.parse("2022-05-02T10:00"), agencyId = "LEICYC") {
+                      courtEventCharge(offenderCharge = offenderCharge1)
+                      courtOrder = courtOrder(courtDate = LocalDate.parse("2022-05-02"))
+                    }
+                    sentence1 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      taggedBailAdjustment = adjustment(adjustmentTypeCode = "S240A", active = false)
+                      unusedRemandAdjustment = adjustment(adjustmentTypeCode = "UR", active = false)
+                      offenderSentenceCharge(offenderCharge = offenderCharge1)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                  }
+                }
+              }
+          }
+          request = ConvertToRecallRequest(
+            returnToCustody = ReturnToCustodyRequest(
+              returnToCustodyDate = LocalDate.parse("2023-01-01"),
+              enteredByStaffUsername = "T.SMITH",
+              recallLength = 28,
+            ),
+            sentences = listOf(
+              RecallRelatedSentenceDetails(
+                SentenceId(offenderBookingId = previousBooking.bookingId, sentenceSequence = sentence1.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "FTR_ORA",
+              ),
+
+            ),
+            recallRevocationDate = LocalDate.now(),
+          )
+        }
+
+        @Test
+        fun `recalling a sentence on previous booking will copy it to latest booking and convert it to a recall sentence`() {
+          val sentence1OnLatestBookingId = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(booking, 1)
+          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isFalse
+            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+            assertThat(status).isEqualTo("I")
+          }
+
+          // does not exist in the latest booking
+          assertThat(offenderSentenceRepository.findById(sentence1OnLatestBookingId)).isEmpty
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          // still an original sentence on previous booking
+          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isFalse
+            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+            assertThat(status).isEqualTo("I")
+          }
+          // now exists on the latest booking as now a recall sentence
+          with(offenderSentenceRepository.findById(sentence1OnLatestBookingId).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("A")
+          }
+        }
+
+        @Test
+        fun `will add a return to custody data on latest booking`() {
+          assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isNotPresent()
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          val returnToCustodyData = offenderFixedTermRecallRepository.findById(booking.bookingId).orElseThrow()
+          assertThat(returnToCustodyData.returnToCustodyDate).isEqualTo(LocalDate.parse("2023-01-01"))
+          assertThat(returnToCustodyData.recallLength).isEqualTo(28L)
+          assertThat(returnToCustodyData.staff.id).isEqualTo(staff.id)
+        }
+
+        @Test
+        fun `will update the imprisonment status on latest booking`() {
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          verify(spRepository).imprisonmentStatusUpdate(
+            bookingId = eq(booking.bookingId),
+            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
+          )
+        }
+
+        @Test
+        fun `will copy and activate adjustments onto the latest booking`() {
+          val sentence1OnLatestBookingId = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(booking, 1)
+
+          // on previous booking
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(taggedBailAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("S240A")
+            assertThat(active).isFalse
+          }
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(unusedRemandAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UR")
+            assertThat(active).isFalse
+          }
+
+          assertThat(offenderSentenceAdjustmentRepository.findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(offenderBooking = booking)).isEmpty()
+          assertThat(offenderSentenceAdjustmentRepository.findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(offenderBooking = previousBooking)).hasSize(2)
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          // adjustment has not changed on old booking
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(taggedBailAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("S240A")
+            assertThat(active).isFalse
+          }
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(unusedRemandAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UR")
+            assertThat(active).isFalse
+          }
+
+          nomisDataBuilder.runInTransaction {
+            // but now exists on the latest booking as RSR
+            val adjustmentsOnLatestBooking = offenderSentenceAdjustmentRepository.findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(offenderBooking = booking)
+            assertThat(adjustmentsOnLatestBooking).hasSize(2)
+
+            // copied and converted a S240A to an RST
+            with(adjustmentsOnLatestBooking.find { it.sentenceAdjustment.id == "RST" }!!) {
+              assertThat(active).isTrue
+              assertThat(sentence.id).isEqualTo(sentence1OnLatestBookingId)
+            }
+            with(adjustmentsOnLatestBooking.find { it.sentenceAdjustment.id == "UR" }!!) {
+              assertThat(active).isTrue
+              assertThat(sentence.id).isEqualTo(sentence1OnLatestBookingId)
+            }
+          }
+        }
+
+        @Test
+        fun `will track telemetry for the recall`() {
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          val createdCourtCase = courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(offenderBooking = booking).first()!!
+
+          verify(telemetryClient).trackEvent(
+            eq("sentences-recalled"),
+            check {
+              assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
+              assertThat(it["sentenceSequences"]).isEqualTo("1")
+              assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
+              assertThat(it["clonedCourtCaseIds"]).isEqualTo("${createdCourtCase.id}")
+              assertThat(it["courtCaseCloned"]).isEqualTo("true")
+            },
+            isNull(),
+          )
+        }
+
+        @Test
+        fun `will create a court event on the cloned court case`() {
+          // Set a specific recall revocation date
+          val recallRevocationDate = LocalDate.parse("2023-02-15")
+          val requestWithSpecificDate = request.copy(recallRevocationDate = recallRevocationDate)
+
+          val recallResponse: ConvertToRecallResponse = webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(requestWithSpecificDate))
+            .exchange()
+            .expectStatus().isOk.expectBodyResponse()
+
+          nomisDataBuilder.runInTransaction {
+            // Get the court case from the sentence
+            with(courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(booking).first()) {
+              assertThat(this.courtEvents).hasSize(2)
+              with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
+                assertThat(eventDate).isEqualTo(recallRevocationDate)
+                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(courtEventType.code).isEqualTo("BREACH")
+                assertThat(outcomeReasonCode?.code).isEqualTo("1501")
+                assertThat(court.id).isEqualTo("LEICYC")
+                assertThat(courtEventCharges).extracting<String> { it.resultCode1!!.code }.containsExactly("1501")
+                assertThat(recallResponse.courtEventIds).contains(this.id)
+              }
+            }
+
+            // case on previous booking has not changed
+            with(courtCaseRepository.findById(courtCase1.id).orElseThrow()) {
+              assertThat(this.courtEvents).hasSize(1)
+            }
+          }
+        }
+      }
+
+      @Nested
+      inner class RecallOnPreviousBookingAndLatestBooking {
+        @BeforeEach
+        fun createPrisonerAndSentence() {
+          nomisDataBuilder.build {
+            staff = staff {
+              account(username = "T.SMITH")
+            }
+            prisoner =
+              offender(nomsId = "A1234AB") {
+                booking = booking(agencyLocationId = "MDI") {
                   courtCase1 = courtCase(reportingStaff = staff, agencyId = "ABDRCT", caseSequence = 1) {
                     lateinit var courtOrder: CourtOrder
                     offenderCharge1 = offenderCharge(offenceCode = "RT88074")
