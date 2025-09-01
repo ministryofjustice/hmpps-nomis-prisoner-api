@@ -8315,8 +8315,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   courtCase1 = courtCase(reportingStaff = staff, agencyId = "LEICYC", caseSequence = 1) {
                     lateinit var courtOrder: CourtOrder
                     offenderCharge1 = offenderCharge(offenceCode = "RT88074")
+                    offenderCharge2 = offenderCharge(offenceCode = "LG72004")
+
                     courtEvent(eventDateTime = LocalDateTime.parse("2022-05-02T10:00"), agencyId = "LEICYC") {
                       courtEventCharge(offenderCharge = offenderCharge1)
+                      courtEventCharge(offenderCharge = offenderCharge2)
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2022-05-02"))
                     }
                     sentence1 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
@@ -8324,6 +8327,10 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                       unusedRemandAdjustment = adjustment(adjustmentTypeCode = "UR", active = false)
                       offenderSentenceCharge(offenderCharge = offenderCharge1)
                       term(days = 35, sentenceTermType = "IMP")
+                    }
+                    sentence2 = sentence(category = "2020", calculationType = "ADIMP", statusUpdateStaff = staff, courtOrder = courtOrder, status = "I") {
+                      offenderSentenceCharge(offenderCharge = offenderCharge2)
+                      term(days = 70, sentenceTermType = "IMP")
                     }
                   }
                 }
@@ -8341,6 +8348,11 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 sentenceCategory = "2020",
                 sentenceCalcType = "FTR_ORA",
               ),
+              RecallRelatedSentenceDetails(
+                SentenceId(offenderBookingId = previousBooking.bookingId, sentenceSequence = sentence2.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "FTR_ORA",
+              ),
 
             ),
             recallRevocationDate = LocalDate.now(),
@@ -8350,14 +8362,28 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         @Test
         fun `recalling a sentence on previous booking will copy it to latest booking and convert it to a recall sentence`() {
           val sentence1OnLatestBookingId = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(booking, 1)
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
+          val sentence2OnLatestBookingId = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(booking, 2)
+
+          transaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+              assertThat(offenderSentenceCharges).hasSize(1)
+              assertThat(offenderSentenceCharges[0].offenderCharge.offence.id.offenceCode).isEqualTo("RT88074")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+              assertThat(offenderSentenceCharges).hasSize(1)
+              assertThat(offenderSentenceCharges[0].offenderCharge.offence.id.offenceCode).isEqualTo("LG72004")
+            }
           }
 
           // does not exist in the latest booking
           assertThat(offenderSentenceRepository.findById(sentence1OnLatestBookingId)).isEmpty
+          assertThat(offenderSentenceRepository.findById(sentence2OnLatestBookingId)).isEmpty
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
@@ -8373,11 +8399,28 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
             assertThat(status).isEqualTo("I")
           }
-          // now exists on the latest booking as now a recall sentence
-          with(offenderSentenceRepository.findById(sentence1OnLatestBookingId).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isFalse
+            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+            assertThat(status).isEqualTo("I")
+          }
+
+          transaction {
+            // now exists on the latest booking as now a recall sentence
+            with(offenderSentenceRepository.findById(sentence1OnLatestBookingId).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+              assertThat(offenderSentenceCharges).hasSize(1)
+              assertThat(offenderSentenceCharges[0].offenderCharge.offence.id.offenceCode).isEqualTo("RT88074")
+            }
+            with(offenderSentenceRepository.findById(sentence2OnLatestBookingId).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+              assertThat(offenderSentenceCharges).hasSize(1)
+              assertThat(offenderSentenceCharges[0].offenderCharge.offence.id.offenceCode).isEqualTo("LG72004")
+            }
           }
         }
 
@@ -8483,7 +8526,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             eq("sentences-recalled"),
             check {
               assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
-              assertThat(it["sentenceSequences"]).isEqualTo("1")
+              assertThat(it["sentenceSequences"]).isEqualTo("1, 2")
               assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
               assertThat(it["clonedCourtCaseIds"]).isEqualTo("${createdCourtCase.id}")
               assertThat(it["courtCaseCloned"]).isEqualTo("true")
@@ -8517,7 +8560,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                 assertThat(courtEventType.code).isEqualTo("BREACH")
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEICYC")
-                assertThat(courtEventCharges).extracting<String> { it.resultCode1!!.code }.containsExactly("1501")
+                assertThat(courtEventCharges).extracting<String> { it.resultCode1!!.code }.containsExactly("1501", "1501")
                 assertThat(recallResponse.courtEventIds).contains(this.id)
               }
             }
