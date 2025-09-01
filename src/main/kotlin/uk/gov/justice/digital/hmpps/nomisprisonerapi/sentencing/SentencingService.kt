@@ -287,11 +287,54 @@ class SentencingService(
 
   data class ClonedCaseConvertToRecall(val convertToRecallRequest: ConvertToRecallRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)
 
-  // TODO - check if cloning is required and clone here
-  private fun cloneCasesIfRequired(convertToRecallRequest: ConvertToRecallRequest): ClonedCaseConvertToRecall = ClonedCaseConvertToRecall(
-    convertToRecallRequest = convertToRecallRequest,
-    clonedCourtCases = null,
-  )
+  private fun cloneCasesIfRequired(convertToRecallRequest: ConvertToRecallRequest): ClonedCaseConvertToRecall {
+    val casesRequiringCloning: List<Pair<CourtCase, RecallRelatedSentenceDetails>> = convertToRecallRequest.sentences.mapNotNull { sentence ->
+      sentence.takeIf { findOffenderBooking(sentence.sentenceId.offenderBookingId).bookingSequence != 1 }?.let {
+        findSentence(it.sentenceId.sentenceSequence, findOffenderBooking(sentence.sentenceId.offenderBookingId)).courtCase!! to it
+      }
+    }
+
+    val sentencesToBeCloned = casesRequiringCloning.map { it.second }
+
+    if (casesRequiringCloning.isNotEmpty()) {
+      cloneCourtCasesToLatestBookingFrom(casesRequiringCloning.map { it.first }).let { bookingCloneResponse ->
+        return ClonedCaseConvertToRecall(
+          convertToRecallRequest = convertToRecallRequest.copy(
+            sentences = convertToRecallRequest.sentences.map { sentence ->
+              if (sentence in sentencesToBeCloned) {
+                // now sentence has been cloned update the request to point at the cloned sentence and booking
+                bookingCloneResponse.findClonedSentence(sentence)
+              } else {
+                sentence
+              }
+            },
+          ),
+          clonedCourtCases = bookingCloneResponse,
+        )
+      }
+    } else {
+      return ClonedCaseConvertToRecall(
+        convertToRecallRequest = convertToRecallRequest,
+        clonedCourtCases = null,
+      )
+    }
+  }
+
+  private fun BookingCourtCaseCloneResponse.findClonedSentence(sentence: RecallRelatedSentenceDetails): RecallRelatedSentenceDetails {
+    val sourceCaseContainingSentence = this.courtCases.map { it.sourceCourtCase }.find { sourceCourtCase -> sourceCourtCase.sentences.find { it.sentenceSeq == sentence.sentenceId.sentenceSequence && it.bookingId == sentence.sentenceId.offenderBookingId } != null }!!
+    val courtCaseClonePair = this.courtCases.find { it.sourceCourtCase == sourceCaseContainingSentence }!!
+    val sentenceIndex = sourceCaseContainingSentence.sentences.indexOf(sourceCaseContainingSentence.sentences.find { it.sentenceSeq == sentence.sentenceId.sentenceSequence && it.bookingId == sentence.sentenceId.offenderBookingId })
+    val clonedSentence = courtCaseClonePair.courtCase.sentences[sentenceIndex]
+    return RecallRelatedSentenceDetails(
+      sentenceId = SentenceId(
+        offenderBookingId = clonedSentence.bookingId,
+        sentenceSequence = clonedSentence.sentenceSeq,
+      ),
+      sentenceCategory = sentence.sentenceCategory,
+      sentenceCalcType = sentence.sentenceCalcType,
+      active = sentence.active,
+    )
+  }
 
   // creates offender charge without associating with a Court Event
   fun createCourtCharge(
@@ -1085,7 +1128,7 @@ class SentencingService(
   fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest): ConvertToRecallResponse {
     val (convertToRecallRequest, clonedCourtCases) = cloneCasesIfRequired(request)
 
-    // It would be odd for the sentences to sit across bookings but given DPS is booking agnostic,
+    // It would be odd for the sentences to sit across bookings, but given DPS is booking agnostic,
     // it would make sense to not make any assumptions
     val bookingIds = convertToRecallRequest.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
@@ -1147,6 +1190,8 @@ class SentencingService(
         "bookingId" to bookingIds.joinToString { it.toString() },
         "sentenceSequences" to convertToRecallRequest.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
+        "clonedCourtCaseIds" to (clonedCourtCases?.courtCases?.map { it.courtCase.id } ?: emptyList()).joinToString { it.toString() },
+        "courtCaseCloned" to (clonedCourtCases != null).toString(),
       ),
       null,
     )
@@ -1407,6 +1452,23 @@ class SentencingService(
     }
 
     return cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases.filter { relevantCourtCases.contains(it) })
+  }
+  fun cloneCourtCasesToLatestBookingFrom(cases: List<CourtCase>): BookingCourtCaseCloneResponse {
+    // though unlikely, there is nothing to stop DPS recalling sentences over several bookings - so deal with it here
+    // by cloning booking by booking and aggregating the response
+    val groupedByBooking = cases.groupBy { it.offenderBooking.bookingId }
+    val cloneResponse = groupedByBooking.map { (bookingId, cases) ->
+      val booking = offenderBookingRepository.findByIdOrNull(bookingId)!!
+      val relevantCourtCases = cases.flatMap { findRelatedCasesFrom(it) }.toSet()
+      val latestBooking = findLatestBooking(booking.offender.nomsId)
+
+      if (booking == latestBooking) {
+        throw BadDataException("Cannot clone court cased from the latest booking ${booking.bookingId} on to itself")
+      }
+      cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases.filter { relevantCourtCases.contains(it) })
+    }
+
+    return cloneResponse.let { response -> BookingCourtCaseCloneResponse(courtCases = response.flatMap { it.courtCases }, sentenceAdjustments = response.flatMap { it.sentenceAdjustments }) }
   }
 
   private fun findRelatedCasesFrom(rootCase: CourtCase): Set<CourtCase> = rootCase.linkedOrConsecutiveSentenceLinked(mutableSetOf(rootCase)).toSet()

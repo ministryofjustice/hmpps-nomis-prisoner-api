@@ -306,6 +306,8 @@ class SentencingAdjustmentService(
         ),
       )
     }.let { adjustment ->
+      // essentially refresh the owning entity since the caller is not aware of the new adjustments
+      toSentence.adjustments.addAll(adjustment.map { offenderSentenceAdjustmentRepository.findByIdOrNull(it.id)!! })
       SentenceIdAndAdjustments(
         sentenceId = SentenceId(
           offenderBooking = toSentence.id.offenderBooking,
