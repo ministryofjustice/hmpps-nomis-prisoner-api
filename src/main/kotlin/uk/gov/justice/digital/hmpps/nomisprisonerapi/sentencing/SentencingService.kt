@@ -1645,11 +1645,10 @@ class SentencingService(
               cjaAct = offenderSentence.cjaAct,
               sled2Calc = offenderSentence.sled2Calc,
               startDate2Calc = offenderSentence.startDate2Calc,
-              // TODO
               adjustments = mutableListOf(),
             ).also { clonedSentence ->
               clonedSentence.offenderSentenceCharges += offenderSentence.offenderSentenceCharges.map { sourceOffenderSentenceCharge ->
-                val clonedOffenderSentenceCharge = clonedCase.offenderCharges[offenderSentence.offenderSentenceCharges.indexOf(sourceOffenderSentenceCharge)]
+                val clonedOffenderSentenceCharge = clonedCase.offenderCharges[sourceCase.offenderCharges.indexOf(sourceOffenderSentenceCharge.offenderCharge)]
                 OffenderSentenceCharge(
                   id = OffenderSentenceChargeId(
                     offenderBooking = latestBooking,
