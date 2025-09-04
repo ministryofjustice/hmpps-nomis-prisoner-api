@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -124,6 +125,12 @@ interface CourtCaseDsl {
     startDate2Calc: LocalDate? = LocalDate.parse("2023-01-21"),
     dsl: OffenderSentenceDsl.() -> Unit = { },
   ): OffenderSentence
+
+  @OffenderCaseStatusDslMarker
+  fun offenderCaseStatus(
+    statusUpdateStaff: Staff,
+    dsl: OffenderCaseStatusDsl.() -> Unit = {},
+  ): OffenderCaseStatus
 }
 
 @Component
@@ -133,8 +140,9 @@ class CourtCaseBuilderFactory(
   private val offenderChargeBuilderFactory: OffenderChargeBuilderFactory,
   private val offenderCaseIdentifierBuilderFactory: OffenderCaseIdentifierBuilderFactory,
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
+  private val offenderCaseStatusBuilderFactory: OffenderCaseStatusBuilderFactory,
 ) {
-  fun builder(): CourtCaseBuilder = CourtCaseBuilder(repository, courtEventBuilderFactory, offenderChargeBuilderFactory, offenderCaseIdentifierBuilderFactory, offenderSentenceBuilderFactory)
+  fun builder(): CourtCaseBuilder = CourtCaseBuilder(repository, courtEventBuilderFactory, offenderChargeBuilderFactory, offenderCaseIdentifierBuilderFactory, offenderSentenceBuilderFactory, offenderCaseStatusBuilderFactory)
 }
 
 @Component
@@ -187,6 +195,7 @@ class CourtCaseBuilder(
   private val offenderChargeBuilderFactory: OffenderChargeBuilderFactory,
   private val offenderCaseIdentifierBuilderFactory: OffenderCaseIdentifierBuilderFactory,
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
+  private val offenderCaseStatusBuilderFactory: OffenderCaseStatusBuilderFactory,
 ) : CourtCaseDsl {
   private lateinit var courtCase: CourtCase
   private lateinit var whenCreated: LocalDateTime
@@ -409,6 +418,17 @@ class CourtCaseBuilder(
         .also { courtCase.offenderBooking.sentences += it }
         .also { builder.apply(dsl) }
     }
+
+  override fun offenderCaseStatus(
+    statusUpdateStaff: Staff,
+    dsl: OffenderCaseStatusDsl.() -> Unit,
+  ) = offenderCaseStatusBuilderFactory.builder().let { builder ->
+    builder.build(
+      courtCase = courtCase,
+      statusUpdateStaff = statusUpdateStaff,
+    )
+      .also { builder.apply(dsl) }
+  }
 
   override fun audit(
     createDatetime: LocalDateTime,

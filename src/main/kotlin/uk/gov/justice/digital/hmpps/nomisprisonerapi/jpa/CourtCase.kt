@@ -115,6 +115,9 @@ class CourtCase(
   @OneToMany(mappedBy = "id.courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
   var caseInfoNumbers: MutableList<OffenderCaseIdentifier> = mutableListOf(),
 
+  @OneToMany(mappedBy = "courtCase", cascade = [CascadeType.ALL], orphanRemoval = true)
+  var offenderCaseStatuses: MutableList<OffenderCaseStatus> = mutableListOf(),
+
   /* COLUMNS NOT MAPPED
     VICTIM_LIAISON_UNIT - not used
     CASE_INFO_PREFIX - not used
