@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceCalculationTypeId
@@ -58,6 +59,12 @@ interface OffenderSentenceDsl {
     offenderCharge: OffenderCharge,
     dsl: OffenderSentenceChargeDsl.() -> Unit = {},
   ): OffenderSentenceCharge
+
+  @OffenderSentenceStatusDslMarker
+  fun offenderSentenceStatus(
+    statusUpdateStaff: Staff,
+    dsl: OffenderSentenceStatusDsl.() -> Unit = {},
+  ): OffenderSentenceStatus
 }
 
 @Component
@@ -78,12 +85,14 @@ class OffenderSentenceBuilderFactory(
   private val sentenceTermBuilderFactory: OffenderSentenceTermBuilderFactory,
   private val sentenceChargeBuilderFactory: OffenderSentenceChargeBuilderFactory,
   private val sentenceAdjustmentBuilderFactory: OffenderSentenceAdjustmentBuilderFactory,
+  private val offenderSentenceStatusBuilderFactory: OffenderSentenceStatusBuilderFactory,
   private val repository: OffenderSentenceBuilderRepository,
 ) {
   fun builder(): OffenderSentenceBuilder = OffenderSentenceBuilder(
     sentenceAdjustmentBuilderFactory,
     sentenceTermBuilderFactory,
     sentenceChargeBuilderFactory,
+    offenderSentenceStatusBuilderFactory,
     repository,
   )
 }
@@ -92,6 +101,7 @@ class OffenderSentenceBuilder(
   private val sentenceAdjustmentBuilderFactory: OffenderSentenceAdjustmentBuilderFactory,
   private val sentenceTermBuilderFactory: OffenderSentenceTermBuilderFactory,
   private val sentenceChargeBuilderFactory: OffenderSentenceChargeBuilderFactory,
+  private val offenderSentenceStatusBuilderFactory: OffenderSentenceStatusBuilderFactory,
   private val repository: OffenderSentenceBuilderRepository,
 ) : OffenderSentenceDsl {
   private lateinit var offenderSentence: OffenderSentence
@@ -256,6 +266,17 @@ class OffenderSentenceBuilder(
       sentence = offenderSentence,
     )
       .also { offenderSentence.offenderSentenceCharges += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun offenderSentenceStatus(
+    statusUpdateStaff: Staff,
+    dsl: OffenderSentenceStatusDsl.() -> Unit,
+  ) = offenderSentenceStatusBuilderFactory.builder().let { builder ->
+    builder.build(
+      sentence = offenderSentence,
+      statusUpdateStaff = statusUpdateStaff,
+    )
       .also { builder.apply(dsl) }
   }
 }

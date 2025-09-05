@@ -4786,6 +4786,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtCase: CourtCase
     private lateinit var courtEvent: CourtEvent
     private lateinit var courtEvent2: CourtEvent
+    private lateinit var sentence: OffenderSentence
+    private lateinit var order: CourtOrder
     private var latestBookingId: Long = 0
     private lateinit var offenderCharge1: OffenderCharge
 
@@ -4819,10 +4821,16 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   offenderCharge = offenderCharge1,
                   plea = "NG",
                 )
-                courtOrder {
+                order = courtOrder {
                   sentencePurpose(purposeCode = "REPAIR")
                   sentencePurpose(purposeCode = "PUNISH")
                 }
+              }
+              sentence = sentence(courtOrder = order, statusUpdateStaff = staff) {
+                offenderSentenceCharge(offenderCharge = offenderCharge1)
+                term {}
+                term(days = 35)
+                offenderSentenceStatus(statusUpdateStaff = staff) {}
               }
               offenderCaseStatus(statusUpdateStaff = staff)
             }
