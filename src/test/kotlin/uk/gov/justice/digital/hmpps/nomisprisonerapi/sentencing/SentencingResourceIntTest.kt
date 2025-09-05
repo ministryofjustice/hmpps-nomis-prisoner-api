@@ -4824,6 +4824,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                   sentencePurpose(purposeCode = "PUNISH")
                 }
               }
+              offenderCaseStatus(statusUpdateStaff = staff)
             }
           }
         }
@@ -4885,7 +4886,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     inner class DeleteCourtCaseSuccess {
 
       @Test
-      fun `can delete a court appearance`() {
+      fun `can delete a court case`() {
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
           .exchange()
