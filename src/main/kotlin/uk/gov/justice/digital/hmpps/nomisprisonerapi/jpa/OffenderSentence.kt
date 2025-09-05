@@ -221,7 +221,7 @@ data class OffenderSentence(
   var offenderSentenceTerms: MutableList<OffenderSentenceTerm> = mutableListOf(),
 
   @OneToMany(mappedBy = "sentence", cascade = [CascadeType.ALL], orphanRemoval = true)
-  var offenderCSentenceStatuses: MutableList<OffenderSentenceStatus> = mutableListOf(),
+  var offenderSentenceStatuses: MutableList<OffenderSentenceStatus> = mutableListOf(),
 
   /* COLUMNS NOT MAPPED
     TERMINATION_REASON - not used
