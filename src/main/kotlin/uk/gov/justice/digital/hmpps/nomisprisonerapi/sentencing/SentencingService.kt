@@ -548,10 +548,10 @@ class SentencingService(
     courtCaseRepository.findByIdOrNull(caseId)?.also {
       telemetry = telemetry + ("bookingId" to it.offenderBooking.bookingId.toString())
       courtCaseRepository.delete(it)
-      /*storedProcedureRepository.imprisonmentStatusUpdate(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = it.offenderBooking.bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-      )*/
+      )
       telemetryClient.trackEvent(
         "court-case-deleted",
         telemetry,
