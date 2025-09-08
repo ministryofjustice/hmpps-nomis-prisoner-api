@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.0.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.0.1"
   kotlin("plugin.spring") version "2.2.10"
   kotlin("plugin.jpa") version "2.2.10"
   idea
@@ -19,7 +19,7 @@ dependencies {
   implementation("org.hibernate.orm:hibernate-community-dialects")
   implementation("com.google.guava:guava:33.4.8-jre")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.12")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
 
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.3.232")
