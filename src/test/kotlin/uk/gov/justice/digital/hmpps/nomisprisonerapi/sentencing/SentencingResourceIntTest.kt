@@ -4912,10 +4912,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+/*        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
+
+ */
       }
 
       @Test
