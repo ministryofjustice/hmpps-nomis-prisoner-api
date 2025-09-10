@@ -224,6 +224,40 @@ class MovementsService(
     return scheduledAbsenceReturn.toSingleResponse()
   }
 
+  @Transactional
+  fun createScheduledTemporaryAbsenceReturn(offenderNo: String, request: CreateScheduledTemporaryAbsenceReturnRequest): CreateScheduledTemporaryAbsenceReturnResponse {
+    val offenderBooking = offenderBookingOrThrow(offenderNo)
+    val application = movementApplicationOrThrow(request.movementApplicationId)
+    val scheduledTemporaryAbsence = scheduledTemporaryAbsenceOrThrow(request.scheduledTemporaryAbsenceEventId)
+    val eventSubType = eventSubTypeOrThrow(request.eventSubType)
+    val eventStatus = eventStatusOrThrow(request.eventStatus)
+    val escort = escortOrThrow(request.escort)
+    val fromAgency = request.fromAgency?.let { agencyLocationOrThrow(request.fromAgency) }
+    val toPrison = request.toPrison?.let { agencyLocationOrThrow(request.toPrison) }
+
+    return OffenderScheduledTemporaryAbsenceReturn(
+      offenderBooking = offenderBooking,
+      eventDate = request.eventDate,
+      startTime = request.startTime,
+      eventSubType = eventSubType,
+      eventStatus = eventStatus,
+      comment = request.comment,
+      escort = escort,
+      fromAgency = fromAgency,
+      toPrison = toPrison,
+      temporaryAbsenceApplication = application,
+      scheduledTemporaryAbsence = scheduledTemporaryAbsence,
+    ).let {
+      scheduledTemporaryAbsenceReturnRepository.save(it)
+    }.let {
+      CreateScheduledTemporaryAbsenceReturnResponse(
+        bookingId = offenderBooking.bookingId,
+        movementApplicationId = application.movementApplicationId,
+        eventId = it.eventId,
+      )
+    }
+  }
+
   fun getTemporaryAbsenceApplicationOutsideMovement(offenderNo: String, appMultiId: Long): TemporaryAbsenceApplicationOutsideMovementResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
@@ -297,6 +331,9 @@ class MovementsService(
 
   private fun movementApplicationOrThrow(movementApplicationId: Long) = offenderMovementApplicationRepository.findByIdOrNull(movementApplicationId)
     ?: throw BadDataException("Movement application $movementApplicationId does not exist")
+
+  private fun scheduledTemporaryAbsenceOrThrow(eventId: Long) = scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)
+    ?: throw BadDataException("Scheduled temporary absence $eventId does not exist")
 
   private fun eventSubTypeOrThrow(eventSubType: String) = movementReasonRepository.findByIdOrNull(MovementReason.pk(eventSubType))
     ?: throw BadDataException("Event sub type $eventSubType is invalid")
