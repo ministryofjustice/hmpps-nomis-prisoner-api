@@ -1,0 +1,65 @@
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
+
+import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDate
+import java.time.LocalDateTime
+
+@Schema(description = "Create scheduled temporary absence request")
+data class CreateScheduledTemporaryAbsenceRequest(
+  @Schema(description = "Movement application ID")
+  val movementApplicationId: Long,
+
+  @Schema(description = "Event date")
+  val eventDate: LocalDate?,
+
+  @Schema(description = "Start time")
+  val startTime: LocalDateTime?,
+
+  @Schema(description = "Event sub type")
+  val eventSubType: String,
+
+  @Schema(description = "Event status")
+  val eventStatus: String,
+
+  @Schema(description = "Comment")
+  val comment: String?,
+
+  @Schema(description = "Escort")
+  val escort: String,
+
+  @Schema(description = "From prison")
+  val fromPrison: String,
+
+  @Schema(description = "To agency")
+  val toAgency: String?,
+
+  @Schema(description = "Transport type")
+  val transportType: String?,
+
+  @Schema(description = "Return date")
+  val returnDate: LocalDate,
+
+  @Schema(description = "Return time")
+  val returnTime: LocalDateTime,
+
+  @Schema(description = "To address ID")
+  val toAddressId: Long?,
+
+  @Schema(description = "Application date")
+  val applicationDate: LocalDateTime,
+
+  @Schema(description = "Application time")
+  val applicationTime: LocalDateTime?,
+)
+
+@Schema(description = "Create scheduled temporary absence response")
+data class CreateScheduledTemporaryAbsenceResponse(
+  @Schema(description = "Booking ID")
+  val bookingId: Long,
+
+  @Schema(description = "Movement application ID")
+  val movementApplicationId: Long,
+
+  @Schema(description = "Event ID")
+  val eventId: Long,
+)
