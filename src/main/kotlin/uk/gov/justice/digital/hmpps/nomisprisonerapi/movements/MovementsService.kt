@@ -1,9 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
@@ -11,6 +17,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTempor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceSubType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceTransportType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -18,17 +30,29 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSche
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalTime
 
 @Service
 @Transactional(readOnly = true)
 class MovementsService(
   private val offenderRepository: OffenderRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
   private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
   private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
   private val offenderMovementApplicationMultiRepository: OffenderMovementApplicationMultiRepository,
+  private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
+  private val movementApplicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
+  private val escortRepository: ReferenceCodeRepository<Escort>,
+  private val transportTypeRepository: ReferenceCodeRepository<TemporaryAbsenceTransportType>,
+  private val addressRepository: AddressRepository,
+  private val agencyLocationRepository: AgencyLocationRepository,
+  private val movementApplicationTypeRepository: ReferenceCodeRepository<MovementApplicationType>,
+  private val temporaryAbsenceTypeRepository: ReferenceCodeRepository<TemporaryAbsenceType>,
+  private val temporaryAbsenceSubTypeRepository: ReferenceCodeRepository<TemporaryAbsenceSubType>,
 ) {
   fun getTemporaryAbsencesAndMovements(offenderNo: String): OffenderTemporaryAbsencesResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -91,6 +115,67 @@ class MovementsService(
       ?: throw NotFoundException("Temporary absence application with id=$applicationId not found for offender with nomsId=$offenderNo")
 
     return application.toSingleResponse()
+  }
+
+  @Transactional
+  fun createTemporaryAbsenceApplication(offenderNo: String, request: CreateTemporaryAbsenceApplicationRequest): CreateTemporaryAbsenceApplicationResponse {
+    val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+      ?: throw NotFoundException("Offender $offenderNo not found with a booking")
+
+    val eventSubType = movementReasonRepository.findByIdOrNull(MovementReason.pk(request.eventSubType))
+      ?: throw BadDataException("Event sub type $request.eventSubType is invalid")
+    val applicationStatus = movementApplicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(request.applicationStatus))
+      ?: throw BadDataException("Application status ${request.applicationStatus} is invalid")
+    val escort = request.escortCode?.let {
+      escortRepository.findByIdOrNull(Escort.pk(request.escortCode)) ?: throw BadDataException("Escort code ${request.escortCode} is invalid")
+    }
+    val transportType = request.transportType?.let {
+      transportTypeRepository.findByIdOrNull(TemporaryAbsenceTransportType.pk(request.transportType)) ?: throw BadDataException("Transport type ${request.transportType} is invalid")
+    }
+    val toAddress = request.toAddressId?.let {
+      addressRepository.findByIdOrNull(request.toAddressId) ?: throw BadDataException("Address id ${request.toAddressId} is invalid")
+    }
+    val prison = request.prisonId?.let {
+      agencyLocationRepository.findByIdOrNull(request.prisonId) ?: throw BadDataException("Prison id ${request.prisonId} is invalid")
+    }
+    val toAgency = request.toAgencyId?.let {
+      agencyLocationRepository.findByIdOrNull(request.toAgencyId) ?: throw BadDataException("To agency id ${request.toAgencyId} is invalid")
+    }
+    val applicationType = movementApplicationTypeRepository.findByIdOrNull(MovementApplicationType.pk(request.applicationType))
+      ?: throw BadDataException("Application type ${request.applicationType} is invalid")
+    val temporaryAbsenceType = request.temporaryAbsenceType?.let {
+      temporaryAbsenceTypeRepository.findByIdOrNull(TemporaryAbsenceType.pk(request.temporaryAbsenceType)) ?: throw BadDataException("Temporary absence type ${request.temporaryAbsenceType} is invalid")
+    }
+    val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let {
+      temporaryAbsenceSubTypeRepository.findByIdOrNull(TemporaryAbsenceSubType.pk(request.temporaryAbsenceSubType)) ?: throw BadDataException("Temporary absence sub type ${request.temporaryAbsenceSubType} is invalid")
+    }
+
+    return OffenderMovementApplication(
+      offenderBooking = offenderBooking,
+      eventSubType = eventSubType,
+      applicationDate = request.applicationDate.atTime(LocalTime.MIDNIGHT),
+      applicationTime = request.applicationDate.atTime(LocalTime.MIDNIGHT),
+      fromDate = request.fromDate,
+      releaseTime = request.releaseTime,
+      toDate = request.toDate,
+      returnTime = request.returnTime,
+      applicationStatus = applicationStatus,
+      escort = escort,
+      transportType = transportType,
+      comment = request.comment,
+      toAddressOwnerClass = toAddress?.addressOwnerClass,
+      toAddress = toAddress,
+      prison = prison,
+      toAgency = toAgency,
+      contactPersonName = request.contactPersonName,
+      applicationType = applicationType,
+      temporaryAbsenceType = temporaryAbsenceType,
+      temporaryAbsenceSubType = temporaryAbsenceSubType,
+    ).let {
+      offenderMovementApplicationRepository.save(it)
+    }.let {
+      CreateTemporaryAbsenceApplicationResponse(offenderBooking.bookingId, it.movementApplicationId)
+    }
   }
 
   fun getScheduledTemporaryAbsence(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceResponse {
