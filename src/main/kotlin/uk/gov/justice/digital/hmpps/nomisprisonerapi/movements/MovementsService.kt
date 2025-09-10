@@ -119,36 +119,17 @@ class MovementsService(
 
   @Transactional
   fun createTemporaryAbsenceApplication(offenderNo: String, request: CreateTemporaryAbsenceApplicationRequest): CreateTemporaryAbsenceApplicationResponse {
-    val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
-      ?: throw NotFoundException("Offender $offenderNo not found with a booking")
-
-    val eventSubType = movementReasonRepository.findByIdOrNull(MovementReason.pk(request.eventSubType))
-      ?: throw BadDataException("Event sub type $request.eventSubType is invalid")
-    val applicationStatus = movementApplicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(request.applicationStatus))
-      ?: throw BadDataException("Application status ${request.applicationStatus} is invalid")
-    val escort = request.escortCode?.let {
-      escortRepository.findByIdOrNull(Escort.pk(request.escortCode)) ?: throw BadDataException("Escort code ${request.escortCode} is invalid")
-    }
-    val transportType = request.transportType?.let {
-      transportTypeRepository.findByIdOrNull(TemporaryAbsenceTransportType.pk(request.transportType)) ?: throw BadDataException("Transport type ${request.transportType} is invalid")
-    }
-    val toAddress = request.toAddressId?.let {
-      addressRepository.findByIdOrNull(request.toAddressId) ?: throw BadDataException("Address id ${request.toAddressId} is invalid")
-    }
-    val prison = request.prisonId?.let {
-      agencyLocationRepository.findByIdOrNull(request.prisonId) ?: throw BadDataException("Prison id ${request.prisonId} is invalid")
-    }
-    val toAgency = request.toAgencyId?.let {
-      agencyLocationRepository.findByIdOrNull(request.toAgencyId) ?: throw BadDataException("To agency id ${request.toAgencyId} is invalid")
-    }
-    val applicationType = movementApplicationTypeRepository.findByIdOrNull(MovementApplicationType.pk(request.applicationType))
-      ?: throw BadDataException("Application type ${request.applicationType} is invalid")
-    val temporaryAbsenceType = request.temporaryAbsenceType?.let {
-      temporaryAbsenceTypeRepository.findByIdOrNull(TemporaryAbsenceType.pk(request.temporaryAbsenceType)) ?: throw BadDataException("Temporary absence type ${request.temporaryAbsenceType} is invalid")
-    }
-    val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let {
-      temporaryAbsenceSubTypeRepository.findByIdOrNull(TemporaryAbsenceSubType.pk(request.temporaryAbsenceSubType)) ?: throw BadDataException("Temporary absence sub type ${request.temporaryAbsenceSubType} is invalid")
-    }
+    val offenderBooking = offenderBookingOrThrow(offenderNo)
+    val eventSubType = eventSubTypeOrThrow(request.eventSubType)
+    val applicationStatus = applicationStatusOrThrow(request.applicationStatus)
+    val escort = request.escortCode?.let { escortOrThrow(request.escortCode) }
+    val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
+    val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
+    val prison = request.prisonId?.let { agencyLocationOrThrow(request.prisonId) }
+    val toAgency = request.toAgencyId?.let { agencyLocationOrThrow(request.toAgencyId) }
+    val applicationType = movementApplicationTypeOrThrow(request.applicationType)
+    val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
+    val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
 
     return OffenderMovementApplication(
       offenderBooking = offenderBooking,
@@ -211,6 +192,41 @@ class MovementsService(
     return outsideMovement.toSingleResponse()
   }
 
+  @Transactional
+  fun createTemporaryAbsenceOutsideMovement(offenderNo: String, request: CreateTemporaryAbsenceOutsideMovementRequest): CreateTemporaryAbsenceOutsideMovementResponse {
+    val offenderBooking = offenderBookingOrThrow(offenderNo)
+    val application = movementApplicationOrThrow(request.movementApplicationId)
+    val eventSubType = eventSubTypeOrThrow(request.eventSubType)
+    val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
+    val toAgency = request.toAgencyId?.let { agencyLocationOrThrow(request.toAgencyId) }
+    val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
+    val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
+
+    return OffenderMovementApplicationMulti(
+      offenderMovementApplication = application,
+      eventSubType = eventSubType,
+      fromDate = request.fromDate,
+      releaseTime = request.releaseTime,
+      toDate = request.toDate,
+      returnTime = request.returnTime,
+      comment = request.comment,
+      toAgency = toAgency,
+      toAddress = toAddress,
+      toAddressOwnerClass = toAddress?.addressOwnerClass,
+      contactPersonName = request.contactPersonName,
+      temporaryAbsenceType = temporaryAbsenceType,
+      temporaryAbsenceSubType = temporaryAbsenceSubType,
+    ).let {
+      offenderMovementApplicationMultiRepository.save(it)
+    }.let {
+      CreateTemporaryAbsenceOutsideMovementResponse(
+        bookingId = offenderBooking.bookingId,
+        movementApplicationId = application.movementApplicationId,
+        outsideMovementId = it.movementApplicationMultiId,
+      )
+    }
+  }
+
   fun getTemporaryAbsence(offenderNo: String, bookingId: Long, movementSeq: Int): TemporaryAbsenceResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
@@ -232,6 +248,39 @@ class MovementsService(
 
     return temporaryAbsenceReturn.toSingleResponse()
   }
+
+  private fun offenderBookingOrThrow(offenderNo: String) = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
+    ?: throw NotFoundException("Offender $offenderNo not found with a booking")
+
+  private fun movementApplicationOrThrow(movementApplicationId: Long) = offenderMovementApplicationRepository.findByIdOrNull(movementApplicationId)
+    ?: throw BadDataException("Movement application $movementApplicationId does not exist")
+
+  private fun eventSubTypeOrThrow(eventSubType: String) = movementReasonRepository.findByIdOrNull(MovementReason.pk(eventSubType))
+    ?: throw BadDataException("Event sub type $eventSubType is invalid")
+
+  private fun applicationStatusOrThrow(applicationStatus: String) = movementApplicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(applicationStatus))
+    ?: throw BadDataException("Application status $applicationStatus is invalid")
+
+  private fun escortOrThrow(escort: String) = escortRepository.findByIdOrNull(Escort.pk(escort))
+    ?: throw BadDataException("Escort code $escort is invalid")
+
+  private fun transportTypeOrThrow(transportType: String) = transportTypeRepository.findByIdOrNull(TemporaryAbsenceTransportType.pk(transportType))
+    ?: throw BadDataException("Transport type $transportType is invalid")
+
+  private fun addressOrThrow(addressId: Long) = addressRepository.findByIdOrNull(addressId)
+    ?: throw BadDataException("Address id $addressId is invalid")
+
+  private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
+    ?: throw BadDataException("Agency id $agencyId is invalid")
+
+  private fun movementApplicationTypeOrThrow(applicationType: String) = movementApplicationTypeRepository.findByIdOrNull(MovementApplicationType.pk(applicationType))
+    ?: throw BadDataException("Application type $applicationType is invalid")
+
+  private fun temporaryAbsenceTypeOrThrow(temporaryAbsenceType: String) = temporaryAbsenceTypeRepository.findByIdOrNull(TemporaryAbsenceType.pk(temporaryAbsenceType))
+    ?: throw BadDataException("Temporary absence type $temporaryAbsenceType is invalid")
+
+  private fun temporaryAbsenceSubTypeOrThrow(temporaryAbsenceSubType: String) = temporaryAbsenceSubTypeRepository.findByIdOrNull(TemporaryAbsenceSubType.pk(temporaryAbsenceSubType))
+    ?: throw BadDataException("Temporary absence sub type $temporaryAbsenceSubType is invalid")
 
   private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
     movementApplicationId = movementApplicationId,

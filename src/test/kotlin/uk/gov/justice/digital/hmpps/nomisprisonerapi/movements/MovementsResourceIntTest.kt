@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTempor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails.roundToNearestSecond
@@ -35,6 +36,7 @@ class MovementsResourceIntTest(
   @Autowired val nomisDataBuilder: NomisDataBuilder,
   @Autowired val repository: Repository,
   @Autowired val applicationRepository: OffenderMovementApplicationRepository,
+  @Autowired val applicationMultiRepository: OffenderMovementApplicationMultiRepository,
   @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
@@ -1335,6 +1337,203 @@ class MovementsResourceIntTest(
           assertThat(contactPersonName).isEqualTo("Derek")
         }
     }
+  }
+
+  @Nested
+  @DisplayName("POST /movements/{offenderNo}/temporary-absences/outside-movement")
+  inner class CreateTemporaryAbsenceOutsideMovement {
+
+    private fun aCreateRequest(movementApplicationId: Long? = null) = CreateTemporaryAbsenceOutsideMovementRequest(
+      movementApplicationId = movementApplicationId ?: application.movementApplicationId,
+      eventSubType = "C5",
+      fromDate = twoDaysAgo.toLocalDate(),
+      releaseTime = twoDaysAgo,
+      toDate = yesterday.toLocalDate(),
+      returnTime = yesterday,
+      comment = "Some comment outside movement",
+      toAgencyId = "HAZLWD",
+      toAddressId = offenderAddress.addressId,
+      contactPersonName = "Derek",
+      temporaryAbsenceType = "RR",
+      temporaryAbsenceSubType = "RDR",
+    )
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication()
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should create outside movement`() {
+        webTestClient.createOutsideMovementOk()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationMultiRepository.findByIdOrNull(outsideMovementId)!!) {
+                assertThat(offenderMovementApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
+                assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
+                assertThat(eventSubType.code).isEqualTo("C5")
+                assertThat(fromDate).isEqualTo(twoDaysAgo.toLocalDate())
+                assertThat(releaseTime).isEqualTo(twoDaysAgo)
+                assertThat(toDate).isEqualTo(yesterday.toLocalDate())
+                assertThat(returnTime).isEqualTo(yesterday)
+                assertThat(comment).isEqualTo("Some comment outside movement")
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+                assertThat(toAgency?.id).isEqualTo("HAZLWD")
+                assertThat(contactPersonName).isEqualTo("Derek")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found if offender unknown`() {
+        webTestClient.createOutsideMovement(offenderNo = "UNKNOWN")
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return not found if offender has no bookings`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "C1234DE") {
+            offenderAddress = address()
+          }
+        }
+
+        webTestClient.createOutsideMovement()
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("C1234DE").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return bad request if movement application does not exist`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "C1234DE") {
+            offenderAddress = address()
+            booking = booking()
+          }
+        }
+
+        webTestClient.createOutsideMovement(request = aCreateRequest(movementApplicationId = 9999))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("9999").contains("does not exist")
+          }
+      }
+
+      @Test
+      fun `should return bad request for invalid event sub type`() {
+        webTestClient.createOutsideMovementBadRequestUnknown(aCreateRequest().copy(eventSubType = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid to agency id`() {
+        webTestClient.createOutsideMovementBadRequestUnknown(aCreateRequest().copy(toAgencyId = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid to address id`() {
+        webTestClient.createOutsideMovementBadRequest(aCreateRequest().copy(toAddressId = 9999L))
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("9999").contains("invalid")
+          }
+      }
+
+      @Test
+      fun `should return bad request for invalid temporary absence type`() {
+        webTestClient.createOutsideMovementBadRequestUnknown(aCreateRequest().copy(temporaryAbsenceType = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid temporary absence sub type`() {
+        webTestClient.createOutsideMovementBadRequestUnknown(aCreateRequest().copy(temporaryAbsenceSubType = "UNKNOWN"))
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorized for missing token`() {
+        webTestClient.post()
+          .uri("/movements/$offenderNo/temporary-absences/outside-movement")
+          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.post()
+          .uri("/movements/$offenderNo/temporary-absences/outside-movement")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.post()
+          .uri("/movements/$offenderNo/temporary-absences/outside-movement")
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    private fun WebTestClient.createOutsideMovement(
+      request: CreateTemporaryAbsenceOutsideMovementRequest = aCreateRequest(application.movementApplicationId),
+      offenderNo: String = offender.nomsId,
+    ) = post()
+      .uri("/movements/$offenderNo/temporary-absences/outside-movement")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .bodyValue(request)
+      .exchange()
+      .expectStatus()
+
+    private fun WebTestClient.createOutsideMovementOk(
+      request: CreateTemporaryAbsenceOutsideMovementRequest = aCreateRequest(application.movementApplicationId),
+    ) = createOutsideMovement(request)
+      .isCreated
+      .expectBodyResponse<CreateTemporaryAbsenceOutsideMovementResponse>()
+
+    private fun WebTestClient.createOutsideMovementBadRequest(
+      request: CreateTemporaryAbsenceOutsideMovementRequest = aCreateRequest(application.movementApplicationId),
+    ) = createOutsideMovement(request)
+      .isBadRequest
+
+    private fun WebTestClient.createOutsideMovementBadRequestUnknown(
+      request: CreateTemporaryAbsenceOutsideMovementRequest = aCreateRequest(application.movementApplicationId),
+    ) = createOutsideMovementBadRequest(request)
+      .expectBody().jsonPath("userMessage").value<String> {
+        assertThat(it).contains("UNKNOWN").contains("invalid")
+      }
   }
 
   @Nested
