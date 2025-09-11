@@ -70,6 +70,9 @@ data class CreateLocationRequest(
   @field:Size(max = 240, message = "Comment is too long (max allowed 240 characters)")
   val comment: String? = null,
 
+  @Schema(description = "Whether internal transfers are tracked")
+  val tracking: Boolean? = null,
+
   @Schema(description = "Profiles")
   val profiles: List<ProfileRequest>? = null,
 
@@ -84,7 +87,7 @@ data class CreateLocationRequest(
   ): AgencyInternalLocation = AgencyInternalLocation(
     active = true,
     certified = certified,
-    tracking = true,
+    tracking = tracking ?: true,
     locationCode = locationCode,
     locationType = locationType,
     description = description,

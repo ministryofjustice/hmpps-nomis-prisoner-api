@@ -75,6 +75,9 @@ data class LocationResponse(
   @Schema(description = "The expected reactivation date if any", example = "2024-12-31")
   val reactivateDate: LocalDate? = null,
 
+  @Schema(description = "Whether internal transfers are tracked")
+  val tracking: Boolean,
+
   @Schema(description = "Profiles")
   val profiles: List<ProfileRequest>? = null,
 

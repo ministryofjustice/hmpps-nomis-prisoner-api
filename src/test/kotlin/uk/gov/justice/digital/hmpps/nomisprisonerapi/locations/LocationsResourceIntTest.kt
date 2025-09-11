@@ -35,6 +35,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
       locationCode = "5",
       description = "LEI-A-2-TEST",
       parentLocationId = -1L,
+      tracking = false,
     )
   }
 
@@ -201,6 +202,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "userDescription"     : "user description",
                 "listSequence"        : 1,
                 "certified"           : true,
+                "tracking"            : false,
                 "profiles"            : [
                   {
                     "profileType"     : "HOU_UNIT_ATT",
@@ -245,6 +247,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(userDescription).isEqualTo("user description")
         assertThat(listSequence).isEqualTo(1)
         assertThat(certified).isTrue
+        assertThat(tracking).isFalse
         with(profiles) {
           assertThat(this).hasSize(2)
           assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
@@ -404,6 +407,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "userDescription"     : "new description",
                 "listSequence"        : 1,
                 "unitType"            : "NA",
+                "tracking"            : true,
                 "profiles"            : [
                   {
                     "profileType"     : "HOU_UNIT_ATT",
@@ -442,6 +446,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(userDescription).isEqualTo("new description")
         assertThat(listSequence).isEqualTo(1)
         assertThat(unitType?.code).isEqualTo("NA")
+        assertThat(tracking).isTrue
         with(profiles) {
           assertThat(this).hasSize(2)
           assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
@@ -494,6 +499,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(comment).isEqualTo("this is a cell!")
         assertThat(userDescription).isEqualTo("new description")
         assertThat(listSequence).isEqualTo(5)
+        assertThat(tracking).isFalse
       }
     }
   }
@@ -886,6 +892,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.deactivateDate").isEqualTo("2024-01-01")
         .jsonPath("$.reasonCode").isEqualTo("A")
         .jsonPath("$.reactivateDate").isEqualTo("2024-01-02")
+        .jsonPath("$.tracking").isEqualTo(false)
         .jsonPath("$.profiles[0].profileType").isEqualTo("HOU_UNIT_ATT")
         .jsonPath("$.profiles[0].profileCode").isEqualTo("OTH")
         .jsonPath("$.usages[0].capacity").isEqualTo(41)

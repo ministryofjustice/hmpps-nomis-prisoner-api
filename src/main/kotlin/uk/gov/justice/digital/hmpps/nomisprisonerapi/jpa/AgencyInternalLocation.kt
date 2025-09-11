@@ -43,7 +43,7 @@ data class AgencyInternalLocation(
 
   @Column(name = "TRACKING_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val tracking: Boolean = false,
+  var tracking: Boolean = false,
 
   @Column(name = "INTERNAL_LOCATION_TYPE")
   var locationType: String,

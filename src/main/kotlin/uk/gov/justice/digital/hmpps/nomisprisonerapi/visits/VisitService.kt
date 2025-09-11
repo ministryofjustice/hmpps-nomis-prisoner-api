@@ -603,9 +603,6 @@ class VisitService(
   ): AgencyInternalLocation {
     log.info("Creating VSIP visit room: $roomDescription ($roomCode)")
 
-//    val visitInternalLocationType = internalLocationTypeRepository.findByIdOrNull(InternalLocationType.VISIT)
-//      ?: throw RuntimeException("VISIT location type not found")
-
     return internalLocationRepository.save(
       AgencyInternalLocation(
         agency = location,
