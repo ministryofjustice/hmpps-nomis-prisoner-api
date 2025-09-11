@@ -11,5 +11,5 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenc
 interface OffenderTemporaryAbsenceRepository : JpaRepository<OffenderTemporaryAbsence, OffenderExternalMovementId> {
   fun findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceIsNull(offenderNo: String): List<OffenderTemporaryAbsence>
 
-  fun findByOffenderBooking_BookingIdAndId_Sequence(bookingId: Long, sequence: Int): OffenderTemporaryAbsence?
+  fun findById_OffenderBooking_BookingIdAndId_Sequence(bookingId: Long, sequence: Int): OffenderTemporaryAbsence?
 }
