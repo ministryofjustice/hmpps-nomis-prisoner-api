@@ -95,6 +95,7 @@ class LocationService(
       listSequence = locationDto.listSequence
       comment = locationDto.comment
       unitType = housingUnitType
+      locationDto.tracking?.apply { tracking = locationDto.tracking }
 
       saveProfiles(this, locationDto.profiles)
       saveUsages(this, locationDto.usages)
@@ -205,7 +206,8 @@ class LocationService(
     )
   }
 
-  fun getLocation(id: Long): LocationResponse = agencyInternalLocationRepository.findByIdOrNull(id)?.toLocationResponse()
+  fun getLocation(id: Long): LocationResponse = agencyInternalLocationRepository
+    .findByIdOrNull(id)?.toLocationResponse()
     ?: throw NotFoundException("Location with id=$id does not exist")
 
   fun getLocationByKey(key: String): LocationResponse = agencyInternalLocationRepository.findOneByDescription(key)
@@ -309,6 +311,7 @@ class LocationService(
     deactivateDate = deactivateDate,
     reactivateDate = reactivateDate,
     reasonCode = deactivateReason?.code,
+    tracking = tracking,
     profiles = profiles.map { toProfileResponse(it.id) },
     usages = usages.map { toUsageResponse(it) },
     amendments = amendments.map { toAmendmentResponse(it) },
