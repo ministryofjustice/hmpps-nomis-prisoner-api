@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMove
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails.roundToNearestSecond
 import java.time.LocalDate
@@ -45,6 +46,7 @@ class MovementsResourceIntTest(
   @Autowired val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   @Autowired val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
   @Autowired val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
+  @Autowired val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   @Autowired val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
@@ -2286,8 +2288,6 @@ class MovementsResourceIntTest(
       }
     }
 
-    // TODO test for creatign an unscheduled temporary absence
-
     @Nested
     inner class Security {
 
@@ -2536,5 +2536,247 @@ class MovementsResourceIntTest(
           }
       }
     }
+  }
+
+  @Nested
+  @DisplayName("POST /movements/{offenderNo}/temporary-absences/temporary-absence-return")
+  inner class CreateTemporaryAbsenceReturn {
+
+    private fun aCreateRequest(scheduledTemporaryAbsenceReturnId: Long? = scheduledTempAbsenceReturn.eventId) = CreateTemporaryAbsenceReturnRequest(
+      scheduledTemporaryAbsenceReturnId = scheduledTemporaryAbsenceReturnId,
+      movementDate = twoDaysAgo.toLocalDate(),
+      movementTime = twoDaysAgo,
+      movementReason = "C5",
+      arrestAgency = "POL",
+      escort = "L",
+      escortText = "SE",
+      fromAgency = "HAZLWD",
+      toPrison = "LEI",
+      commentText = "comment temporary absence in",
+      fromAddressId = offenderAddress.addressId,
+    )
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn()
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should create temporary absence return`() {
+        webTestClient.createTemporaryAbsenceReturnOk()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            // Note there is already an admission external movement on sequence 1 and the temporary absence external movement on sequence 2
+            assertThat(movementSequence).isEqualTo(3)
+            repository.runInTransaction {
+              with(temporaryAbsenceReturnRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
+                assertThat(active).isTrue
+                assertThat(scheduledTemporaryAbsence?.eventId).isEqualTo(scheduledTempAbsence.eventId)
+                assertThat(scheduledTemporaryAbsenceReturn?.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+                assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
+                assertThat(movementTime).isEqualTo(twoDaysAgo)
+                assertThat(movementReason.code).isEqualTo("C5")
+                assertThat(arrestAgency?.code).isEqualTo("POL")
+                assertThat(escort?.code).isEqualTo("L")
+                assertThat(escortText).isEqualTo("SE")
+                assertThat(fromAgency?.id).isEqualTo("HAZLWD")
+                assertThat(toAgency?.id).isEqualTo("LEI")
+                assertThat(commentText).isEqualTo("comment temporary absence in")
+                assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(fromCity?.code).isEqualTo(offenderAddress.city?.code)
+              }
+              with(offenderExternalMovementRepository.findByIdOrNull(OffenderExternalMovementId(booking, 1))!!) {
+                assertThat(active).isFalse
+              }
+              with(offenderExternalMovementRepository.findByIdOrNull(OffenderExternalMovementId(booking, 2))!!) {
+                assertThat(active).isFalse
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found if offender unknown`() {
+        webTestClient.createTemporaryAbsenceReturn(offenderNo = "UNKNOWN")
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return not found if offender has no bookings`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "C1234DE") {
+            offenderAddress = address()
+          }
+        }
+
+        webTestClient.createTemporaryAbsenceReturn()
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("C1234DE").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return bad request if schedule temporary absence does not exist`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "C1234DE") {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+
+        webTestClient.createTemporaryAbsenceReturn(request = aCreateRequest(scheduledTemporaryAbsenceReturnId = 9999))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("9999").contains("does not exist")
+          }
+      }
+
+      @Test
+      fun `should return bad request for invalid movement reason`() {
+        webTestClient.createTemporaryAbsenceReturnBadRequestUnknown(aCreateRequest().copy(movementReason = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid arrest agency`() {
+        webTestClient.createTemporaryAbsenceReturnBadRequestUnknown(aCreateRequest().copy(arrestAgency = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid escort`() {
+        webTestClient.createTemporaryAbsenceReturnBadRequestUnknown(aCreateRequest().copy(escort = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid from agency`() {
+        webTestClient.createTemporaryAbsenceReturnBadRequestUnknown(aCreateRequest().copy(fromAgency = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid to prison`() {
+        webTestClient.createTemporaryAbsenceReturnBadRequestUnknown(aCreateRequest().copy(toPrison = "UNKNOWN"))
+      }
+
+      @Test
+      fun `should return bad request for invalid to address id`() {
+        webTestClient.createTemporaryAbsenceReturnBadRequest(aCreateRequest().copy(fromAddressId = 9999))
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("9999").contains("invalid")
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorized for missing token`() {
+        webTestClient.post()
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
+          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.post()
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.post()
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    @Nested
+    inner class CreateUnscheduledTemporaryAbsenceReturn {
+      @Test
+      fun `should create unscheduled temporary absence`() {
+        webTestClient.createTemporaryAbsenceReturnOk(aCreateRequest(scheduledTemporaryAbsenceReturnId = null))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            // Note there is already an admission external movement on sequence 1 and the temporary absence external movement on sequence 2
+            assertThat(movementSequence).isEqualTo(3)
+            repository.runInTransaction {
+              with(temporaryAbsenceReturnRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
+                assertThat(active).isTrue
+                assertThat(scheduledTemporaryAbsence).isNull()
+                assertThat(scheduledTemporaryAbsenceReturn).isNull()
+                assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
+                assertThat(movementTime).isEqualTo(twoDaysAgo)
+              }
+              with(offenderExternalMovementRepository.findByIdOrNull(OffenderExternalMovementId(booking, 1))!!) {
+                assertThat(active).isFalse
+              }
+            }
+          }
+      }
+    }
+
+    private fun WebTestClient.createTemporaryAbsenceReturn(
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+      offenderNo: String = offender.nomsId,
+    ) = post()
+      .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .bodyValue(request)
+      .exchange()
+      .expectStatus()
+
+    private fun WebTestClient.createTemporaryAbsenceReturnOk(
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+    ) = createTemporaryAbsenceReturn(request)
+      .isCreated
+      .expectBodyResponse<CreateTemporaryAbsenceReturnResponse>()
+
+    private fun WebTestClient.createTemporaryAbsenceReturnBadRequest(
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+    ) = createTemporaryAbsenceReturn(request)
+      .isBadRequest
+
+    private fun WebTestClient.createTemporaryAbsenceReturnBadRequestUnknown(
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+    ) = createTemporaryAbsenceReturnBadRequest(request)
+      .expectBody().jsonPath("userMessage").value<String> {
+        assertThat(it).contains("UNKNOWN").contains("invalid")
+      }
   }
 }
