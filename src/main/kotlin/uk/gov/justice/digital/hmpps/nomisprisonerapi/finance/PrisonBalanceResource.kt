@@ -19,7 +19,9 @@ import java.time.LocalDateTime
 @Validated
 @RequestMapping("/finance/prison", produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasRole('NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class PrisonBalanceResource {
+class PrisonBalanceResource(
+  private val prisonBalanceService: PrisonBalanceService,
+) {
   @GetMapping("/ids")
   @Operation(
     summary = "Gets all the caseloads (prisons) that have balance entries.",
@@ -50,7 +52,7 @@ class PrisonBalanceResource {
       ),
     ],
   )
-  fun getPrisonIds(): List<String> = listOf("MDI", "LEI")
+  fun getPrisonIds(): List<String> = prisonBalanceService.findAllIds()
 
   @GetMapping("/{prisonId}/balance")
   @Operation(

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @WithMockAuthUser
@@ -20,7 +21,9 @@ class PrisonBalanceResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
-    nomisDataBuilder.build {}
+    nomisDataBuilder.build {
+      caseloadCurrentAccountBase(caseloadId = "LEI", currentBalance = BigDecimal("23.45"))
+    }
   }
 
   @AfterEach
@@ -57,16 +60,15 @@ class PrisonBalanceResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun getPrisonBalance() {
+    fun getIds() {
       webTestClient.get().uri("/finance/prison/ids")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("$[0]").isEqualTo("MDI")
-        .jsonPath("$[1]").isEqualTo("LEI")
-        .jsonPath("$.length()").isEqualTo(2)
+        .jsonPath("$[0]").isEqualTo("LEI")
+        .jsonPath("$.length()").isEqualTo(1)
     }
   }
 

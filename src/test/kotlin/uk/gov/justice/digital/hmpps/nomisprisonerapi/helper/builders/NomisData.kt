@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseloadCurrentAccountsBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
@@ -46,8 +47,8 @@ class NomisDataBuilder(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
-  // private val repository: OffenderTransactionBuilderRepository,
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
+  private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
 ) {
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -69,6 +70,7 @@ class NomisDataBuilder(
     linkCaseTxnBuilderFactory,
     agencyAddressBuilderFactory,
     generalLedgerTransactionBuilderFactory,
+    caseloadCurrentAccountsBaseBuilderFactory,
   ).apply(dsl)
 }
 
@@ -89,8 +91,8 @@ class NomisData(
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
-  // private val repository: OffenderTransactionBuilderRepository,
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
+  private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
 ) : NomisDataDsl {
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
@@ -529,6 +531,18 @@ class NomisData(
     transactionReferenceNumber = null,
     entryAmount = entryAmount,
   )
+
+  override fun caseloadCurrentAccountBase(
+    caseloadId: String,
+    accountCode: Int,
+    accountPeriod: Int,
+    currentBalance: BigDecimal,
+  ): CaseloadCurrentAccountsBase = caseloadCurrentAccountsBaseBuilderFactory!!.builder().build(
+    caseloadId = caseloadId,
+    accountCode = accountCode,
+    accountPeriod = accountPeriod,
+    currentBalance = currentBalance,
+  )
 }
 
 @NomisDataDslMarker
@@ -756,6 +770,14 @@ interface NomisDataDsl {
     entryAmount: BigDecimal = BigDecimal.TWO,
     dsl: GeneralLedgerTransactionDsl.() -> Unit = {},
   ): GeneralLedgerTransaction
+
+  @CaseloadCurrentAccountsBaseDslMarker
+  fun caseloadCurrentAccountBase(
+    caseloadId: String = "MDI",
+    accountCode: Int = 2101,
+    accountPeriod: Int = 202608,
+    currentBalance: BigDecimal,
+  ): CaseloadCurrentAccountsBase
 }
 
 @DslMarker
