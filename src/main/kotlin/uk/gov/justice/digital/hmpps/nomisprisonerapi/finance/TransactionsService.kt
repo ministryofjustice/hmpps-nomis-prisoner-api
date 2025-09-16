@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Limit
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,10 +23,6 @@ class TransactionsService(
   val offenderTransactionRepository: OffenderTransactionRepository,
   val generalLedgerTransactionRepository: GeneralLedgerTransactionRepository,
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
-
   fun getOffenderTransactions(transactionId: Long): List<OffenderTransactionDto> = offenderTransactionRepository
     .findByTransactionId(transactionId)
     .map(::mapOT)
