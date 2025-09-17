@@ -537,12 +537,15 @@ class NomisData(
     accountCode: Int,
     accountPeriod: Int,
     currentBalance: BigDecimal,
-  ): CaseloadCurrentAccountsBase = caseloadCurrentAccountsBaseBuilderFactory!!.builder().build(
-    caseloadId = caseloadId,
-    accountCode = accountCode,
-    accountPeriod = accountPeriod,
-    currentBalance = currentBalance,
-  )
+    dsl: CaseloadCurrentAccountsBaseDsl.() -> Unit,
+  ): CaseloadCurrentAccountsBase = caseloadCurrentAccountsBaseBuilderFactory!!.builder().let { builder ->
+    builder.build(
+      caseloadId = caseloadId,
+      accountCode = accountCode,
+      accountPeriod = accountPeriod,
+      currentBalance = currentBalance,
+    ).also { builder.apply(dsl) }
+  }
 }
 
 @NomisDataDslMarker
@@ -777,6 +780,7 @@ interface NomisDataDsl {
     accountCode: Int = 2101,
     accountPeriod: Int = 202608,
     currentBalance: BigDecimal,
+    dsl: CaseloadCurrentAccountsBaseDsl.() -> Unit = {},
   ): CaseloadCurrentAccountsBase
 }
 

@@ -81,16 +81,7 @@ class PrisonBalanceResource(
     @Schema(description = "prisonId", example = "MDI")
     @PathVariable
     prisonId: String,
-  ): PrisonBalanceDto = PrisonBalanceDto(
-    prisonId = prisonId,
-    accountBalances = listOf(
-      PrisonAccountBalanceDto(
-        accountCode = 2101,
-        balance = BigDecimal("33.12"),
-        transactionDate = LocalDateTime.now(),
-      ),
-    ),
-  )
+  ): PrisonBalanceDto = prisonBalanceService.getPrisonBalance(prisonId)
 }
 
 data class PrisonBalanceDto(
