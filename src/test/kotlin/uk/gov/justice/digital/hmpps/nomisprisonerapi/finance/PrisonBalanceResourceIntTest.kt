@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,6 +23,7 @@ class PrisonBalanceResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       caseloadCurrentAccountBase(caseloadId = "LEI", currentBalance = BigDecimal("23.45")) {
         transaction(currentBalance = BigDecimal("12.23"))
+        transaction(currentBalance = BigDecimal("11.22"))
       }
       caseloadCurrentAccountBase(caseloadId = "MDI", currentBalance = BigDecimal("5.67"))
     }
@@ -107,15 +107,15 @@ class PrisonBalanceResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonBalance() {
-      webTestClient.get().uri("/finance/prison/MDI/balance")
+      webTestClient.get().uri("/finance/prison/LEI/balance")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("$.prisonId").isEqualTo("MDI")
+        .jsonPath("$.prisonId").isEqualTo("LEI")
         .jsonPath("$.accountBalances[0].accountCode").isEqualTo(2101)
-        .jsonPath("$.accountBalances[0].balance").isEqualTo("33.12")
+        .jsonPath("$.accountBalances[0].balance").isEqualTo("23.45")
         .jsonPath("$.accountBalances[0].transactionDate").value<String> {
           assertThat(it).startsWith(LocalDate.now().toString())
         }
@@ -123,13 +123,15 @@ class PrisonBalanceResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    @Disabled
     fun `none found`() {
       webTestClient.get().uri("/finance/prison/XXX/balance")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
-        .isNotFound
+        .isOk
+        .expectBody()
+        .jsonPath("$.prisonId").isEqualTo("XXX")
+        .jsonPath("$.accountBalances.length()").isEqualTo(0)
     }
   }
 }

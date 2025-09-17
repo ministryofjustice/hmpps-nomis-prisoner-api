@@ -9,11 +9,8 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import org.hibernate.annotations.ColumnDefault
-import org.hibernate.annotations.OnDelete
-import org.hibernate.annotations.OnDeleteAction
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -28,38 +25,29 @@ data class CaseloadCurrentAccountsTxn(
   val id: Long = 0,
 
   @Size(max = 6)
-  @NotNull
   @Column(name = "CASELOAD_ID", nullable = false, length = 6)
   val caseloadId: String,
 
-  @NotNull
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @OnDelete(action = OnDeleteAction.RESTRICT)
   @JoinColumn(name = "ACCOUNT_CODE", nullable = false)
   val accountCode: AccountCode,
 
-  @NotNull
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @OnDelete(action = OnDeleteAction.RESTRICT)
   @JoinColumn(name = "ACCOUNT_PERIOD_ID", nullable = false)
   val accountPeriod: AccountPeriod,
 
-  @NotNull
   @Column(name = "CURRENT_BALANCE", nullable = false, precision = 13, scale = 2)
   val currentBalance: BigDecimal,
 
-  @NotNull
   @ColumnDefault("systimestamp")
   @Column(name = "CREATE_DATETIME", nullable = false)
   val createDateTime: LocalDateTime = LocalDateTime.now(),
 ) {
   @Size(max = 32)
-  @NotNull
   @ColumnDefault("USER")
   @Column(name = "CREATE_USER_ID", nullable = false, length = 32)
   val createUserId: String = "OMSOWNER"
 
-  @NotNull
   @Column(name = "MODIFY_DATE", nullable = false)
   val modifyDate: LocalDate = LocalDate.now()
 }
