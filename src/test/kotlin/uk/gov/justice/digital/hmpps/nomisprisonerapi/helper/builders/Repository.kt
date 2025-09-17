@@ -50,6 +50,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadCurrentAccountsBaseRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadCurrentAccountsTxnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourseScheduleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
@@ -122,6 +124,8 @@ class Repository(
   val generalLedgerTransactionRepository: GeneralLedgerTransactionRepository,
   val offenderTrustAccountRepository: OffenderTrustAccountRepository,
   val linkCaseTxnRepository: LinkCaseTxnRepository,
+  val caseloadCurrentAccountsBaseRepository: CaseloadCurrentAccountsBaseRepository,
+  val caseloadCurrentAccountsTxnRepository: CaseloadCurrentAccountsTxnRepository,
 ) {
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
@@ -308,4 +312,8 @@ class Repository(
       offenderTransactionRepository.deleteAll()
       offenderTrustAccountRepository.deleteAll()
     }
+
+  fun deleteAllPrisonBalances() = caseloadCurrentAccountsBaseRepository.deleteAll().also {
+    caseloadCurrentAccountsTxnRepository.deleteAll()
+  }
 }
