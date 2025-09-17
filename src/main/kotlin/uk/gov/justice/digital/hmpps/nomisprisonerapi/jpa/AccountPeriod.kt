@@ -4,7 +4,6 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import org.hibernate.Hibernate
 import java.time.LocalDate
@@ -17,7 +16,6 @@ class AccountPeriod(
   val id: Long,
 
   @Size(max = 12)
-  @NotNull
   @Column(name = "ACCOUNT_PERIOD_TYPE", nullable = false, length = 12)
   val accountPeriodType: String,
 

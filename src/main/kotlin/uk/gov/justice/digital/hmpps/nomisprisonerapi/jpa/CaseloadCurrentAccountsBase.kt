@@ -9,11 +9,8 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.MapsId
 import jakarta.persistence.Table
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import org.hibernate.Hibernate
-import org.hibernate.annotations.OnDelete
-import org.hibernate.annotations.OnDeleteAction
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Objects
@@ -26,21 +23,16 @@ data class CaseloadCurrentAccountsBase(
 
   @MapsId("accountCode")
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @OnDelete(action = OnDeleteAction.RESTRICT)
   @JoinColumn(name = "ACCOUNT_CODE", nullable = false)
   val accountCode: AccountCode,
 
-  @NotNull
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @OnDelete(action = OnDeleteAction.RESTRICT)
   @JoinColumn(name = "ACCOUNT_PERIOD_ID", nullable = false)
   val accountPeriod: AccountPeriod,
 
-  @NotNull
   @Column(name = "CURRENT_BALANCE", nullable = false, precision = 13, scale = 2)
   val currentBalance: BigDecimal,
 ) {
-  @NotNull
   @Column(name = "MODIFY_DATE", nullable = false)
   val modifyDate: LocalDate = LocalDate.now()
 }
@@ -48,11 +40,9 @@ data class CaseloadCurrentAccountsBase(
 @Embeddable
 class CaseloadCurrentAccountsBaseId(
   @Size(max = 6)
-  @NotNull
   @Column(name = "CASELOAD_ID", nullable = false, length = 6)
   val caseloadId: String,
 
-  @NotNull
   @Column(name = "ACCOUNT_CODE", nullable = false)
   val accountCode: Int,
 ) {
