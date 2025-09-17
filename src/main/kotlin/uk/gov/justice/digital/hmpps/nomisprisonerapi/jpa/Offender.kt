@@ -138,6 +138,9 @@ data class Offender(
   @SQLRestriction("OWNER_CLASS = '${OffenderInternetAddress.TYPE}'")
   val internetAddresses: MutableList<OffenderInternetAddress> = mutableListOf(),
 
+  @OneToMany(mappedBy = "id.offender", cascade = [CascadeType.ALL], fetch = LAZY)
+  val trustAccounts: MutableList<OffenderTrustAccount> = mutableListOf(),
+
   @Column(name = "LAST_NAME_KEY", nullable = false)
   var lastNameKey: String? = null,
 
