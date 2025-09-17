@@ -12,12 +12,10 @@ import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import org.hibernate.Hibernate
-import org.hibernate.annotations.ColumnDefault
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Objects
 
 @Entity
@@ -42,11 +40,6 @@ data class CaseloadCurrentAccountsBase(
   @Column(name = "CURRENT_BALANCE", nullable = false, precision = 13, scale = 2)
   val currentBalance: BigDecimal,
 ) {
-  @NotNull
-  @ColumnDefault("systimestamp")
-  @Column(name = "CREATE_DATETIME", nullable = false)
-  val createDateTime: LocalDateTime = LocalDateTime.now()
-
   @NotNull
   @Column(name = "MODIFY_DATE", nullable = false)
   val modifyDate: LocalDate = LocalDate.now()

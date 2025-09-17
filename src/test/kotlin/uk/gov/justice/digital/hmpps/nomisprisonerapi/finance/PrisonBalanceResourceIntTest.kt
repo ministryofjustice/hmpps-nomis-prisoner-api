@@ -22,7 +22,10 @@ class PrisonBalanceResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   fun setUp() {
     nomisDataBuilder.build {
-      caseloadCurrentAccountBase(caseloadId = "LEI", currentBalance = BigDecimal("23.45"))
+      caseloadCurrentAccountBase(caseloadId = "LEI", currentBalance = BigDecimal("23.45")) {
+        transaction(currentBalance = BigDecimal("12.23"))
+      }
+      caseloadCurrentAccountBase(caseloadId = "MDI", currentBalance = BigDecimal("5.67"))
     }
   }
 
@@ -68,7 +71,8 @@ class PrisonBalanceResourceIntTest : IntegrationTestBase() {
         .isOk
         .expectBody()
         .jsonPath("$[0]").isEqualTo("LEI")
-        .jsonPath("$.length()").isEqualTo(1)
+        .jsonPath("$[1]").isEqualTo("MDI")
+        .jsonPath("$.length()").isEqualTo(2)
     }
   }
 
