@@ -19,7 +19,7 @@ class PrisonerBalanceService(
 
   fun getPrisonerAccounts(rootOffenderId: Long): PrisonerAccountsDto = dummyAccounts
 
-  fun findAllPrisonersWithAccountBalance(pageRequest: Pageable): PagedModel<Long> = PagedModel(offenderRepository.findAllWithBalances(pageRequest))
+  fun findAllPrisonersWithAccountBalance(pageRequest: Pageable): PagedModel<Long> = PagedModel(offenderRepository.findAllOffenderIdWithBalances(pageRequest))
 }
 
 val dummyAccounts = PrisonerAccountsDto(
