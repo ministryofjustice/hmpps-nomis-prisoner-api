@@ -85,7 +85,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get().uri("/adjudications/charges/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -293,7 +293,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .queryParam("size", "1")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -310,7 +310,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
           it.path("/adjudications/charges/ids")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -328,7 +328,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .queryParam("size", "300")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -346,7 +346,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .queryParam("fromDate", "2023-07-01")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -362,7 +362,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .queryParam("toDate", "2015-01-01")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -379,7 +379,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .queryParam("toDate", "2023-01-01")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -394,7 +394,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .queryParam("prisonIds", "LEI")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -410,7 +410,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
             .queryParam("prisonIds", "BXI")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -679,7 +679,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         @Test
         fun `return 404 when adjudication not found`() {
           webTestClient.get().uri("/adjudications/adjudication-number/99999999")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isNotFound
         }
@@ -700,7 +700,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         @Test
         fun `returns details of the charges and offences`() {
           webTestClient.get().uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -743,7 +743,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         fun `returns details of the hearing outcome and punishments (aka awards)`() {
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -827,7 +827,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         @Test
         fun `return 404 when adjudication not found`() {
           webTestClient.get().uri("/adjudications/adjudication-number/99999999/charge-sequence/$hoochChargeSequence")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isNotFound
         }
@@ -835,7 +835,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         @Test
         fun `return 404 when adjudication charge not found`() {
           webTestClient.get().uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/444")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isNotFound
         }
@@ -857,7 +857,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         fun `returns details of the charge and offences`() {
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/$hoochChargeSequence")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -876,7 +876,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         fun `returns details of another charge related to the same adjudication`() {
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/$deadSwanChargeSequence")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -895,7 +895,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         fun `flag to indicate multiple charges is returned`() {
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/1")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -903,7 +903,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/2")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -911,7 +911,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$PREVIOUS_ADJUDICATION_NUMBER/charge-sequence/1")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -937,7 +937,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         fun `returns details of the hearing outcome and punishments (aka awards) only for this charge`() {
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/$hoochChargeSequence")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -978,7 +978,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
           webTestClient.get()
             .uri("/adjudications/adjudication-number/$ADJUDICATION_NUMBER/charge-sequence/$deadSwanChargeSequence")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -995,7 +995,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     private fun getAdjudicationCoreIncidentDetails(url: String) {
       webTestClient.get()
         .uri(url)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1026,7 +1026,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     private fun getAdjudicationEvidenceTest(url: String) {
       webTestClient.get().uri(url)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1052,7 +1052,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     private fun getAdjudicationDamageTest(url: String) {
       webTestClient.get()
         .uri(url)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1073,7 +1073,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
     private fun getAdjudicationHearingsTest(url: String) {
       webTestClient.get()
         .uri(url)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1110,7 +1110,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
     private fun getAdjudicationOtherPartiesTest(url: String) {
       webTestClient.get().uri(url)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1215,7 +1215,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if prisoner not found`() {
         webTestClient.post().uri("/prisoners/A9999ZZ/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
@@ -1227,7 +1227,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if prisoner number is not valid`() {
         webTestClient.post().uri("/prisoners/BANANAS/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
@@ -1239,7 +1239,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if person has no bookings yet`() {
         webTestClient.post().uri("/prisoners/${prisonerWithNoBookings.nomsId}/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication()))
           .exchange()
@@ -1251,7 +1251,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if reporting officer is not found`() {
         webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication(reportingStaffUsername = "BANANAS")))
           .exchange()
@@ -1263,7 +1263,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if offence code is not found`() {
         webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication(offenceCode = "BANANAS")))
           .exchange()
@@ -1275,7 +1275,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if evidence type code is not found`() {
         webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1296,7 +1296,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if repair type code is not found`() {
         webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1314,7 +1314,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if internal location of incident code is not found`() {
         webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication(internalLocationId = 9999999)))
           .exchange()
@@ -1326,7 +1326,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if prison where adjudication is created code is not found`() {
         webTestClient.post().uri("/prisoners/${prisoner.nomsId}/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aSimpleAdjudication(prisonId = "BANANAS")))
           .exchange()
@@ -1369,7 +1369,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `create an adjudication with minimal data`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1395,7 +1395,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create adjudication with multiple charges even though this is not expected to happen`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1431,7 +1431,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `core data created in an adjudication is returned and in the NOMIS database and can be queried by API`() {
         val response = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1503,7 +1503,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.get().uri("/adjudications/adjudication-number/$adjudicationNumber")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1536,7 +1536,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create adjudication with evidence`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1583,7 +1583,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create adjudication with damages (aka repairs)`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1622,7 +1622,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create adjudication with witnesses`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1650,7 +1650,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create adjudication with staff victims`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1678,7 +1678,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create adjudication with prisoner victims`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1707,7 +1707,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create a complex adjudication with many people involved`() {
         adjudicationNumber = webTestClient.post().uri("/prisoners/$offenderNo/adjudications")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2097,7 +2097,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `404 is returned if adjudication does not exist`() {
         webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", 99999)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{"repairs": []}"""))
           .exchange()
@@ -2108,7 +2108,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun `repair type code must be present`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2133,7 +2133,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun `repair type code must valid`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2169,7 +2169,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2200,7 +2200,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2238,7 +2238,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2276,7 +2276,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun `update repair list is returned`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/repairs", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2400,7 +2400,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `404 is returned if adjudication does not exist`() {
         webTestClient.put().uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", 99999)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{"evidence": []}"""))
           .exchange()
@@ -2411,7 +2411,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun `evidence type code must be present`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2436,7 +2436,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun `evidence type code must valid`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2473,7 +2473,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2506,7 +2506,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2551,7 +2551,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2588,7 +2588,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun `updated evidence list is returned`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2633,7 +2633,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
       webTestClient.put()
         .uri("/adjudications/adjudication-number/{adjudicationNumber}/evidence", existingAdjudicationNumber)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -2759,7 +2759,7 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will not throw error and will track event if adjudication not found`() {
         webTestClient.delete().uri("/incident/adjudication-number/333")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk()
 
@@ -2780,12 +2780,12 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
       fun `delete an adjudication hearing`() {
         webTestClient.delete()
           .uri("/incident/adjudication-number/$existingAdjudicationNumber")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
         webTestClient.get().uri("/adjudications//adjudication-number/$existingAdjudicationNumber")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()

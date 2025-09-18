@@ -365,7 +365,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun createActivityExpectingBadRequest(body: String) = webTestClient.post().uri("/activities")
       .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .body(BodyInserters.fromValue(body))
       .exchange()
       .expectStatus().isBadRequest
@@ -379,7 +379,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
     }
 
     private fun callCreateEndpointAndExpect(request: String = validJsonRequest()) = webTestClient.post().uri("/activities")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .contentType(MediaType.APPLICATION_JSON)
       .body(BodyInserters.fromValue(request))
       .exchange()
@@ -1759,7 +1759,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun callUpdateEndpoint(courseActivityId: Long, jsonBody: String) = webTestClient.put().uri("/activities/$courseActivityId")
       .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .body(BodyInserters.fromValue(jsonBody))
       .exchange()
   }
@@ -1791,7 +1791,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // delete activity and deallocate
       webTestClient.delete().uri("/activities/${courseActivity.courseActivityId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -1829,7 +1829,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
       // delete activity, allocation and attendance
       webTestClient.delete().uri("/activities/${courseActivity.courseActivityId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -1852,7 +1852,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         .build()
     }
       .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
 
     @Test
@@ -2074,7 +2074,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.endActivities(courseActivityIds: Collection<Long>, endDate: LocalDate? = null) = put().uri("/activities/end")
       .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds, "endDate": ${endDate?.let { "\"$it\"" }} }"""))
       .exchange()
 
@@ -2340,7 +2340,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.moveEndDate(courseActivityIds: Collection<Long>, oldEndDate: LocalDate, newEndDate: LocalDate) = put().uri("/activities/move-end-date")
       .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .body(BodyInserters.fromValue("""{ "courseActivityIds": $courseActivityIds, "oldEndDate": "$oldEndDate", "newEndDate": "$newEndDate" }"""))
       .exchange()
 
@@ -2544,7 +2544,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
       }
 
       webTestClient.get().uri("/schedules/max-id")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectBody()
         .jsonPath("$").isEqualTo(courseSchedules.maxOfOrNull { it.courseScheduleId } ?: 0)

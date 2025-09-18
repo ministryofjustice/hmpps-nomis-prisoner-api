@@ -49,12 +49,12 @@ class ActivitiesResource(
   private val attendanceService: AttendanceService,
   private val scheduleService: ScheduleService,
 ) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/activities")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new activity",
-    description = "Creates a new activity and associated pay rates. Requires role NOMIS_ACTIVITIES",
+    description = "Creates a new activity and associated pay rates. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = CreateActivityRequest::class)),
@@ -81,7 +81,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -93,11 +93,11 @@ class ActivitiesResource(
     createActivityRequest: CreateActivityRequest,
   ): CreateActivityResponse = activityService.createActivity(createActivityRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/activities/{courseActivityId}")
   @Operation(
     summary = "Updates an activity",
-    description = "Updates an activity and associated pay rates. Requires role NOMIS_ACTIVITIES",
+    description = "Updates an activity and associated pay rates. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = UpdateActivityRequest::class)),
@@ -124,7 +124,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -144,11 +144,11 @@ class ActivitiesResource(
     updateActivityRequest: UpdateActivityRequest,
   ): CreateActivityResponse = activityService.updateActivity(courseActivityId, updateActivityRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/activities/{courseActivityId}/allocation")
   @Operation(
     summary = "Creates or Updates a prisoner's allocation to an activity",
-    description = "Creates or updates a prisoner's allocation to an activity. Requires role NOMIS_ACTIVITIES",
+    description = "Creates or updates a prisoner's allocation to an activity. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -178,7 +178,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -191,11 +191,11 @@ class ActivitiesResource(
     upsertRequest: UpsertAllocationRequest,
   ) = allocationService.upsertAllocation(courseActivityId, upsertRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/activities/{courseActivityId}/schedule")
   @Operation(
     summary = "Updates a course schedule",
-    description = "Updates a course schedule. Requires role NOMIS_ACTIVITIES",
+    description = "Updates a course schedule. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -225,7 +225,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -245,11 +245,11 @@ class ActivitiesResource(
     updateRequest: CourseScheduleRequest,
   ) = scheduleService.updateCourseSchedule(courseActivityId, updateRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/schedules/{courseScheduleId}/booking/{bookingId}/attendance")
   @Operation(
     summary = "Creates or updates an attendance record",
-    description = "Creates or updates an attendance for the course schedule. Requires role NOMIS_ACTIVITIES",
+    description = "Creates or updates an attendance for the course schedule. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = UpsertAttendanceRequest::class)),
@@ -276,7 +276,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -290,12 +290,12 @@ class ActivitiesResource(
     upsertAttendanceRequest: UpsertAttendanceRequest,
   ) = attendanceService.upsertAttendance(courseScheduleId, bookingId, upsertAttendanceRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/schedules/{courseScheduleId}/booking/{bookingId}/attendance")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes an attendance record",
-    description = "Deletes an attendance for the course schedule. Requires role NOMIS_ACTIVITIES",
+    description = "Deletes an attendance for the course schedule. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -310,14 +310,14 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -329,11 +329,11 @@ class ActivitiesResource(
     @Schema(description = "Booking id") @PathVariable bookingId: Long,
   ) = attendanceService.deleteAttendance(courseScheduleId, bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/activities/ids")
   @Operation(
     summary = "Find paged active activities",
-    description = "Searches for active course activities with allocated prisoners. Requires role NOMIS_ACTIVITIES",
+    description = "Searches for active course activities with allocated prisoners. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -355,7 +355,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -375,11 +375,11 @@ class ActivitiesResource(
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> = activityService.findActiveActivityIds(pageRequest, prisonId, courseActivityId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/activities/rates-with-unknown-incentives")
   @Operation(
     summary = "Find activities with pay rates with unknown incentive level",
-    description = "Searches for course activities that have an active pay rate with an unknown incentive level. Requires role NOMIS_ACTIVITIES",
+    description = "Searches for course activities that have an active pay rate with an unknown incentive level. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -401,7 +401,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -413,11 +413,11 @@ class ActivitiesResource(
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindPayRateWithUnknownIncentiveResponse> = activityService.findPayRatesWithUnknownIncentive(prisonId, courseActivityId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/activities/without-schedule-rules")
   @Operation(
     summary = "Find activities without schedule rules",
-    description = "Searches for course activities that are active with active allocations but no schedule rules. Requires role NOMIS_ACTIVITIES",
+    description = "Searches for course activities that are active with active allocations but no schedule rules. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -439,7 +439,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -451,11 +451,11 @@ class ActivitiesResource(
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): List<FindActivitiesWithoutScheduleRulesResponse> = activityService.findActivitiesWithoutScheduleRules(prisonId, courseActivityId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/activities/{courseActivityId}")
   @Operation(
     summary = "Get activity details",
-    description = "Gets activity details including schedule rules and pay rates. Requires role NOMIS_ACTIVITIES",
+    description = "Gets activity details including schedule rules and pay rates. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -477,7 +477,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -495,11 +495,11 @@ class ActivitiesResource(
     @Schema(description = "Course activity id") @PathVariable courseActivityId: Long,
   ) = activityService.getActivity(courseActivityId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/allocations/ids")
   @Operation(
     summary = "Find paged active allocations",
-    description = "Searches for active course allocations. Requires role NOMIS_ACTIVITIES",
+    description = "Searches for active course allocations. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -521,7 +521,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -542,11 +542,11 @@ class ActivitiesResource(
     @Schema(description = "Allocations must be active on this date to be included. For migrations this is the date we switch to DPS. Defaults to tomorrow.") @RequestParam activeOnDate: LocalDate?,
   ): Page<FindActiveAllocationIdsResponse> = allocationService.findActiveAllocations(pageRequest, prisonId, courseActivityId, activeOnDate ?: LocalDate.now().plusDays(1))
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/allocations/suspended")
   @Operation(
     summary = "Find suspended allocations",
-    description = "Searches for suspended prisoners on active course allocations. Requires role NOMIS_ACTIVITIES",
+    description = "Searches for suspended prisoners on active course allocations. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -568,7 +568,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -581,11 +581,11 @@ class ActivitiesResource(
     @Schema(description = "Allocations must be active on this date to be included. For migrations this is the date we switch to DPS. Defaults to tomorrow.") @RequestParam activeOnDate: LocalDate?,
   ): List<FindSuspendedAllocationsResponse> = allocationService.findSuspendedAllocations(prisonId, courseActivityId, activeOnDate ?: LocalDate.now().plusDays(1))
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/allocations/missing-pay-bands")
   @Operation(
     summary = "Find allocations with missing pay bands",
-    description = "Searches for prisoners allocated to a course activity without a pay band assigned. Requires role NOMIS_ACTIVITIES",
+    description = "Searches for prisoners allocated to a course activity without a pay band assigned. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -607,7 +607,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -620,11 +620,11 @@ class ActivitiesResource(
     @Schema(description = "Allocations must be active on this date to be included. For migrations this is the date we switch to DPS. Defaults to tomorrow.") @RequestParam activeOnDate: LocalDate?,
   ): List<FindAllocationsMissingPayBandsResponse> = allocationService.findAllocationsMissingPayBands(prisonId, courseActivityId, activeOnDate ?: LocalDate.now().plusDays(1))
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/allocations/{allocationId}")
   @Operation(
     summary = "Get allocation details",
-    description = "Gets allocation details. Requires role NOMIS_ACTIVITIES",
+    description = "Gets allocation details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -646,7 +646,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -664,12 +664,12 @@ class ActivitiesResource(
     @Schema(description = "Allocation id") @PathVariable allocationId: Long,
   ) = allocationService.getAllocation(allocationId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/activities/{courseActivityId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a NOMIS course activity",
-    description = "Deletes a course activity and its children - pay rates, schedules, allocations and attendances. Intended to be used for data fixes. Requires role NOMIS_ACTIVITIES",
+    description = "Deletes a course activity and its children - pay rates, schedules, allocations and attendances. Intended to be used for data fixes. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -684,7 +684,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -693,12 +693,12 @@ class ActivitiesResource(
   )
   fun deleteActivity(@PathVariable courseActivityId: Long) = activityService.deleteActivity(courseActivityId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/allocations/{referenceId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a NOMIS allocation (from OFFENDER_PROGRAM_PROFILES table)",
-    description = "Deletes an allocation from NOMIS and any children - pay rates, attendances. Requires role NOMIS_ACTIVITIES",
+    description = "Deletes an allocation from NOMIS and any children - pay rates, attendances. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -713,7 +713,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -722,12 +722,12 @@ class ActivitiesResource(
   )
   fun deleteAllocation(@PathVariable referenceId: Long) = allocationService.deleteAllocation(referenceId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/attendances/{eventId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a NOMIS attendance (from OFFENDER_COURSE_ATTENDANCES table)",
-    description = "Deletes an attendance from NOMIS. Requires role NOMIS_ACTIVITIES",
+    description = "Deletes an attendance from NOMIS. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -742,7 +742,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -751,11 +751,11 @@ class ActivitiesResource(
   )
   fun deleteAttendance(@PathVariable eventId: Long) = attendanceService.deleteAttendance(eventId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/activities/{courseActivityId}/end")
   @Operation(
     summary = "End a course activity",
-    description = "Ends a course activity and all active attendances with end date today. Requires role NOMIS_ACTIVITIES",
+    description = "Ends a course activity and all active attendances with end date today. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -777,7 +777,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -797,11 +797,11 @@ class ActivitiesResource(
     @Schema(description = "End date") @RequestParam endDate: LocalDate? = null,
   ) = activityService.endActivity(courseActivityId, endDate ?: LocalDate.now(), endComment)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/activities/end")
   @Operation(
     summary = "End multiple course activities",
-    description = "Ends course activities and all active allocations with end date today. Requires role NOMIS_ACTIVITIES",
+    description = "Ends course activities and all active allocations with end date today. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -831,7 +831,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -849,11 +849,11 @@ class ActivitiesResource(
     @Schema(description = "End activities request") @RequestBody request: EndActivitiesRequest,
   ) = activityService.endActivities(request.courseActivityIds, request.endDate ?: LocalDate.now())
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/activities/move-end-date")
   @Operation(
     summary = "Move the end date of multiple course activities",
-    description = "Move the end date of course activities and allocations if they end on the oldEndDate passed. Requires role NOMIS_ACTIVITIES",
+    description = "Move the end date of course activities and allocations if they end on the oldEndDate passed. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -883,7 +883,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -901,7 +901,7 @@ class ActivitiesResource(
     @Schema(description = "Move activity end date") @RequestBody request: MoveActivityEndDateRequest,
   ) = activityService.moveActivitiesEndDate(request.courseActivityIds, request.oldEndDate, request.newEndDate)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/allocations/reconciliation/{prisonId}")
   @Operation(
     summary = "Get data for an allocation sync reconciliation",
@@ -927,7 +927,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -939,7 +939,7 @@ class ActivitiesResource(
     @Schema(description = "suspended allocations only") @RequestParam suspended: Boolean = false,
   ) = allocationService.findActiveAllocationsSummary(prisonId, suspended)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/attendances/reconciliation/{prisonId}")
   @Operation(
     summary = "Get data for an attendance sync reconciliation",
@@ -965,7 +965,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -977,7 +977,7 @@ class ActivitiesResource(
     @Schema(description = "Date") @RequestParam date: LocalDate,
   ) = attendanceService.findPaidAttendancesSummary(prisonId, date)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/schedules/max-id")
   @Operation(
     summary = "Get the highest value of CRS_SCH_ID in NOMIS",
@@ -1003,7 +1003,7 @@ class ActivitiesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_ACTIVITIES",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],

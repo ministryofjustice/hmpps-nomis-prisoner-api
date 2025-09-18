@@ -77,7 +77,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       @Test
       fun `invalid prison should return not found`() {
         webTestClient.get().uri("/allocations/ids?prisonId=XXX")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -837,7 +837,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
         .apply { activeOnDate?.run { queryParam("activeOnDate", activeOnDate) } }
         .build()
     }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }
@@ -920,7 +920,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       .apply { activeOnDate?.run { queryParam("activeOnDate", activeOnDate) } }
       .build()
   }
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .exchange()
     .expectStatus().isOk
 
@@ -1179,7 +1179,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       .apply { activeOnDate?.run { queryParam("activeOnDate", activeOnDate) } }
       .build()
   }
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .exchange()
     .expectStatus().isOk
 
@@ -1218,7 +1218,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
       @Test
       fun `unknown course allocation should return not found`() {
         webTestClient.get().uri("/allocations/9999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -1380,7 +1380,7 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
     }
 
     private fun WebTestClient.getAllocationDetails(): WebTestClient.ResponseSpec = get().uri("/allocations/${courseAllocation.offenderProgramReferenceId}")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }

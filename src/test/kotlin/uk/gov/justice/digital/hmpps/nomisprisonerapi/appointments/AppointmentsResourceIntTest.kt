@@ -36,7 +36,7 @@ class AppointmentsResourceIntTest : IntegrationTestBase() {
 
   private fun callCreateEndpoint(hasEndTime: Boolean, inCell: Boolean = false): Long {
     val response = webTestClient.post().uri("/appointments")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .contentType(MediaType.APPLICATION_JSON)
       .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime, inCell)))
       .exchange()
@@ -59,14 +59,14 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
   private fun callCancelEndpoint(eventId: Long) {
     webTestClient.put().uri("/appointments/$eventId/cancel")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }
 
   private fun callUncancelEndpoint(eventId: Long) {
     webTestClient.put().uri("/appointments/$eventId/uncancel")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }
@@ -134,7 +134,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `access with booking not found`() {
       webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createAppointmentRequest().copy(bookingId = 999997)))
         .exchange()
         .expectStatus().isBadRequest
@@ -146,7 +146,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `access with room not found`() {
       webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createAppointmentRequest().copy(internalLocationId = 999998)))
         .exchange()
         .expectStatus().isBadRequest
@@ -158,7 +158,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `prisoner and room not in same prison`() {
       webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createAppointmentRequest().copy(bookingId = offenderAtOtherPrison.latestBooking().bookingId)))
         .exchange()
         .expectStatus().isBadRequest
@@ -170,7 +170,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `EventSubType does not exist`() {
       webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createAppointmentRequest().copy(eventSubType = "INVALID")))
         .exchange()
         .expectStatus().isBadRequest
@@ -182,7 +182,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `end time before start`() {
       webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createAppointmentRequest().copy(endTime = LocalTime.of(7, 0))))
         .exchange()
         .expectStatus().isBadRequest
@@ -194,7 +194,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `comment too long`() {
       webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createAppointmentRequest().copy(comment = "x".repeat(4001))))
         .exchange()
         .expectStatus().isBadRequest
@@ -209,7 +209,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
         validCreateJsonRequest(false, false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
         .expectStatus().isBadRequest
@@ -223,7 +223,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       val invalidSchedule = validCreateJsonRequest(true, false).replace(""""endTime"   : "12:10"""", """"endTime": "12:65"""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
         .expectStatus().isBadRequest
@@ -239,7 +239,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
         """"eventDate": "2022-13-31",""",
       )
       webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
@@ -333,7 +333,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `appointment does not exist`() {
       webTestClient.put().uri("/appointments/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateAppointmentRequest()))
         .exchange()
         .expectStatus().isNotFound
@@ -343,7 +343,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     fun `access with room not found`() {
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(internalLocationId = 999998)))
         .exchange()
         .expectStatus().isBadRequest
@@ -356,7 +356,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     fun `EventSubType does not exist`() {
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(eventSubType = "INVALID")))
         .exchange()
         .expectStatus().isBadRequest
@@ -369,7 +369,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     fun `end time before start`() {
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateAppointmentRequest().copy(endTime = LocalTime.of(7, 0))))
         .exchange()
         .expectStatus().isBadRequest
@@ -385,7 +385,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
         .expectStatus().isBadRequest
@@ -400,7 +400,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
         .expectStatus().isBadRequest
@@ -417,7 +417,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       )
       val eventId = callCreateEndpoint(false)
       webTestClient.put().uri("/appointments/$eventId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
@@ -476,7 +476,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     private fun callUpdateEndpoint(eventId: Long, hasEndTime: Boolean, inCell: Boolean = false) {
       webTestClient.put().uri("/appointments/$eventId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(validUpdateJsonRequest(hasEndTime, inCell)))
         .exchange()
@@ -523,7 +523,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @Test
     fun `appointment does not exist`() {
       webTestClient.put().uri("/appointments/1/cancel")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -570,7 +570,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @Test
     fun `appointment does not exist`() {
       webTestClient.put().uri("/appointments/1/uncancel")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -618,7 +618,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @Test
     fun `appointment does not exist`() {
       webTestClient.delete().uri("/appointments/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -635,7 +635,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
 
     private fun callDeleteEndpoint(eventId: Long) {
       webTestClient.delete().uri("/appointments/$eventId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
     }
@@ -671,7 +671,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @Test
     fun `get by id`() {
       webTestClient.get().uri("/appointments/${appointment1.eventId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -691,7 +691,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @Test
     fun `appointments not found`() {
       webTestClient.get().uri("/appointments/99999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -699,7 +699,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @Test
     fun `malformed id returns bad request`() {
       webTestClient.get().uri("/appointments/stuff")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -772,7 +772,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
     @Test
     fun `prison filter missing`() {
       webTestClient.get().uri("/appointments/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
@@ -788,7 +788,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
             .queryParam("prisonIds", "MDI", "SWI", "BXI")
             .build()
         }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -804,7 +804,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
           .queryParam("toDate", "2023-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -821,7 +821,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
           .queryParam("toDate", "2026-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -836,7 +836,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
           .queryParam("prisonIds", "MDI", "SWI")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -853,7 +853,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
           .queryParam("size", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -875,7 +875,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
           .queryParam("page", "1")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -895,7 +895,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
           .queryParam("fromDate", "202-10-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -1027,7 +1027,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
       @Test
       fun `should return bad request if no prisons`() {
         webTestClient.get().uri("/appointments/counts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -1044,7 +1044,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("fromDate", "1/2/2024")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -1061,7 +1061,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("toDate", "1/2/2024")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -1078,7 +1078,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("fromDate", "2024-02-31")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -1095,7 +1095,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("toDate", "2024-02-31")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody().jsonPath("$.userMessage").value<String> {
@@ -1114,7 +1114,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("prisonIds", "MDI, BXI")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1145,7 +1145,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("prisonIds", "BXI")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1165,7 +1165,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("fromDate", "$tomorrow")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1189,7 +1189,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("toDate", "$today")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1214,7 +1214,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
               .queryParam("toDate", "$tomorrow")
               .build()
           }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()

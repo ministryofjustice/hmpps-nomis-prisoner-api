@@ -93,14 +93,14 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
   private fun upsertAllocationIsBadRequest(request: String = upsertRequest()) = webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
     .contentType(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .body(BodyInserters.fromValue(request))
     .exchange()
     .expectStatus().isBadRequest
 
   private fun upsertAllocationIsOk(request: String = upsertRequest()) = webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
     .contentType(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .body(BodyInserters.fromValue(request))
     .exchange()
     .expectStatus().isOk
@@ -143,7 +143,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
     fun `should return not found if course activity does not exist`() {
       webTestClient.put().uri("/activities/9999/allocation")
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(upsertRequest()))
         .exchange()
         .expectStatus().isNotFound
@@ -1112,7 +1112,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       val request = upsertRequest().withEndDate("$today")
       webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(request))
         .exchange()
         .expectStatus().is5xxServerError
@@ -1122,14 +1122,14 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       // delete the duplicate
       webTestClient.delete().uri("/allocations/${duplicate.offenderProgramReferenceId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
       // now able to update the allocation
       webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/allocation")
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(request))
         .exchange()
         .expectStatus().isOk

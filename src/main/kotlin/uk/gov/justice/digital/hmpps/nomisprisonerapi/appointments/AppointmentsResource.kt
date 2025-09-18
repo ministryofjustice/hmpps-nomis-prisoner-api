@@ -33,12 +33,12 @@ import java.time.LocalDateTime
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentsResource(private val appointmentService: AppointmentService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/appointments")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new appointment",
-    description = "Creates a new appointment. Requires role NOMIS_APPOINTMENTS",
+    description = "Creates a new appointment. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = CreateAppointmentRequest::class)),
@@ -64,7 +64,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -74,11 +74,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     createAppointmentRequest: CreateAppointmentRequest,
   ): CreateAppointmentResponse = appointmentService.createAppointment(createAppointmentRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/appointments/{nomisEventId}")
   @Operation(
     summary = "Updates an existing appointment",
-    description = "Updates an existing appointment. Requires role NOMIS_APPOINTMENTS",
+    description = "Updates an existing appointment. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = UpdateAppointmentRequest::class)),
@@ -103,7 +103,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -116,11 +116,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     updateAppointmentRequest: UpdateAppointmentRequest,
   ) = appointmentService.updateAppointment(nomisEventId, updateAppointmentRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/appointments/{nomisEventId}/cancel")
   @Operation(
     summary = "Cancels an existing appointment",
-    description = "Cancels an existing appointment. Requires role NOMIS_APPOINTMENTS",
+    description = "Cancels an existing appointment. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
@@ -135,7 +135,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -146,11 +146,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     nomisEventId: Long,
   ) = appointmentService.cancelAppointment(nomisEventId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/appointments/{nomisEventId}/uncancel")
   @Operation(
     summary = "Undoes an appointment cancellation",
-    description = "Undoes an appointment cancellation. Requires role NOMIS_APPOINTMENTS",
+    description = "Undoes an appointment cancellation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
@@ -165,7 +165,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -176,12 +176,12 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     nomisEventId: Long,
   ) = appointmentService.uncancelAppointment(nomisEventId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/appointments/{nomisEventId}")
   @Operation(
     summary = "Deletes an existing appointment",
-    description = "Deletes an existing appointment by actually deleting from the table. Intended for appointments created in error. Requires role NOMIS_APPOINTMENTS",
+    description = "Deletes an existing appointment by actually deleting from the table. Intended for appointments created in error. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "204", description = "Success"),
       ApiResponse(
@@ -196,7 +196,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -207,11 +207,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     nomisEventId: Long,
   ) = appointmentService.deleteAppointment(nomisEventId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/appointments/booking/{bookingId}/location/{locationId}/start/{dateTime}")
   @Operation(
     summary = "Get an appointment",
-    description = "Get an appointment given the booking id, internal location, date and start time. Requires role NOMIS_APPOINTMENTS",
+    description = "Get an appointment given the booking id, internal location, date and start time. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -232,7 +232,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -249,11 +249,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     dateTime: LocalDateTime,
   ): AppointmentResponse = appointmentService.getAppointment(bookingId, locationId, dateTime)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/appointments/{eventId}")
   @Operation(
     summary = "Get appointment by event id",
-    description = "Get an appointment given the unique event id. Requires role NOMIS_APPOINTMENTS",
+    description = "Get an appointment given the unique event id. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -274,7 +274,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_APPOINTMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -285,11 +285,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     eventId: Long,
   ): AppointmentResponse = appointmentService.getAppointment(eventId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/appointments/ids")
   @Operation(
     summary = "get appointments by filter",
-    description = "Retrieves a paged list of appointment ids by filter. Requires ROLE_NOMIS_APPOINTMENTS.",
+    description = "Retrieves a paged list of appointment ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -335,11 +335,11 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     AppointmentFilter(prisonIds = prisonIds, toDate = toDate, fromDate = fromDate),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/appointments/counts")
   @Operation(
     summary = "Get appointment counts by prison, event sub type and future / past. Note that the 'future' is everything from tomorrow onwards.",
-    description = "Retrieves counts of appointments for the migration preview. Requires ROLE_NOMIS_APPOINTMENTS.",
+    description = "Retrieves counts of appointments for the migration preview. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",

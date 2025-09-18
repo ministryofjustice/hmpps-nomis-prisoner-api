@@ -144,7 +144,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should return bad request`() {
         webTestClient.put().uri("/schedules/1/booking/2/attendance")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest.withUnexcusedAbsence("INVALID"),
@@ -815,7 +815,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
         // delete the duplicate
         webTestClient.delete().uri("/attendances/${duplicate.eventId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
 
@@ -831,7 +831,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       jsonRequest: String = validJsonRequest,
     ) = put().uri("/schedules/$courseScheduleId/booking/$bookingId/attendance")
       .contentType(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .body(BodyInserters.fromValue(jsonRequest))
       .exchange()
   }
@@ -898,7 +898,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return not found for unknown schedule`() {
       webTestClient.delete().uri("/schedules/9999/booking/${offenderBooking.bookingId}/attendance")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -906,7 +906,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return not found for unknown booking`() {
       webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/99999/attendance")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -922,7 +922,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/${offenderBooking.bookingId}/attendance")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -930,7 +930,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should delete an attendance`() {
       webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/${offenderBooking.bookingId}/attendance")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -952,7 +952,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       }
 
       webTestClient.delete().uri("/schedules/${courseSchedule.courseScheduleId}/booking/${offenderBooking.bookingId}/attendance")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }
