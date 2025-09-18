@@ -16,6 +16,7 @@ interface OffenderSubAccountDsl
 class OffenderSubAccountBuilderFactory {
   fun builder() = OffenderSubAccountBuilder()
 }
+
 class OffenderSubAccountBuilder : OffenderSubAccountDsl {
 
   fun build(
@@ -23,10 +24,12 @@ class OffenderSubAccountBuilder : OffenderSubAccountDsl {
     caseloadId: String,
     accountCode: Long,
     balance: BigDecimal,
+    holdBalance: BigDecimal,
+    lastTransactionId: Long,
   ): OffenderSubAccount = OffenderSubAccount(
     id = OffenderSubAccountId(caseloadId = caseloadId, offender = offender, accountCode = accountCode),
     balance = balance,
-    holdBalance = BigDecimal(0),
-    lastTransactionId = 0,
+    holdBalance = holdBalance,
+    lastTransactionId = lastTransactionId,
   )
 }

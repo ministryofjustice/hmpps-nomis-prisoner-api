@@ -98,6 +98,9 @@ data class PrisonerAccountsDto(
   @Schema(description = "The root offender Id", example = "12345")
   val rootOffenderId: Long,
 
+  @Schema(description = "The prison Number", example = "A1234BC")
+  val prisonNumber: String,
+
   @Schema(description = "The accounts associated with the prisoner")
   val accounts: List<PrisonerAccountDto>,
 )

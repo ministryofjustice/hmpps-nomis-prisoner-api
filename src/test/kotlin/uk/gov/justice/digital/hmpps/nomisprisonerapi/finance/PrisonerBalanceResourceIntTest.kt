@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
 
@@ -28,16 +29,22 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   fun setUp() {
     nomisDataBuilder.build {
-      id1 = offender {
+      id1 = offender(nomsId = "A1234BC") {
         trustAccount()
-        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(12.50))
+        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(12.50)) {
+          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(11.25), lastTransactionId = 45678)
+        }
         trustAccount(caseloadId = "WWI", currentBalance = BigDecimal.valueOf(-1.50))
       }.id
-      id2 = offender {
+      id2 = offender(nomsId = "B2345CD") {
         trustAccount()
-        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(33.50))
+        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(34.50)) {
+          subAccount()
+          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(12.25), lastTransactionId = 34567)
+          subAccount(accountCode = 2103, balance = BigDecimal.valueOf(21.25), holdBalance = BigDecimal.valueOf(2.50), lastTransactionId = 56789)
+        }
       }.id
-      id3 = offender {
+      id3 = offender(nomsId = "C3456DE") {
         trustAccount(holdBalance = BigDecimal.valueOf(1.25))
       }.id
       offender {
@@ -126,25 +133,30 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonerBalance() {
-      webTestClient.get().uri("/finance/prisoners/12345/balance")
+      val balance = webTestClient.get().uri("/finance/prisoners/$id2/balance")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
-        .expectBody()
-        .jsonPath("rootOffenderId").isEqualTo("12345")
-        .jsonPath("accounts.length()").isEqualTo(3)
-        .jsonPath("accounts[0].prisonId").isEqualTo("MDI")
-        .jsonPath("accounts[0].lastTransactionId").isEqualTo(56789)
-        .jsonPath("accounts[0].subAccountType").isEqualTo("CASH")
-        .jsonPath("accounts[0].balance").isEqualTo("12.5")
-        .jsonPath("accounts[0].holdBalance").doesNotExist()
-        .jsonPath("accounts[2].holdBalance").isEqualTo("2.5")
+        .expectBodyResponse<PrisonerAccountsDto>()
+
+      with(balance) {
+        assertThat(rootOffenderId).isEqualTo(id2)
+        assertThat(prisonNumber).isEqualTo("B2345CD")
+        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts[0].prisonId).isEqualTo("LEI")
+        assertThat(accounts[0].lastTransactionId).isEqualTo(12345)
+        assertThat(accounts[0].subAccountType).isEqualTo(SubAccountType.CASH)
+        assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[1].subAccountType).isEqualTo(SubAccountType.SPEND)
+        assertThat(accounts[2].subAccountType).isEqualTo(SubAccountType.SAVINGS)
+        assertThat(accounts[2].balance).isEqualTo("21.25")
+        assertThat(accounts[2].holdBalance).isEqualTo("2.5")
+      }
     }
 
-    // TODO reintroduce test once service & repository code complete
     @Test
-    @Disabled
     fun `none found`() {
       webTestClient.get().uri("/finance/prisoners/99999/balance")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))

@@ -6,11 +6,13 @@ import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.Objects
 import kotlin.jvm.javaClass
 
@@ -54,6 +56,16 @@ class OffenderSubAccount(
 
   @Column(name = "LAST_TXN_ID", nullable = false)
   val lastTransactionId: Long,
+
+  @Column(nullable = false)
+  val modifyDate: LocalDateTime = LocalDateTime.now(),
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumns(
+    JoinColumn(name = "OFFENDER_ID", referencedColumnName = "OFFENDER_ID", insertable = false, updatable = false),
+    JoinColumn(name = "CASELOAD_ID", referencedColumnName = "CASELOAD_ID", insertable = false, updatable = false),
+  )
+  val trustAccount: OffenderTrustAccount? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {

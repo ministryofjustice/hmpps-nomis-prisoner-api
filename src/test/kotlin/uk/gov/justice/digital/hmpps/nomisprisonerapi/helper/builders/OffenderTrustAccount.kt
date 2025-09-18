@@ -15,8 +15,10 @@ interface OffenderTrustAccountDsl {
 
   @OffenderSubAccountDslMarker
   fun subAccount(
-    accountCode: Long,
-    balance: BigDecimal,
+    accountCode: Long = 2101,
+    balance: BigDecimal = BigDecimal.ZERO,
+    holdBalance: BigDecimal = BigDecimal.ZERO,
+    lastTransactionId: Long = 12345,
     dsl: OffenderSubAccountDsl.() -> Unit = {},
   ): OffenderSubAccount
 }
@@ -28,8 +30,8 @@ class OffenderTrustAccountBuilderFactory(private val offenderSubAccountBuilderFa
 
 class OffenderTrustAccountBuilder(
   private val offenderSubAccountBuilderFactory: OffenderSubAccountBuilderFactory,
-
 ) : OffenderTrustAccountDsl {
+
   private lateinit var offenderTrustAccount: OffenderTrustAccount
 
   fun build(
@@ -42,11 +44,14 @@ class OffenderTrustAccountBuilder(
     currentBalance = currentBalance,
     holdBalance = holdBalance,
     accountClosed = false,
-  ).also { offenderTrustAccount = it }
+  )
+    .also { offenderTrustAccount = it }
 
   override fun subAccount(
     accountCode: Long,
     balance: BigDecimal,
+    holdBalance: BigDecimal,
+    lastTransactionId: Long,
     dsl: OffenderSubAccountDsl.() -> Unit,
   ): OffenderSubAccount = offenderSubAccountBuilderFactory.builder().let { builder ->
     builder.build(
@@ -54,6 +59,10 @@ class OffenderTrustAccountBuilder(
       caseloadId = offenderTrustAccount.id.caseloadId,
       accountCode = accountCode,
       balance = balance,
+      holdBalance = holdBalance,
+      lastTransactionId = lastTransactionId,
     )
+      .also { offenderTrustAccount.subAccounts += it }
+      .also { builder.apply(dsl) }
   }
 }
