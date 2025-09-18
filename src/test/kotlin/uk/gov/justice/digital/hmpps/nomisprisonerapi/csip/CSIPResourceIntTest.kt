@@ -172,7 +172,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown csip report should return not found`() {
       webTestClient.get().uri("/csip/999999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -184,7 +184,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return a csip Report by Id with minimal data`() {
       webTestClient.get().uri("/csip/${csip2.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -231,7 +231,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return a csip Report by Id`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -262,7 +262,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return CSIP Report Additional Details by Id`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -291,7 +291,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return csip safer custody screening data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -307,7 +307,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return csip plan data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -330,7 +330,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return csip review data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -361,7 +361,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return csip investigation data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -377,7 +377,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return csip investigation interview data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -395,7 +395,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return CSIP Decision & Actions data`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -422,7 +422,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return CSIP Document information if requested`() {
       webTestClient.get().uri("/csip/${csip1.id}?includeDocumentIds=true")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -434,7 +434,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will not return CSIP Document information by default`() {
       webTestClient.get().uri("/csip/${csip1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -475,7 +475,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown csip should return not found`() {
       webTestClient.get().uri("/csip/booking/999999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -493,7 +493,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       }
 
       webTestClient.get().uri("/csip/booking/$bookingId2")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -503,7 +503,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
     @Test
     fun `booking with multiple csips should return csip ids list`() {
       webTestClient.get().uri("/csip/booking/$bookingId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -520,7 +520,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         }
       }
       webTestClient.get().uri("/csip/booking/$bookingId3")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -584,7 +584,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 even when does not exist`() {
         webTestClient.delete().uri("/csip/99999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -595,17 +595,17 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will delete the csip`() {
         webTestClient.get().uri("/csip/${csipToDelete.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
         webTestClient.delete().uri("/csip/${csipToDelete.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
         webTestClient.get().uri("/csip/${csipToDelete.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNotFound
@@ -658,7 +658,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when does not exist`() {
         webTestClient.get().uri("/prisoners/99999/csip/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -669,7 +669,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will fetch the csips`() {
         webTestClient.get().uri("/prisoners/A1234TT/csip/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -688,7 +688,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return ok when no csips for prisoner`() {
         webTestClient.get().uri("/prisoners/Z1234AA/csip/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -741,7 +741,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when prisoner does not exist`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -765,7 +765,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when offender No is not present`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -791,7 +791,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when incident date is not present`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -816,7 +816,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when typeCode is not present`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -841,7 +841,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when locationCode is not present`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -866,7 +866,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when areaOfWorkCode is not present`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -891,7 +891,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when reportedBy is not present`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -916,7 +916,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when reportedDate is not present`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -941,7 +941,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when incident type code is not valid`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -967,7 +967,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when location code is not valid`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -995,7 +995,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when areaOfWork code is not valid`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1028,7 +1028,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequestMinimalData()
 
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1044,7 +1044,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest()
 
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1075,7 +1075,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest()
 
         val createdCsip = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1084,7 +1084,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         webTestClient.get().uri("/csip/${createdCsip.nomisCSIPReportId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1102,7 +1102,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest()
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1236,7 +1236,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1271,7 +1271,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1307,7 +1307,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1338,7 +1338,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1374,7 +1374,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1406,7 +1406,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest().copy(reviews = listOf(reviewRequest.copy(summary = veryLongSummary)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1437,7 +1437,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1466,7 +1466,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1488,7 +1488,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequestMinimalData()
 
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1510,7 +1510,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest()
 
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1560,7 +1560,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           )
 
           webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(validCSIP)
             .exchange()
@@ -1586,7 +1586,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           )
 
           webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(validCSIP)
             .exchange()
@@ -1614,7 +1614,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           )
 
           webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(validCSIP)
             .exchange()
@@ -1640,7 +1640,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           )
 
           webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(validCSIP)
             .exchange()
@@ -1671,7 +1671,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           )
 
           webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(validCSIP)
             .exchange()
@@ -1693,7 +1693,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `update a csip with minimal data will return basic data`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             UpsertCSIPRequest(
@@ -1721,7 +1721,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id)
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1872,7 +1872,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1915,7 +1915,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1950,7 +1950,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -1986,7 +1986,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -2017,7 +2017,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -2053,7 +2053,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         )
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -2085,7 +2085,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip2.id).copy(reviews = listOf(reviewRequest.copy(summary = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -2114,7 +2114,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(progression = veryLongTextField, intervention = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -2143,7 +2143,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest().copy(plans = listOf(planRequest.copy(identifiedNeed = veryLongTextField)))
 
         val upsertResponse = webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -2163,7 +2163,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will track telemetry event for update with minimal data`() {
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             UpsertCSIPRequest(
@@ -2196,7 +2196,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         val validCSIP = createUpsertCSIPRequest(nomisCSIPReportId = csip1.id)
 
         webTestClient.put().uri("/csip")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCSIP)
           .exchange()
@@ -2261,7 +2261,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         fun `Updating a csip with multiple factors will successfully save along with existing`() {
           // Update with 2 more factors
           val response = webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(upsertWithMultipleFactors)
             .exchange()
@@ -2292,7 +2292,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry event for multiple factors`() {
           // Update with 2 more factors
           webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(upsertWithMultipleFactors)
             .exchange()
@@ -2347,7 +2347,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         fun `Updating a csip with multiple plans will successfully save along with existing`() {
           // Update with 2 more plans
           val response = webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(
               upsertWithMultiplePlans,
@@ -2379,7 +2379,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will track telemetry event for multiple plans`() {
           webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(
               upsertWithMultiplePlans,
@@ -2406,7 +2406,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         fun `Updating a csip with multiple reviews will successfully save along with existing`() {
           // Update with 2 more reviews
           val response = webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(
               UpsertCSIPRequest(
@@ -2471,7 +2471,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         fun `Updating a csip with multiple attendees will successfully save along with existing`() {
           // Update with 2 more reviews
           val response = webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(
               UpsertCSIPRequest(
@@ -2559,7 +2559,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         fun `Updating a csip with multiple interviews will successfully save along with existing`() {
           // Update with 2 more interviews
           val response = webTestClient.put().uri("/csip")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(
               UpsertCSIPRequest(

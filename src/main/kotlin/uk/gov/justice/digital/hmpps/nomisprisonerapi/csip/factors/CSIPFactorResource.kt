@@ -18,14 +18,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
 @RestController
 @Validated
-@PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 @RequestMapping(value = ["/csip/factors"], produces = [MediaType.APPLICATION_JSON_VALUE])
 class CSIPFactorResource(private val csipFactorService: CSIPFactorService) {
 
   @GetMapping("/{csipFactorId}")
   @Operation(
     summary = "Get CSIP factor details",
-    description = "Gets csip factor details. Requires role NOMIS_CSIP",
+    description = "Gets csip factor details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -47,7 +47,7 @@ class CSIPFactorResource(private val csipFactorService: CSIPFactorService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_CSIP",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -69,7 +69,7 @@ class CSIPFactorResource(private val csipFactorService: CSIPFactorService) {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a csip factor",
-    description = "Deletes a csip factor. Requires ROLE_NOMIS_CSIP",
+    description = "Deletes a csip factor. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -87,7 +87,7 @@ class CSIPFactorResource(private val csipFactorService: CSIPFactorService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

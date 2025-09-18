@@ -26,14 +26,14 @@ import java.time.LocalTime
 
 @RestController
 @Validated
-@PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class CSIPResource(private val csipService: CSIPService) {
 
   @PutMapping("/csip")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Creates or updates a csip",
-    description = "Creates or updates a csip report and its children. Requires ROLE_NOMIS_CSIP",
+    description = "Creates or updates a csip report and its children. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -67,7 +67,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -79,12 +79,12 @@ class CSIPResource(private val csipService: CSIPService) {
   )
   fun upsertCSIP(@RequestBody @Valid request: UpsertCSIPRequest) = csipService.upsertCSIP(request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CSIP')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/csip/reconciliation")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets csips for an offender for reconciliation",
-    description = "Retrieves a list of csips for a prisoner. Requires ROLE_NOMIS_CSIP",
+    description = "Retrieves a list of csips for a prisoner. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -108,7 +108,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -137,7 +137,7 @@ class CSIPResource(private val csipService: CSIPService) {
   @GetMapping("/csip/{id}")
   @Operation(
     summary = "Get CSIP details",
-    description = "Gets csip details. Requires role NOMIS_CSIP",
+    description = "Gets csip details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -159,7 +159,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_CSIP",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -182,7 +182,7 @@ class CSIPResource(private val csipService: CSIPService) {
   @GetMapping("/csip/booking/{bookingId}")
   @Operation(
     summary = "Get a list of CSIP Ids for a booking",
-    description = "Gets a list of all csip ids relating to an offender booking. Requires role NOMIS_CSIP",
+    description = "Gets a list of all csip ids relating to an offender booking. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -204,7 +204,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_CSIP",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -228,7 +228,7 @@ class CSIPResource(private val csipService: CSIPService) {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a csip report",
-    description = "Deletes a csip report. Requires ROLE_NOMIS_CSIP",
+    description = "Deletes a csip report. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -246,7 +246,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CSIP",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -265,7 +265,7 @@ class CSIPResource(private val csipService: CSIPService) {
   @GetMapping("/csip/count")
   @Operation(
     summary = "Get csip count",
-    description = "Gets a count of all csips. Requires role NOMIS_CSIP",
+    description = "Gets a count of all csips. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -280,7 +280,7 @@ class CSIPResource(private val csipService: CSIPService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_CSIP",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],

@@ -84,7 +84,7 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown csip report should return not found`() {
       webTestClient.get().uri("/csip/factors/999999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -96,7 +96,7 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return a csip Factor by Id`() {
       webTestClient.get().uri("/csip/factors/${csip1.factors[0].id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -109,7 +109,7 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return a csip Factor with with all fields set`() {
       webTestClient.get().uri("/csip/factors/${csip2.factors[0].id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -174,7 +174,7 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 even when does not exist`() {
         webTestClient.delete().uri("/csip/factors/99999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -185,17 +185,17 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will delete the csip factor`() {
         webTestClient.get().uri("/csip/factors/${csipToDelete.factors[0].id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
         webTestClient.delete().uri("/csip/factors/${csipToDelete.factors[0].id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
         webTestClient.get().uri("/csip/factors/${csipToDelete.factors[0].id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CSIP")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNotFound

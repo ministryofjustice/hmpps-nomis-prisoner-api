@@ -100,7 +100,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all question ids - no filter specified`() {
       webTestClient.get().uri("/questionnaires/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -114,7 +114,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -133,7 +133,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
           .queryParam("page", "1")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -177,7 +177,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown questionnaire should return not found`() {
       webTestClient.get().uri("/questionnaires/999999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -189,7 +189,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return the questionnaire by Id`() {
       webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -202,7 +202,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return the offender roles for this questionnaire`() {
       webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -216,7 +216,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return the questions and answers for a questionnaire`() {
       val persistedQuestionnaire1 = webTestClient.get().uri("/questionnaires/${questionnaire1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody(QuestionnaireResponse::class.java)
@@ -274,7 +274,7 @@ class QuestionnaireResourceIntTest : IntegrationTestBase() {
     @Test
     fun `can request an inactive questionnaire by Id`() {
       webTestClient.get().uri("/questionnaires/${questionnaire2.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

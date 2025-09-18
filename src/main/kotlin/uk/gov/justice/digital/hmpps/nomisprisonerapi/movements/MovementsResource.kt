@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
-@PreAuthorize("hasRole('ROLE_NOMIS_MOVEMENTS')")
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -28,7 +28,7 @@ class MovementsResource(
   @GetMapping("/movements/{offenderNo}/temporary-absences")
   @Operation(
     summary = "Get temporary absence applications, schedules and external movements for an offender",
-    description = "Get temporary absence applications, schedules and external movements for an offender. This is used to migrate temporary absences to DPS. Requires role NOMIS_MOVEMENTS",
+    description = "Get temporary absence applications, schedules and external movements for an offender. This is used to migrate temporary absences to DPS. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -43,7 +43,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -64,7 +64,7 @@ class MovementsResource(
   @GetMapping("/movements/{offenderNo}/temporary-absences/application/{applicationId}")
   @Operation(
     summary = "Get a specific temporary absence application for an offender",
-    description = "Get a specific temporary absence application for an offender. Note that this does not include any children such as the scheduled or actual movements. Requires role NOMIS_MOVEMENTS",
+    description = "Get a specific temporary absence application for an offender. Note that this does not include any children such as the scheduled or actual movements. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -79,7 +79,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -102,7 +102,7 @@ class MovementsResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Inserts a temporary absence application for an offender",
-    description = "Creates a temporary absence application on the prisoner's latest booking. Requires ROLE_NOMIS_MOVEMENTS",
+    description = "Creates a temporary absence application on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -130,7 +130,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_MOVEMENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -161,7 +161,7 @@ class MovementsResource(
   @GetMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence/{eventId}")
   @Operation(
     summary = "Get a specific scheduled temporary absence for an offender",
-    description = "Get a specific scheduled temporary absence for an offender by event ID. Requires role NOMIS_MOVEMENTS",
+    description = "Get a specific scheduled temporary absence for an offender by event ID. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -176,7 +176,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -198,7 +198,7 @@ class MovementsResource(
   @GetMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence-return/{eventId}")
   @Operation(
     summary = "Get a specific scheduled temporary absence return for an offender",
-    description = "Get a specific scheduled temporary absence return for an offender by event ID. Requires role NOMIS_MOVEMENTS",
+    description = "Get a specific scheduled temporary absence return for an offender by event ID. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -213,7 +213,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -236,7 +236,7 @@ class MovementsResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Inserts a scheduled temporary absence return for an offender",
-    description = "Creates a scheduled temporary absence return on the prisoner's latest booking. Requires ROLE_NOMIS_MOVEMENTS",
+    description = "Creates a scheduled temporary absence return on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -264,7 +264,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_MOVEMENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -295,7 +295,7 @@ class MovementsResource(
   @GetMapping("/movements/{offenderNo}/temporary-absences/outside-movement/{appMultiId}")
   @Operation(
     summary = "Get a specific temporary absence application outside movement for an offender",
-    description = "Get a specific temporary absence application outside movement for an offender by application multi ID. Requires role NOMIS_MOVEMENTS",
+    description = "Get a specific temporary absence application outside movement for an offender by application multi ID. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -310,7 +310,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -333,7 +333,7 @@ class MovementsResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Inserts a temporary absence outside movement for an offender",
-    description = "Creates a temporary absence outside movement on the prisoner's latest booking. Requires ROLE_NOMIS_MOVEMENTS",
+    description = "Creates a temporary absence outside movement on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -361,7 +361,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_MOVEMENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -392,7 +392,7 @@ class MovementsResource(
   @GetMapping("/movements/{offenderNo}/temporary-absences/temporary-absence/{bookingId}/{movementSeq}")
   @Operation(
     summary = "Get a specific temporary absence for an offender",
-    description = "Get a specific temporary absence for an offender by booking ID and movement sequence. Requires role NOMIS_MOVEMENTS",
+    description = "Get a specific temporary absence for an offender by booking ID and movement sequence. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -407,7 +407,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -431,7 +431,7 @@ class MovementsResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Inserts a scheduled temporary absence for an offender",
-    description = "Creates a scheduled temporary absence on the prisoner's latest booking. Requires ROLE_NOMIS_MOVEMENTS",
+    description = "Creates a scheduled temporary absence on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -459,7 +459,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_MOVEMENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -491,7 +491,7 @@ class MovementsResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Inserts a temporary absence for an offender",
-    description = "Creates a temporary absence on the prisoner's latest booking. Requires ROLE_NOMIS_MOVEMENTS",
+    description = "Creates a temporary absence on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -519,7 +519,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_MOVEMENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -550,7 +550,7 @@ class MovementsResource(
   @GetMapping("/movements/{offenderNo}/temporary-absences/temporary-absence-return/{bookingId}/{movementSeq}")
   @Operation(
     summary = "Get a specific temporary absence return for an offender",
-    description = "Get a specific temporary absence return for an offender by booking ID and movement sequence. Requires role NOMIS_MOVEMENTS",
+    description = "Get a specific temporary absence return for an offender by booking ID and movement sequence. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -565,7 +565,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_MOVEMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -589,7 +589,7 @@ class MovementsResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Inserts a temporary absence return for an offender",
-    description = "Creates a temporary absence return on the prisoner's latest booking. Requires ROLE_NOMIS_MOVEMENTS",
+    description = "Creates a temporary absence return on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -617,7 +617,7 @@ class MovementsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_MOVEMENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

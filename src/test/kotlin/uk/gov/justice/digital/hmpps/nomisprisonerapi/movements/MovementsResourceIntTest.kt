@@ -109,7 +109,7 @@ class MovementsResourceIntTest(
     fun `should return not found if offender not found`() {
       webTestClient.get()
         .uri("/movements/UNKNOWN/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -149,7 +149,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -208,7 +208,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -259,7 +259,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -308,7 +308,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -354,7 +354,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -401,7 +401,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -443,7 +443,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -486,7 +486,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -528,7 +528,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -636,7 +636,7 @@ class MovementsResourceIntTest(
 
       webTestClient.get()
         .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -747,7 +747,7 @@ class MovementsResourceIntTest(
     fun `should return not found if offender not found`() {
       webTestClient.get()
         .uri("/movements/UNKNOWN/temporary-absences/application/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -759,7 +759,7 @@ class MovementsResourceIntTest(
     fun `should return not found if application not found`() {
       webTestClient.get()
         .uri("/movements/$offenderNo/temporary-absences/application/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -774,7 +774,7 @@ class MovementsResourceIntTest(
           "/movements/${offender.nomsId}/temporary-absences/application/{applicationId}",
           application.movementApplicationId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBodyResponse<TemporaryAbsenceApplicationResponse>()
@@ -988,7 +988,7 @@ class MovementsResourceIntTest(
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/application")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(request)
       .exchange()
       .expectStatus()
@@ -1072,7 +1072,7 @@ class MovementsResourceIntTest(
     fun `should return not found if offender not found`() {
       webTestClient.get()
         .uri("/movements/UNKNOWN/temporary-absences/scheduled-temporary-absence/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -1084,7 +1084,7 @@ class MovementsResourceIntTest(
     fun `should return not found if scheduled temporary absence not found`() {
       webTestClient.get()
         .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -1099,7 +1099,7 @@ class MovementsResourceIntTest(
           "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
           scheduledTempAbsence.eventId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
@@ -1186,7 +1186,7 @@ class MovementsResourceIntTest(
     fun `should return not found if offender not found`() {
       webTestClient.get()
         .uri("/movements/UNKNOWN/temporary-absences/scheduled-temporary-absence-return/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -1198,7 +1198,7 @@ class MovementsResourceIntTest(
     fun `should return not found if scheduled temporary absence return not found`() {
       webTestClient.get()
         .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence-return/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -1213,7 +1213,7 @@ class MovementsResourceIntTest(
           "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence-return/{eventId}",
           scheduledTempAbsenceReturn.eventId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBodyResponse<ScheduledTemporaryAbsenceReturnResponse>()
@@ -1420,7 +1420,7 @@ class MovementsResourceIntTest(
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence-return")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(request)
       .exchange()
       .expectStatus()
@@ -1510,7 +1510,7 @@ class MovementsResourceIntTest(
     fun `should return not found if offender not found`() {
       webTestClient.get()
         .uri("/movements/UNKNOWN/temporary-absences/outside-movement/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -1522,7 +1522,7 @@ class MovementsResourceIntTest(
     fun `should return not found if outside movement not found`() {
       webTestClient.get()
         .uri("/movements/$offenderNo/temporary-absences/outside-movement/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -1537,7 +1537,7 @@ class MovementsResourceIntTest(
           "/movements/${offender.nomsId}/temporary-absences/outside-movement/{appMultiId}",
           applicationOutsideMovement.movementApplicationMultiId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBodyResponse<TemporaryAbsenceApplicationOutsideMovementResponse>()
@@ -1734,7 +1734,7 @@ class MovementsResourceIntTest(
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/outside-movement")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(request)
       .exchange()
       .expectStatus()
@@ -1947,7 +1947,7 @@ class MovementsResourceIntTest(
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(request)
       .exchange()
       .expectStatus()
@@ -2030,7 +2030,7 @@ class MovementsResourceIntTest(
       fun `should return not found if offender not found`() {
         webTestClient.get()
           .uri("/movements/UNKNOWN/temporary-absences/temporary-absence/1/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
@@ -2042,7 +2042,7 @@ class MovementsResourceIntTest(
       fun `should return not found if temporary absence not found`() {
         webTestClient.get()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence/9999/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
@@ -2054,7 +2054,7 @@ class MovementsResourceIntTest(
       fun `should retrieve unscheduled temporary absence`() {
         webTestClient.get()
           .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse<TemporaryAbsenceResponse>()
@@ -2114,7 +2114,7 @@ class MovementsResourceIntTest(
       fun `should retrieve scheduled temporary absence`() {
         webTestClient.get()
           .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse<TemporaryAbsenceResponse>()
@@ -2350,7 +2350,7 @@ class MovementsResourceIntTest(
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/temporary-absence")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(request)
       .exchange()
       .expectStatus()
@@ -2432,7 +2432,7 @@ class MovementsResourceIntTest(
       fun `should return not found if offender not found`() {
         webTestClient.get()
           .uri("/movements/UNKNOWN/temporary-absences/temporary-absence-return/1/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
@@ -2444,7 +2444,7 @@ class MovementsResourceIntTest(
       fun `should return not found if temporary absence return not found`() {
         webTestClient.get()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/9999/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
@@ -2456,7 +2456,7 @@ class MovementsResourceIntTest(
       fun `should retrieve unscheduled temporary absence return`() {
         webTestClient.get()
           .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse<TemporaryAbsenceReturnResponse>()
@@ -2514,7 +2514,7 @@ class MovementsResourceIntTest(
       fun `should retrieve scheduled temporary absence return`() {
         webTestClient.get()
           .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse<TemporaryAbsenceReturnResponse>()
@@ -2756,7 +2756,7 @@ class MovementsResourceIntTest(
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_MOVEMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(request)
       .exchange()
       .expectStatus()
