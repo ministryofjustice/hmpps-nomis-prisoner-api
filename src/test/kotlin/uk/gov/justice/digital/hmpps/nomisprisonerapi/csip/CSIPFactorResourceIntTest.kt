@@ -34,10 +34,10 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
             releaseDate = LocalDate.parse("2028-11-25"),
           ) {
             factor()
-            factor(factor = "GAN")
+            factor(type = "GAN")
           }
           csip2 = csipReport {
-            factor(factor = "AFL", comment = "Beer in the cell")
+            factor(type = "AFL", comment = "Beer in the cell")
           }
         }
       }
@@ -131,7 +131,7 @@ class CSIPFactorResourceIntTest : IntegrationTestBase() {
         offender(nomsId = "A1234YY", firstName = "Jim", lastName = "Jones") {
           booking(agencyLocationId = "MDI") {
             csipToDelete = csipReport {
-              factor(factor = "GAN")
+              factor(type = "GAN")
             }
           }
         }
