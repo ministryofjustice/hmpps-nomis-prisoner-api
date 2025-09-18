@@ -88,7 +88,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun getTransaction() {
       webTestClient.get().uri("/transactions/${transaction1.transactionId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
@@ -122,7 +122,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun `none found`() {
       webTestClient.get().uri("/transactions/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
@@ -163,7 +163,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun getGLTransaction() {
       webTestClient.get().uri("/transactions/${transaction1.transactionId}/general-ledger")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
@@ -199,7 +199,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun `none found`() {
       webTestClient.get().uri("/transactions/9999/general-ledger")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
@@ -240,7 +240,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun getTransactionId() {
       val id = webTestClient.get().uri("/transactions/2025-08-11/first")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
@@ -252,7 +252,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     @Test
     fun `none found`() {
       webTestClient.get().uri("/transactions/2025-08-12/first")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isNotFound
@@ -315,7 +315,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun getAll() {
         webTestClient.get().uri("/transactions/from/9/99/99")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -326,7 +326,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `get transactions limited by pagesize`() {
         webTestClient.get().uri("/transactions/from/9/99/99?pageSize=2")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -343,7 +343,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `get transactions starting midway through seq`() {
         webTestClient.get().uri("/transactions/from/11/1/2")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -363,7 +363,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `get transactions starting midway through GL seq`() {
         webTestClient.get().uri("/transactions/from/11/2/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -380,7 +380,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `none found`() {
         webTestClient.get().uri("/transactions/from/20/1/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -430,7 +430,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun getAll() {
         webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}/99")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -441,7 +441,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `get transactions limited by pagesize`() {
         webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}/99?pageSize=1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -458,7 +458,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `get transactions starting midway through seq`() {
         webTestClient.get().uri("/transactions/from/2/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -476,7 +476,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `none found`() {
         webTestClient.get().uri("/transactions/from/9999/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_TRANSACTIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk

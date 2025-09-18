@@ -22,11 +22,11 @@ import java.time.LocalDateTime
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class CorePersonResource(private val corePersonService: CorePersonService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_CORE_PERSON')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/core-person/{prisonNumber}")
   @Operation(
     summary = "Get an offender by prison number",
-    description = "Retrieves an offender. Requires ROLE_NOMIS_CORE_PERSON",
+    description = "Retrieves an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -50,7 +50,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CORE_PERSON",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

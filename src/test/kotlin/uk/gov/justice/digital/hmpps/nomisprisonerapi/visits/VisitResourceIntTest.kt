@@ -157,7 +157,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `create visit with offender not found`() {
       webTestClient.post().uri("/prisoners/Z9999ZZ/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isNotFound
@@ -166,7 +166,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `create visit with invalid person`() {
       val error = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createVisitWithPeople().copy(visitorPersonIds = listOf(threePeople[0].id, -99L))))
         .exchange()
         .expectStatus().isBadRequest
@@ -178,7 +178,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `create visit with invalid offenderNo`() {
       webTestClient.post().uri("/prisoners/ZZ000ZZ/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createVisitWithPeople()))
         .exchange()
         .expectStatus().isBadRequest
@@ -190,7 +190,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun `will add visitors to visit and visit order`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -234,7 +234,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun `will create visit with correct visit details`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -270,7 +270,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun `will create visit with visit order and balance adjustment`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -313,7 +313,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun `will create visit with the correct slot`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -360,7 +360,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun `will create visit with outcome marked as attended for primary visit record and all visitors`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -394,7 +394,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun `room description defaults to VISITS when no visit parent area exists`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -433,7 +433,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     internal fun `room description depends on root visits internal location when it exists - BXI it is VISIT`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       val response = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -472,7 +472,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `creating two identical visits results in 409 response error`() {
       val personIds: String = threePeople.map { it.id }.joinToString(",")
       webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -500,7 +500,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       // another visit at different time
       webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -528,7 +528,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       // another visit at same time with difference reference
       val existingVisit = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -558,7 +558,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       // another visit at same time with same reference
       webTestClient.post().uri("/prisoners/$offenderNo/visits")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -793,7 +793,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
   }
 
   private fun createVisit(startDateTime: String, endTime: String, room: String, openClosedStatus: String, offenderNoForVisit: String = offenderNo) = webTestClient.post().uri("/prisoners/$offenderNoForVisit/visits")
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .contentType(MediaType.APPLICATION_JSON)
     .body(
       BodyInserters.fromValue(
@@ -835,7 +835,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visitId = createVisit()
 
       webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -877,7 +877,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `cancel visit with visit id not found`() {
       assertThat(
         webTestClient.put().uri("/prisoners/$offenderNo/visits/9999/cancel")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""),
@@ -895,7 +895,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       assertThat(
         webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "NOT-A-CANC-REASON" }"""))
           .exchange()
@@ -910,7 +910,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val visitId = createVisit()
 
       webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
         .exchange()
@@ -918,7 +918,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       assertThat(
         webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "OFFCANC" }"""))
           .exchange()
@@ -931,7 +931,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       assertThat(
         webTestClient.put().uri("/prisoners/$offenderNo/visits/$visitId/cancel")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
           .exchange()
@@ -947,7 +947,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       assertThat(
         webTestClient.put().uri("/prisoners/B1234BB/visits/$visitId/cancel")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue("""{ "outcome" : "VISCANC" }"""))
           .exchange()
@@ -1008,7 +1008,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `404 when visit does not exist`() {
       webTestClient.put().uri("/prisoners/$offenderNo/visits/987654321")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateVisitWithPeople()))
         .exchange()
         .expectStatus().isNotFound
@@ -1017,7 +1017,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `404 when offender does not exist`() {
       webTestClient.put().uri("/prisoners/A1234JK/visits/$existingVisitId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateVisitWithPeople()))
         .exchange()
         .expectStatus().isNotFound
@@ -1046,7 +1046,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @Test
       fun `404 when offender does not own the visit`() {
         webTestClient.put().uri("/prisoners/${anotherOffender.nomsId}/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(BodyInserters.fromValue(updateVisitWithPeople()))
           .exchange()
           .expectStatus().isNotFound
@@ -1133,7 +1133,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `can change the people visiting`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(updateRequest.copy(visitorPersonIds = listOf(neoAyomide.id, kashfAbidi.id))),
           )
@@ -1141,7 +1141,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1162,7 +1162,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `can change the people visiting for a visit without a visit order`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisitNoBalance.nomsId}/visits/$existingVisitNoBalanceId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(updateRequest.copy(visitorPersonIds = listOf(neoAyomide.id, kashfAbidi.id))),
           )
@@ -1170,7 +1170,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updatedVisit = webTestClient.get().uri("/visits/$existingVisitNoBalanceId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1186,7 +1186,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `can not change the room the visit is in if restriction does not change`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(updateRequest.copy(room = "Another room", openClosedStatus = "OPEN")),
           )
@@ -1194,7 +1194,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1217,7 +1217,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `can change the restriction status`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(updateRequest.copy(openClosedStatus = "CLOSED")),
           )
@@ -1225,7 +1225,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1237,7 +1237,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `can change date and time of visit`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(updateRequest.copy(LocalDateTime.parse("2021-11-05T14:00"), LocalTime.parse("15:30"))),
           )
@@ -1245,7 +1245,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1270,7 +1270,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `can change the visit comment`() {
         webTestClient.put().uri("/prisoners/${offenderWithVisit.nomsId}/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(updateRequest),
           )
@@ -1278,7 +1278,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         val updatedVisit = webTestClient.get().uri("/visits/$existingVisitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1290,7 +1290,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
   }
 
   private fun createVisit(offenderNo: String = this.offenderNo, request: CreateVisitRequest = createVisitWithPeople()) = webTestClient.post().uri("/prisoners/$offenderNo/visits")
-    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .contentType(MediaType.APPLICATION_JSON)
     .body(BodyInserters.fromValue(request))
     .exchange()
@@ -1336,7 +1336,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       fun `get visit success`() {
         val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1365,7 +1365,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       fun `get visit with visit id not found`() {
         assertThat(
           webTestClient.get().uri("/visits/123")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isNotFound
             .expectBody(ErrorResponse::class.java)
@@ -1435,7 +1435,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       fun `visit wil contain lead visitor with telephone numbers`() {
         val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1490,7 +1490,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       fun `visit will contain outcome and status`() {
         val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1542,7 +1542,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       fun `visit will contain outcome and status`() {
         val visitId = offenderAtMoorlands.latestBooking().visits[0].id
         val visit = webTestClient.get().uri("/visits/$visitId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody(VisitResponse::class.java)
@@ -1656,7 +1656,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all visit ids - no filter specified`() {
       webTestClient.get().uri("/visits/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1667,7 +1667,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `get visit ids by prisons - Leeds`() {
       val leedsVisitIds = offenderAtLeeds.latestBooking().visits.map { it.id.toInt() }.toTypedArray()
       webTestClient.get().uri("/visits/ids?prisonIds=LEI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1690,7 +1690,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("sort", "location.id,startDateTime,asc")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1704,7 +1704,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get visit ids by visit type`() {
       webTestClient.get().uri("/visits/ids?visitTypes=OFFI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1718,7 +1718,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get visit ids including visits without a room`() {
       webTestClient.get().uri("/visits/ids?ignoreMissingRoom=false")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1734,7 +1734,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("sort", "location.id,startDateTime,asc")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1754,7 +1754,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("sort", "location.id,startDateTime,asc")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1778,7 +1778,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("sort", "location.id,startDateTime,asc")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1797,7 +1797,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("sort", "location.id,startDateTime,asc")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1817,7 +1817,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("sort", "location.id,startDateTime,asc")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1835,7 +1835,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("fromDateTime", "202-10-01T09:00:00")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -1955,7 +1955,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get room usage count for all visit rooms - no filter specified`() {
       webTestClient.get().uri("/visits/rooms/usage-count")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1967,7 +1967,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       val oneWeekInFuture = LocalDateTime.of(LocalDate.now().plusWeeks(1), LocalTime.NOON).toString()
       webTestClient.get()
         .uri("/visits/rooms/usage-count?prisonIds=BXI&prisonIds=MDI&fromDateTime=$oneWeekInFuture&visitTypes=SCON")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1987,7 +1987,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `get visit rooms usage - ignores visits in the past (and excludes erroneous future dates) by default`() {
       webTestClient.get()
         .uri("/visits/rooms/usage-count?prisonIds=LEI&visitTypes=SCON")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1998,7 +1998,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
     fun `get visit rooms usage - include ALL visits regardless of visit date (including any erroneous future dates)`() {
       webTestClient.get()
         .uri("/visits/rooms/usage-count?prisonIds=LEI&visitTypes=SCON&futureVisitsOnly=false")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -2012,7 +2012,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
           .queryParam("fromDateTime", "202-10-01T09:00:00")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }

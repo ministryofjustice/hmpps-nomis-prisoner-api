@@ -20,7 +20,7 @@ import java.time.LocalDate
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-@PreAuthorize("hasRole('NOMIS_TRANSACTIONS')")
+@PreAuthorize("hasRole('NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class TransactionsResource(
   private val transactionsService: TransactionsService,
 ) {
@@ -28,7 +28,7 @@ class TransactionsResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get a transaction group by id",
-    description = "Retrieves transactions (all in sequence) identified by id. Requires NOMIS_TRANSACTIONS",
+    description = "Retrieves transactions (all in sequence) identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(
@@ -38,7 +38,7 @@ class TransactionsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires NOMIS_TRANSACTIONS",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -58,7 +58,7 @@ class TransactionsResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get a transaction by id and sequence number",
-    description = "Retrieves a prisoner transaction. Requires NOMIS_TRANSACTIONS",
+    description = "Retrieves a prisoner transaction. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(
@@ -68,7 +68,7 @@ class TransactionsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires NOMIS_TRANSACTIONS",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -88,7 +88,7 @@ class TransactionsResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get the first transaction on the given date",
-    description = "Intended to be used to start retrieval of transactions from this date. Requires NOMIS_TRANSACTIONS",
+    description = "Intended to be used to start retrieval of transactions from this date. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(
@@ -98,7 +98,7 @@ class TransactionsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires NOMIS_TRANSACTIONS",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -118,7 +118,7 @@ class TransactionsResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get a page of orphan GL transactions starting from an id,seq,glseq onwards",
-    description = "Retrieves transactions to be iterated over. Requires NOMIS_TRANSACTIONS",
+    description = "Retrieves transactions to be iterated over. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(
@@ -128,7 +128,7 @@ class TransactionsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires NOMIS_TRANSACTIONS",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -165,7 +165,7 @@ class TransactionsResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get a transaction by id and sequence number",
-    description = "Retrieves a prisoner transaction. Requires NOMIS_TRANSACTIONS",
+    description = "Retrieves a prisoner transaction. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(
@@ -175,7 +175,7 @@ class TransactionsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires NOMIS_TRANSACTIONS",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(

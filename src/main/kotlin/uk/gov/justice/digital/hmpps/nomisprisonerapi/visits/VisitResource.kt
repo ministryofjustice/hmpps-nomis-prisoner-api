@@ -35,7 +35,7 @@ const val OFFENDER_NO_PATTERN = "[A-Z]\\d{4}[A-Z]{2}"
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class VisitResource(private val visitService: VisitService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/visits")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -105,7 +105,7 @@ class VisitResource(private val visitService: VisitService) {
     createVisitRequest: CreateVisitRequest,
   ): CreateVisitResponse = visitService.createVisit(offenderNo, createVisitRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/visits/{visitId}")
   @Operation(
     summary = "Updates an existing visit",
@@ -167,7 +167,7 @@ class VisitResource(private val visitService: VisitService) {
     updateVisitRequest: UpdateVisitRequest,
   ): Unit = visitService.updateVisit(offenderNo, visitId, updateVisitRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/visits/{visitId}/cancel")
   @Operation(
     summary = "Cancel a visit",
@@ -222,7 +222,7 @@ class VisitResource(private val visitService: VisitService) {
     visitService.cancelVisit(offenderNo, visitId, cancelVisitRequest)
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/visits/{visitId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -262,7 +262,7 @@ class VisitResource(private val visitService: VisitService) {
     visitId: Long,
   ): VisitResponse = visitService.getVisit(visitId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/visits/ids")
   @Operation(
     summary = "get visits by filter",
@@ -323,7 +323,7 @@ class VisitResource(private val visitService: VisitService) {
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/visits/rooms/usage-count")
   @Operation(
     summary = "get future visit room usage by filter",
