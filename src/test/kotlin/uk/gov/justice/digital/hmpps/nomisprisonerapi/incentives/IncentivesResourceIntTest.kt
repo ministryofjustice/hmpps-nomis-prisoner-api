@@ -93,7 +93,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `create with booking not found`() {
       webTestClient.post().uri("/prisoners/booking-id/$OFFENDER_BOOKING_ID/incentives")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createIncentive()))
         .exchange()
         .expectStatus().isNotFound
@@ -134,7 +134,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     private fun callCreateEndpoint(bookingId: Long?) {
       val response = webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -200,7 +200,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all incentives ids - no filter specified`() {
       webTestClient.get().uri("/incentives/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -215,7 +215,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", LocalDate.now().toString())
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -229,7 +229,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -248,7 +248,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .queryParam("page", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -266,7 +266,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .queryParam("fromDate", "202-10-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -330,7 +330,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `get incentive by id`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -353,7 +353,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `get incentive by id (current)`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/2")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -374,7 +374,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `get incentive by id - not found (sequence)`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/4")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -382,7 +382,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get incentive by id - not found (booking id)`() {
       webTestClient.get().uri("/incentives/booking-id/456/incentive-sequence/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -447,7 +447,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `get current incentive`() {
       val bookingId = offenderAtMoorlands.latestBooking().bookingId
       webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -465,7 +465,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get current incentive by booking - booking not found`() {
       webTestClient.get().uri("/incentives/booking-id/5678/current")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -474,7 +474,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `get current incentive by booking - no incentives against booking`() {
       val bookingId = offenderAtMoorlandsWithoutIncentives.latestBooking().bookingId
       webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -558,7 +558,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `404 not found when bookingId not found`() {
         webTestClient.post().uri("/prisoners/booking-id/999/incentives/reorder")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -569,7 +569,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `200 when reordered successfully`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -577,7 +577,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will reorder the current IEPs on the same date`() {
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -587,12 +587,12 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .jsonPath("currentIep").isEqualTo(true)
 
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/current")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -602,7 +602,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .jsonPath("currentIep").isEqualTo(true)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/5")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -612,7 +612,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .jsonPath("currentIep").isEqualTo(false)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/4")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -622,7 +622,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .jsonPath("currentIep").isEqualTo(false)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/3")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -632,7 +632,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .jsonPath("currentIep").isEqualTo(false)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/2")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -642,7 +642,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
           .jsonPath("currentIep").isEqualTo(false)
 
         webTestClient.get().uri("/incentives/booking-id/$bookingId/incentive-sequence/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -655,7 +655,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will track analytic event when reorder is complete`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -673,7 +673,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will not track analytic event when reorder does nothing`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -687,7 +687,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
         // 2nd reorder should do nothing
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives/reorder")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -702,7 +702,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get global incentive level`() {
       webTestClient.get().uri("/incentives/reference-codes/STD")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -713,7 +713,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get global incentive level returns 404 if IEP_LEVEL doesn't exist`() {
       webTestClient.get().uri("/incentives/reference-codes/HHH")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -745,7 +745,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @AfterEach
     internal fun deleteIncentiveLevel() {
       webTestClient.delete().uri("/incentives/reference-codes/NIEP")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
     }
@@ -753,7 +753,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `create global incentive level`() {
       val response = webTestClient.post().uri("/incentives/reference-codes")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -823,7 +823,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `update global incentive level`() {
       val response = webTestClient.put().uri("/incentives/reference-codes/EN2")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -889,7 +889,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `reorder global incentive levels`() {
       webTestClient.post().uri("/incentives/reference-codes/reorder")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -902,7 +902,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       webTestClient.get().uri("/incentives/reference-codes/STD")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -910,7 +910,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .jsonPath("parentCode").isEqualTo("1")
 
       webTestClient.get().uri("/incentives/reference-codes/ENH")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -921,7 +921,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `reorder incentive levels ignores missing levels`() {
       webTestClient.post().uri("/incentives/reference-codes/reorder")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -976,7 +976,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun setupIncentiveLevel() {
       webTestClient.post().uri("/incentives/reference-codes")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -994,12 +994,12 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @AfterEach
     internal fun deleteData() {
       webTestClient.delete().uri("/incentives/prison/MDI/code/PILD")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete().uri("/incentives/reference-codes/PILD")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
     }
@@ -1007,7 +1007,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `create prison incentive level data`() {
       val response = webTestClient.post().uri("/incentives/prison/MDI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1044,7 +1044,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `create prison incentive will update if data exists`() {
       webTestClient.post().uri("/incentives/prison/MDI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1066,7 +1066,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
       // call create again (will update)
       val response = webTestClient.post().uri("/incentives/prison/MDI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1104,7 +1104,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `create prison incentive will reject reject missing request with Incentive level`() {
       assertThat(
         webTestClient.post().uri("/incentives/prison/MDI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1188,7 +1188,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     internal fun setupIncentiveLevel() {
       // creates ABC and DEF global incentive levels with only ABC having prison level incentive data at MDI prison
       webTestClient.post().uri("/incentives/reference-codes")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1203,7 +1203,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isCreated
 
       webTestClient.post().uri("/incentives/reference-codes")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1218,7 +1218,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isCreated
 
       webTestClient.post().uri("/incentives/prison/MDI")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1242,22 +1242,22 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @AfterEach
     internal fun deleteData() {
       webTestClient.delete().uri("/incentives/prison/MDI/code/ABC")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete().uri("/incentives/prison/MDI/code/DEF")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete().uri("/incentives/reference-codes/ABC")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete().uri("/incentives/reference-codes/DEF")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
     }
@@ -1265,7 +1265,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `update prison incentive level data`() {
       val response = webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1301,7 +1301,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `update prison incentive request for data that doesn't exist will create`() {
       webTestClient.put().uri("/incentives/prison/MDI/code/DEF")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1321,7 +1321,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       webTestClient.get().uri("/incentives/prison/MDI/code/DEF")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1343,7 +1343,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     @Test
     fun `update prison incentive to disable the record`() {
       webTestClient.put().uri("/incentives/prison/MDI/code/ABC")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1363,7 +1363,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       webTestClient.get().uri("/incentives/prison/MDI/code/ABC")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1379,7 +1379,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
     fun `update prison will reject reject missing request with Incentive level`() {
       assertThat(
         webTestClient.put().uri("/incentives/prison/MDI/code/BBB")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCENTIVES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(

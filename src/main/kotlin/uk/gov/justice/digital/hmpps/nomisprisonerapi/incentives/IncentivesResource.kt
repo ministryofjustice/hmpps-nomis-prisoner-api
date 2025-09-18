@@ -34,7 +34,7 @@ import java.time.LocalDate
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class IncentivesResource(private val incentivesService: IncentivesService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/booking-id/{bookingId}/incentives")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -93,11 +93,11 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     createIncentiveRequest: CreateIncentiveRequest,
   ): CreateIncentiveResponse = incentivesService.createIncentive(bookingId, createIncentiveRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/incentives/ids")
   @Operation(
     summary = "get incentives (a.k.a IEP) by filter",
-    description = "Retrieves a paged list of incentive composite ids by filter. Requires ROLE_NOMIS_INCENTIVES.",
+    description = "Retrieves a paged list of incentive composite ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -115,7 +115,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -157,11 +157,11 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/incentives/booking-id/{bookingId}/incentive-sequence/{incentiveSequence}")
   @Operation(
     summary = "get a prisoner's incentive level (a.k.a IEP) by id (bookingId and incentiveId)",
-    description = "Retrieves a created incentive level for a prisoner. Requires ROLE_NOMIS_INCENTIVES.",
+    description = "Retrieves a created incentive level for a prisoner. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -179,7 +179,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -201,11 +201,11 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     incentiveSequence = incentiveSequence,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/incentives/booking-id/{bookingId}/current")
   @Operation(
     summary = "get a prisoner's current incentive level (a.k.a IEP) for a booking",
-    description = "Retrieves the current incentive level (by booking) for a prisoner. Requires ROLE_NOMIS_INCENTIVES.",
+    description = "Retrieves the current incentive level (by booking) for a prisoner. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -223,7 +223,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -241,7 +241,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     bookingId = bookingId,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/booking-id/{bookingId}/incentives/reorder")
   @Operation(
     summary = "Reorder a existing incentives to match time order",
@@ -263,7 +263,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Access this endpoint forbidden, incorrect role. Must have NOMIS_INCENTIVES",
+        description = "Access this endpoint forbidden, incorrect role. Must have NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -289,7 +289,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     bookingId: Long,
   ): Unit = incentivesService.reorderCurrentIncentives(bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/incentives/reference-codes")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -320,7 +320,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -335,7 +335,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     createIncentiveRequest: CreateGlobalIncentiveRequest,
   ): ReferenceCode = incentivesService.createGlobalIncentiveLevel(createIncentiveRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/incentives/reference-codes/{code}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -366,7 +366,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -394,7 +394,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     updateIncentiveRequest: UpdateGlobalIncentiveRequest,
   ): ReferenceCode = incentivesService.updateGlobalIncentiveLevel(code, updateIncentiveRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/incentives/reference-codes/{code}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -433,7 +433,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     code: String,
   ): ReferenceCode = incentivesService.getGlobalIncentiveLevel(code)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/incentives/reference-codes/reorder")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -464,7 +464,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -481,7 +481,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     incentivesService.reorderGlobalIncentiveLevels(request.codeList)
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/incentives/reference-codes/{code}")
   @ResponseStatus(HttpStatus.OK)
   @Hidden
@@ -505,7 +505,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -523,7 +523,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     incentivesService.deleteGlobalIncentiveLevel(code)
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/incentives/prison/{prison}")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -554,7 +554,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -572,7 +572,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     createIncentiveRequest: CreatePrisonIncentiveRequest,
   ): PrisonIncentiveLevelDataResponse = incentivesService.createPrisonIncentiveLevelData(prison, createIncentiveRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/incentives/prison/{prison}/code/{code}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -603,7 +603,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -624,7 +624,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     updateIncentiveRequest: UpdatePrisonIncentiveRequest,
   ): PrisonIncentiveLevelDataResponse = incentivesService.updatePrisonIncentiveLevelData(prison, code, updateIncentiveRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/incentives/prison/{prison}/code/{code}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -666,7 +666,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
     code: String,
   ): PrisonIncentiveLevelDataResponse = incentivesService.getPrisonIncentiveLevel(prison, code)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCENTIVES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/incentives/prison/{prison}/code/{code}")
   @ResponseStatus(HttpStatus.OK)
   @Hidden
@@ -690,7 +690,7 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCENTIVES not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",

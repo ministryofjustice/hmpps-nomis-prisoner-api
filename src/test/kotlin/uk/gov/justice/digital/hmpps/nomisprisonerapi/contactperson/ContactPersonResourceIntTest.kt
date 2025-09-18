@@ -173,7 +173,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when person not found`() {
         webTestClient.get().uri("/persons/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -184,7 +184,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return basic person data`() {
         webTestClient.get().uri("/persons/${personMinimal.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -209,7 +209,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return full person data`() {
         webTestClient.get().uri("/persons/${personFull.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -262,7 +262,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return phone numbers`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -342,7 +342,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return addresses`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -392,7 +392,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return phone numbers associated with addresses`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -437,7 +437,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return email address`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -478,7 +478,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return employments`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -522,7 +522,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return identifiers`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -624,7 +624,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return contact details`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -747,7 +747,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return contact restriction details`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -813,7 +813,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return global restriction details`() {
         webTestClient.get().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -956,7 +956,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `list will be empty when no prisoner found`() {
         val prisonerWithContacts: PrisonerWithContacts = webTestClient.get().uri("/prisoners/A9999KT/contacts")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk.expectBodyResponse()
 
@@ -971,7 +971,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can request active and inactive contacts`() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -983,7 +983,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can request just active contacts`() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=true&latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -995,7 +995,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `by default only can active contacts return`() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1007,7 +1007,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can include latest booking only`() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1020,7 +1020,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can filter by latest booking only bookings`() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=true")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1033,7 +1033,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `by default only latest booking contacts are returned`() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1046,7 +1046,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `by default only latest booking contacts and active are returned`() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1065,7 +1065,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         prisonerWithContacts = webTestClient.get().uri("/prisoners/${prisoner.nomsId}/contacts?active-only=false&latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1187,7 +1187,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           it.path("/persons/ids")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1205,7 +1205,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             .queryParam("size", "1")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1224,7 +1224,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("fromDate", "2020-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1242,7 +1242,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2020-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1261,7 +1261,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1280,7 +1280,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1292,7 +1292,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2021-12-31")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1304,7 +1304,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1316,7 +1316,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1328,7 +1328,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1342,7 +1342,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "60")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1544,7 +1544,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 409 when person id supplied already exists`() {
         webTestClient.post().uri("/persons")
           .bodyValue(validPerson.copy(personId = existingPerson.id))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isEqualTo(409)
       }
@@ -1555,7 +1555,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create a person with core data and assign an id`() {
         val newPersonCreateResponse: CreatePersonResponse = webTestClient.post().uri("/persons")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(validPerson.copy(personId = null))
           .exchange()
           .expectStatus()
@@ -1574,7 +1574,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create a person with core data and set own id`() {
         webTestClient.post().uri("/persons")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(validPerson.copy(personId = 98765443))
           .exchange()
           .expectStatus()
@@ -1589,7 +1589,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create a person with all supplied data`() {
         webTestClient.post().uri("/persons")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(
             validPerson.copy(
               personId = 98765443,
@@ -1804,7 +1804,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when person not found`() {
         webTestClient.delete().uri("/persons/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -1834,7 +1834,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.delete().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -1957,7 +1957,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when person not found`() {
         webTestClient.put().uri("/persons/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(validPersonUpdate)
           .exchange()
           .expectStatus().isNotFound
@@ -1979,7 +1979,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.put().uri("/persons/${person.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(validPersonUpdate)
           .exchange()
           .expectStatus()
@@ -1996,7 +1996,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will create a person with all supplied data`() {
       webTestClient.put().uri("/persons/${person.id}")
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .bodyValue(
           validPersonUpdate.copy(
             middleName = "Tina",
@@ -2111,7 +2111,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 409 when contact relationship supplied already exists on latest booking`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/contact")
           .bodyValue(validContactRequest.copy(relationshipTypeCode = "SIS"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isEqualTo(409)
       }
@@ -2120,7 +2120,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/contact")
           .bodyValue(validContactRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2129,7 +2129,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when prisoner does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/contact")
           .bodyValue(validContactRequest.copy(offenderNo = "A999ZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2138,7 +2138,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when contact type does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/contact")
           .bodyValue(validContactRequest.copy(contactTypeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2147,7 +2147,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when relationship type does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/contact")
           .bodyValue(validContactRequest.copy(relationshipTypeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2159,7 +2159,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will create a contact`() {
         val response: CreatePersonContactResponse = webTestClient.post().uri("/persons/${existingPerson.id}/contact")
           .bodyValue(validContactRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -2276,7 +2276,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 409 when contact relationship supplied already exists on latest booking`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
           .bodyValue(validUpdateContactRequest.copy(relationshipTypeCode = "FRI"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isEqualTo(409)
       }
@@ -2285,7 +2285,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/999/contact/${existingContact.id}")
           .bodyValue(validUpdateContactRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2294,7 +2294,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when contact does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/99999")
           .bodyValue(validUpdateContactRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2303,7 +2303,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when contact type does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
           .bodyValue(validUpdateContactRequest.copy(contactTypeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2312,7 +2312,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when relationship type does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
           .bodyValue(validUpdateContactRequest.copy(relationshipTypeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2324,7 +2324,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will update a contact`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
           .bodyValue(validUpdateContactRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -2426,7 +2426,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         assertThat(personRepository.existsById(9999)).isFalse()
         assertThat(personContactRepository.existsById(existingContact.id)).isTrue()
         webTestClient.delete().uri("/persons/9999/contact/${existingContact.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isBadRequest
@@ -2436,7 +2436,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will return 204 even if contact not found`() {
         assertThat(personContactRepository.existsById(9999)).isFalse()
         webTestClient.delete().uri("/persons/${existingPerson.id}/contact/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2455,7 +2455,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2530,7 +2530,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/address")
           .bodyValue(validAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2539,7 +2539,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when city code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/address")
           .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2548,7 +2548,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when county code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/address")
           .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2557,7 +2557,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when country code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/address")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2566,7 +2566,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when address type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/address")
           .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2595,7 +2595,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               endDate = LocalDate.parse("2032-12-31"),
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -2695,7 +2695,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/9999/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2704,7 +2704,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/99999")
           .bodyValue(validAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2713,7 +2713,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when city code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2722,7 +2722,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when county code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2731,7 +2731,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when country code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2740,7 +2740,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when address type code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2770,7 +2770,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               validatedPAF = true,
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -2859,7 +2859,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 address exists but  not exist on the person `() {
         webTestClient.delete().uri("/persons/9999/address/${existingAddress.addressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2867,7 +2867,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when address does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/address/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -2879,7 +2879,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will delete a address`() {
         assertThat(personAddressRepository.existsById(existingAddress.addressId)).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2949,7 +2949,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/email")
           .bodyValue(validEmailRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2965,7 +2965,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               email = "test@email.com",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -3053,7 +3053,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/99999/email/${existingEmail.internetAddressId}")
           .bodyValue(validEmailRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3062,7 +3062,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when email does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/email/9999")
           .bodyValue(validEmailRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3078,7 +3078,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               email = "test@email.com",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -3155,7 +3155,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when emails exists but not on the person`() {
         webTestClient.delete().uri("/persons/99999/email/${existingEmail.internetAddressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3163,7 +3163,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when email does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/email/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -3175,7 +3175,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will create a email`() {
         assertThat(personInternetAddressRepository.existsById(existingEmail.internetAddressId)).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/email/${existingEmail.internetAddressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -3245,7 +3245,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3254,7 +3254,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/phone")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3272,7 +3272,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               extension = "x555",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -3362,7 +3362,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/9999/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3371,7 +3371,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when phone does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/phone/99999")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3380,7 +3380,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3398,7 +3398,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               extension = "x555",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -3476,7 +3476,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when phone exists but not on that person`() {
         webTestClient.delete().uri("/persons/9999/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3484,7 +3484,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when phone does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/phone/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -3496,7 +3496,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will delete the phone`() {
         assertThat(personPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -3574,7 +3574,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3583,7 +3583,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/address/999/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3592,7 +3592,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist on person`() {
         webTestClient.post().uri("/persons/${anotherPerson.id}/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3601,7 +3601,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3619,7 +3619,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               extension = "x555",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -3713,7 +3713,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3722,7 +3722,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/99999/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3731,7 +3731,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when phone does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/99999")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3740,7 +3740,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3758,7 +3758,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               extension = "x555",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -3840,7 +3840,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when phone exists on address but address does not belong to person`() {
         webTestClient.delete().uri("/persons/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3848,7 +3848,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when phone exists but not on address`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/address/99999/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3856,7 +3856,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when phone does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -3868,7 +3868,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will delete the phone`() {
         assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -3939,7 +3939,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/identifier")
           .bodyValue(validIdentifierRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -3948,7 +3948,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when identifier type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
           .bodyValue(validIdentifierRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -3966,7 +3966,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               issuedAuthority = "DVLA",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -4057,7 +4057,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/99999/identifier/${existingIdentifier.id.sequence}")
           .bodyValue(validIdentifierRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4066,7 +4066,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when sequence of identifier does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/identifier/9999")
           .bodyValue(validIdentifierRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4075,7 +4075,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when identifier type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/identifier")
           .bodyValue(validIdentifierRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4093,7 +4093,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               issuedAuthority = "DVLA",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -4171,7 +4171,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when person does not exist`() {
         webTestClient.delete().uri("/persons/99999/identifier/${existingIdentifier.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4179,7 +4179,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when sequence of identifier does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/identifier/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -4198,7 +4198,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           ),
         ).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/identifier/${existingIdentifier.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -4278,7 +4278,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/employment")
           .bodyValue(validEmploymentRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4287,7 +4287,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when corporate Id does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/employment")
           .bodyValue(validEmploymentRequest.copy(corporateId = 9999))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4299,7 +4299,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will create a employment`() {
         val response: CreatePersonEmploymentResponse = webTestClient.post().uri("/persons/${existingPerson.id}/employment")
           .bodyValue(validEmploymentRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -4393,7 +4393,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/99999/employment/${existingEmployment.id.sequence}")
           .bodyValue(validEmploymentRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4402,7 +4402,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when sequence of employment does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/employment/9999")
           .bodyValue(validEmploymentRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4411,7 +4411,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when employment type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/employment")
           .bodyValue(validEmploymentRequest.copy(corporateId = 999))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4423,7 +4423,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will update a employment`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
           .bodyValue(validEmploymentRequest.copy(active = false))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -4504,7 +4504,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when person does not exist`() {
         webTestClient.delete().uri("/persons/99999/employment/${existingEmployment.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4512,7 +4512,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when sequence of employment does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/employment/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -4531,7 +4531,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           ),
         ).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/employment/${existingEmployment.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -4624,7 +4624,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/contact/${existingContact.id}/restriction")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4633,7 +4633,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when contact does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/contact/999/restriction")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4642,7 +4642,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when contact does not exist on person`() {
         webTestClient.post().uri("/persons/${anotherPerson.id}/contact/${existingContact.id}/restriction")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4651,7 +4651,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when restriction type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
           .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4660,7 +4660,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when staff username code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction")
           .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4680,7 +4680,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               enteredStaffUsername = "KOFEADDY_GEN",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -4794,7 +4794,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/999/contact/${existingContact.id}/restriction/${existingRestriction.id}")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4803,7 +4803,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when contact does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/9999/restriction/${existingRestriction.id}")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4812,7 +4812,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when contact restriction does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/9999")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -4821,7 +4821,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when restriction type code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/${existingRestriction.id}")
           .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4830,7 +4830,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when staff username code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/${existingRestriction.id}")
           .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4850,7 +4850,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               enteredStaffUsername = "KOFEADDY_GEN",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -4949,7 +4949,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when restriction and contact exist but not on the person`() {
         webTestClient.delete().uri("/persons/999/contact/${existingContact.id}/restriction/${existingRestriction.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4957,7 +4957,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when restriction exists but not on contact`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/contact/9999/restriction/${existingRestriction.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -4965,7 +4965,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when contact restriction does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -4977,7 +4977,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will delete a restriction`() {
         assertThat(personContactRestrictionRepository.existsById(existingRestriction.id)).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/contact/${existingContact.id}/restriction/${existingRestriction.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -5055,7 +5055,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.post().uri("/persons/999/restriction")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -5064,7 +5064,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when restriction type code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
           .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5073,7 +5073,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when staff username code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
           .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5093,7 +5093,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               enteredStaffUsername = "KOFEADDY_GEN",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -5190,7 +5190,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when prisoner does not exist`() {
         webTestClient.post().uri("/prisoners/Z9999ZZ/restriction")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -5199,7 +5199,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when restriction type code does not exist`() {
         webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
           .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5208,7 +5208,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when entered staff username code does not exist`() {
         webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
           .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5217,7 +5217,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when authorised staff username code does not exist`() {
         webTestClient.post().uri("/prisoners/${existingPrisoner.nomsId}/restriction")
           .bodyValue(restrictionRequest.copy(authorisedStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5238,7 +5238,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               authorisedStaffUsername = "KOFEADDY_ADM",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -5341,7 +5341,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when restriction does not exist`() {
         webTestClient.put().uri("/prisoners/${existingPrisoner.nomsId}/restriction/9999")
           .bodyValue(updateRestrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -5350,7 +5350,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when restriction exists but not for this prisoner`() {
         webTestClient.put().uri("/prisoners/A1234KT/restriction/$existingRestrictionId")
           .bodyValue(updateRestrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5359,7 +5359,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when restriction type code does not exist`() {
         webTestClient.put().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
           .bodyValue(updateRestrictionRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5368,7 +5368,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when entered staff username code does not exist`() {
         webTestClient.put().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
           .bodyValue(updateRestrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5377,7 +5377,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when authorised staff username code does not exist`() {
         webTestClient.put().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
           .bodyValue(updateRestrictionRequest.copy(authorisedStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5389,7 +5389,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will update a restriction`() {
         webTestClient.put().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
           .bodyValue(updateRestrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -5488,7 +5488,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when person does not exist`() {
         webTestClient.put().uri("/persons/999/restriction/${existingRestriction.id}")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -5497,7 +5497,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 404 when restriction does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/restriction/9999")
           .bodyValue(restrictionRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -5506,7 +5506,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when restriction type code does not exist`() {
         webTestClient.put().uri("/persons/${existingPerson.id}/restriction/${existingRestriction.id}")
           .bodyValue(restrictionRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5515,7 +5515,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `return 400 when staff username code does not exist`() {
         webTestClient.post().uri("/persons/${existingPerson.id}/restriction")
           .bodyValue(restrictionRequest.copy(enteredStaffUsername = "ZZZZZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5535,7 +5535,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
               enteredStaffUsername = "KOFEADDY_GEN",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -5627,7 +5627,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when restriction exists but not on the person`() {
         webTestClient.delete().uri("/persons/999/restriction/${existingRestriction.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -5635,7 +5635,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when restriction does not exist`() {
         webTestClient.delete().uri("/persons/${existingPerson.id}/restriction/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -5647,7 +5647,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       fun `will delete a restriction`() {
         assertThat(personRestrictionRepository.existsById(existingRestriction.id)).isTrue()
         webTestClient.delete().uri("/persons/${existingPerson.id}/restriction/${existingRestriction.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -5723,7 +5723,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when contact not found`() {
         webTestClient.get().uri("/contact/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -5734,7 +5734,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return contact details`() {
         val response = webTestClient.get().uri("/contact/${existingContact.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse<PersonContact>()
@@ -5827,7 +5827,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `404 when restriction not found`() {
         webTestClient.get().uri("/prisoners/restrictions/99999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -5838,7 +5838,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return restriction details`() {
         webTestClient.get().uri("/prisoners/restrictions/$restrictionId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5944,7 +5944,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `list will be empty when no prisoner found`() {
         webTestClient.get().uri("/prisoners/A1234ZZ/restrictions")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5958,7 +5958,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can include all bookings`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5968,7 +5968,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can filter by latest booking only bookings`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=true")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5978,7 +5978,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `by default only latest booking restrictions are returned`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5991,7 +5991,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return restrictions for all bookings`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6001,7 +6001,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return details about the restrictions`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/restrictions?latest-booking-only=false")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6126,7 +6126,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           it.path("/prisoners/restrictions/ids")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6144,7 +6144,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
             .queryParam("size", "1")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6163,7 +6163,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("fromDate", "2020-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6181,7 +6181,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2020-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6200,7 +6200,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6219,7 +6219,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6231,7 +6231,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2021-12-31")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6243,7 +6243,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6255,7 +6255,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6267,7 +6267,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6281,7 +6281,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "60")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -6481,7 +6481,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when restriction exists but not for this prisoner`() {
         webTestClient.delete().uri("/prisoners/A1234KT/restriction/$existingRestrictionId")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -6489,7 +6489,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when restriction does not exist`() {
         webTestClient.delete().uri("/prisoners/${existingPrisoner.nomsId}/restriction/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -6502,7 +6502,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         assertThat(offenderRestrictionsRepository.existsById(existingRestrictionId)).isTrue()
 
         webTestClient.delete().uri("/prisoners/${existingPrisoner.nomsId}/restriction/$existingRestrictionId")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent

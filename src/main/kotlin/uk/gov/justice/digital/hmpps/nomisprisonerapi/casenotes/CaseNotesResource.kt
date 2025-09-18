@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-@PreAuthorize("hasRole('ROLE_NOMIS_CASENOTES')")
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class CaseNotesResource(
   private val caseNotesService: CaseNotesService,
 ) {
@@ -37,7 +37,7 @@ class CaseNotesResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get a case note by id",
-    description = "Retrieves a prisoner case note. Requires ROLE_NOMIS_CASENOTES",
+    description = "Retrieves a prisoner case note. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -53,7 +53,7 @@ class CaseNotesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -73,7 +73,7 @@ class CaseNotesResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a case note on a prisoner",
-    description = "Creates a case note on the prisoner's latest booking. Requires ROLE_NOMIS_CASENOTES",
+    description = "Creates a case note on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -94,7 +94,7 @@ class CaseNotesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -115,7 +115,7 @@ class CaseNotesResource(
   @PutMapping("/casenotes/{caseNoteId}")
   @Operation(
     summary = "Updates a case note on a prisoner",
-    description = "Updates the specified case note. Requires ROLE_NOMIS_CASENOTES",
+    description = "Updates the specified case note. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "CaseNote Updated"),
       ApiResponse(
@@ -130,7 +130,7 @@ class CaseNotesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -154,7 +154,7 @@ class CaseNotesResource(
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a case note",
-    description = "Deletes the specified case note. Requires ROLE_NOMIS_CASENOTES",
+    description = "Deletes the specified case note. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "201", description = "CaseNote Deleted"),
       ApiResponse(
@@ -164,7 +164,7 @@ class CaseNotesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -186,7 +186,7 @@ class CaseNotesResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets all case notes for a prisoner",
-    description = "Retrieves all case notes for a specific prisoner, for migration or merge. Requires ROLE_NOMIS_CASENOTES",
+    description = "Retrieves all case notes for a specific prisoner, for migration or merge. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -202,7 +202,7 @@ class CaseNotesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
@@ -227,7 +227,7 @@ class CaseNotesResource(
     NOMIS. This is because the notes are truncated at 4,000 characters so we can end up with more amendments in DPS
     than there are in NOMIS. We therefore just return the text as stored in NOMIS and then transform the DPS text to
     match.
-    Requires ROLE_NOMIS_CASENOTES""",
+    Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -243,7 +243,7 @@ class CaseNotesResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CASENOTES",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(

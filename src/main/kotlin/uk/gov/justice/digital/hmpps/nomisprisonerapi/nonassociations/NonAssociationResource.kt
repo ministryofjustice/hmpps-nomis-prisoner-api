@@ -31,12 +31,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class NonAssociationResource(private val nonAssociationService: NonAssociationService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/non-associations")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new non-association",
-    description = "Creates a new non-association. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Creates a new non-association. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = CreateNonAssociationRequest::class)),
@@ -56,7 +56,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -66,11 +66,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     createNonAssociationRequest: CreateNonAssociationRequest,
   ): CreateNonAssociationResponse = nonAssociationService.createNonAssociation(createNonAssociationRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}")
   @Operation(
     summary = "Updates an existing non-association",
-    description = "Updates an existing non-association. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Updates an existing non-association. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = UpdateNonAssociationRequest::class)),
@@ -95,7 +95,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -116,11 +116,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     nonAssociationService.updateNonAssociation(offenderNo, nsOffenderNo, typeSequence, updateNonAssociationRequest)
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}/close")
   @Operation(
     summary = "Closes an existing non-association",
-    description = "Closes an existing non-association. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Closes an existing non-association. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
@@ -140,7 +140,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -159,11 +159,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     nonAssociationService.closeNonAssociation(offenderNo, nsOffenderNo, typeSequence)
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/sequence/{typeSequence}")
   @Operation(
     summary = "Deletes a non-association",
-    description = "Deletes the specified non-association detail record. if there was only one, the parent NA record is deleted too. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Deletes the specified non-association detail record. if there was only one, the parent NA record is deleted too. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
@@ -178,7 +178,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -197,11 +197,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     nonAssociationService.deleteNonAssociation(offenderNo, nsOffenderNo, typeSequence)
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}")
   @Operation(
     summary = "Get an open non-association",
-    description = "Get the open non-association for the two offender numbers. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Get the open non-association for the two offender numbers. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Non-association information"),
       ApiResponse(
@@ -216,7 +216,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -237,11 +237,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     throw NotFoundException("No open non-association exists for these offender numbers")
   }
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/non-associations/booking/{bookingId}")
   @Operation(
     summary = "Get non-associations by booking ID",
-    description = "Get non-associations for the given booking ID. Returns empty list if none found. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Get non-associations for the given booking ID. Returns empty list if none found. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "List of non-associations"),
       ApiResponse(
@@ -251,7 +251,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -262,11 +262,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     bookingId: Long,
   ): List<NonAssociationIdResponse> = nonAssociationService.getByBookingId(bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/non-associations/offender/{offenderNo}/ns-offender/{nsOffenderNo}/all")
   @Operation(
     summary = "Get all non-associations for the two offender numbers",
-    description = "Get all non-associations for the two offender numbers, including expired. Requires role NOMIS_NON_ASSOCIATIONS",
+    description = "Get all non-associations for the two offender numbers, including expired. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "List of non-associations"),
       ApiResponse(
@@ -281,7 +281,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_NON_ASSOCIATIONS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -295,11 +295,11 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
     nsOffenderNo: String,
   ): List<NonAssociationResponse> = nonAssociationService.getNonAssociation(offenderNo, nsOffenderNo, null, true)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_NON_ASSOCIATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/non-associations/ids")
   @Operation(
     summary = "get non-associations by filter",
-    description = "Retrieves a paged list of composite ids by filter. Requires ROLE_NOMIS_NON_ASSOCIATIONS.",
+    description = "Retrieves a paged list of composite ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -312,7 +312,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_NON_ASSOCIATIONS not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
