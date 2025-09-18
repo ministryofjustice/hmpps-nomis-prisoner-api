@@ -117,7 +117,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           it.path("/corporates/ids")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -135,7 +135,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
             .queryParam("size", "1")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -154,7 +154,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("fromDate", "2020-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -172,7 +172,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2020-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -191,7 +191,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -210,7 +210,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -222,7 +222,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2021-12-31")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -234,7 +234,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-01")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -246,7 +246,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -258,7 +258,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", "2022-01-02")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -272,7 +272,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "60")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -327,7 +327,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if corporate caseload code does not exist`() {
         webTestClient.post().uri("/corporates")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(corporate.copy(caseloadId = "ZZZ"))
           .exchange()
           .expectStatus().isBadRequest
@@ -342,7 +342,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create a corporate with minimal data`() {
         webTestClient.post().uri("/corporates")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(corporate.copy(id = 10001, name = "Bingahm Solicitors"))
           .exchange()
           .expectStatus().isCreated
@@ -367,7 +367,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create a corporate with maximum data`() {
         webTestClient.post().uri("/corporates")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(
             corporate.copy(
               id = 10002,
@@ -458,7 +458,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if corporate does not exist`() {
         webTestClient.put().uri("/corporates/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(corporateRequest)
           .exchange()
           .expectStatus().isNotFound
@@ -469,7 +469,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if corporate caseload code does not exist`() {
         webTestClient.put().uri("/corporates/${corporate.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(corporateRequest.copy(caseloadId = "ZZZ"))
           .exchange()
           .expectStatus().isBadRequest
@@ -483,7 +483,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update a corporate with minimal data`() {
         webTestClient.put().uri("/corporates/${corporate.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(corporateRequest.copy(name = "Bingahm Solicitors"))
           .exchange()
           .expectStatus().isNoContent
@@ -508,7 +508,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update a corporate with maximum data`() {
         webTestClient.put().uri("/corporates/${corporate.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(
             corporateRequest.copy(
               name = "Bright Solicitors",
@@ -594,7 +594,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 204 if corporate does not exist`() {
         webTestClient.delete().uri("/corporates/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -606,7 +606,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `will delete the corporate`() {
         assertThat(corporateRepository.existsById(corporate.id)).isTrue()
         webTestClient.delete().uri("/corporates/${corporate.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
         assertThat(corporateRepository.existsById(corporate.id)).isFalse()
@@ -662,7 +662,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if corporate does not exist`() {
         webTestClient.get().uri("/corporates/999999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -701,7 +701,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will find a corporate when it exists`() {
           webTestClient.get().uri("/corporates/${corporate.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -711,7 +711,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return the core corporate data`() {
           val corporateOrganisation: CorporateOrganisation = webTestClient.get().uri("/corporates/${hotel.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBodyResponse()
@@ -734,7 +734,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return any associated corporate types`() {
           val corporateOrganisation: CorporateOrganisation = webTestClient.get().uri("/corporates/${hotel.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBodyResponse()
@@ -781,7 +781,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return phone numbers`() {
           webTestClient.get().uri("/corporates/${corporate.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus()
             .isOk
@@ -862,7 +862,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return addresses`() {
           webTestClient.get().uri("/corporates/${corporate.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus()
             .isOk
@@ -918,7 +918,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return phone numbers associated with addresses`() {
           webTestClient.get().uri("/corporates/${corporate.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus()
             .isOk
@@ -962,7 +962,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return email address`() {
           webTestClient.get().uri("/corporates/${corporate.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus()
             .isOk
@@ -1040,7 +1040,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.post().uri("/corporates/999/address")
           .bodyValue(validAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1049,7 +1049,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when city code does not exist`() {
         webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
           .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1058,7 +1058,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when county code does not exist`() {
         webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
           .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1067,7 +1067,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when country code does not exist`() {
         webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1076,7 +1076,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when address type code does not exist`() {
         webTestClient.post().uri("/corporates/${existingCorporate.id}/address")
           .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1109,7 +1109,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
 
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -1206,7 +1206,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.put().uri("/corporates/9999/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1215,7 +1215,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/99999")
           .bodyValue(validAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1224,7 +1224,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when city code does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1233,7 +1233,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when county code does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1242,7 +1242,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when country code does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1251,7 +1251,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when address type code does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1283,7 +1283,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               businessHours = "10-12am",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -1365,7 +1365,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 address exists but not exist on the corporate `() {
         webTestClient.delete().uri("/corporates/9999/address/${existingAddress.addressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1373,7 +1373,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when address does not exist`() {
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -1385,7 +1385,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `will delete a corporate address`() {
         assertThat(corporateAddressRepository.existsById(existingAddress.addressId)).isTrue()
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -1462,7 +1462,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.post().uri("/corporates/999/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1471,7 +1471,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist`() {
         webTestClient.post().uri("/corporates/${existingCorporate.id}/address/999/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1480,7 +1480,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist on corporate`() {
         webTestClient.post().uri("/corporates/${anotherCorporate.id}/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1489,7 +1489,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.post().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1507,7 +1507,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               extension = "x555",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -1599,7 +1599,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.put().uri("/corporates/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1608,7 +1608,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when address does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/99999/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1617,7 +1617,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when phone does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/99999")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1626,7 +1626,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1644,7 +1644,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               extension = "x555",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -1717,7 +1717,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when phone does not exist`() {
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/phone/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -1729,7 +1729,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `will delete the phone`() {
         assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/address/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -1797,7 +1797,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.post().uri("/corporates/999/phone")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1806,7 +1806,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.post().uri("/corporates/${existingCorporate.id}/phone")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1824,7 +1824,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               number = "07973 55 55555",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -1908,7 +1908,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.put().uri("/corporates/9999/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1917,7 +1917,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when phone does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/99999")
           .bodyValue(validPhoneRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1926,7 +1926,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 400 when phone type code does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1944,7 +1944,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               extension = "x12",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2013,7 +2013,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 phone exists but not exist on the corporate `() {
         webTestClient.delete().uri("/corporates/9999/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2021,7 +2021,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when phone does not exist`() {
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/phone/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -2033,7 +2033,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `will delete a corporate phone`() {
         assertThat(corporatePhoneRepository.existsById(existingPhone.phoneId)).isTrue()
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/phone/${existingPhone.phoneId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2100,7 +2100,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.post().uri("/corporates/999/email")
           .bodyValue(validEmailRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2116,7 +2116,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               email = "test@justice.gov.uk",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -2198,7 +2198,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.put().uri("/corporates/9999/email/${existingEmail.internetAddressId}")
           .bodyValue(validEmailRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2207,7 +2207,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when email does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/email/99999")
           .bodyValue(validEmailRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2223,7 +2223,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               email = "newemail@justice.gov.uk",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2291,7 +2291,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 email exists but not exist on the corporate `() {
         webTestClient.delete().uri("/corporates/9999/email/${existingEmail.internetAddressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2299,7 +2299,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when email does not exist`() {
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/email/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -2311,7 +2311,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `will delete a corporate email`() {
         assertThat(corporateInternetAddressRepository.existsById(existingEmail.internetAddressId)).isTrue()
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/email/${existingEmail.internetAddressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2378,7 +2378,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.post().uri("/corporates/999/web-address")
           .bodyValue(validWebAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2394,7 +2394,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               webAddress = "www.justice.gov.uk",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -2476,7 +2476,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.put().uri("/corporates/9999/web-address/${existingWebAddress.internetAddressId}")
           .bodyValue(validWebAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2485,7 +2485,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when web address does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/web-address/99999")
           .bodyValue(validWebAddressRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2501,7 +2501,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               webAddress = "www.newweb.justice.gov.uk",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2569,7 +2569,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 web address exists but not exist on the corporate `() {
         webTestClient.delete().uri("/corporates/9999/web-address/${existingWebAddress.internetAddressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -2577,7 +2577,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when web does not exist`() {
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/web-address/99999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -2589,7 +2589,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `will delete a corporate web address`() {
         assertThat(corporateInternetAddressRepository.existsById(existingWebAddress.internetAddressId)).isTrue()
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/web-address/${existingWebAddress.internetAddressId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
@@ -2658,7 +2658,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       fun `return 404 when corporate does not exist`() {
         webTestClient.post().uri("/corporates/999/type")
           .bodyValue(validTypeRequest)
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -2677,7 +2677,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               typeCode = "YOTWORKER",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -2700,7 +2700,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
               typeCode = "TEA",
             ),
           )
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isCreated
@@ -2773,7 +2773,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 400 when type does not exist`() {
         webTestClient.put().uri("/corporates/${existingCorporate.id}/type")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(UpdateCorporateTypesRequest(typeCodes = setOf("TEA", "ZZZ")))
           .exchange()
           .expectStatus().isBadRequest
@@ -2792,7 +2792,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.put().uri("/corporates/${existingCorporate.id}/type")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(UpdateCorporateTypesRequest(typeCodes = setOf("TEA", "TRUST")))
           .exchange()
           .expectStatus()
@@ -2862,7 +2862,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when type does not exist`() {
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/type/ZZZZ")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -2880,7 +2880,7 @@ class CorporateResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.delete().uri("/corporates/${existingCorporate.id}/type/TEA")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent

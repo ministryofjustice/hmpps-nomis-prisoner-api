@@ -214,7 +214,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all incident ids - no filter specified`() {
       webTestClient.get().uri("/incidents/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -228,7 +228,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -247,7 +247,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .queryParam("page", "1")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -294,7 +294,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown incident should return not found`() {
       webTestClient.get().uri("/incidents/999999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -306,7 +306,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return an incident by Id`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -337,7 +337,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return staff party information for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -360,7 +360,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return offender party information for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -381,7 +381,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident requirement details for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -401,7 +401,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident questions for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -418,7 +418,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident responses for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -445,7 +445,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident responses for an incident with missing questionnaire answers - Nomis missing data test`() {
       webTestClient.get().uri("/incidents/${incident2.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -469,7 +469,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident history for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -486,7 +486,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident history questions for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -498,7 +498,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident history responses for an incident`() {
       webTestClient.get().uri("/incidents/${incident1.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -525,7 +525,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return incident history responses with missing questionnaire answers - Nomis missing data test`() {
       webTestClient.get().uri("/incidents/${incident2.id}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -570,7 +570,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown incident should return not found`() {
       webTestClient.get().uri("/incidents/booking/999999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -588,7 +588,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       webTestClient.get().uri("/incidents/booking/$bookingId2")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -619,7 +619,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       webTestClient.get().uri("/incidents/booking/${offender2.latestBooking().bookingId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -631,7 +631,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `booking will correctly identify the incident for the booking`() {
       webTestClient.get().uri("/incidents/booking/${offender1.latestBooking().bookingId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -672,7 +672,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all agencies for incidents`() {
       webTestClient.get().uri("/incidents/reconciliation/agencies")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -714,7 +714,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get incident count at agency`() {
       webTestClient.get().uri("/incidents/reconciliation/agency/BXI/counts")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -726,7 +726,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get incident count at agency with none closed`() {
       webTestClient.get().uri("/incidents/reconciliation/agency/MDI/counts")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -767,7 +767,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed for correct role`() {
         webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -789,7 +789,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return first page of incidents ordered by incidentId ASC`() {
         webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id?pageSize=2")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -802,7 +802,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return second page of incidents ordered by incidentId ASC`() {
         webTestClient.get().uri("/incidents/reconciliation/ids/all-from-id?pageSize=2&incidentId=$id5")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -848,7 +848,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         it.path("/incidents/reconciliation/agency/BXI/ids")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -862,7 +862,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -883,7 +883,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .queryParam("page", "1")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -932,7 +932,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will fail if location can't be found`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -951,7 +951,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will fail if incident status code can't be found`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -970,7 +970,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will fail if questionnaire can't be found`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -989,7 +989,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will fail if reportedBy can't be found`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1011,7 +1011,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1029,7 +1029,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1059,7 +1059,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with amendments`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1102,7 +1102,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1113,7 +1113,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with requirements`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1133,7 +1133,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1152,7 +1152,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with requirements comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1172,7 +1172,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1182,7 +1182,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with parties`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1209,7 +1209,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1237,7 +1237,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with parties comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1264,7 +1264,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1275,7 +1275,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with questions`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1292,7 +1292,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1307,7 +1307,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with responses`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1352,7 +1352,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1378,7 +1378,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with responses comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1404,7 +1404,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1414,7 +1414,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with history`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1466,7 +1466,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1494,7 +1494,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will create an incident with history comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${++currentId}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1527,7 +1527,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/$currentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
@@ -1541,7 +1541,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident`() {
         webTestClient.put().uri("/incidents/${incident4.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1559,7 +1559,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident4.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident4.id)
@@ -1589,7 +1589,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with amendments`() {
         webTestClient.put().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1616,7 +1616,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident2.id)
@@ -1627,7 +1627,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with requirements`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1648,7 +1648,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
@@ -1667,7 +1667,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with requirements comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1688,7 +1688,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
@@ -1698,7 +1698,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with parties`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1725,7 +1725,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
@@ -1753,7 +1753,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with parties comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1780,7 +1780,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
@@ -1791,7 +1791,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with questions`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1808,7 +1808,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
@@ -1823,7 +1823,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with responses`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1868,7 +1868,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
@@ -1894,7 +1894,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with responses comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1920,7 +1920,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident1.id)
@@ -1930,7 +1930,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with history`() {
         webTestClient.put().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -1988,7 +1988,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident2.id)
@@ -2024,7 +2024,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update an incident with history comment over 240 chars`() {
         webTestClient.put().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -2063,7 +2063,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident2.id)
@@ -2074,7 +2074,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will do nothing if an incident with history stays the same size`() {
         webTestClient.put().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               upsertIncidentRequest().copy(
@@ -2094,7 +2094,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/incidents/${incident2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident2.id)
@@ -2146,7 +2146,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 even when does not exist`() {
         webTestClient.delete().uri("/incidents/99999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -2157,17 +2157,17 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will delete the incident`() {
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
         webTestClient.delete().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
         webTestClient.get().uri("/incidents/${incident1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_INCIDENTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNotFound

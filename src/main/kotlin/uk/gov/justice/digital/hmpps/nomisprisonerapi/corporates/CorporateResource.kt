@@ -36,12 +36,12 @@ import java.time.LocalDate
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class CorporateResource(private val corporateService: CorporateService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/corporates/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get all Ids",
-    description = "Retrieves all corporate Ids - typically for a migration. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves all corporate Ids - typically for a migration. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -59,7 +59,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -94,12 +94,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/corporates/{corporateId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a corporate by corporateId Id",
-    description = "Retrieves a corporate and details. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves a corporate and details. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -123,7 +123,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -149,12 +149,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     corporateId: Long,
   ): CorporateOrganisation = corporateService.getCorporateById(corporateId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/corporates")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a corporate organisation",
-    description = "Creates a new corporate record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a new corporate record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -182,7 +182,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -197,12 +197,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: CreateCorporateOrganisationRequest,
   ) = corporateService.createCorporate(request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @PutMapping("/corporates/{corporateId}")
   @Operation(
     summary = "Update corporate organisation",
-    description = "Updates an existing corporate record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates an existing corporate record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -230,7 +230,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -257,12 +257,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: UpdateCorporateOrganisationRequest,
   ) = corporateService.updateCorporate(corporateId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/corporates/{corporateId}")
   @Operation(
     summary = "Delete corporate organisation",
-    description = "Deletes an existing corporate record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes an existing corporate record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -280,7 +280,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -295,12 +295,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     corporateId: Long,
   ) = corporateService.deleteCorporate(corporateId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/corporates/{corporateId}/address")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a corporate address",
-    description = "Creates a new corporate address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a new corporate address record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -334,7 +334,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -361,12 +361,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: CreateCorporateAddressRequest,
   ) = corporateService.createCorporateAddress(corporateId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/corporates/{corporateId}/address/{addressId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update a corporate address",
-    description = "Updates a corporate address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a corporate address record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -394,7 +394,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -423,12 +423,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: UpdateCorporateAddressRequest,
   ) = corporateService.updateCorporateAddress(corporateId = corporateId, addressId = addressId, request = request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/corporates/{corporateId}/address/{addressId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a corporate address",
-    description = "Deletes a corporate address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a corporate address record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -456,7 +456,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -473,12 +473,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     addressId: Long,
   ) = corporateService.deleteCorporateAddress(corporateId = corporateId, addressId = addressId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/corporates/{corporateId}/address/{addressId}/phone")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a corporate address phone",
-    description = "Creates a new corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a new corporate address phone record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -512,7 +512,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -541,12 +541,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: CreateCorporatePhoneRequest,
   ) = corporateService.createCorporateAddressPhone(corporateId = corporateId, addressId = addressId, request = request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/corporates/{corporateId}/address/{addressId}/phone/{phoneId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update a corporate address phone",
-    description = "Updates a corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a corporate address phone record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -574,7 +574,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -605,12 +605,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: UpdateCorporatePhoneRequest,
   ) = corporateService.updateCorporateAddressPhone(corporateId = corporateId, addressId = addressId, phoneId = phoneId, request = request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/corporates/{corporateId}/address/phone/{phoneId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a corporate address phone",
-    description = "Deletes a corporate address phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a corporate address phone record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -638,7 +638,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -655,12 +655,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     phoneId: Long,
   ) = corporateService.deleteCorporateAddressPhone(corporateId = corporateId, phoneId = phoneId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/corporates/{corporateId}/phone")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create a corporate phone",
-    description = "Creates a new corporate phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a new corporate phone record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -694,7 +694,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -721,12 +721,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: CreateCorporatePhoneRequest,
   ) = corporateService.createCorporatePhone(corporateId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/corporates/{corporateId}/phone/{phoneId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update a corporate phone",
-    description = "Updates a corporate phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a corporate phone record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -754,7 +754,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -783,12 +783,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: UpdateCorporatePhoneRequest,
   ) = corporateService.updateCorporatePhone(corporateId = corporateId, phoneId = phoneId, request = request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/corporates/{corporateId}/phone/{phoneId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a corporate phone",
-    description = "Deletes a corporate phone record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a corporate phone record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -816,7 +816,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -833,12 +833,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     phoneId: Long,
   ) = corporateService.deleteCorporatePhone(corporateId = corporateId, phoneId = phoneId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/corporates/{corporateId}/email")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create a corporate email",
-    description = "Creates a new corporate email record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a new corporate email record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -862,7 +862,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -889,12 +889,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: CreateCorporateEmailRequest,
   ) = corporateService.createCorporateEmail(corporateId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/corporates/{corporateId}/email/{emailId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update a corporate email",
-    description = "Updates a corporate email record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a corporate email record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -912,7 +912,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -941,12 +941,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: UpdateCorporateEmailRequest,
   ) = corporateService.updateCorporateEmail(corporateId = corporateId, emailAddressId = emailId, request = request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/corporates/{corporateId}/email/{emailId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a corporate email",
-    description = "Deletes a corporate email record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a corporate email record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -974,7 +974,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -991,12 +991,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     emailId: Long,
   ) = corporateService.deleteCorporateEmail(corporateId = corporateId, emailAddressId = emailId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/corporates/{corporateId}/web-address")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create a corporate web address",
-    description = "Creates a new corporate web address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a new corporate web address record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1020,7 +1020,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1047,12 +1047,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: CreateCorporateWebAddressRequest,
   ) = corporateService.createCorporateWebAddress(corporateId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/corporates/{corporateId}/web-address/{webAddressId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update a corporate web address",
-    description = "Updates a corporate web address record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a corporate web address record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1070,7 +1070,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1099,12 +1099,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: UpdateCorporateWebAddressRequest,
   ) = corporateService.updateCorporateWebAddress(corporateId = corporateId, webAddressId = webAddressId, request = request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/corporates/{corporateId}/web-address/{webAddressId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a corporate web address",
-    description = "Deletes a corporate web record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a corporate web record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1132,7 +1132,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1149,12 +1149,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     webAddressId: Long,
   ) = corporateService.deleteCorporateWebAddress(corporateId = corporateId, webAddressId = webAddressId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/corporates/{corporateId}/type")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create a corporate type",
-    description = "Creates a new corporate type record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a new corporate type record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1182,7 +1182,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1209,12 +1209,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: CreateCorporateTypeRequest,
   ) = corporateService.createCorporateType(corporateId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/corporates/{corporateId}/type")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update the corporate types",
-    description = "Updates the set of corporate types. This might result in some types being added and others being deleted. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates the set of corporate types. This might result in some types being added and others being deleted. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1242,7 +1242,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1269,12 +1269,12 @@ class CorporateResource(private val corporateService: CorporateService) {
     request: UpdateCorporateTypesRequest,
   ) = corporateService.updateCorporateTypes(corporateId, request.typeCodes)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/corporates/{corporateId}/type/{typeCode}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete a corporate type",
-    description = "Deletes a new corporate type record. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a new corporate type record. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1292,7 +1292,7 @@ class CorporateResource(private val corporateService: CorporateService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

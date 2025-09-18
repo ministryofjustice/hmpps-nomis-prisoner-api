@@ -33,13 +33,13 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(value = ["/incidents"], produces = [MediaType.APPLICATION_JSON_VALUE])
-@PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class IncidentResource(private val incidentService: IncidentService) {
 
   @GetMapping("/ids")
   @Operation(
     summary = "get incident IDs by filter",
-    description = "Retrieves a paged list of incident ids by filter. Requires ROLE_NOMIS_INCIDENTS.",
+    description = "Retrieves a paged list of incident ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -57,7 +57,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCIDENTS not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -95,7 +95,7 @@ class IncidentResource(private val incidentService: IncidentService) {
   @GetMapping("/booking/{bookingId}")
   @Operation(
     summary = "Get a list of Incidents for a booking",
-    description = "Gets a list of all incidents relating to an offender booking. Requires role NOMIS_INCIDENTS",
+    description = "Gets a list of all incidents relating to an offender booking. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -117,7 +117,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -140,7 +140,7 @@ class IncidentResource(private val incidentService: IncidentService) {
   @GetMapping("/{incidentId}")
   @Operation(
     summary = "Get incident details",
-    description = "Gets incident details. Requires role NOMIS_INCIDENTS",
+    description = "Gets incident details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -162,7 +162,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -226,7 +226,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -265,7 +265,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -288,7 +288,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       Gets the specified number of open incidents starting after the given id number.
       Clients can iterate through all incidents by calling this endpoint using the id from the last call (omit for first call).
       Iteration ends when the returned incidentIds list has size less than the requested page size.
-      Requires role NOMIS_INCIDENTS""",
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -310,7 +310,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -329,7 +329,7 @@ class IncidentResource(private val incidentService: IncidentService) {
   @PutMapping("/{incidentId}")
   @Operation(
     summary = "create or update an incident using the specified id",
-    description = "Create or update an incident. Requires ROLE_NOMIS_INCIDENTS",
+    description = "Create or update an incident. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -347,7 +347,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_INCIDENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -389,7 +389,7 @@ class IncidentResource(private val incidentService: IncidentService) {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Delete an incident using the specified id",
-    description = "Delete an incident. Requires ROLE_NOMIS_INCIDENTS",
+    description = "Delete an incident. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -407,7 +407,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_INCIDENTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

@@ -26,11 +26,11 @@ import java.time.LocalDateTime
 @RequestMapping(value = ["/questionnaires"], produces = [MediaType.APPLICATION_JSON_VALUE])
 class QuestionnaireResource(private val questionnaireService: QuestionnaireService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/ids")
   @Operation(
     summary = "get questionnaire IDs by filter",
-    description = "Retrieves a paged list of incident questionnaire ids by filter. Requires ROLE_NOMIS_INCIDENTS.",
+    description = "Retrieves a paged list of incident questionnaire ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -48,7 +48,7 @@ class QuestionnaireResource(private val questionnaireService: QuestionnaireServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_INCIDENTS not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -82,11 +82,11 @@ class QuestionnaireResource(private val questionnaireService: QuestionnaireServi
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_INCIDENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{questionnaireId}")
   @Operation(
     summary = "Get incident questionnaire details",
-    description = "Gets incident questionnaire details. Requires role NOMIS_INCIDENTS",
+    description = "Gets incident questionnaire details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -108,7 +108,7 @@ class QuestionnaireResource(private val questionnaireService: QuestionnaireServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_INCIDENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
