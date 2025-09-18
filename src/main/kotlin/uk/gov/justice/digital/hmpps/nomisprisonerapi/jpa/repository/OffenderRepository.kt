@@ -52,7 +52,7 @@ interface OffenderRepository :
         and ota.currentBalance != 0 or ota.holdBalance != 0
     """,
   )
-  fun findAllWithBalances(pageable: Pageable): Page<Long>
+  fun findAllOffenderIdWithBalances(pageable: Pageable): Page<Long>
 
   @Query(
     """
