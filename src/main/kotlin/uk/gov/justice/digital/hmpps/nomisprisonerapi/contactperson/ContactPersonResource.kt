@@ -36,7 +36,7 @@ import java.time.LocalDate
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class ContactPersonResource(private val contactPersonService: ContactPersonService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/contact/{contactId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -66,12 +66,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     contactId: Long,
   ): PersonContact = contactPersonService.getContact(contactId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/persons/{personId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a person by person Id",
-    description = "Retrieves a person and related contacts. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves a person and related contacts. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -95,7 +95,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -121,12 +121,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     personId: Long,
   ): ContactPerson = contactPersonService.getPerson(personId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/contacts")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets a prisoner's contacts",
-    description = "Retrieves all contacts across all bookings for a prisoner. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves all contacts across all bookings for a prisoner. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -150,7 +150,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -178,12 +178,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     latestBookingOnly: Boolean,
   ): PrisonerWithContacts = contactPersonService.getPrisonerWithContacts(offenderNo, activeOnly, latestBookingOnly)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/restrictions/{restrictionId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner restriction by ID",
-    description = "Retrieves a single restriction by its ID. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves a single restriction by its ID. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -201,7 +201,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -227,12 +227,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     restrictionId: Long,
   ): PrisonerRestriction = contactPersonService.getPrisonerRestriction(restrictionId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/restrictions/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get all prisoner restriction Ids",
-    description = "Retrieves all restriction Ids - typically for a migration. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves all restriction Ids - typically for a migration. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -250,7 +250,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -318,12 +318,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     pageSize: Int,
   ): RestrictionIdsWithLast = contactPersonService.findOffenderRestrictionIdsFromId(restrictionId, pageSize)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/restrictions")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets a prisoner's restrictions",
-    description = "Retrieves all restrictions across all bookings for a prisoner. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves all restrictions across all bookings for a prisoner. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -341,7 +341,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -363,12 +363,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     latestBookingOnly: Boolean,
   ): PrisonerWithRestrictions = contactPersonService.getPrisonerWithRestrictions(offenderNo, latestBookingOnly)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/persons/ids")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get all Ids",
-    description = "Retrieves all person Ids - typically for a migration. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves all person Ids - typically for a migration. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -386,7 +386,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -454,12 +454,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     pageSize: Int,
   ): PersonIdsWithLast = contactPersonService.findPersonIdsFromId(personId, pageSize)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person",
-    description = "Creates a person, typically a person who will become a contact of a prisoners. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person, typically a person who will become a contact of a prisoners. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -483,7 +483,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -508,12 +508,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePersonRequest,
   ): CreatePersonResponse = contactPersonService.createPerson(request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/persons/{personId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a person",
-    description = "Deletes a person and any associated data e.g contact relationships, addresses. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person and any associated data e.g contact relationships, addresses. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -531,7 +531,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -547,11 +547,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     personId: Long,
   ) = contactPersonService.deletePerson(personId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}")
   @Operation(
     summary = "Updates a person",
-    description = "Updates core person data but leaves any associated data e.g contact relationships, addresses. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates core person data but leaves any associated data e.g contact relationships, addresses. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -569,7 +569,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -587,12 +587,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     personId: Long,
   ) = contactPersonService.updatePerson(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/contact")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person contact",
-    description = "Creates a person contact; the relationship between a prisoner and a person. Typically a prospective visitor. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person contact; the relationship between a prisoner and a person. Typically a prospective visitor. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -626,7 +626,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -664,11 +664,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePersonContactRequest,
   ): CreatePersonContactResponse = contactPersonService.createPersonContact(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/contact/{contactId}")
   @Operation(
     summary = "Updates a person contact",
-    description = "Updates a person contact; the relationship between a prisoner and a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person contact; the relationship between a prisoner and a person. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -696,7 +696,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -737,12 +737,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdatePersonContactRequest,
   ) = contactPersonService.updatePersonContact(personId, contactId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/persons/{personId}/contact/{contactId}")
   @Operation(
     summary = "Deletes a person contact",
-    description = "Deletes a person contact; the relationship between a prisoner and a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person contact; the relationship between a prisoner and a person. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -770,7 +770,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -789,12 +789,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     contactId: Long,
   ) = contactPersonService.deletePersonContact(personId, contactId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/contact/{contactId}/restriction")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person contact restriction for a specific relationship",
-    description = "Creates a person contact restriction; the restriction is for a specific relationship between a prisoner and a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person contact restriction; the restriction is for a specific relationship between a prisoner and a person. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -828,7 +828,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -859,11 +859,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreateContactPersonRestrictionRequest,
   ): CreateContactPersonRestrictionResponse = contactPersonService.createPersonContactRestriction(personId, contactId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/contact/{contactId}/restriction/{contactRestrictionId}")
   @Operation(
     summary = "Updates a person contact restriction for a specific relationship",
-    description = "Updates a person contact restriction; the restriction is for a specific relationship between a prisoner and a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person contact restriction; the restriction is for a specific relationship between a prisoner and a person. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -890,7 +890,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -924,12 +924,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdateContactPersonRestrictionRequest,
   ) = contactPersonService.updatePersonContactRestriction(personId, contactId, contactRestrictionId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/persons/{personId}/contact/{contactId}/restriction/{contactRestrictionId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a person contact restriction for a specific relationship",
-    description = "Deletes a person contact restriction; the restriction is for a specific relationship between a prisoner and a person. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person contact restriction; the restriction is for a specific relationship between a prisoner and a person. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -956,7 +956,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -978,12 +978,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     contactRestrictionId: Long,
   ) = contactPersonService.deletePersonContactRestriction(personId, contactId, contactRestrictionId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/restriction")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a global person restriction",
-    description = "Creates a person restriction; the restriction is estate wide. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person restriction; the restriction is estate wide. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1017,7 +1017,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1045,11 +1045,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreateContactPersonRestrictionRequest,
   ): CreateContactPersonRestrictionResponse = contactPersonService.createPersonRestriction(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/restriction/{personRestrictionId}")
   @Operation(
     summary = "Updates a global person restriction",
-    description = "Updates a person restriction; the restriction is estate wide. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person restriction; the restriction is estate wide. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1076,7 +1076,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1107,12 +1107,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdateContactPersonRestrictionRequest,
   ) = contactPersonService.updatePersonRestriction(personId, personRestrictionId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/persons/{personId}/restriction/{personRestrictionId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a global person restriction",
-    description = "Deletes a person restriction; the restriction is estate wide. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person restriction; the restriction is estate wide. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1139,7 +1139,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1158,12 +1158,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     personRestrictionId: Long,
   ) = contactPersonService.deletePersonRestriction(personId, personRestrictionId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/restriction")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a prisoner restriction",
-    description = "Creates a prisoner restriction. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a prisoner restriction. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1197,7 +1197,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1225,11 +1225,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePrisonerRestrictionRequest,
   ): CreatePrisonerRestrictionResponse = contactPersonService.createPrisonerRestriction(offenderNo, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/restriction/{prisonerRestrictionId}")
   @Operation(
     summary = "Updates a prisoner restriction",
-    description = "Updates a prisoner restriction. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a prisoner restriction. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1257,7 +1257,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1288,12 +1288,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdatePrisonerRestrictionRequest,
   ) = contactPersonService.updatePrisonerRestriction(offenderNo, prisonerRestrictionId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/prisoners/{offenderNo}/restriction/{prisonerRestrictionId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a prisoner restriction",
-    description = "Deletes a prisoner restriction. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a prisoner restriction. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1321,7 +1321,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1340,12 +1340,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     prisonerRestrictionId: Long,
   ) = contactPersonService.deletePrisonerRestriction(offenderNo, prisonerRestrictionId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/address")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person address",
-    description = "Creates a person address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1379,7 +1379,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1407,11 +1407,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePersonAddressRequest,
   ): CreatePersonAddressResponse = contactPersonService.createPersonAddress(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/address/{addressId}")
   @Operation(
     summary = "Updates a person address",
-    description = "Updates a person address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1439,7 +1439,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1470,12 +1470,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdatePersonAddressRequest,
   ) = contactPersonService.updatePersonAddress(personId = personId, addressId = addressId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/persons/{personId}/address/{addressId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a person address",
-    description = "Deletes a person address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "202",
@@ -1503,7 +1503,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1522,12 +1522,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     addressId: Long,
   ) = contactPersonService.deletePersonAddress(personId = personId, addressId = addressId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/email")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person email",
-    description = "Creates a person email in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1551,7 +1551,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1579,11 +1579,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePersonEmailRequest,
   ): CreatePersonEmailResponse = contactPersonService.createPersonEmail(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/email/{emailAddressId}")
   @Operation(
     summary = "Updates a person email",
-    description = "Updates a person email in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1601,7 +1601,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1632,12 +1632,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdatePersonEmailRequest,
   ) = contactPersonService.updatePersonEmail(personId = personId, emailAddressId = emailAddressId, request = request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/persons/{personId}/email/{emailAddressId}")
   @Operation(
     summary = "Deletes a person email",
-    description = "Deletes a person email in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1665,7 +1665,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1694,12 +1694,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     emailAddressId: Long,
   ) = contactPersonService.deletePersonEmail(personId = personId, emailAddressId = emailAddressId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/phone")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person global phone",
-    description = "Creates a person global phone in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person global phone in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1733,7 +1733,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1761,11 +1761,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePersonPhoneRequest,
   ): CreatePersonPhoneResponse = contactPersonService.createPersonPhone(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/phone/{phoneId}")
   @Operation(
     summary = "Updated a person global phone",
-    description = "Updates a person global phone in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person global phone in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1793,7 +1793,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1824,12 +1824,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdatePersonPhoneRequest,
   ) = contactPersonService.updatePersonPhone(personId = personId, phoneId = phoneId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/persons/{personId}/phone/{phoneId}")
   @Operation(
     summary = "Deleted a person global phone",
-    description = "Deletes a person global phone in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person global phone in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1857,7 +1857,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1876,12 +1876,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     phoneId: Long,
   ) = contactPersonService.deletePersonPhone(personId = personId, phoneId = phoneId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/address/{addressId}/phone")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person address phone",
-    description = "Creates a person phone associated with an address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person phone associated with an address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -1915,7 +1915,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1950,11 +1950,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/address/{addressId}/phone/{phoneId}")
   @Operation(
     summary = "Updates a person address phone",
-    description = "Updates a person phone associated with an address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person phone associated with an address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1982,7 +1982,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -2021,12 +2021,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/persons/{personId}/address/{addressId}/phone/{phoneId}")
   @Operation(
     summary = "Deletes a person address phone",
-    description = "Deletes a person phone associated with an address in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person phone associated with an address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -2054,7 +2054,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -2080,12 +2080,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     phoneId = phoneId,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/identifier")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person identifier",
-    description = "Creates a person identifier in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person identifier in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -2119,7 +2119,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -2147,11 +2147,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePersonIdentifierRequest,
   ): CreatePersonIdentifierResponse = contactPersonService.createPersonIdentifier(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/identifier/{sequence}")
   @Operation(
     summary = "Updates a person identifier",
-    description = "Updates a person identifier in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person identifier in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -2179,7 +2179,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -2210,12 +2210,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdatePersonIdentifierRequest,
   ) = contactPersonService.updatePersonIdentifier(personId, sequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/persons/{personId}/identifier/{sequence}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a person identifier",
-    description = "Deletes a person identifier in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person identifier in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -2233,7 +2233,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -2262,12 +2262,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     sequence: Long,
   ) = contactPersonService.deletePersonIdentifier(personId, sequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/persons/{personId}/employment")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a person employment",
-    description = "Creates a person employment in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Creates a person employment in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -2301,7 +2301,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -2329,11 +2329,11 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: CreatePersonEmploymentRequest,
   ): CreatePersonEmploymentResponse = contactPersonService.createPersonEmployment(personId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/persons/{personId}/employment/{sequence}")
   @Operation(
     summary = "Updates a person employment",
-    description = "Updates a person employment in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Updates a person employment in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -2361,7 +2361,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -2392,12 +2392,12 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
     request: UpdatePersonEmploymentRequest,
   ) = contactPersonService.updatePersonEmployment(personId, sequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_CONTACTPERSONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/persons/{personId}/employment/{sequence}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes a person employment",
-    description = "Deletes a person employment in NOMIS. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Deletes a person employment in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -2415,7 +2415,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

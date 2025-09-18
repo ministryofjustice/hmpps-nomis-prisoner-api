@@ -98,7 +98,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `offender not found`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createNonAssociationRequest().copy(offenderNo = "A0000AA")))
         .exchange()
         .expectStatus().isBadRequest
@@ -110,7 +110,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `nsOffender not found`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createNonAssociationRequest().copy(nsOffenderNo = "A0000AA")))
         .exchange()
         .expectStatus().isBadRequest
@@ -122,7 +122,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid reason`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createNonAssociationRequest().copy(reason = "invalid")))
         .exchange()
         .expectStatus().isBadRequest
@@ -134,7 +134,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid reciprocal reason`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createNonAssociationRequest().copy(recipReason = "invalid")))
         .exchange()
         .expectStatus().isBadRequest
@@ -146,7 +146,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid type`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createNonAssociationRequest().copy(type = "INVALID")))
         .exchange()
         .expectStatus().isBadRequest
@@ -158,7 +158,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `effectiveDate in the future`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(
           BodyInserters.fromValue(
             createNonAssociationRequest().copy(
@@ -176,7 +176,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `comment too long`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createNonAssociationRequest().copy(comment = "x".repeat(241))))
         .exchange()
         .expectStatus().isBadRequest
@@ -199,7 +199,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
               }
       """.trimIndent()
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
@@ -212,7 +212,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will create non-association with correct details`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -307,7 +307,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         }
       }
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -402,7 +402,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     internal fun createNonAssociation() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -478,7 +478,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           "A1234AA",
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
         .expectStatus().isBadRequest
@@ -498,7 +498,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           "A1234AB",
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
         .expectStatus().isNotFound
@@ -516,7 +516,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           99,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest()))
         .exchange()
         .expectStatus().isNotFound
@@ -535,7 +535,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offenderAtLeeds.nomsId,
         1,
       )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(reason = "invalid")))
         .exchange()
         .expectStatus().isBadRequest
@@ -551,7 +551,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offenderAtLeeds.nomsId,
         1,
       )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(recipReason = "invalid")))
         .exchange()
         .expectStatus().isBadRequest
@@ -568,7 +568,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offenderAtLeeds.nomsId,
         1,
       )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(type = "INVALID")))
         .exchange()
         .expectStatus().isBadRequest
@@ -586,7 +586,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         1,
       )
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(
           BodyInserters.fromValue(
             updateNonAssociationRequest().copy(
@@ -610,7 +610,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         1,
       )
         .contentType(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(updateNonAssociationRequest().copy(comment = "x".repeat(241))))
         .exchange()
         .expectStatus().isBadRequest
@@ -636,7 +636,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offenderAtLeeds.nomsId,
         1,
       )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(invalidSchedule))
         .exchange()
@@ -655,7 +655,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -727,7 +727,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -764,7 +764,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -800,7 +800,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -883,7 +883,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           "A1234AB",
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -897,7 +897,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           "A1234AA",
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody()
@@ -916,7 +916,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           45,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -924,7 +924,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `non-association not open`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -951,7 +951,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
@@ -964,7 +964,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody()
@@ -977,7 +977,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will close non-association correctly`() {
       webTestClient.post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1004,7 +1004,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
@@ -1049,7 +1049,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
@@ -1113,7 +1113,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           "A1234AB",
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1127,7 +1127,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           "A1234AA",
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
         .expectBody()
@@ -1146,7 +1146,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           45,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1191,7 +1191,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().is5xxServerError
     }
@@ -1200,7 +1200,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     fun `will delete non-association with 1 detail correctly`() {
       webTestClient
         .post().uri("/non-associations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -1228,7 +1228,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           1,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
@@ -1287,7 +1287,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtLeeds.nomsId,
           2,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
@@ -1352,7 +1352,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtMoorlands.nomsId,
           offenderAtLeeds.nomsId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1377,7 +1377,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtMoorlands.nomsId,
           offenderAtLeeds.nomsId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1396,7 +1396,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtMoorlands.nomsId,
           offenderAtLeeds.nomsId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1404,7 +1404,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `offender not found`() {
       webTestClient.get().uri("/non-associations/offender/A0000AA/ns-offender/A0000BB")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1417,7 +1417,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offenderAtLeeds.nomsId,
         offenderAtMoorlands.nomsId,
       )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1430,7 +1430,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offenderAtMoorlands.nomsId,
         offenderAtShrewsbury.nomsId,
       )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1484,7 +1484,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           offenderAtMoorlands.nomsId,
           offenderAtLeeds.nomsId,
         )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1515,7 +1515,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `offender not found`() {
       webTestClient.get().uri("/non-associations/offender/A0000AA/ns-offender/A0000BB/all")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1528,7 +1528,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         offenderAtLeeds.nomsId,
         offenderAtMoorlands.nomsId,
       )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1578,7 +1578,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all ids`() {
       webTestClient.get().uri("/non-associations/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1598,7 +1598,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1617,7 +1617,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
           .queryParam("page", "1")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1667,7 +1667,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     fun `get by booking id`() {
       webTestClient
         .get().uri("/non-associations/booking/${offenderAtLeeds.latestBooking().bookingId}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1681,7 +1681,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `non-associations not found`() {
       webTestClient.get().uri("/non-associations/booking/999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_NON_ASSOCIATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

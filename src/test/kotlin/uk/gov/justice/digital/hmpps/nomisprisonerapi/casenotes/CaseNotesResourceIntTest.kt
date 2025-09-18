@@ -84,7 +84,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when case note id not found`() {
         webTestClient.get().uri("/casenotes/99")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -112,7 +112,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.get().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -160,7 +160,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.get().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -242,7 +242,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when prisoner does not exist`() {
         webTestClient.post().uri("/prisoners/A9999ZZ/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCaseNote)
           .exchange()
@@ -252,7 +252,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when type is not valid`() {
         webTestClient.post().uri("/prisoners/A1234AB/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCaseNote.copy(caseNoteType = "NNNNN"))
           .exchange()
@@ -262,7 +262,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when subtype is not valid`() {
         webTestClient.post().uri("/prisoners/A1234AB/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCaseNote.copy(caseNoteSubType = "NNNNN"))
           .exchange()
@@ -272,7 +272,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when type-subtype combo is not in WORKS`() {
         webTestClient.post().uri("/prisoners/A1234AB/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCaseNote.copy(caseNoteSubType = "SOU"))
           .exchange()
@@ -285,7 +285,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when author does not exist`() {
         webTestClient.post().uri("/prisoners/A1234AB/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCaseNote.copy(authorUsername = "another"))
           .exchange()
@@ -298,7 +298,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating a case note will allow the data to be retrieved`() {
         val response = webTestClient.post().uri("/prisoners/A1234AB/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -414,7 +414,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when case note does not exist`() {
         webTestClient.put().uri("/casenotes/99999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCaseNote)
           .exchange()
@@ -427,7 +427,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Can update the caseNote and retrieve those caseNote updates`() {
         webTestClient.put().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validCaseNote)
           .exchange()
@@ -499,7 +499,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when case note does not exist`() {
         webTestClient.delete().uri("/casenotes/99999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -510,7 +510,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Can delete the caseNote`() {
         webTestClient.delete().uri("/casenotes/${casenote1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isEqualTo(204)
 
@@ -629,7 +629,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner not found`() {
         webTestClient.get().uri("/prisoners/A9999ZZ/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -637,7 +637,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 200 when prisoner with no bookings found`() {
         webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -647,7 +647,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 200 when prisoner found with no casenotes`() {
         webTestClient.get().uri("/prisoners/${prisonerNoCaseNotes.nomsId}/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -660,7 +660,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `returns all casenotes for current booking`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/casenotes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -805,7 +805,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner not found`() {
         webTestClient.get().uri("/prisoners/A9999ZZ/casenotes/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -813,7 +813,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 200 when prisoner with no bookings found`() {
         webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/casenotes/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -823,7 +823,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 200 when prisoner found with no casenotes`() {
         webTestClient.get().uri("/prisoners/${prisonerNoCaseNotes.nomsId}/casenotes/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -836,7 +836,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       @Test
       fun `returns all casenotes for current booking`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/casenotes/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CASENOTES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk

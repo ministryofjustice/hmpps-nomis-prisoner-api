@@ -106,7 +106,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     fun `returns 404 if location not found`(uri: Pair<String, String>) {
       if (!uri.first.equals("POST") && !uri.second.equals("/locations/ids")) { // skip the 'create' and ids endpoints
         webOperation(uri)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -126,7 +126,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `agency not found`() {
       webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(prisonId = "XXX")))
         .exchange()
         .expectStatus().isBadRequest
@@ -138,7 +138,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `parent location not found`() {
       webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(parentLocationId = -9999)))
         .exchange()
         .expectStatus().isBadRequest
@@ -150,7 +150,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid housing unit type`() {
       webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(unitType = "invalid")))
         .exchange()
         .expectStatus().isBadRequest
@@ -162,7 +162,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `userDescription too long`() {
       webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(userDescription = "x".repeat(41))))
         .exchange()
         .expectStatus().isBadRequest
@@ -174,7 +174,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `comment too long`() {
       webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(comment = "x".repeat(241))))
         .exchange()
         .expectStatus().isBadRequest
@@ -186,7 +186,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will create location with correct details`() {
       val result = webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -270,7 +270,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will create location with parent`() {
       val result = webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -347,7 +347,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `parent location not found`() {
       webTestClient.put().uri("/locations/{locationId}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(parentLocationId = -9999)))
         .exchange()
         .expectStatus().isBadRequest
@@ -359,7 +359,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `invalid housing unit type`() {
       webTestClient.put().uri("/locations/{locationId}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(unitType = "invalid")))
         .exchange()
         .expectStatus().isBadRequest
@@ -371,7 +371,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `userDescription too long`() {
       webTestClient.put().uri("/locations/{locationId}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(userDescription = "x".repeat(41))))
         .exchange()
         .expectStatus().isBadRequest
@@ -383,7 +383,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `comment too long`() {
       webTestClient.put().uri("/locations/{locationId}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .body(BodyInserters.fromValue(createLocationRequest().copy(comment = "x".repeat(241))))
         .exchange()
         .expectStatus().isBadRequest
@@ -395,7 +395,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will update location with correct details`() {
       webTestClient.put().uri("/locations/{locationId}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -469,7 +469,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will update location with parent`() {
       webTestClient.put().uri("/locations/{locationId}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -529,7 +529,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("{}"))
         .exchange()
@@ -552,7 +552,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("""{ "deactivateDate": "2024-02-02", "force": true }"""))
         .exchange()
@@ -577,7 +577,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("""{ "reasonCode" : "XXX" }"""))
         .exchange()
@@ -598,7 +598,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("{}"))
         .exchange()
@@ -623,7 +623,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/deactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("""{ "deactivateDate" : "2024-02-15", "reasonCode" : "C", "reactivateDate" : "2024-02-27"}"""))
         .exchange()
@@ -661,7 +661,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/reactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("{}"))
         .exchange()
@@ -684,7 +684,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/reactivate", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("{}"))
         .exchange()
@@ -725,7 +725,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/capacity", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -759,7 +759,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/capacity?ignoreOperationalCapacity=true", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -805,7 +805,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         )
       }
       webTestClient.put().uri("/locations/{locationId}/certification", location1!!.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("""{ "certified" : false, "cnaCapacity" : 4 }"""))
         .exchange()
@@ -870,7 +870,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     fun `get location by id`() {
       webTestClient
         .get().uri("/locations/{id}", location1.locationId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -945,7 +945,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     fun `get location by id`() {
       webTestClient
         .get().uri("/locations/key/{key}", location1.description)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -971,7 +971,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all ids`() {
       webTestClient.get().uri("/locations/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -988,7 +988,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "5")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1010,7 +1010,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           .queryParam("page", "1")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_LOCATIONS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

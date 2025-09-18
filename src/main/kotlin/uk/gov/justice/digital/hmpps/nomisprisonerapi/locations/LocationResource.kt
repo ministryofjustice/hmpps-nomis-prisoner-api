@@ -29,12 +29,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class LocationResource(private val locationService: LocationService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/locations")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new location",
-    description = "Creates a new location. Requires role ROLE_NOMIS_LOCATIONS",
+    description = "Creates a new location. Requires role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = CreateLocationRequest::class)),
@@ -70,11 +70,11 @@ class LocationResource(private val locationService: LocationService) {
     createLocationRequest: CreateLocationRequest,
   ): LocationIdResponse = locationService.createLocation(createLocationRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/locations/{locationId}")
   @Operation(
     summary = "Updates an existing location",
-    description = "Updates an existing location. Requires role NOMIS_LOCATIONS",
+    description = "Updates an existing location. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = UpdateLocationRequest::class)),
@@ -112,11 +112,11 @@ class LocationResource(private val locationService: LocationService) {
     updateLocationRequest: UpdateLocationRequest,
   ) = locationService.updateLocation(locationId, updateLocationRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/locations/{locationId}/deactivate")
   @Operation(
     summary = "Deactivates an existing location",
-    description = "Requires role NOMIS_LOCATIONS",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [Content(mediaType = "application/json", schema = Schema(implementation = DeactivateRequest::class))],
     ),
@@ -152,11 +152,11 @@ class LocationResource(private val locationService: LocationService) {
     deactivateRequest: DeactivateRequest,
   ) = locationService.deactivateLocation(locationId, deactivateRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/locations/{locationId}/reactivate")
   @Operation(
     summary = "Reactivates a deactivated location",
-    description = "Requires role NOMIS_LOCATIONS",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Success"),
       ApiResponse(
@@ -187,11 +187,11 @@ class LocationResource(private val locationService: LocationService) {
     locationId: Long,
   ) = locationService.reactivateLocation(locationId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/locations/{locationId}/capacity")
   @Operation(
     summary = "Update location capacity",
-    description = "Requires role NOMIS_LOCATIONS",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = UpdateCapacityRequest::class)),
@@ -227,11 +227,11 @@ class LocationResource(private val locationService: LocationService) {
     updateCapacityRequest: UpdateCapacityRequest,
   ) = locationService.updateCapacity(locationId, updateCapacityRequest, ignoreOperationalCapacity)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/locations/{locationId}/certification")
   @Operation(
     summary = "Update location certification",
-    description = "Requires role NOMIS_LOCATIONS",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(mediaType = "application/json", schema = Schema(implementation = UpdateCertificationRequest::class)),
@@ -264,11 +264,11 @@ class LocationResource(private val locationService: LocationService) {
     updateCertificationRequest: UpdateCertificationRequest,
   ) = locationService.updateCertification(locationId, updateCertificationRequest)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/locations/{id}")
   @Operation(
     summary = "Get a location",
-    description = "Get the location given the id. Requires role ROLE_NOMIS_LOCATIONS",
+    description = "Get the location given the id. Requires role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -298,11 +298,11 @@ class LocationResource(private val locationService: LocationService) {
     id: Long,
   ): LocationResponse = locationService.getLocation(id)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/locations/key/{key}")
   @Operation(
     summary = "Get a location",
-    description = "Get the location given the business key. Requires role ROLE_NOMIS_LOCATIONS",
+    description = "Get the location given the business key. Requires role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -332,11 +332,11 @@ class LocationResource(private val locationService: LocationService) {
     key: String,
   ): LocationResponse = locationService.getLocationByKey(key)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_LOCATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/locations/ids")
   @Operation(
     summary = "get locations by filter",
-    description = "Retrieves a paged list of composite ids by filter. Requires ROLE_NOMIS_LOCATIONS.",
+    description = "Retrieves a paged list of composite ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(responseCode = "200", description = "Pageable list of ids is returned"),
       ApiResponse(
@@ -346,7 +346,7 @@ class LocationResource(private val locationService: LocationService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role ROLE_NOMIS_LOCATIONS not present",
+        description = "Forbidden to access this endpoint when role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
