@@ -144,7 +144,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when prisoner does not exist`() {
         webTestClient.post().uri("/prisoners/A9999ZZ/visit-balance-adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validVisitBalanceAdjustment)
           .exchange()
@@ -154,7 +154,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when visit-balance-adjustment username is not valid`() {
         webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -186,7 +186,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating a visit balance adjustment with minimal data will be successful`() {
         webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -206,7 +206,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating a visit balance adjustment will allow the data to be retrieved`() {
         webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validFullAdjustment)
           .exchange()
@@ -235,7 +235,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating a visit balance adjustment with minimal data will allow the data to be retrieved`() {
         webTestClient.post().uri("/prisoners/A1234AB/visit-balance-adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             CreateVisitBalanceAdjustmentRequest(
@@ -275,7 +275,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
         )
 
         webTestClient.post().uri("/prisoners/A5678CD/visit-balance-adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(adjustment)
           .exchange()
@@ -384,7 +384,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when prisoner does not exist`() {
         webTestClient.put().uri("/prisoners/A9999ZZ/visit-balance")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validVisitBalance)
           .exchange()
@@ -402,7 +402,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `updating a visit balance will allow the data to be retrieved`() {
         webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validFullBalance)
           .exchange()
@@ -419,7 +419,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating a visit balance will allow the data to be retrieved`() {
         webTestClient.put().uri("/prisoners/A4321AB/visit-balance")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validFullBalance)
           .exchange()
@@ -436,7 +436,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `passing in no visit balance when no existing balance will cause no action`() {
         webTestClient.put().uri("/prisoners/${prisoner2.nomsId}/visit-balance")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(UpdateVisitBalanceRequest(null, null))
           .exchange()
@@ -560,7 +560,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when offender not found`() {
         webTestClient.get().uri("/visit-balances/9999")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -568,7 +568,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return zero balances when null entries for vos or pvos`() {
         webTestClient.get().uri("/visit-balances/$bookingIdWithNullVisitOrders")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -584,7 +584,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       fun `is able to re-hydrate visit order balance`() {
         val visitOrderBalanceResponse =
           webTestClient.get().uri("/visit-balances/${booking.bookingId}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus()
             .isOk
@@ -707,7 +707,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when offender not found`() {
         webTestClient.get().uri("/prisoners/9999/visit-balance/details")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -715,7 +715,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return zero balances when null entries for vos or pvos`() {
         webTestClient.get().uri("/prisoners/$offenderIdWithNullVisitOrders/visit-balance/details")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -731,7 +731,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       fun `is able to re-hydrate visit order balance`() {
         val visitOrderBalanceResponse =
           webTestClient.get().uri("/prisoners/$offenderId/visit-balance/details")
-            .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus()
             .isOk
@@ -825,7 +825,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when offender not found`() {
         webTestClient.get().uri("/prisoners/AB1234C/visit-balance")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -833,7 +833,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return null when no visit balance found`() {
         webTestClient.get().uri("/prisoners/A5432BC/visit-balance")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody().isEmpty
@@ -842,7 +842,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return null when null entries for vos or pvos`() {
         webTestClient.get().uri("/prisoners/A1234DE/visit-balance")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -858,7 +858,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       fun `is able to re-hydrate visit order balance`() {
         val visitOrderBalanceResponse =
           webTestClient.get().uri("/prisoners/${offender.nomsId}/visit-balance")
-            .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus()
             .isOk
@@ -940,7 +940,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return count of all visit balances by default`() {
         webTestClient.get().uri("/visit-balances/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -951,7 +951,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return a page of  visit balances`() {
         webTestClient.get().uri("/visit-balances/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -965,7 +965,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will page the data`() {
         webTestClient.get().uri("/visit-balances/ids?size=1&page=0")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -978,7 +978,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can filter by prison Id`() {
         webTestClient.get().uri("/visit-balances/ids?prisonId=MDI")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1081,7 +1081,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when adjustment not found`() {
         webTestClient.get().uri("/visit-balances/visit-balance-adjustment/12345")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1092,7 +1092,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return minimal visit balance adjustment`() {
         webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${adjustmentMin.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1112,7 +1112,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return visit balance adjustment fully populated`() {
         webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${adjustment.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1133,7 +1133,7 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return visit balance adjustment for previous booking`() {
         webTestClient.get().uri("/visit-balances/visit-balance-adjustment/${previousAdjustment.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_VISIT_BALANCE")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk

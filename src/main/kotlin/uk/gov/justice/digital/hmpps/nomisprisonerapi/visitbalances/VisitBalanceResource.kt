@@ -32,7 +32,7 @@ import java.time.LocalDate
 
 @RestController
 @Validated
-@PreAuthorize("hasRole('ROLE_NOMIS_VISIT_BALANCE')")
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class VisitBalanceResource(
   private val visitBalanceService: VisitBalanceService,
@@ -43,7 +43,7 @@ class VisitBalanceResource(
     summary = "Find paged visit balance ids",
     description = """
       Returns the visit balance ids (which are booking ids) for the latest booking for offenders with balance entries.
-      Requires role NOMIS_VISIT_BALANCE""",
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -65,7 +65,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_VISIT_BALANCE",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -88,7 +88,7 @@ class VisitBalanceResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get visit balance data for a booking",
-    description = "Retrieves visit order balance for a booking . Requires ROLE_NOMIS_VISIT_BALANCE",
+    description = "Retrieves visit order balance for a booking . Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -106,7 +106,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -136,7 +136,7 @@ class VisitBalanceResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get visit balance details for a prisoner",
-    description = "Retrieves visit balance details including last IEP allocation date for a prisoner. Requires ROLE_NOMIS_VISIT_BALANCE",
+    description = "Retrieves visit balance details including last IEP allocation date for a prisoner. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -154,7 +154,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -184,7 +184,7 @@ class VisitBalanceResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get visit order balance data for a prisoner",
-    description = "Retrieves visit order balance details for a prisoner. Requires ROLE_NOMIS_VISIT_BALANCE",
+    description = "Retrieves visit order balance details for a prisoner. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -202,7 +202,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -232,7 +232,7 @@ class VisitBalanceResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get specific offender visit balance adjustment",
-    description = "Retrieves offender visit balance adjustment. Requires ROLE_NOMIS_VISIT_BALANCE",
+    description = "Retrieves offender visit balance adjustment. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -250,7 +250,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -280,7 +280,7 @@ class VisitBalanceResource(
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Inserts a visit balance adjustment for an offender",
-    description = "Creates a visit balance adjustment on the prisoner's latest booking. Requires ROLE_NOMIS_VISIT_BALANCE",
+    description = "Creates a visit balance adjustment on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -308,7 +308,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -340,7 +340,7 @@ class VisitBalanceResource(
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Updates a visit order balance for an offender",
-    description = "Updates a visit order balance on the prisoner's latest booking or creates one if it doesn't already exist. Requires ROLE_NOMIS_VISIT_BALANCE",
+    description = "Updates a visit order balance on the prisoner's latest booking or creates one if it doesn't already exist. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -368,7 +368,7 @@ class VisitBalanceResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISIT_BALANCE",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
