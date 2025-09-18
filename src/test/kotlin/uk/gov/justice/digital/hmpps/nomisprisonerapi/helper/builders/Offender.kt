@@ -13,12 +13,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTrustAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.plusAssign
 
 @DslMarker
 annotation class OffenderDslMarker
@@ -104,6 +107,14 @@ interface OffenderDsl {
     whoCreated: String? = null,
     dsl: OffenderEmailDsl.() -> Unit = {},
   ): OffenderInternetAddress
+
+  @OffenderTrustAccountDslMarker
+  fun trustAccount(
+    caseloadId: String = "MDI",
+    currentBalance: BigDecimal = BigDecimal.ZERO,
+    holdBalance: BigDecimal = BigDecimal.ZERO,
+    dsl: OffenderTrustAccountDsl.() -> Unit = {},
+  ): OffenderTrustAccount
 }
 
 @Component
@@ -135,6 +146,7 @@ class OffenderBuilderFactory(
   private val offenderAddressBuilderFactory: OffenderAddressBuilderFactory,
   private val offenderPhoneBuilderFactory: OffenderPhoneBuilderFactory,
   private val offenderEmailBuilderFactory: OffenderEmailBuilderFactory,
+  private val offenderTrustAccountBuilderFactory: OffenderTrustAccountBuilderFactory,
 ) {
   fun builder(): OffenderBuilder = OffenderBuilder(
     repository,
@@ -144,6 +156,7 @@ class OffenderBuilderFactory(
     offenderAddressBuilderFactory,
     offenderPhoneBuilderFactory,
     offenderEmailBuilderFactory,
+    offenderTrustAccountBuilderFactory,
   )
 }
 
@@ -155,6 +168,7 @@ class OffenderBuilder(
   private val offenderAddressBuilderFactory: OffenderAddressBuilderFactory,
   private val offenderPhoneBuilderFactory: OffenderPhoneBuilderFactory,
   private val offenderEmailBuilderFactory: OffenderEmailBuilderFactory,
+  private val offenderTrustAccountBuilderFactory: OffenderTrustAccountBuilderFactory,
 ) : OffenderDsl {
   lateinit var rootOffender: Offender
   var nextBookingSequence: Int = 1
@@ -360,6 +374,21 @@ class OffenderBuilder(
       whoCreated = whoCreated,
     )
       .also { rootOffender.internetAddresses += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun trustAccount(
+    caseloadId: String,
+    currentBalance: BigDecimal,
+    holdBalance: BigDecimal,
+    dsl: OffenderTrustAccountDsl.() -> Unit,
+  ): OffenderTrustAccount = offenderTrustAccountBuilderFactory.builder().let { builder ->
+    builder.build(
+      offender = rootOffender,
+      caseloadId = caseloadId,
+      currentBalance = currentBalance,
+      holdBalance = holdBalance,
+    ).also { rootOffender.trustAccounts += it }
       .also { builder.apply(dsl) }
   }
 }

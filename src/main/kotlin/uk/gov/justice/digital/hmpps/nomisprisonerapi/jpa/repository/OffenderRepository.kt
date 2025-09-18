@@ -45,6 +45,17 @@ interface OffenderRepository :
 
   @Query(
     """
+        select
+            distinct(ota.id.offender.id) as offenderId
+        from OffenderTrustAccount ota join ota.id.offender o
+        where o.rootOffenderId = o.id
+        and ota.currentBalance != 0 or ota.holdBalance != 0
+    """,
+  )
+  fun findAllOffenderIdWithBalances(pageable: Pageable): Page<Long>
+
+  @Query(
+    """
         select o.nomsId as nomsId from Offender o where o.rootOffenderId = o.id
     """,
   )

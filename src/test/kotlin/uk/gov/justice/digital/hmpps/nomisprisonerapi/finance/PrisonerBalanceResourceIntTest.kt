@@ -8,21 +8,47 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
+import java.math.BigDecimal
 
 @WithMockAuthUser
 class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
+  @Autowired
+  private lateinit var repository: Repository
+
+  private var id1: Long = 0
+  private var id2: Long = 0
+  private var id3: Long = 0
+
   @BeforeEach
   fun setUp() {
-    nomisDataBuilder.build {}
+    nomisDataBuilder.build {
+      id1 = offender {
+        trustAccount()
+        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(12.50))
+        trustAccount(caseloadId = "WWI", currentBalance = BigDecimal.valueOf(-1.50))
+      }.id
+      id2 = offender {
+        trustAccount()
+        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(33.50))
+      }.id
+      id3 = offender {
+        trustAccount(holdBalance = BigDecimal.valueOf(1.25))
+      }.id
+      offender {
+        trustAccount()
+      }
+    }
   }
 
   @AfterEach
   fun tearDown() {
+    repository.deleteOffenders()
   }
 
   @Nested
@@ -62,10 +88,10 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("totalElements").isEqualTo(2)
-        .jsonPath("numberOfElements").isEqualTo(2)
-        .jsonPath("content[0]").isEqualTo("12345")
-        .jsonPath("content[1]").isEqualTo("67890")
+        .jsonPath("page.totalElements").isEqualTo(3)
+        .jsonPath("content[0]").isEqualTo(id1)
+        .jsonPath("content[1]").isEqualTo(id2)
+        .jsonPath("content[2]").isEqualTo(id3)
     }
   }
 
@@ -106,7 +132,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("prisonerId").isEqualTo("12345")
+        .jsonPath("rootOffenderId").isEqualTo("12345")
         .jsonPath("accounts.length()").isEqualTo(3)
         .jsonPath("accounts[0].prisonId").isEqualTo("MDI")
         .jsonPath("accounts[0].lastTransactionId").isEqualTo(56789)

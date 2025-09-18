@@ -4,10 +4,10 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
+import org.springframework.data.web.PagedModel
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -29,7 +29,7 @@ class PrisonerBalanceResource(
 ) {
   @GetMapping("/ids")
   @Operation(
-    summary = "Gets the identifiers for all prisoners with a non-negative trust account balance",
+    summary = "Gets the rootOffenderIds for all prisoners with a non-negative trust account balance",
     description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
@@ -56,11 +56,11 @@ class PrisonerBalanceResource(
     ],
   )
   fun getPrisonerIdentifiers(
-    @PageableDefault(sort = ["rootOffenderId"], direction = Sort.Direction.ASC)
+    @PageableDefault(sort = ["offenderId"], direction = Sort.Direction.ASC)
     pageRequest: Pageable,
-  ): Page<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(pageRequest)
+  ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(pageRequest)
 
-  @GetMapping("/{prisonerId}/balance")
+  @GetMapping("/{rootOffenderId}/balance")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's finance details by their root offender id",
@@ -85,18 +85,18 @@ class PrisonerBalanceResource(
     ],
   )
   fun getPrisonerAccountDetails(
-    @Schema(description = "prisonerId", example = "123456")
+    @Schema(description = "rootOffenderId", example = "123456")
     @PathVariable
-    prisonerId: Long,
-  ): PrisonerAccountsDto = prisonerBalanceService.getPrisonerAccounts(prisonerId)
+    rootOffenderId: Long,
+  ): PrisonerAccountsDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId)
 }
 
 enum class SubAccountType { CASH, SPEND, SAVINGS }
 
 @Schema(description = "Finance details for a prisoner")
 data class PrisonerAccountsDto(
-  @Schema(description = "The offender Id", example = "12345")
-  val prisonerId: Long,
+  @Schema(description = "The root offender Id", example = "12345")
+  val rootOffenderId: Long,
 
   @Schema(description = "The accounts associated with the prisoner")
   val accounts: List<PrisonerAccountDto>,
