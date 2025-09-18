@@ -11,6 +11,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.math.BigDecimal
+import java.util.Objects
 import kotlin.jvm.javaClass
 
 @Embeddable
@@ -24,7 +25,18 @@ class OffenderSubAccountId(
 
   @Column(name = "TRUST_ACCOUNT_CODE", nullable = false, insertable = false, updatable = false)
   val accountCode: Long,
-)
+) {
+  override fun hashCode(): Int = Objects.hash(caseloadId, offender.id, accountCode)
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+
+    other as OffenderSubAccountId
+
+    return caseloadId == other.caseloadId && offender.id == other.offender.id && accountCode == other.accountCode
+  }
+  override fun toString(): String = "OffenderSubAccountId(caseloadId='$caseloadId', offenderId='${offender.id}, accountCode=$accountCode)"
+}
 
 @Entity
 @EntityOpen
