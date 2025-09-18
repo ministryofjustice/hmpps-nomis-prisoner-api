@@ -1,52 +1,39 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.data.web.PagedModel
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import java.math.BigDecimal
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccountRepository
 
 @Service
 @Transactional
 class PrisonerBalanceService(
   val offenderRepository: OffenderRepository,
+  val offenderSubAccountRepository: OffenderSubAccountRepository,
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
 
-  fun getPrisonerAccounts(rootOffenderId: Long): PrisonerAccountsDto = dummyAccounts
+  fun getPrisonerAccounts(rootOffenderId: Long): PrisonerAccountsDto = offenderRepository.findByIdOrNull(rootOffenderId)
+    ?.let { offender ->
+      PrisonerAccountsDto(
+        rootOffenderId,
+        prisonNumber = offender.nomsId,
+        offenderSubAccountRepository.findByIdOffenderId(rootOffenderId).map { it.toPrisonerAccountDto() },
+      )
+    }
+    ?: throw NotFoundException("Offender with id $rootOffenderId not found")
 
   fun findAllPrisonersWithAccountBalance(pageRequest: Pageable): PagedModel<Long> = PagedModel(offenderRepository.findAllOffenderIdWithBalances(pageRequest))
 }
 
-val dummyAccounts = PrisonerAccountsDto(
-  rootOffenderId = 12345,
-  accounts = listOf(
-    PrisonerAccountDto(
-      prisonId = "MDI",
-      lastTransactionId = 56789,
-      subAccountType = SubAccountType.CASH,
-      balance = BigDecimal(12.50),
-    ),
-    (
-      PrisonerAccountDto(
-        prisonId = "MDI",
-        lastTransactionId = 56789,
-        subAccountType = SubAccountType.SPEND,
-        balance = BigDecimal(12.50),
-      )
-      ),
-    (
-      PrisonerAccountDto(
-        prisonId = "MDI",
-        lastTransactionId = 56789,
-        subAccountType = SubAccountType.SAVINGS,
-        balance = BigDecimal(12.50),
-        holdBalance = BigDecimal(2.50),
-      )
-      ),
-  ),
+private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(
+  prisonId = id.caseloadId,
+  lastTransactionId = lastTransactionId,
+  subAccountType = SubAccountType.fromLong(id.accountCode),
+  balance = balance,
+  holdBalance = holdBalance,
 )

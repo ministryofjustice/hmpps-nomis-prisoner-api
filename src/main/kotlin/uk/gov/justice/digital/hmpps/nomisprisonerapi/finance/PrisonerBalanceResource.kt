@@ -91,12 +91,13 @@ class PrisonerBalanceResource(
   ): PrisonerAccountsDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId)
 }
 
-enum class SubAccountType { CASH, SPEND, SAVINGS }
-
 @Schema(description = "Finance details for a prisoner")
 data class PrisonerAccountsDto(
   @Schema(description = "The root offender Id", example = "12345")
   val rootOffenderId: Long,
+
+  @Schema(description = "The prison Number", example = "A1234BC")
+  val prisonNumber: String,
 
   @Schema(description = "The accounts associated with the prisoner")
   val accounts: List<PrisonerAccountDto>,
@@ -118,3 +119,13 @@ data class PrisonerAccountDto(
   @Schema(description = "The amount on hold", example = "12.50")
   val holdBalance: BigDecimal? = null,
 )
+enum class SubAccountType(val value: Long) {
+  CASH(2101),
+  SPEND(2102),
+  SAVINGS(2103),
+  ;
+
+  companion object {
+    fun fromLong(value: Long) = entries.first { it.value == value }
+  }
+}
