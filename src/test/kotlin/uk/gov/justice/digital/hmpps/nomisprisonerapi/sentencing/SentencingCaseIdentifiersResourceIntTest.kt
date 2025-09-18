@@ -148,7 +148,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       fun `access allowed with correct role`() {
         webTestClient.post()
           .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -165,7 +165,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if court case not found`() {
         webTestClient.post().uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/111/case-identifiers")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -186,7 +186,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
       fun `can add a new case reference`() {
         webTestClient.post()
           .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -204,7 +204,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -219,7 +219,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
         fun `can remove case references`() {
           webTestClient.post()
             .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -234,7 +234,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -247,7 +247,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
         fun `case references can be added and removed`() {
           webTestClient.post()
             .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -264,7 +264,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -278,7 +278,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
         fun `if case info is removed use next case info in the list on the case primary column`() {
           webTestClient.post()
             .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -294,7 +294,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -308,7 +308,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
         fun `if all case info numbers are removed then clear the case column`() {
           webTestClient.post()
             .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -321,7 +321,7 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()

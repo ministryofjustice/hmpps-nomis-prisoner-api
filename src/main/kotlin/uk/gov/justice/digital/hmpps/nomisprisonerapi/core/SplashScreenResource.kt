@@ -19,11 +19,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class SplashScreenResource(private val service: SplashScreenService) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SCREEN_ACCESS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/splash-screens/{moduleName}")
   @Operation(
     summary = "Retrieve a list of prisons and their associated screen conditions (if any set) for the screen",
-    description = "Retrieves all prisons switched on for the screen (module) name, or an empty list if there are none. Requires role NOMIS_SCREEN_ACCESS",
+    description = "Retrieves all prisons switched on for the screen (module) name, or an empty list if there are none. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -45,7 +45,7 @@ class SplashScreenResource(private val service: SplashScreenService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_SCREEN_ACCESS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -57,11 +57,11 @@ class SplashScreenResource(private val service: SplashScreenService) {
     @PathVariable moduleName: String,
   ): SplashScreenDto = service.getSplashScreen(moduleName)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SCREEN_ACCESS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/splash-screens/{moduleName}/blocked")
   @Operation(
     summary = "Retrieve a list of blocked prison ids for the screen",
-    description = "Retrieves a list of blocked prison ids for the screen (module) name or **ALL** if all prisons, or an empty list if there are none blocked. Requires role NOMIS_SCREEN_ACCESS",
+    description = "Retrieves a list of blocked prison ids for the screen (module) name or **ALL** if all prisons, or an empty list if there are none blocked. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -83,7 +83,7 @@ class SplashScreenResource(private val service: SplashScreenService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_SCREEN_ACCESS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],

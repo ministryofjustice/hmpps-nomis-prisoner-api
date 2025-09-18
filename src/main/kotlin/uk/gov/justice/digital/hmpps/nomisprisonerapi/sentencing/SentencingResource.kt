@@ -37,11 +37,11 @@ import java.time.LocalDateTime
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class SentencingResource(private val sentencingService: SentencingService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Operation(
     summary = "get a court case",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a court case by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -59,7 +59,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -98,11 +98,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ): CourtCaseResponse = sentencingService.getCourtCase(id, offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/court-cases/{id}")
   @Operation(
     summary = "get a court case, without offenderNo validation",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a court case by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -120,7 +120,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -146,11 +146,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     id: Long,
   ): CourtCaseResponse = sentencingService.getCourtCaseForMigration(id)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases")
   @Operation(
     summary = "get court cases for an offender",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a court case by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -168,7 +168,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -194,12 +194,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffender(offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/get-list")
   @Tag(name = "Multiple Court case lookup")
   @Operation(
     summary = "Retrieves a specified list of court cases for an offender",
-    description = "Requires role <b>NOMIS_SENTENCING</b>",
+    description = "Requires role <b>NOMIS_PRISONER_API__SYNCHRONISATION__RW</b>",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -241,7 +241,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -258,11 +258,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @RequestBody nomisCaseIds: List<Long>,
   ): List<CourtCaseResponse> = sentencingService.getCourtCases(offenderNo = offenderNo, idList = nomisCaseIds)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/ids")
   @Operation(
     summary = "get court case ids for an offender",
-    description = "Requires role NOMIS_SENTENCING. Retrieves all court case ids by offender",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves all court case ids by offender",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -280,7 +280,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -306,11 +306,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ): List<Long> = sentencingService.findCourtCaseIdsByOffender(offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/post-merge")
   @Operation(
     summary = "Get court cases affected by the last prisoner merge of two prisoner records",
-    description = "Requires role NOMIS_SENTENCING. The court cases returned - if any -  includes cases that may have been cloned onto the active booking and those deactivated",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. The court cases returned - if any -  includes cases that may have been cloned onto the active booking and those deactivated",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -338,7 +338,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -364,11 +364,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ): PostPrisonerMergeCaseChanges = sentencingService.getCourtCasesChangedByMergePrisoners(offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Operation(
     summary = "delete a court case",
-    description = "Requires role NOMIS_SENTENCING. Deletes a court case by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Deletes a court case by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -386,7 +386,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -405,11 +405,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ) = sentencingService.deleteCourtCase(caseId = id, offenderNo = offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   @Operation(
     summary = "get sentences for an offender using the given case.booking id and sentence sequence",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a court case by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a court case by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -427,7 +427,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -473,11 +473,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sentenceSequence = sequence,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/sentences/recall")
   @Operation(
     summary = "get all active recall sentences for a booking",
-    description = "Requires role NOMIS_SENTENCING. Retrieves all active recall sentences for a booking",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves all active recall sentences for a booking",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -495,7 +495,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -521,11 +521,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     bookingId: Long,
   ): List<SentenceResponse> = sentencingService.getActiveRecallSentencesByBookingId(bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentence-terms/booking-id/{bookingId}/sentence-sequence/{sentenceSequence}/term-sequence/{termSequence}")
   @Operation(
     summary = "get a sentence term by id (offender booking, sentence sequence and term sequence",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a sentence term by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a sentence term by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -543,7 +543,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -593,12 +593,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     termSequence = termSequence,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Sentence",
-    description = "Required role NOMIS_SENTENCING Creates a new Sentence for the offender booking associated with the court case",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Sentence for the offender booking associated with the court case",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -634,7 +634,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -665,12 +665,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CreateSentenceRequest,
   ): CreateSentenceResponse = sentencingService.createSentence(offenderNo, caseId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sentenceSequence}/sentence-terms")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Sentence term",
-    description = "Required role NOMIS_SENTENCING Creates a new sentence term for the specified sentence",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new sentence term for the specified sentence",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -706,7 +706,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -740,12 +740,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: SentenceTermRequest,
   ): CreateSentenceTermResponse = sentencingService.createSentenceTerm(offenderNo, caseId, sentenceSequence = sentenceSequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Sentence",
-    description = "Required role NOMIS_SENTENCING Updates a Sentence for the offender and case",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a Sentence for the offender and case",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -781,7 +781,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -830,11 +830,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentences/recall")
   @Operation(
     summary = "Recalls Sentences by convert the specified sentences to the requested recall sentence",
-    description = "Required role NOMIS_SENTENCING Recalls sentences for the offender",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Recalls sentences for the offender",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -870,7 +870,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -911,11 +911,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/sentences/recall")
   @Operation(
     summary = "Updates Recalls Sentences",
-    description = "Required role NOMIS_SENTENCING Recalls sentences for the offender",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Recalls sentences for the offender",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -951,7 +951,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -992,11 +992,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/sentences/recall/restore-original")
   @Operation(
     summary = "Deletes Recalls Sentences and replaces with original sentence",
-    description = "Required role NOMIS_SENTENCING replaces recall sentences for the offender",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW replaces recall sentences for the offender",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1032,7 +1032,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1073,11 +1073,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/sentences/recall/restore-previous")
   @Operation(
     summary = "Deletes Recalls Sentences and replaces with previous recall sentence",
-    description = "Required role NOMIS_SENTENCING replaces recall sentences for the offender",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW replaces recall sentences for the offender",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1113,7 +1113,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1154,12 +1154,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sentenceSequence}/sentence-terms/{termSequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Sentence Term",
-    description = "Required role NOMIS_SENTENCING Updates a Sentence Term for the offender",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a Sentence Term for the offender",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1195,7 +1195,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1248,12 +1248,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     termRequest = request,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
   @Operation(
     summary = "deletes a specific sentence",
-    description = "Requires role NOMIS_SENTENCING. Deletes a sentence by case.booking and sentence sequence",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Deletes a sentence by case.booking and sentence sequence",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1271,7 +1271,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1293,12 +1293,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     sequence: Long,
   ): Unit = sentencingService.deleteSentence(offenderNo, caseId, sequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sentenceSequence}/sentence-terms/{termSequence}")
   @Operation(
     summary = "deletes a specific sentence",
-    description = "Requires role NOMIS_SENTENCING. Deletes a sentence by case.booking, sentence sequence and term sequence",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Deletes a sentence by case.booking, sentence sequence and term sequence",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -1316,7 +1316,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1346,12 +1346,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     termSequence = termSequence,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Court Case",
-    description = "Required role NOMIS_SENTENCING Creates a new Court Case for the offender and latest booking",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Court Case for the offender and latest booking",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1387,7 +1387,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1415,11 +1415,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CreateCourtCaseRequest,
   ): CreateCourtCaseResponse = sentencingService.createCourtCase(offenderNo, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/booking-id/{bookingId}/sentencing/court-cases/clone")
   @Operation(
     summary = "Clones court cases from the supplied booking to the current booking",
-    description = "Required role NOMIS_SENTENCING. Court cases and all child elements including adjustments are copied to the current booking",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Court cases and all child elements including adjustments are copied to the current booking",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1447,7 +1447,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1473,12 +1473,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     bookingId: Long,
   ): BookingCourtCaseCloneResponse = sentencingService.cloneCourtCasesToLatestBookingFrom(bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Court Appearance",
-    description = "Required role NOMIS_SENTENCING Creates a new Court Appearance for the offender and given Court Case",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Court Appearance for the offender and given Court Case",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1514,7 +1514,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1555,12 +1555,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CourtAppearanceRequest,
   ): CreateCourtAppearanceResponse = sentencingService.createCourtAppearance(offenderNo, caseId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/charges")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new Offender Charge",
-    description = "Required role NOMIS_SENTENCING Creates a new Offender Charge for the offender and latest booking. Will not associate with a Court Event",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Offender Charge for the offender and latest booking. Will not associate with a Court Event",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1596,7 +1596,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1626,12 +1626,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: OffenderChargeRequest,
   ): OffenderChargeIdResponse = sentencingService.createCourtCharge(offenderNo, caseId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Court Appearance",
-    description = "Required role NOMIS_SENTENCING Updates a new Court Appearance for the offender and given Court Case",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a new Court Appearance for the offender and given Court Case",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1667,7 +1667,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1721,12 +1721,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: CourtAppearanceRequest,
   ): UpdateCourtAppearanceResponse = sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Deletes Court Appearance",
-    description = "Required role NOMIS_SENTENCING Deletes s Court Appearance for the offender.",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Deletes s Court Appearance for the offender.",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1752,7 +1752,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1774,12 +1774,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     eventId: Long,
   ) = sentencingService.deleteCourtAppearance(offenderNo, caseId, eventId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{courtEventId}/charges/{chargeId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Updates Charge",
-    description = "Required role NOMIS_SENTENCING Updates a Court Event Charge for the offender and given Appearance and Court Case (latest booking)",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a Court Event Charge for the offender and given Appearance and Court Case (latest booking)",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -1815,7 +1815,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1862,11 +1862,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     request: OffenderChargeRequest,
   ) = sentencingService.updateCourtCharge(offenderNo, caseId, chargeId, courtEventId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{id}")
   @Operation(
     summary = "get a court appearance",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a court appearance by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a court appearance by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1884,7 +1884,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1923,11 +1923,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ): CourtEventResponse = sentencingService.getCourtAppearance(id, offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/offender-charges/{offenderChargeId}")
   @Operation(
     summary = "get an offender charge",
-    description = "Requires role NOMIS_SENTENCING. Retrieves offender charge details. Offender Charges are at the booking level.",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves offender charge details. Offender Charges are at the booking level.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1945,7 +1945,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -1984,11 +1984,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{eventId}/charges/{chargeId}")
   @Operation(
     summary = "get the court event charge",
-    description = "Requires role NOMIS_SENTENCING. Retrieves the court event charge ",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves the court event charge ",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -2006,7 +2006,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -2058,11 +2058,11 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
   ): CourtEventChargeResponse = sentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, offenderNo = offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/court-cases/ids")
   @Operation(
     summary = "get court case IDs by filter",
-    description = "Retrieves a paged list of court case ids by filter. Requires ROLE_NOMIS_SENTENCING.",
+    description = "Retrieves a paged list of court case ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -2080,7 +2080,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role ROLE_NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -2115,12 +2115,12 @@ class SentencingResource(private val sentencingService: SentencingService) {
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/case-identifiers")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Refreshes the list of Case identifiers associated with the case",
-    description = "Required role NOMIS_SENTENCING Refreshes the list of Case identifiers associated with the case (identifier type CASE/INFO#)",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Refreshes the list of Case identifiers associated with the case (identifier type CASE/INFO#)",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -2156,7 +2156,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",

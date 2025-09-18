@@ -77,7 +77,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should return not found if splash screen does not exist`() {
       webTestClient.get()
         .uri("/splash-screens/UNKNOWN_SCREEN")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -89,7 +89,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should return configuration splash screen data if exists`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN3")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -103,7 +103,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should return splash condition data if it exists`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN3")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -121,7 +121,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should not return splash condition data if it doesn't exist`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -163,7 +163,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should return empty list if splash screen does not exist`() {
       webTestClient.get()
         .uri("/splash-screens/UNKNOWN_SCREEN/blocked")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -174,7 +174,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should return no prisons for 'NO' splash screen blocked type`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN1/blocked")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -185,7 +185,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should return all prisons for 'YES' splash screen blocked type, irrespective of condition setting`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN3/blocked")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -198,7 +198,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should return special case for 'COND' with splash screen blocked type and 'ALL' prisons`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN2/blocked")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -210,7 +210,7 @@ class SplashScreenResourceIntTest : IntegrationTestBase() {
     fun `should only return prisons for 'COND' splash screen blocked type with accessBlocked condition set`() {
       webTestClient.get()
         .uri("/splash-screens/SCREEN4/blocked")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SCREEN_ACCESS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
