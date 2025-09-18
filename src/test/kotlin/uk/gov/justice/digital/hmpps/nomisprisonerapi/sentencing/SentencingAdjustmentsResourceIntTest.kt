@@ -113,7 +113,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `404 when adjustment does not exist`() {
       webTestClient.get().uri("/key-date-adjustments/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -121,7 +121,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `200 when adjustment does exist`() {
       webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -133,14 +133,14 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `release flag and prison is populated`() {
       webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnActiveBooking")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("hasBeenReleased").isEqualTo(false)
         .jsonPath("prisonId").isEqualTo("MDI")
       webTestClient.get().uri("/key-date-adjustments/$adjustmentIdOnInActiveBooking")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -189,7 +189,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when booking id does not exist`() {
         webTestClient.post().uri("/prisoners/booking-id/999/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest()))
           .exchange()
@@ -201,7 +201,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when days not present in request`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -222,7 +222,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not valid`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -244,7 +244,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type is for a sentence not booking`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -266,7 +266,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not present in request`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -290,7 +290,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create an adjustment with minimal data`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -308,7 +308,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -327,7 +327,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create an adjustment with all data`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -348,7 +348,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -372,7 +372,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Adjustment with 0 days has no TO DATE`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -392,7 +392,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -415,7 +415,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will track telemetry for the create`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest()),
@@ -439,7 +439,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will call store procedure to audit key date adjustment create`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicKeyDateAdjustmentRequest()),
@@ -524,7 +524,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when adjustment id does not exist`() {
         webTestClient.put().uri("/key-date-adjustments/999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()))
           .exchange()
@@ -536,7 +536,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when days not present in request`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -557,7 +557,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not valid`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -579,7 +579,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type is for a sentence not booking`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -601,7 +601,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not present in request`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -625,7 +625,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can update an adjustment with minimal data keeping data that is not updatable`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -642,7 +642,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -661,7 +661,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can update most of adjustment data`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -681,7 +681,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -700,7 +700,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `updating an adjustment to zero days removes the TO DATE`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -719,7 +719,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -737,7 +737,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will call store procedure to update key date adjustments`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()),
@@ -754,7 +754,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will call store procedure to audit key date adjustment update`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()),
@@ -766,7 +766,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will track telemetry for the update`() {
         webTestClient.put().uri("/key-date-adjustments/$adjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicKeyDateAdjustmentUpdateRequest()),
@@ -853,12 +853,12 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `204 even when adjustment does not exist`() {
       webTestClient.get().uri("/key-date-adjustments/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
 
       webTestClient.delete().uri("/key-date-adjustments/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -874,17 +874,17 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `204 when adjustment does exist`() {
       webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
       webTestClient.get().uri("/key-date-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -892,7 +892,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will track telemetry for the delete`() {
       webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -911,7 +911,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will call store procedure to delete sentence adjustments`() {
       webTestClient.delete().uri("/key-date-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -999,7 +999,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `404 when adjustment does not exist`() {
       webTestClient.get().uri("/sentence-adjustments/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -1007,7 +1007,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `200 when adjustment does exist`() {
       webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1020,7 +1020,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `adjustment has hidden flag set when related to a key date adjustment`() {
       webTestClient.get().uri("/sentence-adjustments/$keyDateRelatedAdjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1031,7 +1031,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `release flag and prison is populated`() {
       webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnActiveBooking")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1039,7 +1039,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .jsonPath("bookingSequence").isEqualTo("1")
         .jsonPath("hasBeenReleased").isEqualTo(false)
       webTestClient.get().uri("/sentence-adjustments/$adjustmentIdOnInActiveBooking")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -1089,7 +1089,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when booking id does not exist`() {
         webTestClient.post().uri("/prisoners/booking-id/999/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(createBasicSentenceAdjustmentRequest()))
           .exchange()
@@ -1101,7 +1101,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when sentence does not exist`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/999/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(createBasicSentenceAdjustmentRequest()))
           .exchange()
@@ -1113,7 +1113,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when days not present in request`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1133,7 +1133,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not valid`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1154,7 +1154,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type is for a booking not sentence`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1175,7 +1175,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not present in request`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1198,7 +1198,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create an adjustment with minimal data`() {
         val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1215,7 +1215,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1235,7 +1235,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create an DPS only adjustment`() {
         val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1252,7 +1252,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1272,7 +1272,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create an adjustment with all data`() {
         val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1293,7 +1293,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1313,7 +1313,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create an adjustment with just 1 day`() {
         val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1332,7 +1332,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1351,7 +1351,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Adjustment with 0 days has no TO DATE`() {
         val sentenceAdjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1370,7 +1370,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1389,7 +1389,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will track telemetry for the create`() {
         val adjustmentId = webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicSentenceAdjustmentRequest()),
@@ -1414,7 +1414,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will call store procedure to audit sentence adjustment create`() {
         webTestClient.post().uri("/prisoners/booking-id/$bookingId/sentences/1/adjustments")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicSentenceAdjustmentRequest()),
@@ -1455,7 +1455,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       fun `can create an adjustment with minimal data`() {
         val sentenceAdjustmentId =
           webTestClient.post().uri("/prisoners/booking-id/$anotherBookingId/sentences/2/adjustments")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -1472,7 +1472,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1493,7 +1493,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       fun `can create an adjustment with all data`() {
         val sentenceAdjustmentId =
           webTestClient.post().uri("/prisoners/booking-id/$anotherBookingId/sentences/2/adjustments")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -1514,7 +1514,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
             .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1611,7 +1611,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when adjustment id does not exist`() {
         webTestClient.put().uri("/sentence-adjustments/999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)))
           .exchange()
@@ -1623,7 +1623,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when sentence sequence does not exist`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = 99)))
           .exchange()
@@ -1635,7 +1635,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when days not present in request`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1656,7 +1656,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when sentence sequence not present in request`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1677,7 +1677,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not valid`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1699,7 +1699,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type is for a booking not sentence`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1721,7 +1721,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when adjustment type not present in request`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1745,7 +1745,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can update an adjustment with minimal data keep data that is not updatable`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1762,7 +1762,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1782,7 +1782,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can update most of adjustment data`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1803,7 +1803,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1823,7 +1823,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `updating an adjustment to zero days removes the TO DATE`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1843,7 +1843,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1862,7 +1862,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will track telemetry for the update`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)),
@@ -1886,7 +1886,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will call store procedure to audit sentence adjustment update`() {
         webTestClient.put().uri("/sentence-adjustments/$sentenceAdjustmentId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(createBasicSentenceAdjustmentUpdateRequest(sentenceSequence = sentenceSequence)),
@@ -1964,12 +1964,12 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `204 even when adjustment does not exist`() {
       webTestClient.get().uri("/sentence-adjustments/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
 
       webTestClient.delete().uri("/sentence-adjustments/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -1985,17 +1985,17 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `204 when adjustment does exist`() {
       webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
       webTestClient.get().uri("/sentence-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -2003,7 +2003,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will track telemetry for the delete`() {
       webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -2023,7 +2023,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will call store procedure to audit sentence adjustment update`() {
       webTestClient.delete().uri("/sentence-adjustments/$adjustmentId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
     }
@@ -2086,7 +2086,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all adjustment ids - no filter specified`() {
       webTestClient.get().uri("/adjustments/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -2101,7 +2101,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .queryParam("toDate", LocalDate.of(2023, 1, 5).toString())
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -2119,7 +2119,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .queryParam("size", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -2138,7 +2138,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
           .queryParam("page", "2")
           .build()
       }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -2214,7 +2214,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `get all active adjustments ignoring linked key date adjustments by default`() {
       webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments", bookingId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -2229,7 +2229,7 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
     @Test
     fun `can get all adjustments regardless of active status`() {
       webTestClient.get().uri("/prisoners/booking-id/{bookingId}/sentencing-adjustments?active-only=false", bookingId)
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

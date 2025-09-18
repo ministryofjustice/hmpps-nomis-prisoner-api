@@ -42,7 +42,7 @@ class PrisonResourceIntTest : IntegrationTestBase() {
     fun `should return not found if prison not found`() {
       webTestClient.get()
         .uri("/prisons/XXX/incentive-levels")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody().jsonPath("userMessage").value<String> {
@@ -54,7 +54,7 @@ class PrisonResourceIntTest : IntegrationTestBase() {
     fun `should retrieve incentive levels`() {
       webTestClient.get()
         .uri("/prisons/MDI/incentive-levels")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -67,7 +67,7 @@ class PrisonResourceIntTest : IntegrationTestBase() {
     fun `should ignore inactive incentive levels`() {
       webTestClient.get()
         .uri("/prisons/BMI/incentive-levels")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

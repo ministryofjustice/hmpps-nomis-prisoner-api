@@ -17,11 +17,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class PrisonResource(val prisonService: PrisonService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisons/{prisonId}/incentive-levels")
   @Operation(
     summary = "Retrieve a list of active incentive levels for a prison",
-    description = "Retrieve a list of active incentive levels for a prison. Requires role NOMIS_ACTIVITIES",
+    description = "Retrieve a list of active incentive levels for a prison. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",

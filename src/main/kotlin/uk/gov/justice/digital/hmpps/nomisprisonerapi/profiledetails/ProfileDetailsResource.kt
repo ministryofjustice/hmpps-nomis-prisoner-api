@@ -20,13 +20,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-@PreAuthorize("hasAnyRole('ROLE_NOMIS_CONTACTPERSONS')")
+@PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class ProfileDetailsResource(private val service: ProfileDetailsService) {
 
   @GetMapping("/prisoners/{offenderNo}/profile-details")
   @Operation(
     summary = "Get profile details for a prisoner",
-    description = "Retrieves profile details for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Retrieves profile details for a prisoner and all of their aliases and bookings. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -50,7 +50,7 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -80,7 +80,7 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
   @PutMapping("/prisoners/{offenderNo}/profile-details")
   @Operation(
     summary = "Upsert profile details for a prisoner",
-    description = "Upserts profile details on the latest booking for a prisoner, if it exists. Requires ROLE_NOMIS_CONTACTPERSONS",
+    description = "Upserts profile details on the latest booking for a prisoner, if it exists. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -112,7 +112,7 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_CONTACTPERSONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

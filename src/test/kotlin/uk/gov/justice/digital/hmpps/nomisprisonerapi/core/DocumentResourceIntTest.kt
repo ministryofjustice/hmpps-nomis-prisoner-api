@@ -82,7 +82,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `document with no body should return not found`() {
       webTestClient.get().uri("/documents/$document2Id")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -94,7 +94,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown document should return not found`() {
       webTestClient.get().uri("/documents/-99999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
@@ -106,7 +106,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return a document by id`() {
       webTestClient.get().uri("/documents/$document1Id")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody(String::class.java).isEqualTo("This is a test file.")
@@ -146,7 +146,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `document with no body should return data`() {
       webTestClient.get().uri("/documents/booking/$bookingId?templateName=ANY1_WM")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -157,7 +157,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown bookingId should return empty results`() {
       webTestClient.get().uri("/documents/booking/-99999?templateName=CSIPA1_FNP")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -167,7 +167,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `unknown template name should return empty results`() {
       webTestClient.get().uri("/documents/booking/$bookingId?templateName=NOT_FOUND")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -177,7 +177,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return error if only bookingId supplied`() {
       webTestClient.get().uri("/documents/booking/$bookingId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }
@@ -185,7 +185,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return a document id filtered by bookingId and template name`() {
       webTestClient.get().uri("/documents/booking/$bookingId?templateName=CSIPA1_FNP")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -196,7 +196,7 @@ class DocumentResourceIntTest : IntegrationTestBase() {
     @Test
     fun `will return documents filtered by bookingId and multiple template names`() {
       webTestClient.get().uri("/documents/booking/$bookingId?templateName=CSIPA1_FNP&templateName=ANY1_WM")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_DOCUMENTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()

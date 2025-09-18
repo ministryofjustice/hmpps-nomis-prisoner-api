@@ -199,7 +199,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -210,7 +210,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if court case not found`() {
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/1144")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -220,7 +220,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if offender not found`() {
         webTestClient.get().uri("/prisoners/XXXX/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -233,7 +233,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the court case and events`() {
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -325,7 +325,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the court case and events with minimal data`() {
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCaseTwo.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -511,7 +511,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get().uri("/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -522,7 +522,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if court case not found`() {
         webTestClient.get().uri("/court-cases/11111")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -535,7 +535,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `target case will contain all source case ids`() {
         val case: CourtCaseResponse = webTestClient.get().uri("/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse()
@@ -546,14 +546,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `each source case will contain target case ids`() {
         val case1: CourtCaseResponse = webTestClient.get().uri("/court-cases/${sourceCourtCase1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse()
         assertThat(case1.combinedCaseId).isEqualTo(courtCase.id)
 
         val case2: CourtCaseResponse = webTestClient.get().uri("/court-cases/${sourceCourtCase2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse()
@@ -563,7 +563,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `a case can be source and target so will contains both ids`() {
         val case2: CourtCaseResponse = webTestClient.get().uri("/court-cases/${sourceCourtCase2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse()
@@ -574,7 +574,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the court case and events`() {
         webTestClient.get().uri("/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -705,7 +705,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get().uri("/court-cases/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -779,7 +779,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .queryParam("size", "1")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -796,7 +796,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           it.path("/court-cases/ids")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -814,7 +814,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .queryParam("size", "300")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -830,7 +830,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .queryParam("fromDate", "2020-05-01")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -845,7 +845,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .queryParam("toDate", "2033-01-01")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -861,7 +861,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .queryParam("toDate", "2020-04-01")
             .build()
         }
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -952,7 +952,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -964,7 +964,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return all ids across bookings for offender`() {
         webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -974,7 +974,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return empty list if no court cases for offender`() {
         webTestClient.get().uri("/prisoners/${prisoner2.nomsId}/sentencing/court-cases/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1060,7 +1060,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -1071,7 +1071,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the court cases for the offender`() {
         webTestClient.get().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1179,7 +1179,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.post().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/get-list")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1196,7 +1196,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return the specified court cases for the offender`() {
         webTestClient.post().uri("/prisoners/${prisoner1.nomsId}/sentencing/court-cases/get-list")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1431,7 +1431,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `access allowed with correct role`() {
         webTestClient.get().uri("/prisoners/${prisonerWithRecentMerge.nomsId}/sentencing/court-cases/post-merge")
-          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -1442,7 +1442,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will fail if there has never been a merge for this prisoner`() {
         webTestClient.get().uri("/prisoners/${prisonerWithNoMerge.nomsId}/sentencing/court-cases/post-merge")
-          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -1454,7 +1454,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the created and amended court cases for the offender`() {
         val response: PostPrisonerMergeCaseChanges =
           webTestClient.get().uri("/prisoners/${prisonerWithRecentMerge.nomsId}/sentencing/court-cases/post-merge")
-            .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk.expectBodyResponse()
 
@@ -1482,7 +1482,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will not return anything if merge didn't copy any cases`() {
         val response: PostPrisonerMergeCaseChanges = webTestClient.get()
           .uri("/prisoners/${prisonerWithRecentMergeCasesNotAffected.nomsId}/sentencing/court-cases/post-merge")
-          .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk.expectBodyResponse()
 
@@ -1494,7 +1494,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will not return anything when the merge happened before cases where added`() {
         val response: PostPrisonerMergeCaseChanges =
           webTestClient.get().uri("/prisoners/${prisonerWithOldMerge.nomsId}/sentencing/court-cases/post-merge")
-            .headers(setAuthorisation(roles = listOf("NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk.expectBodyResponse()
 
@@ -1621,7 +1621,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `access allowed with correct role`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -1632,7 +1632,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if sentence not found`() {
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/11")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -1644,7 +1644,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return 404 if case not found`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/54321/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -1658,7 +1658,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the offender sentence`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1748,7 +1748,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the offender sentence without the consecutive sequence if the target consecutive sentence does not exist `() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceWithBadConsecutiveData.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1759,7 +1759,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the fixed term recall data offender sentence`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${recallSentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1777,7 +1777,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will not return the fixed term recall data if the recall sentence is not active`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${inactiveRecallSentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1793,7 +1793,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will not return the fixed term recall data if the sentence is not a recall`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1889,7 +1889,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when offender does not exist`() {
         webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1905,7 +1905,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when legalCaseType not present in request`() {
         webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1925,7 +1925,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when legalCaseType not valid`() {
         webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1944,7 +1944,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create a court case without a court appearance`() {
         val courtCaseId = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1956,7 +1956,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/$courtCaseId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1975,7 +1975,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create multiple cases for the same prisoner`() {
         val firstCourtCaseId = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -1987,7 +1987,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/$firstCourtCaseId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1995,7 +1995,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseSequence").isEqualTo(1)
 
         val secondCourtCaseId = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -2007,7 +2007,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!.id
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/$secondCourtCaseId")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -2099,7 +2099,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when booking does not exist`() {
         webTestClient.post().uri("/prisoners/booking-id/99999/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -2109,7 +2109,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when supplied booking is the latest booking`() {
         webTestClient.post().uri("/prisoners/booking-id/$latestBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -2151,7 +2151,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `No cases returned when nothing copied`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$noCasesBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2165,7 +2165,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.post().uri("/prisoners/booking-id/$noCasesBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2557,7 +2557,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will update the imprisonment status`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2571,7 +2571,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `cases copied are returned along with source`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2585,7 +2585,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2597,7 +2597,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `core cases details copied are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2635,7 +2635,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `cases for both source and clones ones are returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2648,7 +2648,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `status update columns are set to allow NOMIS trigger to add to case status table`() {
         webTestClient.post()
           .uri("/prisoners/booking-id/$bookingIdWithConsecutiveSentences/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2673,7 +2673,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `case identifiers, except primary case number, are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2701,7 +2701,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `DPS case identifiers are returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2718,7 +2718,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `offender charges are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2758,7 +2758,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `Offender charges are returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2771,7 +2771,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `court appearances are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2809,7 +2809,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `Court appearances are returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2822,7 +2822,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `court appearance charges are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2863,7 +2863,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `Court appearances charges are returned with IDs`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2880,7 +2880,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `court appearances orders are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2911,7 +2911,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `Court appearances orders are returned with IDs`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -2925,7 +2925,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `sentences are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -2993,7 +2993,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `consecutive sentences are linked correctly`() {
         webTestClient.post()
           .uri("/prisoners/booking-id/$bookingIdWithConsecutiveSentences/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -3022,7 +3022,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `consecutive sentence ids are returned correctly`() {
         val response: BookingCourtCaseCloneResponse = webTestClient.post()
           .uri("/prisoners/booking-id/$bookingIdWithConsecutiveSentences/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
@@ -3037,7 +3037,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `sentences are returned with IDs`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -3050,7 +3050,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `sentences charges are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -3070,7 +3070,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `sentences charges are returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -3083,7 +3083,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `sentences terms are copied`() {
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -3120,7 +3120,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `sentences terms are returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -3135,7 +3135,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `sentence adjustments copied and their IDs are returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse()
 
@@ -3158,7 +3158,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.post().uri("/prisoners/booking-id/$previousBookingId/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -3231,7 +3231,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithLinkedCases/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -3285,7 +3285,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `linked cases should be returned`() {
         val response: BookingCourtCaseCloneResponse =
           webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithLinkedCases/sentencing/court-cases/clone")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange().expectBodyResponse()
 
         // state of cases cloned should mirror the source booking
@@ -3335,7 +3335,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.post().uri("/prisoners/booking-id/$bookingIdWithLinkedCases/sentencing/court-cases/clone")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -3579,7 +3579,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when offender does not exist`() {
         webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/court-appearances")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3595,7 +3595,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when case does not exist`() {
         webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/1234/court-appearances")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3616,7 +3616,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can add a new court appearance to a case`() {
         val courtAppearanceResponse: CreateCourtAppearanceResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -3639,7 +3639,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -3685,7 +3685,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the create`() {
         val createResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -3720,7 +3720,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         val courtAppearanceResponse: CreateCourtAppearanceResponse =
           webTestClient.post()
             .uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -3744,7 +3744,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         )
         val sourceCourtCaseResponse: CourtCaseResponse =
           webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectBodyResponse<CourtCaseResponse>()
 
@@ -3757,7 +3757,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             courtAppearanceResponse.clonedCourtCases!!.findByCaseInfoNumberOrNull("TARGET")!!.id
           }",
         )
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse<CourtCaseResponse>()
 
@@ -3779,7 +3779,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.post()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3813,7 +3813,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.post()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingSourceCourtCase.id}/court-appearances")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3846,7 +3846,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.post()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingNotLinkedCourtCase.id}/court-appearances")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3871,7 +3871,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the create`() {
         val courtAppearanceResponse: CreateCourtAppearanceResponse = webTestClient.post()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3982,7 +3982,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when offender does not exist`() {
         webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/charges")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -3998,7 +3998,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when case does not exist`() {
         webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/1234/charges")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4019,7 +4019,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can add a new offender charge to a case`() {
         val chargeResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -4033,7 +4033,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         assertThat(chargeResponse.offenderChargeId).isGreaterThan(0)
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4055,7 +4055,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the create`() {
         val createResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/charges")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -4196,7 +4196,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when offender does not exist`() {
         webTestClient.put()
           .uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}/charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4213,7 +4213,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when case does not exist`() {
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/1234/court-appearances/${courtEvent.id}/charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4235,7 +4235,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 // confirming that an initial court order does not exist
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4243,7 +4243,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}/charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4254,7 +4254,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4267,7 +4267,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4294,7 +4294,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can update the court event charge and offender charge on an earlier appearance`() {
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${earlierCourtEvent.id}/charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4310,7 +4310,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
 // the result code for an earlier appearance should not be updated on the offender charge. Only the latest CEC result code is updated on the underlying charge
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4322,7 +4322,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${earlierCourtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4337,7 +4337,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the update`() {
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}/charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4488,7 +4488,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when offender does not exist`() {
         webTestClient.put()
           .uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4504,7 +4504,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when case does not exist`() {
         webTestClient.put().uri("/prisoners/$offenderNo/sentencing/court-cases/1234/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4520,7 +4520,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when court appearance does not exist`() {
         webTestClient.put().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/1234")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4541,7 +4541,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can update a court appearance`() {
         val courtAppearanceResponse = webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4560,7 +4560,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4590,7 +4590,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         val courtAppearanceResponse = webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4606,7 +4606,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4623,7 +4623,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         val courtAppearanceResponse = webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4642,7 +4642,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .returnResult().responseBody!!
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4656,7 +4656,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the update`() {
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -4795,7 +4795,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `will log event when court appearance does not exist`() {
         webTestClient.delete()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/1234")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -4818,12 +4818,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can delete a court appearance`() {
         webTestClient.delete()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -4841,7 +4841,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the delete`() {
         webTestClient.delete()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -4961,7 +4961,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `will log event when court case does not exist`() {
         webTestClient.delete().uri("/prisoners/$offenderNo/sentencing/court-cases/333")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -4982,18 +4982,18 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can delete a court case`() {
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
         webTestClient.delete()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
 
@@ -5008,7 +5008,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the delete`() {
         webTestClient.delete()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
@@ -5108,7 +5108,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `access allowed with correct role`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -5119,7 +5119,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if court case not found`() {
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/1155")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -5129,7 +5129,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if offender not found`() {
         webTestClient.get().uri("/prisoners/XXXX/sentencing/court-appearances/${courtAppearance.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -5143,7 +5143,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the court appearance`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtAppearance.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5273,7 +5273,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `access allowed with correct role`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -5284,7 +5284,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if offender charge not found`() {
         webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/11")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -5294,7 +5294,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if offender not found`() {
         webTestClient.get().uri("/prisoners/XXXX/sentencing/offender-charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -5308,7 +5308,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the court charge`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/offender-charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5460,7 +5460,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `access allowed with correct role`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -5472,7 +5472,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return 404 if no court event charge is found - offender charge and appearance do exist seperately`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge3.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -5484,7 +5484,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return 404 if charge not found`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/111")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -5498,7 +5498,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the court event charge`() {
         val response: CourtEventChargeResponse = webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${firstCourtAppearance.id}/charges/${offenderCharge2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse()
@@ -5513,7 +5513,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the linked charge data for court event charge`() {
         val chargeResponse1: CourtEventChargeResponse = webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${secondCourtAppearance.id}/charges/${offenderCharge1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse()
@@ -5529,7 +5529,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         }
         val chargeResponse2: CourtEventChargeResponse = webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${secondCourtAppearance.id}/charges/${offenderCharge2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse()
@@ -5615,7 +5615,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can remove all court event charges for an appearance`() {
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -5635,7 +5635,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5655,7 +5655,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 // remove references to 1 of the 2 offender charges for all appearances in the court case
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -5671,7 +5671,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent2.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -5686,7 +5686,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5790,7 +5790,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `changing a result to Final and Active will create a Court Order when none exists for the court appearance`() {
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5798,7 +5798,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent1.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -5814,7 +5814,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5842,7 +5842,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `removing any Final and Active results will delete a Court Order for the court appearance`() {
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -5851,7 +5851,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 // there is 1 charge with Final disposition code and Active Charge status - update to inactive
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent2.id}/charges/${offenderCharge3.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -5868,7 +5868,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6000,7 +6000,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when case does not exist`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/12345678/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6016,7 +6016,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when category not valid`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6032,7 +6032,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when calc type not valid`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6049,7 +6049,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `400 when category code and calc type are individually valid but not a valid combination`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6066,7 +6066,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when offender charge id does not exist`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6082,7 +6082,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when consecutive sequence doesn't exist`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6104,7 +6104,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     @Test
     fun `400 if associated appearance Id does not relate to a court order`() {
       webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
@@ -6126,7 +6126,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can create a sentence with data`() {
         val sentenceSeq =
           webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -6147,7 +6147,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6187,7 +6187,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the create`() {
         val sentenceSeq =
           webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -6212,7 +6212,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `court order date not updated when sentence exists`() {
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6228,7 +6228,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${courtAppearance.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6254,7 +6254,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 // create first sentence
         val sentenceSeq1 =
           webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -6270,7 +6270,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
 // create an aggregate sentence in between (although this will have a line seq, unlike when generated in nomis so not totally accurate)
         webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6289,7 +6289,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 // create second sentence consecutive to first
         val sentenceSeq2 =
           webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -6305,14 +6305,14 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         val sentence1 = webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBody(SentenceResponse::class.java)
           .returnResult().responseBody!!
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq2")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6445,7 +6445,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when court case does not exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/33/sentences/${sentenceTwo.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6462,7 +6462,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when sentence does not exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/5555")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6480,7 +6480,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `400 when category code and calc type are individually valid but not a valid combination`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6498,7 +6498,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when consecutive sequence doesn't exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6523,7 +6523,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can update a sentence`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6550,7 +6550,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6574,7 +6574,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6586,7 +6586,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6600,7 +6600,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the update`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6690,12 +6690,12 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `204 even when sentence does not exist`() {
       webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/9999 ")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
 
       webTestClient.delete().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -6713,19 +6713,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     internal fun `204 when sentence does exist`() {
       webTestClient.get()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
       webTestClient.get()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -6734,7 +6734,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     fun `will track telemetry for the delete`() {
       webTestClient.delete()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -6864,7 +6864,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when case does not exist`() {
         webTestClient.post()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/12345678/sentences/${sentence.id.sequence}/sentence-terms")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6881,7 +6881,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `400 when sentence term type not valid`() {
         webTestClient.post()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}/sentence-terms")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -6902,7 +6902,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         val response =
           webTestClient.post()
             .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}/sentence-terms")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -6920,7 +6920,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${response.bookingId}/sentence-sequence/${response.sentenceSeq}/term-sequence/${response.termSeq}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -6941,7 +6941,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         val response =
           webTestClient.post()
             .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}/sentence-terms")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -7085,7 +7085,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when court case does not exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/33/sentences/${sentenceTwo.id.sequence}/sentence-terms/${term.id.termSequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -7102,7 +7102,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       internal fun `404 when sentence term does not exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/5555/sentence-terms/${term.id.termSequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -7124,7 +7124,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `can update a sentence`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}/sentence-terms/${term.id.termSequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -7141,7 +7141,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/${sentenceTwo.id.sequence}/term-sequence/${term.id.termSequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -7154,7 +7154,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will track telemetry for the update`() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}/sentence-terms/${term.id.termSequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -7258,13 +7258,13 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     internal fun `204 even when sentence term does not exist`() {
       webTestClient.get()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/9999/term-sequence/${term.id.termSequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
 
       webTestClient.delete()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/9999/sentence-terms/${term.id.termSequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -7283,19 +7283,19 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     internal fun `204 when sentence term does exist`() {
       webTestClient.get()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/${sentence.id.sequence}/term-sequence/${term.id.termSequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
 
       webTestClient.delete()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}/sentence-terms/${term.id.termSequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
       webTestClient.get()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/${sentence.id.sequence}/term-sequence/${term.id.termSequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -7304,7 +7304,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     fun `will track telemetry for the delete`() {
       webTestClient.delete()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}/sentence-terms/${term.id.termSequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
 
@@ -7425,7 +7425,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `access allowed with correct role`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/$latestBookingId/sentences/recall")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -7437,7 +7437,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return 404 if booking not found`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/9999999/sentences/recall")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -7452,7 +7452,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return only active recall sentences`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/$latestBookingId/sentences/recall")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -7544,7 +7544,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `access allowed with correct role`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/${sentence.id.sequence}/term-sequence/${term.id.termSequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -7556,7 +7556,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return 404 if sentence term not found`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/${sentence.id.sequence}/term-sequence/4444")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -7571,7 +7571,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `will return the offender sentence term`() {
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/${sentence.id.sequence}/term-sequence/${term.id.termSequence}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -7834,7 +7834,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `400 when category code and calc type are individually valid but not a valid combination`() {
         webTestClient.post()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceCategory = "1880") })))
           .exchange()
@@ -7845,7 +7845,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `404 when sentence does not exist`() {
         webTestClient.post()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -8004,7 +8004,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8033,7 +8033,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8051,7 +8051,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request.copy(returnToCustody = null)))
             .exchange()
@@ -8064,7 +8064,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will update the imprisonment status`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8085,7 +8085,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8106,7 +8106,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8127,7 +8127,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           val response: ConvertToRecallResponse = webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8154,7 +8154,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry for the recall`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8184,7 +8184,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           val recallResponse: ConvertToRecallResponse = webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(requestWithSpecificDate))
             .exchange()
@@ -8323,7 +8323,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8351,7 +8351,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8368,7 +8368,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will update the imprisonment status`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8384,7 +8384,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry for the recall`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8503,7 +8503,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8546,7 +8546,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8562,7 +8562,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will update the imprisonment status on latest booking`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8601,7 +8601,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8641,7 +8641,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry for the recall`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8671,7 +8671,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           val recallResponse: ConvertToRecallResponse = webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(requestWithSpecificDate))
             .exchange()
@@ -8816,7 +8816,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8848,7 +8848,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8874,7 +8874,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8890,7 +8890,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will update the imprisonment status on latest booking`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8930,7 +8930,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -8976,7 +8976,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry for the recall`() {
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9007,7 +9007,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           val recallResponse: ConvertToRecallResponse = webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(requestWithSpecificDate))
             .exchange()
@@ -9217,7 +9217,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `400 when category code and calc type are individually valid but not a valid combination`() {
         webTestClient.put()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceCategory = "1880") })))
           .exchange()
@@ -9228,7 +9228,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `404 when sentence does not exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -9351,7 +9351,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9377,7 +9377,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9394,7 +9394,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9409,7 +9409,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -9435,7 +9435,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will update the imprisonment status`() {
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9451,7 +9451,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry for the recall`() {
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9627,7 +9627,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `400 when category code and calc type are individually valid but not a valid combination`() {
         webTestClient.put()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceCategory = "1880") })))
           .exchange()
@@ -9638,7 +9638,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `404 when sentence does not exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -9762,7 +9762,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9786,7 +9786,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9801,7 +9801,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9818,7 +9818,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9837,7 +9837,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9852,7 +9852,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will update the imprisonment status`() {
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -9868,7 +9868,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry for the recall`() {
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-original")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -10045,7 +10045,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `400 when category code and calc type are individually valid but not a valid combination`() {
         webTestClient.put()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(request.copy(sentences = request.sentences.map { it.copy(sentenceCategory = "1880") })))
           .exchange()
@@ -10056,7 +10056,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
       fun `404 when sentence does not exist`() {
         webTestClient.put()
           .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -10190,7 +10190,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -10216,7 +10216,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -10234,7 +10234,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
 
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -10248,7 +10248,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will update the imprisonment status`() {
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()
@@ -10264,7 +10264,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
         fun `will track telemetry for the recall`() {
           webTestClient.put()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_SENTENCING")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .exchange()

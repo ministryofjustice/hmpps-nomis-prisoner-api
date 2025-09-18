@@ -33,11 +33,11 @@ import java.time.LocalDate
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class SentencingAdjustmentResource(private val sentencingAdjustmentService: SentencingAdjustmentService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/sentence-adjustments/{adjustmentId}")
   @Operation(
     summary = "get specific sentence adjustment",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a sentence adjustment by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a sentence adjustment by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -55,7 +55,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -81,12 +81,12 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     adjustmentId: Long,
   ): SentenceAdjustmentResponse = sentencingAdjustmentService.getSentenceAdjustment(adjustmentId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/sentence-adjustments/{adjustmentId}")
   @Operation(
     summary = "deletes specific sentence adjustment",
-    description = "Requires role NOMIS_SENTENCING. Deletes a sentence adjustment by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Deletes a sentence adjustment by id",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -104,7 +104,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -120,11 +120,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     adjustmentId: Long,
   ): Unit = sentencingAdjustmentService.deleteSentenceAdjustment(adjustmentId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/sentence-adjustments/{adjustmentId}")
   @Operation(
     summary = "Updates specific sentence adjustment. The related booking and sentence can not be changed",
-    description = "Requires role NOMIS_SENTENCING. Updates a sentence adjustment by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Updates a sentence adjustment by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -152,7 +152,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -170,12 +170,12 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     request: UpdateSentenceAdjustmentRequest,
   ): Unit = sentencingAdjustmentService.updateSentenceAdjustment(adjustmentId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/booking-id/{bookingId}/sentences/{sentenceSequence}/adjustments")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new sentence adjustment",
-    description = "Required role NOMIS_SENTENCING Creates a new sentence adjustment (aka Debit/Credit). Key dates will not be recalculated as a side effect of this operation",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new sentence adjustment (aka Debit/Credit). Key dates will not be recalculated as a side effect of this operation",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -211,7 +211,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -242,11 +242,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     request: CreateSentenceAdjustmentRequest,
   ): CreateAdjustmentResponse = sentencingAdjustmentService.createSentenceAdjustment(bookingId, sentenceSequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/key-date-adjustments/{adjustmentId}")
   @Operation(
     summary = "get specific key date adjustment",
-    description = "Requires role NOMIS_SENTENCING. Retrieves a key date adjustment by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves a key date adjustment by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -264,7 +264,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -290,11 +290,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     adjustmentId: Long,
   ): KeyDateAdjustmentResponse = sentencingAdjustmentService.getKeyDateAdjustment(adjustmentId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/key-date-adjustments/{adjustmentId}")
   @Operation(
     summary = "Updates specific key date adjustment. The related booking can not be changed",
-    description = "Requires role NOMIS_SENTENCING. Updates a sentence adjustment by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Updates a sentence adjustment by id",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -322,7 +322,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -350,12 +350,12 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     request: UpdateKeyDateAdjustmentRequest,
   ): Unit = sentencingAdjustmentService.updateKeyDateAdjustment(adjustmentId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @DeleteMapping("/key-date-adjustments/{adjustmentId}")
   @Operation(
     summary = "deletes specific key date adjustment",
-    description = "Requires role NOMIS_SENTENCING. Deletes a key date adjustment by id",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Deletes a key date adjustment by id",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -373,7 +373,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -389,12 +389,12 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     adjustmentId: Long,
   ): Unit = sentencingAdjustmentService.deleteKeyDateAdjustment(adjustmentId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/booking-id/{bookingId}/adjustments")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a new key date adjustment",
-    description = "Required role NOMIS_SENTENCING Creates a new key date adjustment. Key dates will be recalculated as a side effect of this operation",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new key date adjustment. Key dates will be recalculated as a side effect of this operation",
     requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
       content = [
         Content(
@@ -430,7 +430,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -458,11 +458,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     request: CreateKeyDateAdjustmentRequest,
   ): CreateAdjustmentResponse = sentencingAdjustmentService.createKeyDateAdjustment(bookingId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/adjustments/ids")
   @Operation(
     summary = "get adjustment IDs (key date and Sentence adjustments) by filter",
-    description = "Retrieves a paged list of adjustment ids by filter. Requires ROLE_NOMIS_SENTENCING.",
+    description = "Retrieves a paged list of adjustment ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -480,7 +480,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -514,11 +514,11 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_SENTENCING')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/sentencing-adjustments")
   @Operation(
     summary = "get active sentence and key date adjustments for a booking",
-    description = "Retrieves all the current active sentence and key date adjustments (by booking) for a prisoner. Requires NOMIS_SENTENCING.",
+    description = "Retrieves all the current active sentence and key date adjustments (by booking) for a prisoner. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -536,7 +536,7 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_SENTENCING not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",

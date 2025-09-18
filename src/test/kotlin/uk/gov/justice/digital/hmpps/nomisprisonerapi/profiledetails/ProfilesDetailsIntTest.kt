@@ -73,7 +73,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       @Test
       fun `not found if prisoner does not exist`() {
         webTestClient.get().uri("/prisoners/A1234AA/profile-details")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -556,7 +556,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           .queryParam("latestBookingOnly", latestBookingOnly)
           .build()
       }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
       .expectBody<PrisonerProfileDetailsResponse>()
@@ -598,7 +598,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       @Test
       fun `not found if prisoner does not exist`() {
         webTestClient.put().uri("/prisoners/A1234AA/profile-details")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(UpsertProfileDetailsRequest("HAIR", "BROWN"))
           .exchange()
           .expectStatus().isNotFound
@@ -965,7 +965,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       .expectBody<UpsertProfileDetailsResponse>()
 
     fun WebTestClient.upsertProfileDetails(offenderNo: String, profileType: String, profileCode: String?) = put().uri("/prisoners/$offenderNo/profile-details")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(UpsertProfileDetailsRequest(profileType, profileCode))
       .exchange()
 

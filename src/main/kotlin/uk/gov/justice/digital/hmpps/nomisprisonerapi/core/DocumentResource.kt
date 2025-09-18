@@ -21,11 +21,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @Validated
 @RequestMapping(value = ["/documents"])
 class DocumentResource(private val documentService: DocumentService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_DOCUMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{id}", produces = [APPLICATION_OCTET_STREAM_VALUE])
   @Operation(
     summary = "Retrieve a document",
-    description = "Retrieve a document by its id. Requires role NOMIS_DOCUMENTS",
+    description = "Retrieve a document by its id. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -47,7 +47,7 @@ class DocumentResource(private val documentService: DocumentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_DOCUMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
@@ -65,11 +65,11 @@ class DocumentResource(private val documentService: DocumentService) {
     @Schema(description = "The document id") @PathVariable id: Long,
   ) = documentService.getDocumentById(id)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_DOCUMENTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/booking/{bookingId}", produces = [APPLICATION_JSON_VALUE])
   @Operation(
     summary = "Retrieve a list of document ids",
-    description = "Retrieve a list of document ids searching by booking id and template name. Requires role NOMIS_DOCUMENTS",
+    description = "Retrieve a list of document ids searching by booking id and template name. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -91,7 +91,7 @@ class DocumentResource(private val documentService: DocumentService) {
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden, requires role NOMIS_DOCUMENTS",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
         ],
