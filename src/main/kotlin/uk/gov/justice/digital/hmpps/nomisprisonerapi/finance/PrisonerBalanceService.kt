@@ -33,17 +33,7 @@ class PrisonerBalanceService(
 private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(
   prisonId = id.caseloadId,
   lastTransactionId = lastTransactionId,
-  subAccountType = when (id.accountCode) {
-    2101L -> {
-      SubAccountType.CASH
-    }
-    2102L -> {
-      SubAccountType.SPEND
-    }
-    else -> {
-      SubAccountType.SAVINGS
-    }
-  },
+  subAccountType = SubAccountType.fromLong(id.accountCode),
   balance = balance,
   holdBalance = holdBalance,
 )
