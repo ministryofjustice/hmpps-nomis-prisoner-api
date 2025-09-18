@@ -90,7 +90,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             logNumber = "MDI-1234",
           ) {
             factor()
-            factor(factor = "MED", comment = "Wrong medication given")
+            factor(type = "MED", comment = "Wrong medication given")
             scs()
             investigation(
               staffInvolved = "There were numerous staff involved",
@@ -100,7 +100,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
               trigger = "Mental Health",
               protectiveFactors = "Supported by staff",
             )
-            interview(comment = "Helping with behaviour")
+            interview(comments = "Helping with behaviour")
             decision()
             plan(progression = "Behaviour improved")
             review {

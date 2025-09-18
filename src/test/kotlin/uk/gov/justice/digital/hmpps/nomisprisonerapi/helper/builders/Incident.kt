@@ -46,7 +46,7 @@ interface IncidentDsl {
   fun requirement(
     comment: String = "Please update the name correct",
     recordingStaff: Staff,
-    locationId: String,
+    agencyId: String,
     recordedDate: LocalDateTime = LocalDateTime.now(),
     dsl: IncidentRequirementDsl.() -> Unit = {},
   ): IncidentRequirement

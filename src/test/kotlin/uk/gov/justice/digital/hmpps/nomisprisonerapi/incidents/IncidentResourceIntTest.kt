@@ -75,8 +75,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         staffParty(staff = reportingStaff2)
         offenderParty(offenderBooking = offender1.latestBooking(), outcome = "POR")
 
-        requirement("Update the name", recordingStaff = requirementRecordingStaff, locationId = "MDI", recordedDate = LocalDateTime.parse("2025-12-20T01:02:03"))
-        requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, locationId = "MDI")
+        requirement("Update the name", recordingStaff = requirementRecordingStaff, agencyId = "MDI", recordedDate = LocalDateTime.parse("2025-12-20T01:02:03"))
+        requirement("Ensure all details are added", recordingStaff = requirementRecordingStaff, agencyId = "MDI")
 
         question(question = questionnaire1.questions[3])
         question(question = questionnaire1.questions[2]) {

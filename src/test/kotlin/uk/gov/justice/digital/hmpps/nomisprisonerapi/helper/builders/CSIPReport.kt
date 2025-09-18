@@ -37,7 +37,7 @@ interface CSIPReportDsl {
 
   @CSIPFactorDslMarker
   fun factor(
-    factor: String = "BUL",
+    type: String = "BUL",
     comment: String? = null,
     dsl: CSIPFactorDsl.() -> Unit = {},
   ): CSIPFactor
@@ -65,7 +65,7 @@ interface CSIPReportDsl {
     interviewee: String = "Jim the Interviewee",
     interviewDate: LocalDate = LocalDate.now(),
     role: String = "WITNESS",
-    comment: String? = null,
+    comments: String? = null,
     dsl: CSIPInterviewDsl.() -> Unit = {},
   ): CSIPInterview
 
@@ -97,7 +97,7 @@ interface CSIPReportDsl {
   fun decision(
     conclusion: String = "The end result",
     decisionOutcome: String = "NFA",
-    signedOffBy: String = "CUSTMAN",
+    signedOffRole: String = "CUSTMAN",
     recordedBy: String = "FRED.JAMES",
     recordedDate: LocalDate = LocalDate.now(),
     nextSteps: String = "provide help",
