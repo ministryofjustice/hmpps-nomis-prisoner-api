@@ -1123,8 +1123,13 @@ class SentencingService(
     log.info("Adding case identifiers offender $offenderNo: ${caseIdentifiersToAdd.map { it.id }}")
     courtCase.caseInfoNumbers.removeAll(caseIdentifiersToRemove)
     courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
-    if (courtCase.primaryCaseInfoNumber != requestCaseIdentifierReferences.getOrNull(0)) {
-      courtCaseRepository.updatePrimaryCaseInfoNumber(caseInfoNumber = requestCaseIdentifierReferences.getOrNull(0), caseId = caseId)
+    courtCaseRepository.saveAndFlush(courtCase).also {
+      if (courtCase.primaryCaseInfoNumber != requestCaseIdentifierReferences.getOrNull(0)) {
+        courtCaseRepository.updatePrimaryCaseInfoNumber(
+          caseInfoNumber = requestCaseIdentifierReferences.getOrNull(0),
+          caseId = caseId,
+        )
+      }
     }
   }
 
