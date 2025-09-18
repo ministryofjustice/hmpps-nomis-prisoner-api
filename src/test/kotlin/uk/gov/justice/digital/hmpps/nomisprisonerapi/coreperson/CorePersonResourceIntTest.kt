@@ -101,7 +101,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when offender not found`() {
         webTestClient.get().uri("/core-person/AB1234C")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -112,7 +112,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return basic offender data`() {
         webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -147,7 +147,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `is able to re-hydrate the core person`() {
         val person = webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -160,7 +160,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return full offender data`() {
         webTestClient.get().uri("/core-person/${offenderFull.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -246,7 +246,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return aliases`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -275,7 +275,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will set working name to offender record linked to active booking`() {
         webTestClient.get().uri("/core-person/${offender2.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -328,7 +328,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return identifiers`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON"))).exchange()
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW"))).exchange()
           .expectStatus()
           .isOk
           .expectBody()
@@ -440,7 +440,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return addresses`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -486,7 +486,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return addresses for offender with active alias`() {
         webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -500,7 +500,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return phone numbers associated with addresses`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -521,7 +521,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return address usages associated with addresses`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -540,7 +540,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `is able to re-hydrate the core person`() {
         val person = webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -589,7 +589,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return phone numbers`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -609,7 +609,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return phone numbers for offender with active alias`() {
         webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -657,7 +657,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return email address`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -671,7 +671,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return email address for offender with active alias`() {
         webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -717,7 +717,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return nationalities`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -774,7 +774,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return nationalities`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -829,7 +829,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return sexual orientations`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -886,7 +886,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return disabilities`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -941,7 +941,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return interests to immigration`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -997,7 +997,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return sentence start dates`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1073,7 +1073,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return beliefs`() {
         webTestClient.get().uri("/core-person/${offender.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1112,7 +1112,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return beliefs when current alias is different from root offender`() {
         webTestClient.get().uri("/core-person/${offender2.nomsId}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_CORE_PERSON")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
