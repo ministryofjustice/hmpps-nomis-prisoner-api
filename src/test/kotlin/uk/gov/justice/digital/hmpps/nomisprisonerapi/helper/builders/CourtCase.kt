@@ -161,6 +161,10 @@ class CourtCaseBuilderRepository(
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 
+  fun updateCaseInfoNumber(courtCase: CourtCase, caseInfoNumber: String?) {
+    repository.updatePrimaryCaseInfoNumber(courtCase.id, caseInfoNumber = caseInfoNumber)
+  }
+
   fun updateAudit(
     id: Long,
     createDatetime: LocalDateTime,
@@ -236,6 +240,7 @@ class CourtCaseBuilder(
     .let { repository.save(it) }
     .also { courtCase = it }
     .also { this.whenCreated = whenCreated }
+    .also { repository.updateCaseInfoNumber(courtCase = it, caseInfoNumber = caseInfoNumber) }
 
   override fun offenderCharge(
     offenceDate: LocalDate,
