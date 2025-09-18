@@ -35,11 +35,11 @@ import java.time.LocalDate
 class AdjudicationResource(
   private val adjudicationService: AdjudicationService,
 ) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/adjudications/charges/ids")
   @Operation(
     summary = "get adjudication charge IDs by filter",
-    description = "Retrieves a paged list of adjudication charge ids by filter. Requires ROLE_NOMIS_ADJUDICATIONS.",
+    description = "Retrieves a paged list of adjudication charge ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -57,7 +57,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_ADJUDICATIONS not present",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
         content = [
           Content(
             mediaType = "application/json",
@@ -99,12 +99,12 @@ class AdjudicationResource(
     ),
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/adjudications/adjudication-number/{adjudicationNumber}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get adjudication by adjudication number",
-    description = "Retrieves an adjudication by the adjudication number. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Retrieves an adjudication by the adjudication number. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -128,7 +128,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -154,12 +154,12 @@ class AdjudicationResource(
     adjudicationNumber: Long,
   ): AdjudicationResponse = adjudicationService.getAdjudication(adjudicationNumber)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge-sequence/{chargeSequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get adjudication by adjudication number and charge sequence",
-    description = "Retrieves an adjudication by the adjudication number and charge sequence. Will only return the specified charge. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Retrieves an adjudication by the adjudication number and charge sequence. Will only return the specified charge. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -183,7 +183,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -212,12 +212,12 @@ class AdjudicationResource(
     chargeSequence: Int,
   ): AdjudicationChargeResponse = adjudicationService.getAdjudicationByCharge(adjudicationNumber, chargeSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/adjudications")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "creates an adjudication on the latest booking of a prisoner",
-    description = "Creates an adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates an adjudication. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -241,7 +241,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -280,11 +280,11 @@ class AdjudicationResource(
     request: CreateAdjudicationRequest,
   ): AdjudicationResponse? = adjudicationService.createAdjudication(offenderNo, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/incident/adjudication-number/{adjudicationNumber}")
   @Operation(
     summary = "**** Used to recover from a duplicate incident creation only ***** Deletes an incident by adjudication number.",
-    description = "Deletes an incident by adjudication number. Supports the removal of a duplicate incident without a DPS mapping. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Deletes an incident by adjudication number. Supports the removal of a duplicate incident without a DPS mapping. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -302,7 +302,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -318,11 +318,11 @@ class AdjudicationResource(
     adjudicationNumber: Long,
   ) = adjudicationService.deleteIncident(adjudicationNumber)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings")
   @Operation(
     summary = "creates a hearing for a given adjudication",
-    description = "Creates a hearing for a given adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates a hearing for a given adjudication. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -346,7 +346,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -374,11 +374,11 @@ class AdjudicationResource(
     request: CreateHearingRequest,
   ): CreateHearingResponse = adjudicationService.createHearing(adjudicationNumber, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}")
   @Operation(
     summary = "Updates a hearing",
-    description = "Updates a hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Updates a hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -402,7 +402,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -443,11 +443,11 @@ class AdjudicationResource(
     request: UpdateHearingRequest,
   ): Hearing = adjudicationService.updateHearing(adjudicationNumber, hearingId, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}")
   @Operation(
     summary = "Deletes a hearing",
-    description = "Deletes a hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Deletes a hearing for a given adjudication and hearing Id. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -465,7 +465,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -494,11 +494,11 @@ class AdjudicationResource(
     hearingId: Long,
   ) = adjudicationService.deleteHearing(adjudicationNumber, hearingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/repairs")
   @Operation(
     summary = "Updates repairs (aka damages) for a given adjudication",
-    description = "List of repairs are refreshed so this operation may result in any combinations of inserts, updates or deletes. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "List of repairs are refreshed so this operation may result in any combinations of inserts, updates or deletes. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -522,7 +522,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -550,11 +550,11 @@ class AdjudicationResource(
     request: UpdateRepairsRequest,
   ): UpdateRepairsResponse = adjudicationService.updateRepairs(adjudicationNumber, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/evidence")
   @Operation(
     summary = "Updates evidence for a given adjudication",
-    description = "List of evidence items are refreshed so this operation may result in any combinations of inserts, updates or deletes. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "List of evidence items are refreshed so this operation may result in any combinations of inserts, updates or deletes. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -578,7 +578,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -606,12 +606,12 @@ class AdjudicationResource(
     request: UpdateEvidenceRequest,
   ): UpdateEvidenceResponse = adjudicationService.updateEvidence(adjudicationNumber, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/adjudications/hearings/{hearingId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get hearing by hearing Id",
-    description = "Retrieves a hearing by the hearing Id. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Retrieves a hearing by the hearing Id. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -635,7 +635,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -661,11 +661,11 @@ class AdjudicationResource(
     hearingId: Long,
   ): Hearing = adjudicationService.getHearing(hearingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/charge/{chargeSequence}/result")
   @Operation(
     summary = "creates or updates a hearing result for a given hearing and charge.",
-    description = "Creates a (or updates the existing) hearing result for a given hearing and charge. DPS only supports 1 result per hearing. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates a (or updates the existing) hearing result for a given hearing and charge. DPS only supports 1 result per hearing. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -689,7 +689,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -733,11 +733,11 @@ class AdjudicationResource(
     request: CreateHearingResultRequest,
   ) = adjudicationService.upsertHearingResult(adjudicationNumber, hearingId, chargeSequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
   @Operation(
     summary = "creates or updates a result for a given charge. This requires a dummy hearing to be created",
-    description = "Creates or updates a result for a charge. DPS allows results to be created without hearings eg: Refer to Police. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates or updates a result for a charge. DPS allows results to be created without hearings eg: Refer to Police. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -755,7 +755,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -786,12 +786,12 @@ class AdjudicationResource(
     request: CreateHearingResultRequest,
   ) = adjudicationService.upsertResultWithDummyHearing(adjudicationNumber, chargeSequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/adjudications/hearings/{hearingId}/charge/{chargeSequence}/result")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get hearing result by hearing id",
-    description = "Retrieves a hearing result by the nomis hearing id. DPS migrated and synchronised hearing results always have a result sequence of 1 Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Retrieves a hearing result by the nomis hearing id. DPS migrated and synchronised hearing results always have a result sequence of 1 Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -815,7 +815,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -844,11 +844,11 @@ class AdjudicationResource(
     chargeSequence: Int,
   ): HearingResult = adjudicationService.getHearingResult(hearingId, chargeSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/hearings/{hearingId}/charge/{chargeSequence}/result")
   @Operation(
     summary = "Deletes a hearing result",
-    description = "Deletes a hearing result for a given adjudication and hearing Id. Returns list of any deleted award Ids to allow removal of award mappings in the sync service. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Deletes a hearing result for a given adjudication and hearing Id. Returns list of any deleted award Ids to allow removal of award mappings in the sync service. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -872,7 +872,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -904,11 +904,11 @@ class AdjudicationResource(
     chargeSequence: Int,
   ): DeleteHearingResultResponse = adjudicationService.deleteHearingResult(adjudicationNumber, hearingId, chargeSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/result")
   @Operation(
     summary = "Deletes a result",
-    description = "Deletes a result for a given adjudication and charge sequence. The result will be associated with a dummy hearing used by DPS to record referrals. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Deletes a result for a given adjudication and charge sequence. The result will be associated with a dummy hearing used by DPS to record referrals. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -926,7 +926,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -955,11 +955,11 @@ class AdjudicationResource(
     chargeSequence: Int,
   ) = adjudicationService.deleteResultWithDummyHearing(adjudicationNumber, chargeSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Operation(
     summary = "creates a hearing result award for a given adjudication",
-    description = "Creates a hearing result award. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates a hearing result award. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -983,7 +983,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1024,11 +1024,11 @@ class AdjudicationResource(
     requests: CreateHearingResultAwardRequest,
   ) = adjudicationService.createHearingResultAwards(adjudicationNumber, chargeSequence, requests)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Operation(
     summary = "updates a batch of hearing result awards for a given adjudication",
-    description = "Creates a hearing result awards that have been added, updates those that have changed and deletes ones that are absent for the booking associated with the adjudication. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Creates a hearing result awards that have been added, updates those that have changed and deletes ones that are absent for the booking associated with the adjudication. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1052,7 +1052,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1093,11 +1093,11 @@ class AdjudicationResource(
     requests: UpdateHearingResultAwardRequest,
   ): UpdateHearingResultAwardResponses = adjudicationService.updateCreateAndDeleteHearingResultAwards(adjudicationNumber, chargeSequence, requests)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/awards")
   @Operation(
     summary = "Deletes hearing result awards for a given adjudication and charge sequence",
-    description = "Deletes hearing result awards for a given adjudication and charge sequence. Returns list of deleted award keys. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Deletes hearing result awards for a given adjudication and charge sequence. Returns list of deleted award keys. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1121,7 +1121,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1160,11 +1160,11 @@ class AdjudicationResource(
     chargeSequence: Int,
   ): DeleteHearingResultAwardResponses = adjudicationService.deleteHearingResultAwards(adjudicationNumber, chargeSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/quash")
   @Operation(
     summary = "updates adjudication charge outcome and awards to quashed",
-    description = "The latest hearing result is set to quashed along with all awards associated with this charge (that may be associated with other hearings). Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "The latest hearing result is set to quashed along with all awards associated with this charge (that may be associated with other hearings). Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1182,7 +1182,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1221,11 +1221,11 @@ class AdjudicationResource(
     chargeSequence: Int,
   ) = adjudicationService.quashHearingResultAndAwards(adjudicationNumber, chargeSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/adjudications/adjudication-number/{adjudicationNumber}/charge/{chargeSequence}/unquash")
   @Operation(
     summary = "updates adjudication charge outcome and awards to the requested state before a quash",
-    description = "The latest hearing result is set to back to the supplied value along with all awards associated with this charge. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "The latest hearing result is set to back to the supplied value along with all awards associated with this charge. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1249,7 +1249,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1290,12 +1290,12 @@ class AdjudicationResource(
     request: UnquashHearingResultAwardRequest,
   ): UpdateHearingResultAwardResponses = adjudicationService.unquashHearingResultAndAwards(adjudicationNumber, chargeSequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/awards/{sanctionSequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get hearing result award by Id ",
-    description = "Retrieves a hearing result by the Id (bookingId and sanctionSequence). Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Retrieves a hearing result by the Id (bookingId and sanctionSequence). Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1319,7 +1319,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -1348,12 +1348,12 @@ class AdjudicationResource(
     sanctionSequence: Int,
   ): HearingResultAward = adjudicationService.getHearingResultAward(bookingId, sanctionSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ADJUDICATIONS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/awards/ada/summary")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get ADA award summary result award by booking ",
-    description = "Retrieves a summary of ADA awards along with associated adjudication for a given booking. Requires ROLE_NOMIS_ADJUDICATIONS",
+    description = "Retrieves a summary of ADA awards along with associated adjudication for a given booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -1377,7 +1377,7 @@ class AdjudicationResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ADJUDICATIONS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

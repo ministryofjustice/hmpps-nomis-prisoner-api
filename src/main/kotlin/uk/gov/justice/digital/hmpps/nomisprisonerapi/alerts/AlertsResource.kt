@@ -34,12 +34,12 @@ class AlertsResource(
   private val alertsReferenceDataService: AlertsReferenceDataService,
 ) {
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "get an alert by bookingId and alert sequence",
-    description = "Retrieves an prisoner alert. Requires ROLE_NOMIS_ALERTS",
+    description = "Retrieves an prisoner alert. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -63,7 +63,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -92,12 +92,12 @@ class AlertsResource(
     alertSequence: Long,
   ): AlertResponse = alertsService.getAlert(bookingId, alertSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/alerts/to-migrate")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets alert for latest booking",
-    description = "Retrieves alerts for a prisoner from latest all bookings. Requires ROLE_NOMIS_ALERTS",
+    description = "Retrieves alerts for a prisoner from latest all bookings. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -121,7 +121,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -147,12 +147,12 @@ class AlertsResource(
     offenderNo: String,
   ): PrisonerAlertsResponse = alertsService.getAlerts(offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/alerts/reconciliation")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets active alerts for latest booking",
-    description = "Retrieves active alerts for latest booking. Requires ROLE_NOMIS_ALERTS",
+    description = "Retrieves active alerts for latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -176,7 +176,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -202,12 +202,12 @@ class AlertsResource(
     offenderNo: String,
   ): PrisonerAlertsResponse = alertsService.getActiveAlertsForReconciliation(offenderNo)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/alerts")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Gets alert for booking",
-    description = "Retrieves alerts for a specific booking. Requires ROLE_NOMIS_ALERTS",
+    description = "Retrieves alerts for a specific booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -231,7 +231,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -257,12 +257,12 @@ class AlertsResource(
     bookingId: Long,
   ): BookingAlertsResponse = alertsService.getAlerts(bookingId)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/alerts")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates an alert on a prisoner",
-    description = "Creates an alert on the prisoner's latest booking. Requires ROLE_NOMIS_ALERTS",
+    description = "Creates an alert on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -296,7 +296,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -334,11 +334,11 @@ class AlertsResource(
     request: CreateAlertRequest,
   ): CreateAlertResponse = alertsService.createAlert(offenderNo, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
   @Operation(
     summary = "Updates an alert on a prisoner",
-    description = "Updates an alert on the specified prisoner's booking which should be the latest booking. Requires ROLE_NOMIS_ALERTS",
+    description = "Updates an alert on the specified prisoner's booking which should be the latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -372,7 +372,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -403,12 +403,12 @@ class AlertsResource(
     request: UpdateAlertRequest,
   ): AlertResponse = alertsService.updateAlert(bookingId, alertSequence, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/prisoners/booking-id/{bookingId}/alerts/{alertSequence}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Deletes an alert by bookingId and alert sequence",
-    description = "Deletes an prisoner alert. Requires ROLE_NOMIS_ALERTS",
+    description = "Deletes an prisoner alert. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -426,7 +426,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -445,12 +445,12 @@ class AlertsResource(
     alertSequence: Long,
   ): Unit = alertsService.deleteAlert(bookingId, alertSequence)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/alerts/codes")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates an alert code",
-    description = "Creates an alert code in the NOMIS reference data. Requires ROLE_NOMIS_ALERTS",
+    description = "Creates an alert code in the NOMIS reference data. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -478,7 +478,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -503,12 +503,12 @@ class AlertsResource(
     request: CreateAlertCode,
   ) = alertsReferenceDataService.createAlertCode(request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/alerts/resynchronise")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Replaces an alerts on a prisoner",
-    description = "Replaces all alerts on the prisoner's latest booking. Requires ROLE_NOMIS_ALERTS",
+    description = "Replaces all alerts on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -542,7 +542,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -570,12 +570,12 @@ class AlertsResource(
     request: List<CreateAlertRequest>,
   ): List<CreateAlertResponse> = alertsService.resynchroniseAlerts(offenderNo, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/alerts/codes/{code}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update an alert code",
-    description = "Updates an alert code in the NOMIS reference data, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    description = "Updates an alert code in the NOMIS reference data, specifically the description. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -603,7 +603,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -630,12 +630,12 @@ class AlertsResource(
     request: UpdateAlertCode,
   ) = alertsReferenceDataService.updateAlertCode(code, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/alerts/codes/{code}/reactivate")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update an alert code to be active",
-    description = "Updates an alert code in the NOMIS reference data to be active, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    description = "Updates an alert code in the NOMIS reference data to be active, specifically the description. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -653,7 +653,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -678,12 +678,12 @@ class AlertsResource(
     code: String,
   ) = alertsReferenceDataService.reactivateAlertCode(code)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/alerts/codes/{code}/deactivate")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update an alert code to be inactive",
-    description = "Updates an alert code in the NOMIS reference data to be inactive, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    description = "Updates an alert code in the NOMIS reference data to be inactive, specifically the description. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -701,7 +701,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -726,12 +726,12 @@ class AlertsResource(
     code: String,
   ) = alertsReferenceDataService.deactivateAlertCode(code)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/alerts/types")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates an alert type",
-    description = "Creates an alert type in the NOMIS reference data. Requires ROLE_NOMIS_ALERTS",
+    description = "Creates an alert type in the NOMIS reference data. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -759,7 +759,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -784,12 +784,12 @@ class AlertsResource(
     request: CreateAlertType,
   ) = alertsReferenceDataService.createAlertType(request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/alerts/types/{code}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update an alert type",
-    description = "Updates an alert type in the NOMIS reference data, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    description = "Updates an alert type in the NOMIS reference data, specifically the description. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -817,7 +817,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -844,12 +844,12 @@ class AlertsResource(
     request: UpdateAlertType,
   ) = alertsReferenceDataService.updateAlertType(code, request)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/alerts/types/{code}/reactivate")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update an alert type to be active",
-    description = "Updates an alert type in the NOMIS reference data to be active, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    description = "Updates an alert type in the NOMIS reference data to be active, specifically the description. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -867,7 +867,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",
@@ -892,12 +892,12 @@ class AlertsResource(
     code: String,
   ) = alertsReferenceDataService.reactivateAlertType(code)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_ALERTS')")
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/alerts/types/{code}/deactivate")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Update an alert type to be inactive",
-    description = "Updates an alert type in the NOMIS reference data to be inactive, specifically the description. Requires ROLE_NOMIS_ALERTS",
+    description = "Updates an alert type in the NOMIS reference data to be inactive, specifically the description. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "204",
@@ -915,7 +915,7 @@ class AlertsResource(
       ),
       ApiResponse(
         responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_ALERTS",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [
           Content(
             mediaType = "application/json",

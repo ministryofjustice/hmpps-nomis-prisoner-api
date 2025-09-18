@@ -119,7 +119,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if adjudication not found`() {
         webTestClient.post().uri("/adjudications/adjudication-number/88888/hearings")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearing()))
           .exchange()
@@ -131,7 +131,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 400 if hearing type is not valid`() {
         webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearing(hearingType = "VVV")))
           .exchange()
@@ -148,7 +148,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       fun `create an adjudication hearing`() {
         val hearingResponse =
           webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
@@ -181,7 +181,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
         }
 
         webTestClient.post().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -311,7 +311,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if adjudication not found`() {
         webTestClient.put().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingUpdate()))
           .exchange()
@@ -323,7 +323,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if hearing not found`() {
         webTestClient.put().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingUpdate()))
           .exchange()
@@ -336,7 +336,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       fun `will return 400 if hearing type is not valid`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(BodyInserters.fromValue(aHearingUpdate(hearingType = "VVV")))
           .exchange()
@@ -349,7 +349,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       fun `will return 400 if update fields not provided`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -371,7 +371,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       fun `update an adjudication hearing`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
@@ -490,7 +490,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if hearing not found`() {
         webTestClient.get().uri("/adjudications/hearings/123")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -503,7 +503,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `get adjudication hearing`() {
         webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -634,7 +634,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 if adjudication not found`() {
         webTestClient.delete().uri("/adjudications/adjudication-number/88888/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -645,7 +645,7 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will not throw error and will track event if hearing not found`() {
         webTestClient.delete().uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/88888")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk()
 
@@ -667,12 +667,12 @@ class AdjudicationsHearingsResourceIntTest : IntegrationTestBase() {
       fun `delete an adjudication hearing`() {
         webTestClient.delete()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
 
         webTestClient.get().uri("/adjudications/hearings/${existingHearing.id}")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()

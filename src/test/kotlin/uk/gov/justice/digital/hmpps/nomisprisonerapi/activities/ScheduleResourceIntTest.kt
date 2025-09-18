@@ -111,7 +111,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for date`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withDate("2022-11-61"),
@@ -128,7 +128,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for start time`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withStartTime("29:00"),
@@ -145,7 +145,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for end time`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withEndTime("11:70"),
@@ -162,7 +162,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return bad request for cancelled`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withCancelled("INVALID"),
@@ -179,7 +179,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return not found for unknown activity`() {
         webTestClient.put().uri("/activities/9876/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(BodyInserters.fromValue(validJsonRequest()))
           .exchange()
           .expectStatus().isNotFound
@@ -192,7 +192,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return not found for unknown schedule`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withId(99999),
@@ -213,7 +213,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return OK if updated to cancelled`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(BodyInserters.fromValue(validJsonRequest()))
           .exchange()
           .expectStatus().isOk
@@ -243,7 +243,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withCancelled("false"),
@@ -274,7 +274,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withDate(tomorrow.toString()),
@@ -305,7 +305,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
 
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withDate(yesterday.toString()),
@@ -330,7 +330,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return bad request if dates out of order`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withStartTime("13:00").withEndTime("12:59"),
@@ -355,7 +355,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return OK if updating dates and times`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(
             BodyInserters.fromValue(
               validJsonRequest().withStartTime("13:00").withEndTime("15:00"),
@@ -378,7 +378,7 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
       fun `should publish telemetry`() {
         webTestClient.put().uri("/activities/${courseActivity.courseActivityId}/schedule")
           .contentType(MediaType.APPLICATION_JSON)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .body(BodyInserters.fromValue(validJsonRequest()))
           .exchange()
           .expectStatus().isOk

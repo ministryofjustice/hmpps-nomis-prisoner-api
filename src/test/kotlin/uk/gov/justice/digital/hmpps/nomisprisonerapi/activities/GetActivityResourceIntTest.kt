@@ -75,7 +75,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `invalid prison should return not found`() {
         webTestClient.get().uri("/activities/ids?prisonId=XXX")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -451,7 +451,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
         .build()
     }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }
@@ -592,7 +592,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
         .build()
     }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }
@@ -808,7 +808,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
         .apply { courseActivityId?.run { queryParam("courseActivityId", courseActivityId) } }
         .build()
     }
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }
@@ -847,7 +847,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
       @Test
       fun `unknown course activity should return not found`() {
         webTestClient.get().uri("/activities/9999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -1073,7 +1073,7 @@ class GetActivityResourceIntTest : IntegrationTestBase() {
     }
 
     private fun WebTestClient.getActivityDetails(): WebTestClient.ResponseSpec = get().uri("/activities/${courseActivity.courseActivityId}")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
   }

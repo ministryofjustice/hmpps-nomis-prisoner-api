@@ -300,7 +300,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner's booking not found`() {
         webTestClient.get().uri("/prisoners/booking-id/9999/alerts/$activeAlertSequence")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -308,7 +308,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner's alert not found`() {
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/9999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -319,7 +319,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `returned data for a minimal active alert`() {
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -342,7 +342,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `returned data for a an inactive alert`() {
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$inactiveAlertSequence")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -364,7 +364,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can read audit data related to the alert`() {
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$alertSequenceWithAuditMinimal")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -382,7 +382,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           .jsonPath("audit.auditClientWorkstationName").exists()
           .jsonPath("audit.auditAdditionalInfo").doesNotExist()
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$alertSequenceWithAudit")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -616,7 +616,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner not found`() {
         webTestClient.get().uri("/prisoners/A9999ZZ/alerts/to-migrate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -624,7 +624,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner with no bookings not found`() {
         webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/alerts/to-migrate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -632,7 +632,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 200 when prisoner found with no alerts`() {
         webTestClient.get().uri("/prisoners/${prisonerNoAlerts.nomsId}/alerts/to-migrate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -645,7 +645,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `returns all alerts for current booking`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/to-migrate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -877,7 +877,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner not found`() {
         webTestClient.get().uri("/prisoners/A9999ZZ/alerts/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -885,7 +885,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when prisoner with no bookings not found`() {
         webTestClient.get().uri("/prisoners/${prisonerNoBookings.nomsId}/alerts/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -893,7 +893,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 200 when prisoner found with no alerts`() {
         webTestClient.get().uri("/prisoners/${prisonerNoAlerts.nomsId}/alerts/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -906,7 +906,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `returns all alerts for current booking`() {
         webTestClient.get().uri("/prisoners/${prisoner.nomsId}/alerts/reconciliation")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1002,7 +1002,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 404 when booking not found`() {
         webTestClient.get().uri("/prisoners/booking-id/9999/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -1010,7 +1010,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 200 when prisoner found with no alerts`() {
         webTestClient.get().uri("/prisoners/booking-id/$bookingNoAlertsId/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -1023,7 +1023,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `returns all alerts for current booking`() {
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
@@ -1099,7 +1099,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when prisoner's booking not found`() {
         webTestClient.delete().uri("/prisoners/booking-id/9999/alerts/$activeAlertSequence")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -1107,7 +1107,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `return 204 when prisoner's alert not found`() {
         webTestClient.delete().uri("/prisoners/booking-id/$bookingId/alerts/9999")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
       }
@@ -1118,17 +1118,17 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will delete the alert`() {
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
         webTestClient.delete().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNoContent
         webTestClient.get().uri("/prisoners/booking-id/$bookingId/alerts/$activeAlertSequence")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isNotFound
@@ -1244,7 +1244,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when prisoner does not exist`() {
         webTestClient.post().uri("/prisoners/A9999ZZ/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlert)
           .exchange()
@@ -1254,7 +1254,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert code is not present`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1274,7 +1274,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when create username is not present`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1294,7 +1294,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert date is not present`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1314,7 +1314,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert code is not valid`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1336,7 +1336,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       fun `attempt to add the same active alert twice is rejected`() {
         // HPI is already active so will be rejected
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1355,7 +1355,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
         // Can create another inactive HPI alert
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1374,7 +1374,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
         // existing SC is inactive so can create an active one
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1393,7 +1393,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
 
         // SA is active but on a previous booking
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1417,7 +1417,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating an alert with minimal data will return basic data`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1450,7 +1450,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
         val veryLongComment = textWithASingle4ByteCharacter + textWith3999Characters
 
         val alert = webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1480,7 +1480,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating an alert will allow the data to be retrieved`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1528,7 +1528,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create an alert that is inactive`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1676,7 +1676,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when prisoner does not exist`() {
         webTestClient.post().uri("/prisoners/A9999ZZ/alerts/resynchronise")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlerts)
           .exchange()
@@ -1686,7 +1686,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when one of the alert codes is not present`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1709,7 +1709,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       fun `can to add the same active alert twice`() {
         // Validation is relaxed since we are replacing exactly what is in DPS
         webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1741,7 +1741,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `replaces an alerts with minimal data will return basic data`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1772,7 +1772,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `creating an alert will allow the data to be retrieved`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1822,7 +1822,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can create alerts that are inactive`() {
         webTestClient.post().uri("/prisoners/A1234AB/alerts/resynchronise")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -1977,13 +1977,13 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when booking or alert sequence does not exist`() {
         webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/99")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validUpdate)
           .exchange()
           .expectStatus().isNotFound
         webTestClient.put().uri("/prisoners/booking-id/999999/alerts/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validUpdate)
           .exchange()
@@ -1993,7 +1993,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when update username is not present`() {
         webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2013,7 +2013,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert date is not present`() {
         webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2036,7 +2036,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Can update the alert expiry date and status`() {
         webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             UpdateAlertRequest(
@@ -2060,7 +2060,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Can update the alert and retrieve those alert updates`() {
         webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             UpdateAlertRequest(
@@ -2099,7 +2099,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Update will create a new workflow log modification record`() {
         webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             UpdateAlertRequest(
@@ -2132,7 +2132,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `Can update the alert on previous booking though this is not expected to ever happen in DPS`() {
         webTestClient.put().uri("/prisoners/booking-id/$inactiveBookingId/alerts/1")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             UpdateAlertRequest(
@@ -2155,7 +2155,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       val veryLongComment = textWithASingle4ByteCharacter + textWith3999Characters
 
       webTestClient.put().uri("/prisoners/booking-id/$activeBookingId/alerts/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(
           UpdateAlertRequest(
@@ -2234,7 +2234,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert code is not present`() {
         webTestClient.post().uri("/alerts/codes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2254,7 +2254,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when description is not present`() {
         webTestClient.post().uri("/alerts/codes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2274,7 +2274,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert type is not present`() {
         webTestClient.post().uri("/alerts/codes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2294,7 +2294,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert type is invalid`() {
         webTestClient.post().uri("/alerts/codes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2315,14 +2315,14 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `attempt to add the same code twice is rejected`() {
         webTestClient.post().uri("/alerts/codes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertCode)
           .exchange()
           .expectStatus().isEqualTo(201)
 
         webTestClient.post().uri("/alerts/codes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertCode)
           .exchange()
@@ -2335,7 +2335,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.post().uri("/alerts/codes")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertCode)
           .exchange()
@@ -2426,7 +2426,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert description is not present`() {
         webTestClient.put().uri("/alerts/codes/$alertCode")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2446,7 +2446,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.put().uri("/alerts/codes/$alertCode")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertCodeUpdate)
           .exchange()
@@ -2527,7 +2527,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.put().uri("/alerts/codes/$alertCode/deactivate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .exchange()
           .expectStatus().isEqualTo(204)
@@ -2606,7 +2606,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.put().uri("/alerts/codes/$alertCode/reactivate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .exchange()
           .expectStatus().isEqualTo(204)
@@ -2687,7 +2687,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert type code is not present`() {
         webTestClient.post().uri("/alerts/types")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2706,7 +2706,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when description is not present`() {
         webTestClient.post().uri("/alerts/types")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2725,14 +2725,14 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `attempt to add the same type twice is rejected`() {
         webTestClient.post().uri("/alerts/types")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertType)
           .exchange()
           .expectStatus().isEqualTo(201)
 
         webTestClient.post().uri("/alerts/types")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertType)
           .exchange()
@@ -2745,7 +2745,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.post().uri("/alerts/types")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertType)
           .exchange()
@@ -2836,7 +2836,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @Test
       fun `validation fails when alert description is not present`() {
         webTestClient.put().uri("/alerts/types/$typeCode")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(
             //language=JSON
@@ -2856,7 +2856,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.put().uri("/alerts/types/$typeCode")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(validAlertTypeUpdate)
           .exchange()
@@ -2937,7 +2937,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.put().uri("/alerts/types/$alertType/deactivate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .exchange()
           .expectStatus().isEqualTo(204)
@@ -3016,7 +3016,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         webTestClient.put().uri("/alerts/types/$alertType/reactivate")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .exchange()
           .expectStatus().isEqualTo(204)
@@ -3044,7 +3044,7 @@ class AlertsResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun <T : RequestHeadersSpec<T>> RequestHeadersSpec<T>.validExchangeBody(): WebTestClient.BodyContentSpec = this.headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+  private fun <T : RequestHeadersSpec<T>> RequestHeadersSpec<T>.validExchangeBody(): WebTestClient.BodyContentSpec = this.headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .exchange()
     .expectStatus()
     .isOk

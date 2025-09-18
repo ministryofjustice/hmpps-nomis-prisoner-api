@@ -41,7 +41,7 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.getAllocationReconciliation(prisonId: String = "BXI") = get()
       .uri("/allocations/reconciliation/$prisonId")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
 
@@ -290,7 +290,7 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.getSuspendedAllocationReconciliation(prisonId: String = "BXI") = get()
       .uri("/allocations/reconciliation/$prisonId?suspended=true")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
 
@@ -514,7 +514,7 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
 
     private fun WebTestClient.getAttendanceReconciliation(prisonId: String = "BXI") = get()
       .uri("/attendances/reconciliation/$prisonId?date=$today")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
       .expectStatus().isOk
 
@@ -559,7 +559,7 @@ class SyncReconciliationIntTest : IntegrationTestBase() {
     fun `should return bad request if no date passed`() {
       webTestClient.get()
         .uri("/attendances/reconciliation/prisonId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isBadRequest
     }

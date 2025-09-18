@@ -236,7 +236,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `will return 404 if booking not found`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", 88888)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -250,7 +250,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `will return offender number related to booking`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -261,7 +261,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `there will be a summary for each ADA award across all adjudications for this booking`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -272,7 +272,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `each ADA sanction is returned`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -288,7 +288,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `each ADA sanction is returned regardless of status`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -304,7 +304,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `summary of ADA is returned`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -320,7 +320,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `ADA days calculated from months as well as days`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", bookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -347,7 +347,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `will return offender number related to booking`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", noAdjudicationsBookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -358,7 +358,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
       fun `will have no adjudication summaries`() {
         webTestClient.get()
           .uri("/prisoners/booking-id/{bookingId}/awards/ada/summary", noAdjudicationsBookingId)
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ADJUDICATIONS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
