@@ -7,8 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.transaction.annotation.Transactional
@@ -418,11 +416,10 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectStatus().isUnauthorized
       }
 
-      @ParameterizedTest
-      @CsvSource("ROLE_NOMIS_ALERTS", "ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")
-      fun `access allowed for role`(role: String) {
+      @Test
+      fun `access allowed for role NOMIS_PRISONER_API__SYNCHRONISATION__RW`() {
         webTestClient.get().uri("/prisoners/ids?active=false&size=1&page=0")
-          .headers(setAuthorisation(roles = listOf(role)))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -517,16 +514,10 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .expectStatus().isUnauthorized
       }
 
-      @ParameterizedTest
-      @CsvSource(
-        "ROLE_NOMIS_ALERTS",
-        "ROLE_NOMIS_CORE_PERSON",
-        "ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        "ROLE_NOMIS_SENTENCING",
-      )
-      fun `access allowed for role`(role: String) {
+      @Test
+      fun `access allowed for role NOMIS_PRISONER_API__SYNCHRONISATION__RW`() {
         webTestClient.get().uri("/prisoners/ids/all")
-          .headers(setAuthorisation(roles = listOf(role)))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
       }
@@ -822,7 +813,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should return 404 for not found `() {
       webTestClient.get().uri("/prisoners/A9999ZZ")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
     }
@@ -830,7 +821,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should get prisoner details`() {
       webTestClient.get().uri("/prisoners/A1234TT")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -843,7 +834,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
     @Test
     fun `should get inactive prisoner details`() {
       webTestClient.get().uri("/prisoners/A1234WW")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
@@ -851,14 +842,6 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         .jsonPath("bookingId").isEqualTo(bookingOut.bookingId)
         .jsonPath("offenderNo").isEqualTo("A1234WW")
         .jsonPath("active").isEqualTo(false)
-    }
-
-    @Test
-    fun `can use role ROLE_NOMIS_CONTACTPERSONS`() {
-      webTestClient.get().uri("/prisoners/A1234WW")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_CONTACTPERSONS")))
-        .exchange()
-        .expectStatus().isOk
     }
   }
 
@@ -935,7 +918,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 for a prisoner that does not exist`() {
         webTestClient.get().uri("/prisoners/A9999TT/bookings/$bookingId/previous")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -943,7 +926,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 for a booking that  does not exist for prisoner`() {
         webTestClient.get().uri("/prisoners/A1234TT/bookings/9999/previous")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -951,7 +934,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return 404 for a booking that has no previous booking`() {
         webTestClient.get().uri("/prisoners/A1234WW/bookings/$bookingIdOnlyOne/previous")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
       }
@@ -962,7 +945,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return previous booking for the latest booking`() {
         webTestClient.get().uri("/prisoners/A1234TT/bookings/$bookingId/previous")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -973,7 +956,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return first booking for the middle booking`() {
         webTestClient.get().uri("/prisoners/A1234TT/bookings/$previousBookingId/previous")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
@@ -986,7 +969,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return previous booking for the latest booking`() {
           webTestClient.get().uri("/prisoners/A1234HH/bookings/$aliasLatestBookingId/previous")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
@@ -997,7 +980,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         @Test
         fun `will return first booking for the middle booking`() {
           webTestClient.get().uri("/prisoners/A1234HH/bookings/$aliasPreviousBookingId/previous")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ALERTS")))
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBody()
