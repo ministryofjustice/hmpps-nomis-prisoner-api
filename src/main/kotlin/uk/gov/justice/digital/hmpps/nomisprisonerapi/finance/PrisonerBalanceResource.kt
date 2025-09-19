@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -103,6 +104,7 @@ data class PrisonerAccountsDto(
   val accounts: List<PrisonerAccountDto>,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class PrisonerAccountDto(
   @Schema(description = "The id of the prison", example = "MDI")
   val prisonId: String,

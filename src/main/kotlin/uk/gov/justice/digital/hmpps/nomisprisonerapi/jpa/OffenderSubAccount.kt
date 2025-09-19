@@ -51,8 +51,8 @@ class OffenderSubAccount(
   @Column(nullable = false)
   val balance: BigDecimal,
 
-  @Column(nullable = false)
-  val holdBalance: BigDecimal,
+  @Column
+  val holdBalance: BigDecimal?,
 
   @Column(name = "LAST_TXN_ID", nullable = false)
   val lastTransactionId: Long,

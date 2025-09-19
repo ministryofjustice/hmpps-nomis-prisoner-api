@@ -17,7 +17,7 @@ interface OffenderTrustAccountDsl {
   fun subAccount(
     accountCode: Long = 2101,
     balance: BigDecimal = BigDecimal.ZERO,
-    holdBalance: BigDecimal = BigDecimal.ZERO,
+    holdBalance: BigDecimal? = null,
     lastTransactionId: Long = 12345,
     dsl: OffenderSubAccountDsl.() -> Unit = {},
   ): OffenderSubAccount
@@ -38,7 +38,7 @@ class OffenderTrustAccountBuilder(
     offender: Offender,
     caseloadId: String,
     currentBalance: BigDecimal,
-    holdBalance: BigDecimal,
+    holdBalance: BigDecimal?,
   ): OffenderTrustAccount = OffenderTrustAccount(
     id = OffenderTrustAccountId(caseloadId = caseloadId, offender = offender),
     currentBalance = currentBalance,
@@ -50,7 +50,7 @@ class OffenderTrustAccountBuilder(
   override fun subAccount(
     accountCode: Long,
     balance: BigDecimal,
-    holdBalance: BigDecimal,
+    holdBalance: BigDecimal?,
     lastTransactionId: Long,
     dsl: OffenderSubAccountDsl.() -> Unit,
   ): OffenderSubAccount = offenderSubAccountBuilderFactory.builder().let { builder ->

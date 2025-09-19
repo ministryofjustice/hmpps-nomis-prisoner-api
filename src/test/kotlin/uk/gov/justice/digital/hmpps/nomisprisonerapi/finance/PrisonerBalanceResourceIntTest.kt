@@ -40,7 +40,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         trustAccount()
         trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(34.50)) {
           subAccount()
-          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(12.25), lastTransactionId = 34567)
+          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(12.25), holdBalance = BigDecimal.ZERO, lastTransactionId = 34567)
           subAccount(accountCode = 2103, balance = BigDecimal.valueOf(21.25), holdBalance = BigDecimal.valueOf(2.50), lastTransactionId = 56789)
         }
       }.id
@@ -148,8 +148,9 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].lastTransactionId).isEqualTo(12345)
         assertThat(accounts[0].subAccountType).isEqualTo(SubAccountType.CASH)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
-        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[0].holdBalance).isNull()
         assertThat(accounts[1].subAccountType).isEqualTo(SubAccountType.SPEND)
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
         assertThat(accounts[2].subAccountType).isEqualTo(SubAccountType.SAVINGS)
         assertThat(accounts[2].balance).isEqualTo("21.25")
         assertThat(accounts[2].holdBalance).isEqualTo("2.5")
