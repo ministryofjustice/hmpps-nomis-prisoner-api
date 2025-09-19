@@ -1967,6 +1967,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseStatus.description").isEqualTo("Active")
           .jsonPath("legalCaseType.code").isEqualTo("A")
           .jsonPath("legalCaseType.description").isEqualTo("Adult")
+          .jsonPath("primaryCaseInfoNumber").isEqualTo("caseRef1")
           .jsonPath("beginDate").isEqualTo("2023-01-01")
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
@@ -7605,6 +7606,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
     legalCaseType = legalCaseType,
     startDate = startDate,
     status = status,
+    caseReference = "caseRef1",
   )
 
   private fun createOffenderChargeRequest(
