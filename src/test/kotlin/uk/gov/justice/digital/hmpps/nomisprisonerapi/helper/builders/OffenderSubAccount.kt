@@ -24,7 +24,7 @@ class OffenderSubAccountBuilder : OffenderSubAccountDsl {
     caseloadId: String,
     accountCode: Long,
     balance: BigDecimal,
-    holdBalance: BigDecimal,
+    holdBalance: BigDecimal?,
     lastTransactionId: Long,
   ): OffenderSubAccount = OffenderSubAccount(
     id = OffenderSubAccountId(caseloadId = caseloadId, offender = offender, accountCode = accountCode),
