@@ -213,7 +213,6 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseInfoNumbers[1].reference").isEqualTo("caseRef2")
           .jsonPath("caseInfoNumbers[2].reference").isEqualTo("caseRef5")
           .jsonPath("caseInfoNumbers[3].reference").isEqualTo("newRef6")
-          .jsonPath("primaryCaseInfoNumber").isEqualTo("caseRef1")
 
         @Test
         fun `can remove case references`() {
@@ -240,7 +239,6 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
             .expectBody()
             .jsonPath("caseInfoNumbers.size()").isEqualTo(1)
             .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef1")
-            .jsonPath("primaryCaseInfoNumber").isEqualTo("caseRef1")
         }
 
         @Test
@@ -272,61 +270,6 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
             .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef1")
             .jsonPath("caseInfoNumbers[1].reference").isEqualTo("newRef1")
             .jsonPath("caseInfoNumbers[2].reference").isEqualTo("newRef2")
-        }
-
-        @Test
-        fun `if case info is removed use next case info in the list on the case primary column`() {
-          webTestClient.post()
-            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(
-              BodyInserters.fromValue(
-                CaseIdentifierRequest(
-                  caseIdentifiers = listOf(
-                    CaseIdentifier("newRef1", LocalDateTime.now().plusHours(1)),
-                    CaseIdentifier("newRef2", LocalDateTime.now().plusHours(2)),
-                  ),
-                ),
-              ),
-            )
-            .exchange()
-            .expectStatus().isOk
-
-          webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBody()
-            .jsonPath("caseInfoNumbers.size()").isEqualTo(2)
-            .jsonPath("caseInfoNumbers[1].reference").isEqualTo("newRef1")
-            .jsonPath("caseInfoNumbers[2].reference").isEqualTo("newRef2")
-            .jsonPath("primaryCaseInfoNumber").isEqualTo("newRef1")
-        }
-
-        @Test
-        fun `if all case info numbers are removed then clear the case column`() {
-          webTestClient.post()
-            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(
-              BodyInserters.fromValue(
-                CaseIdentifierRequest(
-                  caseIdentifiers = emptyList(),
-                ),
-              ),
-            )
-            .exchange()
-            .expectStatus().isOk
-
-          webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBody()
-            .jsonPath("caseInfoNumbers.size()").isEqualTo(0)
-            .jsonPath("primaryCaseInfoNumber").doesNotExist()
         }
       }
 

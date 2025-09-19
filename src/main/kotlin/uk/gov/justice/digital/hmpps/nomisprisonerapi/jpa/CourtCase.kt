@@ -76,7 +76,7 @@ class CourtCase(
   )
   var caseStatus: CaseStatus,
 
-  @Column(name = "CASE_INFO_NUMBER", updatable = false, insertable = false)
+  @Column(name = "CASE_INFO_NUMBER")
   var primaryCaseInfoNumber: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)

@@ -161,6 +161,7 @@ class SentencingService(
         legalCaseType = lookupLegalCaseType(request.legalCaseType),
         beginDate = request.startDate,
         caseStatus = lookupCaseStatus(request.status),
+        primaryCaseInfoNumber = request.caseReference,
         court = lookupEstablishment(request.courtId),
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
       ),
@@ -1103,7 +1104,7 @@ class SentencingService(
     val courtCase = courtCaseRepository.findByIdOrNull(caseId)
       ?: throw NotFoundException("Court case $caseId not found")
     val existingDpsCaseIdentifiers = courtCase.getDpsCaseInfoNumbers()
-    val requestCaseIdentifierReferences = request.caseIdentifiers.sortedBy { it.createdDate }.map { it.reference }
+    val requestCaseIdentifierReferences = request.caseIdentifiers.map { it.reference }
 
     val caseIdentifiersToRemove =
       existingDpsCaseIdentifiers.filter { it.id.reference !in request.caseIdentifiers.map { it.reference } }
@@ -1123,14 +1124,6 @@ class SentencingService(
     log.info("Adding case identifiers offender $offenderNo: ${caseIdentifiersToAdd.map { it.id }}")
     courtCase.caseInfoNumbers.removeAll(caseIdentifiersToRemove)
     courtCase.caseInfoNumbers.addAll(caseIdentifiersToAdd)
-    courtCaseRepository.saveAndFlush(courtCase).also {
-      if (courtCase.primaryCaseInfoNumber != requestCaseIdentifierReferences.getOrNull(0)) {
-        courtCaseRepository.updatePrimaryCaseInfoNumber(
-          caseInfoNumber = requestCaseIdentifierReferences.getOrNull(0),
-          caseId = caseId,
-        )
-      }
-    }
   }
 
   fun convertToRecallSentences(offenderNo: String, request: ConvertToRecallRequest): ConvertToRecallResponse {
@@ -1514,6 +1507,8 @@ class SentencingService(
           // make case active unless this is a source of a linked case
           caseStatus = if (sourceCase.targetCombinedCase != null) sourceCase.caseStatus else lookupCaseStatus("A"),
           court = sourceCase.court,
+          // set this later as the last update to offender case to prevent NOMIS trigger adding ti identifiers table
+          primaryCaseInfoNumber = null,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
           statusUpdateDate = sourceCase.statusUpdateDate,
@@ -1790,6 +1785,7 @@ class SentencingService(
       courtCaseRepository.saveAllAndFlush(clonedCases).also { clonedCases ->
         clonedCases.forEachIndexed { caseIndex, clonedCase ->
           val sourceCase = sourceCourtCases[caseIndex]
+          clonedCase.primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber
           clonedCase.statusUpdateDate = sourceCase.statusUpdateDate ?: LocalDate.now()
           clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: sourceCase.deriveStatusUpdateReason()
           clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
@@ -1817,14 +1813,6 @@ class SentencingService(
 
     val sourceSentences = clonedCasesWithSource.flatMap { (_, source) -> source.sentences }
     val clonedSentences = clonedCasesWithSource.flatMap { (cloned, _) -> cloned.sentences }
-
-    clonedCasesWithSource.forEachIndexed { caseIndex, cloneSourcePair ->
-      val sourceCase = cloneSourcePair.second
-      val cloneCase = cloneSourcePair.first
-      courtCaseRepository.updatePrimaryCaseInfoNumber(caseId = cloneCase.id, caseInfoNumber = sourceCase.primaryCaseInfoNumber)
-      // for returned dto only - not saved with CourtCase
-      cloneCase.primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber
-    }
 
     return BookingCourtCaseCloneResponse(
       courtCases = clonedCasesWithSource.map { (cloned, source) ->
