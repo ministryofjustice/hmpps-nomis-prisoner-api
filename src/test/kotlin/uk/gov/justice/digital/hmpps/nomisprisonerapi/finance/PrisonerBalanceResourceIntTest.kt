@@ -100,6 +100,29 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .jsonPath("content[1]").isEqualTo(id2)
         .jsonPath("content[2]").isEqualTo(id3)
     }
+
+    @Test
+    fun getPrisonerIdsAtPrison() {
+      webTestClient.get().uri("/finance/prisoners/ids?prisonId=WWI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("page.totalElements").isEqualTo(1)
+        .jsonPath("content[0]").isEqualTo(id1)
+    }
+
+    @Test
+    fun getPrisonerIdsAtPrisonNoResults() {
+      webTestClient.get().uri("/finance/prisoners/ids?prisonId=XXI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("page.totalElements").isEqualTo(0)
+    }
   }
 
   @Nested
@@ -149,8 +172,10 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].subAccountType).isEqualTo(SubAccountType.CASH)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
         assertThat(accounts[0].holdBalance).isNull()
+        assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].subAccountType).isEqualTo(SubAccountType.SPEND)
         assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[2].prisonId).isEqualTo("LEI")
         assertThat(accounts[2].subAccountType).isEqualTo(SubAccountType.SAVINGS)
         assertThat(accounts[2].balance).isEqualTo("21.25")
         assertThat(accounts[2].holdBalance).isEqualTo("2.5")
