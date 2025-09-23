@@ -27,7 +27,9 @@ class PrisonerBalanceService(
     }
     ?: throw NotFoundException("Offender with id $rootOffenderId not found")
 
-  fun findAllPrisonersWithAccountBalance(pageRequest: Pageable): PagedModel<Long> = PagedModel(offenderRepository.findAllOffenderIdWithBalances(pageRequest))
+  fun findAllPrisonersWithAccountBalance(prisonId: String?, pageRequest: Pageable): PagedModel<Long> = PagedModel(
+    offenderRepository.findAllOffenderIdsWithBalances(prisonId, pageRequest),
+  )
 }
 
 private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(
