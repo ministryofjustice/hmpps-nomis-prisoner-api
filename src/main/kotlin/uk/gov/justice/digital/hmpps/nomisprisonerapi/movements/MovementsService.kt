@@ -646,6 +646,7 @@ class MovementsService(
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     applicationDate = applicationDate,
     applicationTime = applicationTime,
+    contactPersonName = contactPersonName,
     audit = toAudit(),
   )
 

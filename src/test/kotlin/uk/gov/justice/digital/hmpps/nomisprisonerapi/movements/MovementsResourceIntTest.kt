@@ -1030,6 +1030,7 @@ class MovementsResourceIntTest(
                 returnDate = yesterday.toLocalDate(),
                 returnTime = yesterday,
                 toAddress = offenderAddress,
+                contactPersonName = "Jeff",
               ) {
                 tempAbsence = externalMovement()
                 scheduledTempAbsenceReturn = scheduledReturn {
@@ -1120,6 +1121,7 @@ class MovementsResourceIntTest(
           assertThat(returnTime).isCloseTo(yesterday, within(1, ChronoUnit.MINUTES))
           assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
           assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+          assertThat(contactPersonName).isEqualTo("Jeff")
         }
     }
   }
