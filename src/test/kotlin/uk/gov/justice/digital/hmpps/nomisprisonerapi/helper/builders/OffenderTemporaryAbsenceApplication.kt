@@ -39,6 +39,7 @@ interface OffenderTemporaryAbsenceApplicationDsl {
     returnDate: LocalDate = eventDate,
     returnTime: LocalDateTime = startTime.plusHours(1),
     toAddress: Address? = null,
+    contactPersonName: String? = null,
     dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit = {},
   ): OffenderScheduledTemporaryAbsence
 
@@ -154,6 +155,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     returnDate: LocalDate,
     returnTime: LocalDateTime,
     toAddress: Address?,
+    contactPersonName: String?,
     dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit,
   ): OffenderScheduledTemporaryAbsence = scheduleTemporaryAbsenceBuilderFactory.builder().let { builder ->
     builder.build(
@@ -170,6 +172,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
       returnDate = returnDate,
       returnTime = returnTime,
       toAddress = toAddress,
+      contactPersonName = contactPersonName,
     )
       .also { temporaryAbsenceApplication.scheduledTemporaryAbsences += it }
       .also { builder.apply(dsl) }

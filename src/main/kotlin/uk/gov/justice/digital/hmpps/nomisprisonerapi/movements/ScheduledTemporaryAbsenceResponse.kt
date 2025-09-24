@@ -61,6 +61,9 @@ data class ScheduledTemporaryAbsenceResponse(
   @Schema(description = "Application time")
   val applicationTime: LocalDateTime?,
 
+  @Schema(description = "Contact person name")
+  val contactPersonName: String?,
+
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )

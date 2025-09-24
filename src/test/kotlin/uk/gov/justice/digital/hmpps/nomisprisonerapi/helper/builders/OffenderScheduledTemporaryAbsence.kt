@@ -96,6 +96,7 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     returnDate: LocalDate,
     returnTime: LocalDateTime,
     toAddress: Address?,
+    contactPersonName: String?,
   ): OffenderScheduledTemporaryAbsence = OffenderScheduledTemporaryAbsence(
     temporaryAbsenceApplication = temporaryAbsenceApplication,
     offenderBooking = temporaryAbsenceApplication.offenderBooking,
@@ -114,6 +115,7 @@ class OffenderScheduledTemporaryAbsenceBuilder(
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     applicationDate = temporaryAbsenceApplication.applicationDate,
     applicationTime = temporaryAbsenceApplication.applicationTime,
+    contactPersonName = contactPersonName,
   )
     .also { scheduledTemporaryAbsence = it }
 
