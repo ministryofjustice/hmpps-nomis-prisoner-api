@@ -35,7 +35,7 @@ class PrisonerBalanceService(
 private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(
   prisonId = id.caseloadId,
   lastTransactionId = lastTransactionId,
-  subAccountType = SubAccountType.fromLong(id.accountCode),
+  accountCode = id.accountCode,
   balance = balance,
   holdBalance = holdBalance,
 )

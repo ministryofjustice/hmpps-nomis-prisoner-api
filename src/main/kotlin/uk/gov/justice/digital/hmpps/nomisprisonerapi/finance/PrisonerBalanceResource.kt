@@ -114,8 +114,8 @@ data class PrisonerAccountDto(
   @Schema(description = "The id of the last transaction associated with the balance", example = "123")
   val lastTransactionId: Long,
 
-  @Schema(description = "The account type")
-  val subAccountType: SubAccountType,
+  @Schema(description = "The account code for the balance entry", example = "2101")
+  val accountCode: Long,
 
   @Schema(description = "The account balance", example = "12.50")
   val balance: BigDecimal,
@@ -123,13 +123,3 @@ data class PrisonerAccountDto(
   @Schema(description = "The amount on hold", example = "12.50")
   val holdBalance: BigDecimal? = null,
 )
-enum class SubAccountType(val value: Long) {
-  CASH(2101),
-  SPEND(2102),
-  SAVINGS(2103),
-  ;
-
-  companion object {
-    fun fromLong(value: Long) = entries.first { it.value == value }
-  }
-}
