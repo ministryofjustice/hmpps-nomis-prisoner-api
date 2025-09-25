@@ -91,11 +91,11 @@ class PrisonerBalanceResource(
     @Schema(description = "rootOffenderId", example = "123456")
     @PathVariable
     rootOffenderId: Long,
-  ): PrisonerAccountsDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId)
+  ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId)
 }
 
 @Schema(description = "Finance details for a prisoner")
-data class PrisonerAccountsDto(
+data class PrisonerBalanceDto(
   @Schema(description = "The root offender Id", example = "12345")
   val rootOffenderId: Long,
 
