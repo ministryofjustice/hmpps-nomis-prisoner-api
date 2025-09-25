@@ -18,8 +18,8 @@ import java.time.LocalDateTime
 class OffenderScheduledTemporaryAbsence(
   eventId: Long = 0,
   offenderBooking: OffenderBooking,
-  eventDate: LocalDate? = null,
-  startTime: LocalDateTime? = null,
+  eventDate: LocalDate,
+  startTime: LocalDateTime,
   eventSubType: MovementReason,
   eventStatus: EventStatus,
   comment: String? = null,

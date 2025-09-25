@@ -10,10 +10,10 @@ data class CreateScheduledTemporaryAbsenceRequest(
   val movementApplicationId: Long,
 
   @Schema(description = "Event date")
-  val eventDate: LocalDate?,
+  val eventDate: LocalDate,
 
   @Schema(description = "Start time")
-  val startTime: LocalDateTime?,
+  val startTime: LocalDateTime,
 
   @Schema(description = "Event sub type")
   val eventSubType: String,

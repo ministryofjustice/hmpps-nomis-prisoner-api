@@ -84,8 +84,8 @@ class OffenderScheduledTemporaryAbsenceBuilder(
 
   fun build(
     temporaryAbsenceApplication: OffenderMovementApplication,
-    eventDate: LocalDate?,
-    startTime: LocalDateTime?,
+    eventDate: LocalDate,
+    startTime: LocalDateTime,
     eventSubType: String,
     eventStatus: String,
     comment: String?,

@@ -66,8 +66,8 @@ class OffenderScheduledTemporaryAbsenceReturnBuilder(
 
   fun build(
     offenderBooking: OffenderBooking,
-    eventDate: LocalDate? = null,
-    startTime: LocalDateTime? = null,
+    eventDate: LocalDate,
+    startTime: LocalDateTime,
     eventSubType: String,
     eventStatus: String,
     comment: String? = null,

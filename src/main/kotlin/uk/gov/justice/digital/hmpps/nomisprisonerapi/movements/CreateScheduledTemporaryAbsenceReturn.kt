@@ -13,10 +13,10 @@ data class CreateScheduledTemporaryAbsenceReturnRequest(
   val scheduledTemporaryAbsenceEventId: Long,
 
   @Schema(description = "Event date")
-  val eventDate: LocalDate?,
+  val eventDate: LocalDate,
 
   @Schema(description = "Start time")
-  val startTime: LocalDateTime?,
+  val startTime: LocalDateTime,
 
   @Schema(description = "Event sub type")
   val eventSubType: String,
