@@ -510,8 +510,8 @@ class MovementsService(
 
   private fun OffenderScheduledTemporaryAbsence.toResponse() = ScheduledTemporaryAbsence(
     eventId = eventId,
-    eventDate = eventDate,
-    startTime = startTime,
+    eventDate = eventDate ?: temporaryAbsenceApplication.fromDate,
+    startTime = startTime ?: temporaryAbsenceApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
@@ -530,8 +530,8 @@ class MovementsService(
 
   private fun OffenderScheduledTemporaryAbsenceReturn.toResponse() = ScheduledTemporaryAbsenceReturn(
     eventId = eventId,
-    eventDate = eventDate,
-    startTime = startTime,
+    eventDate = eventDate ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.fromDate,
+    startTime = startTime ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
@@ -631,8 +631,8 @@ class MovementsService(
     bookingId = offenderBooking.bookingId,
     movementApplicationId = temporaryAbsenceApplication.movementApplicationId,
     eventId = eventId,
-    eventDate = eventDate,
-    startTime = startTime,
+    eventDate = eventDate ?: temporaryAbsenceApplication.fromDate,
+    startTime = startTime ?: temporaryAbsenceApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
@@ -654,8 +654,8 @@ class MovementsService(
     bookingId = offenderBooking.bookingId,
     movementApplicationId = scheduledTemporaryAbsence.temporaryAbsenceApplication.movementApplicationId,
     eventId = eventId,
-    eventDate = eventDate,
-    startTime = startTime,
+    eventDate = eventDate ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.fromDate,
+    startTime = startTime ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
