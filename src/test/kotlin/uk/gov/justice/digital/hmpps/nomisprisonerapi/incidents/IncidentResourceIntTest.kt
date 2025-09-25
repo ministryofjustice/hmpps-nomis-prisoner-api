@@ -1569,7 +1569,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("status.code").isEqualTo("INREQ")
           .jsonPath("status.description").isEqualTo("Information Required")
           .jsonPath("status.listSequence").isEqualTo(3)
-          .jsonPath("status.standardUser").isEqualTo(true)
+          .jsonPath("status.standardUser").isEqualTo(false)
           .jsonPath("status.enhancedUser").isEqualTo(true)
           .jsonPath("type").isEqualTo("ESCAPE_EST")
           .jsonPath("agency.code").isEqualTo("BXI")
