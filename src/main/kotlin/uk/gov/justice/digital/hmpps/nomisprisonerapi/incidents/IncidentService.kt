@@ -86,6 +86,7 @@ class IncidentService(
         this.reportedTime = request.reportedDateTime
         this.incidentDate = request.incidentDateTime
         this.incidentTime = request.incidentDateTime
+        this.status = status
       } ?: Incident(
         id = incidentId,
         title = request.title,
