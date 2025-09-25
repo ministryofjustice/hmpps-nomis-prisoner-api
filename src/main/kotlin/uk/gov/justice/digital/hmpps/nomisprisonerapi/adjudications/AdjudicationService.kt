@@ -876,6 +876,7 @@ class AdjudicationService(
     val sanctionsToDelete = allAwards.filterNot { sanctionsToKeep.contains(it.id.sanctionSequence) }
     return sanctionsToDelete.map {
       adjudicationHearingResultAwardRepository.delete(it)
+      it.hearingResult?.resultAwards?.remove(it)
       telemetryClient.trackEvent(
         "hearing-result-award-deleted",
         mapOf(
