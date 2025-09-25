@@ -1547,7 +1547,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
               upsertIncidentRequest().copy(
                 title = "Something happened",
                 description = "and people had a fight",
-                statusCode = "AWAN",
+                statusCode = "INREQ",
                 typeCode = questionnaire1.code,
                 location = "BXI",
                 incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
@@ -1566,10 +1566,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("questionnaireId").isEqualTo(questionnaire1.id)
           .jsonPath("title").isEqualTo("Something happened")
           .jsonPath("description").isEqualTo("and people had a fight")
-          .jsonPath("status.code").isEqualTo("AWAN")
-          .jsonPath("status.description").isEqualTo("Awaiting Analysis")
-          .jsonPath("status.listSequence").isEqualTo(1)
-          .jsonPath("status.standardUser").isEqualTo(true)
+          .jsonPath("status.code").isEqualTo("INREQ")
+          .jsonPath("status.description").isEqualTo("Information Required")
+          .jsonPath("status.listSequence").isEqualTo(3)
+          .jsonPath("status.standardUser").isEqualTo(false)
           .jsonPath("status.enhancedUser").isEqualTo(true)
           .jsonPath("type").isEqualTo("ESCAPE_EST")
           .jsonPath("agency.code").isEqualTo("BXI")
