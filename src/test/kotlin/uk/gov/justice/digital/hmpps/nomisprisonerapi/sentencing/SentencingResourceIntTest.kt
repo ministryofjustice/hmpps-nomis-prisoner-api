@@ -5937,6 +5937,8 @@ class SentencingResourceIntTest : IntegrationTestBase() {
                     sentencePurpose(purposeCode = "REPAIR")
                     sentencePurpose(purposeCode = "PUNISH")
                   }
+                  // NOMIS allows multiple orders for an appearance - but it is rare
+                  courtOrder(courtDate = LocalDate.of(2023, 1, 10))
                 }
                 courtAppearanceNoCourtOrder = courtEvent {
                   courtEventCharge(

@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 
 @Repository
 interface CourtOrderRepository : JpaRepository<CourtOrder, Long> {
-  fun findByOffenderBookingAndCourtEventAndOrderType(
+  fun findFirstByOffenderBookingAndCourtEventAndOrderTypeOrderByIdAsc(
     offenderBooking: OffenderBooking,
     courtEvent: CourtEvent,
     orderType: String = "AUTO",
