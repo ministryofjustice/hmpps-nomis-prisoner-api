@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -262,6 +263,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   )
   fun getPrisonerRestrictionIds(
     @PageableDefault(size = 20, sort = ["restrictionId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "fromDate")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -398,6 +400,7 @@ class ContactPersonResource(private val contactPersonService: ContactPersonServi
   )
   fun getPersonIds(
     @PageableDefault(size = 20, sort = ["personId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "fromDate")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

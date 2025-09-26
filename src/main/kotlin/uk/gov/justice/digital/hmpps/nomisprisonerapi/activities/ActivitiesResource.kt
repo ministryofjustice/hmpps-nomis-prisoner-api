@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -370,7 +371,9 @@ class ActivitiesResource(
     ],
   )
   fun findActiveActivities(
-    @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
+    @PageableDefault(sort = ["courseActivityId"], direction = Sort.Direction.ASC)
+    @ParameterObject
+    pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
   ): Page<FindActiveActivityIdsResponse> = activityService.findActiveActivityIds(pageRequest, prisonId, courseActivityId)
@@ -536,7 +539,8 @@ class ActivitiesResource(
     ],
   )
   fun findActiveAllocations(
-    @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
+    @PageableDefault(sort = ["offenderProgramReferenceId"], direction = Sort.Direction.ASC) @ParameterObject
+    pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String,
     @Schema(description = "Course Activity ID", type = "integer") @RequestParam courseActivityId: Long?,
     @Schema(description = "Allocations must be active on this date to be included. For migrations this is the date we switch to DPS. Defaults to tomorrow.") @RequestParam activeOnDate: LocalDate?,

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -286,6 +287,7 @@ class VisitResource(private val visitService: VisitService) {
   )
   fun getVisitsByFilter(
     @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "prisonIds", required = false)
     @Parameter(
@@ -347,6 +349,7 @@ class VisitResource(private val visitService: VisitService) {
   )
   fun getVisitRoomCountsByFilter(
     @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "prisonIds", required = false)
     @Parameter(

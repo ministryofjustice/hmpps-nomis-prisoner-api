@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Pattern
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -69,6 +70,7 @@ class AdjudicationResource(
   )
   fun getAdjudicationChargeIdsByFilter(
     @PageableDefault(size = 20)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "fromDate")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
