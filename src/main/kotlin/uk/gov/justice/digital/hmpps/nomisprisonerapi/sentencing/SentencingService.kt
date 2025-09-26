@@ -68,6 +68,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.CourtOrderInsertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.time.LocalDate
@@ -98,6 +99,7 @@ class SentencingService(
   private val courtEventRepository: CourtEventRepository,
   private val offenceResultCodeRepository: OffenceResultCodeRepository,
   private val courtOrderRepository: CourtOrderRepository,
+  private val courtOrderInsertRepository: CourtOrderInsertRepository,
   private val storedProcedureRepository: StoredProcedureRepository,
   private val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
@@ -990,7 +992,9 @@ class SentencingService(
           }
         }
       } ?: let {
-        courtOrderRepository.save(
+        // for a race condition when multiple charges updated at same time the row may not be created by this thread but another thread
+        // since the order be identical we can happily ignore the insert "failure" but it will be logged in "orderForAppearanceAlreadyExists" property
+        val orderForAppearanceAlreadyExists = courtOrderInsertRepository.insertOnePerEvent(
           CourtOrder(
             offenderBooking = courtEvent.offenderBooking,
             courtCase = courtEvent.courtCase!!,
@@ -999,7 +1003,7 @@ class SentencingService(
             courtDate = courtEvent.eventDate,
             issuingCourt = courtEvent.court,
           ),
-        )
+        ) == 0
         telemetryClient.trackEvent(
           "court-order-created",
           mapOf(
@@ -1008,6 +1012,7 @@ class SentencingService(
             "offenderNo" to offenderNo,
             "court" to courtEvent.court.id,
             "courtEventId" to courtEvent.id.toString(),
+            "orderForAppearanceAlreadyExists" to orderForAppearanceAlreadyExists.toString(),
           ),
           null,
         )
@@ -1033,7 +1038,7 @@ class SentencingService(
 
   fun OffenceResultCode.resultRequiresACourtOrder(): Boolean = this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
 
-  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findByOffenderBookingAndCourtEventAndOrderType(offenderBooking, courtEvent)
+  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findFirstByOffenderBookingAndCourtEventAndOrderTypeOrderByIdAsc(offenderBooking, courtEvent)
 
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
       .plusDays(1)
