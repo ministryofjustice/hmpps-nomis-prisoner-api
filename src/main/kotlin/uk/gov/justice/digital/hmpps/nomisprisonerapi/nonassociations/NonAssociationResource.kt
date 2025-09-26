@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -319,6 +320,7 @@ class NonAssociationResource(private val nonAssociationService: NonAssociationSe
   )
   fun getNonAssociationsByFilter(
     @PageableDefault(sort = ["id.offenderId", "id.nsOffenderId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
   ): Page<NonAssociationIdResponse> = nonAssociationService.findIdsByFilter(
     pageRequest = pageRequest,

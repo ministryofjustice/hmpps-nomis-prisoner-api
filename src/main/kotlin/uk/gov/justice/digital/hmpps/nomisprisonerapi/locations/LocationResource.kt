@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -353,6 +354,7 @@ class LocationResource(private val locationService: LocationService) {
   )
   fun getLocationsByFilter(
     @PageableDefault(sort = ["locationId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
   ): Page<LocationIdResponse> = locationService.findIdsByFilter(pageRequest = pageRequest)
 }

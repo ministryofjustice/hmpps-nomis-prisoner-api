@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -309,6 +310,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
   )
   fun getAppointmentsByFilter(
     @PageableDefault(sort = ["eventId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "prisonIds", required = true)
     @Parameter(

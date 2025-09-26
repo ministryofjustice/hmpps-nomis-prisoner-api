@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.constraints.Pattern
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -62,6 +63,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @Deprecated("Use /prisoners/ids/active")
   fun getPrisonerIdentifiers(
     @PageableDefault(sort = ["bookingId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "active", required = false, defaultValue = "true")
     @Parameter(
@@ -104,6 +106,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   )
   fun getActivePrisonerIdentifiers(
     @PageableDefault(sort = ["bookingId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
   ): Page<PrisonerIds> = prisonerService.findAllActivePrisoners(pageRequest)
 
@@ -129,6 +132,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   )
   fun getAllPrisoners(
     @PageableDefault(sort = ["rootOffenderId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
   ): Page<PrisonerId> = prisonerService.findAllPrisoners(pageRequest)
 

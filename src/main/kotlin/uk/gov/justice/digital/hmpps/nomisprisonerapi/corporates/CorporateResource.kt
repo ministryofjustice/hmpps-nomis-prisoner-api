@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -71,6 +72,7 @@ class CorporateResource(private val corporateService: CorporateService) {
   )
   fun getCorporateIds(
     @PageableDefault(size = 20, sort = ["corporateId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "fromDate")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

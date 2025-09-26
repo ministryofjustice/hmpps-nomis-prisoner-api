@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -2092,6 +2093,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   )
   fun getCourtCaseIdsByFilter(
     @PageableDefault(size = 20)
+    @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "fromDate")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
