@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -80,7 +81,9 @@ class VisitBalanceResource(
     ],
   )
   fun findVisitBalanceIds(
-    @PageableDefault(sort = ["offenderBookingId"], direction = Sort.Direction.ASC) pageRequest: Pageable,
+    @PageableDefault(sort = ["offenderBookingId"], direction = Sort.Direction.ASC)
+    @ParameterObject
+    pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String?,
   ): Page<VisitBalanceIdResponse> = visitBalanceService.findAllIds(prisonId, pageRequest)
 

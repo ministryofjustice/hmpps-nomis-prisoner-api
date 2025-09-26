@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
@@ -57,8 +58,9 @@ class PrisonerBalanceResource(
       ),
     ],
   )
-  fun getPrisonerIdentifiers(
+  fun getPrisonerBalanceIdentifiers(
     @PageableDefault(sort = ["offenderId"], direction = Sort.Direction.ASC)
+    @ParameterObject
     pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam prisonId: String?,
   ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(prisonId, pageRequest)
