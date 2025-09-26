@@ -17,9 +17,9 @@ class PrisonerBalanceService(
   val offenderSubAccountRepository: OffenderSubAccountRepository,
 ) {
 
-  fun getPrisonerAccounts(rootOffenderId: Long): PrisonerAccountsDto = offenderRepository.findByIdOrNull(rootOffenderId)
+  fun getPrisonerAccounts(rootOffenderId: Long): PrisonerBalanceDto = offenderRepository.findByIdOrNull(rootOffenderId)
     ?.let { offender ->
-      PrisonerAccountsDto(
+      PrisonerBalanceDto(
         rootOffenderId,
         prisonNumber = offender.nomsId,
         offenderSubAccountRepository.findByIdOffenderId(rootOffenderId).map { it.toPrisonerAccountDto() },

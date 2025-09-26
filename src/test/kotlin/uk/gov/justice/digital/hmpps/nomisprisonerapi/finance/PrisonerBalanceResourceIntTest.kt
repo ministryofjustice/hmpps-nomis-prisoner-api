@@ -161,7 +161,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyResponse<PrisonerAccountsDto>()
+        .expectBodyResponse<PrisonerBalanceDto>()
 
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
