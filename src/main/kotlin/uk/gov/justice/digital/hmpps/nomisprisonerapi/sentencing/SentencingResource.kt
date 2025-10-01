@@ -1417,64 +1417,6 @@ class SentencingResource(private val sentencingService: SentencingService) {
   ): CreateCourtCaseResponse = sentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @PostMapping("/prisoners/booking-id/{bookingId}/sentencing/court-cases/clone")
-  @Operation(
-    summary = "Clones court cases from the supplied booking to the current booking",
-    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Court cases and all child elements including adjustments are copied to the current booking",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Created Court cases",
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "Booking id supplied is already the latest booking",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Booking does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun cloneCourtCasesFromBooking(
-    @Schema(description = "Booking id", example = "1233", required = true)
-    @PathVariable
-    bookingId: Long,
-  ): BookingCourtCaseCloneResponse = sentencingService.cloneCourtCasesToLatestBookingFrom(bookingId)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/clone/{caseId}")
   @Operation(
     summary = "Clones court cases from the cases' booking to the current booking",
