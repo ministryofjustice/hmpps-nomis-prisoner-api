@@ -1448,6 +1448,21 @@ class SentencingService(
 
     return cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases)
   }
+
+  fun cloneCourtCasesToLatestBookingFor(offenderNo: String, caseId: Long): BookingCourtCaseCloneResponse {
+    val case = courtCaseRepository.findByIdOrNull(caseId) ?: throw NotFoundException("Court case $caseId not found")
+    val latestBooking = findLatestBooking(offenderNo)
+    if (case.offenderBooking == latestBooking) {
+      throw BadDataException("Cannot clone court cased from the latest booking ${case.offenderBooking.bookingId} on to itself")
+    }
+
+    if (case.offenderBooking.offender.nomsId != offenderNo) {
+      throw BadDataException("Cannot clone court case $caseId for offender $offenderNo since case belongs to offender ${case.offenderBooking.offender.nomsId}")
+    }
+
+    return cloneCourtCasesToLatestBookingFrom(case)
+  }
+
   fun cloneCourtCasesToLatestBookingFrom(case: CourtCase): BookingCourtCaseCloneResponse {
     val booking = offenderBookingRepository.findByIdOrNull(case.offenderBooking.bookingId)!!
     val relevantCourtCases = findRelatedCasesFrom(case)
@@ -1489,7 +1504,7 @@ class SentencingService(
     val casesLinkedViaConsecutiveSentencesToThisCase = this.offenderBooking.courtCases
       .flatMap { it.sentences }
       .filter { it.consecutiveSentence?.courtCase == this && it.courtCase != this }
-      .mapNotNull { it.consecutiveSentence?.courtCase }
+      .mapNotNull { it.courtCase }
 
     val casesLinked = mutableSetOf<CourtCase>()
     casesLinked += casesLinkedViaConsecutiveSentencesFromThisCase
