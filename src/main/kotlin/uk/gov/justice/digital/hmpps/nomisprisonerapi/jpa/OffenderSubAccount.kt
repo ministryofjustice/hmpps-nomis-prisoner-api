@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -60,6 +61,10 @@ class OffenderSubAccount(
   @Column(nullable = false)
   val modifyDate: LocalDateTime = LocalDateTime.now(),
 
+  @Column(insertable = false, updatable = false)
+  @Generated
+  var modifyDatetime: LocalDateTime? = null,
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumns(
     JoinColumn(name = "OFFENDER_ID", referencedColumnName = "OFFENDER_ID", insertable = false, updatable = false),
@@ -67,6 +72,9 @@ class OffenderSubAccount(
   )
   val trustAccount: OffenderTrustAccount? = null,
 ) {
+  @Column(insertable = false, updatable = false)
+  @Generated
+  lateinit var createDatetime: LocalDateTime
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

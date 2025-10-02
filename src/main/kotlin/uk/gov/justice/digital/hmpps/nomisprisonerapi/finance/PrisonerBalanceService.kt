@@ -38,4 +38,5 @@ private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(
   accountCode = id.accountCode,
   balance = balance,
   holdBalance = holdBalance,
+  transactionDate = modifyDatetime ?: createDatetime,
 )

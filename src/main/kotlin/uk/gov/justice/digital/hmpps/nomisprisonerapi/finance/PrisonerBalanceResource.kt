@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -115,6 +116,9 @@ data class PrisonerAccountDto(
 
   @Schema(description = "The id of the last transaction associated with the balance", example = "123")
   val lastTransactionId: Long,
+
+  @Schema(description = "The date and time of the last transaction")
+  val transactionDate: LocalDateTime,
 
   @Schema(description = "The account code for the balance entry", example = "2101")
   val accountCode: Long,

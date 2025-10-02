@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -13,6 +14,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit.SECONDS
 
 @WithMockAuthUser
 class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
@@ -33,8 +36,11 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         trustAccount()
         trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(12.50)) {
           subAccount(accountCode = 2102, balance = BigDecimal.valueOf(11.25), lastTransactionId = 45678)
+          subAccount(accountCode = 2103, balance = BigDecimal.valueOf(1.25), lastTransactionId = 67890)
         }
-        trustAccount(caseloadId = "WWI", currentBalance = BigDecimal.valueOf(-1.50))
+        trustAccount(caseloadId = "WWI", currentBalance = BigDecimal.valueOf(-1.50)) {
+          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(-1.50), holdBalance = BigDecimal.ZERO, lastTransactionId = 56789)
+        }
       }.id
       id2 = offender(nomsId = "B2345CD") {
         trustAccount()
@@ -155,6 +161,42 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun getPrisonerBalanceWithDifferentPrisons() {
+      val balance = webTestClient.get().uri("/finance/prisoners/$id1/balance")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyResponse<PrisonerBalanceDto>()
+
+      with(balance) {
+        assertThat(rootOffenderId).isEqualTo(id1)
+        assertThat(prisonNumber).isEqualTo("A1234BC")
+        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts[0].prisonId).isEqualTo("LEI")
+        assertThat(accounts[0].accountCode).isEqualTo(2102)
+        assertThat(accounts[0].balance).isEqualTo(BigDecimal(11.25))
+        assertThat(accounts[0].holdBalance).isNull()
+        assertThat(accounts[0].lastTransactionId).isEqualTo(45678)
+        assertThat(accounts[0].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+
+        assertThat(accounts[1].prisonId).isEqualTo("LEI")
+        assertThat(accounts[1].accountCode).isEqualTo(2103)
+        assertThat(accounts[1].balance).isEqualTo(BigDecimal(1.25))
+        assertThat(accounts[1].holdBalance).isNull()
+        assertThat(accounts[1].lastTransactionId).isEqualTo(67890)
+        assertThat(accounts[0].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+
+        assertThat(accounts[2].prisonId).isEqualTo("WWI")
+        assertThat(accounts[2].accountCode).isEqualTo(2102)
+        assertThat(accounts[2].balance).isEqualTo("-1.5")
+        assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal.ZERO)
+        assertThat(accounts[2].lastTransactionId).isEqualTo(56789)
+        assertThat(accounts[2].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+      }
+    }
+
+    @Test
     fun getPrisonerBalance() {
       val balance = webTestClient.get().uri("/finance/prisoners/$id2/balance")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -168,17 +210,22 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(prisonNumber).isEqualTo("B2345CD")
         assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
-        assertThat(accounts[0].lastTransactionId).isEqualTo(12345)
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
         assertThat(accounts[0].holdBalance).isNull()
+        assertThat(accounts[0].lastTransactionId).isEqualTo(12345)
+        assertThat(accounts[0].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].accountCode).isEqualTo(2102)
         assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[1].lastTransactionId).isEqualTo(34567)
+        assertThat(accounts[1].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         assertThat(accounts[2].prisonId).isEqualTo("LEI")
         assertThat(accounts[2].accountCode).isEqualTo(2103)
         assertThat(accounts[2].balance).isEqualTo("21.25")
         assertThat(accounts[2].holdBalance).isEqualTo("2.5")
+        assertThat(accounts[2].lastTransactionId).isEqualTo(56789)
+        assertThat(accounts[2].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
