@@ -32,6 +32,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
   @BeforeEach
   fun setUp() {
     nomisDataBuilder.build {
+      offender()
       id1 = offender(nomsId = "A1234BC") {
         trustAccount()
         trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(12.50)) {
@@ -128,6 +129,61 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .isOk
         .expectBody()
         .jsonPath("page.totalElements").isEqualTo(0)
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /finance/prisoners/ids/all-from-id")
+  inner class PrisonerIdsFromLastTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/finance/prisoners/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/finance/prisoners/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/finance/prisoners/ids/all-from-id")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `will return first page of prisoners ordered by rootOffenderId ASC`() {
+      webTestClient.get().uri("/finance/prisoners/ids/all-from-id?pageSize=2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("rootOffenderIds.size()").isEqualTo("2")
+        .jsonPath("rootOffenderIds[0]").isEqualTo(id1)
+        .jsonPath("rootOffenderIds[1]").isEqualTo(id2)
+        .jsonPath("lastOffenderId").isEqualTo(id2)
+    }
+
+    @Test
+    fun `will return second page of prisoners ordered by rootOffenderId ASC`() {
+      webTestClient.get().uri("/finance/prisoners/ids/all-from-id?pageSize=2&offenderId=$id2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("rootOffenderIds[0]").isEqualTo(id1)
+        .jsonPath("rootOffenderIds[1]").isEqualTo(id2)
+        .jsonPath("lastOffenderId").isEqualTo(id2)
     }
   }
 

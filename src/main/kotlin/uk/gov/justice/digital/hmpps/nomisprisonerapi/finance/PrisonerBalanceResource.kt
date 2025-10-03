@@ -66,6 +66,48 @@ class PrisonerBalanceResource(
     @Schema(description = "Prison id") @RequestParam prisonId: String?,
   ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(prisonId, pageRequest)
 
+  @GetMapping("/ids/all-from-id")
+  @Operation(
+    summary = "Gets the rootOffenderIds for all prisoners with a non-negative trust account balance",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
+    responses = [
+      ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerBalanceIdentifiersFromId(
+    @Schema(description = "If supplied get offenders starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "rootOffenderId", defaultValue = "0")
+    rootOffenderId: Long,
+    @Schema(description = "Number of offenders to get", required = false, defaultValue = "10")
+    @RequestParam(value = "pageSize", defaultValue = "10")
+    pageSize: Int,
+  ): RootOffenderIdsWithLast = prisonerBalanceService.findAllPrisonersWithAccountBalanceFromId(rootOffenderId, pageSize)
+
+  data class RootOffenderIdsWithLast(
+    val rootOffenderIds: List<Long>,
+    val lastOffenderId: Long,
+  )
+
   @GetMapping("/{rootOffenderId}/balance")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
