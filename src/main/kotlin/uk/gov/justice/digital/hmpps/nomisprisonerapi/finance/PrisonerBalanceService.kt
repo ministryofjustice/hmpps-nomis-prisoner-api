@@ -30,6 +30,10 @@ class PrisonerBalanceService(
   fun findAllPrisonersWithAccountBalance(prisonId: String?, pageRequest: Pageable): PagedModel<Long> = PagedModel(
     offenderRepository.findAllOffenderIdsWithBalances(prisonId, pageRequest),
   )
+
+  fun findAllPrisonersWithAccountBalanceFromId(rootOffenderId: Long, pageSize: Int): PrisonerBalanceResource.RootOffenderIdsWithLast = offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, pageSize).let {
+    PrisonerBalanceResource.RootOffenderIdsWithLast(lastOffenderId = it.lastOrNull() ?: 0, rootOffenderIds = it)
+  }
 }
 
 private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(

@@ -59,6 +59,23 @@ interface OffenderRepository :
 
   @Query(
     """
+      select * from (
+        select
+            distinct OFFENDER_ID
+         from 
+            OFFENDER_TRUST_ACCOUNTS 
+         where 
+            OFFENDER_ID > :offenderId and
+            (CURRENT_BALANCE != 0 or HOLD_BALANCE != 0)
+         order by OFFENDER_ID) 
+      where rownum <= :pageSize
+  """,
+    nativeQuery = true,
+  )
+  fun findAllOffendersIdsWithBalancesFromId(offenderId: Long, pageSize: Int): List<Long>
+
+  @Query(
+    """
         select o.nomsId as nomsId from Offender o where o.rootOffenderId = o.id
     """,
   )
