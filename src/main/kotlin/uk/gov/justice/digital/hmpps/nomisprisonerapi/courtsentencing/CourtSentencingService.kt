@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
@@ -71,13 +71,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAcc
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.CourtOrderInsertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments.SentencingAdjustmentService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.collections.forEach
 
 @Service
 @Transactional
-class SentencingService(
+class CourtSentencingService(
   private val courtCaseRepository: CourtCaseRepository,
   private val offenderRepository: OffenderRepository,
   private val offenderSentenceRepository: OffenderSentenceRepository,
@@ -947,7 +949,7 @@ class SentencingService(
   }
 
   // nomis only updates the outcome/result on the Offence Charge if a change is made to the latest Court Event Charge
-  private fun SentencingService.refreshOffenderCharge(
+  private fun CourtSentencingService.refreshOffenderCharge(
     courtEventCharge: CourtEventCharge,
     offenderChargeRequest: ExistingOffenderChargeRequest,
     resultCode: OffenceResultCode?,
@@ -1362,7 +1364,12 @@ class SentencingService(
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
-  private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNull(SentenceId(sequence = sentenceSequence, offenderBooking = booking))
+  private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNull(
+    SentenceId(
+      sequence = sentenceSequence,
+      offenderBooking = booking,
+    ),
+  )
     ?: throw NotFoundException("Sentence for booking ${booking.bookingId} and sentence sequence $sentenceSequence not found")
 
   private fun findSentenceTerm(
@@ -1478,7 +1485,12 @@ class SentencingService(
       cloneCourtCasesToLatestBookingFrom(latestBooking, booking.courtCases.filter { relevantCourtCases.contains(it) })
     }
 
-    return cloneResponse.let { response -> BookingCourtCaseCloneResponse(courtCases = response.flatMap { it.courtCases }, sentenceAdjustments = response.flatMap { it.sentenceAdjustments }) }
+    return cloneResponse.let { response ->
+      BookingCourtCaseCloneResponse(
+        courtCases = response.flatMap { it.courtCases },
+        sentenceAdjustments = response.flatMap { it.sentenceAdjustments },
+      )
+    }
   }
 
   private fun findRelatedCasesFrom(rootCase: CourtCase): Set<CourtCase> = rootCase.linkedOrConsecutiveSentenceLinked(mutableSetOf(rootCase)).toSet()

@@ -8,7 +8,7 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing.AdjustmentIdResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments.AdjustmentIdResponse
 import java.time.LocalDate
 
 @Repository
