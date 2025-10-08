@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityManager
@@ -78,7 +78,12 @@ class SentencingAdjustmentService(
 
   @Audit
   fun updateSentenceAdjustment(adjustmentId: Long, request: UpdateSentenceAdjustmentRequest): Unit = offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
-    offenderSentenceRepository.findByIdOrNull(SentenceId(this.offenderBooking, request.sentenceSequence))?.let { sentence ->
+    offenderSentenceRepository.findByIdOrNull(
+      SentenceId(
+        this.offenderBooking,
+        request.sentenceSequence,
+      ),
+    )?.let { sentence ->
       this.sentenceAdjustment = findValidSentenceAdjustmentType(request.adjustmentTypeCode)
       this.adjustmentDate = request.adjustmentDate
       this.adjustmentNumberOfDays = request.adjustmentDays

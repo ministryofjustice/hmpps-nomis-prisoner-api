@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
+class CourtCaseIdentifiersResourceIntTest : IntegrationTestBase() {
   private val aDateString = "2023-01-01"
   private val aLaterDateString = "2023-01-05"
 
@@ -213,71 +213,71 @@ class SentencingCaseIdentifiersResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseInfoNumbers[1].reference").isEqualTo("caseRef2")
           .jsonPath("caseInfoNumbers[2].reference").isEqualTo("caseRef5")
           .jsonPath("caseInfoNumbers[3].reference").isEqualTo("newRef6")
-
-        @Test
-        fun `can remove case references`() {
-          webTestClient.post()
-            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(
-              BodyInserters.fromValue(
-                CaseIdentifierRequest(
-                  caseIdentifiers = listOf(
-                    CaseIdentifier("caseRef1", LocalDateTime.now()),
-                  ),
-                ),
-              ),
-            )
-            .exchange()
-            .expectStatus().isOk
-
-          webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBody()
-            .jsonPath("caseInfoNumbers.size()").isEqualTo(1)
-            .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef1")
-        }
-
-        @Test
-        fun `case references can be added and removed`() {
-          webTestClient.post()
-            .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(
-              BodyInserters.fromValue(
-                CaseIdentifierRequest(
-                  caseIdentifiers = listOf(
-                    CaseIdentifier("caseRef1", LocalDateTime.now()),
-                    CaseIdentifier("newRef1", LocalDateTime.now().plusHours(1)),
-                    CaseIdentifier("newRef2", LocalDateTime.now().plusHours(2)),
-                  ),
-                ),
-              ),
-            )
-            .exchange()
-            .expectStatus().isOk
-
-          webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBody()
-            .jsonPath("caseInfoNumbers.size()").isEqualTo(3)
-            .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef1")
-            .jsonPath("caseInfoNumbers[1].reference").isEqualTo("newRef1")
-            .jsonPath("caseInfoNumbers[2].reference").isEqualTo("newRef2")
-        }
       }
 
-      @AfterEach
-      internal fun deletePrisoner() {
-        repository.delete(prisonerAtMoorland)
-        repository.delete(staff)
+      @Test
+      fun `can remove case references`() {
+        webTestClient.post()
+          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              CaseIdentifierRequest(
+                caseIdentifiers = listOf(
+                  CaseIdentifier("caseRef1", LocalDateTime.now()),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("caseInfoNumbers.size()").isEqualTo(1)
+          .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef1")
       }
+
+      @Test
+      fun `case references can be added and removed`() {
+        webTestClient.post()
+          .uri("/prisoners/$prisonerAtMoorland/sentencing/court-cases/${courtCase.id}/case-identifiers")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              CaseIdentifierRequest(
+                caseIdentifiers = listOf(
+                  CaseIdentifier("caseRef1", LocalDateTime.now()),
+                  CaseIdentifier("newRef1", LocalDateTime.now().plusHours(1)),
+                  CaseIdentifier("newRef2", LocalDateTime.now().plusHours(2)),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("caseInfoNumbers.size()").isEqualTo(3)
+          .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef1")
+          .jsonPath("caseInfoNumbers[1].reference").isEqualTo("newRef1")
+          .jsonPath("caseInfoNumbers[2].reference").isEqualTo("newRef2")
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
     }
   }
 }
