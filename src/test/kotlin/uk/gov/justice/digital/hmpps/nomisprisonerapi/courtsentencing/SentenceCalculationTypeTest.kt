@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested

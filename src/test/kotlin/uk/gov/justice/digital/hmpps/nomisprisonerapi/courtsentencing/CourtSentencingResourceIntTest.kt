@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
@@ -50,7 +50,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class SentencingResourceIntTest : IntegrationTestBase() {
+class CourtSentencingResourceIntTest : IntegrationTestBase() {
   private val aDateString = "2023-01-01"
   private val aDateTimeString = "2023-01-01T10:30:00"
   private val aLaterDateString = "2023-01-05"
@@ -8687,7 +8687,7 @@ class SentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           val createdCourtCase =
-            courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(offenderBooking = booking).first()!!
+            courtCaseRepository.findByOffenderBookingOrderByCreateDatetimeDesc(offenderBooking = booking).first()
 
           verify(telemetryClient).trackEvent(
             eq("sentences-recalled"),

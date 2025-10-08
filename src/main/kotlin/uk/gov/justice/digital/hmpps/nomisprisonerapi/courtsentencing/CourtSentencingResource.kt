@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -37,7 +37,7 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class SentencingResource(private val sentencingService: SentencingService) {
+class CourtSentencingResource(private val courtSentencingService: CourtSentencingService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
   @Operation(
@@ -97,7 +97,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "12345")
     @PathVariable
     offenderNo: String,
-  ): CourtCaseResponse = sentencingService.getCourtCase(id, offenderNo)
+  ): CourtCaseResponse = courtSentencingService.getCourtCase(id, offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/court-cases/{id}")
@@ -145,7 +145,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Court case id", example = "12345")
     @PathVariable
     id: Long,
-  ): CourtCaseResponse = sentencingService.getCourtCaseForMigration(id)
+  ): CourtCaseResponse = courtSentencingService.getCourtCaseForMigration(id)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases")
@@ -193,7 +193,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "AA12345")
     @PathVariable
     offenderNo: String,
-  ): List<CourtCaseResponse> = sentencingService.getCourtCasesByOffender(offenderNo)
+  ): List<CourtCaseResponse> = courtSentencingService.getCourtCasesByOffender(offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/get-list")
@@ -201,7 +201,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Retrieves a specified list of court cases for an offender",
     description = "Requires role <b>NOMIS_PRISONER_API__SYNCHRONISATION__RW</b>",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -256,8 +256,8 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "AA12345")
     @PathVariable
     offenderNo: String,
-    @RequestBody nomisCaseIds: List<Long>,
-  ): List<CourtCaseResponse> = sentencingService.getCourtCases(offenderNo = offenderNo, idList = nomisCaseIds)
+    @org.springframework.web.bind.annotation.RequestBody nomisCaseIds: List<Long>,
+  ): List<CourtCaseResponse> = courtSentencingService.getCourtCases(offenderNo = offenderNo, idList = nomisCaseIds)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/ids")
@@ -305,7 +305,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "AA12345")
     @PathVariable
     offenderNo: String,
-  ): List<Long> = sentencingService.findCourtCaseIdsByOffender(offenderNo)
+  ): List<Long> = courtSentencingService.findCourtCaseIdsByOffender(offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-cases/post-merge")
@@ -363,7 +363,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "AA12345")
     @PathVariable
     offenderNo: String,
-  ): PostPrisonerMergeCaseChanges = sentencingService.getCourtCasesChangedByMergePrisoners(offenderNo)
+  ): PostPrisonerMergeCaseChanges = courtSentencingService.getCourtCasesChangedByMergePrisoners(offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}")
@@ -404,7 +404,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "AB2134")
     @PathVariable
     offenderNo: String,
-  ) = sentencingService.deleteCourtCase(caseId = id, offenderNo = offenderNo)
+  ) = courtSentencingService.deleteCourtCase(caseId = id, offenderNo = offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
@@ -468,7 +468,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Sentence sequence", example = "1", required = true)
     @PathVariable
     sequence: Long,
-  ): SentenceResponse = sentencingService.getOffenderSentence(
+  ): SentenceResponse = courtSentencingService.getOffenderSentence(
     offenderNo = offenderNo,
     caseId = caseId,
     sentenceSequence = sequence,
@@ -520,7 +520,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Booking ID", example = "12345", required = true)
     @PathVariable
     bookingId: Long,
-  ): List<SentenceResponse> = sentencingService.getActiveRecallSentencesByBookingId(bookingId)
+  ): List<SentenceResponse> = courtSentencingService.getActiveRecallSentencesByBookingId(bookingId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentence-terms/booking-id/{bookingId}/sentence-sequence/{sentenceSequence}/term-sequence/{termSequence}")
@@ -587,7 +587,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "term sequence", example = "1", required = true)
     @PathVariable
     termSequence: Long,
-  ): SentenceTermResponse = sentencingService.getOffenderSentenceTerm(
+  ): SentenceTermResponse = courtSentencingService.getOffenderSentenceTerm(
     offenderNo = offenderNo,
     offenderBookingId = bookingId,
     sentenceSequence = sentenceSequence,
@@ -600,7 +600,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Creates a new Sentence",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Sentence for the offender booking associated with the court case",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -662,9 +662,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Case Id", example = "4565456", required = true)
     @PathVariable
     caseId: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: CreateSentenceRequest,
-  ): CreateSentenceResponse = sentencingService.createSentence(offenderNo, caseId, request)
+  ): CreateSentenceResponse = courtSentencingService.createSentence(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sentenceSequence}/sentence-terms")
@@ -672,7 +672,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Creates a new Sentence term",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new sentence term for the specified sentence",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -737,9 +737,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Sentence sequence", example = "4565456", required = true)
     @PathVariable
     sentenceSequence: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: SentenceTermRequest,
-  ): CreateSentenceTermResponse = sentencingService.createSentenceTerm(offenderNo, caseId, sentenceSequence = sentenceSequence, request)
+  ): CreateSentenceTermResponse = courtSentencingService.createSentenceTerm(offenderNo, caseId, sentenceSequence = sentenceSequence, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sequence}")
@@ -747,7 +747,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Updates Sentence",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a Sentence for the offender and case",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -822,9 +822,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Sentence sequence", example = "1", required = true)
     @PathVariable
     sequence: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: CreateSentenceRequest,
-  ) = sentencingService.updateSentence(
+  ) = courtSentencingService.updateSentence(
     sentenceSequence = sequence,
     caseId = caseId,
     offenderNo = offenderNo,
@@ -836,7 +836,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Recalls Sentences by convert the specified sentences to the requested recall sentence",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Recalls sentences for the offender",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -905,9 +905,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender no", example = "AA668EC", required = true)
     @PathVariable
     offenderNo: String,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: ConvertToRecallRequest,
-  ) = sentencingService.convertToRecallSentences(
+  ) = courtSentencingService.convertToRecallSentences(
     offenderNo = offenderNo,
     request = request,
   )
@@ -917,7 +917,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Updates Recalls Sentences",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Recalls sentences for the offender",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -986,9 +986,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender no", example = "AA668EC", required = true)
     @PathVariable
     offenderNo: String,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: UpdateRecallRequest,
-  ) = sentencingService.updateRecallSentences(
+  ) = courtSentencingService.updateRecallSentences(
     offenderNo = offenderNo,
     request = request,
   )
@@ -998,7 +998,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Deletes Recalls Sentences and replaces with original sentence",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW replaces recall sentences for the offender",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1067,9 +1067,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender no", example = "AA668EC", required = true)
     @PathVariable
     offenderNo: String,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: DeleteRecallRequest,
-  ) = sentencingService.replaceRecallSentences(
+  ) = courtSentencingService.replaceRecallSentences(
     offenderNo = offenderNo,
     request = request,
   )
@@ -1079,7 +1079,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Deletes Recalls Sentences and replaces with previous recall sentence",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW replaces recall sentences for the offender",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1148,9 +1148,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender no", example = "AA668EC", required = true)
     @PathVariable
     offenderNo: String,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: RevertRecallRequest,
-  ) = sentencingService.revertRecallSentences(
+  ) = courtSentencingService.revertRecallSentences(
     offenderNo = offenderNo,
     request = request,
   )
@@ -1161,7 +1161,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Updates Sentence Term",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a Sentence Term for the offender",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1239,9 +1239,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "term sequence", example = "1", required = true)
     @PathVariable
     termSequence: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: SentenceTermRequest,
-  ) = sentencingService.updateSentenceTerm(
+  ) = courtSentencingService.updateSentenceTerm(
     sentenceSequence = sentenceSequence,
     termSequence = termSequence,
     caseId = caseId,
@@ -1292,7 +1292,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Sentence sequence", example = "1", required = true)
     @PathVariable
     sequence: Long,
-  ): Unit = sentencingService.deleteSentence(offenderNo, caseId, sequence)
+  ): Unit = courtSentencingService.deleteSentence(offenderNo, caseId, sequence)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -1340,7 +1340,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Term sequence", example = "1", required = true)
     @PathVariable
     termSequence: Long,
-  ): Unit = sentencingService.deleteSentenceTerm(
+  ): Unit = courtSentencingService.deleteSentenceTerm(
     offenderNo = offenderNo,
     caseId = caseId,
     sentenceSequence = sentenceSequence,
@@ -1353,7 +1353,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Creates a new Court Case",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Court Case for the offender and latest booking",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1412,9 +1412,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "AK1234B", required = true)
     @PathVariable
     offenderNo: String,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: CreateCourtCaseRequest,
-  ): CreateCourtCaseResponse = sentencingService.createCourtCase(offenderNo, request)
+  ): CreateCourtCaseResponse = courtSentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/clone/{caseId}")
@@ -1475,7 +1475,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Case id", example = "1233", required = true)
     @PathVariable
     caseId: Long,
-  ): BookingCourtCaseCloneResponse = sentencingService.cloneCourtCasesToLatestBookingFor(
+  ): BookingCourtCaseCloneResponse = courtSentencingService.cloneCourtCasesToLatestBookingFor(
     offenderNo = offenderNo,
     caseId = caseId,
   )
@@ -1486,7 +1486,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Creates a new Court Appearance",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Court Appearance for the offender and given Court Case",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1558,9 +1558,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Case Id", example = "34565", required = true)
     @PathVariable
     caseId: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: CourtAppearanceRequest,
-  ): CreateCourtAppearanceResponse = sentencingService.createCourtAppearance(offenderNo, caseId, request)
+  ): CreateCourtAppearanceResponse = courtSentencingService.createCourtAppearance(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/charges")
@@ -1568,7 +1568,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Creates a new Offender Charge",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Offender Charge for the offender and latest booking. Will not associate with a Court Event",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1629,9 +1629,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     offenderNo: String,
     @PathVariable
     caseId: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: OffenderChargeRequest,
-  ): OffenderChargeIdResponse = sentencingService.createCourtCharge(offenderNo, caseId, request)
+  ): OffenderChargeIdResponse = courtSentencingService.createCourtCharge(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
@@ -1639,7 +1639,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Updates Court Appearance",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a new Court Appearance for the offender and given Court Case",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1724,9 +1724,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Case appearance Id", example = "34565", required = true)
     @PathVariable
     eventId: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: CourtAppearanceRequest,
-  ): UpdateCourtAppearanceResponse = sentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
+  ): UpdateCourtAppearanceResponse = courtSentencingService.updateCourtAppearance(offenderNo, caseId, eventId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @DeleteMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{eventId}")
@@ -1734,7 +1734,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Deletes Court Appearance",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Deletes s Court Appearance for the offender.",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1779,7 +1779,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Case appearance Id", example = "34565", required = true)
     @PathVariable
     eventId: Long,
-  ) = sentencingService.deleteCourtAppearance(offenderNo, caseId, eventId)
+  ) = courtSentencingService.deleteCourtAppearance(offenderNo, caseId, eventId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances/{courtEventId}/charges/{chargeId}")
@@ -1787,7 +1787,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Updates Charge",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a Court Event Charge for the offender and given Appearance and Court Case (latest booking)",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -1865,9 +1865,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Court event Id", example = "34565", required = true)
     @PathVariable
     courtEventId: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: OffenderChargeRequest,
-  ) = sentencingService.updateCourtCharge(offenderNo, caseId, chargeId, courtEventId, request)
+  ) = courtSentencingService.updateCourtCharge(offenderNo, caseId, chargeId, courtEventId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{id}")
@@ -1928,7 +1928,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "12345")
     @PathVariable
     offenderNo: String,
-  ): CourtEventResponse = sentencingService.getCourtAppearance(id, offenderNo)
+  ): CourtEventResponse = courtSentencingService.getCourtAppearance(id, offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/offender-charges/{offenderChargeId}")
@@ -1989,7 +1989,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "12345")
     @PathVariable
     offenderNo: String,
-  ): OffenderChargeResponse = sentencingService.getOffenderCharge(offenderChargeId, offenderNo)
+  ): OffenderChargeResponse = courtSentencingService.getOffenderCharge(offenderChargeId, offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/{offenderNo}/sentencing/court-appearances/{eventId}/charges/{chargeId}")
@@ -2063,7 +2063,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Offender No", example = "AB12345")
     @PathVariable
     offenderNo: String,
-  ): CourtEventChargeResponse = sentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, offenderNo = offenderNo)
+  ): CourtEventChargeResponse = courtSentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, offenderNo = offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/court-cases/ids")
@@ -2115,7 +2115,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
       example = "2021-11-03",
     )
     toDate: LocalDate?,
-  ): Page<CourtCaseIdResponse> = sentencingService.findCourtCaseIdsByFilter(
+  ): Page<CourtCaseIdResponse> = courtSentencingService.findCourtCaseIdsByFilter(
     pageRequest = pageRequest,
     CourtCaseFilter(
       toDateTime = toDate?.plusDays(1)?.atStartOfDay(),
@@ -2129,7 +2129,7 @@ class SentencingResource(private val sentencingService: SentencingService) {
   @Operation(
     summary = "Refreshes the list of Case identifiers associated with the case",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Refreshes the list of Case identifiers associated with the case (identifier type CASE/INFO#)",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
+    requestBody = RequestBody(
       content = [
         Content(
           mediaType = "application/json",
@@ -2191,9 +2191,9 @@ class SentencingResource(private val sentencingService: SentencingService) {
     @Schema(description = "Case Id", example = "34565", required = true)
     @PathVariable
     caseId: Long,
-    @RequestBody @Valid
+    @org.springframework.web.bind.annotation.RequestBody @Valid
     request: CaseIdentifierRequest,
-  ) = sentencingService.refreshCaseIdentifiers(offenderNo, caseId, request)
+  ) = courtSentencingService.refreshCaseIdentifiers(offenderNo, caseId, request)
 }
 
 @Schema(description = "Court Case")
@@ -2440,18 +2440,18 @@ data class CreateCourtCaseRequest(
   // optional case reference (dps holds case ref at the appearance level - max of one when creating a case)
   val caseReference: String? = null,
 
-  /* not currently provided by sentencing service:
-  caseSequence: Int,
-  caseStatus: String,
-  combinedCase: CourtCase?,
-  statusUpdateReason: String?,
-  statusUpdateComment: String?,
-  statusUpdateDate: LocalDate?,
-  statusUpdateStaff: Staff?,
-  lidsCaseId: Int?,
-  lidsCaseNumber: Int,
-  lidsCombinedCaseId: Int?
-   */
+    /* not currently provided by sentencing service:
+    caseSequence: Int,
+    caseStatus: String,
+    combinedCase: CourtCase?,
+    statusUpdateReason: String?,
+    statusUpdateComment: String?,
+    statusUpdateDate: LocalDate?,
+    statusUpdateStaff: Staff?,
+    lidsCaseId: Int?,
+    lidsCaseNumber: Int,
+    lidsCombinedCaseId: Int?
+     */
 )
 
 @Schema(description = "Create court case response")
@@ -2517,13 +2517,13 @@ data class CourtAppearanceRequest(
   // nomis UI doesn't allow this during a create but DPS does
   val nextCourtId: String?,
 
-  /* not currently provided by sentencing service:
-  val commentText: String?, no sign in new service
-  val orderRequestedFlag: Boolean?,
-  val holdFlag: Boolean?,
-  val directionCode: CodeDescription?,
-  val judgeName: String?,
-   */
+    /* not currently provided by sentencing service:
+    val commentText: String?, no sign in new service
+    val orderRequestedFlag: Boolean?,
+    val holdFlag: Boolean?,
+    val directionCode: CodeDescription?,
+    val judgeName: String?,
+     */
 )
 
 @Schema(description = "Court Charge")
@@ -2534,20 +2534,20 @@ data class OffenderChargeRequest(
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
 
-  /*
-  val plea: String?,
-  val propertyValue: BigDecimal?,
-  val offencesCount: Long?,
-  val totalPropertyValue: BigDecimal?,
-  val cjitCode1: String?,
-  val cjitCode2: String?,
-  val cjitCode3: String?,
-  val chargeStatus: String?,
-  val resultCode2: String?,  // DPS data model has 1 outcome
-  val resultCode1Indicator: String?,
-  val resultCode2Indicator: String?,
-  val lidsOffenceNumber: Int?,
-   */
+    /*
+    val plea: String?,
+    val propertyValue: BigDecimal?,
+    val offencesCount: Long?,
+    val totalPropertyValue: BigDecimal?,
+    val cjitCode1: String?,
+    val cjitCode2: String?,
+    val cjitCode3: String?,
+    val chargeStatus: String?,
+    val resultCode2: String?,  // DPS data model has 1 outcome
+    val resultCode1Indicator: String?,
+    val resultCode2Indicator: String?,
+    val lidsOffenceNumber: Int?,
+     */
 
   /* mostSeriousFlag has been removed - DPS not providing */
 )

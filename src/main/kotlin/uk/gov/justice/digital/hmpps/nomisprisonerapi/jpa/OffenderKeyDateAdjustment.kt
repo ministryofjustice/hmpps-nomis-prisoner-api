@@ -16,7 +16,7 @@ import jakarta.persistence.SqlResultSetMapping
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencing.AdjustmentIdResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments.AdjustmentIdResponse
 import java.time.LocalDate
 import java.time.LocalDateTime
 
