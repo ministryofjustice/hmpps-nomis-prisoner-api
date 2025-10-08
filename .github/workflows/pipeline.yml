@@ -63,6 +63,7 @@ jobs:
     with:
       gradle-command: ./gradlew ${{ matrix.tests }}
       artifact-name: ${{ matrix.tests }}
+      java-version: "25"
     needs:
       - gradle-build
       - setup-test-matrix
