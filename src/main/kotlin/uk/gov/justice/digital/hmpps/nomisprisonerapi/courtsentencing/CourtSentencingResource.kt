@@ -1420,8 +1420,8 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}/repair")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
-    summary = "Creates a new Court Case",
-    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Replaces existing court case for the offender. ",
+    summary = "Repairs an existing Court Case",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Deletes and recreates an existing court case for the offender. ",
     requestBody = RequestBody(
       content = [
         Content(
