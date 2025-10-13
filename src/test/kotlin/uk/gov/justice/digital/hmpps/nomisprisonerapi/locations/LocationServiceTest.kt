@@ -88,6 +88,7 @@ internal class LocationServiceTest {
       comment = "Some comment",
       unitType = "HC",
       userDescription = "Some description",
+      active = false,
       profiles = listOf(
         ProfileRequest(profileType = "HOU_SANI_FIT", profileCode = "MOB"),
       ),
@@ -110,7 +111,7 @@ internal class LocationServiceTest {
 
       verify(agencyInternalLocationRepository).save(
         check {
-          assertThat(it.active).isTrue
+          assertThat(it.active).isFalse
           assertThat(it.description).isEqualTo("A-1-001")
           assertThat(it.certified).isTrue
           assertThat(it.tracking).isTrue
@@ -163,6 +164,7 @@ internal class LocationServiceTest {
       comment = "Some comment",
       unitType = "HC",
       userDescription = "New description",
+      active = true,
       profiles = listOf(
         ProfileRequest(profileType = "HOU_SANI_FIT", profileCode = "MOB"),
         ProfileRequest(profileType = "HOU_SANI_ATT", profileCode = "NEW"),
