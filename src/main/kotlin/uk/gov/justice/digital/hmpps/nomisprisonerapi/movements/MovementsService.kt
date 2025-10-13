@@ -698,8 +698,16 @@ class MovementsService(
     fromPrison = fromAgency?.id,
     toAgency = toAgency?.id,
     commentText = commentText,
-    toAddressId = toAddress?.addressId,
-    toAddressOwnerClass = toAddress?.addressOwnerClass,
+    toAddressId = toAddressView?.addressId,
+    toAddressOwnerClass = toAddressView?.ownerClass,
+    toAddressDescription = toAddressView?.commentText,
+    toAddressHouse = toAddressView?.house?.trim(),
+    toAddressStreet = toAddressView?.street?.trim(),
+    toAddressLocality = toAddressView?.locality?.trim(),
+    toAddressCity = toAddressView?.cityName?.trim(),
+    toAddressCounty = toAddressView?.county?.trim(),
+    toAddressCountry = toAddressView?.country?.trim(),
+    toAddressPostcode = toAddressView?.postalCode,
     audit = toAudit(),
   )
 

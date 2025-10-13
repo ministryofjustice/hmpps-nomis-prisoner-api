@@ -1984,7 +1984,16 @@ class MovementsResourceIntTest(
       fun setUp() {
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
-            offenderAddress = address()
+            offenderAddress = address(
+              flat = "Flat 1",
+              premise = "41",
+              street = "High Street",
+              locality = "Hillsborough",
+              city = "25343",
+              county = "S.YORKSHIRE",
+              country = "ENG",
+              postcode = "S1 1AB",
+            )
             booking = booking {
               tempAbsence = temporaryAbsence(
                 date = twoDaysAgo,
@@ -2076,6 +2085,14 @@ class MovementsResourceIntTest(
             assertThat(commentText).isEqualTo("Tap OUT comment")
             assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
             assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+            assertThat(toAddressHouse).isEqualTo("Flat 1  41")
+            assertThat(toAddressStreet).isEqualTo("High Street")
+            assertThat(toAddressLocality).isEqualTo("Hillsborough")
+            // City, County and Country would be the description in the real view - we're missing the package OMS_MISCELLANEOUS.GETDESCCODE() so we can't do that
+            assertThat(toAddressCity).isEqualTo("25343")
+            assertThat(toAddressCounty).isEqualTo("S.YORKSHIRE")
+            assertThat(toAddressCountry).isEqualTo("ENG")
+            assertThat(toAddressPostcode).isEqualTo("S1 1AB")
           }
       }
     }
