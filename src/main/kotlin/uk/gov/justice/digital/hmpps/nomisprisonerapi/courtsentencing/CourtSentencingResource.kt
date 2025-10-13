@@ -1417,6 +1417,75 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   ): CreateCourtCaseResponse = courtSentencingService.createCourtCase(offenderNo, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}/repair")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new Court Case",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Replaces existing court case for the offender. ",
+    requestBody = RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CourtCaseRepairRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Repaired Court case",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun repairCourtCase(
+    @Schema(description = "Offender No", example = "AK1234B", required = true)
+    @PathVariable
+    offenderNo: String,
+    @org.springframework.web.bind.annotation.RequestBody @Valid
+    request: CourtCaseRepairRequest,
+  ): CourtCaseRepairResponse = courtSentencingService.courtCaseRepair(offenderNo, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/clone/{caseId}")
   @Operation(
     summary = "Clones court cases from the cases' booking to the current booking",
@@ -2454,11 +2523,63 @@ data class CreateCourtCaseRequest(
      */
 )
 
+@Schema(description = "Court case repair request")
+data class CourtCaseRepairRequest(
+  val caseId: Long,
+  val startDate: LocalDate,
+  val legalCaseType: String,
+  val courtId: String,
+  val status: String,
+  val courtAppearances: List<CourtAppearanceRepairRequest> = emptyList(),
+  val offenderCharges: List<OffenderChargeRepairRequest> = emptyList(),
+  val caseReferences: CaseIdentifierRequest? = null,
+)
+
+@Schema(description = "Court Event")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtAppearanceRepairRequest(
+  val eventDateTime: LocalDateTime,
+  val courtEventType: String,
+  val courtId: String,
+  val outcomeReasonCode: String?,
+  val nextEventDateTime: LocalDateTime?,
+  val courtEventCharges: List<CourtEventChargeRepairRequest>,
+  val nextCourtId: String?,
+)
+
+@Schema(description = "Court Charge")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class OffenderChargeRepairRequest(
+  val id: String,
+  val offenceCode: String,
+  val offenceDate: LocalDate?,
+  val offenceEndDate: LocalDate?,
+  val resultCode1: String?,
+)
+
+@Schema(description = "Court Charge")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtEventChargeRepairRequest(
+  val id: String,
+  val offenceDate: LocalDate?,
+  val offenceEndDate: LocalDate?,
+  val resultCode1: String?,
+)
+
 @Schema(description = "Create court case response")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateCourtCaseResponse(
   val id: Long,
+  // TODO remove this as not used
   val courtAppearanceIds: List<CreateCourtAppearanceResponse> = listOf(),
+)
+
+@Schema(description = "Court case repair response")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtCaseRepairResponse(
+  val caseId: Long,
+  val courtAppearanceIds: List<Long> = listOf(),
+  val offenderChargeIds: List<Long> = listOf(),
 )
 
 @Schema(description = "court case id")
