@@ -96,6 +96,7 @@ class LocationService(
       comment = locationDto.comment
       unitType = housingUnitType
       locationDto.tracking?.apply { tracking = locationDto.tracking }
+      locationDto.active?.apply { active = locationDto.active }
 
       saveProfiles(this, locationDto.profiles)
       saveUsages(this, locationDto.usages)

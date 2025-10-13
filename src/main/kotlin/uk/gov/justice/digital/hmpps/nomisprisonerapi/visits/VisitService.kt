@@ -134,23 +134,25 @@ class VisitService(
     return CreateVisitResponse(visit.id)
   }
 
-  private fun doesVisitAlreadyExist(visit: Visit): Boolean = visitRepository.existsByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
-    offenderBooking = visit.offenderBooking,
-    startDateTime = visit.startDateTime,
-    endDateTime = visit.endDateTime,
-    commentText = visit.commentText,
-    visitStatus = visit.visitStatus,
-    room = visit.agencyInternalLocation,
-  )
+  private fun doesVisitAlreadyExist(visit: Visit): Boolean = visitRepository
+    .existsByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
+      offenderBooking = visit.offenderBooking,
+      startDateTime = visit.startDateTime,
+      endDateTime = visit.endDateTime,
+      commentText = visit.commentText,
+      visitStatus = visit.visitStatus,
+      room = visit.agencyInternalLocation,
+    )
 
-  private fun getExistingVisit(visit: Visit): Visit? = visitRepository.findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
-    offenderBooking = visit.offenderBooking,
-    startDateTime = visit.startDateTime,
-    endDateTime = visit.endDateTime,
-    commentText = visit.commentText,
-    visitStatus = visit.visitStatus,
-    room = visit.agencyInternalLocation,
-  )
+  private fun getExistingVisit(visit: Visit): Visit? = visitRepository
+    .findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
+      offenderBooking = visit.offenderBooking,
+      startDateTime = visit.startDateTime,
+      endDateTime = visit.endDateTime,
+      commentText = visit.commentText,
+      visitStatus = visit.visitStatus,
+      room = visit.agencyInternalLocation,
+    )
 
   fun cancelVisit(offenderNo: String, visitId: Long, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
@@ -280,18 +282,18 @@ class VisitService(
     updateVisitRequest.visitComment?.let { visit.commentText = it }
   }
 
-  fun getVisit(visitId: Long): VisitResponse {
-    return visitRepository.findByIdOrNull(visitId)?.run {
-      return VisitResponse(this)
+  fun getVisit(visitId: Long): VisitResponse = visitRepository
+    .findByIdOrNull(visitId)?.run {
+      VisitResponse(this)
     } ?: throw NotFoundException("visit id $visitId")
-  }
 
   fun findVisitIdsByFilter(pageRequest: Pageable, visitFilter: VisitFilter): Page<VisitIdResponse> {
     log.info("Visit Id filter request : $visitFilter with page request $pageRequest")
     return visitRepository.findAll(VisitSpecification(visitFilter), pageRequest).map { VisitIdResponse(it.id) }
   }
 
-  fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> = visitRepository.findRoomUsageWithFilter(visitFilter)
+  fun findRoomCountsByFilter(visitFilter: VisitFilter): List<VisitRoomCountResponse> = visitRepository
+    .findRoomUsageWithFilter(visitFilter)
 
   private fun createBalance(
     visit: Visit,
@@ -406,7 +408,8 @@ class VisitService(
     }
   }
 
-  private fun isDpsInChargeOfAllocation(offenderBooking: OffenderBooking): Boolean = serviceAgencySwitchesService.checkServiceAgency(VISIT_ALLOCATION_SERVICE, offenderBooking.location?.id ?: "NONE")
+  private fun isDpsInChargeOfAllocation(offenderBooking: OffenderBooking): Boolean = serviceAgencySwitchesService
+    .checkServiceAgency(VISIT_ALLOCATION_SERVICE, offenderBooking.location.id)
 
   private fun mapVisitModel(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
     val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))

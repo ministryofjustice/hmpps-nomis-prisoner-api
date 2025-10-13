@@ -73,6 +73,9 @@ data class CreateLocationRequest(
   @Schema(description = "Whether internal transfers are tracked")
   val tracking: Boolean? = null,
 
+  @Schema(description = "Whether location is activated")
+  val active: Boolean? = null,
+
   @Schema(description = "Profiles")
   val profiles: List<ProfileRequest>? = null,
 
@@ -85,7 +88,7 @@ data class CreateLocationRequest(
     agency: AgencyLocation,
     parent: AgencyInternalLocation?,
   ): AgencyInternalLocation = AgencyInternalLocation(
-    active = true,
+    active = active ?: true,
     certified = certified,
     tracking = tracking ?: true,
     locationCode = locationCode,

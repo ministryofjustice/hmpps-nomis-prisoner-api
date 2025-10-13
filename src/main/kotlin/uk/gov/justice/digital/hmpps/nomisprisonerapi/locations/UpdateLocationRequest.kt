@@ -53,6 +53,9 @@ data class UpdateLocationRequest(
   @Schema(description = "Whether internal transfers are tracked")
   val tracking: Boolean? = null,
 
+  @Schema(description = "Whether location is activated")
+  val active: Boolean? = null,
+
   @Schema(description = "Profiles")
   val profiles: List<ProfileRequest>? = null,
 
