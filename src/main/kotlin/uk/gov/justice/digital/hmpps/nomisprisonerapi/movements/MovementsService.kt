@@ -726,6 +726,14 @@ class MovementsService(
     commentText = commentText,
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
+    fromAddressDescription = fromAddressView?.commentText,
+    fromAddressHouse = fromAddressView?.house?.trim(),
+    fromAddressStreet = fromAddressView?.street?.trim(),
+    fromAddressLocality = fromAddressView?.locality?.trim(),
+    fromAddressCity = fromAddressView?.cityName?.trim(),
+    fromAddressCounty = fromAddressView?.county?.trim(),
+    fromAddressCountry = fromAddressView?.country?.trim(),
+    fromAddressPostcode = fromAddressView?.postalCode,
     audit = toAudit(),
   )
 }
