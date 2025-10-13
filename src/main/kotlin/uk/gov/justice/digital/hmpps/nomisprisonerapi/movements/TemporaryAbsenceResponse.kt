@@ -73,7 +73,7 @@ data class TemporaryAbsenceResponse(
   @Schema(description = "To address country")
   val toAddressCountry: String?,
 
-  @Schema(description = "To address psotcode")
+  @Schema(description = "To address postcode")
   val toAddressPostcode: String?,
 
   @Schema(description = "Audit data associated with the records")
