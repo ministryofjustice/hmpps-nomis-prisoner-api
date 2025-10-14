@@ -199,7 +199,7 @@ class CourtSentencingService(
         caseStatus = lookupCaseStatus(request.status),
         court = lookupEstablishment(request.courtId),
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
-        primaryCaseInfoNumber = request.caseReferences?.caseIdentifiers?.takeIf { it.isNotEmpty() }?.get(0).toString(),
+        primaryCaseInfoNumber = request.caseReferences?.caseIdentifiers?.takeIf { it.isNotEmpty() }?.get(0)?.reference,
       )
     courtCase.offenderCharges.addAll(
       request.offenderCharges.map {
@@ -217,7 +217,7 @@ class CourtSentencingService(
         )
       },
     )
-
+    courtCaseRepository.save(courtCase)
     courtCase.courtEvents.addAll(
       request.courtAppearances.map { appearanceRequest ->
         CourtEvent(
@@ -246,14 +246,14 @@ class CourtSentencingService(
             appearanceRequest.courtEventCharges.map { cec ->
               val offenderCharge = courtCase.offenderCharges.find { it.id == offenderChargeIdMap.get(cec.id) }
                 ?: throw BadDataException("Offender charge ${cec.id} not found in created case")
-              val resultCode = courtEvent.outcomeReasonCode ?: offenderCharge.resultCode1
+              val resultCode = cec.resultCode1?.let { lookupOffenceResultCode(it) } ?: offenderCharge.resultCode1
               CourtEventCharge(
                 CourtEventChargeId(
                   courtEvent = courtEvent,
                   offenderCharge = offenderCharge,
                 ),
-                offenceDate = offenderCharge.offenceDate,
-                offenceEndDate = offenderCharge.offenceEndDate,
+                offenceDate = cec.offenceDate,
+                offenceEndDate = cec.offenceEndDate,
                 mostSeriousFlag = offenderCharge.mostSeriousFlag,
                 resultCode1 = resultCode,
                 resultCode1Indicator = resultCode?.dispositionCode,
@@ -274,6 +274,7 @@ class CourtSentencingService(
 
     CourtCaseRepairResponse(
       caseId = courtCase.id,
+      bookingId = booking.bookingId,
       courtAppearanceIds = courtCase.courtEvents.map { courtEvent -> courtEvent.id },
       offenderChargeIds = courtCase.offenderCharges.map { it.id },
     ).also { response ->

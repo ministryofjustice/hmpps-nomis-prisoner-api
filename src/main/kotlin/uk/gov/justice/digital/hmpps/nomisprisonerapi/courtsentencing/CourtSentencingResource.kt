@@ -1418,7 +1418,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{id}/repair")
-  @ResponseStatus(HttpStatus.CREATED)
+  @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Creates a new Court Case",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Replaces existing court case for the offender. ",
@@ -2580,6 +2580,7 @@ data class CreateCourtCaseResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtCaseRepairResponse(
   val caseId: Long,
+  val bookingId: Long,
   val courtAppearanceIds: List<Long> = listOf(),
   val offenderChargeIds: List<Long> = listOf(),
 )
