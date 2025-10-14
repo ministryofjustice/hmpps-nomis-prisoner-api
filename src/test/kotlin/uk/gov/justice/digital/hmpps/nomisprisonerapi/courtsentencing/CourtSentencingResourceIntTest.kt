@@ -3399,6 +3399,174 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{caseId}/repair")
+  @Nested
+  inner class RepairCourtCase {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private lateinit var courtOrder: CourtOrder
+    private lateinit var offenderCharge1: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aDateString),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
+                val offenderCharge2 = offenderCharge()
+                courtEvent {
+                  // overrides from the parent offender charge fields
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                  courtEventCharge(
+                    offenderCharge = offenderCharge2,
+                  )
+                  courtOrder = courtOrder {
+                    sentencePurpose(purposeCode = "REPAIR")
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
+                }
+                sentence(
+                  courtOrder = courtOrder,
+                  calculationType = "AGG_IND_ORA",
+                  category = "1991",
+                )
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/repair")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRepairRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRepairRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/repair")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRepairRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when offender does not exist`() {
+        webTestClient.post().uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCase(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found or has no bookings")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the original court case and create new one`() {
+        val repairResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/repair")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtCaseRepairRequest(),
+              ),
+            )
+            .exchange()
+            .expectStatus().isOk.expectBody(CourtCaseRepairResponse::class.java)
+            .returnResult().responseBody
+
+        // check original case is gone
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${repairResponse!!.caseId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtId").isEqualTo("COURT1")
+          .jsonPath("caseStatus.code").isEqualTo("A")
+          .jsonPath("caseStatus.description").isEqualTo("Active")
+          .jsonPath("legalCaseType.code").isEqualTo("A")
+          .jsonPath("legalCaseType.description").isEqualTo("Adult")
+          .jsonPath("primaryCaseInfoNumber").isEqualTo("caseRef1")
+          .jsonPath("beginDate").isEqualTo("2023-01-01")
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1067")
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[0].courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
+          .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1012")
+          .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2023-02-01")
+          .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-02-02")
+          .jsonPath("caseInfoNumbers.size()").isEqualTo(2)
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.delete(prisonerAtMoorland)
+        repository.delete(staff)
+      }
+    }
+  }
+
   @Nested
   @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances")
   inner class CreateCourtAppearance {
@@ -7644,6 +7812,47 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     startDate = startDate,
     status = status,
     caseReference = "caseRef1",
+  )
+  private fun createCourtCaseRepairRequest(
+    courtId: String = "COURT1",
+    legalCaseType: String = "A",
+    startDate: LocalDate = LocalDate.of(2023, 1, 1),
+    status: String = "A",
+    courtAppearances: List<CourtAppearanceRepairRequest> = listOf(
+      CourtAppearanceRepairRequest(
+        eventDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
+        courtId = "ABDRCT",
+        courtEventType = "CRT",
+        outcomeReasonCode = "1004",
+        nextEventDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
+        nextCourtId = "COURT1",
+        courtEventCharges = listOf(
+          CourtEventChargeRepairRequest(
+            id = "dps1",
+            offenceDate = LocalDate.of(2023, 1, 1),
+            offenceEndDate = LocalDate.of(2023, 1, 2),
+            resultCode1 = "1067",
+          ),
+        ),
+      ),
+    ),
+    offenderCharges: List<OffenderChargeRepairRequest> = listOf(
+      OffenderChargeRepairRequest(
+        id = "dps1",
+        offenceCode = "RT88074",
+        offenceDate = LocalDate.of(2023, 2, 1),
+        offenceEndDate = LocalDate.of(2023, 2, 2),
+        resultCode1 = "1012",
+      ),
+    ),
+  ) = CourtCaseRepairRequest(
+    legalCaseType = legalCaseType,
+    startDate = startDate,
+    status = status,
+    caseReferences = CaseIdentifierRequest(listOf(CaseIdentifier("caseRef1", LocalDateTime.now().minusDays(4)), CaseIdentifier("caseRef2", LocalDateTime.now().minusDays(2)))),
+    courtId = courtId,
+    courtAppearances = courtAppearances,
+    offenderCharges = offenderCharges,
   )
 
   private fun createOffenderChargeRequest(
