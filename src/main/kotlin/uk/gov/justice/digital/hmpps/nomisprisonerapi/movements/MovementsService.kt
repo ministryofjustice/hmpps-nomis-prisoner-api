@@ -714,6 +714,7 @@ class MovementsService(
   private fun OffenderTemporaryAbsenceReturn.toSingleResponse() = TemporaryAbsenceReturnResponse(
     bookingId = id.offenderBooking.bookingId,
     sequence = id.sequence,
+    scheduledTemporaryAbsenceId = scheduledTemporaryAbsence?.eventId,
     scheduledTemporaryAbsenceReturnId = scheduledTemporaryAbsenceReturn?.eventId,
     movementApplicationId = scheduledTemporaryAbsence?.temporaryAbsenceApplication?.movementApplicationId,
     movementDate = movementDate,

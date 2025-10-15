@@ -13,7 +13,10 @@ data class TemporaryAbsenceReturnResponse(
   @Schema(description = "Movement application ID. Empty for unscheduled movements.")
   val movementApplicationId: Long?,
 
-  @Schema(description = "Scheduled temporary absence return event ID. Empty for unscheduled movements.")
+  @Schema(description = "Scheduled temporary absence event ID (outbound). Empty for unscheduled movements.")
+  val scheduledTemporaryAbsenceId: Long?,
+
+  @Schema(description = "Scheduled temporary absence return event ID (inbound). Empty for unscheduled movements.")
   val scheduledTemporaryAbsenceReturnId: Long?,
 
   @Schema(description = "Movement sequence")
