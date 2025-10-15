@@ -2508,6 +2508,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+            assertThat(scheduledTemporaryAbsenceId).isNull()
             assertThat(scheduledTemporaryAbsenceReturnId).isNull()
             assertThat(movementApplicationId).isNull()
             assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -2583,6 +2584,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+            assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
             assertThat(scheduledTemporaryAbsenceReturnId).isEqualTo(scheduledTempAbsenceReturn.eventId)
             assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
             assertThat(movementDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
