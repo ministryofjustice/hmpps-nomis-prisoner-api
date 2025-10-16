@@ -3422,6 +3422,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateDate = LocalDate.parse(aDateString),
                 statusUpdateStaff = staff,
               ) {
+                offenderCaseIdentifier(reference = "AA4444444", type = "CASE/INFO#")
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 val offenderCharge2 = offenderCharge()
                 courtEvent {
@@ -3556,7 +3557,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].resultCode1.code").isEqualTo("1012")
           .jsonPath("offenderCharges[0].offenceDate").isEqualTo("2023-02-01")
           .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo("2023-02-02")
-          .jsonPath("caseInfoNumbers.size()").isEqualTo(2)
+          // the trigger will add the primary reference later
+          .jsonPath("caseInfoNumbers.size()").isEqualTo(1)
+          .jsonPath("caseInfoNumbers[0].reference").isEqualTo("caseRef2")
       }
 
       @AfterEach

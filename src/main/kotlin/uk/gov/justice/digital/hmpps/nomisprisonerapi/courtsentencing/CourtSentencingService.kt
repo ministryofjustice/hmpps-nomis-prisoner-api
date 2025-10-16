@@ -191,6 +191,7 @@ class CourtSentencingService(
   @Audit
   fun courtCaseRepair(caseId: Long, offenderNo: String, request: CourtCaseRepairRequest) = findLatestBooking(offenderNo).let { booking ->
     deleteCourtCase(offenderNo = offenderNo, caseId = caseId)
+    val primaryCaseIdentifier = request.caseReferences?.caseIdentifiers?.takeIf { it.isNotEmpty() }?.get(0)?.reference
     val courtCase =
       CourtCase(
         offenderBooking = booking,
@@ -199,7 +200,7 @@ class CourtSentencingService(
         caseStatus = lookupCaseStatus(request.status),
         court = lookupEstablishment(request.courtId),
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
-        primaryCaseInfoNumber = request.caseReferences?.caseIdentifiers?.takeIf { it.isNotEmpty() }?.get(0)?.reference,
+        primaryCaseInfoNumber = primaryCaseIdentifier,
       )
     courtCase.offenderCharges.addAll(
       request.offenderCharges.map {
@@ -270,7 +271,10 @@ class CourtSentencingService(
       changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
     )
 
-    if (request.caseReferences != null) refreshCaseIdentifiers(offenderNo = offenderNo, caseId = courtCase.id, request = request.caseReferences)
+    if (request.caseReferences != null) {
+      val caseIdentifiersWithoutPrimary = CaseIdentifierRequest(request.caseReferences.caseIdentifiers.filter { it.reference != primaryCaseIdentifier })
+      refreshCaseIdentifiers(offenderNo = offenderNo, caseId = courtCase.id, request = caseIdentifiersWithoutPrimary)
+    }
 
     CourtCaseRepairResponse(
       caseId = courtCase.id,
