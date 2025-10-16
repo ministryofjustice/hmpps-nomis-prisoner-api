@@ -96,7 +96,9 @@ class LocationService(
       comment = locationDto.comment
       unitType = housingUnitType
       locationDto.tracking?.apply { tracking = locationDto.tracking }
-      locationDto.active?.apply { active = locationDto.active }
+      // locationDto.active?.apply { active = locationDto.active }
+      // TODO for now leave active status to the deactivate / reactivate events. In future should do it all via update/amend though.
+      // DPS needs to do some work to ensure an amend event is raised for all deactivate / reactivate scenarios before this can happen.
 
       saveProfiles(this, locationDto.profiles)
       saveUsages(this, locationDto.usages)
