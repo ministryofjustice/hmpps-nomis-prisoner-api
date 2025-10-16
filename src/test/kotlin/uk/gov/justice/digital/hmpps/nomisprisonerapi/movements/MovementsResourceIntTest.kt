@@ -2702,16 +2702,7 @@ class MovementsResourceIntTest(
                   ) {
                     tempAbsence = externalMovement()
                     scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement(
-                        date = twoDaysAgo,
-                        fromAgency = "HAZLWD",
-                        toPrison = "LEI",
-                        movementReason = "C5",
-                        escort = "L",
-                        escortText = "SE",
-                        comment = "Tap IN comment",
-                        fromAddress = null,
-                      )
+                      tempAbsenceReturn = externalMovement()
                     }
                   }
                 }
