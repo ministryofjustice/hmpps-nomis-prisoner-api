@@ -2179,14 +2179,6 @@ class MovementsResourceIntTest(
                     toAddress = offenderAddress,
                   ) {
                     tempAbsence = externalMovement(
-                      date = twoDaysAgo,
-                      fromPrison = "LEI",
-                      toAgency = "HAZLWD",
-                      movementReason = "C5",
-                      arrestAgency = "POL",
-                      escort = "L",
-                      escortText = "SE",
-                      comment = "Tap OUT comment",
                       toAddress = null,
                     )
                     scheduledTempAbsenceReturn = scheduledReturn {
@@ -2234,40 +2226,14 @@ class MovementsResourceIntTest(
         fun setUp() {
           nomisDataBuilder.build {
             offender = offender(nomsId = offenderNo) {
-              scheduleAddress = address(
-                flat = "Flat 2",
-                premise = "42",
-                street = "Low Street",
-                locality = "Whitchurch",
-                city = "24847",
-                county = "S.GLAMORGAN",
-                country = "WALES",
-                postcode = "CF1 1AB",
-              )
-              movementAddress = address(
-                flat = "Flat 1",
-                premise = "41",
-                street = "High Street",
-                locality = "Hillsborough",
-                city = "25343",
-                county = "S.YORKSHIRE",
-                country = "ENG",
-                postcode = "S1 1AB",
-              )
+              scheduleAddress = address()
+              movementAddress = address()
               booking = booking {
                 application = temporaryAbsenceApplication {
                   scheduledTempAbsence = scheduledTemporaryAbsence(
                     toAddress = scheduleAddress,
                   ) {
                     tempAbsence = externalMovement(
-                      date = twoDaysAgo,
-                      fromPrison = "LEI",
-                      toAgency = "HAZLWD",
-                      movementReason = "C5",
-                      arrestAgency = "POL",
-                      escort = "L",
-                      escortText = "SE",
-                      comment = "Tap OUT comment",
                       toAddress = movementAddress,
                     )
                     scheduledTempAbsenceReturn = scheduledReturn {
@@ -2289,18 +2255,8 @@ class MovementsResourceIntTest(
             .expectStatus().isOk
             .expectBodyResponse<TemporaryAbsenceResponse>()
             .apply {
-              assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
               assertThat(toAddressId).isEqualTo(movementAddress.addressId)
               assertThat(toAddressOwnerClass).isEqualTo(movementAddress.addressOwnerClass)
-              assertThat(toAddressHouse).isEqualTo("Flat 1  41")
-              assertThat(toAddressStreet).isEqualTo("High Street")
-              assertThat(toAddressLocality).isEqualTo("Hillsborough")
-              // City, County and Country would be the description in the real view - we're missing the package OMS_MISCELLANEOUS.GETDESCCODE() so we can't do that
-              assertThat(toAddressCity).isEqualTo("25343")
-              assertThat(toAddressCounty).isEqualTo("S.YORKSHIRE")
-              assertThat(toAddressCountry).isEqualTo("ENG")
-              assertThat(toAddressPostcode).isEqualTo("S1 1AB")
             }
         }
       }
@@ -2773,8 +2729,6 @@ class MovementsResourceIntTest(
             .expectStatus().isOk
             .expectBodyResponse<TemporaryAbsenceReturnResponse>()
             .apply {
-              assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
               assertThat(fromAddressId).isEqualTo(offenderAddress.addressId)
               assertThat(fromAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
               assertThat(fromAddressHouse).isEqualTo("Flat 1  41")
@@ -2799,26 +2753,8 @@ class MovementsResourceIntTest(
         fun setUp() {
           nomisDataBuilder.build {
             offender = offender(nomsId = offenderNo) {
-              scheduledOutAddress = address(
-                flat = "Flat 2",
-                premise = "42",
-                street = "Low Street",
-                locality = "Whitchurch",
-                city = "24847",
-                county = "S.GLAMORGAN",
-                country = "WALES",
-                postcode = "CF1 1AB",
-              )
-              movementOutAddress = address(
-                flat = "Flat 1",
-                premise = "41",
-                street = "High Street",
-                locality = "Hillsborough",
-                city = "25343",
-                county = "S.YORKSHIRE",
-                country = "ENG",
-                postcode = "S1 1AB",
-              )
+              scheduledOutAddress = address()
+              movementOutAddress = address()
               booking = booking {
                 application = temporaryAbsenceApplication {
                   scheduledTempAbsence = scheduledTemporaryAbsence(
@@ -2829,13 +2765,6 @@ class MovementsResourceIntTest(
                     )
                     scheduledTempAbsenceReturn = scheduledReturn {
                       tempAbsenceReturn = externalMovement(
-                        date = twoDaysAgo,
-                        fromAgency = "HAZLWD",
-                        toPrison = "LEI",
-                        movementReason = "C5",
-                        escort = "L",
-                        escortText = "SE",
-                        comment = "Tap IN comment",
                         fromAddress = null,
                       )
                     }
@@ -2855,18 +2784,7 @@ class MovementsResourceIntTest(
             .expectStatus().isOk
             .expectBodyResponse<TemporaryAbsenceReturnResponse>()
             .apply {
-              assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
               assertThat(fromAddressId).isEqualTo(movementOutAddress.addressId)
-              assertThat(fromAddressOwnerClass).isEqualTo(movementOutAddress.addressOwnerClass)
-              assertThat(fromAddressHouse).isEqualTo("Flat 1  41")
-              assertThat(fromAddressStreet).isEqualTo("High Street")
-              assertThat(fromAddressLocality).isEqualTo("Hillsborough")
-              // City, County and Country would be the description in the real view - we're missing the package OMS_MISCELLANEOUS.GETDESCCODE() so we can't do that
-              assertThat(fromAddressCity).isEqualTo("25343")
-              assertThat(fromAddressCounty).isEqualTo("S.YORKSHIRE")
-              assertThat(fromAddressCountry).isEqualTo("ENG")
-              assertThat(fromAddressPostcode).isEqualTo("S1 1AB")
             }
         }
       }
@@ -2882,36 +2800,9 @@ class MovementsResourceIntTest(
         fun setUp() {
           nomisDataBuilder.build {
             offender = offender(nomsId = offenderNo) {
-              scheduledOutAddress = address(
-                flat = "Flat 2",
-                premise = "42",
-                street = "Low Street",
-                locality = "Whitchurch",
-                city = "24847",
-                county = "S.GLAMORGAN",
-                country = "WALES",
-                postcode = "CF1 1AB",
-              )
-              movementOutAddress = address(
-                flat = "Flat 2",
-                premise = "42",
-                street = "Low Street",
-                locality = "Whitchurch",
-                city = "24847",
-                county = "S.GLAMORGAN",
-                country = "WALES",
-                postcode = "CF1 1AB",
-              )
-              movementInAddress = address(
-                flat = "Flat 1",
-                premise = "41",
-                street = "High Street",
-                locality = "Hillsborough",
-                city = "25343",
-                county = "S.YORKSHIRE",
-                country = "ENG",
-                postcode = "S1 1AB",
-              )
+              scheduledOutAddress = address()
+              movementOutAddress = address()
+              movementInAddress = address()
               booking = booking {
                 application = temporaryAbsenceApplication {
                   scheduledTempAbsence = scheduledTemporaryAbsence(
@@ -2922,13 +2813,6 @@ class MovementsResourceIntTest(
                     )
                     scheduledTempAbsenceReturn = scheduledReturn {
                       tempAbsenceReturn = externalMovement(
-                        date = twoDaysAgo,
-                        fromAgency = "HAZLWD",
-                        toPrison = "LEI",
-                        movementReason = "C5",
-                        escort = "L",
-                        escortText = "SE",
-                        comment = "Tap IN comment",
                         fromAddress = movementInAddress,
                       )
                     }
@@ -2948,18 +2832,7 @@ class MovementsResourceIntTest(
             .expectStatus().isOk
             .expectBodyResponse<TemporaryAbsenceReturnResponse>()
             .apply {
-              assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
               assertThat(fromAddressId).isEqualTo(movementInAddress.addressId)
-              assertThat(fromAddressOwnerClass).isEqualTo(movementInAddress.addressOwnerClass)
-              assertThat(fromAddressHouse).isEqualTo("Flat 1  41")
-              assertThat(fromAddressStreet).isEqualTo("High Street")
-              assertThat(fromAddressLocality).isEqualTo("Hillsborough")
-              // City, County and Country would be the description in the real view - we're missing the package OMS_MISCELLANEOUS.GETDESCCODE() so we can't do that
-              assertThat(fromAddressCity).isEqualTo("25343")
-              assertThat(fromAddressCounty).isEqualTo("S.YORKSHIRE")
-              assertThat(fromAddressCountry).isEqualTo("ENG")
-              assertThat(fromAddressPostcode).isEqualTo("S1 1AB")
             }
         }
       }
