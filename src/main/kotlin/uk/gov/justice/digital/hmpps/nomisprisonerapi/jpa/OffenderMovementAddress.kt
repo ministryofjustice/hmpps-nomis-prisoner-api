@@ -9,7 +9,7 @@ import org.hibernate.Hibernate
 @Entity
 @Table(name = "V_ADDRESSES")
 @Inheritance
-class OffenderExternalMovementAddress(
+class OffenderMovementAddress(
   @Id
   val addressId: Long,
 
@@ -34,7 +34,7 @@ class OffenderExternalMovementAddress(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
-    other as OffenderExternalMovementAddress
+    other as OffenderMovementAddress
     return addressId == other.addressId
   }
 

@@ -35,7 +35,7 @@ class OffenderTemporaryAbsenceReturn(
 
   @OneToOne
   @JoinColumn(name = "FROM_ADDRESS_ID", insertable = false, updatable = false)
-  val fromAddressView: OffenderExternalMovementAddress? = null,
+  val fromAddressView: OffenderMovementAddress? = null,
 ) : OffenderExternalMovement(
   id = id,
   movementDate = movementDate,
