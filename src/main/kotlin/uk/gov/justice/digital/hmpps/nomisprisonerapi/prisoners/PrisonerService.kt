@@ -83,6 +83,7 @@ class PrisonerService(
 private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetails(
   offenderNo = offender.nomsId,
   offenderId = offender.id,
+  rootOffenderId = offender.rootOffenderId,
   bookingId = bookingId,
   location = location.id,
   active = active,

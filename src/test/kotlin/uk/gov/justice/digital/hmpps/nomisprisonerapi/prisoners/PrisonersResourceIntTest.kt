@@ -828,6 +828,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         .jsonPath("bookingId").isEqualTo(bookingBxi.bookingId)
         .jsonPath("offenderNo").isEqualTo("A1234TT")
         .jsonPath("offenderId").isEqualTo(offenderBxi.id)
+        .jsonPath("rootOffenderId").isEqualTo(offenderBxi.rootOffenderId)
     }
 
     @Test
@@ -841,6 +842,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         .jsonPath("bookingId").isEqualTo(bookingOut.bookingId)
         .jsonPath("offenderNo").isEqualTo("A1234WW")
         .jsonPath("offenderId").isEqualTo(offenderOut.id)
+        .jsonPath("rootOffenderId").isEqualTo(offenderOut.rootOffenderId)
         .jsonPath("active").isEqualTo(false)
     }
   }
