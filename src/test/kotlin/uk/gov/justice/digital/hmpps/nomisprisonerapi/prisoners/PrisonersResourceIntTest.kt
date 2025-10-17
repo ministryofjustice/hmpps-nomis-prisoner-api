@@ -768,21 +768,19 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
   @Nested
   @DisplayName("GET /prisoners/{offenderNo}")
   inner class GetPrisonerDetails {
+    private lateinit var offenderBxi: Offender
     private lateinit var bookingBxi: OffenderBooking
+    private lateinit var offenderOut: Offender
     private lateinit var bookingOut: OffenderBooking
-    private lateinit var bookingTrn: OffenderBooking
 
     @BeforeEach
     internal fun createPrisoners() {
       nomisDataBuilder.build {
-        offender(nomsId = "A1234TT") {
+        offenderBxi = offender(nomsId = "A1234TT") {
           bookingBxi = booking(agencyLocationId = "BXI")
         }
-        offender(nomsId = "A1234WW") {
+        offenderOut = offender(nomsId = "A1234WW") {
           bookingOut = booking(active = false, agencyLocationId = "OUT")
-        }
-        offender(nomsId = "A1234XX") {
-          bookingTrn = booking(active = false, agencyLocationId = "TRN")
         }
       }
     }
@@ -829,6 +827,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         .jsonPath("active").isEqualTo(true)
         .jsonPath("bookingId").isEqualTo(bookingBxi.bookingId)
         .jsonPath("offenderNo").isEqualTo("A1234TT")
+        .jsonPath("offenderId").isEqualTo(offenderBxi.id)
     }
 
     @Test
@@ -841,6 +840,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
         .jsonPath("location").isEqualTo("OUT")
         .jsonPath("bookingId").isEqualTo(bookingOut.bookingId)
         .jsonPath("offenderNo").isEqualTo("A1234WW")
+        .jsonPath("offenderId").isEqualTo(offenderOut.id)
         .jsonPath("active").isEqualTo(false)
     }
   }

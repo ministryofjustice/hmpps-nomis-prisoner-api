@@ -384,6 +384,8 @@ data class PrisonerId(
 data class PrisonerDetails(
   @Schema(description = "The NOMIS reference", example = "A1234AA")
   val offenderNo: String,
+  @Schema(description = "The NOMIS offenderId", example = "1234567")
+  val offenderId: Long,
   @Schema(description = "The NOMIS booking ID", example = "1234567")
   val bookingId: Long,
   @Schema(description = "The prisoner's current location", example = "BXI, OUT")
