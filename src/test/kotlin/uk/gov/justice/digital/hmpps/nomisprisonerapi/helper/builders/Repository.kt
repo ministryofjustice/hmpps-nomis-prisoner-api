@@ -229,6 +229,7 @@ class Repository(
     visit.visitOrder?.visitors?.size
     return visit
   }
+  fun getIncident(incidentId: Long): Incident = incidentRepository.findByIdOrNull(incidentId)!!
 
   fun getAttendance(eventId: Long): OffenderCourseAttendance = offenderCourseAttendanceRepository.findByIdOrNull(eventId)!!
 
