@@ -55,6 +55,15 @@ data class ScheduledTemporaryAbsenceResponse(
   @Schema(description = "To address owner class")
   val toAddressOwnerClass: String?,
 
+  @Schema(description = "From address description")
+  val toAddressDescription: String?,
+
+  @Schema(description = "From full address")
+  val toFullAddress: String?,
+
+  @Schema(description = "From address postcode")
+  val toAddressPostcode: String?,
+
   @Schema(description = "Application date")
   val applicationDate: LocalDateTime,
 

@@ -29,6 +29,8 @@ class OffenderMovementAddress(
 
   val country: String? = null,
 
+  val fullAddress: String? = null,
+
   val postalCode: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {

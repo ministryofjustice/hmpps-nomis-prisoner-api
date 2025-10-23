@@ -55,23 +55,8 @@ data class TemporaryAbsenceReturnResponse(
   @Schema(description = "From address description")
   val fromAddressDescription: String?,
 
-  @Schema(description = "From address house")
-  val fromAddressHouse: String?,
-
-  @Schema(description = "From address street")
-  val fromAddressStreet: String?,
-
-  @Schema(description = "From address locality")
-  val fromAddressLocality: String?,
-
-  @Schema(description = "From address city")
-  val fromAddressCity: String?,
-
-  @Schema(description = "From address county")
-  val fromAddressCounty: String?,
-
-  @Schema(description = "From address country")
-  val fromAddressCountry: String?,
+  @Schema(description = "From full address")
+  val fromFullAddress: String?,
 
   @Schema(description = "From address postcode")
   val fromAddressPostcode: String?,

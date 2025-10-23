@@ -644,6 +644,9 @@ class MovementsService(
     returnTime = returnTime,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
+    toAddressDescription = toAddress?.comment,
+    toFullAddress = toAddressView?.fullAddress,
+    toAddressPostcode = toAddress?.postalCode,
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     contactPersonName = contactPersonName,
@@ -688,12 +691,6 @@ class MovementsService(
     // The address may only exist on the schedule so check there too
     val address = toAddressView
       ?: scheduledTemporaryAbsence?.toAddressView
-    // There may be no address and only a city
-    val city = if (address != null) {
-      address.cityName
-    } else {
-      toCity?.description
-    }
     return TemporaryAbsenceResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
@@ -711,12 +708,7 @@ class MovementsService(
       toAddressId = address?.addressId,
       toAddressOwnerClass = address?.ownerClass,
       toAddressDescription = address?.commentText,
-      toAddressHouse = address?.house?.trim(),
-      toAddressStreet = address?.street?.trim(),
-      toAddressLocality = address?.locality?.trim(),
-      toAddressCity = city?.trim(),
-      toAddressCounty = address?.county?.trim(),
-      toAddressCountry = address?.country?.trim(),
+      toFullAddress = address?.fullAddress,
       toAddressPostcode = address?.postalCode,
       audit = toAudit(),
     )
@@ -727,12 +719,6 @@ class MovementsService(
     val address = fromAddressView
       ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddressView
       ?: scheduledTemporaryAbsence?.toAddressView
-    // There may be no address and only a city
-    val city = if (address != null) {
-      address.cityName
-    } else {
-      fromCity?.description
-    }
     return TemporaryAbsenceReturnResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
@@ -750,12 +736,7 @@ class MovementsService(
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.ownerClass,
       fromAddressDescription = address?.commentText,
-      fromAddressHouse = address?.house?.trim(),
-      fromAddressStreet = address?.street?.trim(),
-      fromAddressLocality = address?.locality?.trim(),
-      fromAddressCity = city?.trim(),
-      fromAddressCounty = address?.county?.trim(),
-      fromAddressCountry = address?.country?.trim(),
+      fromFullAddress = address?.fullAddress,
       fromAddressPostcode = address?.postalCode,
       audit = toAudit(),
     )
