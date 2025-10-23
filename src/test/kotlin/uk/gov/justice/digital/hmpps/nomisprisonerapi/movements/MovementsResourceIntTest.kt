@@ -2075,12 +2075,7 @@ class MovementsResourceIntTest(
             assertThat(commentText).isEqualTo("Tap OUT comment")
             assertThat(toAddressId).isNull()
             assertThat(toAddressOwnerClass).isNull()
-            assertThat(toAddressHouse).isNull()
-            assertThat(toAddressStreet).isNull()
-            assertThat(toAddressLocality).isNull()
-            assertThat(toAddressCity).isEqualTo("Sheffield")
-            assertThat(toAddressCounty).isNull()
-            assertThat(toAddressCountry).isNull()
+            assertThat(toFullAddress).isNull()
             assertThat(toAddressPostcode).isNull()
           }
       }
@@ -2144,12 +2139,7 @@ class MovementsResourceIntTest(
               assertThat(commentText).isEqualTo("Tap OUT comment")
               assertThat(toAddressId).isNull()
               assertThat(toAddressOwnerClass).isNull()
-              assertThat(toAddressHouse).isNull()
-              assertThat(toAddressStreet).isNull()
-              assertThat(toAddressLocality).isNull()
-              assertThat(toAddressCity).isNull()
-              assertThat(toAddressCounty).isNull()
-              assertThat(toAddressCountry).isNull()
+              assertThat(toFullAddress).isNull()
               assertThat(toAddressPostcode).isNull()
             }
         }
@@ -2204,13 +2194,7 @@ class MovementsResourceIntTest(
               assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
               assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
               assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-              assertThat(toAddressHouse).isEqualTo("Flat 1  41")
-              assertThat(toAddressStreet).isEqualTo("High Street")
-              assertThat(toAddressLocality).isEqualTo("Hillsborough")
-              // City, County and Country would be the description in the real view - we're missing the package OMS_MISCELLANEOUS.GETDESCCODE() so we can't do that
-              assertThat(toAddressCity).isEqualTo("25343")
-              assertThat(toAddressCounty).isEqualTo("S.YORKSHIRE")
-              assertThat(toAddressCountry).isEqualTo("ENG")
+              assertThat(toFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
               assertThat(toAddressPostcode).isEqualTo("S1 1AB")
             }
         }
@@ -2599,12 +2583,7 @@ class MovementsResourceIntTest(
             assertThat(commentText).isEqualTo("Tap IN comment")
             assertThat(fromAddressId).isNull()
             assertThat(fromAddressOwnerClass).isNull()
-            assertThat(fromAddressHouse).isNull()
-            assertThat(fromAddressStreet).isNull()
-            assertThat(fromAddressLocality).isNull()
-            assertThat(fromAddressCity).isEqualTo("Sheffield")
-            assertThat(fromAddressCounty).isNull()
-            assertThat(fromAddressCountry).isNull()
+            assertThat(fromFullAddress).isNull()
             assertThat(fromAddressPostcode).isNull()
           }
       }
@@ -2667,12 +2646,7 @@ class MovementsResourceIntTest(
               assertThat(commentText).isEqualTo("Tap IN comment")
               assertThat(fromAddressId).isNull()
               assertThat(fromAddressOwnerClass).isNull()
-              assertThat(fromAddressHouse).isNull()
-              assertThat(fromAddressStreet).isNull()
-              assertThat(fromAddressLocality).isNull()
-              assertThat(fromAddressCity).isNull()
-              assertThat(fromAddressCounty).isNull()
-              assertThat(fromAddressCountry).isNull()
+              assertThat(fromFullAddress).isNull()
               assertThat(fromAddressPostcode).isNull()
             }
         }
@@ -2722,13 +2696,7 @@ class MovementsResourceIntTest(
             .apply {
               assertThat(fromAddressId).isEqualTo(offenderAddress.addressId)
               assertThat(fromAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-              assertThat(fromAddressHouse).isEqualTo("Flat 1  41")
-              assertThat(fromAddressStreet).isEqualTo("High Street")
-              assertThat(fromAddressLocality).isEqualTo("Hillsborough")
-              // City, County and Country would be the description in the real view - we're missing the package OMS_MISCELLANEOUS.GETDESCCODE() so we can't do that
-              assertThat(fromAddressCity).isEqualTo("25343")
-              assertThat(fromAddressCounty).isEqualTo("S.YORKSHIRE")
-              assertThat(fromAddressCountry).isEqualTo("ENG")
+              assertThat(fromFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
               assertThat(fromAddressPostcode).isEqualTo("S1 1AB")
             }
         }
