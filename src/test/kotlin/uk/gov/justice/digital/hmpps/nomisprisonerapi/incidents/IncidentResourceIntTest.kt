@@ -1107,7 +1107,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("incidentId").isEqualTo(currentId)
           .jsonPath("title").isEqualTo("Something happened with amendments")
-          .jsonPath("description").isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
+          .jsonPath("description")
+          .isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
       }
 
       @Test
@@ -1534,6 +1535,31 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("title").isEqualTo("Something happened with history")
           .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("${"a".repeat(215)}... see DPS for full text")
       }
+
+      @Test
+      fun `will clear time portions for date fields`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                incidentDateTime = LocalDateTime.parse("2024-12-30T13:45:00"),
+                reportedDateTime = LocalDateTime.parse("2025-01-02T09:30:00"),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          with(repository.getIncident(currentId)) {
+            assertThat(incidentDate).isEqualTo(LocalDateTime.parse("2024-12-30T00:00"))
+            assertThat(incidentTime).isEqualTo(LocalDateTime.parse("2024-12-30T13:45"))
+            assertThat(reportedDate).isEqualTo(LocalDateTime.parse("2025-01-02T00:00"))
+            assertThat(reportedTime).isEqualTo(LocalDateTime.parse("2025-01-02T09:30"))
+          }
+        }
+      }
     }
 
     @Nested
@@ -1621,7 +1647,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("incidentId").isEqualTo(incident2.id)
           .jsonPath("title").isEqualTo("Something happened with amendments")
-          .jsonPath("description").isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
+          .jsonPath("description")
+          .isEqualTo("and people had a fightUser:Bloggs,Bob Date:30-Dec-2023 13:45amendmentUser:Smith,Joe Date:30-Dec-2024 13:45second amendment")
       }
 
       @Test
@@ -2107,6 +2134,31 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("history[0].questions[0].answers[0].comment").isEqualTo("one staff")
           .jsonPath("history[0].questionnaireId").isEqualTo(questionnaire2.id)
           .jsonPath("history.length()").isEqualTo(1)
+      }
+
+      @Test
+      fun `will clear time portions for date fields`() {
+        webTestClient.put().uri("/incidents/${incident2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                incidentDateTime = LocalDateTime.parse("2024-12-30T13:46:00"),
+                reportedDateTime = LocalDateTime.parse("2025-01-02T09:31:00"),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          with(repository.getIncident(incident2.id)) {
+            assertThat(incidentDate).isEqualTo(LocalDateTime.parse("2024-12-30T00:00"))
+            assertThat(incidentTime).isEqualTo(LocalDateTime.parse("2024-12-30T13:46"))
+            assertThat(reportedDate).isEqualTo(LocalDateTime.parse("2025-01-02T00:00"))
+            assertThat(reportedTime).isEqualTo(LocalDateTime.parse("2025-01-02T09:31"))
+          }
+        }
       }
     }
   }

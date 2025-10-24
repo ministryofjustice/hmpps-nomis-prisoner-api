@@ -43,6 +43,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.SortedSet
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff as JPAStaff
 
@@ -82,9 +83,9 @@ class IncidentService(
         this.agency = agency
         this.questionnaire = questionnaire
         this.reportingStaff = reportedStaff.staff
-        this.reportedDate = request.reportedDateTime
+        this.reportedDate = request.reportedDateTime.truncatedTo(ChronoUnit.DAYS)
         this.reportedTime = request.reportedDateTime
-        this.incidentDate = request.incidentDateTime
+        this.incidentDate = request.incidentDateTime.truncatedTo(ChronoUnit.DAYS)
         this.incidentTime = request.incidentDateTime
         this.status = status
       } ?: Incident(
@@ -95,9 +96,9 @@ class IncidentService(
         agency = agency,
         questionnaire = questionnaire,
         reportingStaff = reportedStaff.staff,
-        reportedDate = request.reportedDateTime,
+        reportedDate = request.reportedDateTime.truncatedTo(ChronoUnit.DAYS),
         reportedTime = request.reportedDateTime,
-        incidentDate = request.incidentDateTime,
+        incidentDate = request.incidentDateTime.truncatedTo(ChronoUnit.DAYS),
         incidentTime = request.incidentDateTime,
         status = status,
       )
