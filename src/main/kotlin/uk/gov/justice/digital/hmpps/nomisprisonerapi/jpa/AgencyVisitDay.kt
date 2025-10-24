@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.io.Serializable
 
 @Entity
@@ -15,7 +16,21 @@ import java.io.Serializable
 data class AgencyVisitDay(
   @EmbeddedId
   val agencyVisitDayId: AgencyVisitDayId,
-)
+
+) : NomisAuditableEntityBasic() {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as AgencyVisitDay
+
+    return agencyVisitDayId == other.agencyVisitDayId
+  }
+
+  override fun hashCode(): Int = agencyVisitDayId.hashCode()
+
+  @Override
+  override fun toString(): String = "${this::class.simpleName} (id = $agencyVisitDayId )"
+}
 
 @Embeddable
 data class AgencyVisitDayId(

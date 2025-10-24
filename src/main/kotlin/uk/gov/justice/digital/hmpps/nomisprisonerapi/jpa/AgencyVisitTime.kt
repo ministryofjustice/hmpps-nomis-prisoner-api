@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalTime
@@ -27,10 +28,23 @@ data class AgencyVisitTime(
   @Column(nullable = false)
   val effectiveDate: LocalDate,
 
-  @Column(nullable = false)
-  val expiryDate: LocalDate,
+  @Column
+  val expiryDate: LocalDate?,
 
-)
+) : NomisAuditableEntityBasic() {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as AgencyVisitTime
+
+    return agencyVisitTimesId == other.agencyVisitTimesId
+  }
+
+  override fun hashCode(): Int = agencyVisitTimesId.hashCode()
+
+  @Override
+  override fun toString(): String = "${this::class.simpleName} (id = $agencyVisitTimesId )"
+}
 
 @Embeddable
 data class AgencyVisitTimeId(

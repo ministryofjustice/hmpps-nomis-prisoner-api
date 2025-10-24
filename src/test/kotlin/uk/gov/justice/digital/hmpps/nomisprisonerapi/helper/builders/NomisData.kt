@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseloadCurrentAccountsBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -49,6 +51,7 @@ class NomisDataBuilder(
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
   private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
+  private val agencyVisitDayBuilderFactory: AgencyVisitDayBuilderFactory? = null,
 ) {
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -71,6 +74,7 @@ class NomisDataBuilder(
     agencyAddressBuilderFactory,
     generalLedgerTransactionBuilderFactory,
     caseloadCurrentAccountsBaseBuilderFactory,
+    agencyVisitDayBuilderFactory,
   ).apply(dsl)
 }
 
@@ -93,6 +97,7 @@ class NomisData(
   private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
   private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
+  private val agencyVisitDayBuilderFactory: AgencyVisitDayBuilderFactory? = null,
 ) : NomisDataDsl {
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
@@ -546,6 +551,14 @@ class NomisData(
       currentBalance = currentBalance,
     ).also { builder.apply(dsl) }
   }
+
+  override fun agencyVisitDay(prisonerId: String, weekDay: WeekDay, dsl: AgencyVisitDayDsl.() -> Unit): AgencyVisitDay = agencyVisitDayBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(prisonerId, weekDay)
+        .also {
+          builder.apply(dsl)
+        }
+    }
 }
 
 @NomisDataDslMarker
@@ -782,6 +795,9 @@ interface NomisDataDsl {
     currentBalance: BigDecimal,
     dsl: CaseloadCurrentAccountsBaseDsl.() -> Unit = {},
   ): CaseloadCurrentAccountsBase
+
+  @AgencyVisitDayDslMarker
+  fun agencyVisitDay(prisonerId: String, weekDay: WeekDay, dsl: AgencyVisitDayDsl.() -> Unit = {}): AgencyVisitDay
 }
 
 @DslMarker
