@@ -413,6 +413,9 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         .jsonPath("questions[0].question").isEqualTo("Q1: Were the police informed of the incident?")
         .jsonPath("questions[0].createDateTime").isNotEmpty
         .jsonPath("questions[0].createdBy").isNotEmpty
+        .jsonPath("questions[0].hasMultipleAnswers").isEqualTo(false)
+        .jsonPath("questions[1].hasMultipleAnswers").isEqualTo(false)
+        .jsonPath("questions[2].hasMultipleAnswers").isEqualTo(true)
     }
 
     @Test

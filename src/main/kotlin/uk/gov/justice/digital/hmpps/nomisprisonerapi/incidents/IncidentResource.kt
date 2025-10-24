@@ -695,6 +695,8 @@ data class Question(
   val sequence: Int,
   @Schema(description = "The Question being asked")
   val question: String,
+  @Schema(description = "Whether this question can have multiple answers")
+  val hasMultipleAnswers: Boolean,
   @Schema(description = "List of Responses to this question")
   val answers: List<Response> = listOf(),
   @Schema(description = "The date and time the question was created")

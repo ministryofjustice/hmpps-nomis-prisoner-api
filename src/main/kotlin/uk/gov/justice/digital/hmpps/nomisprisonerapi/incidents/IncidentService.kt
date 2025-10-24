@@ -387,6 +387,7 @@ private fun IncidentQuestion.toQuestionResponse() = Question(
   question = question.questionText,
   createDateTime = createDatetime,
   createdBy = createUsername,
+  hasMultipleAnswers = question.multipleAnswers,
   answers = responses.map { response ->
     Response(
       questionResponseId = response.answer?.id,
