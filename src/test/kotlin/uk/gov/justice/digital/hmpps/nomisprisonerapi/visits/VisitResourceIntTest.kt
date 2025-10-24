@@ -742,7 +742,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `a day of the week is created for prison when one does not already exist`() {
-        assertThat(repository.getAgencyVisitDays("MONDAY", PRISON_ID)).isNull()
+        assertThat(repository.getAgencyVisitDays("MON", PRISON_ID)).isNull()
 
         val visit = repository.getVisit(
           createVisit(
