@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
@@ -12,13 +14,22 @@ import java.time.LocalTime
 annotation class AgencyVisitTimeDslMarker
 
 @NomisDataDslMarker
-interface AgencyVisitTimeDsl
+interface AgencyVisitTimeDsl {
+  @AgencyVisitSlotDslMarker
+  fun visitSlot(
+    agencyInternalLocation: AgencyInternalLocation,
+    maxGroups: Int? = null,
+    maxAdults: Int? = null,
+    dsl: AgencyVisitSlotDsl.() -> Unit = {},
+  ): AgencyVisitSlot
+}
 
 @Component
 class AgencyVisitTimeBuilderFactory(
   private val repository: AgencyVisitTimeBuilderRepository,
+  private val agencyVisitSlotBuilderFactory: AgencyVisitSlotBuilderFactory,
 ) {
-  fun builder(): AgencyVisitTimeBuilder = AgencyVisitTimeBuilder(repository)
+  fun builder(): AgencyVisitTimeBuilder = AgencyVisitTimeBuilder(repository, agencyVisitSlotBuilderFactory)
 }
 
 @Component
@@ -30,6 +41,7 @@ class AgencyVisitTimeBuilderRepository(
 
 class AgencyVisitTimeBuilder(
   private val repository: AgencyVisitTimeBuilderRepository,
+  private val agencyVisitSlotBuilderFactory: AgencyVisitSlotBuilderFactory,
 ) : AgencyVisitTimeDsl {
   private lateinit var agencyVisitTime: AgencyVisitTime
 
@@ -53,4 +65,20 @@ class AgencyVisitTimeBuilder(
   )
     .let { repository.save(it) }
     .also { agencyVisitTime = it }
+
+  override fun visitSlot(
+    agencyInternalLocation: AgencyInternalLocation,
+    maxGroups: Int?,
+    maxAdults: Int?,
+    dsl: AgencyVisitSlotDsl.() -> Unit,
+  ): AgencyVisitSlot = agencyVisitSlotBuilderFactory.builder().let { builder ->
+    builder.build(
+      visitTime = agencyVisitTime,
+      agencyInternalLocation = agencyInternalLocation,
+      maxGroups = maxGroups,
+      maxAdults = maxAdults,
+    )
+      .also { agencyVisitTime.visitSlots += it }
+      .also { builder.apply(dsl) }
+  }
 }

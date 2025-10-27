@@ -744,50 +744,55 @@ class VisitResourceIntTest : IntegrationTestBase() {
       internal fun `a day of the week is created for prison when one does not already exist`() {
         assertThat(repository.getAgencyVisitDays("MON", PRISON_ID)).isNull()
 
-        val visit = repository.getVisit(
-          createVisit(
-            startDateTime = "2022-08-01T14:00",
-            endTime = "16:00",
-            room = "Main visit room",
-            openClosedStatus = "OPEN",
-          ),
+        val visitId = createVisit(
+          startDateTime = "2022-08-01T14:00",
+          endTime = "16:00",
+          room = "Main visit room",
+          openClosedStatus = "OPEN",
         )
 
-        assertThat(repository.getAgencyVisitDays("MON", PRISON_ID))
-          .isNotNull
-          .matches { it!!.agencyVisitDayId.weekDay == visit.agencyVisitSlot!!.weekDay }
-          .matches { it!!.agencyVisitDayId.weekDay == "MON" }
+        repository.runInTransaction {
+          val visit = repository.getVisit(visitId)
 
-        val visitForFollowingWeek = repository.getVisit(
-          createVisit(
-            startDateTime = "2022-08-08T14:00",
-            endTime = "16:00",
-            room = "Main visit room",
-            openClosedStatus = "OPEN",
-          ),
-        )
-        assertThat(repository.getAgencyVisitDays("MON", PRISON_ID))
-          .isNotNull
-          .matches { it!!.agencyVisitDayId.weekDay == visitForFollowingWeek.agencyVisitSlot!!.weekDay }
-          .matches { it!!.agencyVisitDayId.weekDay == "MON" }
+          assertThat(repository.getAgencyVisitDays("MON", PRISON_ID))
+            .isNotNull
+            .matches { it!!.agencyVisitDayId.weekDay == visit.agencyVisitSlot!!.weekDay }
+            .matches { it!!.agencyVisitDayId.weekDay == "MON" }
+        }
 
-        val visitForNextDay = repository.getVisit(
-          createVisit(
-            startDateTime = "2022-08-09T14:00",
-            endTime = "16:00",
-            room = "Main visit room",
-            openClosedStatus = "OPEN",
-          ),
+        val nextWeekVisitId = createVisit(
+          startDateTime = "2022-08-08T14:00",
+          endTime = "16:00",
+          room = "Main visit room",
+          openClosedStatus = "OPEN",
         )
-        assertThat(
-          repository.getAgencyVisitDays(
-            "TUE",
-            PRISON_ID,
-          ),
+        repository.runInTransaction {
+          val visitForFollowingWeek = repository.getVisit(nextWeekVisitId)
+          assertThat(repository.getAgencyVisitDays("MON", PRISON_ID))
+            .isNotNull
+            .matches { it!!.agencyVisitDayId.weekDay == visitForFollowingWeek.agencyVisitSlot!!.weekDay }
+            .matches { it!!.agencyVisitDayId.weekDay == "MON" }
+        }
+
+        val nextDayVisitId = createVisit(
+          startDateTime = "2022-08-09T14:00",
+          endTime = "16:00",
+          room = "Main visit room",
+          openClosedStatus = "OPEN",
         )
-          .isNotNull
-          .matches { it!!.agencyVisitDayId.weekDay == visitForNextDay.agencyVisitSlot!!.weekDay }
-          .matches { it!!.agencyVisitDayId.weekDay == "TUE" }
+
+        repository.runInTransaction {
+          val visitForNextDay = repository.getVisit(nextDayVisitId)
+          assertThat(
+            repository.getAgencyVisitDays(
+              "TUE",
+              PRISON_ID,
+            ),
+          )
+            .isNotNull
+            .matches { it!!.agencyVisitDayId.weekDay == visitForNextDay.agencyVisitSlot!!.weekDay }
+            .matches { it!!.agencyVisitDayId.weekDay == "TUE" }
+        }
       }
     }
   }
