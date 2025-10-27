@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType.ALL
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
@@ -7,6 +8,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import java.io.Serializable
@@ -30,6 +32,9 @@ data class AgencyVisitTime(
 
   @Column
   val expiryDate: LocalDate?,
+
+  @OneToMany(mappedBy = "agencyVisitTime", cascade = [ALL], orphanRemoval = true)
+  val visitSlots: MutableList<AgencyVisitSlot> = mutableListOf(),
 
 ) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {

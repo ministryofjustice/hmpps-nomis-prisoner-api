@@ -44,5 +44,5 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
 interface VisitTimeSlotIdProjection {
   val prisonId: String
   val weekdayCode: String
-  val timeSlotSequence: Long
+  val timeSlotSequence: Int
 }
