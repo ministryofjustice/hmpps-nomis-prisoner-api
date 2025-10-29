@@ -2,13 +2,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
-import jakarta.persistence.Inheritance
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 
 @Entity
 @Table(name = "V_ADDRESSES")
-@Inheritance
 class OffenderMovementAddress(
   @Id
   val addressId: Long,
