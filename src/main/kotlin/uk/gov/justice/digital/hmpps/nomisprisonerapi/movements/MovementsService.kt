@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -27,7 +28,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.activeExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.maxMovementSequence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
@@ -61,6 +64,8 @@ class MovementsService(
   private val temporaryAbsenceSubTypeRepository: ReferenceCodeRepository<TemporaryAbsenceSubType>,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val arrestAgencyRepository: ReferenceCodeRepository<ArrestAgency>,
+  private val corporateAddressRepository: CorporateAddressRepository,
+  private val agencyLocationAddressRepository: AgencyLocationAddressRepository,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
 
@@ -644,7 +649,7 @@ class MovementsService(
     returnTime = returnTime,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
-    toAddressDescription = toAddress?.comment,
+    toAddressDescription = getAddressDescription(toAddress),
     toFullAddress = toAddressView?.fullAddress,
     toAddressPostcode = toAddress?.postalCode,
     applicationDate = applicationDate,
@@ -689,8 +694,8 @@ class MovementsService(
 
   private fun OffenderTemporaryAbsence.toSingleResponse(): TemporaryAbsenceResponse {
     // The address may only exist on the schedule so check there too
-    val address = toAddressView
-      ?: scheduledTemporaryAbsence?.toAddressView
+    val toAddress = toAddress ?: scheduledTemporaryAbsence?.toAddress
+    val toAddressView = toAddressView ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
@@ -705,18 +710,21 @@ class MovementsService(
       fromPrison = fromAgency?.id,
       toAgency = toAgency?.id,
       commentText = commentText,
-      toAddressId = address?.addressId,
-      toAddressOwnerClass = address?.ownerClass,
-      toAddressDescription = address?.commentText,
-      toFullAddress = address?.fullAddress,
-      toAddressPostcode = address?.postalCode,
+      toAddressId = toAddress?.addressId,
+      toAddressOwnerClass = toAddress?.addressOwnerClass,
+      toAddressDescription = getAddressDescription(toAddress),
+      toFullAddress = toAddressView?.fullAddress ?: toCity?.description,
+      toAddressPostcode = toAddress?.postalCode,
       audit = toAudit(),
     )
   }
 
   private fun OffenderTemporaryAbsenceReturn.toSingleResponse(): TemporaryAbsenceReturnResponse {
     // The address may only exist on the outbound movement or the scheduled outbound movement so check there too
-    val address = fromAddressView
+    val address = fromAddress
+      ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
+      ?: scheduledTemporaryAbsence?.toAddress
+    val addressView = fromAddressView
       ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddressView
       ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceReturnResponse(
@@ -734,11 +742,19 @@ class MovementsService(
       toPrison = toAgency?.id,
       commentText = commentText,
       fromAddressId = address?.addressId,
-      fromAddressOwnerClass = address?.ownerClass,
-      fromAddressDescription = address?.commentText,
-      fromFullAddress = address?.fullAddress,
+      fromAddressOwnerClass = address?.addressOwnerClass,
+      fromAddressDescription = getAddressDescription(address),
+      fromFullAddress = addressView?.fullAddress ?: fromCity?.description,
       fromAddressPostcode = address?.postalCode,
       audit = toAudit(),
     )
+  }
+
+  private fun getAddressDescription(address: Address?) = address?.addressId?.let {
+    when (address.addressOwnerClass) {
+      "CORP" -> corporateAddressRepository.findByIdOrNull(it)?.corporate?.corporateName
+      "AGY" -> agencyLocationAddressRepository.findByIdOrNull(it)?.agencyLocation?.description
+      else -> null
+    }
   }
 }

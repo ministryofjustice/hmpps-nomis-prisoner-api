@@ -15,6 +15,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAd
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -1010,119 +1012,268 @@ class MovementsResourceIntTest(
   @DisplayName("GET /movements/{offenderNo}/temporary-absences/scheduled-temporary-absence/{eventId}")
   inner class GetScheduledTemporaryAbsence {
 
-    @BeforeEach
-    fun setUp() {
-      nomisDataBuilder.build {
-        offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
-                eventDate = twoDaysAgo.toLocalDate(),
-                startTime = twoDaysAgo,
-                eventSubType = "C5",
-                eventStatus = "SCH",
-                comment = "Scheduled temporary absence",
-                escort = "L",
-                fromPrison = "LEI",
-                toAgency = "HAZLWD",
-                transportType = "VAN",
-                returnDate = yesterday.toLocalDate(),
-                returnTime = yesterday,
-                toAddress = offenderAddress,
-                contactPersonName = "Jeff",
-              ) {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+    @Nested
+    @DisplayName("With offender address")
+    inner class WithOffenderAddress {
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  eventDate = twoDaysAgo.toLocalDate(),
+                  startTime = twoDaysAgo,
+                  eventSubType = "C5",
+                  eventStatus = "SCH",
+                  comment = "Scheduled temporary absence",
+                  escort = "L",
+                  fromPrison = "LEI",
+                  toAgency = "HAZLWD",
+                  transportType = "VAN",
+                  returnDate = yesterday.toLocalDate(),
+                  returnTime = yesterday,
+                  toAddress = offenderAddress,
+                  contactPersonName = "Jeff",
+                ) {
+                  tempAbsence = externalMovement()
+                  scheduledTempAbsenceReturn = scheduledReturn {
+                    tempAbsenceReturn = externalMovement()
+                  }
                 }
               }
             }
           }
         }
       }
+
+      @Test
+      fun `should retrieve scheduled temporary absence`() {
+        webTestClient.get()
+          .uri(
+            "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
+            scheduledTempAbsence.eventId,
+          )
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+            assertThat(eventId).isEqualTo(scheduledTempAbsence.eventId)
+            assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
+            assertThat(startTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
+            assertThat(eventSubType).isEqualTo("C5")
+            assertThat(eventStatus).isEqualTo("SCH")
+            assertThat(comment).isEqualTo("Scheduled temporary absence")
+            assertThat(escort).isEqualTo("L")
+            assertThat(fromPrison).isEqualTo("LEI")
+            assertThat(toAgency).isEqualTo("HAZLWD")
+            assertThat(transportType).isEqualTo("VAN")
+            assertThat(returnDate).isEqualTo(yesterday.toLocalDate())
+            assertThat(returnTime).isCloseTo(yesterday, within(1, ChronoUnit.MINUTES))
+            assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
+            assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+            assertThat(contactPersonName).isEqualTo("Jeff")
+          }
+      }
     }
 
-    @Test
-    fun `should return unauthorised for missing token`() {
-      webTestClient.get()
-        .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/1")
-        .exchange()
-        .expectStatus().isUnauthorized
-    }
+    @Nested
+    @DisplayName("With corporate address")
+    inner class WithCorporateAddress {
+      private lateinit var corporateAddress: CorporateAddress
 
-    @Test
-    fun `should return forbidden for missing role`() {
-      webTestClient.get()
-        .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/1")
-        .headers(setAuthorisation())
-        .exchange()
-        .expectStatus().isForbidden
-    }
-
-    @Test
-    fun `should return forbidden for wrong role`() {
-      webTestClient.get()
-        .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/1")
-        .headers(setAuthorisation("ROLE_INVALID"))
-        .exchange()
-        .expectStatus().isForbidden
-    }
-
-    @Test
-    fun `should return not found if offender not found`() {
-      webTestClient.get()
-        .uri("/movements/UNKNOWN/temporary-absences/scheduled-temporary-absence/1")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isNotFound
-        .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("UNKNOWN").contains("not found")
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate(
+            corporateName = "Boots",
+          ) {
+            corporateAddress = address(
+              type = "BUS",
+              flat = "3B",
+              premise = "Brown Court",
+              street = "Scotland Street",
+              locality = "Hunters Bar",
+              postcode = "S1 3GG",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  toAddress = corporateAddress,
+                ) {
+                  tempAbsence = externalMovement()
+                  scheduledTempAbsenceReturn = scheduledReturn {
+                    tempAbsenceReturn = externalMovement()
+                  }
+                }
+              }
+            }
+          }
         }
+      }
+
+      @Test
+      fun `should retrieve corporate address`() {
+        webTestClient.get()
+          .uri(
+            "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
+            scheduledTempAbsence.eventId,
+          )
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
+          .apply {
+            assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
+            assertThat(toAddressOwnerClass).isEqualTo("CORP")
+            assertThat(toAddressDescription).isEqualTo("Boots")
+            assertThat(toFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+            assertThat(toAddressPostcode).isEqualTo("S1 3GG")
+          }
+      }
     }
 
-    @Test
-    fun `should return not found if scheduled temporary absence not found`() {
-      webTestClient.get()
-        .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/9999")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isNotFound
-        .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("9999").contains("not found")
+    @Nested
+    @DisplayName("With agency address")
+    inner class WithAgencyAddress {
+      private lateinit var agencyAddress: AgencyLocationAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          agencyLocation(
+            agencyLocationId = "NGENHO",
+            description = "Northern General Hospital",
+            type = "HOSPITAL",
+          ) {
+            agencyAddress = address(
+              type = "BUS",
+              street = "Herries Road",
+              postcode = "S5 7AU",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  toAddress = agencyAddress,
+                ) {
+                  tempAbsence = externalMovement()
+                  scheduledTempAbsenceReturn = scheduledReturn {
+                    tempAbsenceReturn = externalMovement()
+                  }
+                }
+              }
+            }
+          }
         }
+      }
+
+      @Test
+      fun `should retrieve agency address`() {
+        webTestClient.get()
+          .uri(
+            "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
+            scheduledTempAbsence.eventId,
+          )
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
+          .apply {
+            assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
+            assertThat(toAddressOwnerClass).isEqualTo("AGY")
+            assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
+            assertThat(toFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+            assertThat(toAddressPostcode).isEqualTo("S5 7AU")
+          }
+      }
     }
 
-    @Test
-    fun `should retrieve scheduled temporary absence`() {
-      webTestClient.get()
-        .uri(
-          "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
-          scheduledTempAbsence.eventId,
-        )
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
-        .apply {
-          assertThat(bookingId).isEqualTo(booking.bookingId)
-          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
-          assertThat(eventId).isEqualTo(scheduledTempAbsence.eventId)
-          assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
-          assertThat(startTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
-          assertThat(eventSubType).isEqualTo("C5")
-          assertThat(eventStatus).isEqualTo("SCH")
-          assertThat(comment).isEqualTo("Scheduled temporary absence")
-          assertThat(escort).isEqualTo("L")
-          assertThat(fromPrison).isEqualTo("LEI")
-          assertThat(toAgency).isEqualTo("HAZLWD")
-          assertThat(transportType).isEqualTo("VAN")
-          assertThat(returnDate).isEqualTo(yesterday.toLocalDate())
-          assertThat(returnTime).isCloseTo(yesterday, within(1, ChronoUnit.MINUTES))
-          assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
-          assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-          assertThat(contactPersonName).isEqualTo("Jeff")
+    @Nested
+    inner class Validation {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence {
+                  tempAbsence = externalMovement()
+                  scheduledTempAbsenceReturn = scheduledReturn {
+                    tempAbsenceReturn = externalMovement()
+                  }
+                }
+              }
+            }
+          }
         }
+      }
+
+      @Test
+      fun `should return unauthorised for missing token`() {
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/1")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/1")
+          .headers(setAuthorisation())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/1")
+          .headers(setAuthorisation("ROLE_INVALID"))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return not found if offender not found`() {
+        webTestClient.get()
+          .uri("/movements/UNKNOWN/temporary-absences/scheduled-temporary-absence/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return not found if scheduled temporary absence not found`() {
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/9999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("9999").contains("not found")
+          }
+      }
     }
   }
 
@@ -2075,7 +2226,7 @@ class MovementsResourceIntTest(
             assertThat(commentText).isEqualTo("Tap OUT comment")
             assertThat(toAddressId).isNull()
             assertThat(toAddressOwnerClass).isNull()
-            assertThat(toFullAddress).isNull()
+            assertThat(toFullAddress).isEqualTo("Sheffield")
             assertThat(toAddressPostcode).isNull()
           }
       }
@@ -2138,6 +2289,7 @@ class MovementsResourceIntTest(
               assertThat(toAgency).isEqualTo("HAZLWD")
               assertThat(commentText).isEqualTo("Tap OUT comment")
               assertThat(toAddressId).isNull()
+              assertThat(toAddressDescription).isNull()
               assertThat(toAddressOwnerClass).isNull()
               assertThat(toFullAddress).isNull()
               assertThat(toAddressPostcode).isNull()
@@ -2146,102 +2298,354 @@ class MovementsResourceIntTest(
       }
 
       @Nested
-      @DisplayName("With address on scheduled OUT, not movement")
-      inner class WithAddressOnScheduledOutButNotMovement {
+      inner class WithOffenderAddress {
 
-        @BeforeEach
-        fun setUp() {
-          nomisDataBuilder.build {
-            offender = offender(nomsId = offenderNo) {
-              offenderAddress = address(
-                flat = "Flat 1",
-                premise = "41",
-                street = "High Street",
-                locality = "Hillsborough",
-                city = "25343",
-                county = "S.YORKSHIRE",
-                country = "ENG",
-                postcode = "S1 1AB",
-              )
-              booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence(
-                    toAddress = offenderAddress,
-                  ) {
-                    tempAbsence = externalMovement(
-                      toAddress = null,
-                    )
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement()
+        @Nested
+        @DisplayName("With address on scheduled OUT, not movement")
+        inner class WithAddressOnScheduledOutButNotMovement {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                offenderAddress = address(
+                  flat = "Flat 1",
+                  premise = "41",
+                  street = "High Street",
+                  locality = "Hillsborough",
+                  city = "25343",
+                  county = "S.YORKSHIRE",
+                  country = "ENG",
+                  postcode = "S1 1AB",
+                )
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = offenderAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = null,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
                     }
                   }
                 }
               }
             }
           }
+
+          @Test
+          fun `should retrieve address from scheduled temporary absence`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceResponse>()
+              .apply {
+                assertThat(bookingId).isEqualTo(booking.bookingId)
+                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+                assertThat(toFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
+                assertThat(toAddressPostcode).isEqualTo("S1 1AB")
+              }
+          }
         }
 
-        @Test
-        fun `should retrieve address from scheduled temporary absence`() {
-          webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBodyResponse<TemporaryAbsenceResponse>()
-            .apply {
-              assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
-              assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
-              assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-              assertThat(toFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
-              assertThat(toAddressPostcode).isEqualTo("S1 1AB")
+        @Nested
+        @DisplayName("With address on both schedule and movement")
+        inner class WithAddressOnMovement {
+          private lateinit var scheduleAddress: OffenderAddress
+          private lateinit var movementAddress: OffenderAddress
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                scheduleAddress = address()
+                movementAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = scheduleAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = movementAddress,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
+                    }
+                  }
+                }
+              }
             }
+          }
+
+          @Test
+          fun `should take the address from the movement`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceResponse>()
+              .apply {
+                assertThat(toAddressId).isEqualTo(movementAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo(movementAddress.addressOwnerClass)
+              }
+          }
         }
       }
 
       @Nested
-      @DisplayName("With address on both schedule and movement")
-      inner class WithAddressOnMovement {
-        private lateinit var scheduleAddress: OffenderAddress
-        private lateinit var movementAddress: OffenderAddress
+      @DisplayName("With corporate address")
+      inner class WithCorporateAddress {
+        private lateinit var corporateAddress: CorporateAddress
 
-        @BeforeEach
-        fun setUp() {
-          nomisDataBuilder.build {
-            offender = offender(nomsId = offenderNo) {
-              scheduleAddress = address()
-              movementAddress = address()
-              booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence(
-                    toAddress = scheduleAddress,
-                  ) {
-                    tempAbsence = externalMovement(
-                      toAddress = movementAddress,
-                    )
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement()
+        @Nested
+        @DisplayName("With address on scheduled OUT, not movement")
+        inner class WithAddressOnScheduledOutButNotMovement {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              corporate(
+                corporateName = "Boots",
+              ) {
+                corporateAddress = address(
+                  type = "BUS",
+                  flat = "3B",
+                  premise = "Brown Court",
+                  street = "Scotland Street",
+                  locality = "Hunters Bar",
+                  postcode = "S1 3GG",
+                  city = SHEFFIELD,
+                  county = "S.YORKSHIRE",
+                  country = "ENG",
+                )
+              }
+              offender = offender(nomsId = offenderNo) {
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = corporateAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = null,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
                     }
                   }
                 }
               }
             }
           }
+
+          @Test
+          fun `should take corporate address from schedule`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceResponse>()
+              .apply {
+                assertThat(bookingId).isEqualTo(booking.bookingId)
+                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("CORP")
+                assertThat(toAddressDescription).isEqualTo("Boots")
+                assertThat(toFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(toAddressPostcode).isEqualTo("S1 3GG")
+              }
+          }
         }
 
-        @Test
-        fun `should take the address from the movement`() {
-          webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBodyResponse<TemporaryAbsenceResponse>()
-            .apply {
-              assertThat(toAddressId).isEqualTo(movementAddress.addressId)
-              assertThat(toAddressOwnerClass).isEqualTo(movementAddress.addressOwnerClass)
+        @Nested
+        @DisplayName("With address on both schedule and movement")
+        inner class WithAddressOnMovement {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              nomisDataBuilder.build {
+                corporate(
+                  corporateName = "Boots",
+                ) {
+                  corporateAddress = address(
+                    type = "BUS",
+                    flat = "3B",
+                    premise = "Brown Court",
+                    street = "Scotland Street",
+                    locality = "Hunters Bar",
+                    postcode = "S1 3GG",
+                    city = SHEFFIELD,
+                    county = "S.YORKSHIRE",
+                    country = "ENG",
+                  )
+                }
+                offender = offender(nomsId = offenderNo) {
+                  offenderAddress = address()
+                  booking = booking {
+                    application = temporaryAbsenceApplication {
+                      scheduledTempAbsence = scheduledTemporaryAbsence(
+                        toAddress = offenderAddress,
+                      ) {
+                        tempAbsence = externalMovement(
+                          toAddress = corporateAddress,
+                        )
+                        scheduledTempAbsenceReturn = scheduledReturn {
+                          tempAbsenceReturn = externalMovement()
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
+          }
+
+          @Test
+          fun `should take corporate address from movement`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceResponse>()
+              .apply {
+                assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("CORP")
+                assertThat(toAddressDescription).isEqualTo("Boots")
+                assertThat(toFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(toAddressPostcode).isEqualTo("S1 3GG")
+              }
+          }
+        }
+      }
+
+      @Nested
+      @DisplayName("With agency address")
+      inner class WithAgencyAddress {
+        private lateinit var agencyAddress: AgencyLocationAddress
+
+        @BeforeEach
+        fun setUp() {
+          nomisDataBuilder.build {
+            agencyLocation(
+              agencyLocationId = "NGENHO",
+              description = "Northern General Hospital",
+              type = "HOSPITAL",
+            ) {
+              agencyAddress = address(
+                type = "BUS",
+                street = "Herries Road",
+                postcode = "S5 7AU",
+                city = SHEFFIELD,
+                county = "S.YORKSHIRE",
+                country = "ENG",
+              )
+            }
+          }
+        }
+
+        @Nested
+        @DisplayName("With address on scheduled OUT, not movement")
+        inner class WithAddressOnScheduledOutButNotMovement {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = agencyAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = null,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          @Test
+          fun `should take agency address from schedule`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceResponse>()
+              .apply {
+                assertThat(bookingId).isEqualTo(booking.bookingId)
+                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("AGY")
+                assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
+                assertThat(toFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(toAddressPostcode).isEqualTo("S5 7AU")
+              }
+          }
+        }
+
+        @Nested
+        @DisplayName("With address on both schedule and movement")
+        inner class WithAddressOnMovement {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                offenderAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = offenderAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = agencyAddress,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          @Test
+          fun `should take agency address from movement`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceResponse>()
+              .apply {
+                assertThat(bookingId).isEqualTo(booking.bookingId)
+                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("AGY")
+                assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
+                assertThat(toFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(toAddressPostcode).isEqualTo("S5 7AU")
+              }
+          }
         }
       }
     }
@@ -2583,7 +2987,7 @@ class MovementsResourceIntTest(
             assertThat(commentText).isEqualTo("Tap IN comment")
             assertThat(fromAddressId).isNull()
             assertThat(fromAddressOwnerClass).isNull()
-            assertThat(fromFullAddress).isNull()
+            assertThat(fromFullAddress).isEqualTo("Sheffield")
             assertThat(fromAddressPostcode).isNull()
           }
       }
@@ -2653,146 +3057,481 @@ class MovementsResourceIntTest(
       }
 
       @Nested
-      inner class WithAddressOnScheduledOutOnly {
+      inner class WithOffenderAddress {
+
+        @Nested
+        inner class WithAddressOnScheduledOutOnly {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                offenderAddress = address(
+                  flat = "Flat 1",
+                  premise = "41",
+                  street = "High Street",
+                  locality = "Hillsborough",
+                  city = "25343",
+                  county = "S.YORKSHIRE",
+                  country = "ENG",
+                  postcode = "S1 1AB",
+                )
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = offenderAddress,
+                    ) {
+                      tempAbsence = externalMovement()
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          @Test
+          fun `should retrieve address from scheduled OUT`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(offenderAddress.addressId)
+                assertThat(fromAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+                assertThat(fromFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
+                assertThat(fromAddressPostcode).isEqualTo("S1 1AB")
+              }
+          }
+        }
+
+        @Nested
+        @DisplayName("With address on scheduled OUT and movement OUT but not movement IN")
+        inner class WithAddressOnScheduledOutAndMovementOutButNotMovementIn {
+          private lateinit var scheduledOutAddress: OffenderAddress
+          private lateinit var movementOutAddress: OffenderAddress
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                scheduledOutAddress = address()
+                movementOutAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = scheduledOutAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = movementOutAddress,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement(
+                          fromAddress = null,
+                        )
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          @Test
+          fun `should retrieve address from movement OUT`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(movementOutAddress.addressId)
+              }
+          }
+        }
+
+        @Nested
+        @DisplayName("With address on scheduled OUT, movement OUT and movement IN")
+        inner class WithAddressOnMovementAndSchedules {
+          private lateinit var scheduledOutAddress: OffenderAddress
+          private lateinit var movementOutAddress: OffenderAddress
+          private lateinit var movementInAddress: OffenderAddress
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                scheduledOutAddress = address()
+                movementOutAddress = address()
+                movementInAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = scheduledOutAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = movementOutAddress,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement(
+                          fromAddress = movementInAddress,
+                        )
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          @Test
+          fun `should retrieve address from movement IN`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(movementInAddress.addressId)
+              }
+          }
+        }
+      }
+
+      @Nested
+      inner class WithCorporateAddress {
+        private lateinit var corporateAddress: CorporateAddress
 
         @BeforeEach
         fun setUp() {
           nomisDataBuilder.build {
-            offender = offender(nomsId = offenderNo) {
-              offenderAddress = address(
-                flat = "Flat 1",
-                premise = "41",
-                street = "High Street",
-                locality = "Hillsborough",
-                city = "25343",
+            corporate(
+              corporateName = "Boots",
+            ) {
+              corporateAddress = address(
+                type = "BUS",
+                flat = "3B",
+                premise = "Brown Court",
+                street = "Scotland Street",
+                locality = "Hunters Bar",
+                postcode = "S1 3GG",
+                city = SHEFFIELD,
                 county = "S.YORKSHIRE",
                 country = "ENG",
-                postcode = "S1 1AB",
               )
-              booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence(
-                    toAddress = offenderAddress,
-                  ) {
-                    tempAbsence = externalMovement()
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement()
+            }
+          }
+        }
+
+        @Nested
+        inner class WithAddressOnScheduledOutOnly {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                offenderAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = corporateAddress,
+                    ) {
+                      tempAbsence = externalMovement()
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
                     }
                   }
                 }
               }
             }
           }
+
+          @Test
+          fun `should retrieve corporate address from scheduled OUT`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(corporateAddress.addressId)
+                assertThat(fromAddressOwnerClass).isEqualTo("CORP")
+                assertThat(fromAddressDescription).isEqualTo("Boots")
+                assertThat(fromFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(fromAddressPostcode).isEqualTo("S1 3GG")
+              }
+          }
         }
 
-        @Test
-        fun `should retrieve address from scheduled OUT`() {
-          webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBodyResponse<TemporaryAbsenceReturnResponse>()
-            .apply {
-              assertThat(fromAddressId).isEqualTo(offenderAddress.addressId)
-              assertThat(fromAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-              assertThat(fromFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
-              assertThat(fromAddressPostcode).isEqualTo("S1 1AB")
+        @Nested
+        @DisplayName("With address on scheduled OUT and movement OUT but not movement IN")
+        inner class WithAddressOnScheduledOutAndMovementOutButNotMovementIn {
+          private lateinit var scheduledOutAddress: OffenderAddress
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                scheduledOutAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = scheduledOutAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = corporateAddress,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement(
+                          fromAddress = null,
+                        )
+                      }
+                    }
+                  }
+                }
+              }
             }
+          }
+
+          @Test
+          fun `should retrieve address from movement OUT`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(corporateAddress.addressId)
+                assertThat(fromAddressOwnerClass).isEqualTo("CORP")
+                assertThat(fromAddressDescription).isEqualTo("Boots")
+                assertThat(fromFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(fromAddressPostcode).isEqualTo("S1 3GG")
+              }
+          }
+        }
+
+        @Nested
+        @DisplayName("With address on scheduled OUT, movement OUT and movement IN")
+        inner class WithAddressOnMovementAndSchedules {
+          private lateinit var scheduledOutAddress: OffenderAddress
+          private lateinit var movementOutAddress: OffenderAddress
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                scheduledOutAddress = address()
+                movementOutAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = scheduledOutAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = movementOutAddress,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement(
+                          fromAddress = corporateAddress,
+                        )
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          @Test
+          fun `should retrieve address from movement IN`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(corporateAddress.addressId)
+                assertThat(fromAddressOwnerClass).isEqualTo("CORP")
+                assertThat(fromAddressDescription).isEqualTo("Boots")
+                assertThat(fromFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(fromAddressPostcode).isEqualTo("S1 3GG")
+              }
+          }
         }
       }
 
       @Nested
-      @DisplayName("With address on scheduled OUT and movement OUT but not movement IN")
-      inner class WithAddressOnScheduledOutAndMovementOutButNotMovementIn {
-        private lateinit var scheduledOutAddress: OffenderAddress
-        private lateinit var movementOutAddress: OffenderAddress
+      inner class WithAgencyAddress {
+        private lateinit var agencyAddress: AgencyLocationAddress
 
         @BeforeEach
         fun setUp() {
           nomisDataBuilder.build {
-            offender = offender(nomsId = offenderNo) {
-              scheduledOutAddress = address()
-              movementOutAddress = address()
-              booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence(
-                    toAddress = scheduledOutAddress,
-                  ) {
-                    tempAbsence = externalMovement(
-                      toAddress = movementOutAddress,
-                    )
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement(
-                        fromAddress = null,
-                      )
+            agencyLocation(
+              agencyLocationId = "NGENHO",
+              description = "Northern General Hospital",
+              type = "HOSPITAL",
+            ) {
+              agencyAddress = address(
+                type = "BUS",
+                street = "Herries Road",
+                postcode = "S5 7AU",
+                city = SHEFFIELD,
+                county = "S.YORKSHIRE",
+                country = "ENG",
+              )
+            }
+          }
+        }
+
+        @Nested
+        inner class WithAddressOnScheduledOutOnly {
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                offenderAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = agencyAddress,
+                    ) {
+                      tempAbsence = externalMovement()
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement()
+                      }
                     }
                   }
                 }
               }
             }
           }
+
+          @Test
+          fun `should retrieve address from scheduled OUT`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(agencyAddress.addressId)
+                assertThat(fromAddressOwnerClass).isEqualTo("AGY")
+                assertThat(fromAddressDescription).isEqualTo("Northern General Hospital")
+                assertThat(fromFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(fromAddressPostcode).isEqualTo("S5 7AU")
+              }
+          }
         }
 
-        @Test
-        fun `should retrieve address from movement OUT`() {
-          webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBodyResponse<TemporaryAbsenceReturnResponse>()
-            .apply {
-              assertThat(fromAddressId).isEqualTo(movementOutAddress.addressId)
-            }
-        }
-      }
+        @Nested
+        @DisplayName("With address on scheduled OUT and movement OUT but not movement IN")
+        inner class WithAddressOnScheduledOutAndMovementOutButNotMovementIn {
+          private lateinit var scheduledOutAddress: OffenderAddress
 
-      @Nested
-      @DisplayName("With address on scheduled OUT, movement OUT and movement IN")
-      inner class WithAddressOnMovementAndSchedules {
-        private lateinit var scheduledOutAddress: OffenderAddress
-        private lateinit var movementOutAddress: OffenderAddress
-        private lateinit var movementInAddress: OffenderAddress
-
-        @BeforeEach
-        fun setUp() {
-          nomisDataBuilder.build {
-            offender = offender(nomsId = offenderNo) {
-              scheduledOutAddress = address()
-              movementOutAddress = address()
-              movementInAddress = address()
-              booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence(
-                    toAddress = scheduledOutAddress,
-                  ) {
-                    tempAbsence = externalMovement(
-                      toAddress = movementOutAddress,
-                    )
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement(
-                        fromAddress = movementInAddress,
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                scheduledOutAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = scheduledOutAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = agencyAddress,
                       )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement(
+                          fromAddress = null,
+                        )
+                      }
                     }
                   }
                 }
               }
             }
           }
+
+          @Test
+          fun `should retrieve address from movement OUT`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(agencyAddress.addressId)
+                assertThat(fromAddressOwnerClass).isEqualTo("AGY")
+                assertThat(fromAddressDescription).isEqualTo("Northern General Hospital")
+                assertThat(fromFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(fromAddressPostcode).isEqualTo("S5 7AU")
+              }
+          }
         }
 
-        @Test
-        fun `should retrieve address from movement IN`() {
-          webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
-            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus().isOk
-            .expectBodyResponse<TemporaryAbsenceReturnResponse>()
-            .apply {
-              assertThat(fromAddressId).isEqualTo(movementInAddress.addressId)
+        @Nested
+        @DisplayName("With address on scheduled OUT, movement OUT and movement IN")
+        inner class WithAddressOnMovementAndSchedules {
+          private lateinit var scheduledOutAddress: OffenderAddress
+          private lateinit var movementOutAddress: OffenderAddress
+
+          @BeforeEach
+          fun setUp() {
+            nomisDataBuilder.build {
+              offender = offender(nomsId = offenderNo) {
+                scheduledOutAddress = address()
+                movementOutAddress = address()
+                booking = booking {
+                  application = temporaryAbsenceApplication {
+                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                      toAddress = scheduledOutAddress,
+                    ) {
+                      tempAbsence = externalMovement(
+                        toAddress = movementOutAddress,
+                      )
+                      scheduledTempAbsenceReturn = scheduledReturn {
+                        tempAbsenceReturn = externalMovement(
+                          fromAddress = agencyAddress,
+                        )
+                      }
+                    }
+                  }
+                }
+              }
             }
+          }
+
+          @Test
+          fun `should retrieve address from movement IN`() {
+            webTestClient.get()
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+              .exchange()
+              .expectStatus().isOk
+              .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+              .apply {
+                assertThat(fromAddressId).isEqualTo(agencyAddress.addressId)
+                assertThat(fromAddressOwnerClass).isEqualTo("AGY")
+                assertThat(fromAddressDescription).isEqualTo("Northern General Hospital")
+                assertThat(fromFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(fromAddressPostcode).isEqualTo("S5 7AU")
+              }
+          }
         }
       }
     }
