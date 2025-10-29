@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStat
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
@@ -528,6 +527,9 @@ class MovementsService(
     returnTime = returnTime,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
+    toAddressDescription = getAddressDescription(toAddress),
+    toFullAddress = toAddressView?.fullAddress?.trim(),
+    toAddressPostcode = toAddress?.postalCode,
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     audit = toAudit(),
@@ -559,6 +561,9 @@ class MovementsService(
     commentText = commentText,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
+    toAddressDescription = getAddressDescription(toAddress),
+    toFullAddress = toAddressView?.fullAddress?.trim(),
+    toAddressPostcode = toAddress?.postalCode,
     audit = toAudit(),
   )
 
@@ -574,10 +579,13 @@ class MovementsService(
     commentText = commentText,
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
+    fromAddressDescription = getAddressDescription(fromAddress),
+    fromFullAddress = fromAddressView?.fullAddress?.trim(),
+    fromAddressPostcode = fromAddress?.postalCode,
     audit = toAudit(),
   )
 
-  private fun OffenderExternalMovement.toTemporaryAbsenceResponse() = TemporaryAbsence(
+  private fun OffenderTemporaryAbsence.toTemporaryAbsenceResponse() = TemporaryAbsence(
     sequence = id.sequence,
     movementDate = movementDate,
     movementTime = movementTime,
@@ -590,10 +598,13 @@ class MovementsService(
     commentText = commentText,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
+    toAddressDescription = getAddressDescription(toAddress),
+    toFullAddress = toAddressView?.fullAddress?.trim() ?: toCity?.description,
+    toAddressPostcode = toAddress?.postalCode,
     audit = toAudit(),
   )
 
-  private fun OffenderExternalMovement.toTemporaryAbsenceReturnResponse() = TemporaryAbsenceReturn(
+  private fun OffenderTemporaryAbsenceReturn.toTemporaryAbsenceReturnResponse() = TemporaryAbsenceReturn(
     sequence = id.sequence,
     movementDate = movementDate,
     movementTime = movementTime,
@@ -605,6 +616,9 @@ class MovementsService(
     commentText = commentText,
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
+    fromAddressDescription = getAddressDescription(fromAddress),
+    fromFullAddress = fromAddressView?.fullAddress?.trim() ?: fromCity?.description,
+    fromAddressPostcode = fromAddress?.postalCode,
     audit = toAudit(),
   )
 
