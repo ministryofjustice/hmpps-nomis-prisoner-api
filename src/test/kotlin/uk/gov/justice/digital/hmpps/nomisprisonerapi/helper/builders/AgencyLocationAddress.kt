@@ -1,12 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
@@ -16,10 +15,10 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class AgencyAddressDslMarker
+annotation class AgencyLocationAddressDslMarker
 
 @NomisDataDslMarker
-interface AgencyAddressDsl {
+interface AgencyLocationAddressDsl {
 
   @AddressPhoneDslMarker
   fun phone(
@@ -33,48 +32,41 @@ interface AgencyAddressDsl {
 }
 
 @Component
-class AgencyAddressBuilderFactory(
+class AgencyLocationAddressBuilderFactory(
   private val addressPhoneBuilderFactory: AddressPhoneBuilderFactory,
-  private val AgencyAddressBuilderRepository: AgencyAddressBuilderRepository,
+  private val agencyAddressBuilderRepository: AgencyLocationAddressBuilderRepository,
 
 ) {
-  fun builder() = AgencyAddressBuilder(
+  fun builder() = AgencyLocationAddressBuilder(
     addressPhoneBuilderFactory = addressPhoneBuilderFactory,
-    AgencyAddressBuilderRepository = AgencyAddressBuilderRepository,
+    agencyAddressBuilderRepository = agencyAddressBuilderRepository,
   )
 }
 
 @Component
-class AgencyAddressBuilderRepository(
+class AgencyLocationAddressBuilderRepository(
   private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
   private val addressRepository: AddressRepository,
-  private val jdbcTemplate: JdbcTemplate,
 ) {
   fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) }
   fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) }
   fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) }
   fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) }
-  fun save(address: AgencyAddress): AgencyAddress = addressRepository.saveAndFlush(address)
-  fun updateCreateDatetime(address: Address, whenCreated: LocalDateTime) {
-    jdbcTemplate.update("update ADDRESSES set CREATE_DATETIME = ? where ADDRESS_ID = ?", whenCreated, address.addressId)
-  }
-  fun updateCreateUsername(address: Address, whoCreated: String) {
-    jdbcTemplate.update("update ADDRESSES set CREATE_USER_ID = ? where ADDRESS_ID = ?", whoCreated, address.addressId)
-  }
+  fun save(address: AgencyLocationAddress): AgencyLocationAddress = addressRepository.saveAndFlush(address)
 }
 
-class AgencyAddressBuilder(
+class AgencyLocationAddressBuilder(
   private val addressPhoneBuilderFactory: AddressPhoneBuilderFactory,
-  private val AgencyAddressBuilderRepository: AgencyAddressBuilderRepository,
-) : AgencyAddressDsl {
+  private val agencyAddressBuilderRepository: AgencyLocationAddressBuilderRepository,
+) : AgencyLocationAddressDsl {
 
-  private lateinit var address: AgencyAddress
+  private lateinit var address: AgencyLocationAddress
 
   fun build(
-    agencyLocationId: String,
+    agencyLocation: AgencyLocation,
     type: String?,
     premise: String?,
     street: String?,
@@ -94,19 +86,17 @@ class AgencyAddressBuilder(
     isServices: Boolean,
     businessHours: String?,
     contactPersonName: String?,
-    whenCreated: LocalDateTime?,
-    whoCreated: String?,
-  ): AgencyAddress = AgencyAddress(
-    agencyLocationId = agencyLocationId,
-    addressType = AgencyAddressBuilderRepository.addressTypeOf(type),
+  ): AgencyLocationAddress = AgencyLocationAddress(
+    agencyLocation = agencyLocation,
+    addressType = agencyAddressBuilderRepository.addressTypeOf(type),
     premise = premise,
     street = street,
     locality = locality,
     flat = flat,
     postalCode = postcode,
-    city = AgencyAddressBuilderRepository.cityOf(city),
-    county = AgencyAddressBuilderRepository.countyOf(county),
-    country = AgencyAddressBuilderRepository.countryOf(country),
+    city = agencyAddressBuilderRepository.cityOf(city),
+    county = agencyAddressBuilderRepository.countyOf(county),
+    country = agencyAddressBuilderRepository.countryOf(country),
     validatedPAF = validatedPAF,
     noFixedAddress = noFixedAddress,
     primaryAddress = primaryAddress,
@@ -117,16 +107,7 @@ class AgencyAddressBuilder(
     isServices = isServices,
     businessHours = businessHours,
     contactPersonName = contactPersonName,
-  ).let { AgencyAddressBuilderRepository.save(it) }
-    .also {
-      if (whenCreated != null) {
-        AgencyAddressBuilderRepository.updateCreateDatetime(it, whenCreated)
-      }
-      if (whoCreated != null) {
-        AgencyAddressBuilderRepository.updateCreateUsername(it, whoCreated)
-      }
-    }
-    .also { address = it }
+  ).also { address = it }
 
   override fun phone(
     phoneType: String,

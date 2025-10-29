@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAd
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
@@ -278,7 +278,7 @@ class TemporaryAbsenceRepositoryIntTest(
     fun `Should save and load application address`() {
       lateinit var corporateAddress: CorporateAddress
       lateinit var offenderAddress: OffenderAddress
-      lateinit var agencyAddress: AgencyAddress
+      lateinit var agencyAddress: AgencyLocationAddress
       lateinit var application1: OffenderMovementApplication
       lateinit var application2: OffenderMovementApplication
       lateinit var application3: OffenderMovementApplication
@@ -287,7 +287,9 @@ class TemporaryAbsenceRepositoryIntTest(
         corporate("Kwikfit") {
           corporateAddress = address()
         }
-        agencyAddress = agencyAddress()
+        agencyLocation("LEI", "HMP Leeds") {
+          agencyAddress = address()
+        }
         offender = offender {
           offenderAddress = address()
           booking = booking {
@@ -318,7 +320,7 @@ class TemporaryAbsenceRepositoryIntTest(
     fun `should save and load an application's outside movement addresses`() {
       lateinit var corporateAddress: CorporateAddress
       lateinit var offenderAddress: OffenderAddress
-      lateinit var agencyAddress: AgencyAddress
+      lateinit var agencyAddress: AgencyLocationAddress
       lateinit var movement1: OffenderMovementApplicationMulti
       lateinit var movement2: OffenderMovementApplicationMulti
       lateinit var movement3: OffenderMovementApplicationMulti
@@ -327,7 +329,9 @@ class TemporaryAbsenceRepositoryIntTest(
         corporate("Kwikfit") {
           corporateAddress = address()
         }
-        agencyAddress = agencyAddress()
+        agencyLocation("LEI", "HMP Leeds") {
+          agencyAddress = address()
+        }
         offender = offender {
           offenderAddress = address()
           booking = booking {
@@ -363,7 +367,7 @@ class TemporaryAbsenceRepositoryIntTest(
     fun `should save and load TAP OUT addresses`() {
       lateinit var corporateAddress: CorporateAddress
       lateinit var offenderAddress: OffenderAddress
-      lateinit var agencyAddress: AgencyAddress
+      lateinit var agencyAddress: AgencyLocationAddress
       lateinit var scheduledAbsence2: OffenderScheduledTemporaryAbsence
       lateinit var scheduledAbsence3: OffenderScheduledTemporaryAbsence
 
@@ -371,7 +375,9 @@ class TemporaryAbsenceRepositoryIntTest(
         corporate("Kwikfit") {
           corporateAddress = address()
         }
-        agencyAddress = agencyAddress()
+        agencyLocation("LEI", "HMP Leeds") {
+          agencyAddress = address()
+        }
         offender = offender {
           offenderAddress = address()
           booking = booking {
@@ -408,10 +414,12 @@ class TemporaryAbsenceRepositoryIntTest(
     // Just need to make sure we can read that data from the table
     @Test
     fun `should load a temporary absence application with where address class is the agency id`() {
-      lateinit var agencyAddress: AgencyAddress
+      lateinit var agencyAddress: AgencyLocationAddress
 
       nomisDataBuilder.build {
-        agencyAddress = agencyAddress()
+        agencyLocation("LEI", "HMP Leeds") {
+          agencyAddress = address()
+        }
         offender = offender {
           booking = booking {
             application = temporaryAbsenceApplication {
@@ -421,11 +429,11 @@ class TemporaryAbsenceRepositoryIntTest(
         }
       }
 
-      jdbcTemplate.update("update offender_ind_schedules set TO_ADDRESS_OWNER_CLASS='${agencyAddress.agencyLocationId}'")
+      jdbcTemplate.update("update offender_ind_schedules set TO_ADDRESS_OWNER_CLASS='${agencyAddress.agencyLocation.id}'")
 
       with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence.eventId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
-        assertThat(toAddressOwnerClass).isEqualTo(agencyAddress.agencyLocationId)
+        assertThat(toAddressOwnerClass).isEqualTo(agencyAddress.agencyLocation.id)
       }
     }
 

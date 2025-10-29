@@ -3,8 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseloadCurrentAccountsBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
@@ -48,7 +48,7 @@ class NomisDataBuilder(
   private val personBuilderFactory: PersonBuilderFactory? = null,
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
-  private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
+  private val agencyLocationBuilderFactory: AgencyLocationBuilderFactory? = null,
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
   private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
   private val agencyVisitDayBuilderFactory: AgencyVisitDayBuilderFactory? = null,
@@ -71,7 +71,7 @@ class NomisDataBuilder(
     personBuilderFactory,
     corporateBuilderFactory,
     linkCaseTxnBuilderFactory,
-    agencyAddressBuilderFactory,
+    agencyLocationBuilderFactory,
     generalLedgerTransactionBuilderFactory,
     caseloadCurrentAccountsBaseBuilderFactory,
     agencyVisitDayBuilderFactory,
@@ -94,7 +94,7 @@ class NomisData(
   private val personBuilderFactory: PersonBuilderFactory? = null,
   private val corporateBuilderFactory: CorporateBuilderFactory? = null,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory? = null,
-  private val agencyAddressBuilderFactory: AgencyAddressBuilderFactory? = null,
+  private val agencyLocationBuilderFactory: AgencyLocationBuilderFactory? = null,
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
   private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
   private val agencyVisitDayBuilderFactory: AgencyVisitDayBuilderFactory? = null,
@@ -461,56 +461,20 @@ class NomisData(
         }
     }
 
-  // TODO - I chickened out of mapping AGENCY_LOCATIONS because AGY_LOC_ID is everywhere. Left it for the person who migrates agencies.
-  override fun agencyAddress(
+  override fun agencyLocation(
     agencyLocationId: String,
-    type: String?,
-    premise: String?,
-    street: String?,
-    locality: String?,
-    flat: String?,
-    postcode: String?,
-    city: String?,
-    county: String?,
-    country: String?,
-    validatedPAF: Boolean,
-    noFixedAddress: Boolean?,
-    primaryAddress: Boolean,
-    mailAddress: Boolean,
-    comment: String?,
-    startDate: String?,
-    endDate: String?,
-    isServices: Boolean,
-    businessHours: String?,
-    contactPersonName: String?,
-    whenCreated: LocalDateTime?,
-    whoCreated: String?,
-    dsl: AgencyAddressDsl.() -> Unit,
-  ): AgencyAddress = agencyAddressBuilderFactory!!.builder().let { builder ->
+    description: String,
+    type: String,
+    active: Boolean,
+    dsl: AgencyLocationDsl.() -> Unit,
+  ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
-      agencyLocationId = agencyLocationId,
+      id = agencyLocationId,
+      description = description,
       type = type,
-      premise = premise,
-      street = street,
-      locality = locality,
-      flat = flat,
-      postcode = postcode,
-      city = city,
-      county = county,
-      country = country,
-      validatedPAF = validatedPAF,
-      noFixedAddress = noFixedAddress,
-      primaryAddress = primaryAddress,
-      mailAddress = mailAddress,
-      comment = comment,
-      startDate = startDate?.let { LocalDate.parse(startDate) },
-      endDate = endDate?.let { LocalDate.parse(endDate) },
-      isServices = isServices,
-      businessHours = businessHours,
-      contactPersonName = contactPersonName,
-      whenCreated = whenCreated,
-      whoCreated = whoCreated,
+      active = active,
     )
+      .also { builder.apply(dsl) }
   }
 
   override fun generalLedgerTransaction(
@@ -747,32 +711,14 @@ interface NomisDataDsl {
     dsl: LinkCaseTxnDsl.() -> Unit = {},
   ): LinkCaseTxn
 
-  @AgencyAddressDslMarker
-  fun agencyAddress(
+  @AgencyLocationDslMarker
+  fun agencyLocation(
     agencyLocationId: String = "LEI",
-    type: String? = null,
-    premise: String? = "2",
-    street: String? = "Gloucester Terrace",
-    locality: String? = "Stanningley",
-    flat: String? = null,
-    postcode: String? = null,
-    city: String? = null,
-    county: String? = null,
-    country: String? = null,
-    validatedPAF: Boolean = false,
-    noFixedAddress: Boolean? = null,
-    primaryAddress: Boolean = false,
-    mailAddress: Boolean = false,
-    comment: String? = null,
-    startDate: String? = null,
-    endDate: String? = null,
-    isServices: Boolean = false,
-    businessHours: String? = null,
-    contactPersonName: String? = null,
-    whenCreated: LocalDateTime? = null,
-    whoCreated: String? = null,
-    dsl: AgencyAddressDsl.() -> Unit = {},
-  ): AgencyAddress
+    description: String = "HMP Leeds",
+    type: String = "INST",
+    active: Boolean = true,
+    dsl: AgencyLocationDsl.() -> Unit = {},
+  ): AgencyLocation
 
   @GeneralLedgerTransactionDslMarker
   fun generalLedgerTransaction(
