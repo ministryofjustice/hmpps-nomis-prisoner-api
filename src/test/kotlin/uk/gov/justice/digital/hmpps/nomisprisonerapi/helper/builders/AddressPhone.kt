@@ -4,7 +4,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PersonAddress
@@ -108,7 +108,7 @@ class AddressPhoneBuilderRepositoryBuilder(private val repository: AddressPhoneB
     }
 
   fun build(
-    address: AgencyAddress,
+    address: AgencyLocationAddress,
     phoneType: String,
     phoneNo: String,
     extNo: String? = null,

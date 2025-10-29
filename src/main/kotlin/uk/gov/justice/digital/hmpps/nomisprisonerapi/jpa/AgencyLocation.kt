@@ -1,17 +1,20 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.SQLRestriction
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
@@ -28,7 +31,7 @@ data class AgencyLocation(
   @Column(name = "DESCRIPTION")
   val description: String,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -54,6 +57,9 @@ data class AgencyLocation(
   @Column(name = "DEACTIVATION_DATE")
   val deactivationDate: LocalDate? = null,
 
+  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
+  @SQLRestriction("OWNER_CLASS = '${AgencyLocationAddress.ADDR_TYPE}'")
+  val addresses: MutableList<AgencyLocationAddress> = mutableListOf(),
 ) {
 
   override fun equals(other: Any?): Boolean {

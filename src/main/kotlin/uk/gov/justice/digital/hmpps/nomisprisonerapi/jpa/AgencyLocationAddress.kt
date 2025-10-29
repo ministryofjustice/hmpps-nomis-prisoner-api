@@ -1,15 +1,18 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
-import jakarta.persistence.Column
 import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType.LAZY
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import java.time.LocalDate
 
 @Entity
-@DiscriminatorValue(AgencyAddress.ADDR_TYPE)
-class AgencyAddress(
-  @Column("OWNER_CODE")
-  val agencyLocationId: String,
+@DiscriminatorValue(AgencyLocationAddress.ADDR_TYPE)
+class AgencyLocationAddress(
+  @JoinColumn("OWNER_CODE")
+  @ManyToOne(optional = false, fetch = LAZY)
+  val agencyLocation: AgencyLocation,
   premise: String? = null,
   street: String? = null,
   locality: String? = null,
