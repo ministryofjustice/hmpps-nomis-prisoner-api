@@ -471,6 +471,42 @@ class MovementsResourceIntTest(
     }
 
     @Test
+    fun `should retrieve address from schedule if not on movement`() {
+      lateinit var agencyAddress: AgencyLocationAddress
+      nomisDataBuilder.build {
+        agencyLocation(description = "Big Hospital") {
+          agencyAddress = address(postcode = "LS3 3AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(
+                toAddress = agencyAddress,
+              ) {
+                tempAbsence = externalMovement(
+                  toAddress = null,
+                )
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${agencyAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").isEqualTo("Big Hospital")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("LS3 3AA")
+    }
+
+    @Test
     fun `should retrieve scheduled temporary absences return`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
@@ -620,6 +656,86 @@ class MovementsResourceIntTest(
                 scheduledTempAbsenceReturn = scheduledReturn {
                   tempAbsenceReturn = externalMovement(
                     fromAddress = agencyAddress,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${agencyAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Big Hospital")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("LS3 3AA")
+    }
+
+    @Test
+    fun `should retrieve address from outbound movement if not on return movement`() {
+      lateinit var agencyAddress: AgencyLocationAddress
+      nomisDataBuilder.build {
+        agencyLocation(description = "Big Hospital") {
+          agencyAddress = address(postcode = "LS3 3AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement(
+                  toAddress = agencyAddress,
+                )
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement(
+                    fromAddress = null,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${agencyAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Big Hospital")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("LS3 3AA")
+    }
+
+    @Test
+    fun `should retrieve address from scheduled outbound movement if not on either movement`() {
+      lateinit var agencyAddress: AgencyLocationAddress
+      nomisDataBuilder.build {
+        agencyLocation(description = "Big Hospital") {
+          agencyAddress = address(postcode = "LS3 3AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(
+                toAddress = agencyAddress,
+              ) {
+                tempAbsence = externalMovement(
+                  toAddress = null,
+                )
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement(
+                    fromAddress = null,
                   )
                 }
               }
