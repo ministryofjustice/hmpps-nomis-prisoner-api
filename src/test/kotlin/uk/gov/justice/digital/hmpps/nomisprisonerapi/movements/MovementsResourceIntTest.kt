@@ -237,7 +237,7 @@ class MovementsResourceIntTest(
     fun `should retrieve scheduled temporary absence`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
+          offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
             application = temporaryAbsenceApplication {
               scheduledTempAbsence = scheduledTemporaryAbsence(
@@ -281,13 +281,82 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.returnTime").value<String> {
           assertThat(it).startsWith("${yesterday.toLocalDate()}")
         }
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").isEqualTo("${offenderAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressOwnerClass").isEqualTo("OFF")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").doesNotExist()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("S1 1AA")
+    }
+
+    @Test
+    fun `should retrieve corporate address`() {
+      lateinit var corporateAddress: CorporateAddress
+      nomisDataBuilder.build {
+        corporate(corporateName = "Boots") {
+          corporateAddress = address(postcode = "S2 2AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address(postcode = "S1 1AA")
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(
+                toAddress = corporateAddress,
+              )
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").isEqualTo("${corporateAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressOwnerClass").isEqualTo("CORP")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").isEqualTo("Boots")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S2 2AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("S2 2AA")
+    }
+
+    @Test
+    fun `should retrieve agency address`() {
+      lateinit var agencyAddress: AgencyLocationAddress
+      nomisDataBuilder.build {
+        agencyLocation(description = "Big Hospital") {
+          agencyAddress = address(postcode = "LS3 3AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address(postcode = "S1 1AA")
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(
+                toAddress = agencyAddress,
+              )
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").isEqualTo("${agencyAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").isEqualTo("Big Hospital")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("LS3 3AA")
     }
 
     @Test
     fun `should retrieve scheduled temporary absence's external movements`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
+          offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
             application = temporaryAbsenceApplication {
               scheduledTempAbsence = scheduledTemporaryAbsence {
@@ -326,8 +395,79 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.fromPrison").isEqualTo("LEI")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAgency").isEqualTo("HAZLWD")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.commentText").isEqualTo("Tap OUT comment for scheduled absence")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo(offenderAddress.addressId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${offenderAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("OFF")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").doesNotExist()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("S1 1AA")
+    }
+
+    @Test
+    fun `should retrieve corporate address from external movement`() {
+      lateinit var corporateAddress: CorporateAddress
+      nomisDataBuilder.build {
+        corporate(corporateName = "Boots") {
+          corporateAddress = address(postcode = "S2 2AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement(
+                  toAddress = corporateAddress,
+                )
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${corporateAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("CORP")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").isEqualTo("Boots")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S2 2AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("S2 2AA")
+    }
+
+    @Test
+    fun `should retrieve agency address from external movement`() {
+      lateinit var agencyAddress: AgencyLocationAddress
+      nomisDataBuilder.build {
+        agencyLocation(description = "Big Hospital") {
+          agencyAddress = address(postcode = "LS3 3AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement(
+                  toAddress = agencyAddress,
+                )
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${agencyAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").isEqualTo("Big Hospital")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("LS3 3AA")
     }
 
     @Test
@@ -377,7 +517,7 @@ class MovementsResourceIntTest(
     fun `should retrieve scheduled temporary absence return's external movements`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
+          offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
             application = temporaryAbsenceApplication {
               scheduledTempAbsence = scheduledTemporaryAbsence {
@@ -418,15 +558,94 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAgency").isEqualTo("HAZLWD")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.toPrison").isEqualTo("LEI")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.commentText").isEqualTo("Tap IN comment")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo(offenderAddress.addressId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${offenderAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("OFF")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").doesNotExist()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("S1 1AA")
+    }
+
+    @Test
+    fun `should retrieve corporate address from return movement`() {
+      lateinit var corporateAddress: CorporateAddress
+      nomisDataBuilder.build {
+        corporate(corporateName = "Boots") {
+          corporateAddress = address(postcode = "S2 2AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement(
+                    fromAddress = corporateAddress,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${corporateAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("CORP")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Boots")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("41  High Street  Sheffield    S2 2AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("S2 2AA")
+    }
+
+    @Test
+    fun `should retrieve agency address from return movement`() {
+      lateinit var agencyAddress: AgencyLocationAddress
+      nomisDataBuilder.build {
+        agencyLocation(description = "Big Hospital") {
+          agencyAddress = address(postcode = "LS3 3AA")
+        }
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement(
+                    fromAddress = agencyAddress,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${agencyAddress.addressId}")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Big Hospital")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("LS3 3AA")
     }
 
     @Test
     fun `should retrieve unscheduled temporary absence external movements`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
+          offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
             unscheduledTemporaryAbsence = temporaryAbsence(
               date = yesterday,
@@ -462,13 +681,43 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].commentText").isEqualTo("Tap OUT comment")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressId").isEqualTo(offenderAddress.addressId)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressDescription").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressPostcode").isEqualTo("S1 1AA")
+    }
+
+    @Test
+    fun `should retrieve city description if no address on unscheduled temporary absence`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            unscheduledTemporaryAbsence = temporaryAbsence(
+              toCity = SHEFFIELD,
+              toAddress = null,
+            )
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressId").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressOwnerClass").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressDescription").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toFullAddress").isEqualTo("Sheffield")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressPostcode").doesNotExist()
     }
 
     @Test
     fun `should retrieve unscheduled temporary absences return external movements`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
+          offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
             unscheduledTemporaryAbsence = temporaryAbsence()
             unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn(
@@ -505,6 +754,37 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].commentText").isEqualTo("Tap IN comment")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressId").isEqualTo(offenderAddress.addressId)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressDescription").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressPostcode").isEqualTo("S1 1AA")
+    }
+
+    @Test
+    fun `should retrieve city description from unscheduled temporary absence return`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            unscheduledTemporaryAbsence = temporaryAbsence()
+            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn(
+              fromCity = SHEFFIELD,
+              fromAddress = null,
+            )
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressId").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressOwnerClass").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressDescription").doesNotExist()
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromFullAddress").isEqualTo("Sheffield")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressPostcode").doesNotExist()
     }
 
     @Test

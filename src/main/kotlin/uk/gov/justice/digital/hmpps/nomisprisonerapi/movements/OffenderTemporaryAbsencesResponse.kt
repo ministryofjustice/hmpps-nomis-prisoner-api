@@ -200,6 +200,15 @@ data class ScheduledTemporaryAbsence(
   @Schema(description = "To address owner class")
   val toAddressOwnerClass: String?,
 
+  @Schema(description = "To address description")
+  val toAddressDescription: String?,
+
+  @Schema(description = "To full address")
+  val toFullAddress: String?,
+
+  @Schema(description = "TO address postcode")
+  val toAddressPostcode: String?,
+
   @Schema(description = "Application date")
   val applicationDate: LocalDateTime,
 
@@ -281,6 +290,15 @@ data class TemporaryAbsence(
   @Schema(description = "To address owner class")
   val toAddressOwnerClass: String?,
 
+  @Schema(description = "To address description")
+  val toAddressDescription: String?,
+
+  @Schema(description = "Full to address")
+  val toFullAddress: String?,
+
+  @Schema(description = "To address postcode")
+  val toAddressPostcode: String?,
+
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -319,6 +337,15 @@ data class TemporaryAbsenceReturn(
 
   @Schema(description = "From address owner class")
   val fromAddressOwnerClass: String?,
+
+  @Schema(description = "From address description")
+  val fromAddressDescription: String?,
+
+  @Schema(description = "From full address")
+  val fromFullAddress: String?,
+
+  @Schema(description = "From address postcode")
+  val fromAddressPostcode: String?,
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
