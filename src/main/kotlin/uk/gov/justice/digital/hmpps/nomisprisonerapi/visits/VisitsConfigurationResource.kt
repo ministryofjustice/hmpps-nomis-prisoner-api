@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.visits
 
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -124,6 +126,7 @@ data class VisitTimeSlotIdResponse(
   val timeSlotSequence: Int,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class VisitTimeSlotResponse(
   @Schema(description = "The prison id", example = "MDI")
   val prisonId: String,
@@ -132,8 +135,10 @@ data class VisitTimeSlotResponse(
   @Schema(description = "The time slot sequence", example = "1")
   val timeSlotSequence: Int,
   @Schema(description = "Slot start time", example = "10:00")
+  @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
   @Schema(description = "Slot end time", example = "11:00")
+  @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
   @Schema(description = "Date slot can first be used", example = "2022-09-01")
   val effectiveDate: LocalDate,
@@ -143,7 +148,10 @@ data class VisitTimeSlotResponse(
   val visitSlots: List<VisitSlotResponse>,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class VisitSlotResponse(
+  @Schema(description = "Slot ID", example = "1")
+  val id: Long,
   @Schema(description = "Room location of  visit slot")
   val internalLocation: VisitInternalLocationResponse,
   @Schema(description = "Optional max groups allowed in slot", example = "1")

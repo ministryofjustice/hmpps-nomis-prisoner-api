@@ -41,6 +41,7 @@ class VisitsConfigurationService(val agencyVisitTimeRepository: AgencyVisitTimeR
       expiryDate = it.expiryDate,
       visitSlots = it.visitSlots.map {
         VisitSlotResponse(
+          id = it.id,
           internalLocation = it.agencyInternalLocation.let { location ->
             VisitInternalLocationResponse(
               id = location.locationId,
