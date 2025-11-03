@@ -155,11 +155,11 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(60)
-          .jsonPath("numberOfElements").isEqualTo(20)
-          .jsonPath("number").isEqualTo(0)
-          .jsonPath("totalPages").isEqualTo(3)
-          .jsonPath("size").isEqualTo(20)
+          .jsonPath("page.totalElements").isEqualTo(60)
+          .jsonPath("content.size()").isEqualTo(20)
+          .jsonPath("page.number").isEqualTo(0)
+          .jsonPath("page.totalPages").isEqualTo(3)
+          .jsonPath("page.size").isEqualTo(20)
       }
 
       @Test
@@ -173,11 +173,11 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("totalElements").isEqualTo(60)
-          .jsonPath("numberOfElements").isEqualTo(1)
-          .jsonPath("number").isEqualTo(0)
-          .jsonPath("totalPages").isEqualTo(60)
-          .jsonPath("size").isEqualTo(1)
+          .jsonPath("page.totalElements").isEqualTo(60)
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("page.number").isEqualTo(0)
+          .jsonPath("page.totalPages").isEqualTo(60)
+          .jsonPath("page.size").isEqualTo(1)
       }
 
       @Test
@@ -348,9 +348,5 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 }
 
 private data class VisitTimeSlotIdPageResponse(
-  val totalElements: Long,
-  val totalPages: Int,
   val content: List<VisitTimeSlotIdResponse>,
-  val number: Int,
-  val numberOfElements: Int? = null,
 )
