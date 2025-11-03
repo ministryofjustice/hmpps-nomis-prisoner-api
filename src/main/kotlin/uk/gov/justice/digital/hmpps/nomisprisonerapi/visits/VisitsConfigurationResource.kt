@@ -7,10 +7,10 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springdoc.core.annotations.ParameterObject
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
+import org.springframework.data.web.PagedModel
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -66,7 +66,7 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     @PageableDefault(size = 20, sort = ["createDatetime"], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
-  ): Page<VisitTimeSlotIdResponse> = visitsConfigurationService.getVisitTimeSlotIds(pageRequest = pageRequest)
+  ): PagedModel<VisitTimeSlotIdResponse> = PagedModel(visitsConfigurationService.getVisitTimeSlotIds(pageRequest = pageRequest))
 
   @GetMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
   @ResponseStatus(HttpStatus.OK)
