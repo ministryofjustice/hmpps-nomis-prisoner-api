@@ -207,6 +207,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
   inner class GetVisitTimeSlot {
     lateinit var room1: AgencyInternalLocation
     lateinit var room2: AgencyInternalLocation
+    var visitSlotId: Long = 0
 
     @BeforeEach
     fun setUp() {
@@ -234,11 +235,11 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
               maxGroups = null,
               maxAdults = null,
             )
-            visitSlot(
+            visitSlotId = visitSlot(
               agencyInternalLocation = room2,
               maxGroups = 10,
               maxAdults = 20,
-            )
+            ).id
           }
         }
       }
@@ -336,6 +337,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
         assertThat(visitTimeSlot.visitSlots[0].maxAdults).isNull()
         assertThat(visitTimeSlot.visitSlots[0].internalLocation.id).isEqualTo(room1.locationId)
         assertThat(visitTimeSlot.visitSlots[0].internalLocation.code).isEqualTo(room1.locationCode)
+        assertThat(visitTimeSlot.visitSlots[1].id).isEqualTo(visitSlotId)
         assertThat(visitTimeSlot.visitSlots[1].maxGroups).isEqualTo(10)
         assertThat(visitTimeSlot.visitSlots[1].maxAdults).isEqualTo(20)
         assertThat(visitTimeSlot.visitSlots[1].internalLocation.id).isEqualTo(room2.locationId)
