@@ -125,6 +125,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateDate = LocalDate.parse(aDateString),
                 statusUpdateStaff = staff,
               ) {
+                audit(
+                  createUserId = "SYS",
+                  modifyUserId = "MOD",
+                )
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
                 val offenderCharge2 = offenderCharge()
                 courtEvent {
@@ -145,7 +149,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   courtOrder = courtOrder,
                   calculationType = "AGG_IND_ORA",
                   category = "1991",
-                )
+                ) {
+                  term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                }
               }
               courtCaseTwo = courtCase(
                 reportingStaff = staff,
@@ -252,7 +258,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
           .jsonPath("lidsCaseId").isEqualTo(2)
           .jsonPath("lidsCombinedCaseId").isEqualTo(3)
-          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdByUsername").isEqualTo("SYS")
+          .jsonPath("modifiedByUsername").isEqualTo("MOD")
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
           .jsonPath("courtEvents[0].offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
@@ -284,6 +291,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.description").isEqualTo("Imprisonment")
           .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("courtEvents[0].courtEventCharges[0].mostSeriousFlag").isEqualTo(false)
+          .jsonPath("courtEvents[0].courtEventCharges[0].createdByUsername").isNotEmpty
           .jsonPath("courtEvents[0].courtOrders[0].id").exists()
           .jsonPath("courtEvents[0].courtOrders[0].orderType").isEqualTo("AUTO")
           .jsonPath("courtEvents[0].courtOrders[0].orderStatus").isEqualTo("A")
@@ -318,8 +326,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
           .jsonPath("offenderCharges[0].lidsOffenceNumber").isEqualTo(11)
+          .jsonPath("offenderCharges[0].createdByUsername").isNotEmpty
           .jsonPath("sentences[0].calculationType.code").isEqualTo("AGG_IND_ORA")
           .jsonPath("sentences[0].category.code").isEqualTo("1991")
+          .jsonPath("sentences[0].createdByUsername").isNotEmpty
+          .jsonPath("sentences[0].sentenceTerms[0].createdByUsername").isNotEmpty
       }
 
       @Test

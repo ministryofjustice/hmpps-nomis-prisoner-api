@@ -96,14 +96,7 @@ class CourtEventCharge(
 
   @OneToOne(mappedBy = "courtEventCharge", fetch = FetchType.LAZY)
   var linkedCaseTransaction: LinkCaseTxn? = null,
-) {
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
-
-  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
-  @Generated
-  lateinit var createDatetime: LocalDateTime
+) : NomisAuditableEntityBasic() {
 
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
   @Generated
