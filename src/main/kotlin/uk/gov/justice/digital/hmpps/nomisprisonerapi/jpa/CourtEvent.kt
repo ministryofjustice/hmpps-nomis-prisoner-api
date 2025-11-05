@@ -13,7 +13,6 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -135,14 +134,7 @@ class CourtEvent(
     OFFENDER_PROCEEDING_ID - not used
    */
 
-) {
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  @Generated
-  lateinit var createUsername: String
-
-  @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
-  @Generated
-  lateinit var createDatetime: LocalDateTime
+) : NomisAuditableEntityBasic() {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

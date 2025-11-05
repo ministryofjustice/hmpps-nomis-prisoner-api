@@ -2011,6 +2011,7 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   statusUpdateStaffId = this.statusUpdateStaff?.id,
   createdDateTime = this.createDatetime,
   createdByUsername = this.createUsername,
+  modifiedByUsername = this.modifyUserId,
   courtEvents = this.courtEvents.map { it.toCourtEvent() },
   offenderCharges = this.offenderCharges.map { it.toOffenderCharge() },
   caseInfoNumbers = this.caseInfoNumbers.filter { it.isDpsCaseInfoNumber() }.map { it.toCaseIdentifier() },
@@ -2042,6 +2043,8 @@ private fun OffenderCharge.toOffenderCharge(): OffenderChargeResponse = Offender
   resultCode2 = this.resultCode2?.toOffenceResultCodeResponse(),
   mostSeriousFlag = this.mostSeriousFlag,
   lidsOffenceNumber = this.lidsOffenceNumber,
+  createdByUsername = this.createUsername,
+  modifiedByUsername = this.modifyUserId,
 )
 
 private fun OffenceResultCode.toOffenceResultCodeResponse(): OffenceResultCodeResponse = OffenceResultCodeResponse(
@@ -2074,6 +2077,8 @@ private fun CourtEventCharge.toCourtEventCharge(): CourtEventChargeResponse = Co
   resultCode2 = this.resultCode2?.toOffenceResultCodeResponse(),
   mostSeriousFlag = this.mostSeriousFlag,
   linkedCaseDetails = this.linkedCaseTransaction?.toLinkedCaseDetails(),
+  createdByUsername = this.createUsername,
+  modifiedByUsername = this.modifyUserId,
 )
 
 private fun LinkCaseTxn.toLinkedCaseDetails(): LinkedCaseChargeDetails = LinkedCaseChargeDetails(
@@ -2107,6 +2112,7 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   },
   createdDateTime = this.createDatetime,
   createdByUsername = this.createUsername,
+  modifiedByUsername = this.modifyUserId,
   courtEventCharges = this.courtEventCharges.map { it.toCourtEventCharge() },
   courtOrders = this.courtOrders.map { it.toCourtOrder() },
 )
@@ -2145,6 +2151,8 @@ private fun OffenderSentenceTerm.toSentenceTermResponse(): SentenceTermResponse 
   lifeSentenceFlag = this.lifeSentenceFlag,
   sentenceTermType = this.sentenceTermType.toCodeDescription(),
   prisonId = this.id.offenderBooking.location.id,
+  createdByUsername = this.createUsername,
+  modifiedByUsername = this.modifyUserId,
 )
 
 fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
@@ -2200,6 +2208,7 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   startDate2Calc = this.startDate2Calc,
   createdDateTime = this.createDatetime,
   createdByUsername = this.createUsername,
+  modifiedByUsername = this.modifyUserId,
   sentenceTerms = this.offenderSentenceTerms.map { it.toSentenceTermResponse() },
   offenderCharges = this.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
   missingCourtOffenderChargeIds = emptyList(),

@@ -2290,6 +2290,7 @@ data class CourtCaseResponse(
   val lidsCombinedCaseId: Int?,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
+  val modifiedByUsername: String?,
   val courtEvents: List<CourtEventResponse>,
   val offenderCharges: List<OffenderChargeResponse>,
   val caseInfoNumbers: List<CaseIdentifierResponse>,
@@ -2316,6 +2317,7 @@ data class CourtEventResponse(
   val nextEventDateTime: LocalDateTime?,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
+  val modifiedByUsername: String?,
   val courtEventCharges: List<CourtEventChargeResponse>,
   val courtOrders: List<CourtOrderResponse>,
 )
@@ -2340,6 +2342,8 @@ data class OffenderChargeResponse(
   val resultCode2: OffenceResultCodeResponse?,
   val mostSeriousFlag: Boolean,
   val lidsOffenceNumber: Int?,
+  val createdByUsername: String,
+  val modifiedByUsername: String?,
 )
 
 @Schema(description = "Offence Result Code")
@@ -2378,6 +2382,8 @@ data class CourtEventChargeResponse(
   val resultCode2: OffenceResultCodeResponse?,
   val mostSeriousFlag: Boolean,
   val linkedCaseDetails: LinkedCaseChargeDetails?,
+  val createdByUsername: String,
+  val modifiedByUsername: String?,
 )
 
 @Schema(description = "Linked case details for a court event charge")
@@ -2466,6 +2472,7 @@ data class SentenceResponse(
   val startDate2Calc: LocalDate?,
   val createdDateTime: LocalDateTime,
   val createdByUsername: String,
+  val modifiedByUsername: String?,
   val sentenceTerms: List<SentenceTermResponse>,
   val offenderCharges: List<OffenderChargeResponse>,
   val missingCourtOffenderChargeIds: List<Long>,
@@ -2495,6 +2502,8 @@ data class SentenceTermResponse(
   val endDate: LocalDate?,
   val lifeSentenceFlag: Boolean,
   val prisonId: String,
+  val createdByUsername: String,
+  val modifiedByUsername: String?,
 )
 
 @Schema(description = "Court case create request")
