@@ -121,6 +121,19 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun getPrisonerIdsAtMultiplePrisons() {
+      webTestClient.get().uri("/finance/prisoners/ids?prisonId=WWI&prisonId=LEI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("page.totalElements").isEqualTo(2)
+        .jsonPath("content[0]").isEqualTo(id1)
+        .jsonPath("content[1]").isEqualTo(id2)
+    }
+
+    @Test
     fun getPrisonerIdsAtPrisonNoResults() {
       webTestClient.get().uri("/finance/prisoners/ids?prisonId=XXI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))

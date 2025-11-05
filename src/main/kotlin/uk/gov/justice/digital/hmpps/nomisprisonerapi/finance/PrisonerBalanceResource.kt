@@ -63,7 +63,7 @@ class PrisonerBalanceResource(
     @PageableDefault(sort = ["offenderId"], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
-    @Schema(description = "Prison id") @RequestParam prisonId: String?,
+    @Schema(description = "Prison id") @RequestParam prisonId: List<String>?,
   ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(prisonId, pageRequest)
 
   @GetMapping("/ids/all-from-id")
