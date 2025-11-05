@@ -52,10 +52,10 @@ interface OffenderRepository :
         where 
             (ota.currentBalance != 0 or ota.holdBalance != 0)
             and
-            (:prisonId is null or ota.id.caseloadId = :prisonId)
+            (:prisonIds is null or ota.id.caseloadId in :prisonIds)
     """,
   )
-  fun findAllOffenderIdsWithBalances(prisonId: String?, pageable: Pageable): Page<Long>
+  fun findAllOffenderIdsWithBalances(prisonIds: List<String>?, pageable: Pageable): Page<Long>
 
   @Query(
     """
