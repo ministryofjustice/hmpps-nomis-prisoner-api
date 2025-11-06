@@ -106,7 +106,7 @@ class OffenderMovementApplication(
       ), JoinColumnOrFormula(column = JoinColumn(name = "EVENT_SUB_TYPE", referencedColumnName = "code")),
     ],
   )
-  val eventSubType: MovementReason,
+  var eventSubType: MovementReason,
 
   @Column(name = "APPLICATION_DATE")
   val applicationDate: LocalDateTime,
@@ -115,16 +115,16 @@ class OffenderMovementApplication(
   val applicationTime: LocalDateTime,
 
   @Column(name = "FROM_DATE")
-  val fromDate: LocalDate,
+  var fromDate: LocalDate,
 
   @Column(name = "RELEASE_TIME")
-  val releaseTime: LocalDateTime,
+  var releaseTime: LocalDateTime,
 
   @Column(name = "TO_DATE")
-  val toDate: LocalDate,
+  var toDate: LocalDate,
 
   @Column(name = "RETURN_TIME")
-  val returnTime: LocalDateTime,
+  var returnTime: LocalDateTime,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -137,7 +137,7 @@ class OffenderMovementApplication(
       ), JoinColumnOrFormula(column = JoinColumn(name = "APPLICATION_STATUS", referencedColumnName = "code")),
     ],
   )
-  val applicationStatus: MovementApplicationStatus,
+  var applicationStatus: MovementApplicationStatus,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -150,7 +150,7 @@ class OffenderMovementApplication(
       ), JoinColumnOrFormula(column = JoinColumn(name = "ESCORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val escort: Escort? = null,
+  var escort: Escort? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -163,17 +163,17 @@ class OffenderMovementApplication(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val transportType: TemporaryAbsenceTransportType? = null,
+  var transportType: TemporaryAbsenceTransportType? = null,
 
   @Column(name = "COMMENT_TEXT")
-  val comment: String? = null,
+  var comment: String? = null,
 
   @Column(name = "TO_ADDRESS_OWNER_CLASS")
-  val toAddressOwnerClass: String? = null,
+  var toAddressOwnerClass: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_ADDRESS_ID")
-  val toAddress: Address? = null,
+  var toAddress: Address? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
@@ -181,10 +181,10 @@ class OffenderMovementApplication(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_AGY_LOC_ID")
-  val toAgency: AgencyLocation? = null,
+  var toAgency: AgencyLocation? = null,
 
   @Column(name = "CONTACT_PERSON_NAME")
-  val contactPersonName: String? = null,
+  var contactPersonName: String? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -197,7 +197,7 @@ class OffenderMovementApplication(
       ), JoinColumnOrFormula(column = JoinColumn(name = "APPLICATION_TYPE", referencedColumnName = "code")),
     ],
   )
-  val applicationType: MovementApplicationType,
+  var applicationType: MovementApplicationType,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -210,7 +210,7 @@ class OffenderMovementApplication(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TAP_ABS_TYPE", referencedColumnName = "code")),
     ],
   )
-  val temporaryAbsenceType: TemporaryAbsenceType? = null,
+  var temporaryAbsenceType: TemporaryAbsenceType? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -223,7 +223,7 @@ class OffenderMovementApplication(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TAP_ABS_SUBTYPE", referencedColumnName = "code")),
     ],
   )
-  val temporaryAbsenceSubType: TemporaryAbsenceSubType? = null,
+  var temporaryAbsenceSubType: TemporaryAbsenceSubType? = null,
 
   @OneToMany(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL])
   var scheduledTemporaryAbsences: MutableList<OffenderScheduledTemporaryAbsence> = mutableListOf(),

@@ -4,8 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Schema(description = "Create temporary absence application request")
-data class CreateTemporaryAbsenceApplicationRequest(
+@Schema(description = "Upsert temporary absence application request")
+data class UpsertTemporaryAbsenceApplicationRequest(
+  @Schema(description = "Existing PK, null if new")
+  val movementApplicationId: Long? = null,
+
   @Schema(description = "Event sub type")
   val eventSubType: String,
 
@@ -39,12 +42,6 @@ data class CreateTemporaryAbsenceApplicationRequest(
   @Schema(description = "Prison ID")
   val prisonId: String?,
 
-  @Schema(description = "To agency ID")
-  val toAgencyId: String?,
-
-  @Schema(description = "To address ID")
-  val toAddressId: Long?,
-
   @Schema(description = "Contact person name")
   val contactPersonName: String?,
 
@@ -58,8 +55,8 @@ data class CreateTemporaryAbsenceApplicationRequest(
   val temporaryAbsenceSubType: String?,
 )
 
-@Schema(description = "Create temporary absence application response")
-data class CreateTemporaryAbsenceApplicationResponse(
+@Schema(description = "Upsert temporary absence application response")
+data class UpsertTemporaryAbsenceApplicationResponse(
   @Schema(description = "Booking ID")
   val bookingId: Long,
 
