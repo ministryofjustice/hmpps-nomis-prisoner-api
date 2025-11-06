@@ -135,45 +135,55 @@ class MovementsService(
   }
 
   @Transactional
-  fun createTemporaryAbsenceApplication(offenderNo: String, request: CreateTemporaryAbsenceApplicationRequest): CreateTemporaryAbsenceApplicationResponse {
+  fun upsertTemporaryAbsenceApplication(offenderNo: String, request: UpsertTemporaryAbsenceApplicationRequest): UpsertTemporaryAbsenceApplicationResponse {
     val offenderBooking = offenderBookingOrThrow(offenderNo)
     val eventSubType = movementReasonOrThrow(request.eventSubType)
     val applicationStatus = applicationStatusOrThrow(request.applicationStatus)
     val escort = request.escortCode?.let { escortOrThrow(request.escortCode) }
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
-    val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
     val prison = request.prisonId?.let { agencyLocationOrThrow(request.prisonId) }
-    val toAgency = request.toAgencyId?.let { agencyLocationOrThrow(request.toAgencyId) }
     val applicationType = movementApplicationTypeOrThrow(request.applicationType)
     val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
 
-    return OffenderMovementApplication(
+    val application = request.movementApplicationId
+      ?.let {
+        offenderMovementApplicationRepository.findByIdOrNull(request.movementApplicationId)
+          ?: throw NotFoundException("Temporary absence application with id=$request.movementApplicationId not found for offender with nomsId=$offenderNo")
+      } ?: OffenderMovementApplication(
       offenderBooking = offenderBooking,
-      eventSubType = eventSubType,
       applicationDate = request.applicationDate.atTime(LocalTime.MIDNIGHT),
       applicationTime = request.applicationDate.atTime(LocalTime.MIDNIGHT),
+      prison = prison,
+      applicationType = applicationType,
+      eventSubType = eventSubType,
       fromDate = request.fromDate,
       releaseTime = request.releaseTime,
       toDate = request.toDate,
       returnTime = request.returnTime,
       applicationStatus = applicationStatus,
-      escort = escort,
-      transportType = transportType,
-      comment = request.comment,
-      toAddressOwnerClass = toAddress?.addressOwnerClass,
-      toAddress = toAddress,
-      prison = prison,
-      toAgency = toAgency,
-      contactPersonName = request.contactPersonName,
-      applicationType = applicationType,
-      temporaryAbsenceType = temporaryAbsenceType,
-      temporaryAbsenceSubType = temporaryAbsenceSubType,
-    ).let {
-      offenderMovementApplicationRepository.save(it)
-    }.let {
-      CreateTemporaryAbsenceApplicationResponse(offenderBooking.bookingId, it.movementApplicationId)
+    )
+
+    with(application) {
+      this.fromDate = request.fromDate
+      this.releaseTime = request.releaseTime
+      this.toDate = request.toDate
+      this.returnTime = request.returnTime
+      this.applicationStatus = applicationStatus
+      this.transportType = transportType
+      this.escort = escort
+      this.comment = request.comment
+      this.toAddressOwnerClass = this.scheduledTemporaryAbsences.firstOrNull()?.toAddressOwnerClass
+      this.toAddress = this.scheduledTemporaryAbsences.firstOrNull()?.toAddress
+      this.toAgency = this.scheduledTemporaryAbsences.firstOrNull()?.toAgency
+      this.contactPersonName = request.contactPersonName
+      this.applicationType = applicationType
+      this.temporaryAbsenceType = temporaryAbsenceType
+      this.temporaryAbsenceSubType = temporaryAbsenceSubType
     }
+
+    return offenderMovementApplicationRepository.save(application)
+      .let { UpsertTemporaryAbsenceApplicationResponse(offenderBooking.bookingId, it.movementApplicationId) }
   }
 
   fun getScheduledTemporaryAbsence(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceResponse {

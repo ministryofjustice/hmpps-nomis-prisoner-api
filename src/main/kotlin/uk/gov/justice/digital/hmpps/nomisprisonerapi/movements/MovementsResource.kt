@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -98,14 +99,13 @@ class MovementsResource(
     @Schema(description = "Application ID", example = "123") @PathVariable applicationId: Long,
   ) = movementsService.getTemporaryAbsenceApplication(offenderNo, applicationId)
 
-  @PostMapping("/movements/{offenderNo}/temporary-absences/application")
-  @ResponseStatus(HttpStatus.CREATED)
+  @PutMapping("/movements/{offenderNo}/temporary-absences/application")
   @Operation(
-    summary = "Inserts a temporary absence application for an offender",
-    description = "Creates a temporary absence application on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Inserts or updates a temporary absence application for an offender",
+    description = "Creates or updates a temporary absence application on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
-        responseCode = "201",
+        responseCode = "200",
         description = "Temporary absence application created",
       ),
       ApiResponse(
@@ -150,13 +150,13 @@ class MovementsResource(
       ),
     ],
   )
-  fun createTemporaryAbsenceApplication(
+  fun upsertTemporaryAbsenceApplication(
     @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
     @PathVariable
     offenderNo: String,
     @RequestBody @Valid
-    request: CreateTemporaryAbsenceApplicationRequest,
-  ): CreateTemporaryAbsenceApplicationResponse = movementsService.createTemporaryAbsenceApplication(offenderNo, request)
+    request: UpsertTemporaryAbsenceApplicationRequest,
+  ): UpsertTemporaryAbsenceApplicationResponse = movementsService.upsertTemporaryAbsenceApplication(offenderNo, request)
 
   @GetMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence/{eventId}")
   @Operation(
