@@ -4,6 +4,8 @@ import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -39,5 +41,6 @@ data class AgencyVisitDayId(
   val location: AgencyLocation,
 
   @Column(name = "WEEK_DAY", nullable = false)
-  val weekDay: String,
+  @Enumerated(EnumType.STRING)
+  val weekDay: WeekDay,
 ) : Serializable

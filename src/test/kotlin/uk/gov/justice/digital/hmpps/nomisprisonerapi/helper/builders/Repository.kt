@@ -40,6 +40,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationHearingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AdjudicationIncidentPartyRepository
@@ -273,7 +274,7 @@ class Repository(
 
   fun getAllAgencyVisitTimes(prisonId: String): List<AgencyVisitTime> = agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationId(prisonId)
 
-  fun getAgencyVisitDays(weekDay: String, prisonId: String): AgencyVisitDay? = agencyVisitDayRepository.findByAgencyVisitDayIdWeekDayAndAgencyVisitDayIdLocationId(weekDay, prisonId)
+  fun getAgencyVisitDays(weekDay: WeekDay, prisonId: String): AgencyVisitDay? = agencyVisitDayRepository.findByAgencyVisitDayIdWeekDayAndAgencyVisitDayIdLocationId(weekDay, prisonId)
 
   fun getAdjudicationIncidentByAdjudicationNumber(adjudicationNumber: Long): AdjudicationIncident? = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.incident
 

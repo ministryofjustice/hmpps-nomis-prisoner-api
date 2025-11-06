@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
@@ -26,8 +28,9 @@ data class AgencyVisitSlot(
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   var location: AgencyLocation,
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "WEEK_DAY", nullable = false)
-  var weekDay: String,
+  var weekDay: WeekDay,
 
   @Column(name = "TIME_SLOT_SEQ", nullable = false)
   var timeSlotSequence: Int,
