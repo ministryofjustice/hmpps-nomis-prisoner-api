@@ -56,7 +56,7 @@ class AgencyVisitDayBuilder(
   ): AgencyVisitDay = AgencyVisitDay(
     agencyVisitDayId = AgencyVisitDayId(
       location = repository.lookupAgency(prisonId),
-      weekDay = weekDay.name,
+      weekDay = weekDay,
     ),
   )
     .let { repository.save(it) }

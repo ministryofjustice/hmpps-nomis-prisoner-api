@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -193,10 +192,10 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
         assertThat(pageResponse.content).hasSize(2)
         assertThat(pageResponse.content[0].prisonId).isEqualTo("MDI")
-        assertThat(pageResponse.content[0].dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+        assertThat(pageResponse.content[0].dayOfWeek).isEqualTo(WeekDay.MON)
         assertThat(pageResponse.content[0].timeSlotSequence).isEqualTo(1L)
         assertThat(pageResponse.content[1].prisonId).isEqualTo("MDI")
-        assertThat(pageResponse.content[1].dayOfWeek).isEqualTo(DayOfWeek.MONDAY)
+        assertThat(pageResponse.content[1].dayOfWeek).isEqualTo(WeekDay.MON)
         assertThat(pageResponse.content[1].timeSlotSequence).isEqualTo(2L)
       }
     }
@@ -257,7 +256,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MONDAY/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -265,7 +264,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MONDAY/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -273,7 +272,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MONDAY/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -283,7 +282,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 400 if prisonId is not valid`() {
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/ZZZ/day-of-week/MONDAY/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/ZZZ/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -291,7 +290,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 400 if day of week in not valid is not valid`() {
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/AUGUST/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/AUG/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -299,19 +298,19 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if time slot does not exist`() {
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MONDAY/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MONDAY/time-slot-sequence/99")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/99")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/LEI/day-of-week/MONDAY/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/LEI/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
-        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/TUESDAY/time-slot-sequence/1")
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/TUE/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
@@ -322,7 +321,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return time slot with visits slots`() {
-        val visitTimeSlot: VisitTimeSlotResponse = webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MONDAY/time-slot-sequence/1")
+        val visitTimeSlot: VisitTimeSlotResponse = webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
@@ -332,11 +331,15 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
         assertThat(visitTimeSlot.endTime).isEqualTo(LocalTime.parse("11:00"))
         assertThat(visitTimeSlot.effectiveDate).isEqualTo(LocalDate.parse("2023-01-01"))
         assertThat(visitTimeSlot.expiryDate).isEqualTo(LocalDate.parse("2033-01-31"))
+        assertThat(visitTimeSlot.audit.createUsername).isNotNull
+        assertThat(visitTimeSlot.audit.createDatetime).isNotNull
         assertThat(visitTimeSlot.visitSlots).hasSize(2)
         assertThat(visitTimeSlot.visitSlots[0].maxGroups).isNull()
         assertThat(visitTimeSlot.visitSlots[0].maxAdults).isNull()
         assertThat(visitTimeSlot.visitSlots[0].internalLocation.id).isEqualTo(room1.locationId)
         assertThat(visitTimeSlot.visitSlots[0].internalLocation.code).isEqualTo(room1.locationCode)
+        assertThat(visitTimeSlot.visitSlots[0].audit.createUsername).isNotNull
+        assertThat(visitTimeSlot.visitSlots[0].audit.createDatetime).isNotNull
         assertThat(visitTimeSlot.visitSlots[1].id).isEqualTo(visitSlotId)
         assertThat(visitTimeSlot.visitSlots[1].maxGroups).isEqualTo(10)
         assertThat(visitTimeSlot.visitSlots[1].maxAdults).isEqualTo(20)

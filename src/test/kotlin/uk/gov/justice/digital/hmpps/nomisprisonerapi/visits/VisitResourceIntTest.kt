@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.VisitResponse.Visitor
 import java.sql.Timestamp
@@ -349,7 +350,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         assertThat(visit.agencyVisitSlot!!.agencyVisitTime.endTime).isEqualTo(LocalTime.parse("13:04"))
         assertThat(visit.agencyVisitSlot!!.agencyVisitTime.effectiveDate).isEqualTo(LocalDate.parse("2021-11-03"))
         assertThat(visit.agencyVisitSlot!!.agencyVisitTime.expiryDate).isEqualTo(LocalDate.parse("2021-11-03"))
-        assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.weekDay).isEqualTo("THU")
+        assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.weekDay).isEqualTo(WeekDay.THU)
         assertThat(visit.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId.timeSlotSequence).isEqualTo(1)
         assertThat(visit.agencyVisitSlot!!.maxAdults).isEqualTo(0)
         assertThat(visit.agencyVisitSlot!!.maxGroups).isEqualTo(0)
@@ -742,7 +743,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
       @Test
       internal fun `a day of the week is created for prison when one does not already exist`() {
-        assertThat(repository.getAgencyVisitDays("MON", PRISON_ID)).isNull()
+        assertThat(repository.getAgencyVisitDays(WeekDay.MON, PRISON_ID)).isNull()
 
         val visitId = createVisit(
           startDateTime = "2022-08-01T14:00",
@@ -754,10 +755,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
         repository.runInTransaction {
           val visit = repository.getVisit(visitId)
 
-          assertThat(repository.getAgencyVisitDays("MON", PRISON_ID))
+          assertThat(repository.getAgencyVisitDays(WeekDay.MON, PRISON_ID))
             .isNotNull
             .matches { it!!.agencyVisitDayId.weekDay == visit.agencyVisitSlot!!.weekDay }
-            .matches { it!!.agencyVisitDayId.weekDay == "MON" }
+            .matches { it!!.agencyVisitDayId.weekDay == WeekDay.MON }
         }
 
         val nextWeekVisitId = createVisit(
@@ -768,10 +769,10 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
         repository.runInTransaction {
           val visitForFollowingWeek = repository.getVisit(nextWeekVisitId)
-          assertThat(repository.getAgencyVisitDays("MON", PRISON_ID))
+          assertThat(repository.getAgencyVisitDays(WeekDay.MON, PRISON_ID))
             .isNotNull
             .matches { it!!.agencyVisitDayId.weekDay == visitForFollowingWeek.agencyVisitSlot!!.weekDay }
-            .matches { it!!.agencyVisitDayId.weekDay == "MON" }
+            .matches { it!!.agencyVisitDayId.weekDay == WeekDay.MON }
         }
 
         val nextDayVisitId = createVisit(
@@ -785,13 +786,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
           val visitForNextDay = repository.getVisit(nextDayVisitId)
           assertThat(
             repository.getAgencyVisitDays(
-              "TUE",
+              WeekDay.TUE,
               PRISON_ID,
             ),
           )
             .isNotNull
             .matches { it!!.agencyVisitDayId.weekDay == visitForNextDay.agencyVisitSlot!!.weekDay }
-            .matches { it!!.agencyVisitDayId.weekDay == "TUE" }
+            .matches { it!!.agencyVisitDayId.weekDay == WeekDay.TUE }
         }
       }
     }

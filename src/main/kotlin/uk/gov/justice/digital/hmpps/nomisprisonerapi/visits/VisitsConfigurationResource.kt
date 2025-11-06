@@ -21,7 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import java.time.DayOfWeek
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -112,7 +113,7 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
   )
   fun getVisitTimeSlot(
     @PathVariable prisonId: String,
-    @PathVariable dayOfWeek: DayOfWeek,
+    @PathVariable dayOfWeek: WeekDay,
     @PathVariable timeSlotSequence: Int,
   ): VisitTimeSlotResponse = visitsConfigurationService.getVisitTimeSlot(prisonId = prisonId, dayOfWeek = dayOfWeek, timeSlotSequence = timeSlotSequence)
 }
@@ -120,8 +121,8 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
 data class VisitTimeSlotIdResponse(
   @Schema(description = "The prison id", example = "MDI")
   val prisonId: String,
-  @Schema(description = "Day of the week time slot is for", example = "MONDAY")
-  val dayOfWeek: DayOfWeek,
+  @Schema(description = "Day of the week time slot is for", example = "MON")
+  val dayOfWeek: WeekDay,
   @Schema(description = "The time slot sequence", example = "1")
   val timeSlotSequence: Int,
 )
@@ -130,8 +131,8 @@ data class VisitTimeSlotIdResponse(
 data class VisitTimeSlotResponse(
   @Schema(description = "The prison id", example = "MDI")
   val prisonId: String,
-  @Schema(description = "Day of the week time slot is for", example = "MONDAY")
-  val dayOfWeek: DayOfWeek,
+  @Schema(description = "Day of the week time slot is for", example = "MON")
+  val dayOfWeek: WeekDay,
   @Schema(description = "The time slot sequence", example = "1")
   val timeSlotSequence: Int,
   @Schema(description = "Slot start time", example = "10:00")
@@ -146,6 +147,8 @@ data class VisitTimeSlotResponse(
   val expiryDate: LocalDate?,
   @Schema(description = "List of slots at this time slot")
   val visitSlots: List<VisitSlotResponse>,
+  @Schema(description = "Audit information")
+  val audit: NomisAudit,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -158,6 +161,8 @@ data class VisitSlotResponse(
   val maxGroups: Int?,
   @Schema(description = "Optional max adults allowed in slot", example = "1")
   val maxAdults: Int?,
+  @Schema(description = "Audit information")
+  val audit: NomisAudit,
 )
 
 data class VisitInternalLocationResponse(

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.time.LocalTime
 
 @Repository
@@ -17,14 +18,14 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
 
   fun findByStartTimeAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
     startTime: LocalTime,
-    weekDay: String,
+    weekDay: WeekDay,
     location: AgencyLocation,
   ): AgencyVisitTime?
 
   // roundabout way of getting the max timeslot sequence for a prison and day
   fun findFirstByAgencyVisitTimesIdLocationAndAgencyVisitTimesIdWeekDayOrderByAgencyVisitTimesIdTimeSlotSequenceDesc(
     agencyId: AgencyLocation,
-    weekDay: String,
+    weekDay: WeekDay,
   ): AgencyVisitTime?
 
   @Query(
@@ -43,6 +44,6 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
 
 interface VisitTimeSlotIdProjection {
   val prisonId: String
-  val weekdayCode: String
+  val weekdayCode: WeekDay
   val timeSlotSequence: Int
 }

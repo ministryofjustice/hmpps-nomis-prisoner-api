@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
@@ -83,13 +84,13 @@ class VisitService(
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
     val dayOfWeekNomisMap = mapOf(
-      1 to "MON",
-      2 to "TUE",
-      3 to "WED",
-      4 to "THU",
-      5 to "FRI",
-      6 to "SAT",
-      7 to "SUN",
+      1 to WeekDay.MON,
+      2 to WeekDay.TUE,
+      3 to WeekDay.WED,
+      4 to WeekDay.THU,
+      5 to WeekDay.FRI,
+      6 to WeekDay.SAT,
+      7 to WeekDay.SUN,
     )
   }
 
@@ -544,7 +545,7 @@ class VisitService(
 
   private fun AgencyInternalLocation.toInternalLocationDescription(isClosedVisit: Boolean) = "$description-VSIP_${if (isClosedVisit) "CLO" else "SOC"}"
 
-  private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: String): AgencyVisitDay = visitDayRepository.save(
+  private fun createDayOfWeek(location: AgencyLocation, weekDayNomis: WeekDay): AgencyVisitDay = visitDayRepository.save(
     AgencyVisitDay(
       AgencyVisitDayId(location, weekDayNomis),
     ),

@@ -5,6 +5,8 @@ import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -59,7 +61,8 @@ data class AgencyVisitTimeId(
   var location: AgencyLocation,
 
   @Column(name = "WEEK_DAY", nullable = false)
-  var weekDay: String,
+  @Enumerated(EnumType.STRING)
+  var weekDay: WeekDay,
 
   @Column(name = "TIME_SLOT_SEQ", nullable = false)
   var timeSlotSequence: Int,
