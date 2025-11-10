@@ -177,7 +177,7 @@ class OffenderMovementApplication(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
-  val prison: AgencyLocation? = null,
+  val prison: AgencyLocation,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_AGY_LOC_ID")

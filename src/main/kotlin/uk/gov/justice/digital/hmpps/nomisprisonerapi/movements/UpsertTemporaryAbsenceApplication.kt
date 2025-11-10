@@ -40,7 +40,7 @@ data class UpsertTemporaryAbsenceApplicationRequest(
   val comment: String?,
 
   @Schema(description = "Prison ID")
-  val prisonId: String?,
+  val prisonId: String,
 
   @Schema(description = "Contact person name")
   val contactPersonName: String?,
