@@ -151,7 +151,7 @@ class VisitRepositoryTest : IntegrationTestBase() {
     assertThat(seedBalance.remainingVisitOrders).isEqualTo(25)
     assertThat(seedBalance.remainingPrivilegedVisitOrders).isEqualTo(2)
 
-    offenderVisitBalanceAdjustmentRepository.save(
+    val savedVisitBalance = offenderVisitBalanceAdjustmentRepository.save(
       OffenderVisitBalanceAdjustment(
         visitBalance = seedOffenderBooking.visitBalance!!,
         adjustDate = LocalDate.of(2020, 12, 21),
@@ -167,7 +167,7 @@ class VisitRepositoryTest : IntegrationTestBase() {
     )
 
     val offenderVisitBalanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll().first()
-    assertThat(offenderVisitBalanceAdjustment.id).isEqualTo(1)
+    assertThat(offenderVisitBalanceAdjustment.id).isEqualTo(savedVisitBalance.id)
     assertThat(offenderVisitBalanceAdjustment.offenderBooking.bookingId).isEqualTo(seedOffenderBooking.bookingId)
     assertThat(offenderVisitBalanceAdjustment.adjustDate).isEqualTo(LocalDate.of(2020, 12, 21))
     assertThat(offenderVisitBalanceAdjustment.adjustReasonCode.code).isEqualTo("VO_ISSUE")
