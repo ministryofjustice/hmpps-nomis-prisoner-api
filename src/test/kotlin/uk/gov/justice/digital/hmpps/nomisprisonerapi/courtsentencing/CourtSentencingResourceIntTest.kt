@@ -1648,7 +1648,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Offender sentence for booking $latestBookingId and sentence sequence 11 not found")
+          .isEqualTo("Offender sentence for case id ${courtCase.id}, booking $latestBookingId and sentence sequence 11 not found")
       }
 
       @Test
@@ -6769,7 +6769,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         )
 
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
@@ -6805,7 +6805,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         webTestClient.get()
-          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentenceTwo.id.sequence}")
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
