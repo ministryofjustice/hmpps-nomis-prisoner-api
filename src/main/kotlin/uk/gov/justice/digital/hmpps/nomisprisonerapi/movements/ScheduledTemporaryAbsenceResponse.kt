@@ -28,6 +28,9 @@ data class ScheduledTemporaryAbsenceResponse(
   @Schema(description = "Event status")
   val eventStatus: String,
 
+  @Schema(description = "Inbound event status")
+  val inboundEventStatus: String?,
+
   @Schema(description = "Comment")
   val comment: String?,
 
@@ -72,6 +75,12 @@ data class ScheduledTemporaryAbsenceResponse(
 
   @Schema(description = "Contact person name")
   val contactPersonName: String?,
+
+  @Schema(description = "Temporary absence type")
+  val temporaryAbsenceType: String?,
+
+  @Schema(description = "Temporary absence sub type")
+  val temporaryAbsenceSubType: String?,
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,

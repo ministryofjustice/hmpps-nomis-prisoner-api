@@ -1260,7 +1260,7 @@ class MovementsResourceIntTest(
                 assertThat(escort?.code).isEqualTo("L")
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(comment).isEqualTo("Some comment application")
-                assertThat(prison?.id).isEqualTo("LEI")
+                assertThat(prison.id).isEqualTo("LEI")
                 assertThat(toAgency).isNull()
                 assertThat(toAddress).isNull()
                 assertThat(toAddressOwnerClass).isNull()
@@ -1433,7 +1433,7 @@ class MovementsResourceIntTest(
                 assertThat(escort?.code).isEqualTo("L")
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(comment).isEqualTo("Some comment application")
-                assertThat(prison?.id).isEqualTo("LEI")
+                assertThat(prison.id).isEqualTo("LEI")
                 assertThat(toAgency?.id).isEqualTo("HAZLWD")
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("OFF")
@@ -1492,12 +1492,15 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
+              application = temporaryAbsenceApplication(
+                temporaryAbsenceType = "RR",
+                temporaryAbsenceSubType = "RDR",
+              ) {
                 scheduledTempAbsence = scheduledTemporaryAbsence(
                   eventDate = twoDaysAgo.toLocalDate(),
                   startTime = twoDaysAgo,
                   eventSubType = "C5",
-                  eventStatus = "SCH",
+                  eventStatus = "COMP",
                   comment = "Scheduled temporary absence",
                   escort = "L",
                   fromPrison = "LEI",
@@ -1509,7 +1512,9 @@ class MovementsResourceIntTest(
                   contactPersonName = "Jeff",
                 ) {
                   tempAbsence = externalMovement()
-                  scheduledTempAbsenceReturn = scheduledReturn {
+                  scheduledTempAbsenceReturn = scheduledReturn(
+                    eventStatus = "SCH",
+                  ) {
                     tempAbsenceReturn = externalMovement()
                   }
                 }
@@ -1537,7 +1542,8 @@ class MovementsResourceIntTest(
             assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
             assertThat(startTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
             assertThat(eventSubType).isEqualTo("C5")
-            assertThat(eventStatus).isEqualTo("SCH")
+            assertThat(eventStatus).isEqualTo("COMP")
+            assertThat(inboundEventStatus).isEqualTo("SCH")
             assertThat(comment).isEqualTo("Scheduled temporary absence")
             assertThat(escort).isEqualTo("L")
             assertThat(fromPrison).isEqualTo("LEI")
@@ -1548,6 +1554,8 @@ class MovementsResourceIntTest(
             assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
             assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
             assertThat(contactPersonName).isEqualTo("Jeff")
+            assertThat(temporaryAbsenceType).isEqualTo("RR")
+            assertThat(temporaryAbsenceSubType).isEqualTo("RDR")
           }
       }
     }

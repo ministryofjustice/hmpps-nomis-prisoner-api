@@ -678,6 +678,7 @@ class MovementsService(
     startTime = startTime ?: temporaryAbsenceApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
+    inboundEventStatus = scheduledTemporaryAbsenceReturns.firstOrNull()?.eventStatus?.code,
     comment = comment,
     escort = escort?.code,
     fromPrison = fromAgency?.id,
@@ -693,6 +694,8 @@ class MovementsService(
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     contactPersonName = contactPersonName,
+    temporaryAbsenceType = temporaryAbsenceApplication.temporaryAbsenceType?.code,
+    temporaryAbsenceSubType = temporaryAbsenceApplication.temporaryAbsenceSubType?.code,
     audit = toAudit(),
   )
 
