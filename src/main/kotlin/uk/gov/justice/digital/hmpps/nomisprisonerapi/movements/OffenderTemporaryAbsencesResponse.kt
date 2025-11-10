@@ -62,7 +62,7 @@ data class TemporaryAbsenceApplication(
   val comment: String?,
 
   @Schema(description = "Prison ID")
-  val prisonId: String?,
+  val prisonId: String,
 
   @Schema(description = "To agency ID")
   val toAgencyId: String?,
