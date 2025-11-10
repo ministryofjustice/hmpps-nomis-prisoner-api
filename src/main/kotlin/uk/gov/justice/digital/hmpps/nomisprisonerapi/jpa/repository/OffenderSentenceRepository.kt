@@ -15,6 +15,8 @@ interface OffenderSentenceRepository :
 
   fun deleteByIdOffenderBookingBookingId(bookingId: Long)
 
+  fun findByIdAndCourtCaseId(sentenceId: SentenceId, courtCaseId: Long): OffenderSentence?
+
   @Query("select coalesce(max(id.sequence), 0) + 1 from OffenderSentence where id.offenderBooking = :offenderBooking")
   fun getNextSequence(offenderBooking: OffenderBooking): Long
 

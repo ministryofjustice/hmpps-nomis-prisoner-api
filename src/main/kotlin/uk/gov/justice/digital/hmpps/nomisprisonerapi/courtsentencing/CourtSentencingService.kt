@@ -1158,13 +1158,14 @@ class CourtSentencingService(
   fun getOffenderSentence(offenderNo: String, caseId: Long, sentenceSequence: Long): SentenceResponse = findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
     val offenderBooking = case.offenderBooking
 
-    return offenderSentenceRepository.findByIdOrNull(
-      SentenceId(
+    return offenderSentenceRepository.findByIdAndCourtCaseId(
+      sentenceId = SentenceId(
         offenderBooking = offenderBooking,
         sequence = sentenceSequence,
       ),
+      courtCaseId = caseId,
     )?.toSentenceResponse()
-      ?: throw NotFoundException("Offender sentence for booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
+      ?: throw NotFoundException("Offender sentence for case id $caseId, booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
   }
 
   fun getOffenderSentenceTerm(
