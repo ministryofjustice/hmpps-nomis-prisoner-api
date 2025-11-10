@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -1050,7 +1051,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("userMessage").value<String> {
-            assertThat(it).isEqualTo("Not Found: No profile found with bookingId = 2, sequence = 1, type = IMM")
+            assertThat(it).isEqualTo("Not Found: No profile found with bookingId = ${booking.bookingId}, sequence = 1, type = IMM")
           }
       }
     }
@@ -1069,28 +1070,26 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           }
         }
 
-        val result = webTestClient.get()
+        webTestClient.get()
           .uri("/profile-details/${booking.bookingId}/sequence/1/type/SHOESIZE")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
-          .expectBody<ProfileDetailsResponse>()
-          .returnResult()
-          .responseBody!!
-        with(result) {
-          assertThat(type).isEqualTo("SHOESIZE")
-          assertThat(code).isEqualTo("8.5")
+          .expectBodyResponse<ProfileDetailsResponse>()
+          .run {
+            assertThat(type).isEqualTo("SHOESIZE")
+            assertThat(code).isEqualTo("8.5")
 
-          assertThat(checkDate).isCloseTo(
-            LocalDateTime.parse("2025-11-05T13:14"),
-            within(3, ChronoUnit.SECONDS),
-          )
-          assertThat(createDateTime).isCloseTo(
-            LocalDateTime.now(),
-            within(3, ChronoUnit.SECONDS),
-          )
-          assertThat(createdBy).isEqualTo("SA")
-        }
+            assertThat(checkDate).isCloseTo(
+              LocalDateTime.parse("2025-11-05T13:14"),
+              within(3, ChronoUnit.SECONDS),
+            )
+            assertThat(createDateTime).isCloseTo(
+              LocalDateTime.now(),
+              within(3, ChronoUnit.SECONDS),
+            )
+            assertThat(createdBy).isEqualTo("SA")
+          }
       }
     }
   }
