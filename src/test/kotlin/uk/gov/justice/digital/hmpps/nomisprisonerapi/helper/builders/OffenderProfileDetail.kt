@@ -33,11 +33,11 @@ class OffenderProfileDetailBuilder(
 ) : OffenderProfileDetailDsl {
 
   fun build(
-    listSequence: Long,
+    listSequence: Int,
     profileTypeId: String,
     profileCodeId: String?,
     offenderBooking: OffenderBooking,
-    sequence: Long,
+    sequence: Int,
     profile: OffenderProfile? = null,
   ): OffenderProfileDetail = OffenderProfileDetail(
     id = OffenderProfileDetailId(

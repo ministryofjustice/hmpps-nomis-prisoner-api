@@ -31,42 +31,22 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
       ApiResponse(
         responseCode = "200",
         description = "Profile Details Returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = PrisonerProfileDetailsResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = PrisonerProfileDetailsResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "404",
         description = "Prisoner does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )
@@ -136,4 +116,15 @@ class ProfileDetailsResource(private val service: ProfileDetailsService) {
     @Schema(description = "Offender number", example = "A1234AA") @PathVariable offenderNo: String,
     @RequestBody @Valid request: UpsertProfileDetailsRequest,
   ): UpsertProfileDetailsResponse = service.upsertProfileDetails(offenderNo, request)
+
+  @GetMapping("/profile-details/{bookingId}/sequence/{sequence}/type/{type}")
+  @Operation(
+    summary = "Get a specific profile details record",
+    description = "Retrieves profile detail for the given PK. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+  )
+  fun getProfileDetail(
+    @Schema(description = "Booking ID", example = "12345678") @PathVariable bookingId: Long,
+    @Schema(description = "Sequence number", example = "1") @PathVariable sequence: Int,
+    @Schema(description = "Profile type", example = "IMM") @PathVariable type: String,
+  ): ProfileDetailsResponse = service.getProfileDetail(bookingId, sequence, type)
 }

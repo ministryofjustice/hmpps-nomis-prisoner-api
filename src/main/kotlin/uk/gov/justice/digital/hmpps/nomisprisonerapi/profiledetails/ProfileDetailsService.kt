@@ -14,16 +14,18 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileCodeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileTypeCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProfileDetailRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileTypeRepository
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Service
 @Transactional
 class ProfileDetailsService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
+  private val profileDetailRepository: OffenderProfileDetailRepository,
   private val profileTypeRepository: ProfileTypeRepository,
   private val profileCodeRepository: ProfileCodeRepository,
   private val telemetryClient: TelemetryClient,
@@ -43,12 +45,13 @@ class ProfileDetailsService(
           latestBooking = booking.bookingSequence == 1,
           startDateTime = booking.bookingBeginDate,
           profileDetails = booking.profileDetails
-            .filter { it.id.sequence == 1L }
+            .filter { it.id.sequence == 1 }
             .filter { profileTypes.isEmpty() || it.id.profileType.type in profileTypes }
             .map { pd ->
               ProfileDetailsResponse(
                 type = pd.id.profileType.type,
                 code = pd.profileCodeId,
+                checkDate = pd.offenderProfile?.checkDate,
                 createDateTime = pd.createDatetime,
                 createdBy = pd.createUserId,
                 modifiedDateTime = pd.modifyDatetime,
@@ -94,16 +97,16 @@ class ProfileDetailsService(
   private fun OffenderBooking.createNewProfileDetails(request: UpsertProfileDetailsRequest) = OffenderProfileDetail(
     id = OffenderProfileDetailId(
       offenderBooking = this,
-      sequence = 1L,
+      sequence = 1,
       profileType = getProfileType(request.profileType),
     ),
-    listSequence = 1L,
+    listSequence = 1,
     profileCodeId = request.profileCode,
   )
     .also { profileDetails += it }
 
-  private fun OffenderBooking.getOrCreateProfile() = profiles.firstOrNull { it.id.sequence == 1L }
-    ?: OffenderProfile(OffenderProfileId(this, 1L), LocalDate.now())
+  private fun OffenderBooking.getOrCreateProfile() = profiles.firstOrNull { it.id.sequence == 1 }
+    ?: OffenderProfile(OffenderProfileId(this, 1), LocalDateTime.now())
       .also { profiles += it }
 
   private fun validateProfileType(profileType: String) {
@@ -127,4 +130,28 @@ class ProfileDetailsService(
 
   private fun findLatestBookingOrThrow(offenderNo: String) = bookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("No latest booking found for $offenderNo")
+
+  fun getProfileDetail(bookingId: Long, sequence: Int, typeString: String): ProfileDetailsResponse {
+    val booking = bookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Booking with id $bookingId not found")
+
+    val type = profileTypeRepository.findByIdOrNull(typeString)
+      ?: throw BadDataException("Type $typeString does not exist")
+
+    return profileDetailRepository
+      .findByIdOrNull(OffenderProfileDetailId(booking, sequence, type))
+      ?.toDto()
+      ?: throw NotFoundException("No profile found with bookingId = $bookingId, sequence = $sequence, type = $typeString")
+  }
 }
+
+fun OffenderProfileDetail.toDto() = ProfileDetailsResponse(
+  type = id.profileType.type,
+  code = profileCodeId,
+  checkDate = offenderProfile?.checkDate,
+  createDateTime = createDatetime,
+  createdBy = createUserId,
+  modifiedDateTime = modifyDatetime,
+  modifiedBy = modifyUserId,
+  auditModuleName = auditModuleName,
+)
