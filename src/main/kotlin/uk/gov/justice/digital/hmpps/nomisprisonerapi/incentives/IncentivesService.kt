@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -97,7 +96,6 @@ class IncentivesService(
       } ?: throw NotFoundException("Current Incentive not found, booking id $bookingId")
   }
 
-  @Audit
   fun createGlobalIncentiveLevel(createIncentiveRequest: CreateGlobalIncentiveRequest): ReferenceCode = incentiveReferenceCodeRepository.findByIdOrNull(pk(createIncentiveRequest.code))
     ?.let {
       ReferenceCode(
@@ -151,7 +149,6 @@ class IncentivesService(
       (maxSequenceIepLevel.sequence!! + 1)
     } ?: 1
 
-  @Audit
   fun updateGlobalIncentiveLevel(code: String, updateIncentiveRequest: UpdateGlobalIncentiveRequest): ReferenceCode = incentiveReferenceCodeRepository.findByIdOrNull(pk(code))
     ?.let {
       it.expiredDate = synchroniseExpiredDateOnUpdate(updateIncentiveRequest.active, it.expiredDate)
@@ -180,7 +177,6 @@ class IncentivesService(
     ?.let { ReferenceCode(it.code, it.domain, it.description, it.active, it.sequence, it.parentCode) }
     ?: throw NotFoundException("Incentive level: $code not found")
 
-  @Audit
   fun deleteGlobalIncentiveLevel(code: String) {
     incentiveReferenceCodeRepository.findByIdOrNull(pk(code))
       ?.let {
@@ -196,7 +192,6 @@ class IncentivesService(
       } ?: log.info("Global Incentive level deletion request for: $code ignored. Level does not exist")
   }
 
-  @Audit
   fun reorderGlobalIncentiveLevels(codeList: List<String>) {
     codeList.mapIndexed { index, levelCode ->
       incentiveReferenceCodeRepository.findByIdOrNull(pk(levelCode))?.let { iepLevel ->
@@ -218,7 +213,6 @@ class IncentivesService(
     )
   }
 
-  @Audit
   fun createPrisonIncentiveLevelData(
     prisonId: String,
     createRequest: CreatePrisonIncentiveRequest,
@@ -308,7 +302,6 @@ class IncentivesService(
       )
     }
 
-  @Audit
   fun updatePrisonIncentiveLevelData(
     prisonId: String,
     levelCode: String,
@@ -382,7 +375,6 @@ class IncentivesService(
     }
     )
 
-  @Audit
   fun deletePrisonIncentiveLevelData(prisonId: String, code: String) {
     val prison = agencyLocationRepository.findByIdOrNull(prisonId)
       ?: throw BadDataException("Prison with id=$prisonId does not exist")

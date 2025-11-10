@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -37,7 +36,6 @@ class LocationService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Audit
   fun createLocation(locationDto: CreateLocationRequest): LocationIdResponse {
     val housingUnitType = locationDto.unitType?.let {
       housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(it))
@@ -71,7 +69,6 @@ class LocationService(
     )
   }
 
-  @Audit
   fun updateLocation(locationId: Long, locationDto: UpdateLocationRequest) {
     val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
@@ -114,7 +111,6 @@ class LocationService(
     }
   }
 
-  @Audit
   fun deactivateLocation(locationId: Long, deactivateRequest: DeactivateRequest) {
     val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
@@ -143,7 +139,6 @@ class LocationService(
     )
   }
 
-  @Audit
   fun reactivateLocation(locationId: Long) {
     val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
@@ -166,7 +161,6 @@ class LocationService(
     )
   }
 
-  @Audit
   fun updateCapacity(locationId: Long, capacity: UpdateCapacityRequest, ignoreOperationalCapacity: Boolean) {
     val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
@@ -189,7 +183,6 @@ class LocationService(
     )
   }
 
-  @Audit
   fun updateCertification(locationId: Long, certification: UpdateCertificationRequest) {
     val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")

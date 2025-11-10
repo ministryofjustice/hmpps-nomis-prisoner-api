@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.casenotes
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
@@ -50,7 +49,6 @@ class CaseNotesService(
   fun getCaseNote(caseNoteId: Long): CaseNoteResponse = offenderCaseNoteRepository.findByIdOrNull(caseNoteId)?.toCaseNoteResponse()
     ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
 
-  @Audit
   fun createCaseNote(offenderNo: String, request: CreateCaseNoteRequest): CreateCaseNoteResponse {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
@@ -86,7 +84,6 @@ class CaseNotesService(
     return CreateCaseNoteResponse(caseNote.id, offenderBooking.bookingId)
   }
 
-  @Audit
   fun updateCaseNote(caseNoteId: Long, request: UpdateCaseNoteRequest) {
     offenderCaseNoteRepository.findByIdOrNull<OffenderCaseNote, Long>(caseNoteId)
       ?.apply {
@@ -95,7 +92,6 @@ class CaseNotesService(
       ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")
   }
 
-  @Audit
   fun deleteCaseNote(caseNoteId: Long) {
     offenderCaseNoteRepository.findByIdOrNull(caseNoteId)
       ?: throw NotFoundException("Case note not found for caseNoteId=$caseNoteId")

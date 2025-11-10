@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -225,7 +224,6 @@ class AdjudicationService(
     }
   }
 
-  @Audit
   fun createAdjudication(
     offenderNo: String,
     request: CreateAdjudicationRequest,
@@ -425,7 +423,6 @@ class AdjudicationService(
     }
   }
 
-  @Audit
   fun createHearing(adjudicationNumber: Long, request: CreateHearingRequest): CreateHearingResponse {
     val party =
       adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.also { it.generateOffenceIds() }
@@ -497,7 +494,6 @@ class AdjudicationService(
     AdjudicationSanctionStatus.pk(code),
   ) ?: throw BadDataException("sanction status $code not found")
 
-  @Audit
   fun updateRepairs(adjudicationNumber: Long, request: UpdateRepairsRequest): UpdateRepairsResponse {
     val adjudicationParty = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)
       ?: throw NotFoundException("Adjudication party with adjudication number $adjudicationNumber not found")
@@ -523,7 +519,6 @@ class AdjudicationService(
     return UpdateRepairsResponse(updatedRepairs.map { it.toRepair() })
   }
 
-  @Audit
   fun updateEvidence(
     adjudicationNumber: Long,
     request: UpdateEvidenceRequest,
@@ -617,7 +612,6 @@ class AdjudicationService(
     )
   }
 
-  @Audit
   fun upsertHearingResult(
     adjudicationNumber: Long,
     hearingId: Long,
@@ -732,7 +726,6 @@ class AdjudicationService(
     }
   }
 
-  @Audit
   fun createHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
@@ -819,7 +812,6 @@ class AdjudicationService(
     }
   }
 
-  @Audit
   fun updateCreateAndDeleteHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
@@ -846,7 +838,6 @@ class AdjudicationService(
     return UpdateHearingResultAwardResponses(awardsCreated = createdAwards, awardsDeleted = deletedAwards)
   }
 
-  @Audit
   fun deleteHearingResultAwards(
     adjudicationNumber: Long,
     chargeSequence: Int,
