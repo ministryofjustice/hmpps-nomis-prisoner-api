@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -155,7 +154,6 @@ class CourtSentencingService(
   fun getOffenderCharge(id: Long): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender Charge $id not found")
 
-  @Audit
   fun createCourtCase(offenderNo: String, request: CreateCourtCaseRequest) = findLatestBooking(offenderNo).let { booking ->
 
     val courtCase = courtCaseRepository.saveAndFlush(
@@ -188,7 +186,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun courtCaseRepair(caseId: Long, offenderNo: String, request: CourtCaseRepairRequest) = findLatestBooking(offenderNo).let { booking ->
     deleteCourtCase(offenderNo = offenderNo, caseId = caseId)
     val primaryCaseIdentifier = request.caseReferences?.caseIdentifiers?.takeIf { it.isNotEmpty() }?.get(0)?.reference
@@ -313,7 +310,6 @@ class CourtSentencingService(
   )
 
   // updates to charges are triggered by a separate endpoint
-  @Audit
   fun createCourtAppearance(
     offenderNo: String,
     caseId: Long,
@@ -540,7 +536,6 @@ class CourtSentencingService(
     courtEvent.courtEventCharges.addAll(newChargeList)
   }
 
-  @Audit
   fun updateCourtAppearance(
     offenderNo: String,
     caseId: Long,
@@ -617,7 +612,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun deleteCourtAppearance(
     offenderNo: String,
     caseId: Long,
@@ -650,7 +644,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun deleteCourtCase(
     offenderNo: String,
     caseId: Long,
@@ -679,7 +672,6 @@ class CourtSentencingService(
       )
   }
 
-  @Audit
   fun updateCourtCharge(
     offenderNo: String,
     caseId: Long,
@@ -733,7 +725,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
 
     val offenderBooking = case.offenderBooking
@@ -800,7 +791,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun createSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termRequest: SentenceTermRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
 
     val offenderBooking = case.offenderBooking
@@ -852,7 +842,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun deleteSentence(offenderNo: String, caseId: Long, sentenceSequence: Long) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = case.offenderBooking
@@ -884,7 +873,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun deleteSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termSequence: Long) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = case.offenderBooking
@@ -919,7 +907,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun updateSentence(
     caseId: Long,
     sentenceSequence: Long,
@@ -1011,7 +998,6 @@ class CourtSentencingService(
     }
   }
 
-  @Audit
   fun updateSentenceTerm(
     caseId: Long,
     sentenceSequence: Long,

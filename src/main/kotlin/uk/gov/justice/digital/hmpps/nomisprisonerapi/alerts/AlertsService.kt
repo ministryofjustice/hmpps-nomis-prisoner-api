@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.alerts
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -38,7 +37,6 @@ class AlertsService(
       ?: throw NotFoundException("Prisoner alert not found for alertSequence=$alertSequence")
   } ?: throw NotFoundException("Prisoner booking not found for bookingId=$bookingId")
 
-  @Audit
   fun createAlert(offenderNo: String, request: CreateAlertRequest): CreateAlertResponse {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
@@ -77,7 +75,6 @@ class AlertsService(
     )
   }
 
-  @Audit
   fun resynchroniseAlerts(offenderNo: String, requests: List<CreateAlertRequest>): List<CreateAlertResponse> {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
@@ -121,7 +118,6 @@ class AlertsService(
     }
   }
 
-  @Audit
   fun updateAlert(bookingId: Long, alertSequence: Long, request: UpdateAlertRequest): AlertResponse {
     val offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
       ?: throw NotFoundException("Booking $bookingId not found")

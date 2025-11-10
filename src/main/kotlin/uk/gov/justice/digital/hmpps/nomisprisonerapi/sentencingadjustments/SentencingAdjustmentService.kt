@@ -8,7 +8,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
@@ -43,7 +42,6 @@ class SentencingAdjustmentService(
   fun getSentenceAdjustment(adjustmentId: Long): SentenceAdjustmentResponse = offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.toAdjustmentResponse()
     ?: throw NotFoundException("Sentence adjustment $adjustmentId not found")
 
-  @Audit
   fun createSentenceAdjustment(bookingId: Long, sentenceSequence: Long, request: CreateSentenceAdjustmentRequest) = offenderBookingRepository.findByIdOrNull(bookingId)?.let { booking ->
     offenderSentenceRepository.findByIdOrNull(SentenceId(booking, sentenceSequence))?.let { sentence ->
       val adjustmentId = offenderSentenceAdjustmentRepository.save(
@@ -76,7 +74,6 @@ class SentencingAdjustmentService(
       ?: throw NotFoundException("Sentence with sequence $sentenceSequence not found")
   } ?: throw NotFoundException("Booking $bookingId not found")
 
-  @Audit
   fun updateSentenceAdjustment(adjustmentId: Long, request: UpdateSentenceAdjustmentRequest): Unit = offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
     offenderSentenceRepository.findByIdOrNull(
       SentenceId(
@@ -110,7 +107,6 @@ class SentencingAdjustmentService(
       ?: throw NotFoundException("Sentence with sequence ${request.sentenceSequence} not found")
   } ?: throw NotFoundException("Sentence adjustment with id $adjustmentId not found")
 
-  @Audit
   fun deleteSentenceAdjustment(adjustmentId: Long) {
     offenderSentenceAdjustmentRepository.findByIdOrNull(adjustmentId)?.also {
       offenderSentenceAdjustmentRepository.deleteById(adjustmentId)
@@ -146,7 +142,6 @@ class SentencingAdjustmentService(
   fun getKeyDateAdjustment(adjustmentId: Long): KeyDateAdjustmentResponse = keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.toAdjustmentResponse()
     ?: throw NotFoundException("Key date adjustment $adjustmentId not found")
 
-  @Audit
   fun createKeyDateAdjustment(bookingId: Long, request: CreateKeyDateAdjustmentRequest) = offenderBookingRepository.findByIdOrNull(bookingId)?.let {
     val adjustmentId = keyDateAdjustmentRepository.save(
       OffenderKeyDateAdjustment(
@@ -178,7 +173,6 @@ class SentencingAdjustmentService(
     }
   } ?: throw NotFoundException("Booking $bookingId not found")
 
-  @Audit
   fun updateKeyDateAdjustment(adjustmentId: Long, request: UpdateKeyDateAdjustmentRequest): Unit = keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.run {
     this.sentenceAdjustment = findValidKeyDateAdjustmentType(request.adjustmentTypeCode)
     this.adjustmentDate = request.adjustmentDate
@@ -207,7 +201,6 @@ class SentencingAdjustmentService(
     )
   } ?: throw NotFoundException("Key date adjustment with id $adjustmentId not found")
 
-  @Audit
   fun deleteKeyDateAdjustment(adjustmentId: Long) {
     keyDateAdjustmentRepository.findByIdOrNull(adjustmentId)?.also {
       storedProcedureRepository.preKeyDateAdjustmentDeletion(
