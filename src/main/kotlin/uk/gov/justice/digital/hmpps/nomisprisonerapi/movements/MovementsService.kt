@@ -141,7 +141,7 @@ class MovementsService(
     val applicationStatus = applicationStatusOrThrow(request.applicationStatus)
     val escort = request.escortCode?.let { escortOrThrow(request.escortCode) }
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
-    val prison = request.prisonId?.let { agencyLocationOrThrow(request.prisonId) }
+    val prison = agencyLocationOrThrow(request.prisonId)
     val applicationType = movementApplicationTypeOrThrow(request.applicationType)
     val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
@@ -487,7 +487,7 @@ class MovementsService(
     comment = comment,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
-    prisonId = prison?.id,
+    prisonId = prison.id,
     toAgencyId = toAgency?.id,
     contactPersonName = contactPersonName,
     applicationType = applicationType.code,
@@ -661,7 +661,7 @@ class MovementsService(
     comment = comment,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
-    prisonId = prison?.id,
+    prisonId = prison.id,
     toAgencyId = toAgency?.id,
     contactPersonName = contactPersonName,
     applicationType = applicationType.code,
