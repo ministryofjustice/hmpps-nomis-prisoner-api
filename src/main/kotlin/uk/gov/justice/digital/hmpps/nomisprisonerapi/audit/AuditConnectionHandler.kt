@@ -33,7 +33,7 @@ class OracleAuditConnectionHandler : AuditConnectionHandler {
     val module = AuditContextHolder.get()
     log.info("Applying Oracle AuditConnectionHandler with audit module $module")
     conn.prepareCall("{call OMS_OWNER.nomis_context.set_context(?, ?)}").use { stmt ->
-      stmt.setString(1, "app.audit_module")
+      stmt.setString(1, "AUDIT_MODULE_NAME")
       stmt.setString(2, module)
       stmt.execute()
     }

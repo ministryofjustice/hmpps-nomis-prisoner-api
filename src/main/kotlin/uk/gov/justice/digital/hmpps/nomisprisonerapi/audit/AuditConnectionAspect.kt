@@ -13,7 +13,7 @@ import javax.sql.DataSource
 @Aspect
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
-class ConnectionAspect(
+class AuditConnectionAspect(
   private val auditHandler: AuditConnectionHandler,
   private val dataSource: DataSource,
 ) {
