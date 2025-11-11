@@ -28,7 +28,7 @@ data class CreateTemporaryAbsenceRequest(
   val escortText: String? = null,
 
   @Schema(description = "From prison code")
-  val fromPrison: String? = null,
+  val fromPrison: String,
 
   @Schema(description = "To agency code")
   val toAgency: String? = null,

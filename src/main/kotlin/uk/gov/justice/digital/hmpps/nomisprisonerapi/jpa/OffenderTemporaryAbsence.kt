@@ -19,7 +19,7 @@ class OffenderTemporaryAbsence(
   arrestAgency: ArrestAgency? = null,
   escort: Escort? = null,
   escortText: String? = null,
-  fromPrison: AgencyLocation? = null,
+  fromPrison: AgencyLocation,
   toAgency: AgencyLocation? = null,
   active: Boolean = false,
   commentText: String? = null,
