@@ -347,7 +347,7 @@ class MovementsService(
     val movementReason = movementReasonOrThrow(request.movementReason)
     val arrestAgency = request.arrestAgency?.let { arrestAgencyOrThrow(request.arrestAgency) }
     val escort = request.escort?.let { escortOrThrow(request.escort) }
-    val fromPrison = request.fromPrison?.let { agencyLocationOrThrow(request.fromPrison) }
+    val fromPrison = agencyLocationOrThrow(request.fromPrison)
     val toAgency = request.toAgency?.let { agencyLocationOrThrow(request.toAgency) }
     val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
 
@@ -397,7 +397,7 @@ class MovementsService(
     val arrestAgency = request.arrestAgency?.let { arrestAgencyOrThrow(request.arrestAgency) }
     val escort = request.escort?.let { escortOrThrow(request.escort) }
     val fromAgency = request.fromAgency?.let { agencyLocationOrThrow(request.fromAgency) }
-    val toPrison = request.toPrison?.let { agencyLocationOrThrow(request.toPrison) }
+    val toPrison = agencyLocationOrThrow(request.toPrison)
     val fromAddress = request.fromAddressId?.let { addressOrThrow(request.fromAddressId) }
 
     return OffenderTemporaryAbsenceReturn(
@@ -748,7 +748,7 @@ class MovementsService(
       arrestAgency = arrestAgency?.code,
       escort = escort?.code,
       escortText = escortText,
-      fromPrison = fromAgency?.id,
+      fromPrison = fromAgency!!.id,
       toAgency = toAgency?.id,
       commentText = commentText,
       toAddressId = toAddress?.addressId,
@@ -780,7 +780,7 @@ class MovementsService(
       escort = escort?.code,
       escortText = escortText,
       fromAgency = fromAgency?.id,
-      toPrison = toAgency?.id,
+      toPrison = toAgency!!.id,
       commentText = commentText,
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,

@@ -31,7 +31,7 @@ data class CreateTemporaryAbsenceReturnRequest(
   val fromAgency: String?,
 
   @Schema(description = "To prison")
-  val toPrison: String?,
+  val toPrison: String,
 
   @Schema(description = "Comment text")
   val commentText: String?,

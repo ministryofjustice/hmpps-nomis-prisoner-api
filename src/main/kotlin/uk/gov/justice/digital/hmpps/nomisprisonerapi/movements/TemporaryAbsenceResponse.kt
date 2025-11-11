@@ -38,7 +38,7 @@ data class TemporaryAbsenceResponse(
   val escortText: String?,
 
   @Schema(description = "From prison")
-  val fromPrison: String?,
+  val fromPrison: String,
 
   @Schema(description = "To agency")
   val toAgency: String?,
