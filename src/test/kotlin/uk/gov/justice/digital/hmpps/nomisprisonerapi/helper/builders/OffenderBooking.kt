@@ -277,17 +277,17 @@ interface BookingDsl {
 
   @OffenderProfileDslMarker
   fun profile(
-    checkDate: LocalDate = LocalDate.now(),
-    sequence: Long = 1L,
+    checkDate: LocalDateTime = LocalDateTime.now(),
+    sequence: Int = 1,
     dsl: OffenderProfileDsl.() -> Unit = {},
   ): OffenderProfile
 
   @OffenderProfileDetailDslMarker
   fun profileDetail(
-    listSequence: Long = 99,
+    listSequence: Int = 99,
     profileType: String = "BUILD",
     profileCode: String? = "SMALL",
-    sequence: Long = 1L,
+    sequence: Int = 1,
   ): OffenderProfileDetail
 
   @OffenderExternalMovementDslMarker
@@ -915,8 +915,8 @@ class BookingBuilder(
     }
 
   override fun profile(
-    checkDate: LocalDate,
-    sequence: Long,
+    checkDate: LocalDateTime,
+    sequence: Int,
     dsl: OffenderProfileDsl.() -> Unit,
   ): OffenderProfile = offenderProfileBuilderFactory.builder()
     .let { builder ->
@@ -931,10 +931,10 @@ class BookingBuilder(
     }
 
   override fun profileDetail(
-    listSequence: Long,
+    listSequence: Int,
     profileType: String,
     profileCode: String?,
-    sequence: Long,
+    sequence: Int,
   ): OffenderProfileDetail = profileDetailBuilderFactory.builder().build(
     listSequence = listSequence,
     profileTypeId = profileType,

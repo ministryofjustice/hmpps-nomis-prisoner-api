@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileId
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class OffenderProfileDslMarker
@@ -22,8 +22,8 @@ class OffenderProfileBuilder : OffenderProfileDsl {
 
   fun build(
     offenderBooking: OffenderBooking,
-    checkDate: LocalDate,
-    sequence: Long,
+    checkDate: LocalDateTime,
+    sequence: Int,
   ): OffenderProfile = OffenderProfile(
     id = OffenderProfileId(
       offenderBooking = offenderBooking,

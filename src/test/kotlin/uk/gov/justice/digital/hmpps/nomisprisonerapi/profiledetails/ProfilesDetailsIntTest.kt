@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -86,7 +87,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingBeginDate = yesterday) {
-              profile()
+              profile(checkDate = LocalDateTime.parse("2025-11-05T13:14"))
               profileDetail(profileType = "L_EYE_C", profileCode = "RED")
               profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
             }
@@ -104,6 +105,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
                   tuple("L_EYE_C", "RED"),
                   tuple("SHOESIZE", "8.5"),
                 )
+              assertThat(bookings[0].profileDetails[0].checkDate).isCloseTo(
+                LocalDateTime.parse("2025-11-05T13:14"),
+                within(3, ChronoUnit.SECONDS),
+              )
               assertThat(bookings[0].profileDetails[0].createDateTime).isCloseTo(
                 LocalDateTime.now(),
                 within(3, ChronoUnit.SECONDS),
@@ -220,12 +225,12 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking {
-              profile(sequence = 1L)
-              profileDetail(sequence = 1L, profileType = "L_EYE_C", profileCode = "RED")
-              profileDetail(sequence = 1L, profileType = "SHOESIZE", profileCode = "8.5")
-              profile(sequence = 2L)
-              profileDetail(sequence = 2L, profileType = "R_EYE_C", profileCode = "BLUE")
-              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "SLIM")
+              profile(sequence = 1)
+              profileDetail(sequence = 1, profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(sequence = 1, profileType = "SHOESIZE", profileCode = "8.5")
+              profile(sequence = 2)
+              profileDetail(sequence = 2, profileType = "R_EYE_C", profileCode = "BLUE")
+              profileDetail(sequence = 2, profileType = "BUILD", profileCode = "SLIM")
             }
           }
         }
@@ -247,10 +252,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking {
-              profileDetail(sequence = 1L, profileType = "L_EYE_C", profileCode = "RED")
-              profileDetail(sequence = 1L, profileType = "SHOESIZE", profileCode = "8.5")
-              profileDetail(sequence = 2L, profileType = "R_EYE_C", profileCode = "BLUE")
-              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "SLIM")
+              profileDetail(sequence = 1, profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(sequence = 1, profileType = "SHOESIZE", profileCode = "8.5")
+              profileDetail(sequence = 2, profileType = "R_EYE_C", profileCode = "BLUE")
+              profileDetail(sequence = 2, profileType = "BUILD", profileCode = "SLIM")
             }
           }
         }
@@ -773,10 +778,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-              profile(sequence = 1L)
-              profileDetail(sequence = 1L, profileType = "BUILD", profileCode = "MEDIUM")
-              profile(sequence = 2L)
-              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "HEAVY")
+              profile(sequence = 1)
+              profileDetail(sequence = 1, profileType = "BUILD", profileCode = "MEDIUM")
+              profile(sequence = 2)
+              profileDetail(sequence = 2, profileType = "BUILD", profileCode = "HEAVY")
             }
           }
         }
@@ -786,12 +791,12 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         repository.runInTransaction {
           val booking = findBooking()
           // The new profile with sequence 1 was updated
-          with(booking.profileDetails.first { it.id.sequence == 1L }) {
+          with(booking.profileDetails.first { it.id.sequence == 1 }) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCodeId).isEqualTo("SMALL")
           }
           // The profile with sequence 2 wasn't updated
-          with(booking.profileDetails.first { it.id.sequence == 2L }) {
+          with(booking.profileDetails.first { it.id.sequence == 2 }) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCodeId).isEqualTo("HEAVY")
           }
@@ -803,8 +808,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
             booking = booking(bookingSequence = 1, bookingBeginDate = yesterday) {
-              profileDetail(sequence = 1L, profileType = "BUILD", profileCode = "MEDIUM")
-              profileDetail(sequence = 2L, profileType = "BUILD", profileCode = "HEAVY")
+              profileDetail(sequence = 1, profileType = "BUILD", profileCode = "MEDIUM")
+              profileDetail(sequence = 2, profileType = "BUILD", profileCode = "HEAVY")
             }
           }
         }
@@ -814,12 +819,12 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
         repository.runInTransaction {
           val booking = findBooking()
           // The new profile with sequence 1 was updated
-          with(booking.profileDetails.first { it.id.sequence == 1L }) {
+          with(booking.profileDetails.first { it.id.sequence == 1 }) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCodeId).isEqualTo("SMALL")
           }
           // The profile with sequence 2 wasn't updated
-          with(booking.profileDetails.first { it.id.sequence == 2L }) {
+          with(booking.profileDetails.first { it.id.sequence == 2 }) {
             assertThat(id.profileType.type).isEqualTo("BUILD")
             assertThat(profileCodeId).isEqualTo("HEAVY")
           }
@@ -973,5 +978,119 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       .consumeWith {
         assertThat(it.responseBody!!.userMessage).contains(partialMessage)
       }
+  }
+
+  @Nested
+  @DisplayName("GET /profile-details/{bookingId}/sequence/{sequence}/type/{type}")
+  inner class GetProfileDetail {
+    private lateinit var booking: OffenderBooking
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/profile-details/9999/sequence/1/type/XXX")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/profile-details/9999/sequence/1/type/XXX")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/profile-details/9999/sequence/1/type/XXX")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    @Nested
+    inner class Exceptions {
+      @Test
+      fun `not found if booking does not exist`() {
+        webTestClient.get().uri("/profile-details/9999/sequence/1/type/IMM")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Booking with id 9999 not found")
+          }
+      }
+
+      @Test
+      fun `bad data if type does not exist`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") { booking = booking(bookingBeginDate = yesterday) }
+        }
+        webTestClient.get().uri("/profile-details/${booking.bookingId}/sequence/1/type/XXX")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Type XXX does not exist")
+          }
+      }
+
+      @Test
+      fun `not found if profile detail does not exist`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") { booking = booking(bookingBeginDate = yesterday) }
+        }
+        webTestClient.get().uri("/profile-details/${booking.bookingId}/sequence/1/type/IMM")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).isEqualTo("Not Found: No profile found with bookingId = ${booking.bookingId}, sequence = 1, type = IMM")
+          }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should return profile details`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234AA") {
+            booking = booking(bookingBeginDate = yesterday) {
+              profile(checkDate = LocalDateTime.parse("2025-11-05T13:14"))
+              profileDetail(profileType = "L_EYE_C", profileCode = "RED")
+              profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
+            }
+          }
+        }
+
+        webTestClient.get()
+          .uri("/profile-details/${booking.bookingId}/sequence/1/type/SHOESIZE")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<ProfileDetailsResponse>()
+          .run {
+            assertThat(type).isEqualTo("SHOESIZE")
+            assertThat(code).isEqualTo("8.5")
+
+            assertThat(checkDate).isCloseTo(
+              LocalDateTime.parse("2025-11-05T13:14"),
+              within(3, ChronoUnit.SECONDS),
+            )
+            assertThat(createDateTime).isCloseTo(
+              LocalDateTime.now(),
+              within(3, ChronoUnit.SECONDS),
+            )
+            assertThat(createdBy).isEqualTo("SA")
+          }
+      }
+    }
   }
 }

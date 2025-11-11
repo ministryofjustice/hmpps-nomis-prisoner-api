@@ -21,7 +21,7 @@ data class OffenderProfileDetailId(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "PROFILE_SEQ", nullable = false)
-  val sequence: Long,
+  val sequence: Int,
 
   @ManyToOne
   @JoinColumn(name = "PROFILE_TYPE", nullable = false)
@@ -35,7 +35,7 @@ data class OffenderProfileDetail(
   val id: OffenderProfileDetailId,
 
   @Column(name = "LIST_SEQ")
-  val listSequence: Long,
+  val listSequence: Int,
 
   @ManyToOne
   @JoinColumns(

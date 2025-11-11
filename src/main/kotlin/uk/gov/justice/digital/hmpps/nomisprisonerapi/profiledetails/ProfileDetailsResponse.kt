@@ -33,6 +33,8 @@ data class ProfileDetailsResponse(
   val type: String,
   @Schema(description = "The value of the profile info", example = "SLIM")
   val code: String?,
+  @Schema(description = "The date and time at which the value was checked to be valid", example = "2020-07-17T12:34:56")
+  val checkDate: LocalDateTime?,
   @Schema(description = "The time the profile info was created", example = "2020-07-17T12:34:56")
   val createDateTime: LocalDateTime,
   @Schema(description = "The user who created the profile info", example = "AQ425D")

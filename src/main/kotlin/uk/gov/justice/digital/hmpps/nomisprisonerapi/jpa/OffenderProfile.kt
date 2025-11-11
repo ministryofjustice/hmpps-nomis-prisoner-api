@@ -10,7 +10,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import java.io.Serializable
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Embeddable
 data class OffenderProfileId(
@@ -19,7 +19,7 @@ data class OffenderProfileId(
   val offenderBooking: OffenderBooking,
 
   @Column(name = "PROFILE_SEQ", nullable = false)
-  val sequence: Long,
+  val sequence: Int,
 ) : Serializable
 
 @Entity
@@ -29,7 +29,7 @@ data class OffenderProfile(
   val id: OffenderProfileId,
 
   @Column(name = "CHECK_DATE")
-  var checkDate: LocalDate,
+  var checkDate: LocalDateTime,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
