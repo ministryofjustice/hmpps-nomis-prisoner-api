@@ -5,9 +5,13 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.atLeastOnce
+import org.mockito.kotlin.any
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.UpsertCSIPRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.UpsertCSIPResponse
@@ -21,8 +25,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances.CreateVisitBa
 import java.time.LocalDate
 
 class AuditResourceIntTest : IntegrationTestBase() {
-  // These tests don't do anything yet - but used for debugging
-
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
@@ -32,25 +34,24 @@ class AuditResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var repository: Repository
 
-  @AfterEach
-  fun tearDown() {
-    repository.deleteAllCSIPReports()
-    repository.deleteOffenders()
-    repository.deleteStaff()
-  }
+  @MockitoSpyBean
+  lateinit var auditConnectionHandler: AuditConnectionHandler
 
   @Nested
   inner class NoAuditAnnotation {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        staff(firstName = "FRED", lastName = "JAMES") {
-          account(username = "FRED.JAMES")
-        }
         offender(nomsId = "A1234TT", firstName = "Bob", lastName = "Smith") {
           booking(agencyLocationId = "MDI")
         }
       }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteAllCSIPReports()
+      repository.deleteOffenders()
     }
 
     @Test
@@ -66,6 +67,8 @@ class AuditResourceIntTest : IntegrationTestBase() {
 
       // Ensure the csip was created
       assertThat(response.nomisCSIPReportId).isNotZero
+
+      verify(auditConnectionHandler, atLeastOnce()).applyAuditModule(any())
     }
 
     private fun createUpsertCSIPRequestMinimalData(csipReportId: Long? = null) = UpsertCSIPRequest(
@@ -82,22 +85,27 @@ class AuditResourceIntTest : IntegrationTestBase() {
 
   @Nested
   inner class AuditAnnotationNoParameter {
+    private var locationId = 0L
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteAgencyInternalLocationById(locationId)
+    }
 
     @Test
     fun `Audit sets default audit module`() {
-      val requestBody = createLocationRequest()
-      val locationAuditId = webTestClient.post().uri("/locations")
+      locationId = webTestClient.post().uri("/locations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .body(BodyInserters.fromValue(requestBody))
+        .body(BodyInserters.fromValue(createLocationRequest()))
         .exchange()
         .expectStatus().isCreated
         .expectBody(LocationIdResponse::class.java)
         .returnResult().responseBody!!.locationId
 
       // Ensure the location was created
-      assertThat(locationAuditId).isNotZero
-      // Clear up
-      repository.deleteAgencyInternalLocationById(locationAuditId)
+      assertThat(locationId).isNotZero
+
+      verify(auditConnectionHandler, atLeastOnce()).applyAuditModule(any())
     }
 
     private val createLocationRequest: () -> CreateLocationRequest = {
@@ -136,6 +144,12 @@ class AuditResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @AfterEach
+    fun tearDown() {
+      repository.deleteOffenders()
+      repository.deleteStaff()
+    }
+
     @Test
     fun `Audit sets specific audit module`() {
       repository.runInTransaction {
@@ -159,6 +173,8 @@ class AuditResourceIntTest : IntegrationTestBase() {
         val bookingAfterPost = offenderBookingRepository.findByIdOrNull(activeBookingId)!!
         assertThat(bookingAfterPost.visitBalanceAdjustments).hasSize(3)
       }
+
+      verify(auditConnectionHandler, atLeastOnce()).applyAuditModule(any())
     }
   }
 }
