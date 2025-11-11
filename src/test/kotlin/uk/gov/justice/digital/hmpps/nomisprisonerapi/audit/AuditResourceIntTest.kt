@@ -12,15 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
-import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.UpsertCSIPRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.UpsertCSIPResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.locations.CreateLocationRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.locations.LocationIdResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances.CreateVisitBalanceAdjustmentRequest
 import java.time.LocalDate
 
@@ -81,44 +78,6 @@ class AuditResourceIntTest : IntegrationTestBase() {
       reportedBy = "Jill Reporter",
       reportedDate = LocalDate.parse("2024-05-12"),
     )
-  }
-
-  @Nested
-  inner class AuditAnnotationNoParameter {
-    private var locationId = 0L
-
-    @AfterEach
-    fun tearDown() {
-      repository.deleteAgencyInternalLocationById(locationId)
-    }
-
-    @Test
-    fun `Audit sets default audit module`() {
-      locationId = webTestClient.post().uri("/locations")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .body(BodyInserters.fromValue(createLocationRequest()))
-        .exchange()
-        .expectStatus().isCreated
-        .expectBody(LocationIdResponse::class.java)
-        .returnResult().responseBody!!.locationId
-
-      // Ensure the location was created
-      assertThat(locationId).isNotZero
-
-      verify(auditConnectionHandler, atLeastOnce()).applyAuditModule(any())
-    }
-
-    private val createLocationRequest: () -> CreateLocationRequest = {
-      CreateLocationRequest(
-        certified = true,
-        locationType = "LAND",
-        prisonId = "MDI",
-        locationCode = "5",
-        description = "LEI-A-2-TEST",
-        parentLocationId = -1L,
-        tracking = false,
-      )
-    }
   }
 
   @Nested

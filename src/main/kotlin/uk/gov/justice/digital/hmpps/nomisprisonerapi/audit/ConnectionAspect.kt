@@ -31,7 +31,6 @@ class ConnectionAspect(
     val conn = DataSourceUtils.getConnection(dataSource)
 
     try {
-      log.info("Applying audit module on connection $conn in thread ${Thread.currentThread().name}")
       auditHandler.applyAuditModule(conn)
       return joinPoint.proceed()
     } finally {

@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -37,7 +36,6 @@ class LocationService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Audit
   fun createLocation(locationDto: CreateLocationRequest): LocationIdResponse {
     val housingUnitType = locationDto.unitType?.let {
       housingUnitTypeRepository.findByIdOrNull(HousingUnitType.pk(it))

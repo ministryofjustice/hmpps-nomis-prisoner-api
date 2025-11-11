@@ -18,15 +18,20 @@ class H2AuditConnectionHandler : AuditConnectionHandler {
 
   override fun applyAuditModule(conn: Connection) {
     val module = AuditContextHolder.get()
-    log.info("Calling H2 version of AuditConnectionHandler with audit module $module")
+    log.info("Applying H2 AuditConnectionHandler with audit module $module")
   }
 }
 
 @Component
 @Profile("oracle")
 class OracleAuditConnectionHandler : AuditConnectionHandler {
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
+
   override fun applyAuditModule(conn: Connection) {
     val module = AuditContextHolder.get()
+    log.info("Applying Oracle AuditConnectionHandler with audit module $module")
     conn.prepareCall("{call OMS_OWNER.nomis_context.set_context(?, ?)}").use { stmt ->
       stmt.setString(1, "app.audit_module")
       stmt.setString(2, module)
