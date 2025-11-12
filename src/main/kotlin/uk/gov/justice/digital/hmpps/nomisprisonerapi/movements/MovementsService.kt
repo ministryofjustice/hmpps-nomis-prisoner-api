@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 
+import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -195,6 +196,7 @@ class MovementsService(
       ?: throw NotFoundException("Scheduled temporary absence with eventId=$eventId not found for offender with nomsId=$offenderNo")
 
     return scheduledAbsence.toSingleResponse()
+      .also { log.info("Returning scheduled outbound movement: eventId=$eventId, nomsId=$offenderNo, eventStatus=${it.eventStatus}, inboundEventStatus=${it.inboundEventStatus}, auditUser=${it.audit.auditUserId}, auditTimestamp=${it.audit.auditTimestamp}, auditModule=${it.audit.auditModuleName}") }
   }
 
   @Transactional
@@ -247,6 +249,7 @@ class MovementsService(
       ?: throw NotFoundException("Scheduled temporary absence return with eventId=$eventId not found for offender with nomsId=$offenderNo")
 
     return scheduledAbsenceReturn.toSingleResponse()
+      .also { log.info("Returning scheduled outbound movement: eventId=$eventId, nomsId=$offenderNo, parentEventId=${it.parentEventId}, eventStatus=${it.eventStatus}, auditUser=${it.audit.auditUserId}, auditTimestamp=${it.audit.auditTimestamp}, auditModule=${it.audit.auditModuleName}") }
   }
 
   @Transactional
@@ -798,5 +801,9 @@ class MovementsService(
       "AGY" -> agencyLocationAddressRepository.findByIdOrNull(it)?.agencyLocation?.description
       else -> null
     }
+  }
+
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
   }
 }
