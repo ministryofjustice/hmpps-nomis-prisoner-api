@@ -16,6 +16,9 @@ data class ScheduledTemporaryAbsenceReturnResponse(
   @Schema(description = "Event ID")
   val eventId: Long,
 
+  @Schema(description = "Event ID")
+  val parentEventId: Long,
+
   @Schema(description = "Event date")
   val eventDate: LocalDate,
 

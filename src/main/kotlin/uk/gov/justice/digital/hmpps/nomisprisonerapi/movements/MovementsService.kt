@@ -703,6 +703,7 @@ class MovementsService(
     bookingId = offenderBooking.bookingId,
     movementApplicationId = scheduledTemporaryAbsence.temporaryAbsenceApplication.movementApplicationId,
     eventId = eventId,
+    parentEventId = scheduledTemporaryAbsence.eventId,
     eventDate = eventDate ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.fromDate,
     startTime = startTime ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.releaseTime,
     eventSubType = eventSubType.code,
