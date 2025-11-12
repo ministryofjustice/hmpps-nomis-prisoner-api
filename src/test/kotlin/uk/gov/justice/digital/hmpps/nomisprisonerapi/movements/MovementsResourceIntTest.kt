@@ -1852,6 +1852,7 @@ class MovementsResourceIntTest(
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
           assertThat(eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+          assertThat(parentEventId).isEqualTo(scheduledTempAbsence.eventId)
           assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
           assertThat(startTime).isCloseTo(yesterday, within(1, ChronoUnit.MINUTES))
           assertThat(eventSubType).isEqualTo("C5")
