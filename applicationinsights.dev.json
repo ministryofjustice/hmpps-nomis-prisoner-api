@@ -32,6 +32,17 @@
         "attributes": [
           {
             "key": "url.path",
+            "value": "/court-cases/[0-9]+",
+            "matchType": "regexp"
+          }
+        ],
+        "percentage": 33.33
+      },
+      {
+        "telemetryType": "request",
+        "attributes": [
+          {
+            "key": "url.path",
             "value": "/health.*",
             "matchType": "regexp"
           }
