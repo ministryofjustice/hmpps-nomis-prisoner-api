@@ -64,7 +64,7 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     ],
   )
   fun getVisitTimeSlotIds(
-    @PageableDefault(size = 20, sort = ["createDatetime"], direction = Sort.Direction.ASC)
+    @PageableDefault(size = 20, sort = ["createDatetime", "agencyVisitTimesId.location", "agencyVisitTimesId.weekDay", "agencyVisitTimesId.timeSlotSequence" ], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
   ): PagedModel<VisitTimeSlotIdResponse> = PagedModel(visitsConfigurationService.getVisitTimeSlotIds(pageRequest = pageRequest))
