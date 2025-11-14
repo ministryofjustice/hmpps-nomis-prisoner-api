@@ -386,6 +386,13 @@ class MovementsService(
     val temporaryAbsenceReturn = temporaryAbsenceReturnRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSeq)
       ?: throw NotFoundException("Temporary absence return with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
 
+    // If the scheduled outbound TAP is not on the external movement (due to a NOMIS bug) add it here
+    with(temporaryAbsenceReturn) {
+      if (scheduledTemporaryAbsenceReturn != null && scheduledTemporaryAbsence == null) {
+        scheduledTemporaryAbsence = scheduledTemporaryAbsenceReturn!!.scheduledTemporaryAbsence
+      }
+    }
+
     return temporaryAbsenceReturn.toSingleResponse()
   }
 
