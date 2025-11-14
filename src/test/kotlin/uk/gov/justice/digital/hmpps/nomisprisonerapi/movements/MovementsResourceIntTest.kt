@@ -4013,6 +4013,49 @@ class MovementsResourceIntTest(
           }
         }
       }
+
+      @Nested
+      inner class GetScheduledReturnWithBrokenParentLink {
+
+        @BeforeEach
+        fun setUp() {
+          nomisDataBuilder.build {
+            offender = offender(nomsId = offenderNo) {
+              booking = booking {
+                application = temporaryAbsenceApplication {
+                  scheduledTempAbsence = scheduledTemporaryAbsence {
+                    tempAbsence = externalMovement()
+                    scheduledTempAbsenceReturn = scheduledReturn {
+                      tempAbsenceReturn = externalMovement()
+                    }
+                  }
+                }
+              }
+            }
+
+            // there's a bug in NOMIS where the external movement parent event id is null if you perform any unscheduled
+            // external movements inbetween confirming the scheduled OUT/IN movements
+            tempAbsenceReturn.scheduledTemporaryAbsence = null
+          }
+        }
+
+        @Test
+        fun `should retrieve scheduled temporary absence return`() {
+          webTestClient.get()
+            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+            .apply {
+              assertThat(bookingId).isEqualTo(booking.bookingId)
+              assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+              assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
+              assertThat(scheduledTemporaryAbsenceReturnId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+              assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+            }
+        }
+      }
     }
   }
 
