@@ -273,6 +273,10 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
           adjustmentDate = LocalDate.parse("2025-03-03"),
           comment = "Good behaviour",
         )
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(bookingWithNoVisitBalanceId)!!
+          assertThat(booking.visitBalanceAdjustments).hasSize(0)
+        }
 
         webTestClient.post().uri("/prisoners/A5678CD/visit-balance-adjustments")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
