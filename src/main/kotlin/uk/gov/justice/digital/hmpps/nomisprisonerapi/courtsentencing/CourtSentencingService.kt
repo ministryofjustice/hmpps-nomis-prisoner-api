@@ -1168,6 +1168,16 @@ class CourtSentencingService(
       ?: throw NotFoundException("Offender sentence for case id $caseId, booking ${offenderBooking.bookingId} and sentence sequence $sentenceSequence not found")
   }
 
+  fun getOffenderSentenceWithoutCase(bookingId: Long, sentenceSequence: Long): SentenceResponse = findOffenderBooking(id = bookingId).let { booking ->
+    return offenderSentenceRepository.findByIdOrNull(
+      SentenceId(
+        offenderBooking = booking,
+        sequence = sentenceSequence,
+      ),
+    )?.toSentenceResponse()
+      ?: throw NotFoundException("Offender sentence for booking $bookingId and sentence sequence $sentenceSequence not found")
+  }
+
   fun getOffenderSentenceTerm(
     offenderNo: String,
     offenderBookingId: Long,
