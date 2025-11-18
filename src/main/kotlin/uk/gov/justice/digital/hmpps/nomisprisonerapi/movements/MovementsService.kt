@@ -198,7 +198,7 @@ class MovementsService(
   }
 
   @Transactional
-  fun createScheduledTemporaryAbsence(offenderNo: String, request: CreateScheduledTemporaryAbsenceRequest): CreateScheduledTemporaryAbsenceResponse {
+  fun upsertScheduledTemporaryAbsence(offenderNo: String, request: UpsertScheduledTemporaryAbsenceRequest): UpsertScheduledTemporaryAbsenceResponse {
     val offenderBooking = offenderBookingOrThrow(offenderNo)
     val application = movementApplicationOrThrow(request.movementApplicationId)
     val eventSubType = movementReasonOrThrow(request.eventSubType)
@@ -209,33 +209,82 @@ class MovementsService(
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
     val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
 
-    return OffenderScheduledTemporaryAbsence(
-      offenderBooking = offenderBooking,
-      eventDate = request.eventDate,
-      startTime = request.startTime,
-      eventSubType = eventSubType,
-      eventStatus = eventStatus,
-      comment = request.comment,
-      escort = escort,
-      fromPrison = fromPrison,
-      toAgency = toAgency,
-      transportType = transportType,
-      returnDate = request.returnDate,
-      returnTime = request.returnTime,
-      temporaryAbsenceApplication = application,
-      toAddressOwnerClass = toAddress?.addressOwnerClass,
-      toAddress = toAddress,
-      applicationDate = request.applicationDate,
-      applicationTime = request.applicationTime,
-    ).let {
-      scheduledTemporaryAbsenceRepository.save(it)
-    }.let {
-      CreateScheduledTemporaryAbsenceResponse(
-        bookingId = offenderBooking.bookingId,
-        movementApplicationId = application.movementApplicationId,
-        eventId = it.eventId,
+    val schedule = request.eventId
+      ?.let { scheduledTemporaryAbsenceRepository.findById(request.eventId).get() }
+      ?.apply {
+        this.eventDate = request.eventDate
+        this.startTime = request.startTime
+        this.eventSubType = eventSubType
+        this.eventStatus = eventStatus
+        this.comment = request.comment
+        this.escort = escort
+        this.fromAgency = fromPrison
+        this.toAgency = toAgency
+        this.transportType = transportType
+        this.returnDate = request.returnDate
+        this.returnTime = request.returnTime
+        this.toAddressOwnerClass = toAddress?.addressOwnerClass
+        this.toAddress = toAddress
+      }
+      ?: OffenderScheduledTemporaryAbsence(
+        offenderBooking = offenderBooking,
+        eventDate = request.eventDate,
+        startTime = request.startTime,
+        eventSubType = eventSubType,
+        eventStatus = eventStatus,
+        comment = request.comment,
+        escort = escort,
+        fromPrison = fromPrison,
+        toAgency = toAgency,
+        transportType = transportType,
+        returnDate = request.returnDate,
+        returnTime = request.returnTime,
+        temporaryAbsenceApplication = application,
+        toAddressOwnerClass = toAddress?.addressOwnerClass,
+        toAddress = toAddress,
+        applicationDate = request.applicationDate,
+        applicationTime = request.applicationTime,
       )
-    }
+
+    val scheduledReturn = schedule.scheduledTemporaryAbsenceReturns.firstOrNull()
+      ?.apply {
+        // TODO As we don't create the scheduled return until the outbound movement has happened we should never need to delete the scheduled return. I think. But if we did then we'd set it to null here. Review this.
+        this.eventStatus = eventStatusOrThrow(request.returnEventStatus ?: "SCH")
+        this.eventDate = request.returnDate
+        this.startTime = request.returnTime
+        this.eventSubType = eventSubType
+        this.escort = escort
+        this.fromAgency = toAgency
+        this.toAgency = fromPrison
+      }
+      ?: let {
+        if (request.eventStatus == "COMP") {
+          OffenderScheduledTemporaryAbsenceReturn(
+            offenderBooking = offenderBooking,
+            temporaryAbsenceApplication = application,
+            scheduledTemporaryAbsence = schedule,
+            eventStatus = eventStatusOrThrow(request.returnEventStatus ?: "SCH"),
+            eventDate = request.returnDate,
+            startTime = request.returnTime,
+            eventSubType = eventSubType,
+            escort = escort,
+            fromAgency = toAgency,
+            toPrison = fromPrison,
+          )
+        } else {
+          null
+        }
+      }
+
+    schedule.scheduledTemporaryAbsenceReturns = scheduledReturn?.let { mutableListOf(scheduledReturn) } ?: mutableListOf()
+
+    scheduledTemporaryAbsenceRepository.save(schedule)
+
+    return UpsertScheduledTemporaryAbsenceResponse(
+      bookingId = offenderBooking.bookingId,
+      movementApplicationId = application.movementApplicationId,
+      eventId = schedule.eventId,
+    )
   }
 
   fun getScheduledTemporaryAbsenceReturn(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceReturnResponse {
@@ -247,40 +296,6 @@ class MovementsService(
       ?: throw NotFoundException("Scheduled temporary absence return with eventId=$eventId not found for offender with nomsId=$offenderNo")
 
     return scheduledAbsenceReturn.toSingleResponse()
-  }
-
-  @Transactional
-  fun createScheduledTemporaryAbsenceReturn(offenderNo: String, request: CreateScheduledTemporaryAbsenceReturnRequest): CreateScheduledTemporaryAbsenceReturnResponse {
-    val offenderBooking = offenderBookingOrThrow(offenderNo)
-    val application = movementApplicationOrThrow(request.movementApplicationId)
-    val scheduledTemporaryAbsence = scheduledTemporaryAbsenceOrThrow(request.scheduledTemporaryAbsenceEventId)
-    val eventSubType = movementReasonOrThrow(request.eventSubType)
-    val eventStatus = eventStatusOrThrow(request.eventStatus)
-    val escort = escortOrThrow(request.escort)
-    val fromAgency = request.fromAgency?.let { agencyLocationOrThrow(request.fromAgency) }
-    val toPrison = request.toPrison?.let { agencyLocationOrThrow(request.toPrison) }
-
-    return OffenderScheduledTemporaryAbsenceReturn(
-      offenderBooking = offenderBooking,
-      eventDate = request.eventDate,
-      startTime = request.startTime,
-      eventSubType = eventSubType,
-      eventStatus = eventStatus,
-      comment = request.comment,
-      escort = escort,
-      fromAgency = fromAgency,
-      toPrison = toPrison,
-      temporaryAbsenceApplication = application,
-      scheduledTemporaryAbsence = scheduledTemporaryAbsence,
-    ).let {
-      scheduledTemporaryAbsenceReturnRepository.save(it)
-    }.let {
-      CreateScheduledTemporaryAbsenceReturnResponse(
-        bookingId = offenderBooking.bookingId,
-        movementApplicationId = application.movementApplicationId,
-        eventId = it.eventId,
-      )
-    }
   }
 
   fun getTemporaryAbsenceApplicationOutsideMovement(offenderNo: String, appMultiId: Long): TemporaryAbsenceApplicationOutsideMovementResponse {

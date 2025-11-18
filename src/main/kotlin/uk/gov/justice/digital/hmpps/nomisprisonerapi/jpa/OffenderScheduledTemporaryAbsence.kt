@@ -38,24 +38,24 @@ class OffenderScheduledTemporaryAbsence(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val transportType: TemporaryAbsenceTransportType? = null,
+  var transportType: TemporaryAbsenceTransportType? = null,
 
   @JoinColumn(name = "RETURN_DATE")
-  val returnDate: LocalDate,
+  var returnDate: LocalDate,
 
   @JoinColumn(name = "RETURN_TIME")
-  val returnTime: LocalDateTime,
+  var returnTime: LocalDateTime,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_MOVEMENT_APP_ID")
   val temporaryAbsenceApplication: OffenderMovementApplication,
 
   @Column(name = "TO_ADDRESS_OWNER_CLASS")
-  val toAddressOwnerClass: String? = null,
+  var toAddressOwnerClass: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_ADDRESS_ID")
-  val toAddress: Address? = null,
+  var toAddress: Address? = null,
 
   @Column(name = "APPLICATION_DATE")
   val applicationDate: LocalDateTime,

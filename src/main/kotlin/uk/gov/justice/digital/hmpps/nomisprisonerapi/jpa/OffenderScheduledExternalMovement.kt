@@ -25,11 +25,11 @@ abstract class OffenderScheduledExternalMovement(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
-  val fromAgency: AgencyLocation? = null,
+  var fromAgency: AgencyLocation? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_AGY_LOC_ID")
-  val toAgency: AgencyLocation? = null,
+  var toAgency: AgencyLocation? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -58,7 +58,7 @@ abstract class OffenderScheduledExternalMovement(
       ), JoinColumnOrFormula(column = JoinColumn(name = "ESCORT_CODE", referencedColumnName = "code")),
     ],
   )
-  val escort: Escort? = null,
+  var escort: Escort? = null,
 
   @Enumerated(EnumType.STRING)
   @Column(name = "DIRECTION_CODE")
