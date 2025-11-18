@@ -1,0 +1,142 @@
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.visits
+
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
+
+class OfficialVisitsResourceIntTest : IntegrationTestBase() {
+  @Autowired
+  private lateinit var nomisDataBuilder: NomisDataBuilder
+
+  @Autowired
+  private lateinit var visitRepository: VisitRepository
+
+  @Autowired
+  private lateinit var offenderRepository: OffenderRepository
+
+  @Autowired
+  private lateinit var personRepository: PersonRepository
+
+  @DisplayName("GET /official-visits/ids")
+  @Nested
+  inner class GetOfficialVisitIds {
+    lateinit var visitIds: MutableList<Long>
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        val visitor = person { }
+
+        offender(nomsId = "A1234TT") {
+          booking {
+            visitBalance { }
+            contact(person = visitor)
+            visitIds = (1..30).map { visit(visitTypeCode = "OFFI", startDateTimeString = "2023-01-01T10:00:00").id }.toMutableList()
+            visit(visitTypeCode = "SCON")
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      visitRepository.deleteAll()
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/official-visits/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/official-visits/ids")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/official-visits/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return first 20 visits`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(30)
+          .jsonPath("content.size()").isEqualTo(20)
+          .jsonPath("page.number").isEqualTo(0)
+          .jsonPath("page.totalPages").isEqualTo(2)
+          .jsonPath("page.size").isEqualTo(20)
+      }
+
+      @Test
+      fun `can set page size`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(30)
+          .jsonPath("content.size()").isEqualTo(1)
+          .jsonPath("page.number").isEqualTo(0)
+          .jsonPath("page.totalPages").isEqualTo(30)
+          .jsonPath("page.size").isEqualTo(1)
+      }
+
+      @Test
+      fun `id just contains visit id`() {
+        val pageResponse: VisitIdPageResponse = webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("size", "2")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(pageResponse.content).hasSize(2)
+        assertThat(pageResponse.content[0].visitId).isEqualTo(visitIds[0])
+        assertThat(pageResponse.content[1].visitId).isEqualTo(visitIds[1])
+      }
+    }
+  }
+}
+
+private data class VisitIdPageResponse(
+  val content: List<VisitIdResponse>,
+)
