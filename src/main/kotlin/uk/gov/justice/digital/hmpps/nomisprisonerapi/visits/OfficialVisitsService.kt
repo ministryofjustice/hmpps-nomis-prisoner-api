@@ -17,4 +17,7 @@ class OfficialVisitsService(
       visitId = it.id,
     )
   }
+
+  @Suppress("unused")
+  fun getVisit(visitId: Long): OfficialVisitResponse = TODO()
 }
