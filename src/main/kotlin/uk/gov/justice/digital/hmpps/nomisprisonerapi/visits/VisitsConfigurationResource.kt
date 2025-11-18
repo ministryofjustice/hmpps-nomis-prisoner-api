@@ -100,7 +100,7 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
         ],
       ),
       ApiResponse(
-        responseCode = "401",
+        responseCode = "404",
         description = "Visit time slot not found",
         content = [
           Content(
