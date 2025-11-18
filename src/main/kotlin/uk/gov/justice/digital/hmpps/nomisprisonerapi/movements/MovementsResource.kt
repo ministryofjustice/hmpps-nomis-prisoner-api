@@ -232,15 +232,14 @@ class MovementsResource(
     @Schema(description = "Event ID", example = "123") @PathVariable eventId: Long,
   ) = movementsService.getScheduledTemporaryAbsenceReturn(offenderNo, eventId)
 
-  @PostMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence-return")
-  @ResponseStatus(HttpStatus.CREATED)
+  @PutMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence")
   @Operation(
-    summary = "Inserts a scheduled temporary absence return for an offender",
-    description = "Creates a scheduled temporary absence return on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Inserts or updates a scheduled temporary absence for an offender, and potentially its return",
+    description = "Creates or updates a scheduled temporary absence on the prisoner's latest booking, and potentially its return. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
-        responseCode = "201",
-        description = "Scheduled temporary absence created",
+        responseCode = "200",
+        description = "Scheduled temporary absence created or updated",
       ),
       ApiResponse(
         responseCode = "400",
@@ -284,13 +283,13 @@ class MovementsResource(
       ),
     ],
   )
-  fun createScheduledTemporaryAbsenceReturn(
+  fun upsertScheduledTemporaryAbsence(
     @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
     @PathVariable
     offenderNo: String,
     @RequestBody @Valid
-    request: CreateScheduledTemporaryAbsenceReturnRequest,
-  ): CreateScheduledTemporaryAbsenceReturnResponse = movementsService.createScheduledTemporaryAbsenceReturn(offenderNo, request)
+    request: UpsertScheduledTemporaryAbsenceRequest,
+  ): UpsertScheduledTemporaryAbsenceResponse = movementsService.upsertScheduledTemporaryAbsence(offenderNo, request)
 
   @GetMapping("/movements/{offenderNo}/temporary-absences/outside-movement/{appMultiId}")
   @Operation(
@@ -426,66 +425,6 @@ class MovementsResource(
     @Schema(description = "Booking ID", example = "123") @PathVariable bookingId: Long,
     @Schema(description = "Movement Sequence", example = "1") @PathVariable movementSeq: Int,
   ) = movementsService.getTemporaryAbsence(offenderNo, bookingId, movementSeq)
-
-  @PostMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence")
-  @ResponseStatus(HttpStatus.CREATED)
-  @Operation(
-    summary = "Inserts a scheduled temporary absence for an offender",
-    description = "Creates a scheduled temporary absence on the prisoner's latest booking. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "201",
-        description = "Scheduled temporary absence created",
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "One or more fields in the request contains invalid data",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prisoner does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun createScheduledTemporaryAbsence(
-    @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
-    @PathVariable
-    offenderNo: String,
-    @RequestBody @Valid
-    request: CreateScheduledTemporaryAbsenceRequest,
-  ): CreateScheduledTemporaryAbsenceResponse = movementsService.createScheduledTemporaryAbsence(offenderNo, request)
 
   @PostMapping("/movements/{offenderNo}/temporary-absences/temporary-absence")
   @ResponseStatus(HttpStatus.CREATED)
