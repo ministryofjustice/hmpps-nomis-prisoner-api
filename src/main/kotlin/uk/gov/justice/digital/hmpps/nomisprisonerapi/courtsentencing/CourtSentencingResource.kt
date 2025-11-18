@@ -475,6 +475,70 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/prisoners/booking-id/{bookingId}/sentences/{sequence}")
+  @Operation(
+    summary = "get sentence given booking id and sentence sequence",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves an offender sentence by id",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the sentence details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Sentence not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender booking not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderSentenceUsingBookingId(
+    @Schema(description = "Booking id", example = "4565456", required = true)
+    @PathVariable
+    bookingId: Long,
+    @Schema(description = "Sentence sequence", example = "1", required = true)
+    @PathVariable
+    sequence: Long,
+  ): SentenceResponse = courtSentencingService.getOffenderSentenceWithoutCase(
+    bookingId = bookingId,
+    sentenceSequence = sequence,
+  )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/sentences/recall")
   @Operation(
     summary = "get all active recall sentences for a booking",

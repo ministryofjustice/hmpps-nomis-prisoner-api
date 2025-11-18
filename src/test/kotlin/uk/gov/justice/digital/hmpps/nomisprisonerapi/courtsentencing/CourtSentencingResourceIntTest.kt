@@ -1824,6 +1824,248 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/sentences/{seq}")
+  @Nested
+  inner class GetOffenderSentenceWithoutCase {
+    private var latestBookingId: Long = 0
+    private lateinit var sentence: OffenderSentence
+    private lateinit var sentenceWithBadConsecutiveData: OffenderSentence
+    private lateinit var recallSentence: OffenderSentence
+    private lateinit var inactiveRecallSentence: OffenderSentence
+    private lateinit var courtCase: CourtCase
+    private lateinit var appearance: CourtEvent
+    private lateinit var courtOrder: CourtOrder
+    private lateinit var offenderCharge: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+    private val aDateString = "2023-01-01"
+    private val aLaterDateString = "2023-01-05"
+
+    @BeforeEach
+    internal fun createPrisonerAndSentence() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(reportingStaff = staff) {
+                offenderCharge = offenderCharge(offenceCode = "RT88074")
+                offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
+                appearance = courtEvent {
+                  courtEventCharge(offenderCharge = offenderCharge)
+                  courtEventCharge(offenderCharge = offenderCharge2)
+                  courtOrder = courtOrder()
+                }
+                sentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A") {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  offenderSentenceCharge(offenderCharge = offenderCharge2)
+                  term {}
+                  term(days = 35)
+                }
+
+                sentenceWithBadConsecutiveData =
+                  sentence(statusUpdateStaff = staff, courtOrder = courtOrder, status = "A", consecSequence = 999) {
+                    offenderSentenceCharge(offenderCharge = offenderCharge)
+                    term {}
+                    term(days = 35)
+                  }
+                recallSentence = sentence(
+                  statusUpdateStaff = staff,
+                  courtOrder = courtOrder,
+                  calculationType = "FTR_ORA",
+                  category = "2003",
+                  status = "A",
+                ) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  term {}
+                }
+                inactiveRecallSentence = sentence(
+                  statusUpdateStaff = staff,
+                  courtOrder = courtOrder,
+                  calculationType = "FTR_ORA",
+                  category = "2003",
+                  status = "I",
+                ) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                  term {}
+                }
+              }
+              fixedTermRecall(
+                returnToCustodyDate = LocalDate.parse("2024-01-01"),
+                staff = staff,
+                comments = "Fixed term recall",
+                recallLength = 14,
+              )
+            }
+          }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/${sentence.id.sequence}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if sentence not found`() {
+        webTestClient.get().uri("/prisoners/booking-id/$latestBookingId/sentences/11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Offender sentence for booking $latestBookingId and sentence sequence 11 not found")
+      }
+
+      @Test
+      fun `will return 404 if booking not found`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/77/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offender booking 77 not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the offender sentence`() {
+        webTestClient.get()
+          .uri("/prisoners/booking-id/$latestBookingId/sentences/${sentence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("bookingId").isEqualTo(latestBookingId)
+          .jsonPath("sentenceSeq").isEqualTo(sentence.id.sequence)
+          .jsonPath("status").isEqualTo("A")
+          .jsonPath("calculationType.code").isEqualTo("ADIMP_ORA")
+          .jsonPath("calculationType.description").isEqualTo("ORA CJA03 Standard Determinate Sentence")
+          .jsonPath("category.code").isEqualTo("2003")
+          .jsonPath("startDate").isEqualTo(aDateString)
+          .jsonPath("courtOrder.eventId").isEqualTo(appearance.id)
+          .jsonPath("courtOrder.courtDate").isEqualTo(appearance.eventDate.toString())
+          .jsonPath("consecSequence").doesNotExist()
+          .jsonPath("endDate").isEqualTo(aLaterDateString)
+          .jsonPath("commentText").isEqualTo("a sentence comment")
+          .jsonPath("absenceCount").isEqualTo(2)
+          .jsonPath("etdCalculatedDate").isEqualTo("2023-01-02")
+          .jsonPath("mtdCalculatedDate").isEqualTo("2023-01-03")
+          .jsonPath("ltdCalculatedDate").isEqualTo("2023-01-04")
+          .jsonPath("ardCalculatedDate").isEqualTo("2023-01-05")
+          .jsonPath("crdCalculatedDate").isEqualTo("2023-01-06")
+          .jsonPath("pedCalculatedDate").isEqualTo("2023-01-07")
+          .jsonPath("npdCalculatedDate").isEqualTo("2023-01-08")
+          .jsonPath("ledCalculatedDate").isEqualTo("2023-01-09")
+          .jsonPath("sedCalculatedDate").isEqualTo("2023-01-10")
+          .jsonPath("prrdCalculatedDate").isEqualTo("2023-01-11")
+          .jsonPath("tariffCalculatedDate").isEqualTo("2023-01-12")
+          .jsonPath("dprrdCalculatedDate").isEqualTo("2023-01-13")
+          .jsonPath("tusedCalculatedDate").isEqualTo("2023-01-14")
+          .jsonPath("aggSentenceSequence").isEqualTo(3)
+          .jsonPath("aggAdjustDays").isEqualTo(6)
+          .jsonPath("sentenceLevel").isEqualTo("AGG")
+          .jsonPath("extendedDays").isEqualTo(4)
+          .jsonPath("counts").isEqualTo(5)
+          .jsonPath("statusUpdateReason").isEqualTo("update rsn")
+          .jsonPath("statusUpdateComment").isEqualTo("update comment")
+          .jsonPath("statusUpdateDate").isEqualTo("2023-01-05")
+          .jsonPath("statusUpdateStaffId").isEqualTo(staff.id)
+          .jsonPath("fineAmount").isEqualTo(12.5)
+          .jsonPath("dischargeDate").isEqualTo("2023-01-05")
+          .jsonPath("nomSentDetailRef").isEqualTo(11)
+          .jsonPath("nomConsToSentDetailRef").isEqualTo(12)
+          .jsonPath("nomConsFromSentDetailRef").isEqualTo(13)
+          .jsonPath("nomConsWithSentDetailRef").isEqualTo(14)
+          .jsonPath("lineSequence").isEqualTo(1)
+          .jsonPath("hdcExclusionFlag").isEqualTo(true)
+          .jsonPath("hdcExclusionReason").isEqualTo("hdc reason")
+          .jsonPath("cjaAct").isEqualTo("A")
+          .jsonPath("sled2Calc").isEqualTo("2023-01-20")
+          .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
+          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location.id)
+          .jsonPath("createdByUsername").isNotEmpty
+          .jsonPath("createdDateTime").isNotEmpty
+          .jsonPath("sentenceTerms.size()").isEqualTo(2)
+          .jsonPath("sentenceTerms[0].startDate").isEqualTo(courtOrder.courtDate.toString())
+          .jsonPath("sentenceTerms[0].endDate").doesNotExist()
+          .jsonPath("sentenceTerms[0].years").isEqualTo(2)
+          .jsonPath("sentenceTerms[0].months").isEqualTo(3)
+          .jsonPath("sentenceTerms[0].weeks").isEqualTo(4)
+          .jsonPath("sentenceTerms[0].days").isEqualTo(5)
+          .jsonPath("sentenceTerms[0].hours").isEqualTo(6)
+          .jsonPath("sentenceTerms[0].sentenceTermType.description").isEqualTo("Section 86 of 2000 Act")
+          .jsonPath("sentenceTerms[0].lifeSentenceFlag").isEqualTo(true)
+          .jsonPath("sentenceTerms[1].startDate").isEqualTo(courtOrder.courtDate.toString())
+          .jsonPath("offenderCharges.size()").isEqualTo(2)
+          .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge.id)
+          .jsonPath("offenderCharges[0].offenceDate").isEqualTo(aDateString)
+          .jsonPath("offenderCharges[0].offenceEndDate").isEqualTo(aLaterDateString)
+          .jsonPath("offenderCharges[0].offence.description")
+          .isEqualTo("Driver of horsedrawn vehicle failing to stop on signal of traffic constable (other than traffic survey)")
+          .jsonPath("offenderCharges[0].offencesCount").doesNotExist()
+          .jsonPath("offenderCharges[0].plea.description").isEqualTo("Guilty")
+          .jsonPath("offenderCharges[0].propertyValue").doesNotExist()
+          .jsonPath("offenderCharges[0].totalPropertyValue").doesNotExist()
+          .jsonPath("offenderCharges[0].cjitCode1").isEqualTo("cj6")
+          .jsonPath("offenderCharges[0].cjitCode2").isEqualTo("cj7")
+          .jsonPath("offenderCharges[0].cjitCode3").isEqualTo("cj8")
+          .jsonPath("offenderCharges[0].resultCode1.description").isEqualTo("Borstal Training")
+          .jsonPath("offenderCharges[0].resultCode1.dispositionCode").isEqualTo("F")
+          .jsonPath("offenderCharges[0].mostSeriousFlag").isEqualTo(true)
+          .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Inactive")
+          .jsonPath("offenderCharges[1].offenceDate").isEqualTo(aLaterDateString)
+          .jsonPath("missingCourtOffenderChargeIds.size()").isEqualTo(0)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
   @Nested
   @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases")
   inner class CreateCourtCase {
