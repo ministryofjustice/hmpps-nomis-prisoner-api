@@ -2,8 +2,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import jakarta.persistence.LockModeType
 import jakarta.persistence.QueryHint
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.findByIdOrNull
@@ -46,4 +49,20 @@ interface VisitRepository :
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "20000")])
   fun findByIdForUpdate(visitId: Long): Visit? = findByIdOrNull(visitId)
+
+  @Query(
+    """
+      select 
+        v.id as id
+      from Visit v 
+      where v.visitType.code = 'OFFI'
+    """,
+  )
+  fun findAllOfficialVisitsIds(
+    pageable: Pageable,
+  ): Page<VisitIdProjection>
+}
+
+interface VisitIdProjection {
+  val id: Long
 }
