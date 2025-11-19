@@ -48,6 +48,7 @@ class OfficialVisitsService(
         visitorConcernText = visitorConcernText,
         commentText = commentText,
         overrideBanStaffUsername = overrideBanStaff?.usernamePreferringGeneralAccount(),
+        // TODO
         visitors = emptyList(),
         audit = toAudit(),
       )

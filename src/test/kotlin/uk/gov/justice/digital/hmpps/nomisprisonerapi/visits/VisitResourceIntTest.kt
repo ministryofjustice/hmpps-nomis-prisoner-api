@@ -1477,7 +1477,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             booking {
               visit {
                 visitor(person = leadVisitor, groupLeader = true)
-                visitOutcome(outcomeReason = "REFUSED")
+                visitOutcome(outcomeReasonCode = "REFUSED")
               }
             }
           }
@@ -1529,7 +1529,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
             booking {
               visit {
                 visitor(person = leadVisitor, groupLeader = true)
-                visitOutcome(outcomeReason = "BATCH_CANC")
+                visitOutcome(outcomeReasonCode = "BATCH_CANC")
               }
             }
           }

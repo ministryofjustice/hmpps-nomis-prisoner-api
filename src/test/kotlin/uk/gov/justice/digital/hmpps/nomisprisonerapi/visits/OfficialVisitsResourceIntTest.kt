@@ -8,9 +8,12 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.GENERAL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
@@ -20,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonReposi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 class OfficialVisitsResourceIntTest : IntegrationTestBase() {
@@ -158,12 +162,18 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
   inner class GetOfficialVisit {
     var officialVisitId = 0L
     var socialVisitId = 0L
+    var bookingId = 0L
     lateinit var visitSlot: AgencyVisitSlot
     lateinit var room: AgencyInternalLocation
+    lateinit var staff: Staff
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        staff = staff {
+          account("T_SMITH_ADM", type = ADMIN)
+          account("T_SMITH_GEN", type = GENERAL)
+        }
         room = agencyInternalLocation(
           locationCode = "BXI-VISIT-1",
           locationType = "VISIT",
@@ -188,16 +198,23 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         val visitor = person { }
 
         offender(nomsId = "A1234TT") {
-          booking {
+          bookingId = booking {
             visitBalance { }
             contact(person = visitor)
-            officialVisitId = visit(
-              visitTypeCode = "OFFI",
-              startDateTimeString = "2023-01-01T10:00:00",
+            officialVisitId = officialVisit(
+              visitDate = LocalDate.parse("2023-01-01"),
               visitSlot = visitSlot,
-            ).id
+              visitStatusCode = "SCH",
+              overrideBanStaff = staff,
+              comment = "Next tuesday",
+              visitorConcern = "Big concerns",
+              prisonerSearchTypeCode = "FULL",
+            ) {
+              visitOutcome(outcomeReasonCode = "ADMIN", eventOutcomeCode = "ABS", eventStatusCode = "CANC")
+              visitor(person = visitor)
+            }.id
             socialVisitId = visit(visitTypeCode = "SCON").id
-          }
+          }.bookingId
         }
       }
     }
@@ -260,11 +277,63 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `will return the visit`() {
-        webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+      fun `will return the visit prisoner data`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visit.offenderNo).isEqualTo("A1234TT")
+        assertThat(visit.bookingId).isEqualTo(bookingId)
+        assertThat(visit.currentTerm).isTrue
+      }
+
+      @Test
+      fun `will return the visit location data`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visit.visitSlotId).isEqualTo(visitSlot.id)
+        assertThat(visit.prisonId).isEqualTo("BXI")
+        assertThat(visit.internalLocationId).isEqualTo(room.locationId)
+      }
+
+      @Test
+      fun `will return the visit status data`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visit.visitStatus.description).isEqualTo("Scheduled")
+        assertThat(visit.outcomeReason?.description).isEqualTo("Administrative Cancellation")
+        assertThat(visit.visitOutcome?.description).isEqualTo("Cancelled")
+      }
+
+      @Test
+      fun `will return the date and times`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visit.startDateTime).isEqualTo(LocalDateTime.parse("2023-01-01T10:00"))
+        assertThat(visit.endDateTime).isEqualTo(LocalDateTime.parse("2023-01-01T11:00"))
+      }
+
+      @Test
+      fun `will return attributes of the visit`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visit.commentText).isEqualTo("Next tuesday")
+        assertThat(visit.visitorConcernText).isEqualTo("Big concerns")
+        assertThat(visit.overrideBanStaffUsername).isEqualTo("T_SMITH_GEN")
+        assertThat(visit.prisonerSearchType?.description).isEqualTo("Full Search")
       }
     }
   }
