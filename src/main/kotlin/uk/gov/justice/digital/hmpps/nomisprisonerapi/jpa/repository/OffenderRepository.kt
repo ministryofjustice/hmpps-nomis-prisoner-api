@@ -68,7 +68,7 @@ interface OffenderRepository :
             OFFENDER_ID > :offenderId and
             (CURRENT_BALANCE != 0 or HOLD_BALANCE != 0)
          and
-            (:prisonIds is null or CASELOAD_ID in (:prisonIds))
+            (:prisonIds is null or CASELOAD_ID in :prisonIds)
          order by OFFENDER_ID) 
       where rownum <= :pageSize
   """,
