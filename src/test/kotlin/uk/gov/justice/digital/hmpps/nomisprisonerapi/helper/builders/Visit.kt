@@ -8,6 +8,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
@@ -33,7 +35,9 @@ interface VisitDsl {
 
   @VisitOutcomeDslMarker
   fun visitOutcome(
-    outcomeReason: String,
+    outcomeReasonCode: String,
+    eventOutcomeCode: String = "ATT",
+    eventStatusCode: String = "COMP",
     dsl: VisitOutcomeDsl.() -> Unit = {},
   ): VisitVisitor
 }
@@ -45,11 +49,13 @@ class VisitBuilderRepository(
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
+  private val searchLevelRepository: ReferenceCodeRepository<SearchLevel>,
 ) {
   fun save(visit: Visit): Visit = visitRepository.save(visit)
   fun lookupVisitType(code: String): VisitType = visitTypeRepository.findByIdOrNull(Pk(VisitType.VISIT_TYPE, code))!!
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupVisitStatus(code: String): VisitStatus = visitStatusRepository.findByIdOrNull(Pk(VisitStatus.VISIT_STATUS, code))!!
+  fun lookupSearchLevelRepository(code: String?): SearchLevel? = code?.let { searchLevelRepository.findByIdOrNull(Pk(SearchLevel.SEARCH_LEVEL, it)) }
   fun lookupAgencyInternalLocationByDescription(description: String): AgencyInternalLocation? = agencyInternalLocationRepository.findOneByDescription(description).getOrNull()
 }
 
@@ -78,6 +84,10 @@ class VisitBuilderRepositoryBuilder(
     endDateTimeString: String,
     agyLocId: String,
     agencyInternalLocationDescription: String?,
+    comment: String? = null,
+    visitorConcern: String? = null,
+    overrideBanStaff: Staff? = null,
+    prisonerSearchTypeCode: String? = null,
     visitSlot: AgencyVisitSlot?,
   ): Visit = Visit(
     offenderBooking = offenderBooking,
@@ -93,6 +103,10 @@ class VisitBuilderRepositoryBuilder(
       )
     },
     agencyVisitSlot = visitSlot,
+    visitorConcernText = visitorConcern,
+    commentText = comment,
+    overrideBanStaff = overrideBanStaff,
+    searchLevel = repository.lookupSearchLevelRepository(prisonerSearchTypeCode),
   )
     .let { repository.save(it) }
     .also { visit = it }
@@ -107,10 +121,17 @@ class VisitBuilderRepositoryBuilder(
       .also { builder.apply(dsl) }
   }
 
-  override fun visitOutcome(outcomeReason: String, dsl: VisitOutcomeDsl.() -> Unit): VisitVisitor = visitOutcomeBuilderFactory.builder().let { builder ->
+  override fun visitOutcome(
+    outcomeReasonCode: String,
+    eventOutcomeCode: String,
+    eventStatusCode: String,
+    dsl: VisitOutcomeDsl.() -> Unit,
+  ): VisitVisitor = visitOutcomeBuilderFactory.builder().let { builder ->
     builder.build(
       visit = visit,
-      outcomeReason = outcomeReason,
+      outcomeReasonCode = outcomeReasonCode,
+      eventOutcomeCode = eventOutcomeCode,
+      eventStatusCode = eventStatusCode,
     )
       .also { visit.visitors += it }
       .also { builder.apply(dsl) }

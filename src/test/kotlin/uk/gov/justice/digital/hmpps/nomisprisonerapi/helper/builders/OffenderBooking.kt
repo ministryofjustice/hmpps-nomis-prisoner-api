@@ -53,6 +53,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @DslMarker
 annotation class BookingDslMarker
@@ -350,7 +351,19 @@ interface BookingDsl {
     endDateTimeString: String = "2022-01-01T13:05",
     agyLocId: String = "MDI",
     agencyInternalLocationDescription: String? = "MDI-1-1-001",
-    visitSlot: AgencyVisitSlot? = null,
+    dsl: VisitDsl.() -> Unit = {},
+  ): Visit
+
+  @VisitDslMarker
+  fun officialVisit(
+    visitTypeCode: String = "OFFI",
+    visitStatusCode: String = "SCH",
+    visitDate: LocalDate = LocalDate.parse("2022-01-01"),
+    visitSlot: AgencyVisitSlot,
+    comment: String? = null,
+    visitorConcern: String? = null,
+    overrideBanStaff: Staff? = null,
+    prisonerSearchTypeCode: String? = null,
     dsl: VisitDsl.() -> Unit = {},
   ): Visit
 
@@ -1061,7 +1074,6 @@ class BookingBuilder(
     endDateTimeString: String,
     agyLocId: String,
     agencyInternalLocationDescription: String?,
-    visitSlot: AgencyVisitSlot?,
     dsl: VisitDsl.() -> Unit,
   ): Visit = visitBuilderFactory.builder()
     .let { builder ->
@@ -1073,7 +1085,37 @@ class BookingBuilder(
         endDateTimeString = endDateTimeString,
         agyLocId = agyLocId,
         agencyInternalLocationDescription = agencyInternalLocationDescription,
+        visitSlot = null,
+      ).also {
+        offenderBooking.visits += it
+        builder.apply(dsl)
+      }
+    }
+  override fun officialVisit(
+    visitTypeCode: String,
+    visitStatusCode: String,
+    visitDate: LocalDate,
+    visitSlot: AgencyVisitSlot,
+    comment: String?,
+    visitorConcern: String?,
+    overrideBanStaff: Staff?,
+    prisonerSearchTypeCode: String?,
+    dsl: VisitDsl.() -> Unit,
+  ): Visit = visitBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        visitTypeCode = visitTypeCode,
+        visitStatusCode = visitStatusCode,
+        startDateTimeString = visitDate.atTime(visitSlot.agencyVisitTime.startTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+        endDateTimeString = visitDate.atTime(visitSlot.agencyVisitTime.endTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+        agyLocId = visitSlot.location.id,
+        agencyInternalLocationDescription = visitSlot.agencyInternalLocation.description,
         visitSlot = visitSlot,
+        comment = comment,
+        visitorConcern = visitorConcern,
+        overrideBanStaff = overrideBanStaff,
+        prisonerSearchTypeCode = prisonerSearchTypeCode,
       ).also {
         offenderBooking.visits += it
         builder.apply(dsl)
