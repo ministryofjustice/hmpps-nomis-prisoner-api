@@ -30,6 +30,10 @@ interface VisitDsl {
   fun visitor(
     person: Person,
     groupLeader: Boolean = false,
+    assistedVisit: Boolean = false,
+    outcomeReasonCode: String? = null,
+    eventOutcomeCode: String = "ATT",
+    eventStatusCode: String = "COMP",
     dsl: VisitVisitorDsl.() -> Unit = {},
   ): VisitVisitor
 
@@ -111,11 +115,23 @@ class VisitBuilderRepositoryBuilder(
     .let { repository.save(it) }
     .also { visit = it }
 
-  override fun visitor(person: Person, groupLeader: Boolean, dsl: VisitVisitorDsl.() -> Unit): VisitVisitor = visitVisitorBuilderFactory.builder().let { builder ->
+  override fun visitor(
+    person: Person,
+    groupLeader: Boolean,
+    assistedVisit: Boolean,
+    outcomeReasonCode: String?,
+    eventOutcomeCode: String,
+    eventStatusCode: String,
+    dsl: VisitVisitorDsl.() -> Unit,
+  ): VisitVisitor = visitVisitorBuilderFactory.builder().let { builder ->
     builder.build(
       visit = visit,
       person = person,
       groupLeader = groupLeader,
+      assistedVisit = assistedVisit,
+      outcomeReasonCode = outcomeReasonCode,
+      eventOutcomeCode = eventOutcomeCode,
+      eventStatusCode = eventStatusCode,
     )
       .also { visit.visitors += it }
       .also { builder.apply(dsl) }
