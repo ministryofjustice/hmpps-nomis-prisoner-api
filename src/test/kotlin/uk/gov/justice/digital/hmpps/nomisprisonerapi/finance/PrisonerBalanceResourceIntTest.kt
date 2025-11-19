@@ -198,6 +198,43 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .jsonPath("rootOffenderIds[1]").isEqualTo(id2)
         .jsonPath("lastOffenderId").isEqualTo(id2)
     }
+
+    @Test
+    fun `will allow return of no match if nothing returned for selected prison`() {
+      webTestClient.get().uri("/finance/prisoners/ids/all-from-id?pageSize=2&prisonId=BMI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("rootOffenderIds.size()").isEqualTo("0")
+        .jsonPath("lastOffenderId").isEqualTo("0")
+    }
+
+    @Test
+    fun `will allow single prisonId query param`() {
+      webTestClient.get().uri("/finance/prisoners/ids/all-from-id?pageSize=2&prisonId=WWI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("rootOffenderIds.size()").isEqualTo("1")
+        .jsonPath("rootOffenderIds[0]").isEqualTo(id1)
+        .jsonPath("lastOffenderId").isEqualTo(id1)
+    }
+
+    @Test
+    fun `will allow multiple prisonId query params`() {
+      webTestClient.get().uri("/finance/prisoners/ids/all-from-id?pageSize=10&prisonId=WWI&prisonId=LEI&prisonId=MDI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("rootOffenderIds.size()").isEqualTo("3")
+        .jsonPath("rootOffenderIds[0]").isEqualTo(id1)
+        .jsonPath("rootOffenderIds[1]").isEqualTo(id2)
+        .jsonPath("rootOffenderIds[2]").isEqualTo(id3)
+        .jsonPath("lastOffenderId").isEqualTo(id3)
+    }
   }
 
   @Nested

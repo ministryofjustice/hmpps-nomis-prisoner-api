@@ -63,8 +63,8 @@ class PrisonerBalanceResource(
     @PageableDefault(sort = ["offenderId"], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
-    @Schema(description = "Prison id") @RequestParam prisonId: List<String>?,
-  ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(prisonId, pageRequest)
+    @Schema(description = "Prison id") @RequestParam(name = "prisonId") prisonIds: List<String>?,
+  ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(prisonIds, pageRequest)
 
   @GetMapping("/ids/all-from-id")
   @Operation(
@@ -101,7 +101,8 @@ class PrisonerBalanceResource(
     @Schema(description = "Number of offenders to get", required = false, defaultValue = "10")
     @RequestParam(value = "pageSize", defaultValue = "10")
     pageSize: Int,
-  ): RootOffenderIdsWithLast = prisonerBalanceService.findAllPrisonersWithAccountBalanceFromId(rootOffenderId, pageSize)
+    @Schema(description = "Prison id") @RequestParam(name = "prisonId") prisonIds: List<String>?,
+  ): RootOffenderIdsWithLast = prisonerBalanceService.findAllPrisonersWithAccountBalanceFromId(rootOffenderId, pageSize, prisonIds)
 
   data class RootOffenderIdsWithLast(
     val rootOffenderIds: List<Long>,
