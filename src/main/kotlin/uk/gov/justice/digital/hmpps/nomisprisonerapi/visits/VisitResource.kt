@@ -286,7 +286,7 @@ class VisitResource(private val visitService: VisitService) {
     ],
   )
   fun getVisitsByFilter(
-    @PageableDefault(sort = ["whenCreated"], direction = Sort.Direction.ASC)
+    @PageableDefault(sort = ["createDatetime"], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "prisonIds", required = false)

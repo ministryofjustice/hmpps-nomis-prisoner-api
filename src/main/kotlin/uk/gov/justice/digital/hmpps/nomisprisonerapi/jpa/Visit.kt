@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -29,7 +29,7 @@ data class Visit(
   @Column(name = "OFFENDER_VISIT_ID", nullable = false)
   val id: Long = 0,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
   val offenderBooking: OffenderBooking,
 
@@ -48,7 +48,7 @@ data class Visit(
   @Column(name = "END_TIME", nullable = false)
   var endDateTime: LocalDateTime,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -62,7 +62,7 @@ data class Visit(
   )
   val visitType: VisitType,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -82,7 +82,7 @@ data class Visit(
   )
   var visitStatus: VisitStatus,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
   @JoinColumnsOrFormulas(
     value = [
@@ -96,19 +96,19 @@ data class Visit(
   )
   val searchLevel: SearchLevel? = null,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)
   val location: AgencyLocation,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "VISIT_INTERNAL_LOCATION_ID")
   var agencyInternalLocation: AgencyInternalLocation? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "AGENCY_VISIT_SLOT_ID")
   var agencyVisitSlot: AgencyVisitSlot? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+  @ManyToOne(fetch = LAZY, cascade = [CascadeType.ALL])
   @JoinColumn(name = "OFFENDER_VISIT_ORDER_ID")
   var visitOrder: VisitOrder? = null,
 
@@ -116,18 +116,11 @@ data class Visit(
   @OneToMany(mappedBy = "visit", cascade = [CascadeType.ALL], orphanRemoval = true)
   val visitors: MutableList<VisitVisitor> = mutableListOf(),
 
-  @Column(name = "CREATE_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenCreated: LocalDateTime = LocalDateTime.now(),
+  @ManyToOne(optional = false, fetch = LAZY)
+  @JoinColumn(name = "OVERRIDE_BAN_STAFF_ID", nullable = true)
+  var overrideBanStaff: Staff? = null,
 
-  @Column(name = "MODIFY_DATETIME", nullable = false, insertable = false, updatable = false)
-  var whenUpdated: LocalDateTime? = null,
-
-  @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
-  val createUserId: String = "",
-
-  @Column(name = "MODIFY_USER_ID", insertable = false, updatable = false)
-  val modifyUserId: String? = null,
-) {
+) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -156,8 +149,5 @@ data class Visit(
 
      "EVENT_OUTCOME" - not used since 2015
      private VisitOutcome outcome;
-
-     "OVERRIDE_BAN_STAFF_ID" - not used since 2015
-     private Long overrideBanStaffId;
    */
 }

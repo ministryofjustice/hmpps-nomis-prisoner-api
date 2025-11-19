@@ -9,10 +9,18 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
+import java.time.LocalDate
+import java.time.LocalTime
 
 class OfficialVisitsResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -26,6 +34,15 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var personRepository: PersonRepository
+
+  @Autowired
+  private lateinit var agencyInternalLocationRepository: AgencyInternalLocationRepository
+
+  @Autowired
+  private lateinit var agencyVisitDayRepository: AgencyVisitDayRepository
+
+  @Autowired
+  private lateinit var agencyVisitTimeRepository: AgencyVisitTimeRepository
 
   @DisplayName("GET /official-visits/ids")
   @Nested
@@ -132,6 +149,122 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         assertThat(pageResponse.content).hasSize(2)
         assertThat(pageResponse.content[0].visitId).isEqualTo(visitIds[0])
         assertThat(pageResponse.content[1].visitId).isEqualTo(visitIds[1])
+      }
+    }
+  }
+
+  @DisplayName("GET /official-visits/{visitId}")
+  @Nested
+  inner class GetOfficialVisit {
+    var officialVisitId = 0L
+    var socialVisitId = 0L
+    lateinit var visitSlot: AgencyVisitSlot
+    lateinit var room: AgencyInternalLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        room = agencyInternalLocation(
+          locationCode = "BXI-VISIT-1",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+            visitSlot = visitSlot(
+              agencyInternalLocation = room,
+              maxGroups = null,
+              maxAdults = null,
+            )
+          }
+        }
+
+        val visitor = person { }
+
+        offender(nomsId = "A1234TT") {
+          booking {
+            visitBalance { }
+            contact(person = visitor)
+            officialVisitId = visit(
+              visitTypeCode = "OFFI",
+              startDateTimeString = "2023-01-01T10:00:00",
+              visitSlot = visitSlot,
+            ).id
+            socialVisitId = visit(visitTypeCode = "SCON").id
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      visitRepository.deleteAll()
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(room)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 bad request if visit is a social visit`() {
+        webTestClient.get().uri("/official-visits/{visitId}", socialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 404 if visit does not exist`() {
+        webTestClient.get().uri("/official-visits/{visitId}", 9999)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the visit`() {
+        webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
       }
     }
   }

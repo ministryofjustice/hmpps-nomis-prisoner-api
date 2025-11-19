@@ -156,6 +156,8 @@ internal class VisitServiceTest {
     commentText = "some comments",
     visitorConcernText = "concerns",
   ).apply {
+    this.createUsername = "djones"
+    this.createDatetime = LocalDateTime.parse("2020-01-01T10:00:00")
     // add circular reference
     visitors.add(VisitVisitor(visit = this, offenderBooking = defaultOffenderBooking))
     visitors.add(VisitVisitor(visit = this, person = Person(-7L, "First", "Last")))

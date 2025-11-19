@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncidentParty
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -349,6 +350,7 @@ interface BookingDsl {
     endDateTimeString: String = "2022-01-01T13:05",
     agyLocId: String = "MDI",
     agencyInternalLocationDescription: String? = "MDI-1-1-001",
+    visitSlot: AgencyVisitSlot? = null,
     dsl: VisitDsl.() -> Unit = {},
   ): Visit
 
@@ -1059,6 +1061,7 @@ class BookingBuilder(
     endDateTimeString: String,
     agyLocId: String,
     agencyInternalLocationDescription: String?,
+    visitSlot: AgencyVisitSlot?,
     dsl: VisitDsl.() -> Unit,
   ): Visit = visitBuilderFactory.builder()
     .let { builder ->
@@ -1070,6 +1073,7 @@ class BookingBuilder(
         endDateTimeString = endDateTimeString,
         agyLocId = agyLocId,
         agencyInternalLocationDescription = agencyInternalLocationDescription,
+        visitSlot = visitSlot,
       ).also {
         offenderBooking.visits += it
         builder.apply(dsl)

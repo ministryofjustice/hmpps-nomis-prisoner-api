@@ -7,7 +7,7 @@ import jakarta.persistence.Entity
 @DiscriminatorValue(VisitType.VISIT_TYPE)
 class VisitType(code: String, description: String) : ReferenceCode(VISIT_TYPE, code, description) {
 
-  fun isSocial() = code == "SCON"
+  fun isOfficial() = code == "OFFI"
   companion object {
     const val VISIT_TYPE = "VISIT_TYPE"
     fun pk(code: String): Pk = Pk(VISIT_TYPE, code)

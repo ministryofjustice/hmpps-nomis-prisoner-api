@@ -14,7 +14,7 @@ import java.time.LocalDate
 class VisitSpecification(private val filter: VisitFilter) : Specification<Visit> {
   override fun toPredicate(
     root: Root<Visit>,
-    query: CriteriaQuery<*>,
+    query: CriteriaQuery<*>?,
     criteriaBuilder: CriteriaBuilder,
   ): Predicate? {
     val predicates = mutableListOf<Predicate>()
@@ -40,11 +40,11 @@ class VisitSpecification(private val filter: VisitFilter) : Specification<Visit>
     }
 
     filter.fromDateTime?.run {
-      predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(Visit::whenCreated.name), this))
+      predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(Visit::createDatetime.name), this))
     }
 
     filter.toDateTime?.run {
-      predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(Visit::whenCreated.name), this))
+      predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(Visit::createDatetime.name), this))
     }
 
     filter.futureVisits?.takeIf { it }?.run {

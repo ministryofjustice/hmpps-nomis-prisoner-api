@@ -4,6 +4,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
@@ -77,6 +78,7 @@ class VisitBuilderRepositoryBuilder(
     endDateTimeString: String,
     agyLocId: String,
     agencyInternalLocationDescription: String?,
+    visitSlot: AgencyVisitSlot?,
   ): Visit = Visit(
     offenderBooking = offenderBooking,
     startDateTime = LocalDateTime.parse(startDateTimeString),
@@ -90,6 +92,7 @@ class VisitBuilderRepositoryBuilder(
         this,
       )
     },
+    agencyVisitSlot = visitSlot,
   )
     .let { repository.save(it) }
     .also { visit = it }

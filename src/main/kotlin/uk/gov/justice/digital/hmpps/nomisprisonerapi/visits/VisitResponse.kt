@@ -138,9 +138,9 @@ data class VisitResponse(
       )
     },
     modifyUserId = visitEntity.modifyUserId,
-    whenUpdated = visitEntity.whenUpdated,
-    createUserId = visitEntity.createUserId,
-    whenCreated = visitEntity.whenCreated,
+    whenUpdated = visitEntity.modifyDatetime,
+    createUserId = visitEntity.createUsername,
+    whenCreated = visitEntity.createDatetime,
   )
 }
 
