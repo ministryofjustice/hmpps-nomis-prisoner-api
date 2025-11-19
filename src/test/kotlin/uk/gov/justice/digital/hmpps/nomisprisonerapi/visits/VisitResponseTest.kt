@@ -40,10 +40,6 @@ internal class VisitResponseTest {
     commentText = "Contact Jane 0978 5652727",
     visitorConcernText = "None",
     location = agency,
-    createUserId = "djones",
-    modifyUserId = "bsmith",
-    whenCreated = LocalDateTime.parse("2020-01-01T10:00:00"),
-    whenUpdated = LocalDateTime.parse("2020-01-01T11:00:00"),
     agencyInternalLocation = AgencyInternalLocation(
       agency = agency,
       description = "LEI-VIS-01",
@@ -53,6 +49,10 @@ internal class VisitResponseTest {
     visitStatus = VisitStatus(code = "SCH", description = "Scheduled"),
     visitors = mutableListOf(),
   ).apply {
+    this.createUsername = "djones"
+    this.modifyUserId = "bsmith"
+    this.createDatetime = LocalDateTime.parse("2020-01-01T10:00:00")
+    this.modifyDatetime = LocalDateTime.parse("2020-01-01T11:00:00")
     this.visitors.add(
       VisitVisitor(
         person = Person(id = 88, firstName = "Name", lastName = "Name"),
@@ -102,7 +102,12 @@ internal class VisitResponseTest {
 
     @Test
     internal fun `will have no lead visitor if not present`() {
-      val theVisit = visit.copy(visitors = mutableListOf(visitor.copy(groupLeader = false), outcomeVisitorRecord))
+      val theVisit = visit.copy(visitors = mutableListOf(visitor.copy(groupLeader = false), outcomeVisitorRecord)).also {
+        it.createUsername = visit.createUsername
+        it.modifyUserId = visit.modifyUserId
+        it.createDatetime = visit.createDatetime
+        it.modifyDatetime = visit.modifyDatetime
+      }
 
       assertThat(VisitResponse(theVisit).leadVisitor).isNull()
     }
@@ -134,7 +139,13 @@ internal class VisitResponseTest {
             ),
             outcomeVisitorRecord,
           ),
-        )
+        ).also {
+          it.createUsername = visit.createUsername
+          it.modifyUserId = visit.modifyUserId
+          it.createDatetime = visit.createDatetime
+          it.modifyDatetime = visit.modifyDatetime
+        }
+
       val response = VisitResponse(theVisit)
 
       assertThat(response.leadVisitor?.telephones).contains("0123456789 ext: 876")
@@ -165,7 +176,12 @@ internal class VisitResponseTest {
             ),
             outcomeVisitorRecord,
           ),
-        )
+        ).also {
+          it.createUsername = visit.createUsername
+          it.modifyUserId = visit.modifyUserId
+          it.createDatetime = visit.createDatetime
+          it.modifyDatetime = visit.modifyDatetime
+        }
       val response = VisitResponse(theVisit)
 
       assertThat(response.leadVisitor?.telephones).contains("0123456789", "07973 121212")
@@ -217,7 +233,12 @@ internal class VisitResponseTest {
             ),
             outcomeVisitorRecord,
           ),
-        )
+        ).also {
+          it.createUsername = visit.createUsername
+          it.modifyUserId = visit.modifyUserId
+          it.createDatetime = visit.createDatetime
+          it.modifyDatetime = visit.modifyDatetime
+        }
       val response = VisitResponse(theVisitor)
 
       assertThat(response.leadVisitor?.telephones).contains(
@@ -285,7 +306,12 @@ internal class VisitResponseTest {
             ),
             outcomeVisitorRecord,
           ),
-        )
+        ).also {
+          it.createUsername = visit.createUsername
+          it.modifyUserId = visit.modifyUserId
+          it.createDatetime = visit.createDatetime
+          it.modifyDatetime = visit.modifyDatetime
+        }
       val response = VisitResponse(theVisitor)
 
       assertThat(response.leadVisitor?.telephones).containsExactly(
@@ -307,7 +333,12 @@ internal class VisitResponseTest {
             outcomeVisitorRecord.copy(outcomeReason = VisitOutcomeReason("REFUSED", "Offender Refused Visit")),
             visitor.copy(outcomeReason = VisitOutcomeReason("APPLES", "Visit ended due to apples")),
           ),
-        )
+        ).also {
+          it.createUsername = visit.createUsername
+          it.modifyUserId = visit.modifyUserId
+          it.createDatetime = visit.createDatetime
+          it.modifyDatetime = visit.modifyDatetime
+        }
       val response = VisitResponse(theVisit)
 
       assertThat(response.visitOutcome).isEqualTo(CodeDescription("REFUSED", "Offender Refused Visit"))
@@ -322,7 +353,12 @@ internal class VisitResponseTest {
             visitor,
             outcomeVisitorRecord.copy(outcomeReason = null),
           ),
-        )
+        ).also {
+          it.createUsername = visit.createUsername
+          it.modifyUserId = visit.modifyUserId
+          it.createDatetime = visit.createDatetime
+          it.modifyDatetime = visit.modifyDatetime
+        }
       val response = VisitResponse(theVisit)
 
       assertThat(response.visitOutcome).isNull()

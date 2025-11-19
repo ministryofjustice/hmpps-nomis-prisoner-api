@@ -118,7 +118,7 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
       ),
     ],
   )
-  fun getVisitTimeSlot(
+  fun getOfficialVisit(
     @PathVariable visitId: Long,
   ): OfficialVisitResponse = officialVisitsService.getVisit(visitId = visitId)
 }
