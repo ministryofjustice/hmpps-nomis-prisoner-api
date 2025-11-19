@@ -195,12 +195,34 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        val visitor = person { }
+        val visitor1 = person(firstName = "JOHN", lastName = "DUPONT")
+        val visitor2 = person(firstName = "JANE", lastName = "DOE")
 
         offender(nomsId = "A1234TT") {
           bookingId = booking {
             visitBalance { }
-            contact(person = visitor)
+            contact(
+              person = visitor1,
+              contactType = "O",
+              relationshipType = "DR",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
+            contact(
+              person = visitor1,
+              contactType = "S",
+              relationshipType = "BRO",
+            )
+            contact(
+              person = visitor1,
+              contactType = "O",
+              relationshipType = "OFS",
+              whenCreated = LocalDateTime.parse("2021-01-01T10:00"),
+            )
+            contact(
+              person = visitor2,
+              contactType = "O",
+              relationshipType = "POL",
+            )
             officialVisitId = officialVisit(
               visitDate = LocalDate.parse("2023-01-01"),
               visitSlot = visitSlot,
@@ -211,7 +233,8 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
               prisonerSearchTypeCode = "FULL",
             ) {
               visitOutcome(outcomeReasonCode = "ADMIN", eventOutcomeCode = "ABS", eventStatusCode = "CANC")
-              visitor(person = visitor)
+              visitor(person = visitor1, eventOutcomeCode = "ABS", outcomeReasonCode = "BATCH_CANC", eventStatusCode = "CANC")
+              visitor(person = visitor2, groupLeader = true, assistedVisit = true, eventStatusCode = "COMP", eventOutcomeCode = "ATT", outcomeReasonCode = null)
             }.id
             socialVisitId = visit(visitTypeCode = "SCON").id
           }.bookingId
