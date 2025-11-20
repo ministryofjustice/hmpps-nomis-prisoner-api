@@ -43,6 +43,7 @@ class VisitVisitorBuilderRepositoryBuilder(private val repository: VisitVisitorB
     outcomeReasonCode: String?,
     eventOutcomeCode: String,
     eventStatusCode: String,
+    comment: String?,
   ): VisitVisitor = VisitVisitor(
     visit = visit,
     person = person,
@@ -51,6 +52,7 @@ class VisitVisitorBuilderRepositoryBuilder(private val repository: VisitVisitorB
     outcomeReasonCode = outcomeReasonCode,
     eventOutcome = repository.lookupEventOutcome(eventOutcomeCode),
     eventStatus = repository.lookupEventStatus(eventStatusCode),
+    commentText = comment,
   )
     .let { repository.save(it) }
 }
