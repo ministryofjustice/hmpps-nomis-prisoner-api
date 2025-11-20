@@ -31,7 +31,7 @@ class PrisonerBalanceService(
     offenderRepository.findAllOffenderIdsWithBalances(prisonIds, pageRequest),
   )
 
-  fun findAllPrisonersWithAccountBalanceFromId(rootOffenderId: Long, pageSize: Int): PrisonerBalanceResource.RootOffenderIdsWithLast = offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, pageSize).let {
+  fun findAllPrisonersWithAccountBalanceFromId(rootOffenderId: Long, pageSize: Int, prisonIds: List<String>?): PrisonerBalanceResource.RootOffenderIdsWithLast = offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, prisonIds, pageSize).let {
     PrisonerBalanceResource.RootOffenderIdsWithLast(lastOffenderId = it.lastOrNull() ?: 0, rootOffenderIds = it)
   }
 }
