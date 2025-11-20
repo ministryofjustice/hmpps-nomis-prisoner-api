@@ -101,7 +101,9 @@ class PrisonerBalanceResource(
     @Schema(description = "Number of offenders to get", required = false, defaultValue = "10")
     @RequestParam(value = "pageSize", defaultValue = "10")
     pageSize: Int,
-    @Schema(description = "Prison id") @RequestParam(name = "prisonId") prisonIds: List<String>?,
+    @Schema(description = "Prison ids to filter by", required = false)
+    @RequestParam(name = "prisonId")
+    prisonIds: List<String>?,
   ): RootOffenderIdsWithLast = prisonerBalanceService.findAllPrisonersWithAccountBalanceFromId(rootOffenderId, pageSize, prisonIds)
 
   data class RootOffenderIdsWithLast(
