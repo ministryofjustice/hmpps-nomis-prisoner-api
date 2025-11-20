@@ -48,10 +48,32 @@ class OfficialVisitsService(
         visitorConcernText = visitorConcernText,
         commentText = commentText,
         overrideBanStaffUsername = overrideBanStaff?.usernamePreferringGeneralAccount(),
-        // TODO
-        visitors = emptyList(),
+        visitors = visitors.filter { it.person != null }.map { visitor ->
+          OfficialVisitResponse.OfficialVisitor(
+            id = visitor.id,
+            personId = visitor.person!!.id,
+            firstName = visitor.person!!.firstName,
+            lastName = visitor.person!!.lastName,
+            leadVisitor = visitor.groupLeader,
+            assistedVisit = visitor.assistedVisit,
+            visitOutcome = visitor.eventOutcome?.toCodeDescription(),
+            outcomeReason = visitor.outcomeReason?.toCodeDescription(),
+            eventStatus = visitor.eventStatus?.toCodeDescription(),
+            commentText = visitor.commentText,
+            // TODO - look at performance of below - a better solution might be to map with filter/where clause in VisitVisitor entity rather than via Person
+            relationships = visitor.person!!.contacts.filter { it.offenderBooking == this.offenderBooking }.map {
+              OfficialVisitResponse.OfficialVisitor.ContactRelationship(
+                relationshipType = it.relationshipType.toCodeDescription(),
+                audit = it.toAudit(),
+              )
+            }.sortedWith(latestOfficialContactFirst()),
+            audit = visitor.toAudit(),
+          )
+        },
         audit = toAudit(),
       )
     }
   }
 }
+
+private fun latestOfficialContactFirst() = compareByDescending<OfficialVisitResponse.OfficialVisitor.ContactRelationship>({ it.relationshipType.code }).thenByDescending { it.audit.createDatetime }

@@ -34,6 +34,7 @@ interface VisitDsl {
     outcomeReasonCode: String? = null,
     eventOutcomeCode: String = "ATT",
     eventStatusCode: String = "COMP",
+    comment: String? = null,
     dsl: VisitVisitorDsl.() -> Unit = {},
   ): VisitVisitor
 
@@ -122,6 +123,7 @@ class VisitBuilderRepositoryBuilder(
     outcomeReasonCode: String?,
     eventOutcomeCode: String,
     eventStatusCode: String,
+    comment: String?,
     dsl: VisitVisitorDsl.() -> Unit,
   ): VisitVisitor = visitVisitorBuilderFactory.builder().let { builder ->
     builder.build(
@@ -132,6 +134,7 @@ class VisitBuilderRepositoryBuilder(
       outcomeReasonCode = outcomeReasonCode,
       eventOutcomeCode = eventOutcomeCode,
       eventStatusCode = eventStatusCode,
+      comment = comment,
     )
       .also { visit.visitors += it }
       .also { builder.apply(dsl) }

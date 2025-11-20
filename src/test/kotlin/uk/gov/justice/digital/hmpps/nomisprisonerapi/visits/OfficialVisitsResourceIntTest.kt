@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Co
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -166,6 +167,9 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
     lateinit var visitSlot: AgencyVisitSlot
     lateinit var room: AgencyInternalLocation
     lateinit var staff: Staff
+    lateinit var johnDupont: Person
+    lateinit var janeDoe: Person
+    var janeDoeVisitorId = 0L
 
     @BeforeEach
     fun setUp() {
@@ -195,31 +199,32 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
           }
         }
 
-        val visitor1 = person(firstName = "JOHN", lastName = "DUPONT")
-        val visitor2 = person(firstName = "JANE", lastName = "DOE")
+        johnDupont = person(firstName = "JOHN", lastName = "DUPONT")
+        janeDoe = person(firstName = "JANE", lastName = "DOE")
 
         offender(nomsId = "A1234TT") {
           bookingId = booking {
             visitBalance { }
             contact(
-              person = visitor1,
+              person = johnDupont,
               contactType = "O",
               relationshipType = "DR",
               whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
             )
             contact(
-              person = visitor1,
+              person = johnDupont,
               contactType = "S",
               relationshipType = "BRO",
+              whenCreated = LocalDateTime.parse("2023-01-01T10:00"),
             )
             contact(
-              person = visitor1,
+              person = johnDupont,
               contactType = "O",
               relationshipType = "OFS",
               whenCreated = LocalDateTime.parse("2021-01-01T10:00"),
             )
             contact(
-              person = visitor2,
+              person = janeDoe,
               contactType = "O",
               relationshipType = "POL",
             )
@@ -233,8 +238,21 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
               prisonerSearchTypeCode = "FULL",
             ) {
               visitOutcome(outcomeReasonCode = "ADMIN", eventOutcomeCode = "ABS", eventStatusCode = "CANC")
-              visitor(person = visitor1, eventOutcomeCode = "ABS", outcomeReasonCode = "BATCH_CANC", eventStatusCode = "CANC")
-              visitor(person = visitor2, groupLeader = true, assistedVisit = true, eventStatusCode = "COMP", eventOutcomeCode = "ATT", outcomeReasonCode = null)
+              visitor(
+                person = johnDupont,
+                eventOutcomeCode = "ABS",
+                outcomeReasonCode = "OFFCANC",
+                eventStatusCode = "CANC",
+              )
+              janeDoeVisitorId = visitor(
+                person = janeDoe,
+                groupLeader = true,
+                assistedVisit = true,
+                eventStatusCode = "COMP",
+                eventOutcomeCode = "ATT",
+                outcomeReasonCode = null,
+                comment = "First time visit",
+              ).id
             }.id
             socialVisitId = visit(visitTypeCode = "SCON").id
           }.bookingId
@@ -357,6 +375,69 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         assertThat(visit.visitorConcernText).isEqualTo("Big concerns")
         assertThat(visit.overrideBanStaffUsername).isEqualTo("T_SMITH_GEN")
         assertThat(visit.prisonerSearchType?.description).isEqualTo("Full Search")
+      }
+
+      @Test
+      fun `will return just the visitors excluding the prisoner`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visit.visitors).hasSize(2)
+      }
+
+      @Test
+      fun `will return key information about each visitor`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        val janeDoeVisitor = visit.visitors.find { it.personId == janeDoe.id }!!
+        val johnDupontVisitor = visit.visitors.find { it.personId == johnDupont.id }!!
+
+        assertThat(janeDoeVisitor.id).isEqualTo(janeDoeVisitorId)
+        assertThat(janeDoeVisitor.personId).isEqualTo(janeDoe.id)
+        assertThat(janeDoeVisitor.firstName).isEqualTo("JANE")
+        assertThat(janeDoeVisitor.lastName).isEqualTo("DOE")
+        assertThat(janeDoeVisitor.leadVisitor).isTrue
+        assertThat(johnDupontVisitor.leadVisitor).isFalse
+        assertThat(janeDoeVisitor.assistedVisit).isTrue
+        assertThat(johnDupontVisitor.assistedVisit).isFalse
+        assertThat(janeDoeVisitor.commentText).isEqualTo("First time visit")
+      }
+
+      @Test
+      fun `will return status about each visitor`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        val janeDoeVisitor = visit.visitors.find { it.personId == janeDoe.id }!!
+        val johnDupontVisitor = visit.visitors.find { it.personId == johnDupont.id }!!
+
+        assertThat(janeDoeVisitor.eventStatus?.description).isEqualTo("Completed")
+        assertThat(janeDoeVisitor.outcomeReason?.description).isNull()
+        assertThat(janeDoeVisitor.visitOutcome?.description).isEqualTo("Attended")
+
+        assertThat(johnDupontVisitor.eventStatus?.description).isEqualTo("Cancelled")
+        assertThat(johnDupontVisitor.outcomeReason?.description).isEqualTo("Offender Cancelled")
+        assertThat(johnDupontVisitor.visitOutcome?.description).isEqualTo("Absence")
+      }
+
+      @Test
+      fun `will return ordered list of relationships with most relevant first`() {
+        val visit: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        val johnDupontVisitor = visit.visitors.find { it.personId == johnDupont.id }!!
+
+        assertThat(johnDupontVisitor.relationships).hasSize(3)
+        assertThat(johnDupontVisitor.relationships[0].relationshipType.description).isEqualTo("Offender Supervisor")
       }
     }
   }
