@@ -194,8 +194,6 @@ data class OfficialVisitResponse(
     data class ContactRelationship(
       @Schema(description = "The relationship type")
       val relationshipType: CodeDescription,
-      @Schema(description = "Audit information")
-      val audit: NomisAudit,
     )
   }
 }

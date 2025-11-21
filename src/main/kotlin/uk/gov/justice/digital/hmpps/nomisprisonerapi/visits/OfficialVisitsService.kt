@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 
 @Service
@@ -61,12 +62,11 @@ class OfficialVisitsService(
             eventStatus = visitor.eventStatus?.toCodeDescription(),
             commentText = visitor.commentText,
             // TODO - look at performance of below - a better solution might be to map with filter/where clause in VisitVisitor entity rather than via Person
-            relationships = visitor.person!!.contacts.filter { it.offenderBooking == this.offenderBooking }.map {
+            relationships = visitor.person!!.contacts.filter { it.offenderBooking == this.offenderBooking }.sortedWith(latestOfficialContactFirst()).map {
               OfficialVisitResponse.OfficialVisitor.ContactRelationship(
                 relationshipType = it.relationshipType.toCodeDescription(),
-                audit = it.toAudit(),
               )
-            }.sortedWith(latestOfficialContactFirst()),
+            },
             audit = visitor.toAudit(),
           )
         },
@@ -76,4 +76,4 @@ class OfficialVisitsService(
   }
 }
 
-private fun latestOfficialContactFirst() = compareByDescending<OfficialVisitResponse.OfficialVisitor.ContactRelationship>({ it.relationshipType.code }).thenByDescending { it.audit.createDatetime }
+private fun latestOfficialContactFirst() = compareByDescending<OffenderContactPerson> { it.relationshipType.code }.thenByDescending { it.createDatetime }
