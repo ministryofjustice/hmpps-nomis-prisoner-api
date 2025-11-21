@@ -31,9 +31,21 @@ class PrisonerBalanceService(
     offenderRepository.findAllOffenderIdsWithBalances(prisonIds, pageRequest),
   )
 
-  fun findAllPrisonersWithAccountBalanceFromId(rootOffenderId: Long, pageSize: Int, prisonIds: List<String>?): PrisonerBalanceResource.RootOffenderIdsWithLast = offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, prisonIds, pageSize).let {
-    PrisonerBalanceResource.RootOffenderIdsWithLast(lastOffenderId = it.lastOrNull() ?: 0, rootOffenderIds = it)
-  }
+  fun findAllPrisonersWithAccountBalanceFromId(
+    rootOffenderId: Long,
+    pageSize: Int,
+    prisonIds: List<String>?,
+  ): PrisonerBalanceResource.RootOffenderIdsWithLast = (
+    prisonIds
+      ?.let { offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, it, pageSize) }
+      ?: offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, pageSize)
+    )
+    .let { offenderIds ->
+      PrisonerBalanceResource.RootOffenderIdsWithLast(
+        lastOffenderId = offenderIds.lastOrNull() ?: 0,
+        rootOffenderIds = offenderIds,
+      )
+    }
 }
 
 private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(
