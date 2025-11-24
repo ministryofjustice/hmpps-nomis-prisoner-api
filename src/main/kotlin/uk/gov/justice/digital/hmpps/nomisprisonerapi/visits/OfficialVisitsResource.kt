@@ -72,10 +72,10 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     @Parameter(description = "Filter results by prison ids (returns all prisons if not specified)", example = "['MDI','LEI']")
     prisonIds: List<String> = emptyList(),
     @RequestParam(value = "fromDate")
-    @Parameter(description = "Filter results by visits that were created on or after the given timestamp", example = "2024-11-03")
+    @Parameter(description = "Filter results by visits that were created on or after the given date", example = "2024-11-03")
     fromDate: LocalDate?,
     @RequestParam(value = "toDate")
-    @Parameter(description = "Filter results by visits that were created on or before the given timestamp", example = "2025-11-03")
+    @Parameter(description = "Filter results by visits that were created on or before the given date", example = "2025-11-03")
     toDate: LocalDate?,
   ): PagedModel<VisitIdResponse> = PagedModel(
     officialVisitsService.getVisitIds(
