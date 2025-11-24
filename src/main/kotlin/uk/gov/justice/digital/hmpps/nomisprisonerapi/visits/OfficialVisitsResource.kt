@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @RestController
@@ -173,6 +174,8 @@ data class OfficialVisitResponse(
     val firstName: String,
     @Schema(description = "Surname name of the person")
     val lastName: String,
+    @Schema(description = "Date of birth name of the person")
+    val dateOfBirth: LocalDate?,
     @Schema(description = "Indicates lead visitor for the visit")
     val leadVisitor: Boolean,
     @Schema(description = "Indicates visitor requires assistance")

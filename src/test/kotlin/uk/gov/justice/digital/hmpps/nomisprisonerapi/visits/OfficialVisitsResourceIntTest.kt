@@ -200,7 +200,7 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         }
 
         johnDupont = person(firstName = "JOHN", lastName = "DUPONT")
-        janeDoe = person(firstName = "JANE", lastName = "DOE")
+        janeDoe = person(firstName = "JANE", lastName = "DOE", dateOfBirth = "1965-07-19")
 
         offender(nomsId = "A1234TT") {
           bookingId = booking {
@@ -401,6 +401,7 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         assertThat(janeDoeVisitor.personId).isEqualTo(janeDoe.id)
         assertThat(janeDoeVisitor.firstName).isEqualTo("JANE")
         assertThat(janeDoeVisitor.lastName).isEqualTo("DOE")
+        assertThat(janeDoeVisitor.dateOfBirth).isEqualTo(LocalDate.parse("1965-07-19"))
         assertThat(janeDoeVisitor.leadVisitor).isTrue
         assertThat(johnDupontVisitor.leadVisitor).isFalse
         assertThat(janeDoeVisitor.assistedVisit).isTrue
