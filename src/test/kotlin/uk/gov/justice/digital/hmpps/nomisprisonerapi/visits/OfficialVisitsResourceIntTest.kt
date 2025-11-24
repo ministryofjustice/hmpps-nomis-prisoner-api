@@ -67,6 +67,15 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
             visit(visitTypeCode = "SCON")
           }
         }
+        offender(nomsId = "A4321TT") {
+          booking {
+            visitBalance { }
+            contact(person = visitor)
+            visit(visitTypeCode = "OFFI", createdDatetime = LocalDateTime.parse("2023-01-01T10:00:00"), agyLocId = "BXI")
+            visit(visitTypeCode = "OFFI", createdDatetime = LocalDateTime.parse("2023-02-01T10:00:00"), agyLocId = "BXI")
+            visit(visitTypeCode = "OFFI", createdDatetime = LocalDateTime.parse("2023-03-01T10:00:00"), agyLocId = "LEI")
+          }
+        }
       }
     }
 
@@ -115,7 +124,7 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("page.totalElements").isEqualTo(30)
+          .jsonPath("page.totalElements").isEqualTo(33)
           .jsonPath("content.size()").isEqualTo(20)
           .jsonPath("page.number").isEqualTo(0)
           .jsonPath("page.totalPages").isEqualTo(2)
@@ -133,11 +142,108 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("page.totalElements").isEqualTo(30)
+          .jsonPath("page.totalElements").isEqualTo(33)
           .jsonPath("content.size()").isEqualTo(1)
           .jsonPath("page.number").isEqualTo(0)
-          .jsonPath("page.totalPages").isEqualTo(30)
+          .jsonPath("page.totalPages").isEqualTo(33)
           .jsonPath("page.size").isEqualTo(1)
+      }
+
+      @Test
+      fun `can filter by one or more prisons`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("prisonIds", "LEI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(1)
+
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("prisonIds", "LEI")
+            .queryParam("prisonIds", "BXI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(3)
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("prisonIds", "LEI")
+            .queryParam("prisonIds", "BXI")
+            .queryParam("prisonIds", "MDI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(33)
+      }
+
+      @Test
+      fun `can filter by from date`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("fromDate", "2023-03-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(31)
+      }
+
+      @Test
+      fun `can filter by to date`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("toDate", "2023-03-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(3)
+      }
+
+      @Test
+      fun `can filter by from and to dates`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("toDate", "2023-03-01")
+            .queryParam("fromDate", "2023-02-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(2)
+      }
+
+      @Test
+      fun `can filter by from and to dates and prison`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids")
+            .queryParam("toDate", "2023-03-01")
+            .queryParam("fromDate", "2023-02-01")
+            .queryParam("prisonIds", "BXI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("page.totalElements").isEqualTo(1)
       }
 
       @Test

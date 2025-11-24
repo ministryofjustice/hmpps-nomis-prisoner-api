@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.visits
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -17,6 +18,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -66,7 +68,23 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     @PageableDefault(size = 20, sort = ["id" ], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
-  ): PagedModel<VisitIdResponse> = PagedModel(officialVisitsService.getVisitIds(pageRequest = pageRequest))
+    @RequestParam(value = "prisonIds")
+    @Parameter(description = "Filter results by prison ids (returns all prisons if not specified)", example = "['MDI','LEI']")
+    prisonIds: List<String> = emptyList(),
+    @RequestParam(value = "fromDate")
+    @Parameter(description = "Filter results by visits that were created on or after the given date", example = "2024-11-03")
+    fromDate: LocalDate?,
+    @RequestParam(value = "toDate")
+    @Parameter(description = "Filter results by visits that were created on or before the given date", example = "2025-11-03")
+    toDate: LocalDate?,
+  ): PagedModel<VisitIdResponse> = PagedModel(
+    officialVisitsService.getVisitIds(
+      pageRequest = pageRequest,
+      prisonIds = prisonIds,
+      fromDate = fromDate,
+      toDate = toDate,
+    ),
+  )
 
   @GetMapping("/official-visits/{visitId}")
   @Operation(
