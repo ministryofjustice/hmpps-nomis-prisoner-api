@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -55,8 +56,13 @@ class VisitBuilderRepository(
   private val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
   private val searchLevelRepository: ReferenceCodeRepository<SearchLevel>,
+  private val jdbcTemplate: JdbcTemplate,
 ) {
-  fun save(visit: Visit): Visit = visitRepository.save(visit)
+  fun save(visit: Visit): Visit = visitRepository.saveAndFlush(visit)
+  fun updateCreateDatetime(visit: Visit, createdDatetime: LocalDateTime) {
+    jdbcTemplate.update("update OFFENDER_VISITS set CREATE_DATETIME = ? where OFFENDER_VISIT_ID = ?", createdDatetime, visit.id)
+  }
+
   fun lookupVisitType(code: String): VisitType = visitTypeRepository.findByIdOrNull(Pk(VisitType.VISIT_TYPE, code))!!
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
   fun lookupVisitStatus(code: String): VisitStatus = visitStatusRepository.findByIdOrNull(Pk(VisitStatus.VISIT_STATUS, code))!!
@@ -94,6 +100,7 @@ class VisitBuilderRepositoryBuilder(
     overrideBanStaff: Staff? = null,
     prisonerSearchTypeCode: String? = null,
     visitSlot: AgencyVisitSlot?,
+    createdDatetime: LocalDateTime? = null,
   ): Visit = Visit(
     offenderBooking = offenderBooking,
     startDateTime = LocalDateTime.parse(startDateTimeString),
@@ -114,6 +121,11 @@ class VisitBuilderRepositoryBuilder(
     searchLevel = repository.lookupSearchLevelRepository(prisonerSearchTypeCode),
   )
     .let { repository.save(it) }
+    .also {
+      if (createdDatetime != null) {
+        repository.updateCreateDatetime(it, createdDatetime)
+      }
+    }
     .also { visit = it }
 
   override fun visitor(

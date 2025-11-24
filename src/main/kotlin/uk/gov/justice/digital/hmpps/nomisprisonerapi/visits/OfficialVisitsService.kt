@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -19,7 +20,29 @@ class OfficialVisitsService(
   private val visitRepository: VisitRepository,
 
 ) {
-  fun getVisitIds(pageRequest: Pageable): Page<VisitIdResponse> = visitRepository.findAllOfficialVisitsIds(pageRequest).map {
+  fun getVisitIds(
+    pageRequest: Pageable,
+    prisonIds: List<String>,
+    fromDate: LocalDate?,
+    toDate: LocalDate?,
+  ): Page<VisitIdResponse> = if (prisonIds.isEmpty()) {
+    if (fromDate == null && toDate == null) {
+      visitRepository.findAllOfficialVisitsIds(pageRequest)
+    } else {
+      visitRepository.findAllOfficialVisitsIdsWithDateFilter(
+        toDate = toDate?.atStartOfDay()?.plusDays(1),
+        fromDate = fromDate?.atStartOfDay(),
+        pageable = pageRequest,
+      )
+    }
+  } else {
+    visitRepository.findAllOfficialVisitsIdsWithDateAndPrisonFilter(
+      toDate = toDate?.atStartOfDay()?.plusDays(1),
+      fromDate = fromDate?.atStartOfDay(),
+      prisonIds = prisonIds,
+      pageable = pageRequest,
+    )
+  }.map {
     VisitIdResponse(
       visitId = it.id,
     )

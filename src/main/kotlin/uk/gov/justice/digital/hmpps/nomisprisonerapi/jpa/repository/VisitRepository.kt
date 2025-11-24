@@ -4,6 +4,7 @@ import jakarta.persistence.LockModeType
 import jakarta.persistence.QueryHint
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
@@ -22,6 +23,7 @@ import java.util.Optional
 interface VisitRepository :
   CrudRepository<Visit, Long>,
   JpaSpecificationExecutor<Visit>,
+  JpaRepository<Visit, Long>,
   VisitCustomRepository {
   fun findByOffenderBooking(booking: OffenderBooking): List<Visit>
 
@@ -59,6 +61,43 @@ interface VisitRepository :
     """,
   )
   fun findAllOfficialVisitsIds(
+    pageable: Pageable,
+  ): Page<VisitIdProjection>
+
+  @Query(
+    """
+      select 
+        v.id as id
+      from Visit v 
+      where v.visitType.code = 'OFFI'
+      and 
+          (:fromDate is null or v.createDatetime > :fromDate) and 
+          (:toDate is null or v.createDatetime < :toDate)    
+  """,
+  )
+  fun findAllOfficialVisitsIdsWithDateFilter(
+    fromDate: LocalDateTime?,
+    toDate: LocalDateTime?,
+    pageable: Pageable,
+  ): Page<VisitIdProjection>
+
+  @Query(
+    """
+      select 
+        v.id as id
+      from Visit v 
+      where v.visitType.code = 'OFFI'
+      and 
+      
+          (:fromDate is null or v.createDatetime > :fromDate) and 
+          (:toDate is null or v.createDatetime < :toDate)  and 
+            v.location.id in (:prisonIds)    
+  """,
+  )
+  fun findAllOfficialVisitsIdsWithDateAndPrisonFilter(
+    fromDate: LocalDateTime?,
+    toDate: LocalDateTime?,
+    prisonIds: List<String>,
     pageable: Pageable,
   ): Page<VisitIdProjection>
 }
