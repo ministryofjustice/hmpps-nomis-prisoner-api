@@ -55,6 +55,7 @@ class OfficialVisitsService(
             personId = visitor.person!!.id,
             firstName = visitor.person!!.firstName,
             lastName = visitor.person!!.lastName,
+            dateOfBirth = visitor.person!!.birthDate,
             leadVisitor = visitor.groupLeader,
             assistedVisit = visitor.assistedVisit,
             visitOutcome = visitor.eventOutcome?.toCodeDescription(),
