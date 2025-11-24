@@ -86,7 +86,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
       fun `should return profile details`() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234AA") {
-            booking = booking(bookingBeginDate = yesterday) {
+            booking = booking(bookingBeginDate = yesterday, bookingSequence = 1) {
               profile(checkDate = LocalDateTime.parse("2025-11-05T13:14"))
               profileDetail(profileType = "L_EYE_C", profileCode = "RED")
               profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
@@ -98,8 +98,8 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
           .consumeWith {
             with(it.responseBody!!) {
               assertThat(offenderNo).isEqualTo("A1234AA")
-              assertThat(bookings).extracting("bookingId", "latestBooking")
-                .containsExactly(tuple(booking.bookingId, true))
+              assertThat(bookings).extracting("bookingId", "latestBooking", "sequence")
+                .containsExactly(tuple(booking.bookingId, true, 1))
               assertThat(bookings[0].profileDetails).extracting("type", "code")
                 .containsExactlyInAnyOrder(
                   tuple("L_EYE_C", "RED"),

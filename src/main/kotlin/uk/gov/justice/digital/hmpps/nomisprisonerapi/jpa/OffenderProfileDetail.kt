@@ -79,6 +79,10 @@ data class OffenderProfileDetail(
   @Generated
   var auditModuleName: String? = null
 
+  @Column(name = "AUDIT_TIMESTAMP")
+  @Generated
+  var auditTimestamp: LocalDateTime? = null
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
