@@ -43,6 +43,7 @@ class ProfileDetailsService(
         BookingProfileDetailsResponse(
           bookingId = booking.bookingId,
           latestBooking = booking.bookingSequence == 1,
+          sequence = booking.bookingSequence,
           startDateTime = booking.bookingBeginDate,
           profileDetails = booking.profileDetails
             .filter { it.id.sequence == 1 }
@@ -57,6 +58,7 @@ class ProfileDetailsService(
                 modifiedDateTime = pd.modifyDatetime,
                 modifiedBy = pd.modifyUserId,
                 auditModuleName = pd.auditModuleName,
+                auditTimestamp = pd.auditTimestamp,
               )
             },
         ).takeIf { bookingResponse -> bookingResponse.profileDetails.isNotEmpty() }
@@ -154,4 +156,5 @@ fun OffenderProfileDetail.toDto() = ProfileDetailsResponse(
   modifiedDateTime = modifyDatetime,
   modifiedBy = modifyUserId,
   auditModuleName = auditModuleName,
+  auditTimestamp = auditTimestamp,
 )

@@ -22,6 +22,8 @@ data class BookingProfileDetailsResponse(
   val profileDetails: List<ProfileDetailsResponse>,
   @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
   val latestBooking: Boolean,
+  @Schema(description = "The booking sequence number.", example = "1")
+  val sequence: Int,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
 )
@@ -45,4 +47,6 @@ data class ProfileDetailsResponse(
   val modifiedBy: String?,
   @Schema(description = "The name of the module that last changed the profile info, indicates if this was NOMIS or the synchronisation service", example = "DPS_SYNCHRONISATION")
   val auditModuleName: String?,
+  @Schema(description = "The timestamp of the last change", example = "2025-11-29T12:34:56")
+  val auditTimestamp: LocalDateTime?,
 )
