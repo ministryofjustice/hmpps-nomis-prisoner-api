@@ -163,12 +163,14 @@ data class OfficialVisitResponse(
   val endDateTime: LocalDateTime,
   @Schema(description = "The room where the visit will take place")
   val internalLocationId: Long,
-  @Schema(description = "The status of the visit")
+  @Schema(description = "The status of the visit; Scheduled, Normal, Cancelled")
   val visitStatus: CodeDescription,
-  @Schema(description = "The outcome of the visit")
+  @Schema(description = "The outcome of the visit; Completed, Cancelled, Scheduled, Expired")
   val visitOutcome: CodeDescription?,
-  @Schema(description = "The outcome reason of the visit")
-  val outcomeReason: CodeDescription?,
+  @Schema(description = "The reason of the visit cancellation")
+  val cancellationReason: CodeDescription?,
+  @Schema(description = "The status of prisoner, Attended or Absent")
+  val prisonerAttendanceOutcome: CodeDescription?,
   @Schema(description = "The type of search to apply to prisoner")
   val prisonerSearchType: CodeDescription?,
   @Schema(description = "Visitor concerns text")
@@ -198,11 +200,11 @@ data class OfficialVisitResponse(
     val leadVisitor: Boolean,
     @Schema(description = "Indicates visitor requires assistance")
     val assistedVisit: Boolean,
-    @Schema(description = "The outcome of the visit")
-    val visitOutcome: CodeDescription?,
-    @Schema(description = "The outcome reason of the visit")
-    val outcomeReason: CodeDescription?,
-    @Schema(description = "The status of visitor")
+    @Schema(description = "The status of visitor, Attended or Absent")
+    val visitorAttendanceOutcome: CodeDescription?,
+    @Schema(description = "The reason of the visit cancellation - typically matches the overall cancellation reason")
+    val cancellationReason: CodeDescription?,
+    @Schema(description = "The status of the visit; Scheduled, Normal, Cancelled")
     val eventStatus: CodeDescription?,
     @Schema(description = "Visitor comments")
     val commentText: String? = null,
