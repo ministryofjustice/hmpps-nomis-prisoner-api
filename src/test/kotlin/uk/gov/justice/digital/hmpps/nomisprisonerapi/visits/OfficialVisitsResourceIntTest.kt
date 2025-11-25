@@ -455,8 +455,9 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk.expectBodyResponse()
 
         assertThat(visit.visitStatus.description).isEqualTo("Scheduled")
-        assertThat(visit.outcomeReason?.description).isEqualTo("Administrative Cancellation")
+        assertThat(visit.cancellationReason?.description).isEqualTo("Administrative Cancellation")
         assertThat(visit.visitOutcome?.description).isEqualTo("Cancelled")
+        assertThat(visit.prisonerAttendanceOutcome?.description).isEqualTo("Absence")
       }
 
       @Test
@@ -526,12 +527,12 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         val johnDupontVisitor = visit.visitors.find { it.personId == johnDupont.id }!!
 
         assertThat(janeDoeVisitor.eventStatus?.description).isEqualTo("Completed")
-        assertThat(janeDoeVisitor.outcomeReason?.description).isNull()
-        assertThat(janeDoeVisitor.visitOutcome?.description).isEqualTo("Attended")
+        assertThat(janeDoeVisitor.cancellationReason?.description).isNull()
+        assertThat(janeDoeVisitor.visitorAttendanceOutcome?.description).isEqualTo("Attended")
 
         assertThat(johnDupontVisitor.eventStatus?.description).isEqualTo("Cancelled")
-        assertThat(johnDupontVisitor.outcomeReason?.description).isEqualTo("Offender Cancelled")
-        assertThat(johnDupontVisitor.visitOutcome?.description).isEqualTo("Absence")
+        assertThat(johnDupontVisitor.cancellationReason?.description).isEqualTo("Offender Cancelled")
+        assertThat(johnDupontVisitor.visitorAttendanceOutcome?.description).isEqualTo("Absence")
       }
 
       @Test
