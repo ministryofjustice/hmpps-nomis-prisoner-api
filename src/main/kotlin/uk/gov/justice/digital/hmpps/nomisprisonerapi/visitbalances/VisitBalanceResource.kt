@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
-import jakarta.validation.constraints.Min
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -404,10 +403,8 @@ class VisitBalanceResource(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateVisitBalanceRequest(
   @Schema(description = "Total number of unallocated (remaining) visit orders", required = false)
-  @field:Min(0)
   val remainingVisitOrders: Int?,
   @Schema(description = "Total number of unallocated (remaining) privileged visit orders", required = false)
-  @field:Min(0)
   val remainingPrivilegedVisitOrders: Int?,
 )
 

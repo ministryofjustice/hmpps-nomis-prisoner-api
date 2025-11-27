@@ -421,6 +421,28 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `updating a visit balance with negative values`() {
+        webTestClient.put().uri("/prisoners/A1234AB/visit-balance")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            UpdateVisitBalanceRequest(
+              remainingVisitOrders = -2,
+              remainingPrivilegedVisitOrders = -3,
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(204)
+
+        repository.runInTransaction {
+          val booking = offenderBookingRepository.findByIdOrNull(activeBookingId)
+          val newBalance = booking?.visitBalance!!
+          assertThat(newBalance.remainingVisitOrders).isEqualTo(-2)
+          assertThat(newBalance.remainingPrivilegedVisitOrders).isEqualTo(-3)
+        }
+      }
+
+      @Test
       fun `creating a visit balance will allow the data to be retrieved`() {
         webTestClient.put().uri("/prisoners/A4321AB/visit-balance")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
