@@ -7,13 +7,20 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
@@ -30,6 +37,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressRepos
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
@@ -39,6 +48,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSche
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 import java.time.LocalTime
 
 @Service
@@ -65,11 +75,16 @@ class MovementsService(
   private val arrestAgencyRepository: ReferenceCodeRepository<ArrestAgency>,
   private val corporateAddressRepository: CorporateAddressRepository,
   private val agencyLocationAddressRepository: AgencyLocationAddressRepository,
+  private val offenderAddressRepository: OffenderAddressRepository,
+  private val corporateRepository: CorporateRepository,
+  addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
 
   private val tapMovementType = movementTypeRepository.findByIdOrNull(MovementType.pk("TAP"))
     ?: throw IllegalStateException("TAP movement type not found")
+
+  private val rotlAddressType = addressUsageTypeRepository.findByIdOrNull(AddressUsageType.pk("ROTL"))
 
   fun getTemporaryAbsencesAndMovements(offenderNo: String): OffenderTemporaryAbsencesResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -207,7 +222,7 @@ class MovementsService(
     val fromPrison = agencyLocationOrThrow(request.fromPrison)
     val toAgency = request.toAgency?.let { agencyLocationOrThrow(request.toAgency) }
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
-    val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
+    val toAddress = findOrCreateAddress(request.toAddress, offenderBooking.offender)
 
     val schedule = request.eventId
       ?.let { scheduledTemporaryAbsenceRepository.findById(request.eventId).get() }
@@ -223,7 +238,7 @@ class MovementsService(
         this.transportType = transportType
         this.returnDate = request.returnDate
         this.returnTime = request.returnTime
-        this.toAddressOwnerClass = toAddress?.addressOwnerClass
+        this.toAddressOwnerClass = toAddress.addressOwnerClass
         this.toAddress = toAddress
       }
       ?: OffenderScheduledTemporaryAbsence(
@@ -240,7 +255,7 @@ class MovementsService(
         returnDate = request.returnDate,
         returnTime = request.returnTime,
         temporaryAbsenceApplication = application,
-        toAddressOwnerClass = toAddress?.addressOwnerClass,
+        toAddressOwnerClass = toAddress.addressOwnerClass,
         toAddress = toAddress,
         applicationDate = request.applicationDate,
         applicationTime = request.applicationTime,
@@ -284,6 +299,8 @@ class MovementsService(
       bookingId = offenderBooking.bookingId,
       movementApplicationId = application.movementApplicationId,
       eventId = schedule.eventId,
+      addressId = toAddress.addressId,
+      addressOwnerClass = toAddress.addressOwnerClass,
     )
   }
 
@@ -476,6 +493,66 @@ class MovementsService(
 
   private fun addressOrThrow(addressId: Long) = addressRepository.findByIdOrNull(addressId)
     ?: throw BadDataException("Address id $addressId is invalid")
+
+  private fun findOrCreateAddress(request: UpsertTemporaryAbsenceAddress, offender: Offender): Address {
+    // If an id is passed then we don't need to create an address
+    if (request.id != null) return addressOrThrow(request.id)
+
+    if (request.addressText == null || request.ownerClass == null) throw BadDataException("Both address text and owner class are required to create a new address")
+    if (request.ownerClass in listOf("AGY", "CORP") && request.name == null) throw BadDataException("Corporate or Agency name is required to create a new address")
+
+    return when (request.ownerClass) {
+      "OFF" -> createOffenderAddress(request.addressText, request.postalCode, offender)
+      // Agency maintenance is tightly controlled in NOMIS so we'll always create a corporate address (which is the same as users often do now)
+      "AGY", "CORP" -> createCorporateAddress(request.name!!, request.addressText, request.postalCode)
+      else -> throw BadDataException("Address owner class ${request.ownerClass} is not supported")
+    }
+  }
+
+  private fun formatAddressText(addressText: String): Pair<String, String?> {
+    val maxPremiseLength = 135
+
+    if (addressText.length <= maxPremiseLength) {
+      return addressText.trim() to null
+    }
+
+    val split = if (addressText.substring(maxPremiseLength, maxPremiseLength + 1) == " ") {
+      maxPremiseLength
+    } else {
+      addressText.substring(0, maxPremiseLength).lastIndexOf(" ")
+    }
+    return addressText.substring(0, split).trim() to addressText.substring(split, addressText.length).trim()
+  }
+
+  private fun createOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress {
+    val (premise, street) = formatAddressText(addressText)
+    return offenderAddressRepository.save(
+      OffenderAddress(
+        offender = offender,
+        premise = premise,
+        street = street,
+        postalCode = postalCode,
+        startDate = LocalDate.now(),
+      ).apply {
+        usages += AddressUsage(AddressUsageId(this, "ROTL"), true, rotlAddressType)
+      },
+    )
+  }
+
+  private fun createCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
+    val (premise, street) = formatAddressText(addressText)
+    return corporateRepository.save(
+      Corporate(corporateName = name).apply {
+        addresses += CorporateAddress(
+          corporate = this,
+          premise = premise,
+          street = street,
+          postalCode = postalCode,
+          startDate = LocalDate.now(),
+        )
+      },
+    ).addresses.first()
+  }
 
   private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw BadDataException("Agency id $agencyId is invalid")

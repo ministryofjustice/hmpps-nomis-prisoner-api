@@ -27,25 +27,25 @@ class Corporate(
   var corporateName: String,
   @JoinColumn(name = "CASELOAD_ID")
   @ManyToOne(fetch = LAZY)
-  var caseload: Caseload?,
+  var caseload: Caseload? = null,
   @Column(name = "CREATED_DATE")
   val createdDate: LocalDateTime = LocalDateTime.now(),
   @Column(name = "COMMENT_TEXT")
-  var commentText: String?,
+  var commentText: String? = null,
   // always N with no default
   @Column(name = "SUSPENDED_FLAG")
   @Convert(converter = YesNoConverter::class)
   var suspended: Boolean = false,
   @Column(name = "FEI_NUMBER")
-  var feiNumber: String?,
+  var feiNumber: String? = null,
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
   var active: Boolean = true,
   @Column(name = "EXPIRY_DATE")
-  var expiryDate: LocalDate?,
+  var expiryDate: LocalDate? = null,
   // nearly always null
   @Column(name = "TAX_NO")
-  var taxNo: String?,
+  var taxNo: String? = null,
 
   @OneToMany(mappedBy = "id.corporate", cascade = [CascadeType.ALL], fetch = LAZY, orphanRemoval = true)
   val types: MutableList<CorporateType> = mutableListOf(),
