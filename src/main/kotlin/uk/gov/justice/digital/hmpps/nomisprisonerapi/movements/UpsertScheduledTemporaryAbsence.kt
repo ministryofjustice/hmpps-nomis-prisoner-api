@@ -48,8 +48,8 @@ data class UpsertScheduledTemporaryAbsenceRequest(
   @Schema(description = "Return time")
   val returnTime: LocalDateTime,
 
-  @Schema(description = "To address ID")
-  val toAddressId: Long?,
+  @Schema(description = "To address")
+  val toAddress: UpsertTemporaryAbsenceAddress,
 
   @Schema(description = "Application date")
   val applicationDate: LocalDateTime,
@@ -68,4 +68,10 @@ data class UpsertScheduledTemporaryAbsenceResponse(
 
   @Schema(description = "Event ID")
   val eventId: Long,
+
+  @Schema(description = "Address ID")
+  val addressId: Long,
+
+  @Schema(description = "Address owner class")
+  val addressOwnerClass: String,
 )

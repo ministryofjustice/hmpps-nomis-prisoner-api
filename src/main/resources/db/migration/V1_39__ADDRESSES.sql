@@ -7,7 +7,7 @@ CREATE TABLE "ADDRESSES"
   "OWNER_CODE"                    VARCHAR2(12 CHAR),
   "ADDRESS_TYPE"                  VARCHAR2(12 CHAR),
   "FLAT"                          VARCHAR2(30 CHAR),
-  "PREMISE"                       VARCHAR2(50 CHAR),
+  "PREMISE"                       VARCHAR2(135 CHAR),
   "STREET"                        VARCHAR2(160 CHAR),
   "LOCALITY"                      VARCHAR2(70 CHAR),
   "CITY_CODE"                     VARCHAR2(12 CHAR),
