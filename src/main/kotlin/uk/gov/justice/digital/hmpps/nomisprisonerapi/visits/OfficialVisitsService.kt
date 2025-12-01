@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import java.time.LocalDate
 
@@ -18,6 +19,7 @@ import java.time.LocalDate
 @Transactional
 class OfficialVisitsService(
   private val visitRepository: VisitRepository,
+  private val offenderContactPersonRepository: OffenderContactPersonRepository,
 
 ) {
   fun getVisitIds(
@@ -86,8 +88,7 @@ class OfficialVisitsService(
             cancellationReason = visitor.outcomeReason?.toCodeDescription(),
             eventStatus = visitor.eventStatus?.toCodeDescription(),
             commentText = visitor.commentText,
-            // TODO - look at performance of below - a better solution might be to map with filter/where clause in VisitVisitor entity rather than via Person
-            relationships = visitor.person!!.contacts.filter { it.offenderBooking == this.offenderBooking }.sortedWith(latestOfficialContactFirst()).map {
+            relationships = offenderContactPersonRepository.findByPersonAndOffenderBooking(visitor.person!!, offenderBooking).sortedWith(latestOfficialContactFirst()).map {
               OfficialVisitResponse.OfficialVisitor.ContactRelationship(
                 relationshipType = it.relationshipType.toCodeDescription(),
               )
