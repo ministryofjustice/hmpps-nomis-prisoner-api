@@ -35,8 +35,9 @@ data class VisitVisitor(
   @JoinColumn(name = "OFFENDER_VISIT_ID", nullable = false)
   val visit: Visit,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @ManyToOne(optional = false, fetch = FetchType.EAGER)
   @JoinColumn(name = "PERSON_ID")
+  @NotFound(action = NotFoundAction.IGNORE)
   val person: Person? = null,
 
   @Column(name = "GROUP_LEADER_FLAG", nullable = false)
