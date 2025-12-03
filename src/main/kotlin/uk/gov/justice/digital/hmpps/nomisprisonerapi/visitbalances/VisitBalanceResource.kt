@@ -6,11 +6,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
-import org.springdoc.core.annotations.ParameterObject
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
-import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -21,7 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -37,55 +31,6 @@ import java.time.LocalDate
 class VisitBalanceResource(
   private val visitBalanceService: VisitBalanceService,
 ) {
-
-  @GetMapping("/visit-balances/ids")
-  @Operation(
-    summary = "Find paged visit balance ids",
-    description = """
-      Returns the visit balance ids (which are booking ids) for the latest booking for offenders with balance entries.
-      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "OK",
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "Invalid request",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Not found",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
-        ],
-      ),
-    ],
-  )
-  fun findVisitBalanceIds(
-    @PageableDefault(sort = ["offenderBookingId"], direction = Sort.Direction.ASC)
-    @ParameterObject
-    pageRequest: Pageable,
-    @Schema(description = "Prison id") @RequestParam prisonId: String?,
-  ): Page<VisitBalanceIdResponse> = visitBalanceService.findAllIds(prisonId, pageRequest)
-
   @GetMapping("/visit-balances/{visitBalanceId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -482,13 +427,6 @@ data class VisitBalanceAdjustmentResponse(
   val createUsername: String,
   @Schema(description = "Whether this adjustment is for the latest booking")
   val latestBooking: Boolean,
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "visit balance id")
-data class VisitBalanceIdResponse(
-  @Schema(description = "The visit balance (booking) id")
-  val visitBalanceId: Long,
 )
 
 fun OffenderVisitBalanceAdjustment.toVisitBalanceAdjustmentResponse(): VisitBalanceAdjustmentResponse = VisitBalanceAdjustmentResponse(

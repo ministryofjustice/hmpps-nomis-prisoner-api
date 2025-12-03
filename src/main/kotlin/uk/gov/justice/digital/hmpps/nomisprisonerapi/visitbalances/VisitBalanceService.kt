@@ -3,8 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -40,9 +38,6 @@ class VisitBalanceService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
     const val OMS_OWNER = "OMS_OWNER"
   }
-  fun findAllIds(prisonId: String?, pageRequest: Pageable): Page<VisitBalanceIdResponse> = visitBalanceRepository.findForLatestBooking(prisonId, pageRequest)
-    .map { VisitBalanceIdResponse(it.offenderBookingId) }
-
   fun getVisitBalanceDetailsById(visitBalanceId: Long): VisitBalanceDetailResponse = offenderBookingRepository.findByIdOrNull(visitBalanceId) ?.let { getVisitBalanceDetailsForBooking(it) }
     ?: throw NotFoundException("Visit Balance $visitBalanceId not found")
 
