@@ -2,17 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
-import org.springdoc.core.annotations.ParameterObject
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -458,63 +453,6 @@ class SentencingAdjustmentResource(private val sentencingAdjustmentService: Sent
     @RequestBody @Valid
     request: CreateKeyDateAdjustmentRequest,
   ): CreateAdjustmentResponse = sentencingAdjustmentService.createKeyDateAdjustment(bookingId, request)
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @GetMapping("/adjustments/ids")
-  @Operation(
-    summary = "get adjustment IDs (key date and Sentence adjustments) by filter",
-    description = "Retrieves a paged list of adjustment ids by filter. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Pageable list of ids are returned",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getAdjustmentsByFilter(
-    @ParameterObject
-    pageRequest: Pageable,
-    @RequestParam(value = "fromDate", required = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by adjustments that were created on or after the given date",
-      example = "2021-11-03",
-    )
-    fromDate: LocalDate?,
-    @RequestParam(value = "toDate", required = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by adjustments that were created on or before the given date",
-      example = "2021-11-03",
-    )
-    toDate: LocalDate?,
-  ): Page<AdjustmentIdResponse> = sentencingAdjustmentService.findAdjustmentIdsByFilter(
-    pageRequest = pageRequest,
-    AdjustmentFilter(
-      toDate = toDate,
-      fromDate = fromDate,
-    ),
-  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/prisoners/booking-id/{bookingId}/sentencing-adjustments")
