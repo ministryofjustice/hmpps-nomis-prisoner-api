@@ -2,8 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityManager
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -222,15 +220,6 @@ class SentencingAdjustmentService(
       "key-date-adjustment-delete-not-found",
       mapOf("adjustmentId" to adjustmentId.toString()),
       null,
-    )
-  }
-
-  fun findAdjustmentIdsByFilter(pageRequest: Pageable, adjustmentFilter: AdjustmentFilter): Page<AdjustmentIdResponse> {
-    val adjustedToDate = adjustmentFilter.toDate?.let { adjustmentFilter.toDate.plusDays(1) }
-    return keyDateAdjustmentRepository.adjustmentIdsQueryNamed(
-      fromDate = adjustmentFilter.fromDate,
-      toDate = adjustedToDate,
-      pageRequest,
     )
   }
 

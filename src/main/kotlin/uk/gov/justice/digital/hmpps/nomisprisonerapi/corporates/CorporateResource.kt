@@ -2,17 +2,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.corporates
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
-import org.springdoc.core.annotations.ParameterObject
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
-import org.springframework.data.web.PageableDefault
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -24,7 +17,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -36,65 +28,6 @@ import java.time.LocalDate
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class CorporateResource(private val corporateService: CorporateService) {
-
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @GetMapping("/corporates/ids")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-    summary = "Get all Ids",
-    description = "Retrieves all corporate Ids - typically for a migration. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Page of corporate Ids",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getCorporateIds(
-    @PageableDefault(size = 20, sort = ["corporateId"], direction = Sort.Direction.ASC)
-    @ParameterObject
-    pageRequest: Pageable,
-    @RequestParam(value = "fromDate")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by corporate that were created on or after the given date",
-      example = "2021-11-03",
-    )
-    fromDate: LocalDate?,
-    @RequestParam(value = "toDate")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(
-      description = "Filter results by corporate that were created on or before the given date",
-      example = "2021-11-03",
-    )
-    toDate: LocalDate?,
-  ): Page<CorporateOrganisationIdResponse> = corporateService.findCorporateIdsByFilter(
-    pageRequest = pageRequest,
-    CorporateFilter(
-      toDate = toDate,
-      fromDate = fromDate,
-    ),
-  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/corporates/{corporateId}")
@@ -1437,11 +1370,6 @@ data class CorporateInternetAddress(
   val type: String,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
-)
-
-data class CorporateOrganisationIdResponse(
-  @Schema(description = "The corporate Id")
-  val corporateId: Long,
 )
 
 @Schema(description = "Request to create a corporate organisation in NOMIS")

@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
@@ -2026,127 +2025,6 @@ class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNoContent
-    }
-  }
-
-  @Nested
-  @DisplayName("GET /adjustments/ids")
-  inner class GetAdjustmentIds {
-    private lateinit var anotherPrisoner: Offender
-
-    @BeforeEach
-    internal fun createPrisoner() {
-      nomisDataBuilder.build {
-        anotherPrisoner = offender(nomsId = "A1234TX") {
-          booking {
-            sentence {
-              adjustment(createdDate = LocalDateTime.of(2023, 1, 1, 13, 30))
-              adjustment(createdDate = LocalDateTime.of(2023, 1, 5, 13, 30))
-              adjustment(createdDate = LocalDateTime.of(2023, 1, 10, 13, 30))
-            }
-            adjustment(createdDate = LocalDateTime.of(2023, 1, 2, 13, 30))
-            adjustment(createdDate = LocalDateTime.of(2023, 1, 3, 13, 30))
-            adjustment(createdDate = LocalDateTime.of(2023, 1, 15, 13, 30))
-          }
-        }
-      }
-    }
-
-    @AfterEach
-    internal fun deletePrisoner() {
-      repository.delete(anotherPrisoner)
-    }
-
-    @Nested
-    inner class Security {
-      @Test
-      fun `access forbidden when no role`() {
-        webTestClient.get().uri("/adjustments/ids")
-          .headers(setAuthorisation(roles = listOf()))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/adjustments/ids")
-          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/adjustments/ids")
-          .exchange()
-          .expectStatus().isUnauthorized
-      }
-    }
-
-    @Test
-    fun `get all adjustment ids - no filter specified`() {
-      webTestClient.get().uri("/adjustments/ids")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("$.numberOfElements").isEqualTo(6)
-    }
-
-    @Test
-    fun `get adjustments created within a given date range`() {
-      webTestClient.get().uri {
-        it.path("/adjustments/ids")
-          .queryParam("fromDate", LocalDate.of(2023, 1, 1).toString())
-          .queryParam("toDate", LocalDate.of(2023, 1, 5).toString())
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("$.numberOfElements").isEqualTo(4)
-        .jsonPath("$.content[0].adjustmentCategory").isEqualTo("SENTENCE")
-        .jsonPath("$.content[1].adjustmentCategory").isEqualTo("KEY-DATE")
-        .jsonPath("$.content[2].adjustmentCategory").isEqualTo("KEY-DATE")
-        .jsonPath("$.content[3].adjustmentCategory").isEqualTo("SENTENCE")
-    }
-
-    @Test
-    fun `can request a different page size`() {
-      webTestClient.get().uri {
-        it.path("/adjustments/ids")
-          .queryParam("size", "2")
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("totalElements").isEqualTo(6)
-        .jsonPath("numberOfElements").isEqualTo(2)
-        .jsonPath("number").isEqualTo(0)
-        .jsonPath("totalPages").isEqualTo(3)
-        .jsonPath("size").isEqualTo(2)
-    }
-
-    @Test
-    fun `can request a different page`() {
-      webTestClient.get().uri {
-        it.path("/adjustments/ids")
-          .queryParam("size", "2")
-          .queryParam("page", "2")
-          .build()
-      }
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("totalElements").isEqualTo(6)
-        .jsonPath("numberOfElements").isEqualTo(2)
-        .jsonPath("number").isEqualTo(2)
-        .jsonPath("totalPages").isEqualTo(3)
-        .jsonPath("size").isEqualTo(2)
     }
   }
 
