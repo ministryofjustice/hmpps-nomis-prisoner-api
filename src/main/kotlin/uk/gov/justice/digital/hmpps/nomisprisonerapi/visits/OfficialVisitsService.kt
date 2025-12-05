@@ -75,6 +75,7 @@ class OfficialVisitsService(
         visitorConcernText = visitorConcernText,
         commentText = commentText,
         overrideBanStaffUsername = overrideBanStaff?.usernamePreferringGeneralAccount(),
+        visitOrder = visitOrder?.let { OfficialVisitResponse.VisitOrder(number = it.visitOrderNumber) },
         visitors = visitors.filter { it.person != null }.map { visitor ->
           OfficialVisitResponse.OfficialVisitor(
             id = visitor.id,
@@ -91,6 +92,7 @@ class OfficialVisitsService(
             relationships = offenderContactPersonRepository.findByPersonAndOffenderBooking(visitor.person!!, offenderBooking).sortedWith(latestOfficialContactFirst()).map {
               OfficialVisitResponse.OfficialVisitor.ContactRelationship(
                 relationshipType = it.relationshipType.toCodeDescription(),
+                contactType = it.contactType.toCodeDescription(),
               )
             },
             audit = visitor.toAudit(),
