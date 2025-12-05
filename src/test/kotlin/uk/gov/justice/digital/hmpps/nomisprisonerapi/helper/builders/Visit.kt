@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
@@ -100,6 +101,7 @@ class VisitBuilderRepositoryBuilder(
     overrideBanStaff: Staff? = null,
     prisonerSearchTypeCode: String? = null,
     visitSlot: AgencyVisitSlot?,
+    visitOrder: VisitOrder? = null,
     createdDatetime: LocalDateTime? = null,
   ): Visit = Visit(
     offenderBooking = offenderBooking,
@@ -119,6 +121,7 @@ class VisitBuilderRepositoryBuilder(
     commentText = comment,
     overrideBanStaff = overrideBanStaff,
     searchLevel = repository.lookupSearchLevelRepository(prisonerSearchTypeCode),
+    visitOrder = visitOrder,
   )
     .let { repository.save(it) }
     .also {

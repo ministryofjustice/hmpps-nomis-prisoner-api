@@ -310,6 +310,9 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
 
         offender(nomsId = "A1234TT") {
           bookingId = booking {
+            val visitOrder = visitOrder(
+              orderNumber = 654321,
+            )
             visitBalance { }
             contact(
               person = johnDupont,

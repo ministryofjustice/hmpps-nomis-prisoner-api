@@ -46,6 +46,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -355,6 +356,14 @@ interface BookingDsl {
     dsl: VisitDsl.() -> Unit = {},
   ): Visit
 
+  fun visitOrder(
+    orderNumber: Long,
+    visitOrderTypeCode: String = "VO",
+    visitStatusCode: String = "SCH",
+    issueDate: LocalDate = LocalDate.now(),
+    dsl: VisitOrderDsl.() -> Unit = {},
+  ): VisitOrder
+
   @VisitDslMarker
   fun officialVisit(
     visitTypeCode: String = "OFFI",
@@ -365,6 +374,7 @@ interface BookingDsl {
     visitorConcern: String? = null,
     overrideBanStaff: Staff? = null,
     prisonerSearchTypeCode: String? = null,
+    visitOrder: VisitOrder? = null,
     dsl: VisitDsl.() -> Unit = {},
   ): Visit
 
@@ -482,6 +492,7 @@ class BookingBuilderFactory(
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
+  private val visitOrderBuilderFactory: VisitOrderBuilderFactory,
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
@@ -510,6 +521,7 @@ class BookingBuilderFactory(
     visitBalanceBuilderFactory,
     offenderContactPersonBuilderFactory,
     visitBuilderFactory,
+    visitOrderBuilderFactory,
     profileDetailBuilderFactory,
     offenderBookingImageBuilderFactory,
     offenderIdentifyingMarkBuilderFactory,
@@ -540,6 +552,7 @@ class BookingBuilder(
   private val visitBalanceBuilderFactory: VisitBalanceBuilderFactory,
   private val offenderContactPersonBuilderFactory: OffenderContactPersonBuilderFactory,
   private val visitBuilderFactory: VisitBuilderFactory,
+  private val visitOrderBuilderFactory: VisitOrderBuilderFactory,
   private val profileDetailBuilderFactory: OffenderProfileDetailBuilderFactory,
   private val offenderBookingImageBuilderFactory: OffenderBookingImageBuilderFactory,
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
@@ -1094,6 +1107,24 @@ class BookingBuilder(
         builder.apply(dsl)
       }
     }
+  override fun visitOrder(
+    orderNumber: Long,
+    visitOrderTypeCode: String,
+    visitStatusCode: String,
+    issueDate: LocalDate,
+    dsl: VisitOrderDsl.() -> Unit,
+  ): VisitOrder = visitOrderBuilderFactory.builder()
+    .let { builder ->
+      builder.build(
+        offenderBooking = offenderBooking,
+        visitOrderTypeCode = visitOrderTypeCode,
+        visitStatusCode = visitStatusCode,
+        orderNumber = orderNumber,
+        issueDate = issueDate,
+      ).also {
+        builder.apply(dsl)
+      }
+    }
   override fun officialVisit(
     visitTypeCode: String,
     visitStatusCode: String,
@@ -1103,6 +1134,7 @@ class BookingBuilder(
     visitorConcern: String?,
     overrideBanStaff: Staff?,
     prisonerSearchTypeCode: String?,
+    visitOrder: VisitOrder?,
     dsl: VisitDsl.() -> Unit,
   ): Visit = visitBuilderFactory.builder()
     .let { builder ->
@@ -1119,6 +1151,7 @@ class BookingBuilder(
         visitorConcern = visitorConcern,
         overrideBanStaff = overrideBanStaff,
         prisonerSearchTypeCode = prisonerSearchTypeCode,
+        visitOrder = visitOrder,
       ).also {
         offenderBooking.visits += it
         builder.apply(dsl)
