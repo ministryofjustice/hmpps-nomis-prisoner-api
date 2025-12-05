@@ -3190,8 +3190,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(calculationType.id.category).isEqualTo("2003")
             assertThat(startDate).isEqualTo(LocalDate.parse("2022-02-01"))
             assertThat(endDate).isEqualTo(LocalDate.parse("2024-02-01"))
-            // inactive sentence made action
-            assertThat(status).isEqualTo("A")
+            // inactive sentence remains inactive
+            assertThat(status).isEqualTo("I")
             assertThat(sentenceLevel).isEqualTo("IND")
             // will be tested separately
             assertThat(consecSequence).isNull()

@@ -1727,8 +1727,7 @@ class CourtSentencingService(
                 offenderBooking = latestBooking,
                 sequence = newSequence,
               ),
-              // make active
-              status = "A",
+              status = offenderSentence.status,
               calculationType = offenderSentence.calculationType,
               courtOrder = clonedCourtOrders[sourceCourtOrders.indexOf(offenderSentence.courtOrder)],
               startDate = offenderSentence.startDate,
