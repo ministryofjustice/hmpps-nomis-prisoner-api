@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDate
@@ -33,6 +34,9 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var visitRepository: VisitRepository
+
+  @Autowired
+  private lateinit var visitOrderRepository: VisitOrderRepository
 
   @Autowired
   private lateinit var offenderRepository: OffenderRepository
@@ -334,6 +338,9 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
               contactType = "O",
               relationshipType = "POL",
             )
+            val visitOrder = visitOrder(
+              orderNumber = 654321,
+            )
             officialVisitId = officialVisit(
               visitDate = LocalDate.parse("2023-01-01"),
               visitSlot = visitSlot,
@@ -342,6 +349,7 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
               comment = "Next tuesday",
               visitorConcern = "Big concerns",
               prisonerSearchTypeCode = "FULL",
+              visitOrder = visitOrder,
             ) {
               visitOutcome(outcomeReasonCode = "ADMIN", eventOutcomeCode = "ABS", eventStatusCode = "CANC")
               visitor(
@@ -369,6 +377,7 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       visitRepository.deleteAll()
+      visitOrderRepository.deleteAll()
       offenderRepository.deleteAll()
       personRepository.deleteAll()
       agencyVisitTimeRepository.deleteAll()
@@ -482,6 +491,7 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         assertThat(visit.visitorConcernText).isEqualTo("Big concerns")
         assertThat(visit.overrideBanStaffUsername).isEqualTo("T_SMITH_GEN")
         assertThat(visit.prisonerSearchType?.description).isEqualTo("Full Search")
+        assertThat(visit.visitOrder?.number).isEqualTo(654321)
       }
 
       @Test
@@ -546,6 +556,9 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
 
         assertThat(johnDupontVisitor.relationships).hasSize(3)
         assertThat(johnDupontVisitor.relationships[0].relationshipType.description).isEqualTo("Offender Supervisor")
+        assertThat(johnDupontVisitor.relationships[0].contactType.description).isEqualTo("Official")
+        assertThat(johnDupontVisitor.relationships[2].relationshipType.description).isEqualTo("Brother")
+        assertThat(johnDupontVisitor.relationships[2].contactType.description).isEqualTo("Social/Family")
       }
     }
   }

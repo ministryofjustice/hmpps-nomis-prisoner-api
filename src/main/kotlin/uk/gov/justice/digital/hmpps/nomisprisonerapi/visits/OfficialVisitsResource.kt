@@ -65,7 +65,7 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     ],
   )
   fun getOfficialVisitIds(
-    @PageableDefault(size = 20, sort = ["id" ], direction = Sort.Direction.ASC)
+    @PageableDefault(size = 20, sort = ["id"], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "prisonIds")
@@ -181,6 +181,8 @@ data class OfficialVisitResponse(
   val overrideBanStaffUsername: String? = null,
   @Schema(description = "Visitors")
   val visitors: List<OfficialVisitor>,
+  @Schema(description = "Details about any related visitor order")
+  val visitOrder: VisitOrder?,
   @Schema(description = "Audit information")
   val audit: NomisAudit,
 ) {
@@ -215,8 +217,16 @@ data class OfficialVisitResponse(
   ) {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     data class ContactRelationship(
-      @Schema(description = "The relationship type")
+      @Schema(description = "The relationship type, e.g. police")
       val relationshipType: CodeDescription,
+      @Schema(description = "The contact type, e.g. social or official")
+      val contactType: CodeDescription,
     )
   }
+
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  data class VisitOrder(
+    @Schema(description = "The visit order number as displayed in NOMIS", example = "123456789")
+    val number: Long,
+  )
 }
