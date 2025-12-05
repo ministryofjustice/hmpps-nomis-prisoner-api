@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.corporates
 
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -27,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporatePho
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -46,6 +49,21 @@ class CorporateService(
   private val corporateOrganisationTypeRepository: ReferenceCodeRepository<uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateOrganisationType>,
 
 ) {
+  fun findCorporateIdsByFilter(
+    pageRequest: Pageable,
+    filter: CorporateFilter,
+  ): Page<CorporateOrganisationIdResponse> = if (filter.toDate == null && filter.fromDate == null) {
+    corporateRepository.findAllCorporateIds(
+      pageRequest,
+    )
+  } else {
+    corporateRepository.findAllCorporateIds(
+      fromDate = filter.fromDate?.atStartOfDay(),
+      toDate = filter.toDate?.atStartOfDay(),
+      pageRequest,
+    )
+  }.map { CorporateOrganisationIdResponse(corporateId = it.corporateId) }
+
   fun createCorporate(request: CreateCorporateOrganisationRequest) {
     corporateRepository.save(
       request.let {
@@ -348,3 +366,8 @@ class CorporateService(
   fun emailOf(corporateId: Long, emailAddressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress = (corporateInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("Email with id=$emailAddressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Email with id=$emailAddressId on Corporate with id=$corporateId does not exist")
   fun webAddressOf(corporateId: Long, webAddressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress = (corporateInternetAddressRepository.findByIdOrNull(webAddressId) ?: throw NotFoundException("Web address with id=$webAddressId does not exist")).takeIf { it.corporate == corporateOf(corporateId) } ?: throw NotFoundException("Web address with id=$webAddressId on Corporate with id=$corporateId does not exist")
 }
+
+data class CorporateFilter(
+  val fromDate: LocalDate?,
+  val toDate: LocalDate?,
+)
