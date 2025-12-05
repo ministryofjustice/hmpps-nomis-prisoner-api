@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.contactperson
 
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
@@ -49,6 +51,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonReposi
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitorRestrictionRepository
+import java.time.LocalDate
 
 @Transactional
 @Service
@@ -276,9 +279,39 @@ class ContactPersonService(
         }
     }.let { PrisonerWithRestrictions(restrictions = it) }
 
+  fun findPersonIdsByFilter(
+    pageRequest: Pageable,
+    personFilter: PersonFilter,
+  ): Page<PersonIdResponse> = if (personFilter.toDate == null && personFilter.fromDate == null) {
+    personRepository.findAllPersonIds(
+      pageRequest,
+    )
+  } else {
+    personRepository.findAllPersonIds(
+      fromDate = personFilter.fromDate?.atStartOfDay(),
+      toDate = personFilter.toDate?.atStartOfDay(),
+      pageRequest,
+    )
+  }.map { PersonIdResponse(personId = it.personId) }
+
   fun findPersonIdsFromId(personId: Long, pageSize: Int): PersonIdsWithLast = personRepository.findAllIdsFromId(personId = personId, pageSize = pageSize).let {
     PersonIdsWithLast(lastPersonId = it.lastOrNull() ?: 0, personIds = it)
   }
+
+  fun findOffenderRestrictionIdsByFilter(
+    pageRequest: Pageable,
+    restrictionFilter: RestrictionFilter,
+  ): Page<PrisonerRestrictionIdResponse> = if (restrictionFilter.toDate == null && restrictionFilter.fromDate == null) {
+    offenderRestrictionsRepository.findAllIds(
+      pageRequest,
+    )
+  } else {
+    offenderRestrictionsRepository.findAllIds(
+      fromDate = restrictionFilter.fromDate?.atStartOfDay(),
+      toDate = restrictionFilter.toDate?.atStartOfDay(),
+      pageRequest,
+    )
+  }.map { PrisonerRestrictionIdResponse(restrictionId = it.restrictionId) }
 
   fun findOffenderRestrictionIdsFromId(restrictionId: Long, pageSize: Int): RestrictionIdsWithLast = offenderRestrictionsRepository.findAllIdsFromId(restrictionId = restrictionId, pageSize = pageSize).let {
     RestrictionIdsWithLast(lastRestrictionId = it.lastOrNull() ?: 0, restrictionIds = it)
@@ -781,5 +814,15 @@ class ContactPersonService(
     )
   }
 }
+
+data class PersonFilter(
+  val fromDate: LocalDate?,
+  val toDate: LocalDate?,
+)
+
+data class RestrictionFilter(
+  val fromDate: LocalDate?,
+  val toDate: LocalDate?,
+)
 
 private fun Staff.toContactRestrictionEnteredStaff() = ContactRestrictionEnteredStaff(staffId = this.id, username = this.usernamePreferringGeneralAccount())
