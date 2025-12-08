@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.QueryHints
-import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -21,7 +20,6 @@ import java.util.Optional
 
 @Repository
 interface VisitRepository :
-  CrudRepository<Visit, Long>,
   JpaSpecificationExecutor<Visit>,
   JpaRepository<Visit, Long>,
   VisitCustomRepository {
