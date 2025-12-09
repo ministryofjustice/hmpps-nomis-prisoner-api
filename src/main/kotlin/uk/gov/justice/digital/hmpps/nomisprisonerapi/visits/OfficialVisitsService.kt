@@ -6,6 +6,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
@@ -69,7 +70,8 @@ class OfficialVisitsService(
         internalLocationId = agencyInternalLocation!!.locationId,
         visitStatus = visitStatus.toCodeDescription(),
         visitOutcome = outcomeVisitor()?.eventStatus?.toCodeDescription(),
-        cancellationReason = outcomeVisitor()?.outcomeReason?.toCodeDescription(),
+        // A couple of outcome reason codes have no NOMIS reference data - so fall back on code ony for a NotFound scenario
+        cancellationReason = outcomeVisitor()?.outcomeReason?.toCodeDescription() ?: outcomeVisitor()?.outcomeReasonCode?.let { CodeDescription(it, it) },
         prisonerAttendanceOutcome = outcomeVisitor()?.eventOutcome?.toCodeDescription(),
         prisonerSearchType = searchLevel?.toCodeDescription(),
         visitorConcernText = visitorConcernText,
@@ -86,7 +88,7 @@ class OfficialVisitsService(
             leadVisitor = visitor.groupLeader,
             assistedVisit = visitor.assistedVisit,
             visitorAttendanceOutcome = visitor.eventOutcome?.toCodeDescription(),
-            cancellationReason = visitor.outcomeReason?.toCodeDescription(),
+            cancellationReason = visitor.outcomeReason?.toCodeDescription() ?: visitor.outcomeReasonCode?.let { CodeDescription(it, it) },
             eventStatus = visitor.eventStatus?.toCodeDescription(),
             commentText = visitor.commentText,
             relationships = offenderContactPersonRepository.findByPersonAndOffenderBooking(visitor.person!!, offenderBooking).sortedWith(latestOfficialContactFirst()).map {

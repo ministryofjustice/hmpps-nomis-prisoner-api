@@ -272,6 +272,8 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetOfficialVisit {
     var officialVisitId = 0L
+    var officialVisitReferenceDataIssue1Id = 0L
+    var officialVisitReferenceDataIssue2Id = 0L
     var socialVisitId = 0L
     var bookingId = 0L
     lateinit var visitSlot: AgencyVisitSlot
@@ -367,6 +369,20 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
                 outcomeReasonCode = null,
                 comment = "First time visit",
               ).id
+            }.id
+            officialVisitReferenceDataIssue1Id = officialVisit(
+              visitSlot = visitSlot,
+              visitStatusCode = "CANC",
+            ) {
+              visitOutcome(outcomeReasonCode = "ADMIN_CANCEL")
+              visitor(person = johnDupont)
+            }.id
+            officialVisitReferenceDataIssue2Id = officialVisit(
+              visitSlot = visitSlot,
+              visitStatusCode = "CANC",
+            ) {
+              visitOutcome(outcomeReasonCode = "BATCH_CANC")
+              visitor(person = johnDupont)
             }.id
             socialVisitId = visit(visitTypeCode = "SCON").id
           }.bookingId
@@ -467,6 +483,25 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         assertThat(visit.cancellationReason?.description).isEqualTo("Administrative Cancellation")
         assertThat(visit.visitOutcome?.description).isEqualTo("Cancelled")
         assertThat(visit.prisonerAttendanceOutcome?.description).isEqualTo("Absence")
+      }
+
+      @Test
+      fun `will return the visit status data for statuses with missing reference data`() {
+        val visitAdminCancel: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitReferenceDataIssue1Id)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visitAdminCancel.cancellationReason?.code).isEqualTo("ADMIN_CANCEL")
+        assertThat(visitAdminCancel.cancellationReason?.description).isEqualTo("ADMIN_CANCEL")
+
+        val visitBatchCancel: OfficialVisitResponse = webTestClient.get().uri("/official-visits/{visitId}", officialVisitReferenceDataIssue2Id)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(visitBatchCancel.cancellationReason?.code).isEqualTo("BATCH_CANC")
+        assertThat(visitBatchCancel.cancellationReason?.description).isEqualTo("BATCH_CANC")
       }
 
       @Test
