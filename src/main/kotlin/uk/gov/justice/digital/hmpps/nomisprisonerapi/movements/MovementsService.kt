@@ -641,6 +641,7 @@ class MovementsService(
     toAddressPostcode = toAddress?.postalCode,
     applicationDate = applicationDate,
     applicationTime = applicationTime,
+    contactPersonName = contactPersonName,
     audit = toAudit(),
   )
 

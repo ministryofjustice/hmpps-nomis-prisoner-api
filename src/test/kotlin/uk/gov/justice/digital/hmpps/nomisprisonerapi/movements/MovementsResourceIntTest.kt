@@ -254,6 +254,7 @@ class MovementsResourceIntTest(
                 returnDate = yesterday.toLocalDate(),
                 returnTime = yesterday,
                 toAddress = offenderAddress,
+                contactPersonName = "Derek",
               )
             }
           }
