@@ -89,7 +89,7 @@ data class TemporaryAbsenceApplication(
   val absences: List<Absence> = mutableListOf(),
 
   @Schema(description = "Outside movements")
-  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>,
+  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>? = null,
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
