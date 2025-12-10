@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
@@ -40,7 +39,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAdd
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
@@ -61,7 +59,6 @@ class MovementsService(
   private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
-  private val offenderMovementApplicationMultiRepository: OffenderMovementApplicationMultiRepository,
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   private val movementApplicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
@@ -315,52 +312,6 @@ class MovementsService(
     return scheduledAbsenceReturn.toSingleResponse()
   }
 
-  fun getTemporaryAbsenceApplicationOutsideMovement(offenderNo: String, appMultiId: Long): TemporaryAbsenceApplicationOutsideMovementResponse {
-    if (!offenderRepository.existsByNomsId(offenderNo)) {
-      throw NotFoundException("Offender with nomsId=$offenderNo not found")
-    }
-
-    val outsideMovement = offenderMovementApplicationMultiRepository.findByMovementApplicationMultiIdAndOffenderMovementApplication_OffenderBooking_Offender_NomsId(appMultiId, offenderNo)
-      ?: throw NotFoundException("Temporary absence application outside movement with id=$appMultiId not found for offender with nomsId=$offenderNo")
-
-    return outsideMovement.toSingleResponse()
-  }
-
-  @Transactional
-  fun createTemporaryAbsenceOutsideMovement(offenderNo: String, request: CreateTemporaryAbsenceOutsideMovementRequest): CreateTemporaryAbsenceOutsideMovementResponse {
-    val offenderBooking = offenderBookingOrThrow(offenderNo)
-    val application = movementApplicationOrThrow(request.movementApplicationId)
-    val eventSubType = movementReasonOrThrow(request.eventSubType)
-    val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
-    val toAgency = request.toAgencyId?.let { agencyLocationOrThrow(request.toAgencyId) }
-    val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
-    val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
-
-    return OffenderMovementApplicationMulti(
-      offenderMovementApplication = application,
-      eventSubType = eventSubType,
-      fromDate = request.fromDate,
-      releaseTime = request.releaseTime,
-      toDate = request.toDate,
-      returnTime = request.returnTime,
-      comment = request.comment,
-      toAgency = toAgency,
-      toAddress = toAddress,
-      toAddressOwnerClass = toAddress?.addressOwnerClass,
-      contactPersonName = request.contactPersonName,
-      temporaryAbsenceType = temporaryAbsenceType,
-      temporaryAbsenceSubType = temporaryAbsenceSubType,
-    ).let {
-      offenderMovementApplicationMultiRepository.save(it)
-    }.let {
-      CreateTemporaryAbsenceOutsideMovementResponse(
-        bookingId = offenderBooking.bookingId,
-        movementApplicationId = application.movementApplicationId,
-        outsideMovementId = it.movementApplicationMultiId,
-      )
-    }
-  }
-
   fun getTemporaryAbsence(offenderNo: String, bookingId: Long, movementSeq: Int): TemporaryAbsenceResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
@@ -600,24 +551,6 @@ class MovementsService(
         temporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
       )
     },
-    outsideMovements = outsideMovements.map { it.toResponse() },
-    audit = toAudit(),
-  )
-
-  private fun OffenderMovementApplicationMulti.toResponse() = TemporaryAbsenceApplicationOutsideMovement(
-    outsideMovementId = movementApplicationMultiId,
-    temporaryAbsenceType = temporaryAbsenceType?.code,
-    temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
-    eventSubType = eventSubType.code,
-    fromDate = fromDate,
-    releaseTime = releaseTime,
-    toDate = toDate,
-    returnTime = returnTime,
-    comment = comment,
-    toAgencyId = toAgency?.id,
-    toAddressId = toAddress?.addressId,
-    toAddressOwnerClass = toAddress?.addressOwnerClass,
-    contactPersonName = contactPersonName,
     audit = toAudit(),
   )
 
@@ -812,25 +745,6 @@ class MovementsService(
     escort = escort?.code,
     fromAgency = fromAgency?.id,
     toPrison = toAgency?.id,
-    audit = toAudit(),
-  )
-
-  private fun OffenderMovementApplicationMulti.toSingleResponse() = TemporaryAbsenceApplicationOutsideMovementResponse(
-    bookingId = offenderMovementApplication.offenderBooking.bookingId,
-    movementApplicationId = offenderMovementApplication.movementApplicationId,
-    outsideMovementId = movementApplicationMultiId,
-    temporaryAbsenceType = temporaryAbsenceType?.code,
-    temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
-    eventSubType = eventSubType.code,
-    fromDate = fromDate,
-    releaseTime = releaseTime,
-    toDate = toDate,
-    returnTime = returnTime,
-    comment = comment,
-    toAgencyId = toAgency?.id,
-    toAddressId = toAddress?.addressId,
-    toAddressOwnerClass = toAddress?.addressOwnerClass,
-    contactPersonName = contactPersonName,
     audit = toAudit(),
   )
 
