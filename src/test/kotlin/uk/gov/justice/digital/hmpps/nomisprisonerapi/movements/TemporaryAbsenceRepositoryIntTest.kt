@@ -21,13 +21,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplicationMulti
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationMultiRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
@@ -39,7 +37,6 @@ import java.time.LocalDateTime
 class TemporaryAbsenceRepositoryIntTest(
   @Autowired private val nomisDataBuilder: NomisDataBuilder,
   @Autowired private val movementApplicationRepository: OffenderMovementApplicationRepository,
-  @Autowired private val movementApplicationMultiRepository: OffenderMovementApplicationMultiRepository,
   @Autowired private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   @Autowired private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
   @Autowired private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
@@ -203,78 +200,6 @@ class TemporaryAbsenceRepositoryIntTest(
     }
 
     @Test
-    fun `should save and load movement application with multiple movements`() {
-      lateinit var movement1: OffenderMovementApplicationMulti
-      lateinit var movement2: OffenderMovementApplicationMulti
-
-      nomisDataBuilder.build {
-        offender = offender {
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              movement1 = outsideMovement(
-                eventSubType = "C5",
-                fromDate = LocalDate.now(),
-                releaseTime = LocalDateTime.now(),
-                toDate = LocalDate.now().plusDays(1),
-                returnTime = LocalDateTime.now().plusDays(1),
-                comment = "First movement",
-                toAgency = "HAZLWD",
-                contactPersonName = "Contact Person 1",
-                temporaryAbsenceType = "RR",
-                temporaryAbsenceSubType = "RDR",
-              )
-              movement2 = outsideMovement(
-                eventSubType = "C6",
-                fromDate = LocalDate.now().plusDays(2),
-                releaseTime = LocalDateTime.now().plusDays(2),
-                toDate = LocalDate.now().plusDays(3),
-                returnTime = LocalDateTime.now().plusDays(3),
-                comment = "Second movement",
-                toAgency = "ARNOLD",
-                contactPersonName = "Contact Person 2",
-                temporaryAbsenceType = "SR",
-                temporaryAbsenceSubType = "ROR",
-              )
-            }
-          }
-        }
-      }
-
-      val movements = movementApplicationMultiRepository.findByOffenderMovementApplication(application)
-      assertThat(movements).hasSize(2)
-
-      with(movements.first { it.movementApplicationMultiId == movement1.movementApplicationMultiId }) {
-        assertThat(movementApplicationMultiId).isGreaterThan(0L)
-        assertThat(offenderMovementApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
-        assertThat(eventSubType.code).isEqualTo("C5")
-        assertThat(fromDate).isEqualTo(LocalDate.now())
-        assertThat(releaseTime.toLocalDate()).isEqualTo(LocalDate.now())
-        assertThat(toDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(returnTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(comment).isEqualTo("First movement")
-        assertThat(toAgency?.id).isEqualTo("HAZLWD")
-        assertThat(contactPersonName).isEqualTo("Contact Person 1")
-        assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
-        assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
-      }
-
-      with(movements.first { it.movementApplicationMultiId == movement2.movementApplicationMultiId }) {
-        assertThat(movementApplicationMultiId).isGreaterThan(0L)
-        assertThat(offenderMovementApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
-        assertThat(eventSubType.code).isEqualTo("C6")
-        assertThat(fromDate).isEqualTo(LocalDate.now().plusDays(2))
-        assertThat(releaseTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(2))
-        assertThat(toDate).isEqualTo(LocalDate.now().plusDays(3))
-        assertThat(returnTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(3))
-        assertThat(comment).isEqualTo("Second movement")
-        assertThat(toAgency?.id).isEqualTo("ARNOLD")
-        assertThat(contactPersonName).isEqualTo("Contact Person 2")
-        assertThat(temporaryAbsenceType?.code).isEqualTo("SR")
-        assertThat(temporaryAbsenceSubType?.code).isEqualTo("ROR")
-      }
-    }
-
-    @Test
     fun `Should save and load application address`() {
       lateinit var corporateAddress: CorporateAddress
       lateinit var offenderAddress: OffenderAddress
@@ -311,53 +236,6 @@ class TemporaryAbsenceRepositoryIntTest(
       }
 
       with(movementApplicationRepository.findByIdOrNull(application3.movementApplicationId)!!) {
-        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
-        assertThat(toAddressOwnerClass).isEqualTo("AGY")
-      }
-    }
-
-    @Test
-    fun `should save and load an application's outside movement addresses`() {
-      lateinit var corporateAddress: CorporateAddress
-      lateinit var offenderAddress: OffenderAddress
-      lateinit var agencyAddress: AgencyLocationAddress
-      lateinit var movement1: OffenderMovementApplicationMulti
-      lateinit var movement2: OffenderMovementApplicationMulti
-      lateinit var movement3: OffenderMovementApplicationMulti
-
-      nomisDataBuilder.build {
-        corporate("Kwikfit") {
-          corporateAddress = address()
-        }
-        agencyLocation("LEI", "HMP Leeds") {
-          agencyAddress = address()
-        }
-        offender = offender {
-          offenderAddress = address()
-          booking = booking {
-            application = temporaryAbsenceApplication {
-              movement1 = outsideMovement(toAddress = corporateAddress)
-              movement2 = outsideMovement(toAddress = offenderAddress)
-              movement3 = outsideMovement(toAddress = agencyAddress)
-            }
-          }
-        }
-      }
-
-      val movements = movementApplicationMultiRepository.findByOffenderMovementApplication(application)
-      assertThat(movements).hasSize(3)
-
-      with(movements.first { it.movementApplicationMultiId == movement1.movementApplicationMultiId }) {
-        assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
-        assertThat(toAddressOwnerClass).isEqualTo("CORP")
-      }
-
-      with(movements.first { it.movementApplicationMultiId == movement2.movementApplicationMultiId }) {
-        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-        assertThat(toAddressOwnerClass).isEqualTo("OFF")
-      }
-
-      with(movements.first { it.movementApplicationMultiId == movement3.movementApplicationMultiId }) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("AGY")
       }

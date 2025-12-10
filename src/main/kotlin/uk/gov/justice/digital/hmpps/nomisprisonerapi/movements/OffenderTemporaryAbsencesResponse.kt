@@ -88,9 +88,6 @@ data class TemporaryAbsenceApplication(
   @Schema(description = "All scheduled temporary absences")
   val absences: List<Absence> = mutableListOf(),
 
-  @Schema(description = "Outside movements")
-  val outsideMovements: List<TemporaryAbsenceApplicationOutsideMovement>? = null,
-
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -109,51 +106,6 @@ data class Absence(
 
   @Schema(description = "Temporary absence return")
   val temporaryAbsenceReturn: TemporaryAbsenceReturn? = null,
-)
-
-@Schema(description = "Temporary absence application outside movement response")
-data class TemporaryAbsenceApplicationOutsideMovement(
-  @Schema(description = "Movement application ID")
-  val outsideMovementId: Long,
-
-  @Schema(description = "Temporary absence type")
-  val temporaryAbsenceType: String?,
-
-  @Schema(description = "Temporary absence sub type")
-  val temporaryAbsenceSubType: String?,
-
-  @Schema(description = "Event sub type")
-  val eventSubType: String,
-
-  @Schema(description = "From date")
-  val fromDate: LocalDate,
-
-  @Schema(description = "Release time")
-  val releaseTime: LocalDateTime,
-
-  @Schema(description = "To date")
-  val toDate: LocalDate,
-
-  @Schema(description = "Return time")
-  val returnTime: LocalDateTime,
-
-  @Schema(description = "Comment")
-  val comment: String?,
-
-  @Schema(description = "To agency ID")
-  val toAgencyId: String?,
-
-  @Schema(description = "To address ID")
-  val toAddressId: Long?,
-
-  @Schema(description = "To address owner class")
-  val toAddressOwnerClass: String?,
-
-  @Schema(description = "Contact person name")
-  val contactPersonName: String?,
-
-  @Schema(description = "Audit data associated with the records")
-  val audit: NomisAudit,
 )
 
 @Schema(description = "Scheduled temporary absence response")
