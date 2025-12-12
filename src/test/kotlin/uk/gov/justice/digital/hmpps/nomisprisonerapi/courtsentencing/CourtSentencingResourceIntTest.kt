@@ -1234,6 +1234,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetCourtCasesChangedByMergePrisoners {
     private lateinit var prisonerWithRecentMerge: Offender
+    private lateinit var prisonerWithRecentMergeWithLinkedCase: Offender
     private lateinit var prisonerWithRecentMergeCasesNotAffected: Offender
     private lateinit var prisonerWithOldMerge: Offender
     private lateinit var prisonerWithNoMerge: Offender
@@ -1390,6 +1391,71 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               ) {}
             }
           }
+        prisonerWithRecentMergeWithLinkedCase =
+          offender(nomsId = "A1234AF") {
+            booking(agencyLocationId = "MDI") {
+              val sourceCase = courtCase(
+                caseInfoNumber = "A/100",
+                reportingStaff = staff,
+                caseStatus = "A",
+                caseSequence = 2,
+              ) {
+                audit(
+                  createDatetime = mergeDate.plusMinutes(1),
+                  auditModule = "MERGE",
+                  createUserId = "SYS",
+                )
+              }
+              courtCase(
+                caseInfoNumber = "A/123",
+                reportingStaff = staff,
+                caseStatus = "I",
+                statusUpdateReason = "LINKED",
+                caseSequence = 1,
+                combinedCase = sourceCase,
+              ) {
+                audit(
+                  // created and modified by merge
+                  createDatetime = mergeDate.plusMinutes(1),
+                  modifyDatetime = mergeDate.plusMinutes(1),
+                  auditModule = "MERGE",
+                  createUserId = "SYS",
+                  modifyUserId = "SYS",
+                )
+              }
+            }
+            booking(agencyLocationId = "MDI") {
+              release()
+              val sourceCase = courtCase(
+                caseInfoNumber = "A/100",
+                reportingStaff = staff,
+                caseStatus = "I",
+                caseSequence = 2,
+              ) {
+// original case cloned by MERGE and made inactive
+                audit(
+                  createDatetime = mergeDate.minusDays(10),
+                  modifyDatetime = mergeDate.plusMinutes(1),
+                  auditModule = "MERGE",
+                )
+              }
+              courtCase(
+                caseInfoNumber = "A/123",
+                reportingStaff = staff,
+                caseStatus = "I",
+                statusUpdateReason = "LINKED",
+                caseSequence = 1,
+                combinedCase = sourceCase,
+              ) {
+// original case cloned by MERGE but already inactive since it is a combines case
+                audit(
+                  createDatetime = mergeDate.minusDays(10),
+                  modifyDatetime = mergeDate.minusDays(10),
+                  auditModule = "OCULCASE",
+                )
+              }
+            }
+          }
 
         mergeTransaction(
           requestDate = mergeDate,
@@ -1410,6 +1476,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           requestDate = mergeDate.minusDays(10),
           nomsId1 = "A1234AD",
           nomsId2 = "A9999AK",
+        )
+        mergeTransaction(
+          requestDate = mergeDate,
+          nomsId1 = "A9999AK",
+          nomsId2 = "A1234AF",
         )
       }
     }
@@ -1511,6 +1582,31 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.courtCasesDeactivated).hasSize(0)
         assertThat(response.courtCasesCreated).hasSize(0)
+      }
+
+      @Test
+      fun `will return the created linked case but not non-amended source court cases for the offender`() {
+        val response: PostPrisonerMergeCaseChanges =
+          webTestClient.get().uri("/prisoners/${prisonerWithRecentMergeWithLinkedCase.nomsId}/sentencing/court-cases/post-merge")
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(response.courtCasesCreated).hasSize(2)
+        with(response.courtCasesCreated.find { it.caseSequence == 2 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("A")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/100")
+        }
+        with(response.courtCasesCreated.find { it.caseSequence == 1 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("I")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/123")
+        }
+        // only one case deactivate since the other was already inactive
+        assertThat(response.courtCasesDeactivated).hasSize(1)
+        with(response.courtCasesDeactivated.find { it.caseSequence == 2 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("I")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/100")
+        }
       }
     }
 

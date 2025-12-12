@@ -147,7 +147,7 @@ class CourtSentencingService(
     return PostPrisonerMergeCaseChanges()
   }
 
-  private fun CourtCase.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = caseStatus.code == CaseStatus.INACTIVE && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime
+  private fun CourtCase.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = caseStatus.code == CaseStatus.INACTIVE && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime && mergeRequestDate > createDatetime
 
   private fun CourtCase.wasCreatedByMerge(mergeRequestDate: LocalDateTime) = mergeRequestDate < createDatetime && createUsername == "SYS"
 
