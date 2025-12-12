@@ -783,7 +783,7 @@ class AdjudicationService(
         hearingResult = hearingResult,
         consecutiveHearingResultAward = request.consecutiveCharge
           ?.let {
-            findMatchingSanctionAwardForAdjudicationCharge(
+            findMatchingSanctionAwardForAdjudicationChargeOrNull(
               adjudicationNumber = it.adjudicationNumber,
               chargeSequence = it.chargeSequence,
               sanctionCode = request.sanctionType,
@@ -929,7 +929,7 @@ class AdjudicationService(
         sanctionStatus = lookupSanctionStatus(it.award.sanctionStatus)
         consecutiveHearingResultAward = it.award.consecutiveCharge
           ?.let { charge ->
-            findMatchingSanctionAwardForAdjudicationCharge(
+            findMatchingSanctionAwardForAdjudicationChargeOrNull(
               adjudicationNumber = charge.adjudicationNumber,
               chargeSequence = charge.chargeSequence,
               sanctionCode = it.award.sanctionType,
@@ -949,16 +949,15 @@ class AdjudicationService(
     }
   }
 
-  private fun findMatchingSanctionAwardForAdjudicationCharge(
+  private fun findMatchingSanctionAwardForAdjudicationChargeOrNull(
     adjudicationNumber: Long,
     chargeSequence: Int,
     sanctionCode: String,
-  ): AdjudicationHearingResultAward = adjudicationHearingResultAwardRepository.findFirstOrNullByIncidentPartyAdjudicationNumberAndSanctionCodeAndHearingResultChargeSequence(
+  ): AdjudicationHearingResultAward? = adjudicationHearingResultAwardRepository.findFirstOrNullByIncidentPartyAdjudicationNumberAndSanctionCodeAndHearingResultChargeSequence(
     adjudicationNumber = adjudicationNumber,
     sanctionCode = sanctionCode,
     chargeSequence = chargeSequence,
   )
-    ?: throw BadDataException("Matching consecutive adjudication award not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence, sanction code: $sanctionCode")
 
   fun getHearingResultAward(bookingId: Long, sanctionSequence: Int): HearingResultAward = adjudicationHearingResultAwardRepository.findByIdOrNull(
     AdjudicationHearingResultAwardId(
