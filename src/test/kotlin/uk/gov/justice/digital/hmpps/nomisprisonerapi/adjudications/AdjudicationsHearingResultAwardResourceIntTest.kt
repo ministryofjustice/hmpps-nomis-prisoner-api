@@ -233,7 +233,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return 400 if appropriate consecutive award not found`() {
+      fun `will allow if appropriate consecutive award not found`() {
         webTestClient.post()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -261,10 +261,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isBadRequest
-          .expectBody()
-          .jsonPath("developerMessage")
-          .isEqualTo("Matching consecutive adjudication award not found. Adjudication number: 123455, charge sequence: 1, sanction code: EXTRA_WORK")
+          .expectStatus().isOk
       }
     }
 
@@ -627,7 +624,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return 400 if appropriate consecutive award not found`() {
+      fun `will allow if appropriate consecutive award not found`() {
         webTestClient.put()
           .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingCharge.id.chargeSequence}/awards")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -656,10 +653,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isBadRequest
-          .expectBody()
-          .jsonPath("developerMessage")
-          .isEqualTo("Matching consecutive adjudication award not found. Adjudication number: 123455, charge sequence: 1, sanction code: EXTRA_WORK")
+          .expectStatus().isOk
       }
     }
 
