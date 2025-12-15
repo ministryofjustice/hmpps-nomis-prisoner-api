@@ -186,4 +186,21 @@ class CorePersonService(
       },
     )
   }
+
+  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> {
+    val rootOffender =
+      offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
+    return offenderBeliefRepository.findByRootOffenderOrderByStartDateDesc(rootOffender).map { belief ->
+      OffenderBelief(
+        beliefId = belief.beliefId,
+        belief = belief.beliefCode.toCodeDescription(),
+        startDate = belief.startDate,
+        endDate = belief.endDate,
+        changeReason = belief.changeReason,
+        comments = belief.comments,
+        verified = belief.verified ?: false,
+        audit = belief.toAudit(),
+      )
+    }
+  }
 }

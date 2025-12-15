@@ -20,9 +20,9 @@ import java.time.LocalDateTime
 
 @RestController
 @Validated
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class CorePersonResource(private val corePersonService: CorePersonService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/core-person/{prisonNumber}")
   @Operation(
     summary = "Get an offender by prison number",
@@ -31,12 +31,6 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ApiResponse(
         responseCode = "200",
         description = "Core person information returned",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = CorePerson::class),
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "401",
@@ -76,6 +70,54 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       example = "A1234BC",
     ) @PathVariable prisonNumber: String,
   ): CorePerson = corePersonService.getOffender(prisonNumber)
+
+  @GetMapping("/core-person/{prisonNumber}/religions")
+  @Operation(
+    summary = "Get all the religion information for an offender by prison number",
+    description = "Retrieves the religion information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Core religion information returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderReligions(
+    @Schema(
+      description = "Prison number aka noms id / offender id display",
+      example = "A1234BC",
+    ) @PathVariable prisonNumber: String,
+  ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
