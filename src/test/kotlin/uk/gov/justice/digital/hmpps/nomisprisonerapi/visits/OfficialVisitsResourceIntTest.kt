@@ -268,6 +268,215 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /official-visits/ids/all-from-id")
+  @Nested
+  inner class GetOfficialVisitIdsFromId {
+    lateinit var visitIds: MutableList<Long>
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        val visitor = person { }
+
+        offender(nomsId = "A1234TT") {
+          booking {
+            visitBalance { }
+            contact(person = visitor)
+            visitIds = (1..30).map { visit(visitTypeCode = "OFFI", startDateTimeString = "2023-01-01T10:00:00").id }.toMutableList()
+            visit(visitTypeCode = "SCON")
+          }
+        }
+        offender(nomsId = "A4321TT") {
+          booking {
+            visitBalance { }
+            contact(person = visitor)
+            visit(visitTypeCode = "OFFI", createdDatetime = LocalDateTime.parse("2023-01-01T10:00:00"), agyLocId = "BXI")
+            visit(visitTypeCode = "OFFI", createdDatetime = LocalDateTime.parse("2023-02-01T10:00:00"), agyLocId = "BXI")
+            visit(visitTypeCode = "OFFI", createdDatetime = LocalDateTime.parse("2023-03-01T10:00:00"), agyLocId = "LEI")
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      visitRepository.deleteAll()
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/official-visits/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/official-visits/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/official-visits/ids/all-from-id")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return first 20 visits`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(20)
+      }
+
+      @Test
+      fun `can set page size`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(1)
+      }
+
+      @Test
+      fun `can filter by one or more prisons`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("prisonIds", "LEI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(1)
+
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("prisonIds", "LEI")
+            .queryParam("prisonIds", "BXI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(3)
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("prisonIds", "LEI")
+            .queryParam("prisonIds", "BXI")
+            .queryParam("prisonIds", "MDI")
+            .queryParam("size", "100")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(33)
+      }
+
+      @Test
+      fun `can filter by from date`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("fromDate", "2023-03-01")
+            .queryParam("size", "100")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(31)
+      }
+
+      @Test
+      fun `can filter by to date`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("toDate", "2023-03-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(3)
+      }
+
+      @Test
+      fun `can filter by from and to dates`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("toDate", "2023-03-01")
+            .queryParam("fromDate", "2023-02-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(2)
+      }
+
+      @Test
+      fun `can filter by from and to dates and prison`() {
+        webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("toDate", "2023-03-01")
+            .queryParam("fromDate", "2023-02-01")
+            .queryParam("prisonIds", "BXI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(1)
+      }
+
+      @Test
+      fun `id just contains visit id`() {
+        val pageResponse: VisitIdsPage = webTestClient.get().uri {
+          it.path("/official-visits/ids/all-from-id")
+            .queryParam("size", "2")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(pageResponse.ids).hasSize(2)
+        assertThat(pageResponse.ids[0].visitId).isEqualTo(visitIds[0])
+        assertThat(pageResponse.ids[1].visitId).isEqualTo(visitIds[1])
+      }
+    }
+  }
+
   @DisplayName("GET /official-visits/{visitId}")
   @Nested
   inner class GetOfficialVisit {

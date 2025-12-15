@@ -64,6 +64,22 @@ interface VisitRepository :
 
   @Query(
     """
+    select 
+        v.id as id
+    from Visit v 
+    where v.visitType.code = 'OFFI' and
+        v.id > :visitId and
+        rownum <= :pageSize    
+    order by v.id asc
+    """,
+  )
+  fun findAllOfficialVisitsIds(
+    visitId: Long,
+    pageSize: Int,
+  ): List<VisitIdProjection>
+
+  @Query(
+    """
       select 
         v.id as id
       from Visit v 
@@ -81,16 +97,36 @@ interface VisitRepository :
 
   @Query(
     """
+    select 
+        v.id as id
+    from Visit v 
+    where v.visitType.code = 'OFFI'
+    and 
+      (:fromDate is null or v.createDatetime > :fromDate) and 
+      (:toDate is null or v.createDatetime < :toDate) and    
+      v.id > :visitId and
+      rownum <= :pageSize    
+    order by v.id asc
+  """,
+  )
+  fun findAllOfficialVisitsIdsWithDateFilter(
+    fromDate: LocalDateTime?,
+    toDate: LocalDateTime?,
+    visitId: Long,
+    pageSize: Int,
+  ): List<VisitIdProjection>
+
+  @Query(
+    """
       select 
         v.id as id
       from Visit v 
       where v.visitType.code = 'OFFI'
       and 
-      
-          (:fromDate is null or v.createDatetime > :fromDate) and 
-          (:toDate is null or v.createDatetime < :toDate)  and 
-            v.location.id in (:prisonIds)    
-  """,
+        (:fromDate is null or v.createDatetime > :fromDate) and 
+        (:toDate is null or v.createDatetime < :toDate)  and 
+        v.location.id in (:prisonIds)    
+    """,
   )
   fun findAllOfficialVisitsIdsWithDateAndPrisonFilter(
     fromDate: LocalDateTime?,
@@ -98,6 +134,29 @@ interface VisitRepository :
     prisonIds: List<String>,
     pageable: Pageable,
   ): Page<VisitIdProjection>
+
+  @Query(
+    """
+    select 
+        v.id as id
+    from Visit v 
+    where v.visitType.code = 'OFFI'
+    and 
+        (:fromDate is null or v.createDatetime > :fromDate) and 
+        (:toDate is null or v.createDatetime < :toDate)  and 
+        v.location.id in (:prisonIds) and
+        v.id > :visitId and
+        rownum <= :pageSize    
+    order by v.id asc
+  """,
+  )
+  fun findAllOfficialVisitsIdsWithDateAndPrisonFilter(
+    fromDate: LocalDateTime?,
+    toDate: LocalDateTime?,
+    prisonIds: List<String>,
+    visitId: Long,
+    pageSize: Int,
+  ): List<VisitIdProjection>
 }
 
 interface VisitIdProjection {

@@ -86,6 +86,62 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     ),
   )
 
+  @GetMapping("/official-visits/ids/all-from-id")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get all official visit Ids",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Page of visit Ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOfficialVisitIdsFromIds(
+    @Schema(description = "If supplied get visit starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "visitId", defaultValue = "0")
+    visitId: Long,
+    @Schema(description = "Number of visit ids to get", required = false, defaultValue = "20")
+    @RequestParam(value = "size", defaultValue = "20")
+    size: Int,
+    @RequestParam(value = "prisonIds")
+    @Parameter(description = "Filter results by prison ids (returns all prisons if not specified)", example = "['MDI','LEI']")
+    prisonIds: List<String> = emptyList(),
+    @RequestParam(value = "fromDate")
+    @Parameter(description = "Filter results by visits that were created on or after the given date", example = "2024-11-03")
+    fromDate: LocalDate?,
+    @RequestParam(value = "toDate")
+    @Parameter(description = "Filter results by visits that were created on or before the given date", example = "2025-11-03")
+    toDate: LocalDate?,
+  ): VisitIdsPage = officialVisitsService.getVisitIds(
+    visitId = visitId,
+    pageSize = size,
+    prisonIds = prisonIds,
+    fromDate = fromDate,
+    toDate = toDate,
+  )
+
   @GetMapping("/official-visits/{visitId}")
   @Operation(
     summary = "Get an official visit",
@@ -230,3 +286,9 @@ data class OfficialVisitResponse(
     val number: Long,
   )
 }
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class VisitIdsPage(
+  @Schema(description = "Page of visit IDs")
+  val ids: List<VisitIdResponse>,
+)
