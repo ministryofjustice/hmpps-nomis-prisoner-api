@@ -64,14 +64,15 @@ interface VisitRepository :
 
   @Query(
     """
-    select 
-        v.id as id
-    from Visit v 
-    where v.visitType.code = 'OFFI' and
-        v.id > :visitId and
-        rownum <= :pageSize    
-    order by v.id asc
+      select *
+      from (select v.OFFENDER_VISIT_ID as id
+            from OFFENDER_VISITS v
+            where v.VISIT_TYPE = 'OFFI'
+              and v.OFFENDER_VISIT_ID > :visitId
+            order by v.OFFENDER_VISIT_ID)
+      where rownum <= :pageSize
     """,
+    nativeQuery = true,
   )
   fun findAllOfficialVisitsIds(
     visitId: Long,
@@ -97,17 +98,17 @@ interface VisitRepository :
 
   @Query(
     """
-    select 
-        v.id as id
-    from Visit v 
-    where v.visitType.code = 'OFFI'
-    and 
-      (:fromDate is null or v.createDatetime > :fromDate) and 
-      (:toDate is null or v.createDatetime < :toDate) and    
-      v.id > :visitId and
-      rownum <= :pageSize    
-    order by v.id asc
+      select *
+      from (select v.OFFENDER_VISIT_ID as id
+            from OFFENDER_VISITS v
+            where v.VISIT_TYPE = 'OFFI'
+              and v.OFFENDER_VISIT_ID > :visitId
+              and (:fromDate is null or v.CREATE_DATETIME > :fromDate)  
+              and (:toDate is null or v.CREATE_DATETIME < :toDate)   
+            order by v.OFFENDER_VISIT_ID)
+      where rownum <= :pageSize
   """,
+    nativeQuery = true,
   )
   fun findAllOfficialVisitsIdsWithDateFilter(
     fromDate: LocalDateTime?,
@@ -137,18 +138,18 @@ interface VisitRepository :
 
   @Query(
     """
-    select 
-        v.id as id
-    from Visit v 
-    where v.visitType.code = 'OFFI'
-    and 
-        (:fromDate is null or v.createDatetime > :fromDate) and 
-        (:toDate is null or v.createDatetime < :toDate)  and 
-        v.location.id in (:prisonIds) and
-        v.id > :visitId and
-        rownum <= :pageSize    
-    order by v.id asc
+      select *
+      from (select v.OFFENDER_VISIT_ID as id
+            from OFFENDER_VISITS v
+            where v.VISIT_TYPE = 'OFFI'
+              and v.OFFENDER_VISIT_ID > :visitId
+              and v.AGY_LOC_ID in (:prisonIds)
+              and (:fromDate is null or v.CREATE_DATETIME > :fromDate)  
+              and (:toDate is null or v.CREATE_DATETIME < :toDate)   
+            order by v.OFFENDER_VISIT_ID)
+      where rownum <= :pageSize
   """,
+    nativeQuery = true,
   )
   fun findAllOfficialVisitsIdsWithDateAndPrisonFilter(
     fromDate: LocalDateTime?,
