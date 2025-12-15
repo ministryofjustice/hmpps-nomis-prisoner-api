@@ -7,15 +7,18 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson.OffenderBelief as OffenderBeliefCorePerson
 
 class CorePersonResourceIntTest : IntegrationTestBase() {
 
@@ -23,7 +26,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Autowired
-  private lateinit var offenderRepository: OffenderRepository
+  private lateinit var repository: Repository
 
   @DisplayName("GET /core-person/{prisonNumber}")
   @Nested
@@ -67,7 +70,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun tearDown() {
-      offenderRepository.deleteAll()
+      repository.deleteAllBeliefs()
+      repository.deleteOffenders()
     }
 
     @Nested
@@ -1125,6 +1129,235 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[0].changeReason").isEqualTo(true)
           .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
           .jsonPath("beliefs[0].verified").isEqualTo(true)
+      }
+    }
+  }
+
+  @DisplayName("GET /core-person/{prisonNumber}/religions")
+  @Nested
+  inner class GetOffenderReligions {
+    private lateinit var offenderMinimal: Offender
+    private lateinit var offenderFull: Offender
+    private lateinit var belief: OffenderBelief
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY", type = "GENERAL")
+        }
+        offenderMinimal = offender(
+          nomsId = "A1234BC",
+          firstName = "JOHN",
+          lastName = "BOG",
+          birthDate = null,
+        ) {
+        }
+        offenderFull = offender(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          booking {
+            belief = belief(
+              beliefCode = "JAIN",
+              changeReason = true,
+              comments = "No longer believes in Zoroastrianism",
+              verified = true,
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteAllBeliefs()
+      repository.deleteOffenders()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religions")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religions")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religions")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/core-person/AB1234C/religions")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return empty list if no data`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religions")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(0)
+      }
+
+      @Test
+      fun `is able to re-hydrate the beliefs`() {
+        val beliefs = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/religions")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .returnResult(ParameterizedTypeReference.forType<OffenderBeliefCorePerson>(OffenderBeliefCorePerson::class.java)).responseBody.blockFirst()!!
+
+        assertThat(beliefs.beliefId).isEqualTo(belief.beliefId)
+        assertThat(beliefs.belief).isEqualTo(CodeDescription(code = "JAIN", description = "Jain"))
+        assertThat(beliefs.comments).isEqualTo("No longer believes in Zoroastrianism")
+      }
+    }
+
+    @Nested
+    inner class OffenderBeliefs {
+      private lateinit var offender: Offender
+      private lateinit var belief1: OffenderBelief
+      private lateinit var belief2: OffenderBelief
+      private lateinit var belief3: OffenderBelief
+      private lateinit var offender2: Offender
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            nomsId = "B1234CD",
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            booking {
+              belief2 = belief(
+                beliefCode = "JAIN",
+                changeReason = true,
+                comments = "No longer believes in Zoroastrianism",
+                verified = true,
+              )
+              belief1 = belief(
+                beliefCode = "ZORO",
+                startDate = LocalDate.parse("2018-01-01"),
+                endDate = LocalDate.parse("2019-02-03"),
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+            }
+            booking(active = false) {
+              belief3 = belief(
+                beliefCode = "DRU",
+                startDate = LocalDate.parse("2023-01-01"),
+                changeReason = false,
+                verified = false,
+              )
+            }
+          }
+          offender2 = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BF",
+          ) {
+            booking(active = false, bookingSequence = 2) {
+              belief(
+                beliefCode = "JAIN",
+                changeReason = true,
+                comments = "No longer believes in Zoroastrianism",
+                verified = true,
+              )
+            }
+            alias(
+              firstName = "AJOHN",
+              lastName = "ABARK",
+              birthDate = LocalDate.parse("1965-07-19"),
+            ) { booking(bookingSequence = 1) { } }
+          }
+        }
+      }
+
+      @Test
+      fun `will return beliefs`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}/religions")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .consumeWith(System.out::println)
+          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("[0].beliefId").isEqualTo(belief3.beliefId)
+          .jsonPath("[0].belief.code").isEqualTo("DRU")
+          .jsonPath("[0].belief.description").isEqualTo("Druid")
+          .jsonPath("[0].startDate").isEqualTo("2023-01-01")
+          .jsonPath("[0].changeReason").isEqualTo(false)
+          .jsonPath("[0].comments").doesNotExist()
+          .jsonPath("[0].verified").isEqualTo(false)
+          .jsonPath("[1].beliefId").isEqualTo(belief2.beliefId)
+          .jsonPath("[1].belief.code").isEqualTo("JAIN")
+          .jsonPath("[1].belief.description").isEqualTo("Jain")
+          .jsonPath("[1].startDate").isEqualTo("2021-01-01")
+          .jsonPath("[1].endDate").doesNotExist()
+          .jsonPath("[1].changeReason").isEqualTo(true)
+          .jsonPath("[1].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .jsonPath("[1].verified").isEqualTo(true)
+          .jsonPath("[1].audit.createUsername").isNotEmpty
+          .jsonPath("[1].audit.createDatetime").isNotEmpty
+          .jsonPath("[2].beliefId").isEqualTo(belief1.beliefId)
+          .jsonPath("[2].belief.code").isEqualTo("ZORO")
+          .jsonPath("[2].belief.description").isEqualTo("Zoroastrian")
+          .jsonPath("[2].startDate").isEqualTo("2018-01-01")
+          .jsonPath("[2].endDate").isEqualTo("2019-02-03")
+          .jsonPath("[2].changeReason").doesNotExist()
+          .jsonPath("[2].comments").doesNotExist()
+          .jsonPath("[2].verified").isEqualTo(false)
+          .jsonPath("[2].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("[2].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+      }
+
+      @Test
+      fun `will return beliefs when current alias is different from root offender`() {
+        webTestClient.get().uri("/core-person/${offender2.nomsId}/religions")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(1)
+          .jsonPath("[0].belief.code").isEqualTo("JAIN")
+          .jsonPath("[0].belief.description").isEqualTo("Jain")
+          .jsonPath("[0].startDate").isEqualTo("2021-01-01")
+          .jsonPath("[0].endDate").doesNotExist()
+          .jsonPath("[0].changeReason").isEqualTo(true)
+          .jsonPath("[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .jsonPath("[0].verified").isEqualTo(true)
       }
     }
   }
