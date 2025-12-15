@@ -50,6 +50,39 @@ class OfficialVisitsService(
       visitId = it.id,
     )
   }
+  fun getVisitIds(
+    visitId: Long,
+    pageSize: Int,
+    prisonIds: List<String>,
+    fromDate: LocalDate?,
+    toDate: LocalDate?,
+  ): VisitIdsPage = if (prisonIds.isEmpty()) {
+    if (fromDate == null && toDate == null) {
+      visitRepository.findAllOfficialVisitsIds(
+        visitId = visitId,
+        pageSize = pageSize,
+      )
+    } else {
+      visitRepository.findAllOfficialVisitsIdsWithDateFilter(
+        toDate = toDate?.atStartOfDay()?.plusDays(1),
+        fromDate = fromDate?.atStartOfDay(),
+        visitId = visitId,
+        pageSize = pageSize,
+      )
+    }
+  } else {
+    visitRepository.findAllOfficialVisitsIdsWithDateAndPrisonFilter(
+      toDate = toDate?.atStartOfDay()?.plusDays(1),
+      fromDate = fromDate?.atStartOfDay(),
+      prisonIds = prisonIds,
+      visitId = visitId,
+      pageSize = pageSize,
+    )
+  }.map {
+    VisitIdResponse(
+      visitId = it.id,
+    )
+  }.let { VisitIdsPage(it) }
 
   @Suppress("unused")
   fun getVisit(visitId: Long): OfficialVisitResponse {
