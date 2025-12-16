@@ -106,7 +106,7 @@ class TemporaryAbsenceRepositoryIntTest(
         assertThat(escort?.code).isEqualTo("L")
         assertThat(transportType?.code).isEqualTo("VAN")
         assertThat(comment).isEqualTo("Some comment application")
-        assertThat(prison?.id).isEqualTo("LEI")
+        assertThat(prison.id).isEqualTo("LEI")
         assertThat(toAgency?.id).isEqualTo("HAZLWD")
         assertThat(contactPersonName).isEqualTo("Derek")
         assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
@@ -522,6 +522,36 @@ class TemporaryAbsenceRepositoryIntTest(
           // The TAP missing a direction still comes out as an external movement
           assertThat(externalMovements.find { it.id.sequence == 4 }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
           assertThat(externalMovements.find { it.id.sequence == 5 }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
+        }
+      }
+    }
+
+    @Test
+    fun `should check for existence of scheduled return movement (rather than outbound) to see if the return movement is unscheduled`() {
+      nomisDataBuilder.build {
+        offender = offender {
+          booking = booking {
+            temporaryAbsenceApplication {
+              scheduledAbsence = scheduledTemporaryAbsence {
+                absenceMovement = externalMovement()
+                scheduledReturn = scheduledReturn {
+                  absenceReturnMovement = externalMovement()
+                }
+              }
+            }
+          }
+        }
+      }
+
+      jdbcTemplate.update(
+        """
+          update OFFENDER_EXTERNAL_MOVEMENTS set parent_event_id = null where event_id = ${scheduledReturn.eventId}
+        """.trimIndent(),
+      )
+
+      repository.runInTransaction {
+        with(temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceReturnIsNull(offender.nomsId)) {
+          assertThat(this).isEmpty()
         }
       }
     }
