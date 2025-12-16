@@ -90,8 +90,22 @@ class MovementsService(
 
     val movementApplications = offenderMovementApplicationRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .also { it.fixMergedSchedules() }
+    println(
+      """
+      
+      ////
+      
+      """.trimIndent(),
+    )
     val unscheduledTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceIsNull(offenderNo)
-    val unscheduledTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceIsNull(offenderNo)
+    println(
+      """
+      
+      ////
+      
+      """.trimIndent(),
+    )
+    val unscheduledTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceReturnIsNull(offenderNo)
     val bookingIds = (
       movementApplications.map { it.offenderBooking.bookingId } +
         unscheduledTemporaryAbsences.map { it.offenderBooking.bookingId } +
