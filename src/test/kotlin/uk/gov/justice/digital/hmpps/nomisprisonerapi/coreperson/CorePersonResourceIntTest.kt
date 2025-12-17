@@ -1246,6 +1246,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       private lateinit var belief1: OffenderBelief
       private lateinit var belief2: OffenderBelief
       private lateinit var belief3: OffenderBelief
+      private lateinit var belief4: OffenderBelief
       private lateinit var offender2: Offender
 
       @BeforeEach
@@ -1259,9 +1260,11 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             booking {
               belief2 = belief(
                 beliefCode = "JAIN",
+                startDate = LocalDate.parse("2018-01-01"),
                 changeReason = true,
                 comments = "No longer believes in Zoroastrianism",
                 verified = true,
+                whenCreated = LocalDateTime.parse("2022-01-01T10:00"),
               )
               belief1 = belief(
                 beliefCode = "ZORO",
@@ -1269,6 +1272,13 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
                 endDate = LocalDate.parse("2019-02-03"),
                 whoCreated = "KOFEADDY",
                 whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+              belief4 = belief(
+                beliefCode = "SATN",
+                startDate = LocalDate.parse("2018-01-01"),
+                endDate = LocalDate.parse("2018-01-01"),
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2021-01-01T10:00"),
               )
             }
             booking(active = false) {
@@ -1311,7 +1321,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBody()
           .consumeWith(System.out::println)
-          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("$.length()").isEqualTo(4)
           .jsonPath("[0].beliefId").isEqualTo(belief3.beliefId)
           .jsonPath("[0].belief.code").isEqualTo("DRU")
           .jsonPath("[0].belief.description").isEqualTo("Druid")
@@ -1322,24 +1332,29 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[1].beliefId").isEqualTo(belief2.beliefId)
           .jsonPath("[1].belief.code").isEqualTo("JAIN")
           .jsonPath("[1].belief.description").isEqualTo("Jain")
-          .jsonPath("[1].startDate").isEqualTo("2021-01-01")
+          .jsonPath("[1].startDate").isEqualTo("2018-01-01")
           .jsonPath("[1].endDate").doesNotExist()
           .jsonPath("[1].changeReason").isEqualTo(true)
           .jsonPath("[1].comments").isEqualTo("No longer believes in Zoroastrianism")
           .jsonPath("[1].verified").isEqualTo(true)
-          .jsonPath("[1].audit.createUsername").isNotEmpty
-          .jsonPath("[1].audit.createDatetime").isNotEmpty
-          .jsonPath("[2].beliefId").isEqualTo(belief1.beliefId)
-          .jsonPath("[2].belief.code").isEqualTo("ZORO")
-          .jsonPath("[2].belief.description").isEqualTo("Zoroastrian")
+          .jsonPath("[1].audit.createDatetime").isEqualTo("2022-01-01T10:00:00")
+          .jsonPath("[2].beliefId").isEqualTo(belief4.beliefId)
+          .jsonPath("[2].belief.code").isEqualTo("SATN")
+          .jsonPath("[2].belief.description").isEqualTo("Satanism")
           .jsonPath("[2].startDate").isEqualTo("2018-01-01")
-          .jsonPath("[2].endDate").isEqualTo("2019-02-03")
-          .jsonPath("[2].changeReason").doesNotExist()
-          .jsonPath("[2].comments").doesNotExist()
-          .jsonPath("[2].verified").isEqualTo(false)
-          .jsonPath("[2].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("[2].audit.createDisplayName").isEqualTo("KOFE ADDY")
-          .jsonPath("[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("[2].endDate").isEqualTo("2018-01-01")
+          .jsonPath("[2].audit.createDatetime").isEqualTo("2021-01-01T10:00:00")
+          .jsonPath("[3].beliefId").isEqualTo(belief1.beliefId)
+          .jsonPath("[3].belief.code").isEqualTo("ZORO")
+          .jsonPath("[3].belief.description").isEqualTo("Zoroastrian")
+          .jsonPath("[3].startDate").isEqualTo("2018-01-01")
+          .jsonPath("[3].endDate").isEqualTo("2019-02-03")
+          .jsonPath("[3].changeReason").doesNotExist()
+          .jsonPath("[3].comments").doesNotExist()
+          .jsonPath("[3].verified").isEqualTo(false)
+          .jsonPath("[3].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("[3].audit.createDisplayName").isEqualTo("KOFE ADDY")
+          .jsonPath("[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
 
       @Test

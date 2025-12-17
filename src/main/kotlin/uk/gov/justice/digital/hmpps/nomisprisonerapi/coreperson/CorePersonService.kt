@@ -172,7 +172,7 @@ class CorePersonService(
           email = address.internetAddress,
         )
       },
-      beliefs = offenderBeliefRepository.findByRootOffenderOrderByStartDateDesc(rootOffender).map { belief ->
+      beliefs = offenderBeliefRepository.findByRootOffenderOrderByStartDateDescCreateDatetimeDesc(rootOffender).map { belief ->
         OffenderBelief(
           beliefId = belief.beliefId,
           belief = belief.beliefCode.toCodeDescription(),
@@ -190,7 +190,7 @@ class CorePersonService(
   fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> {
     val rootOffender =
       offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-    return offenderBeliefRepository.findByRootOffenderOrderByStartDateDesc(rootOffender).map { belief ->
+    return offenderBeliefRepository.findByRootOffenderOrderByStartDateDescCreateDatetimeDesc(rootOffender).map { belief ->
       OffenderBelief(
         beliefId = belief.beliefId,
         belief = belief.beliefCode.toCodeDescription(),
