@@ -7,5 +7,5 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
 
 @Repository
 interface OffenderBeliefRepository : JpaRepository<OffenderBelief, Long> {
-  fun findByRootOffenderOrderByStartDateDesc(rootOffender: Offender): List<OffenderBelief>
+  fun findByRootOffenderOrderByStartDateDescCreateDatetimeDesc(rootOffender: Offender): List<OffenderBelief>
 }
