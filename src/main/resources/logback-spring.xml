@@ -36,6 +36,10 @@
         <appender-ref ref="consoleAppender"/>
     </logger>
 
+    <!-- This suppresses warning "HHH000179: Narrowing proxy to class..." on sub-classes of Address which doesn't cause us problems. Checked for other warnings from that class and there are none. -->
+    <!-- Note that the reason we can ignore this warning is because we correctly implement equals and hashcode. See this post for more details, and follow the link to the article explaining the issue: https://stackoverflow.com/a/61068033 -->
+    <logger name="org.hibernate.engine.internal.StatefulPersistenceContext" level="ERROR"/>
+
     <root level="INFO">
         <appender-ref ref="consoleAppender"/>
     </root>
