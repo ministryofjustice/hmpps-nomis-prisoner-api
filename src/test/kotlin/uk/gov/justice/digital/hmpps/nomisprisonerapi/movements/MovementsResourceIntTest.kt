@@ -1007,6 +1007,42 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
         .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn").isEmpty
     }
+
+    @Test
+    fun `should take return time from the application if not on the schedule`() {
+      val tomorrow = LocalDateTime.now().plusDays(1).withNano(0)
+
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication(returnTime = tomorrow) {
+              scheduledTempAbsence = scheduledTemporaryAbsence()
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by nulling the return time on the schedule
+         */
+        entityManager.createQuery(
+          """
+            update OffenderScheduledTemporaryAbsence ost
+            set ost.returnTime = null
+            where eventId = ${scheduledTempAbsence.eventId}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.returnTime").isEqualTo(tomorrow)
+    }
   }
 
   @Nested
