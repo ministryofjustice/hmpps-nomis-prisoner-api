@@ -47,6 +47,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemp
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Service
@@ -206,7 +207,7 @@ class MovementsService(
     val scheduledAbsence = scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offenderNo)
       ?: throw NotFoundException("Scheduled temporary absence with eventId=$eventId not found for offender with nomsId=$offenderNo")
 
-    return scheduledAbsence.toSingleResponse()
+    return scheduledAbsence.toSingleResponse(scheduledAbsence.temporaryAbsenceApplication.returnTime)
   }
 
   @Transactional
@@ -545,7 +546,7 @@ class MovementsService(
     temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
     absences = scheduledTemporaryAbsences.map {
       Absence(
-        scheduledTemporaryAbsence = it.toResponse(),
+        scheduledTemporaryAbsence = it.toResponse(returnTime),
         scheduledTemporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.toResponse(),
         temporaryAbsence = it.temporaryAbsence?.toResponse(),
         temporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
@@ -554,7 +555,7 @@ class MovementsService(
     audit = toAudit(),
   )
 
-  private fun OffenderScheduledTemporaryAbsence.toResponse() = ScheduledTemporaryAbsence(
+  private fun OffenderScheduledTemporaryAbsence.toResponse(applicationReturnTime: LocalDateTime) = ScheduledTemporaryAbsence(
     eventId = eventId,
     eventDate = eventDate ?: temporaryAbsenceApplication.fromDate,
     startTime = startTime ?: temporaryAbsenceApplication.releaseTime,
@@ -566,7 +567,7 @@ class MovementsService(
     toAgency = toAgency?.id,
     transportType = transportType?.code,
     returnDate = returnDate,
-    returnTime = returnTime,
+    returnTime = returnTime ?: applicationReturnTime,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
@@ -703,7 +704,7 @@ class MovementsService(
     audit = toAudit(),
   )
 
-  private fun OffenderScheduledTemporaryAbsence.toSingleResponse() = ScheduledTemporaryAbsenceResponse(
+  private fun OffenderScheduledTemporaryAbsence.toSingleResponse(applicationReturnTime: LocalDateTime) = ScheduledTemporaryAbsenceResponse(
     bookingId = offenderBooking.bookingId,
     movementApplicationId = temporaryAbsenceApplication.movementApplicationId,
     eventId = eventId,
@@ -718,7 +719,7 @@ class MovementsService(
     toAgency = toAgency?.id,
     transportType = transportType?.code,
     returnDate = returnDate,
-    returnTime = returnTime,
+    returnTime = returnTime ?: applicationReturnTime,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),

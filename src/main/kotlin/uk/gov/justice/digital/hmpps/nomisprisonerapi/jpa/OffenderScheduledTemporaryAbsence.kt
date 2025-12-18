@@ -44,7 +44,7 @@ class OffenderScheduledTemporaryAbsence(
   var returnDate: LocalDate,
 
   @JoinColumn(name = "RETURN_TIME")
-  var returnTime: LocalDateTime,
+  var returnTime: LocalDateTime? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_MOVEMENT_APP_ID")
