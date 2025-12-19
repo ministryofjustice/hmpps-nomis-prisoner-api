@@ -1043,6 +1043,43 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.returnTime").isEqualTo(tomorrow)
     }
+
+    @Test
+    fun `should handle movement address that does not exist any more`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            temporaryAbsenceApplication(toAddress = offenderAddress) {
+              scheduledTemporaryAbsence(toAddress = offenderAddress) {
+                scheduledReturn()
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by deleting the address
+         */
+        entityManager.createQuery(
+          """
+            delete from Address where addressId = ${offenderAddress.addressId}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressId").doesNotExist()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").doesNotExist()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.fromAddressId").doesNotExist()
+    }
   }
 
   @Nested
