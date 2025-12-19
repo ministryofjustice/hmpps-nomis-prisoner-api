@@ -29,19 +29,21 @@ class AppointmentService(
   private val internalScheduleReasonRepository: ReferenceCodeRepository<InternalScheduleReason>,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse = mapModel(dto)
-    .also {
-      telemetryClient.trackEvent(
-        "appointment-created",
-        mapOf(
-          "eventId" to it.eventId.toString(),
-          "bookingId" to it.offenderBooking.bookingId.toString(),
-          "location" to it.internalLocation?.locationId.toString(),
-        ),
-        null,
-      )
-    }
-    .let { CreateAppointmentResponse(offenderAppointmentRepository.save(it).eventId) }
+  fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse = CreateAppointmentResponse(
+    offenderAppointmentRepository.save(mapModel(dto))
+      .also {
+        telemetryClient.trackEvent(
+          "appointment-created",
+          mapOf(
+            "eventId" to it.eventId.toString(),
+            "bookingId" to it.offenderBooking.bookingId.toString(),
+            "location" to it.internalLocation?.locationId.toString(),
+          ),
+          null,
+        )
+      }
+      .eventId,
+  )
 
   fun updateAppointment(eventId: Long, dto: UpdateAppointmentRequest) {
     offenderAppointmentRepository.findByIdOrNull(eventId)
