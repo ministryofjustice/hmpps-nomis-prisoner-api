@@ -19,6 +19,8 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -173,6 +175,7 @@ class OffenderMovementApplication(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_ADDRESS_ID")
+  @NotFound(action = NotFoundAction.IGNORE)
   var toAddress: Address? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)

@@ -11,6 +11,8 @@ import jakarta.persistence.OneToOne
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -55,6 +57,7 @@ class OffenderScheduledTemporaryAbsence(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "TO_ADDRESS_ID")
+  @NotFound(action = NotFoundAction.IGNORE)
   var toAddress: Address? = null,
 
   @Column(name = "APPLICATION_DATE")
@@ -77,6 +80,7 @@ class OffenderScheduledTemporaryAbsence(
 
   @OneToOne
   @JoinColumn(name = "TO_ADDRESS_ID", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
   val toAddressView: OffenderMovementAddress? = null,
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
