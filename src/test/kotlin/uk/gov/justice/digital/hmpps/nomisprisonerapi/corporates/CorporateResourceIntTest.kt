@@ -2895,4 +2895,4 @@ class CorporateResourceIntTest : IntegrationTestBase() {
   }
 }
 
-private inline fun <reified B> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!
+private inline fun <reified B : Any> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectBody(B::class.java).returnResult().responseBody!!

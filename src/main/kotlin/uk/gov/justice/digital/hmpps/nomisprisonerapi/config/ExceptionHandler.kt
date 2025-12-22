@@ -47,7 +47,7 @@ class ExceptionHandler {
   }
 
   @ExceptionHandler(NotFoundException::class)
-  fun handleNotFoundException(e: Exception): ResponseEntity<ErrorResponse?>? {
+  fun handleNotFoundException(e: Exception): ResponseEntity<ErrorResponse>? {
     log.info("Not Found: {}", e.message)
     return ResponseEntity
       .status(NOT_FOUND)
@@ -61,7 +61,7 @@ class ExceptionHandler {
   }
 
   @ExceptionHandler(BadDataException::class)
-  fun handleBadRequestException(e: BadDataException): ResponseEntity<ErrorResponse?>? {
+  fun handleBadRequestException(e: BadDataException): ResponseEntity<ErrorResponse>? {
     log.info("Bad request: {}", e.message)
     return ResponseEntity
       .status(BAD_REQUEST)
@@ -76,7 +76,7 @@ class ExceptionHandler {
   }
 
   @ExceptionHandler(HttpMessageNotReadableException::class)
-  fun handleHttpMessageNotReadablException(e: Exception): ResponseEntity<ErrorResponse?>? {
+  fun handleHttpMessageNotReadablException(e: Exception): ResponseEntity<ErrorResponse>? {
     log.info("Bad request: {}", e.message)
     return ResponseEntity
       .status(BAD_REQUEST)
@@ -90,7 +90,7 @@ class ExceptionHandler {
   }
 
   @ExceptionHandler(MethodArgumentNotValidException::class)
-  fun handleValidationErrorException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse?>? {
+  fun handleValidationErrorException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse>? {
     log.info("Bad request: {}", e.message)
     val message = if (e.hasFieldErrors()) {
       "${e.fieldError?.field} ${e.fieldError?.defaultMessage}"
@@ -109,7 +109,7 @@ class ExceptionHandler {
   }
 
   @ExceptionHandler(ConflictException::class)
-  fun handleConflictException(e: ConflictException): ResponseEntity<ErrorResponse?>? {
+  fun handleConflictException(e: ConflictException): ResponseEntity<ErrorResponse>? {
     log.info("Conflict http error: {}", e.message)
     return ResponseEntity
       .status(CONFLICT)
@@ -160,7 +160,7 @@ class ExceptionHandler {
     .also { log.info("Image bad data exception: {}", e.message) }
 
   @ExceptionHandler(java.lang.Exception::class)
-  fun handleException(e: java.lang.Exception): ResponseEntity<ErrorResponse?>? {
+  fun handleException(e: java.lang.Exception): ResponseEntity<ErrorResponse>? {
     log.error("Unexpected exception", e)
     return ResponseEntity
       .status(INTERNAL_SERVER_ERROR)

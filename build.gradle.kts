@@ -1,31 +1,31 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.3.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.0-beta-3"
   kotlin("plugin.spring") version "2.3.0"
   kotlin("plugin.jpa") version "2.3.0"
   idea
 }
 
-configurations {
-  testImplementation { exclude(group = "org.junit.vintage") }
-}
-
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.8.2")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.0.0-beta-3")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+  implementation("org.springframework.boot:spring-boot-starter-flyway")
+  implementation("org.springframework.boot:spring-boot-jackson2")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
 
   implementation("org.flywaydb:flyway-core")
-  implementation("com.vladmihalcea:hibernate-types-60:2.21.1")
-  implementation("org.hibernate.orm:hibernate-community-dialects")
+  implementation("org.hibernate.orm:hibernate-community-dialects:7.1.13.Final")
   implementation("com.google.guava:guava:33.5.0-jre")
-
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14")
 
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.4.240")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc10:19.29.0.0")
+  runtimeOnly("com.oracle.database.jdbc:ojdbc11:23.26.0.0.0")
 
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:1.8.2")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.0.0-beta-3")
+  testImplementation("org.springframework.boot:spring-boot-test-autoconfigure")
+  testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+  testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
+
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.37") {

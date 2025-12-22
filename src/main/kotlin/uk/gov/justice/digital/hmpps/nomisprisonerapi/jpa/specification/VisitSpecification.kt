@@ -14,7 +14,7 @@ import java.time.LocalDate
 class VisitSpecification(private val filter: VisitFilter) : Specification<Visit> {
   override fun toPredicate(
     root: Root<Visit>,
-    query: CriteriaQuery<*>?,
+    query: CriteriaQuery<*>,
     criteriaBuilder: CriteriaBuilder,
   ): Predicate? {
     val predicates = mutableListOf<Predicate>()

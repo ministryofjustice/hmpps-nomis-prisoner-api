@@ -664,7 +664,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody().consumeWith(System.out::println)
+          .expectBody()
           .jsonPath("caseNotes.size()").isEqualTo(5)
           .jsonPath("caseNotes[0].caseNoteId").isEqualTo(id1)
           .jsonPath("caseNotes[0].bookingId").isEqualTo(latestBookingIdA1234AB)
