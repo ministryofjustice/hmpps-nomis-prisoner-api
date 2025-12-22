@@ -5112,7 +5112,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk.expectBody(CreateCourtAppearanceResponse::class.java)
+          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
           .returnResult().responseBody!!
 
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
@@ -5130,7 +5130,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("4506")
 
 // no new offender charges created
-        assertThat(courtAppearanceResponse.courtEventChargesIds.size).isEqualTo(0)
+        assertThat(courtAppearanceResponse.createdCourtEventChargesIds.size).isEqualTo(0)
 
 // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
