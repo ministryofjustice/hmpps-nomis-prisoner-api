@@ -31,11 +31,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociationI
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayBand
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode.Pk
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
@@ -305,12 +305,15 @@ class Repository(
 
   fun deleteAgencyInternalLocationById(id: Long) = agencyInternalLocationRepository.deleteById(id)
 
-  fun save(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.save(offenderCaseNote)
+  fun save(offenderCaseNote: OffenderCaseNote): OffenderCaseNote = offenderCaseNoteRepository.save(offenderCaseNote)
   fun delete(offenderCaseNote: OffenderCaseNote) = offenderCaseNoteRepository.delete(offenderCaseNote)
   fun deleteCaseNotes() = offenderCaseNoteRepository.deleteAll()
+  fun addSentenceCaseNoteLink(caseNoteId: Long, sentenceSequence: Long) {
+    val cn = offenderCaseNoteRepository.findById(caseNoteId).get()
+    val sentence = offenderSentenceRepository.findById(SentenceId(cn.offenderBooking, sentenceSequence)).get()
+    cn.sentences.add(sentence)
+  }
 
-  fun getTransaction(pk: OffenderTransaction.Companion.Pk) = offenderTransactionRepository.findByIdOrNull(pk)
-    ?.also { it.toString() }
   fun deleteAllTransactions() = generalLedgerTransactionRepository
     .deleteAll().also {
       offenderTransactionRepository.deleteAll()

@@ -17,8 +17,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -32,12 +34,16 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
   private lateinit var offenderCaseNoteRepository: OffenderCaseNoteRepository
 
   @Autowired
+  private lateinit var offenderSentenceRepository: OffenderSentenceRepository
+
+  @Autowired
   private lateinit var repository: Repository
 
   private lateinit var prisoner: Offender
   private lateinit var booking: OffenderBooking
   private lateinit var staff1: Staff
   private lateinit var casenote1: OffenderCaseNote
+  private lateinit var sentence1: OffenderSentence
 
   private val now = LocalDateTime.now()
 
@@ -463,6 +469,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
               author = staff1,
               caseNoteText = "A note",
             )
+            sentence1 = sentence()
           }
         }
       }
@@ -516,6 +523,21 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
         repository.runInTransaction {
           assertThat(offenderCaseNoteRepository.findByIdOrNull(casenote1.id)).isNull()
+        }
+      }
+
+      @Test
+      fun `Can delete the caseNote when case note sents are present`() {
+        repository.addSentenceCaseNoteLink(casenote1.id, sentence1.id.sequence)
+
+        webTestClient.delete().uri("/casenotes/${casenote1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isEqualTo(204)
+
+        repository.runInTransaction {
+          assertThat(offenderCaseNoteRepository.existsById(casenote1.id)).isFalse
+          assertThat(offenderSentenceRepository.existsById(sentence1.id)).isTrue
         }
       }
     }
