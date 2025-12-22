@@ -1,7 +1,7 @@
 spring:
-  flyway:
+  datasource:
     url: ${JDBC_URL}
-    user: ${DB_USERNAME}
+    username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
     hikari:
