@@ -3,9 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import org.hibernate.HibernateException
 import org.hibernate.annotations.IdGeneratorType
 import org.hibernate.engine.spi.SharedSessionContractImplementor
+import org.hibernate.generator.GeneratorCreationContext
 import org.hibernate.id.enhanced.SequenceStyleGenerator
-import org.hibernate.service.ServiceRegistry
-import org.hibernate.type.Type
 import java.util.*
 
 @IdGeneratorType(SequenceGeneratorOrUseId::class)
@@ -19,14 +18,11 @@ annotation class SequenceOrUseId(
 
 class SequenceGeneratorOrUseId(private val config: SequenceOrUseId) : SequenceStyleGenerator() {
 
-  override fun configure(type: Type, params: Properties, serviceRegistry: ServiceRegistry) {
-    val appliedParams = Properties()
-    appliedParams.putAll(params)
-    appliedParams[INITIAL_PARAM] = config.startWith
-    appliedParams[INCREMENT_PARAM] = config.incrementBy
-    appliedParams[SEQUENCE_PARAM] = config.name
-
-    super.configure(type, appliedParams, serviceRegistry)
+  override fun configure(creationContext: GeneratorCreationContext?, parameters: Properties) {
+    parameters[INITIAL_PARAM] = config.startWith
+    parameters[INCREMENT_PARAM] = config.incrementBy
+    parameters[SEQUENCE_PARAM] = config.name
+    super.configure(creationContext, parameters)
   }
 
   @Throws(HibernateException::class)
