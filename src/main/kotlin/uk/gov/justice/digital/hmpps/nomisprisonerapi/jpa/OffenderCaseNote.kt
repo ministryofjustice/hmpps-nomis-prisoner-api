@@ -9,6 +9,8 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.NamedAttributeNode
 import jakarta.persistence.NamedEntityGraph
@@ -129,6 +131,18 @@ class OffenderCaseNote(
   @CreatedDate
   var timeCreation: LocalDateTime? = null,
   // date part always the same as DATE_CREATION but CAN BE NULL in prod data
+
+  @ManyToMany(fetch = FetchType.LAZY, cascade = []) // No cascade, otherwise sentences would be deleted, v bad!
+  @JoinTable(
+    name = "OFFENDER_CASE_NOTE_SENTS",
+    joinColumns = [JoinColumn(name = "CASE_NOTE_ID", referencedColumnName = "CASE_NOTE_ID")],
+    inverseJoinColumns = [
+      JoinColumn(name = "OFFENDER_BOOK_ID", referencedColumnName = "OFFENDER_BOOK_ID"),
+      JoinColumn(name = "SENTENCE_SEQ", referencedColumnName = "SENTENCE_SEQ"),
+    ],
+  )
+  @Deprecated("No longer used, only mapped to support deletion of old case notes which have rows in OFFENDER_CASE_NOTE_SENTS")
+  val sentences: MutableList<OffenderSentence> = mutableListOf(),
 
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
