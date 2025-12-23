@@ -95,4 +95,6 @@ tasks.test {
       excludeTestsMatching("uk.gov.justice.digital.hmpps.nomisprisonerapi.${it.name}.*")
     }
   }
+  minHeapSize = "128m"
+  maxHeapSize = "2048m"
 }
