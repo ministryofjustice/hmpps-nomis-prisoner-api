@@ -64,7 +64,9 @@ data class ModelConfiguration(val name: String) {
 val testPackages = listOf(
   ModelConfiguration("activities"),
   ModelConfiguration("adjudications"),
+  ModelConfiguration("contactperson"),
   ModelConfiguration("courtsentencing"),
+  ModelConfiguration("movements"),
   ModelConfiguration("sentencingadjustments"),
   ModelConfiguration("visitbalances"),
   ModelConfiguration("visits"),
