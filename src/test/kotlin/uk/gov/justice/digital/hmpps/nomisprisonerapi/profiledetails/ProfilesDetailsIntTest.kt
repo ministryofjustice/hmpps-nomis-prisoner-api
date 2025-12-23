@@ -556,7 +556,7 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
     ) = this.get()
       .uri {
         it.path("/prisoners/$offenderNo/profile-details")
-          .queryParam("profileTypes", profileTypes)
+          .apply { profileTypes.forEach { queryParam("profileTypes", it) } }
           .apply { bookingId?.let { queryParam("bookingId", bookingId) } }
           .queryParam("latestBookingOnly", latestBookingOnly)
           .build()

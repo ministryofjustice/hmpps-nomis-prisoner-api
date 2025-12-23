@@ -4,8 +4,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase
 import org.springframework.context.annotation.Import
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.context.ActiveProfiles
@@ -99,30 +99,30 @@ class ActivityRepositoryTest {
     val persistedRecord = activityRepository.findAll().first()
     assertThat(persistedRecord).isNotNull
 
-    assertThat(persistedRecord?.courseActivityId).isGreaterThan(0)
-    assertThat(persistedRecord?.code).isEqualTo("CA")
-    assertThat(persistedRecord?.program?.programCode).isEqualTo("TESTPS")
-    assertThat(persistedRecord?.description).isEqualTo("test description")
-    assertThat(persistedRecord?.capacity).isEqualTo(23)
-    assertThat(persistedRecord?.active).isTrue()
-    assertThat(persistedRecord?.scheduleStartDate).isEqualTo(LocalDate.parse("2022-10-31"))
-    assertThat(persistedRecord?.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
-    assertThat(persistedRecord?.caseloadId).isEqualTo("LEI")
-    assertThat(persistedRecord?.prison?.id).isEqualTo("LEI")
-    assertThat(persistedRecord?.caseloadType).isEqualTo("INST")
-    assertThat(persistedRecord?.providerPartyCode).isEqualTo("LEI")
-    assertThat(persistedRecord?.iepLevel?.description).isEqualTo("Standard")
-    assertThat(persistedRecord?.internalLocation?.locationId).isEqualTo(-9)
-    assertThat(persistedRecord?.excludeBankHolidays).isFalse()
-    assertThat(persistedRecord?.outsideWork).isFalse()
-    assertThat(persistedRecord?.payPerSession).isEqualTo(PayPerSession.F)
-    val rate = persistedRecord?.payRates?.first()
-    assertThat(rate?.id?.courseActivity?.courseActivityId).isEqualTo(persistedRecord?.courseActivityId)
-    assertThat(rate?.id?.iepLevelCode).isEqualTo("STD")
-    assertThat(rate?.id?.payBandCode).isEqualTo("4")
-    assertThat(rate?.id?.startDate).isEqualTo(LocalDate.parse("2022-12-01"))
-    assertThat(rate?.endDate).isEqualTo(LocalDate.parse("2022-12-02"))
-    assertThat(rate?.halfDayRate).isEqualTo(BigDecimal(0.6))
+    assertThat(persistedRecord.courseActivityId).isGreaterThan(0)
+    assertThat(persistedRecord.code).isEqualTo("CA")
+    assertThat(persistedRecord.program?.programCode).isEqualTo("TESTPS")
+    assertThat(persistedRecord.description).isEqualTo("test description")
+    assertThat(persistedRecord.capacity).isEqualTo(23)
+    assertThat(persistedRecord.active).isTrue()
+    assertThat(persistedRecord.scheduleStartDate).isEqualTo(LocalDate.parse("2022-10-31"))
+    assertThat(persistedRecord.scheduleEndDate).isEqualTo(LocalDate.parse("2022-11-30"))
+    assertThat(persistedRecord.caseloadId).isEqualTo("LEI")
+    assertThat(persistedRecord.prison.id).isEqualTo("LEI")
+    assertThat(persistedRecord.caseloadType).isEqualTo("INST")
+    assertThat(persistedRecord.providerPartyCode).isEqualTo("LEI")
+    assertThat(persistedRecord.iepLevel?.description).isEqualTo("Standard")
+    assertThat(persistedRecord.internalLocation?.locationId).isEqualTo(-9)
+    assertThat(persistedRecord.excludeBankHolidays).isFalse()
+    assertThat(persistedRecord.outsideWork).isFalse()
+    assertThat(persistedRecord.payPerSession).isEqualTo(PayPerSession.F)
+    val rate = persistedRecord.payRates.first()
+    assertThat(rate.id.courseActivity.courseActivityId).isEqualTo(persistedRecord?.courseActivityId)
+    assertThat(rate.id.iepLevelCode).isEqualTo("STD")
+    assertThat(rate.id.payBandCode).isEqualTo("4")
+    assertThat(rate.id.startDate).isEqualTo(LocalDate.parse("2022-12-01"))
+    assertThat(rate.endDate).isEqualTo(LocalDate.parse("2022-12-02"))
+    assertThat(rate.halfDayRate).isEqualTo(BigDecimal(0.6))
   }
 
   @Test
