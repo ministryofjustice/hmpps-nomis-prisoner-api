@@ -20,7 +20,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-private const val CSRA_ASSSESSMENT_TYPE = 9687L
 private const val TOP_LEVEL_ASSESSMENT_CLASS = "TYPE"
 
 @Service
@@ -32,18 +31,18 @@ class CsraService(
   private val assessmentRepository: AssessmentRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
-  fun createCsra(offenderNo: String, csraCreateRequest: CsraCreateRequest): CsraCreateResponse {
+  fun createCsra(offenderNo: String, csraCreateRequest: CsraDto): CsraCreateResponse {
     val booking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Cannot find latest booking for offender $offenderNo")
 
     val placementAgency = csraCreateRequest.placementAgencyId?.let {
       agencyLocationRepository.findByIdOrNull(it)
-        ?: throw BadDataException("Cannot find placement agency ${csraCreateRequest.placementAgencyId}")
+        ?: throw BadDataException("Cannot find placement agency $it")
     }
 
     val reviewPlacementAgency = csraCreateRequest.reviewPlacementAgencyId?.let {
       agencyLocationRepository.findByIdOrNull(it)
-        ?: throw BadDataException("Cannot find review placement agency ${csraCreateRequest.placementAgencyId}")
+        ?: throw BadDataException("Cannot find review placement agency $it")
     }
 
     val assessment = assessmentRepository.findOneByAssessmentCodeAndAssessmentClass(
@@ -52,8 +51,11 @@ class CsraService(
     )
       ?: throw BadDataException("Cannot find assessment for code ${csraCreateRequest.type}")
 
-    val user = staffUserAccountRepository.findByUsername(csraCreateRequest.createdBy)
-      ?: throw BadDataException("Cannot find user ${csraCreateRequest.createdBy}")
+    val user = csraCreateRequest.createdBy?.let {
+      staffUserAccountRepository.findByUsername(it)
+        ?: throw BadDataException("Cannot find user $it")
+    }
+      ?: throw BadDataException("createdBy field is required")
 
     val sequence = offenderAssessmentRepository.getNextSequence(booking)
     val offenderAssessment = OffenderAssessment(
@@ -67,15 +69,10 @@ class CsraService(
       assessorStaffId = user.staff.id,
       assessmentComment = csraCreateRequest.comment,
       nextReviewDate = csraCreateRequest.nextReviewDate,
-//      overrideReasonComment = csraCreateRequest.xxxx,
       placementAgency = placementAgency,
-//      overrideLevel = csraCreateRequest.xxxx,
-//      overrideComment = csraCreateRequest.xxxx,
-//      overrideStaffId = csraCreateRequest.xxxx,
       evaluationDate = csraCreateRequest.evaluationDate,
       evaluationResultCode = csraCreateRequest.evaluationResultCode,
       reviewLevel = csraCreateRequest.reviewLevel,
-      // reviewPlacementComment = csraCreateRequest.rev,
       reviewCommitteeCode = csraCreateRequest.reviewCommitteeCode,
       reviewCommitteeComment = csraCreateRequest.reviewCommitteeComment,
       reviewPlacementAgency = reviewPlacementAgency,
@@ -83,121 +80,59 @@ class CsraService(
       assessmentCommitteeCode = csraCreateRequest.committeeCode,
       approvedLevel = csraCreateRequest.approvedLevel,
       assessmentCreationLocation = booking.location.id,
-//      overrideUserId = csraCreateRequest.xxxx,
-//      overrideReasonCode = csraCreateRequest.xxxx,
       creationDateTime = csraCreateRequest.createdDateTime,
       creationUser = csraCreateRequest.createdBy,
-      /*
-       CATs:
- Approve:
-    createParams("bookingId", detail.getBookingId(),
-                "seq", maxSequence,
-                "assessmentTypeId", assessmentId,
-                "assessStatus", "A",
-                "category", detail.getCategory(),
-                "evaluationDate", new SqlParameterValue(Types.DATE, DateTimeConverter.toDate(detail.getEvaluationDate())),
-                "evaluationResultCode", "APP",
-                "reviewCommitteeCode", detail.getReviewCommitteeCode(),
-                "committeeCommentText", detail.getCommitteeCommentText(), // review
-                "nextReviewDate", new SqlParameterValue(Types.DATE, DateTimeConverter.toDate(detail.getNextReviewDate())),
-                "approvedCategoryComment", detail.getApprovedCategoryComment(),
-                "approvedPlacementAgencyId", detail.getApprovedPlacementAgencyId(),
-                "approvedPlacementText
-    update OFFENDER_ASSESSMENTS set
-        ASSESS_STATUS=:assessStatus,
-        EVALUATION_DATE=:evaluationDate,
-        EVALUATION_RESULT_CODE=:evaluationResultCode,
-        REVIEW_SUP_LEVEL_TYPE=:category,
-        REVIEW_SUP_LEVEL_TEXT=:approvedCategoryComment,
-        REVIEW_COMMITTE_CODE=:reviewCommitteeCode,
-        COMMITTE_COMMENT_TEXT=:committeeCommentText,
-        NEXT_REVIEW_DATE=COALESCE(:nextReviewDate, NEXT_REVIEW_DATE),
-        REVIEW_PLACE_AGY_LOC_ID=:approvedPlacementAgencyId,
-        REVIEW_PLACEMENT_TEXT=:approvedPlacementText
-      where OFFENDER_BOOK_ID=:bookingId
-        and ASSESSMENT_SEQ=:seq
-        and ASSESSMENT_TYPE_ID=:assessmentTypeId
-        and ASSESS_STATUS='P'
-Reject:
-    createParams("bookingId", detail.getBookingId(),
-                "seq", detail.getAssessmentSeq(),
-                "assessmentTypeId", assessmentId,
-                "evaluationDate", new SqlParameterValue(Types.DATE, DateTimeConverter.toDate(detail.getEvaluationDate())),
-                "evaluationResultCode", "REJ",
-                "reviewCommitteeCode", detail.getReviewCommitteeCode(),
-                "committeeCommentText", detail.getCommitteeCommentText()
-    update OFFENDER_ASSESSMENTS set
-        EVALUATION_DATE=:evaluationDate,
-        EVALUATION_RESULT_CODE=:evaluationResultCode,
-        REVIEW_COMMITTE_CODE=:reviewCommitteeCode,
-        COMMITTE_COMMENT_TEXT=:committeeCommentText
-      where OFFENDER_BOOK_ID=:bookingId
-        and ASSESSMENT_SEQ=:seq
-        and ASSESSMENT_TYPE_ID=:assessmentTypeId
-        and ASSESS_STATUS='P'
-      */
+      // TODO: not user if needed yet:
+      // reviewPlacementComment = csraCreateRequest.rev,
+//      overrideReasonComment = csraCreateRequest.xxxx,
+//      overrideLevel = csraCreateRequest.xxxx,
+//      overrideComment = csraCreateRequest.xxxx,
+//      overrideStaffId = csraCreateRequest.xxxx,
+//      overrideUserId = csraCreateRequest.xxxx,
+//      overrideReasonCode = csraCreateRequest.xxxx,
     )
-    offenderAssessmentRepository.save(offenderAssessment)
-    return CsraCreateResponse(booking.bookingId, offenderAssessment.id.sequence)
+    val saved = offenderAssessmentRepository.save(offenderAssessment)
+    return CsraCreateResponse(saved.id.offenderBooking.bookingId, saved.id.sequence)
   }
-  /*
-  NB assessment type could be:
-    9686	CSRF	  CSR Full
-    9685	CSRH	  CSR Health
-    9683	CSRDO	  CSR Locate
-    9687	CSR	    CSR Rating
-    9684	CSR1	  CSR Reception
-    9682	CSRREV	CSR Review
-   */
 
   fun getCsra(bookingId: Long, sequence: Int): CsraDto {
     val booking = offenderBookingRepository.findByIdOrNull(bookingId)
       ?: throw NotFoundException("Booking with id $bookingId not found")
 
-    return offenderAssessmentRepository.findByIdAndAssessmentTypeId(
+    return offenderAssessmentRepository.findByIdOrNull(
       OffenderAssessmentId(booking, sequence),
-      CSRA_ASSSESSMENT_TYPE,
     )?.toDto()
       ?: throw NotFoundException("CSRA for booking $bookingId and sequence $sequence not found")
   }
-}
 
-fun OffenderAssessment.toDto() = CsraDto(
-  bookingId = id.offenderBooking.bookingId,
-  sequence = id.sequence,
-  assessmentDate = assessmentDate,
-  calculatedLevel = calculatedLevel,
-  score = score,
-  status = assessmentStatus,
-  assessmentStaffId = assessmentStaffId,
-)
+  fun OffenderAssessment.toDto() = CsraDto(
+    assessmentDate = assessmentDate,
+    calculatedLevel = calculatedLevel,
+    score = score,
+    status = assessmentStatus,
+    assessmentStaffId = assessmentStaffId,
+    type = assessmentRepository.findByIdOrNull(assessmentTypeId)
+      ?.let { AssessmentType.valueOf(it.assessmentCode) }
+      ?: throw BadDataException("Cannot convert assessment type $assessmentTypeId for booking ${id.offenderBooking.bookingId} and sequence ${id.sequence}"),
+    committeeCode = assessmentCommitteeCode,
+    nextReviewDate = nextReviewDate,
+    comment = assessmentComment,
+    placementAgencyId = placementAgency?.id,
+    createdDateTime = creationDateTime,
+    createdBy = creationUser,
+    reviewLevel = reviewLevel,
+    approvedLevel = approvedLevel,
+    evaluationDate = evaluationDate,
+    evaluationResultCode = evaluationResultCode,
+    reviewCommitteeCode = reviewCommitteeCode,
+    reviewCommitteeComment = reviewCommitteeComment,
+    reviewPlacementAgencyId = reviewPlacementAgency?.id,
+    reviewComment = reviewComment,
+  )
+}
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CsraDto(
-  @Schema(description = "The booking id", example = "2345678")
-  val bookingId: Long,
-
-  @Schema(description = "The sequence number of the assessment", example = "2")
-  val sequence: Int,
-
-  @Schema(description = "Date the CSRA was created", example = "2025-11-22")
-  val assessmentDate: LocalDate,
-
-  @Schema(description = "The calculated CSRA level", example = "STANDARD")
-  val calculatedLevel: String? = null,
-
-  @Schema(description = "Score", example = "1000")
-  val score: BigDecimal,
-
-  @Schema(description = "Status, active, inactive or provisional", allowableValues = ["I", "A", "P"])
-  val status: AssessmentStatusType,
-
-  @Schema(description = "Staff id of user that created the CSRA", example = "123456")
-  val assessmentStaffId: Long,
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class CsraCreateRequest(
   @Schema(description = "Date the CSRA was created", example = "2025-11-22")
   val assessmentDate: LocalDate,
 
@@ -215,7 +150,7 @@ data class CsraCreateRequest(
   val type: AssessmentType,
 
   @Schema(description = "The calculated CSRA level", example = "STANDARD")
-  val calculatedLevel: String,
+  val calculatedLevel: String? = null,
 
   @Schema(description = "Score", example = "1000")
   val score: BigDecimal,
@@ -227,7 +162,7 @@ data class CsraCreateRequest(
   val assessmentStaffId: Long,
 
   @Schema(description = "The assessment committee code (reference code in domain 'ASSESS_COMM')")
-  val committeeCode: String,
+  val committeeCode: String? = null,
 
   @Schema(description = "Next review date, defaults to current date + 6 months, if not provided")
   val nextReviewDate: LocalDate? = null,
@@ -239,10 +174,10 @@ data class CsraCreateRequest(
   val placementAgencyId: String? = null,
 
   @Schema(description = "Timestamp for when the CSRA was created", example = "2025-12-06T12:34:56")
-  val createdDateTime: LocalDateTime,
+  val createdDateTime: LocalDateTime? = null,
 
-  @Schema(description = "The user who created the CSRA", example = "NQP56Y")
-  val createdBy: String,
+  @Schema(description = "The user who created the CSRA, required for CSRA creation", example = "NQP56Y")
+  val createdBy: String? = null,
 
   // Review fields:
   @Schema(description = "The review CSRA level")

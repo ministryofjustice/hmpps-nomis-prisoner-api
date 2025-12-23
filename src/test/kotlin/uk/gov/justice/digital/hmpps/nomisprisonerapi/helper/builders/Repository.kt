@@ -129,7 +129,7 @@ class Repository(
   val linkCaseTxnRepository: LinkCaseTxnRepository,
   val caseloadCurrentAccountsBaseRepository: CaseloadCurrentAccountsBaseRepository,
   val caseloadCurrentAccountsTxnRepository: CaseloadCurrentAccountsTxnRepository,
-  val offenderAssessmentRepository: OffenderAssessmentRepository
+  val offenderAssessmentRepository: OffenderAssessmentRepository,
   val offenderBeliefRepository: OffenderBeliefRepository,
 ) {
   @Autowired

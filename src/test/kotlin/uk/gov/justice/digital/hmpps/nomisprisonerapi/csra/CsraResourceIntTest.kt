@@ -8,11 +8,13 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.web.reactive.function.BodyInserters.fromValue
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 
@@ -54,7 +56,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
         webTestClient.post().uri("/csra/A1111AA")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(validCreateJsonRequest()))
+          .body(fromValue(validFullCreateJsonRequest()))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -64,7 +66,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
         webTestClient.post().uri("/csra/A1111AA")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(validCreateJsonRequest()))
+          .body(fromValue(validFullCreateJsonRequest()))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -73,66 +75,215 @@ class CsraResourceIntTest : IntegrationTestBase() {
       fun `access unauthorised with no auth token`() {
         webTestClient.post().uri("/csra/A1111AA")
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(validCreateJsonRequest()))
+          .body(fromValue(validFullCreateJsonRequest()))
           .exchange()
           .expectStatus().isUnauthorized
       }
     }
 
     @Nested
+    inner class Validation {
+      @Test
+      fun `no booking`() {
+        webTestClient.post().uri("/csra/Z9999ZZ")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validFullCreateJsonRequest()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Not Found: Cannot find latest booking for offender Z9999ZZ")
+      }
+
+      @Test
+      fun `no placement agency`() {
+        webTestClient.post().uri("/csra/A1111AA")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue(
+              """{ ${requiredFields()}, "placementAgencyId": "DUFF" }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Cannot find placement agency DUFF")
+      }
+
+      @Test
+      fun `no review placement agency`() {
+        webTestClient.post().uri("/csra/A1111AA")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue(
+              """{ ${requiredFields()}, "reviewPlacementAgencyId": "DUFF" }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Cannot find review placement agency DUFF")
+      }
+
+      @Test
+      fun `no assessment type`() {
+        webTestClient.post().uri("/csra/A1111AA")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue(
+              """{ 
+                "assessmentDate": "2025-12-14",
+                "score": "1200",
+                "status": "A",
+                "assessmentStaffId": ${staff.id},
+                "createdBy": "BILLSTAFF",
+                "type": "DUFF"
+              }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("String \"DUFF\": not one of the values accepted for Enum class")
+          }
+      }
+
+      @Test
+      fun `no created by user`() {
+        webTestClient.post().uri("/csra/A1111AA")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue(
+              """{ 
+          "assessmentDate": "2025-12-14",
+          "type": "CSRF",
+          "score": "1200",
+          "status": "A",
+          "assessmentStaffId": ${staff.id}
+          }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: createdBy field is required")
+      }
+
+      @Test
+      fun `invalid created by user`() {
+        webTestClient.post().uri("/csra/A1111AA")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue(
+              """{
+              "assessmentDate": "2025-12-14",
+              "type": "CSRF",
+              "score": "1200",
+              "status": "A",
+              "assessmentStaffId": ${staff.id},
+              "createdBy": "DUFF"
+               }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Cannot find user DUFF")
+      }
+    }
+
+    @Nested
     inner class HappyPath {
       @Test
-      fun `can create a csra`() {
+      fun `can create a CSRA with full data`() {
         val created = webTestClient.post().uri("/csra/A1111AA")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(validCreateJsonRequest()))
+          .body(fromValue(validFullCreateJsonRequest()))
           .exchange()
           .expectStatus().isOk
-          .expectBody(CsraCreateResponse::class.java)
+          .expectBody<CsraCreateResponse>()
           .returnResult()
-          .responseBody!! // NPE ??
+          .responseBody!!
 
         val data = webTestClient.get().uri("/csra/booking/${created.bookingId}/sequence/${created.sequence}")
-          .headers(setAuthorisation(roles = listOf()))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
-          .expectBody(CsraDto::class.java)
+          .expectBody<CsraDto>()
           .returnResult()
           .responseBody!!
 
         with(data) {
-          assertThat(bookingId).isEqualTo(created.bookingId)
-          assertThat(sequence).isEqualTo(created.sequence)
           assertThat(assessmentDate).isEqualTo("2025-12-14")
+          assertThat(type).isEqualTo(AssessmentType.CSRF)
           assertThat(calculatedLevel).isEqualTo("HI")
           assertThat(score.toString()).isEqualTo("1200")
           assertThat(status).isEqualTo(AssessmentStatusType.A)
-          assertThat(assessmentStaffId).isEqualTo(12345)
-          assertThat(calculatedLevel).isEqualTo("xxxxx")
-          assertThat(calculatedLevel).isEqualTo("xxxxx")
-          assertThat(calculatedLevel).isEqualTo("xxxxx")
-          assertThat(calculatedLevel).isEqualTo("xxxxx")
+          assertThat(assessmentStaffId).isEqualTo(staff.id)
+          assertThat(committeeCode).isEqualTo("GOV")
+          assertThat(nextReviewDate).isEqualTo("2026-12-15")
+          assertThat(comment).isEqualTo("comment")
+          assertThat(placementAgencyId).isEqualTo("LEI")
+          assertThat(createdDateTime).isEqualTo("2025-12-04T12:34:56")
+          assertThat(createdBy).isEqualTo("BILLSTAFF")
+          assertThat(reviewLevel).isEqualTo("MED")
+          assertThat(approvedLevel).isEqualTo("LOW")
+          assertThat(evaluationDate).isEqualTo("2025-12-16")
+          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
+          assertThat(reviewCommitteeCode).isEqualTo("CODE")
+          assertThat(reviewCommitteeComment).isEqualTo("reviewCommitteeComment")
+          assertThat(reviewPlacementAgencyId).isEqualTo("MDI")
+          assertThat(reviewComment).isEqualTo("reviewComment")
+        }
+      }
+
+      @Test
+      fun `can create a CSRA with minimal data`() {
+        val created = webTestClient.post().uri("/csra/A1111AA")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validMinimalCreateJsonRequest()))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody<CsraCreateResponse>()
+          .returnResult()
+          .responseBody!!
+
+        val data = webTestClient.get().uri("/csra/booking/${created.bookingId}/sequence/${created.sequence}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody<CsraDto>()
+          .returnResult()
+          .responseBody!!
+
+        with(data) {
+          assertThat(assessmentDate).isEqualTo("2025-12-14")
+          assertThat(type).isEqualTo(AssessmentType.CSRF)
+          assertThat(score.toString()).isEqualTo("1200")
+          assertThat(status).isEqualTo(AssessmentStatusType.A)
+          assertThat(assessmentStaffId).isEqualTo(staff.id)
         }
       }
     }
   }
 
-  fun validCreateJsonRequest() : String =
+  fun validFullCreateJsonRequest(): String =
     """
-      {
-   "assessmentDate": "2025-12-14",
-   "type": "CSRF",
+      { ${requiredFields()},
    "calculatedLevel": "HI",
-   "score": "1200",
-   "status": "A",
-   "assessmentStaffId": ${staff.id},
    "committeeCode": "GOV",
    "nextReviewDate": "2026-12-15",
    "comment": "comment",
    "placementAgencyId": "LEI",
    "createdDateTime": "2025-12-04T12:34:56",
-   "createdBy": "BILLSTAFF",
    "reviewLevel": "MED",
    "approvedLevel": "LOW",
    "evaluationDate": "2025-12-16",
@@ -142,6 +293,18 @@ class CsraResourceIntTest : IntegrationTestBase() {
    "reviewPlacementAgencyId": "MDI",
    "reviewComment": "reviewComment"
       }
+    """.trimIndent()
+
+  fun validMinimalCreateJsonRequest(): String = "{ ${requiredFields()} }"
+
+  fun requiredFields() =
+    """
+      "assessmentDate": "2025-12-14",
+      "type": "CSRF",
+      "score": "1200",
+      "status": "A",
+      "assessmentStaffId": ${staff.id},
+      "createdBy": "BILLSTAFF"
     """.trimIndent()
 
   @DisplayName("GET /csra/booking/{bookingId}/sequence/{sequence}")
@@ -172,5 +335,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .expectStatus().isUnauthorized
       }
     }
+
+    // TODO along with DSL functions to support
   }
 }

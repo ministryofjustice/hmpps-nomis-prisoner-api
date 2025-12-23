@@ -20,20 +20,18 @@ class CsraResource(private val csraService: CsraService) {
   @PostMapping("/csra/{offenderNo}")
   @Operation(
     summary = "Creates a CSRA record for a prisoner",
-    description = "Retrieves an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
   )
   fun createCsra(
     @PathVariable offenderNo: String,
-    @RequestBody csraCreateRequest: CsraCreateRequest,
-  ) {
-    csraService.createCsra(offenderNo, csraCreateRequest)
-  }
+    @RequestBody csraCreateRequest: CsraDto,
+  ): CsraCreateResponse = csraService.createCsra(offenderNo, csraCreateRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/csra/booking/{bookingId}/sequence/{sequence}")
   @Operation(
     summary = "Get a CSRA record for a prisoner",
-    description = "Retrieves an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
   )
   fun getCsra(
     @Schema(description = "Booking Id", example = "2345678") @PathVariable bookingId: Long,
