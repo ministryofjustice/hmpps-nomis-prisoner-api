@@ -9,10 +9,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AssessmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
@@ -20,15 +20,12 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-private const val TOP_LEVEL_ASSESSMENT_CLASS = "TYPE"
-
 @Service
 @Transactional
 class CsraService(
   private val offenderAssessmentRepository: OffenderAssessmentRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
-  private val assessmentRepository: AssessmentRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
   fun createCsra(offenderNo: String, csraCreateRequest: CsraDto): CsraCreateResponse {
@@ -45,12 +42,6 @@ class CsraService(
         ?: throw BadDataException("Cannot find review placement agency $it")
     }
 
-    val assessment = assessmentRepository.findOneByAssessmentCodeAndAssessmentClass(
-      csraCreateRequest.type.name,
-      TOP_LEVEL_ASSESSMENT_CLASS,
-    )
-      ?: throw BadDataException("Cannot find assessment for code ${csraCreateRequest.type}")
-
     val user = csraCreateRequest.createdBy?.let {
       staffUserAccountRepository.findByUsername(it)
         ?: throw BadDataException("Cannot find user $it")
@@ -62,11 +53,11 @@ class CsraService(
       OffenderAssessmentId(booking, sequence),
       calculatedLevel = csraCreateRequest.calculatedLevel,
       assessmentDate = csraCreateRequest.assessmentDate,
-      assessmentTypeId = assessment.id,
+      assessmentType = AssessmentType.valueOf(csraCreateRequest.type.name),
       score = csraCreateRequest.score, // ?calculated by select s.MAX_SCORE from assessment_supervisions s where s.assessment_id = :assessmentTypeId and s.supervision_level_type = :category ?
       assessmentStatus = csraCreateRequest.status,
-      assessmentStaffId = user.staff.id,
-      assessorStaffId = user.staff.id,
+      assessmentStaff = user.staff,
+      assessorStaff = user.staff,
       assessmentComment = csraCreateRequest.comment,
       nextReviewDate = csraCreateRequest.nextReviewDate,
       placementAgency = placementAgency,
@@ -82,7 +73,7 @@ class CsraService(
       assessmentCreationLocation = booking.location.id,
       creationDateTime = csraCreateRequest.createdDateTime,
       creationUser = csraCreateRequest.createdBy,
-      // TODO: not user if needed yet:
+      // TODO: not sure if needed yet:
       // reviewPlacementComment = csraCreateRequest.rev,
 //      overrideReasonComment = csraCreateRequest.xxxx,
 //      overrideLevel = csraCreateRequest.xxxx,
@@ -110,10 +101,11 @@ class CsraService(
     calculatedLevel = calculatedLevel,
     score = score,
     status = assessmentStatus,
-    assessmentStaffId = assessmentStaffId,
-    type = assessmentRepository.findByIdOrNull(assessmentTypeId)
-      ?.let { AssessmentType.valueOf(it.assessmentCode) }
-      ?: throw BadDataException("Cannot convert assessment type $assessmentTypeId for booking ${id.offenderBooking.bookingId} and sequence ${id.sequence}"),
+    assessmentStaffId = assessmentStaff.id,
+    type = assessmentType,
+//      assessmentRepository.findByIdOrNull(assessmentTypeId)
+//      ?.let { AssessmentType.valueOf(it.assessmentCode) }
+//      ?: throw BadDataException("Cannot convert assessment type $assessmentTypeId for booking ${id.offenderBooking.bookingId} and sequence ${id.sequence}"),
     committeeCode = assessmentCommitteeCode,
     nextReviewDate = nextReviewDate,
     comment = assessmentComment,
@@ -150,7 +142,7 @@ data class CsraDto(
   val type: AssessmentType,
 
   @Schema(description = "The calculated CSRA level", example = "STANDARD")
-  val calculatedLevel: String? = null,
+  val calculatedLevel: AssessmentLevel? = null,
 
   @Schema(description = "Score", example = "1000")
   val score: BigDecimal,
@@ -181,10 +173,10 @@ data class CsraDto(
 
   // Review fields:
   @Schema(description = "The review CSRA level")
-  val reviewLevel: String? = null,
+  val reviewLevel: AssessmentLevel? = null,
 
   @Schema(description = "The approval CSRA level")
-  val approvedLevel: String? = null,
+  val approvedLevel: AssessmentLevel? = null,
 
   @Schema(description = "Evaluation or approval date")
   val evaluationDate: LocalDate? = null,
