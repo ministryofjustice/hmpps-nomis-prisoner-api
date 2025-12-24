@@ -1,4 +1,6 @@
 spring:
+  jpa:
+    database-platform: org.hibernate.community.dialect.OracleLegacyDialect
   datasource:
     url: ${JDBC_URL}
     username: ${DB_USERNAME}
