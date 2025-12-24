@@ -14,9 +14,9 @@ import org.springframework.web.reactive.function.BodyInserters.fromValue
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -224,12 +224,12 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
-          .expectBody<CsraDto>()
+          .expectBody<CsraGetDto>()
           .returnResult()
           .responseBody!!
 
         val data = offenderAssessmentRepository.findByIdOrNull(
-          OffenderAssessmentId(booking, created.sequence)
+          OffenderAssessmentId(booking, created.sequence),
         )
 
         with(data!!) {
@@ -272,7 +272,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
-          .expectBody<CsraDto>()
+          .expectBody<CsraGetDto>()
           .returnResult()
           .responseBody!!
 
@@ -290,12 +290,10 @@ class CsraResourceIntTest : IntegrationTestBase() {
   fun validFullCreateJsonRequest(): String =
     """
       { ${requiredFields()},
-   "calculatedLevel": "HI",
    "committeeCode": "GOV",
    "nextReviewDate": "2026-12-15",
    "comment": "comment",
    "placementAgencyId": "LEI",
-   "createdDateTime": "2025-12-04T12:34:56",
    "reviewLevel": "MED",
    "approvedLevel": "LOW",
    "evaluationDate": "2025-12-16",
@@ -312,11 +310,13 @@ class CsraResourceIntTest : IntegrationTestBase() {
   fun requiredFields() =
     """
       "assessmentDate": "2025-12-14",
+      "calculatedLevel": "HI",
       "type": "CSRF",
       "score": "1200",
       "status": "A",
       "assessmentStaffId": ${staff.id},
-      "createdBy": "BILLSTAFF"
+      "createdBy": "BILLSTAFF",
+      "createdDateTime": "2025-12-04T12:34:56"
     """.trimIndent()
 
   @DisplayName("GET /prisoners/booking-id/{bookingId}/csra/{sequence}")
@@ -367,7 +367,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
-          .expectBody<CsraDto>()
+          .expectBody<CsraGetDto>()
           .returnResult()
           .responseBody!!
 

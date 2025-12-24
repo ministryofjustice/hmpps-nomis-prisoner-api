@@ -106,7 +106,8 @@ data class OffenderAssessment(
 
   val creationUser: String? = null,
 
-  @Column(name = "APPROVED_SUP_LEVEL_TYPE") // actually not used - all null for CSRA top level ***
+  // TODO: actually not used - all null for CSRA top level ***
+  @Column(name = "APPROVED_SUP_LEVEL_TYPE")
   val approvedLevel: AssessmentLevel? = null,
 
   @Column(name = "ASSESSMENT_CREATE_LOCATION")
@@ -124,11 +125,11 @@ data class OffenderAssessment(
 enum class AssessmentStatusType { I, A, P }
 
 enum class AssessmentType(val id: Int) {
-  CSR(9687),    // CSR Rating
-  CSR1(9684),   // CSR Reception
-  CSRDO(9683),  // CSR Locate
-  CSRF(9686),   // CSR Full
-  CSRH(9685),   // CSR Health
+  CSR(9687), // CSR Rating
+  CSR1(9684), // CSR Reception
+  CSRDO(9683), // CSR Locate
+  CSRF(9686), // CSR Full
+  CSRH(9685), // CSR Health
   CSRREV(9682), // CSR Review
 }
 

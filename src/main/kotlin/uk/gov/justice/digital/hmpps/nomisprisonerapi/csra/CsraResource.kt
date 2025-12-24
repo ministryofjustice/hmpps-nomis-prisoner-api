@@ -24,7 +24,7 @@ class CsraResource(private val csraService: CsraService) {
   )
   fun createCsra(
     @PathVariable offenderNo: String,
-    @RequestBody csraCreateRequest: CsraDto,
+    @RequestBody csraCreateRequest: CsraCreateDto,
   ): CsraCreateResponse = csraService.createCsra(offenderNo, csraCreateRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
@@ -36,5 +36,5 @@ class CsraResource(private val csraService: CsraService) {
   fun getCsra(
     @Schema(description = "Booking Id", example = "2345678") @PathVariable bookingId: Long,
     @Schema(description = "Sequence within booking", example = "3") @PathVariable sequence: Int,
-  ): CsraDto = csraService.getCsra(bookingId, sequence)
+  ): CsraGetDto = csraService.getCsra(bookingId, sequence)
 }
