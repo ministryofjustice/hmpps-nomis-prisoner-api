@@ -37,11 +37,10 @@ class CsraService(
         ?: throw BadDataException("Cannot find review placement agency $it")
     }
 
-    val user = csraCreateRequest.createdBy?.let {
+    val user = csraCreateRequest.createdBy.let {
       staffUserAccountRepository.findByUsername(it)
         ?: throw BadDataException("Cannot find user $it")
     }
-      ?: throw BadDataException("createdBy field is required")
 
     val sequence = offenderAssessmentRepository.getNextSequence(booking)
     val offenderAssessment = OffenderAssessment(

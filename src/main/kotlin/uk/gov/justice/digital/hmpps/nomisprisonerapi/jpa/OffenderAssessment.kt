@@ -8,7 +8,6 @@ import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -49,7 +48,7 @@ data class OffenderAssessment(
   @Column(name = "CALC_SUP_LEVEL_TYPE")
   val calculatedLevel: AssessmentLevel? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "ASSESS_STAFF_ID")
   val assessmentStaff: Staff,
 
@@ -69,7 +68,7 @@ data class OffenderAssessment(
   @Column(name = "OVERRIDE_COMMENT_TEXT")
   val overrideComment: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "OVERRIDE_STAFF_ID")
   val overrideStaff: Staff? = null,
 
@@ -86,7 +85,8 @@ data class OffenderAssessment(
   val reviewPlacementComment: String? = null,
 
   @Column(name = "REVIEW_COMMITTE_CODE")
-  val reviewCommitteeCode: String? = null,
+  @Enumerated(EnumType.STRING)
+  val reviewCommitteeCode: AssessmentCommittee? = null,
 
   @Column(name = "COMMITTE_COMMENT_TEXT")
   val reviewCommitteeComment: String? = null,
@@ -99,7 +99,8 @@ data class OffenderAssessment(
   val reviewComment: String? = null,
 
   @Column(name = "ASSESS_COMMITTE_CODE")
-  val assessmentCommitteeCode: String? = null,
+  @Enumerated(EnumType.STRING)
+  val assessmentCommitteeCode: AssessmentCommittee? = null,
 
   @Column(name = "CREATION_DATE")
   val creationDateTime: LocalDateTime? = null,
@@ -113,7 +114,7 @@ data class OffenderAssessment(
   @Column(name = "ASSESSMENT_CREATE_LOCATION")
   val assessmentCreationLocation: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "ASSESSOR_STAFF_ID")
   val assessorStaff: Staff? = null,
 
@@ -135,6 +136,16 @@ enum class AssessmentType(val id: Int) {
 
 enum class AssessmentLevel { STANDARD, PEND, LOW, MED, HI }
 
+enum class AssessmentCommittee {
+  GOV, // Governor
+  MED, // Medical
+  OCA, // OCA
+  RECP, // Reception
+  REVIEW, // Review Board
+  SECSTATE, // Secretary of State
+  SECUR, // Security
+}
+
 @Converter(autoApply = true)
 class CsraLevelConverter : AttributeConverter<AssessmentLevel?, String?> {
   override fun convertToDatabaseColumn(level: AssessmentLevel?): String? = level?.name
@@ -150,3 +161,66 @@ class CsraTypeConverter : AttributeConverter<AssessmentType, Long> {
   override fun convertToDatabaseColumn(type: AssessmentType) = type.id.toLong()
   override fun convertToEntityAttribute(id: Long) = AssessmentType.entries.first { it.id.toLong() == id }
 }
+/* committee code usages :
+794719	RECP
+712447	RECP	RECP
+439464	RECP	REVIEW
+381756	REVIEW	REVIEW
+272480	RECP	GOV
+181961	REVIEW
+105330
+86605	REVIEW	GOV
+73240		RECP
+53548	RECP	SECUR
+45130	GOV	GOV
+37808	GOV
+30300		REVIEW
+28648	REVIEW	RECP
+21889	GOV	REVIEW
+15337		GOV
+13158	GOV	RECP
+12477	RECP	OCA
+4059	OCA
+3208	SECUR	SECUR
+2707		SECUR
+2619	REVIEW	SECUR
+2487	MED
+2445	SECUR
+2102	SECUR	REVIEW
+1617	OCA	OCA
+1533	SECUR	GOV
+1520	MED	REVIEW
+990	REVIEW	OCA
+898	OCA	GOV
+838	OCA	REVIEW
+800	SECUR	RECP
+783	GOV	SECUR
+751	MED	GOV
+595	MED	MED
+559	RECP	MED
+501	OCA	RECP
+456	GOV	OCA
+420		OCA
+400	REVIEW	MED
+263	MED	RECP
+101	SECUR	OCA
+101	GOV	MED
+59	OCA	SECUR
+31		  MED
+25	SECSTATE	REVIEW
+20	MED	SECUR
+17	SECSTATE	RECP
+16	RECP	SECSTATE
+14	SECSTATE
+14	MED	OCA
+3	SECSTATE	GOV
+
+reference data: ASSESS_COMM:
+GOV	Governor
+MED	Medical
+OCA	OCA
+RECP	Reception
+REVIEW	Review Board
+SECSTATE	Secretary of State
+SECUR	Security
+ */

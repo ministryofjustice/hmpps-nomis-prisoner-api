@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.csra
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentCommittee
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
@@ -40,7 +41,7 @@ data class CsraGetDto(
   val assessmentStaffId: Long,
 
   @Schema(description = "The assessment committee code (reference code in domain 'ASSESS_COMM')")
-  val committeeCode: String? = null,
+  val committeeCode: AssessmentCommittee? = null,
 
   @Schema(description = "Next review date, defaults to current date + 6 months, if not provided")
   val nextReviewDate: LocalDate? = null,
@@ -54,7 +55,7 @@ data class CsraGetDto(
   @Schema(description = "Timestamp for when the CSRA was created", example = "2025-12-06T12:34:56")
   val createdDateTime: LocalDateTime? = null,
 
-  @Schema(description = "The user who created the CSRA, required for CSRA creation", example = "NQP56Y")
+  @Schema(description = "The user who created the CSRA", example = "NQP56Y")
   val createdBy: String? = null,
 
   // Review fields:
@@ -71,7 +72,7 @@ data class CsraGetDto(
   val evaluationResultCode: EvaluationResultCode? = null,
 
   @Schema(description = "The review/approval committee code (reference code in domain 'ASSESS_COMM')")
-  val reviewCommitteeCode: String? = null,
+  val reviewCommitteeCode: AssessmentCommittee? = null,
 
   @Schema(description = "Approval Committee Comment text")
   val reviewCommitteeComment: String? = null,
