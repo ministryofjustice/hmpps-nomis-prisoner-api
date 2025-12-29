@@ -18,11 +18,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentCommittee
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentRepository
+import java.time.LocalDate
 
 class CsraResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -34,16 +34,25 @@ class CsraResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var offenderAssessmentRepository: OffenderAssessmentRepository
 
-  private lateinit var prisoner: Offender
-  private lateinit var booking: OffenderBooking
+  private lateinit var booking1: OffenderBooking
+  private lateinit var booking2: OffenderBooking
   private lateinit var staff: Staff
 
   @BeforeEach
   fun init() {
     nomisDataBuilder.build {
       staff = staff(firstName = "BILL", lastName = "STAFF") { account(username = "BILLSTAFF") }
-      prisoner = offender(nomsId = "A1111AA") {
-        booking = booking()
+      offender(nomsId = "A1111AA") {
+        booking1 = booking()
+      }
+      offender(nomsId = "A2222BB") {
+        booking2 = booking {
+          assessment(
+            username = "BILLSTAFF",
+            assessmentDate = LocalDate.parse("2025-12-29"),
+            placementAgency = "BXI",
+          )
+        }
       }
     }
   }
@@ -258,7 +267,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .responseBody!!
 
         val data = offenderAssessmentRepository.findByIdOrNull(
-          OffenderAssessmentId(booking, created.sequence),
+          OffenderAssessmentId(booking1, created.sequence),
         )
 
         with(data!!) {
@@ -298,7 +307,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .responseBody!!
 
         val data = offenderAssessmentRepository.findByIdOrNull(
-          OffenderAssessmentId(booking, created.sequence),
+          OffenderAssessmentId(booking1, created.sequence),
         )
 
         with(data!!) {
@@ -377,18 +386,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `can get a CSRA with full data`() {
-        val created = webTestClient.post().uri("/prisoners/A1111AA/csra")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(fromValue(validFullCreateJsonRequest()))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody<CsraCreateResponse>()
-          .returnResult()
-          .responseBody!!
-        // TODO use DSL functions ^^
-
-        val data = webTestClient.get().uri("/prisoners/booking-id/${created.bookingId}/csra/${created.sequence}")
+        val data = webTestClient.get().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
@@ -397,26 +395,25 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .responseBody!!
 
         with(data) {
-          assertThat(assessmentDate).isEqualTo("2025-12-14")
-          assertThat(type).isEqualTo(AssessmentType.CSRF)
-          assertThat(calculatedLevel).isEqualTo(AssessmentLevel.HI)
-          assertThat(score.toString()).isEqualTo("1200")
-          assertThat(status).isEqualTo(AssessmentStatusType.A)
+          assertThat(assessmentDate).isEqualTo("2025-12-29")
+          assertThat(type).isEqualTo(AssessmentType.CSR)
+          assertThat(calculatedLevel).isEqualTo(AssessmentLevel.STANDARD)
+          assertThat(score.toString()).isEqualTo("1000")
+          assertThat(status).isEqualTo(AssessmentStatusType.I)
           assertThat(assessmentStaffId).isEqualTo(staff.id)
-          assertThat(committeeCode).isEqualTo(AssessmentCommittee.GOV)
+          assertThat(committeeCode).isEqualTo(AssessmentCommittee.SECSTATE)
           assertThat(nextReviewDate).isEqualTo("2026-12-15")
-          assertThat(comment).isEqualTo("comment")
-          assertThat(placementAgencyId).isEqualTo("LEI")
-          assertThat(createdDateTime).isEqualTo("2025-12-04T12:34:56")
+          assertThat(comment).isEqualTo("a-comment")
+          assertThat(placementAgencyId).isEqualTo("BXI")
+          assertThat(createdDateTime).isEqualTo("2025-12-27T12:34:56")
           assertThat(createdBy).isEqualTo("BILLSTAFF")
-          assertThat(reviewLevel).isEqualTo(AssessmentLevel.MED)
-          assertThat(approvedLevel).isEqualTo(AssessmentLevel.LOW)
-          assertThat(evaluationDate).isEqualTo("2025-12-16")
-          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
-          assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.SECUR)
-          assertThat(reviewCommitteeComment).isEqualTo("reviewCommitteeComment")
-          assertThat(reviewPlacementAgencyId).isEqualTo("MDI")
-          assertThat(reviewComment).isEqualTo("reviewComment")
+          assertThat(reviewLevel).isEqualTo(AssessmentLevel.PEND)
+          assertThat(evaluationDate).isEqualTo("2025-12-28")
+          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.REJ)
+          assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.MED)
+          assertThat(reviewCommitteeComment).isEqualTo("a-reviewCommitteeComment")
+          assertThat(reviewPlacementAgencyId).isNull()
+          assertThat(reviewComment).isEqualTo("a-reviewComment")
         }
       }
     }
