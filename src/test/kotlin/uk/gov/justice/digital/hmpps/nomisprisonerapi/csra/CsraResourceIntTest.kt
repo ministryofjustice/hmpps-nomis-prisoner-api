@@ -7,16 +7,22 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters.fromValue
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentCommittee
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentRepository
+import java.time.LocalDate
 
 class CsraResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -25,15 +31,27 @@ class CsraResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var repository: Repository
 
-  private lateinit var prisoner: Offender
+  @Autowired
+  private lateinit var offenderAssessmentRepository: OffenderAssessmentRepository
+
+  private lateinit var booking1: OffenderBooking
+  private lateinit var booking2: OffenderBooking
   private lateinit var staff: Staff
 
   @BeforeEach
   fun init() {
     nomisDataBuilder.build {
       staff = staff(firstName = "BILL", lastName = "STAFF") { account(username = "BILLSTAFF") }
-      prisoner = offender(nomsId = "A1111AA") {
-        booking {
+      offender(nomsId = "A1111AA") {
+        booking1 = booking()
+      }
+      offender(nomsId = "A2222BB") {
+        booking2 = booking {
+          assessment(
+            username = "BILLSTAFF",
+            assessmentDate = LocalDate.parse("2025-12-29"),
+            placementAgency = "BXI",
+          )
         }
       }
     }
@@ -46,14 +64,14 @@ class CsraResourceIntTest : IntegrationTestBase() {
     repository.deleteStaff()
   }
 
-  @DisplayName("POST /csra/{offenderNo}")
+  @DisplayName("POST /prisoners/{offenderNo}/csra")
   @Nested
   inner class CreateCsra {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/csra/A1111AA")
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validFullCreateJsonRequest()))
@@ -63,7 +81,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/csra/A1111AA")
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validFullCreateJsonRequest()))
@@ -73,7 +91,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/csra/A1111AA")
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validFullCreateJsonRequest()))
           .exchange()
@@ -85,7 +103,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `no booking`() {
-        webTestClient.post().uri("/csra/Z9999ZZ")
+        webTestClient.post().uri("/prisoners/Z9999ZZ/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validFullCreateJsonRequest()))
@@ -97,7 +115,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `no placement agency`() {
-        webTestClient.post().uri("/csra/A1111AA")
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -113,7 +131,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `no review placement agency`() {
-        webTestClient.post().uri("/csra/A1111AA")
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -128,8 +146,8 @@ class CsraResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `no assessment type`() {
-        webTestClient.post().uri("/csra/A1111AA")
+      fun `invalid assessment type`() {
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -148,46 +166,82 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .expectStatus().isBadRequest
           .expectBody()
           .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Cannot deserialize value of type `uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType`")
+            assertThat(it).contains("String \"DUFF\": not one of the values accepted for Enum class")
+          }
+      }
+
+      @Test
+      fun `invalid committee`() {
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue(
+              """{ 
+                "assessmentDate": "2025-12-14",
+                "calculatedLevel": "HI",
+                "score": "1200",
+                "status": "A",
+                "assessmentStaffId": ${staff.id},
+                "createdBy": "BILLSTAFF",
+                "type": "CSR",
+                "createdDateTime": "2025-12-04T12:34:56",
+                "committeeCode": "DUFF"
+              }""",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Cannot deserialize value of type `uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentCommittee`")
             assertThat(it).contains("String \"DUFF\": not one of the values accepted for Enum class")
           }
       }
 
       @Test
       fun `no created by user`() {
-        webTestClient.post().uri("/csra/A1111AA")
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             fromValue(
               """{ 
-          "assessmentDate": "2025-12-14",
-          "type": "CSRF",
-          "score": "1200",
-          "status": "A",
-          "assessmentStaffId": ${staff.id}
-          }""",
+                "assessmentDate": "2025-12-14",
+                "calculatedLevel": "HI",
+                "type": "CSRF",
+                "score": "1200",
+                "status": "A",
+                "assessmentStaffId": ${staff.id},
+                "createdDateTime": "2025-12-04T12:34:56"
+              }""",
             ),
           )
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
-          .jsonPath("userMessage").isEqualTo("Bad request: createdBy field is required")
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("missing (therefore NULL) value for creator parameter createdBy")
+          }
       }
 
       @Test
       fun `invalid created by user`() {
-        webTestClient.post().uri("/csra/A1111AA")
+        webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             fromValue(
               """{
-              "assessmentDate": "2025-12-14",
-              "type": "CSRF",
-              "score": "1200",
-              "status": "A",
-              "assessmentStaffId": ${staff.id},
-              "createdBy": "DUFF"
+                "assessmentDate": "2025-12-14",
+                "calculatedLevel": "HI",
+                "type": "CSRF",
+                "score": "1200",
+                "status": "A",
+                "assessmentStaffId": ${staff.id},
+                "createdDateTime": "2025-12-04T12:34:56",
+                "createdBy": "DUFF"
                }""",
             ),
           )
@@ -202,7 +256,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `can create a CSRA with full data`() {
-        val created = webTestClient.post().uri("/csra/A1111AA")
+        val created = webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validFullCreateJsonRequest()))
@@ -212,41 +266,37 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val data = webTestClient.get().uri("/csra/booking/${created.bookingId}/sequence/${created.sequence}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody<CsraDto>()
-          .returnResult()
-          .responseBody!!
+        val data = offenderAssessmentRepository.findByIdOrNull(
+          OffenderAssessmentId(booking1, created.sequence),
+        )
 
-        with(data) {
-          assertThat(assessmentDate).isEqualTo("2025-12-14")
-          assertThat(type).isEqualTo(AssessmentType.CSRF)
-          assertThat(calculatedLevel).isEqualTo("HI")
+        with(data!!) {
+          assertThat(assessmentDate.toString()).isEqualTo("2025-12-14")
+          assertThat(assessmentType).isEqualTo(AssessmentType.CSRF)
+          assertThat(calculatedLevel).isEqualTo(AssessmentLevel.HI)
           assertThat(score.toString()).isEqualTo("1200")
-          assertThat(status).isEqualTo(AssessmentStatusType.A)
-          assertThat(assessmentStaffId).isEqualTo(staff.id)
-          assertThat(committeeCode).isEqualTo("GOV")
+          assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
+          assertThat(assessmentStaff).isEqualTo(staff)
+          assertThat(assessmentCommitteeCode).isEqualTo(AssessmentCommittee.GOV)
           assertThat(nextReviewDate).isEqualTo("2026-12-15")
-          assertThat(comment).isEqualTo("comment")
-          assertThat(placementAgencyId).isEqualTo("LEI")
-          assertThat(createdDateTime).isEqualTo("2025-12-04T12:34:56")
-          assertThat(createdBy).isEqualTo("BILLSTAFF")
-          assertThat(reviewLevel).isEqualTo("MED")
-          assertThat(approvedLevel).isEqualTo("LOW")
+          assertThat(assessmentComment).isEqualTo("comment")
+          assertThat(placementAgency?.id).isEqualTo("LEI")
+          assertThat(creationDateTime).isEqualTo("2025-12-04T12:34:56")
+          assertThat(creationUser).isEqualTo("BILLSTAFF")
+          assertThat(reviewLevel).isEqualTo(AssessmentLevel.MED)
+          assertThat(approvedLevel).isEqualTo(AssessmentLevel.LOW)
           assertThat(evaluationDate).isEqualTo("2025-12-16")
           assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
-          assertThat(reviewCommitteeCode).isEqualTo("CODE")
+          assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.SECUR)
           assertThat(reviewCommitteeComment).isEqualTo("reviewCommitteeComment")
-          assertThat(reviewPlacementAgencyId).isEqualTo("MDI")
+          assertThat(reviewPlacementAgency?.id).isEqualTo("MDI")
           assertThat(reviewComment).isEqualTo("reviewComment")
         }
       }
 
       @Test
       fun `can create a CSRA with minimal data`() {
-        val created = webTestClient.post().uri("/csra/A1111AA")
+        val created = webTestClient.post().uri("/prisoners/A1111AA/csra")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validMinimalCreateJsonRequest()))
@@ -256,20 +306,16 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val data = webTestClient.get().uri("/csra/booking/${created.bookingId}/sequence/${created.sequence}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBody<CsraDto>()
-          .returnResult()
-          .responseBody!!
+        val data = offenderAssessmentRepository.findByIdOrNull(
+          OffenderAssessmentId(booking1, created.sequence),
+        )
 
-        with(data) {
+        with(data!!) {
           assertThat(assessmentDate).isEqualTo("2025-12-14")
-          assertThat(type).isEqualTo(AssessmentType.CSRF)
+          assertThat(assessmentType).isEqualTo(AssessmentType.CSRF)
           assertThat(score.toString()).isEqualTo("1200")
-          assertThat(status).isEqualTo(AssessmentStatusType.A)
-          assertThat(assessmentStaffId).isEqualTo(staff.id)
+          assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
+          assertThat(assessmentStaff).isEqualTo(staff)
         }
       }
     }
@@ -278,17 +324,15 @@ class CsraResourceIntTest : IntegrationTestBase() {
   fun validFullCreateJsonRequest(): String =
     """
       { ${requiredFields()},
-   "calculatedLevel": "HI",
    "committeeCode": "GOV",
    "nextReviewDate": "2026-12-15",
    "comment": "comment",
    "placementAgencyId": "LEI",
-   "createdDateTime": "2025-12-04T12:34:56",
    "reviewLevel": "MED",
    "approvedLevel": "LOW",
    "evaluationDate": "2025-12-16",
    "evaluationResultCode": "APP",
-   "reviewCommitteeCode": "CODE",
+   "reviewCommitteeCode": "SECUR",
    "reviewCommitteeComment": "reviewCommitteeComment",
    "reviewPlacementAgencyId": "MDI",
    "reviewComment": "reviewComment"
@@ -300,21 +344,23 @@ class CsraResourceIntTest : IntegrationTestBase() {
   fun requiredFields() =
     """
       "assessmentDate": "2025-12-14",
+      "calculatedLevel": "HI",
       "type": "CSRF",
       "score": "1200",
       "status": "A",
       "assessmentStaffId": ${staff.id},
-      "createdBy": "BILLSTAFF"
+      "createdBy": "BILLSTAFF",
+      "createdDateTime": "2025-12-04T12:34:56"
     """.trimIndent()
 
-  @DisplayName("GET /csra/booking/{bookingId}/sequence/{sequence}")
+  @DisplayName("GET /prisoners/booking-id/{bookingId}/csra/{sequence}")
   @Nested
   inner class GetCsra {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/csra/booking/999/sequence/1")
+        webTestClient.get().uri("/prisoners/booking-id/999/csra/1")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -322,7 +368,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/csra/booking/999/sequence/1")
+        webTestClient.get().uri("/prisoners/booking-id/999/csra/1")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -330,12 +376,46 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/csra/booking/999/sequence/1")
+        webTestClient.get().uri("/prisoners/booking-id/999/csra/1")
           .exchange()
           .expectStatus().isUnauthorized
       }
     }
 
-    // TODO along with DSL functions to support
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `can get a CSRA with full data`() {
+        val data = webTestClient.get().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody<CsraGetDto>()
+          .returnResult()
+          .responseBody!!
+
+        with(data) {
+          assertThat(assessmentDate).isEqualTo("2025-12-29")
+          assertThat(type).isEqualTo(AssessmentType.CSR)
+          assertThat(calculatedLevel).isEqualTo(AssessmentLevel.STANDARD)
+          assertThat(score.toString()).isEqualTo("1000")
+          assertThat(status).isEqualTo(AssessmentStatusType.I)
+          assertThat(assessmentStaffId).isEqualTo(staff.id)
+          assertThat(committeeCode).isEqualTo(AssessmentCommittee.SECSTATE)
+          assertThat(nextReviewDate).isEqualTo("2026-12-15")
+          assertThat(comment).isEqualTo("a-comment")
+          assertThat(placementAgencyId).isEqualTo("BXI")
+          assertThat(createdDateTime).isEqualTo("2025-12-27T12:34:56")
+          assertThat(createdBy).isEqualTo("BILLSTAFF")
+          assertThat(reviewLevel).isEqualTo(AssessmentLevel.PEND)
+          assertThat(evaluationDate).isEqualTo("2025-12-28")
+          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.REJ)
+          assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.MED)
+          assertThat(reviewCommitteeComment).isEqualTo("a-reviewCommitteeComment")
+          assertThat(reviewPlacementAgencyId).isNull()
+          assertThat(reviewComment).isEqualTo("a-reviewComment")
+        }
+      }
+    }
   }
 }

@@ -17,18 +17,18 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 class CsraResource(private val csraService: CsraService) {
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @PostMapping("/csra/{offenderNo}")
+  @PostMapping("/prisoners/{offenderNo}/csra")
   @Operation(
     summary = "Creates a CSRA record for a prisoner",
     description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
   )
   fun createCsra(
     @PathVariable offenderNo: String,
-    @RequestBody csraCreateRequest: CsraDto,
+    @RequestBody csraCreateRequest: CsraCreateDto,
   ): CsraCreateResponse = csraService.createCsra(offenderNo, csraCreateRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @GetMapping("/csra/booking/{bookingId}/sequence/{sequence}")
+  @GetMapping("/prisoners/booking-id/{bookingId}/csra/{sequence}")
   @Operation(
     summary = "Get a CSRA record for a prisoner",
     description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -36,5 +36,5 @@ class CsraResource(private val csraService: CsraService) {
   fun getCsra(
     @Schema(description = "Booking Id", example = "2345678") @PathVariable bookingId: Long,
     @Schema(description = "Sequence within booking", example = "3") @PathVariable sequence: Int,
-  ): CsraDto = csraService.getCsra(bookingId, sequence)
+  ): CsraGetDto = csraService.getCsra(bookingId, sequence)
 }

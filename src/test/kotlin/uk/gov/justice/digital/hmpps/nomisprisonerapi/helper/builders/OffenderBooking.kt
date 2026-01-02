@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -23,6 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBookingImage
@@ -437,6 +439,16 @@ interface BookingDsl {
     dsl: OffenderTransactionDsl.() -> Unit = {},
   ): OffenderTransaction
 
+  @OffenderAssessmentDslMarker
+  fun assessment(
+    sequence: Int = 1,
+    username: String,
+    assessmentDate: LocalDate,
+    assessmentType: AssessmentType = AssessmentType.CSR,
+    placementAgency: String? = null,
+    dsl: OffenderAssessmentDsl.() -> Unit = {},
+  ): OffenderAssessment
+
   @OffenderTemporaryAbsenceApplicationDslMarker
   fun temporaryAbsenceApplication(
     eventSubType: String = "C5",
@@ -498,6 +510,7 @@ class BookingBuilderFactory(
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
+  private val offenderAssessmentBuilderFactory: OffenderAssessmentBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
@@ -527,6 +540,7 @@ class BookingBuilderFactory(
     offenderIdentifyingMarkBuilderFactory,
     offenderBeliefBuilderFactory,
     offenderTransactionBuilderFactory,
+    offenderAssessmentBuilderFactory,
     offenderRestrictionsBuilderFactory,
     offenderTemporaryAbsenceApplicationBuilderFactory,
     linkCaseTxnBuilderFactory,
@@ -558,6 +572,7 @@ class BookingBuilder(
   private val offenderIdentifyingMarkBuilderFactory: OffenderIdentifyingMarkBuilderFactory,
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
+  private val offenderAssessmentBuilderFactory: OffenderAssessmentBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
@@ -1382,6 +1397,25 @@ class BookingBuilder(
       offenderBooking.location.id,
       transactionType,
       entryDate,
+    )
+      .also { builder.apply(dsl) }
+  }
+
+  override fun assessment(
+    sequence: Int,
+    username: String,
+    assessmentDate: LocalDate,
+    assessmentType: AssessmentType,
+    placementAgency: String?,
+    dsl: OffenderAssessmentDsl.() -> Unit,
+  ): OffenderAssessment = offenderAssessmentBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking,
+      sequence,
+      username,
+      assessmentDate,
+      assessmentType,
+      placementAgency,
     )
       .also { builder.apply(dsl) }
   }

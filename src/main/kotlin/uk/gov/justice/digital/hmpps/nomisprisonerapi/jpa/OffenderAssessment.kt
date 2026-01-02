@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Column
+import jakarta.persistence.Converter
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
@@ -10,9 +12,7 @@ import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.Generated
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csra.EvaluationResultCode
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -28,7 +28,6 @@ data class OffenderAssessmentId(
   val sequence: Int,
 ) : Serializable
 
-@EntityOpen
 @Entity
 @Table(name = "OFFENDER_ASSESSMENTS")
 data class OffenderAssessment(
@@ -37,7 +36,8 @@ data class OffenderAssessment(
 
   val assessmentDate: LocalDate,
 
-  val assessmentTypeId: Long, // nullable but no null rows
+  @Column(name = "ASSESSMENT_TYPE_ID")
+  val assessmentType: AssessmentType, // nullable but no null rows
 
   val score: BigDecimal, // nullable but no null rows
 
@@ -46,10 +46,11 @@ data class OffenderAssessment(
   val assessmentStatus: AssessmentStatusType,
 
   @Column(name = "CALC_SUP_LEVEL_TYPE")
-  val calculatedLevel: String? = null,
+  val calculatedLevel: AssessmentLevel? = null,
 
-  @Column(name = "ASSESS_STAFF_ID")
-  val assessmentStaffId: Long,
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "ASSESS_STAFF_ID")
+  val assessmentStaff: Staff,
 
   @Column(name = "ASSESS_COMMENT_TEXT")
   val assessmentComment: String? = null,
@@ -62,12 +63,14 @@ data class OffenderAssessment(
   val placementAgency: AgencyLocation? = null,
 
   @Column(name = "OVERRIDED_SUP_LEVEL_TYPE")
-  val overrideLevel: String? = null,
+  val overrideLevel: AssessmentLevel? = null,
 
   @Column(name = "OVERRIDE_COMMENT_TEXT")
   val overrideComment: String? = null,
 
-  val overrideStaffId: Long? = null,
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "OVERRIDE_STAFF_ID")
+  val overrideStaff: Staff? = null,
 
   val evaluationDate: LocalDate? = null,
   val nextReviewDate: LocalDate? = null,
@@ -76,13 +79,14 @@ data class OffenderAssessment(
   val evaluationResultCode: EvaluationResultCode? = null,
 
   @Column(name = "REVIEW_SUP_LEVEL_TYPE")
-  val reviewLevel: String? = null,
+  val reviewLevel: AssessmentLevel? = null,
 
   @Column(name = "REVIEW_PLACEMENT_TEXT")
   val reviewPlacementComment: String? = null,
 
   @Column(name = "REVIEW_COMMITTE_CODE")
-  val reviewCommitteeCode: String? = null,
+  @Enumerated(EnumType.STRING)
+  val reviewCommitteeCode: AssessmentCommittee? = null,
 
   @Column(name = "COMMITTE_COMMENT_TEXT")
   val reviewCommitteeComment: String? = null,
@@ -95,46 +99,128 @@ data class OffenderAssessment(
   val reviewComment: String? = null,
 
   @Column(name = "ASSESS_COMMITTE_CODE")
-  val assessmentCommitteeCode: String? = null,
+  @Enumerated(EnumType.STRING)
+  val assessmentCommitteeCode: AssessmentCommittee? = null,
 
   @Column(name = "CREATION_DATE")
   val creationDateTime: LocalDateTime? = null,
 
   val creationUser: String? = null,
 
+  // TODO: actually not used - all null for CSRA top level ***
   @Column(name = "APPROVED_SUP_LEVEL_TYPE")
-  val approvedLevel: String? = null,
+  val approvedLevel: AssessmentLevel? = null,
 
   @Column(name = "ASSESSMENT_CREATE_LOCATION")
   val assessmentCreationLocation: String? = null,
 
-  val assessorStaffId: Long? = null,
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "ASSESSOR_STAFF_ID")
+  val assessorStaff: Staff? = null,
 
   val overrideUserId: String? = null,
   @Column(name = "OVERRIDE_REASON")
   val overrideReasonCode: String? = null, // 'PREVIOUS' or 'SECURITY', not sure if used
-) {
-  @Column(name = "CREATE_DATETIME")
-  @Generated
-  lateinit var createDatetime: LocalDateTime
-
-  @Column(name = "CREATE_USER_ID")
-  @Generated
-  lateinit var createUserId: String
-
-  @Column(name = "MODIFY_DATETIME")
-  @Generated
-  var modifyDatetime: LocalDateTime? = null
-
-  @Column(name = "MODIFY_USER_ID")
-  @Generated
-  var modifyUserId: String? = null
-
-  @Column(name = "AUDIT_MODULE_NAME")
-  @Generated
-  var auditModuleName: String? = null
-}
+) : NomisAuditableEntityBasic()
 
 enum class AssessmentStatusType { I, A, P }
 
-enum class AssessmentType { CSRF, CSRH, CSRDO, CSR, CSR1, CSRREV }
+enum class AssessmentType(val id: Int) {
+  CSR(9687), // CSR Rating
+  CSR1(9684), // CSR Reception
+  CSRDO(9683), // CSR Locate
+  CSRF(9686), // CSR Full
+  CSRH(9685), // CSR Health
+  CSRREV(9682), // CSR Review
+}
+
+enum class AssessmentLevel { STANDARD, PEND, LOW, MED, HI }
+
+enum class AssessmentCommittee {
+  GOV, // Governor
+  MED, // Medical
+  OCA, // OCA
+  RECP, // Reception
+  REVIEW, // Review Board
+  SECSTATE, // Secretary of State
+  SECUR, // Security
+}
+
+@Converter(autoApply = true)
+class CsraLevelConverter : AttributeConverter<AssessmentLevel?, String?> {
+  override fun convertToDatabaseColumn(level: AssessmentLevel?): String? = level?.name
+
+  override fun convertToEntityAttribute(level: String?): AssessmentLevel? = level
+    ?.let { AssessmentLevel.entries.find { it.name == level } }
+  // There are a handful of rows in prod with invalid levels such as 'Z', 'P' etc.
+  // Here we are ignoring them and returning null
+}
+
+@Converter(autoApply = true)
+class CsraTypeConverter : AttributeConverter<AssessmentType, Long> {
+  override fun convertToDatabaseColumn(type: AssessmentType) = type.id.toLong()
+  override fun convertToEntityAttribute(id: Long) = AssessmentType.entries.first { it.id.toLong() == id }
+}
+/* committee code usages :
+794719	RECP
+712447	RECP	RECP
+439464	RECP	REVIEW
+381756	REVIEW	REVIEW
+272480	RECP	GOV
+181961	REVIEW
+105330
+86605	REVIEW	GOV
+73240		RECP
+53548	RECP	SECUR
+45130	GOV	GOV
+37808	GOV
+30300		REVIEW
+28648	REVIEW	RECP
+21889	GOV	REVIEW
+15337		GOV
+13158	GOV	RECP
+12477	RECP	OCA
+4059	OCA
+3208	SECUR	SECUR
+2707		SECUR
+2619	REVIEW	SECUR
+2487	MED
+2445	SECUR
+2102	SECUR	REVIEW
+1617	OCA	OCA
+1533	SECUR	GOV
+1520	MED	REVIEW
+990	REVIEW	OCA
+898	OCA	GOV
+838	OCA	REVIEW
+800	SECUR	RECP
+783	GOV	SECUR
+751	MED	GOV
+595	MED	MED
+559	RECP	MED
+501	OCA	RECP
+456	GOV	OCA
+420		OCA
+400	REVIEW	MED
+263	MED	RECP
+101	SECUR	OCA
+101	GOV	MED
+59	OCA	SECUR
+31		  MED
+25	SECSTATE	REVIEW
+20	MED	SECUR
+17	SECSTATE	RECP
+16	RECP	SECSTATE
+14	SECSTATE
+14	MED	OCA
+3	SECSTATE	GOV
+
+reference data: ASSESS_COMM:
+GOV	Governor
+MED	Medical
+OCA	OCA
+RECP	Reception
+REVIEW	Review Board
+SECSTATE	Secretary of State
+SECUR	Security
+ */
