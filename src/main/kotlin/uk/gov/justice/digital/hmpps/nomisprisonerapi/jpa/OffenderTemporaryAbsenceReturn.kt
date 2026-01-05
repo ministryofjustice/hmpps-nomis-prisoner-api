@@ -32,10 +32,6 @@ class OffenderTemporaryAbsenceReturn(
   @OneToOne()
   @JoinColumn(name = "PARENT_EVENT_ID")
   var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
-
-  @OneToOne
-  @JoinColumn(name = "FROM_ADDRESS_ID", insertable = false, updatable = false)
-  val fromAddressView: OffenderMovementAddress? = null,
 ) : OffenderExternalMovement(
   id = id,
   movementDate = movementDate,

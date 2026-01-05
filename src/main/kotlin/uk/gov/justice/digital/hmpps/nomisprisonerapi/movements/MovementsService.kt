@@ -595,7 +595,6 @@ class MovementsService(
   private fun OffenderTemporaryAbsence.toResponse(): TemporaryAbsence {
     // The address may only exist on the schedule so check there too
     val toAddress = toAddress ?: scheduledTemporaryAbsence?.toAddress
-    val toAddressView = toAddressView ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsence(
       sequence = id.sequence,
       movementDate = movementDate,
@@ -621,9 +620,6 @@ class MovementsService(
     val address = fromAddress
       ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
       ?: scheduledTemporaryAbsence?.toAddress
-    val addressView = fromAddressView
-      ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddressView
-      ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceReturn(
       sequence = id.sequence,
       movementDate = movementDate,
@@ -752,7 +748,6 @@ class MovementsService(
   private fun OffenderTemporaryAbsence.toSingleResponse(): TemporaryAbsenceResponse {
     // The address may only exist on the schedule so check there too
     val toAddress = toAddress ?: scheduledTemporaryAbsence?.toAddress
-    val toAddressView = toAddressView ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
@@ -781,9 +776,6 @@ class MovementsService(
     val address = fromAddress
       ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
       ?: scheduledTemporaryAbsence?.toAddress
-    val addressView = fromAddressView
-      ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddressView
-      ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceReturnResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,

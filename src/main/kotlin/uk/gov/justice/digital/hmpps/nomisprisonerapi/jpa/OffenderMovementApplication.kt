@@ -230,7 +230,4 @@ class OffenderMovementApplication(
 
   @OneToMany(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL])
   var scheduledTemporaryAbsences: MutableList<OffenderScheduledTemporaryAbsence> = mutableListOf(),
-
-  @OneToMany(mappedBy = "offenderMovementApplication", cascade = [CascadeType.ALL])
-  val outsideMovements: MutableList<OffenderMovementApplicationMulti> = mutableListOf(),
 ) : NomisAuditableEntityBasic()
