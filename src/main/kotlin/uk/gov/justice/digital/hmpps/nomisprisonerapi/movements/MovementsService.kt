@@ -571,7 +571,7 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode),
+    toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)),
     toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
     applicationTime = applicationTime,
@@ -610,7 +610,7 @@ class MovementsService(
       toAddressId = toAddress?.addressId,
       toAddressOwnerClass = toAddress?.addressOwnerClass,
       toAddressDescription = getAddressDescription(toAddress),
-      toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode),
+      toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)),
       toAddressPostcode = toAddress?.postalCode?.trim(),
       audit = toAudit(),
     )
@@ -637,7 +637,7 @@ class MovementsService(
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
       fromAddressDescription = getAddressDescription(address),
-      fromFullAddress = addressView?.fullAddress?.formatFullAddress(getAddressDescription(address), address?.postalCode),
+      fromFullAddress = address?.toFullAddress(getAddressDescription(address)),
       fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
@@ -657,7 +657,7 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode) ?: toCity?.description,
+    toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)) ?: toCity?.description,
     toAddressPostcode = toAddress?.postalCode?.trim(),
     audit = toAudit(),
   )
@@ -675,7 +675,7 @@ class MovementsService(
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
     fromAddressDescription = getAddressDescription(fromAddress),
-    fromFullAddress = fromAddressView?.fullAddress?.formatFullAddress(getAddressDescription(fromAddress), fromAddress?.postalCode) ?: fromCity?.description,
+    fromFullAddress = fromAddress?.toFullAddress(getAddressDescription(fromAddress)) ?: fromCity?.description,
     fromAddressPostcode = fromAddress?.postalCode?.trim(),
     audit = toAudit(),
   )
@@ -723,7 +723,7 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode),
+    toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)),
     toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
     applicationTime = applicationTime,
@@ -770,7 +770,7 @@ class MovementsService(
       toAddressId = toAddress?.addressId,
       toAddressOwnerClass = toAddress?.addressOwnerClass,
       toAddressDescription = getAddressDescription(toAddress),
-      toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode) ?: toCity?.description ?: toCity?.description,
+      toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)) ?: toCity?.description,
       toAddressPostcode = toAddress?.postalCode?.trim(),
       audit = toAudit(),
     )
@@ -801,7 +801,7 @@ class MovementsService(
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
       fromAddressDescription = getAddressDescription(address),
-      fromFullAddress = addressView?.fullAddress?.formatFullAddress(getAddressDescription(address), address?.postalCode) ?: fromCity?.description,
+      fromFullAddress = address?.toFullAddress(getAddressDescription(address)) ?: fromCity?.description,
       fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
@@ -815,17 +815,42 @@ class MovementsService(
     }
   }
 
-  private fun String.formatFullAddress(description: String?, postalCode: String?): String = this.let {
-    if (description != null && description.trim().isNotEmpty()) {
-      it.replace(description.trim(), "")
-    } else {
-      it
+  private fun Address.toFullAddress(description: String?): String {
+    val address = mutableListOf<String>()
+
+    fun MutableList<String>.addIfNotEmpty(value: String?) {
+      if (!value.isNullOrBlank()) {
+        add(value.trim())
+      }
     }
-  }.let {
-    if (postalCode != null && postalCode.trim().isNotEmpty()) {
-      it.replace(postalCode.trim(), "")
-    } else {
-      it
+
+    // Append "Flat" if there is one
+    if (!flat.isNullOrBlank()) {
+      val flatText = if (flat!!.contains("flat", ignoreCase = true)) "" else "Flat "
+      address.add("$flatText${flat!!.trim()}")
     }
-  }.trim().replace(Regex("\\s{2,}"), ", ")
+
+    // remove corporate/agency description from any address elements that might contain it
+    val cleanPremise = description?.let { premise?.replace(description, "") } ?: premise
+    val cleanStreet = description?.let { street?.replace(description, "") } ?: street
+    val cleanLocality = description?.let { locality?.replace(description, "") } ?: locality
+
+    // Don't separate a numeric premise from the street, only if it's a name
+    val hasPremise = !cleanPremise.isNullOrBlank()
+    val premiseIsNumber = cleanPremise?.all { char -> char.isDigit() } ?: false
+    val hasStreet = !cleanStreet.isNullOrBlank()
+    when {
+      hasPremise && premiseIsNumber && hasStreet -> address.add("$cleanPremise $cleanStreet")
+      hasPremise && !premiseIsNumber && hasStreet -> address.add("$cleanPremise, $cleanStreet")
+      hasPremise -> address.add(cleanPremise)
+      hasStreet -> address.add(cleanStreet)
+    }
+    // Add others if they exist
+    address.addIfNotEmpty(cleanLocality)
+    address.addIfNotEmpty(city?.description)
+    address.addIfNotEmpty(county?.description)
+    address.addIfNotEmpty(country?.description)
+
+    return address.joinToString(", ").trim()
+  }
 }
