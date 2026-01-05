@@ -571,8 +571,8 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress?.trim(),
-    toAddressPostcode = toAddress?.postalCode,
+    toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode),
+    toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     contactPersonName = contactPersonName,
@@ -610,8 +610,8 @@ class MovementsService(
       toAddressId = toAddress?.addressId,
       toAddressOwnerClass = toAddress?.addressOwnerClass,
       toAddressDescription = getAddressDescription(toAddress),
-      toFullAddress = toAddressView?.fullAddress?.trim(),
-      toAddressPostcode = toAddress?.postalCode,
+      toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode),
+      toAddressPostcode = toAddress?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -637,8 +637,8 @@ class MovementsService(
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
       fromAddressDescription = getAddressDescription(address),
-      fromFullAddress = addressView?.fullAddress?.trim(),
-      fromAddressPostcode = address?.postalCode,
+      fromFullAddress = addressView?.fullAddress?.formatFullAddress(getAddressDescription(address), address?.postalCode),
+      fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -657,8 +657,8 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress?.trim() ?: toCity?.description,
-    toAddressPostcode = toAddress?.postalCode,
+    toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode) ?: toCity?.description,
+    toAddressPostcode = toAddress?.postalCode?.trim(),
     audit = toAudit(),
   )
 
@@ -675,8 +675,8 @@ class MovementsService(
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
     fromAddressDescription = getAddressDescription(fromAddress),
-    fromFullAddress = fromAddressView?.fullAddress?.trim() ?: fromCity?.description,
-    fromAddressPostcode = fromAddress?.postalCode,
+    fromFullAddress = fromAddressView?.fullAddress?.formatFullAddress(getAddressDescription(fromAddress), fromAddress?.postalCode) ?: fromCity?.description,
+    fromAddressPostcode = fromAddress?.postalCode?.trim(),
     audit = toAudit(),
   )
 
@@ -723,8 +723,8 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress,
-    toAddressPostcode = toAddress?.postalCode,
+    toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode),
+    toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     contactPersonName = contactPersonName,
@@ -770,8 +770,8 @@ class MovementsService(
       toAddressId = toAddress?.addressId,
       toAddressOwnerClass = toAddress?.addressOwnerClass,
       toAddressDescription = getAddressDescription(toAddress),
-      toFullAddress = toAddressView?.fullAddress ?: toCity?.description,
-      toAddressPostcode = toAddress?.postalCode,
+      toFullAddress = toAddressView?.fullAddress?.formatFullAddress(getAddressDescription(toAddress), toAddress?.postalCode) ?: toCity?.description ?: toCity?.description,
+      toAddressPostcode = toAddress?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -801,8 +801,8 @@ class MovementsService(
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
       fromAddressDescription = getAddressDescription(address),
-      fromFullAddress = addressView?.fullAddress ?: fromCity?.description,
-      fromAddressPostcode = address?.postalCode,
+      fromFullAddress = addressView?.fullAddress?.formatFullAddress(getAddressDescription(address), address?.postalCode) ?: fromCity?.description,
+      fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -814,4 +814,18 @@ class MovementsService(
       else -> null
     }
   }
+
+  private fun String.formatFullAddress(description: String?, postalCode: String?): String = this.let {
+    if (description != null && description.trim().isNotEmpty()) {
+      it.replace(description.trim(), "")
+    } else {
+      it
+    }
+  }.let {
+    if (postalCode != null && postalCode.trim().isNotEmpty()) {
+      it.replace(postalCode.trim(), "")
+    } else {
+      it
+    }
+  }.trim().replace(Regex("\\s{2,}"), ", ")
 }
