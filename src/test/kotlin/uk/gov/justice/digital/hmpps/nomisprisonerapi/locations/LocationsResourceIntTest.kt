@@ -48,7 +48,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     "PUT" -> webTestClient.put()
       .uri(uri.second, -99999)
       .contentType(MediaType.APPLICATION_JSON)
-      .body(BodyInserters.fromValue(createLocationRequest()))
+      .body(BodyInserters.fromValue(createLocationRequest().copy(cnaCapacity = 2)))
 
     "DELETE" -> webTestClient.delete()
       .uri(uri.second, -1)
