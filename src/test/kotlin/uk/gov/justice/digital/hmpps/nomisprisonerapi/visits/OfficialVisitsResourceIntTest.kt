@@ -806,6 +806,171 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /prisoner/{offenderNo}/official-visits")
+  @Nested
+  inner class GetOfficialVisitsForPrisoner {
+
+    lateinit var visitSlot: AgencyVisitSlot
+    lateinit var room: AgencyInternalLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        room = agencyInternalLocation(
+          locationCode = "BXI-VISIT-2",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+            visitSlot = visitSlot(
+              agencyInternalLocation = room,
+              maxGroups = null,
+              maxAdults = null,
+            )
+          }
+        }
+
+        val visitor = person { }
+
+        offender(nomsId = "A1234TT") {
+          booking {
+            contact(person = visitor)
+            officialVisit(
+              visitDate = LocalDate.parse("2024-12-31"),
+              visitSlot = visitSlot,
+            )
+            officialVisit(
+              visitDate = LocalDate.parse("2025-01-01"),
+              visitSlot = visitSlot,
+            )
+            officialVisit(
+              visitDate = LocalDate.parse("2025-01-02"),
+              visitSlot = visitSlot,
+            )
+            visit(visitTypeCode = "SCON", startDateTimeString = "2025-01-01T10:00")
+          }
+          booking {
+            release(date = LocalDateTime.parse("2024-01-01T10:00"))
+            contact(person = visitor)
+            officialVisit(
+              visitDate = LocalDate.parse("2025-01-01"),
+              visitSlot = visitSlot,
+            )
+          }
+        }
+        offender(nomsId = "A4321TT") {
+          booking {
+            contact(person = visitor)
+            officialVisit(
+              visitDate = LocalDate.parse("2025-01-01"),
+              visitSlot = visitSlot,
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      visitRepository.deleteAll()
+      visitOrderRepository.deleteAll()
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(room)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoner/A1234TT/official-visits")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoner/A1234TT/official-visits")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoner/A1234TT/official-visits")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return all visits for prisoner including old bookings `() {
+        webTestClient.get().uri("/prisoner/A1234TT/official-visits")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(4)
+      }
+
+      @Test
+      fun `can filter by from date`() {
+        webTestClient.get().uri {
+          it.path("/prisoner/A1234TT/official-visits")
+            .queryParam("fromDate", "2025-01-02")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(1)
+      }
+
+      @Test
+      fun `can filter by to date`() {
+        webTestClient.get().uri {
+          it.path("/prisoner/A1234TT/official-visits")
+            .queryParam("toDate", "2025-01-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(3)
+      }
+
+      @Test
+      fun `can filter by from and to dates`() {
+        webTestClient.get().uri {
+          it.path("/prisoner/A1234TT/official-visits")
+            .queryParam("fromDate", "2025-01-01")
+            .queryParam("toDate", "2025-01-01")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.size()").isEqualTo(2)
+      }
+    }
+  }
 }
 
 private data class VisitIdPageResponse(

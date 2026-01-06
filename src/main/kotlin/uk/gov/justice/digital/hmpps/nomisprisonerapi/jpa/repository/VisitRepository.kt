@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
 
@@ -158,6 +159,23 @@ interface VisitRepository :
     visitId: Long,
     pageSize: Int,
   ): List<VisitIdProjection>
+
+  @Query(
+    """
+select v
+            from Visit v
+            where v.visitType.code = 'OFFI'
+              and v.offenderBooking.offender.nomsId = :offenderNo  
+              and (:fromDate is null or v.visitDate >= :fromDate)  
+              and (:toDate is null or v.visitDate <= :toDate)   
+            order by v.id
+  """,
+  )
+  fun findAllOfficialVisitsByOffenderNoWithDateFilter(
+    offenderNo: String,
+    fromDate: LocalDate?,
+    toDate: LocalDate?,
+  ): List<Visit>
 }
 
 interface VisitIdProjection {
