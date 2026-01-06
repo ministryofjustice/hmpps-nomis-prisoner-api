@@ -196,6 +196,53 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
   fun getOfficialVisit(
     @PathVariable visitId: Long,
   ): OfficialVisitResponse = officialVisitsService.getVisit(visitId = visitId)
+
+  @GetMapping("/prisoner/{offenderNo}/official-visits")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get official visits for a prisoner optional filtered by scheduled date",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "List of visits",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOfficialVisitsForPrisoner(
+    @PathVariable
+    offenderNo: String,
+    @RequestParam(value = "fromDate")
+    @Parameter(description = "Filter results by visits that are scheduled on or after the given date", example = "2024-11-03")
+    fromDate: LocalDate? = null,
+    @RequestParam(value = "toDate")
+    @Parameter(description = "Filter results by visits that are scheduled on or before the given date", example = "2025-11-03")
+    toDate: LocalDate? = null,
+  ): List<OfficialVisitResponse> = officialVisitsService.getVisitsForPrisoner(
+    offenderNo = offenderNo,
+    fromDate = fromDate,
+    toDate = toDate,
+  )
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

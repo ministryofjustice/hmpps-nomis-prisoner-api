@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.usernamePreferringGeneralAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderContactPersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import java.time.LocalDate
@@ -84,59 +85,64 @@ class OfficialVisitsService(
     )
   }.let { VisitIdsPage(it) }
 
-  @Suppress("unused")
   fun getVisit(visitId: Long): OfficialVisitResponse {
     val officialVisit = (visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")).takeIf { it.visitType.isOfficial() } ?: throw BadDataException("Visit with id $visitId is not an official visit")
 
-    return with(officialVisit) {
-      OfficialVisitResponse(
-        visitId = id,
-        // only one social visit has no slot
-        visitSlotId = agencyVisitSlot!!.id,
-        prisonId = location.id,
-        offenderNo = offenderBooking.offender.nomsId,
-        bookingId = offenderBooking.bookingId,
-        currentTerm = offenderBooking.bookingSequence == 1,
-        startDateTime = startDateTime,
-        endDateTime = endDateTime,
-        // only one social visit has no location
-        internalLocationId = agencyInternalLocation!!.locationId,
-        visitStatus = visitStatus.toCodeDescription(),
-        visitOutcome = outcomeVisitor()?.eventStatus?.toCodeDescription(),
-        // A couple of outcome reason codes have no NOMIS reference data - so fall back on code ony for a NotFound scenario
-        cancellationReason = outcomeVisitor()?.outcomeReason?.toCodeDescription() ?: outcomeVisitor()?.outcomeReasonCode?.let { CodeDescription(it, it) },
-        prisonerAttendanceOutcome = outcomeVisitor()?.eventOutcome?.toCodeDescription(),
-        prisonerSearchType = searchLevel?.toCodeDescription(),
-        visitorConcernText = visitorConcernText,
-        commentText = commentText,
-        overrideBanStaffUsername = overrideBanStaff?.usernamePreferringGeneralAccount(),
-        visitOrder = visitOrder?.let { OfficialVisitResponse.VisitOrder(number = it.visitOrderNumber) },
-        visitors = visitors.filter { it.person != null }.map { visitor ->
-          OfficialVisitResponse.OfficialVisitor(
-            id = visitor.id,
-            personId = visitor.person!!.id,
-            firstName = visitor.person!!.firstName,
-            lastName = visitor.person!!.lastName,
-            dateOfBirth = visitor.person!!.birthDate,
-            leadVisitor = visitor.groupLeader,
-            assistedVisit = visitor.assistedVisit,
-            visitorAttendanceOutcome = visitor.eventOutcome?.toCodeDescription(),
-            cancellationReason = visitor.outcomeReason?.toCodeDescription() ?: visitor.outcomeReasonCode?.let { CodeDescription(it, it) },
-            eventStatus = visitor.eventStatus?.toCodeDescription(),
-            commentText = visitor.commentText,
-            relationships = offenderContactPersonRepository.findByPersonAndOffenderBooking(visitor.person!!, offenderBooking).sortedWith(latestOfficialContactFirst()).map {
-              OfficialVisitResponse.OfficialVisitor.ContactRelationship(
-                relationshipType = it.relationshipType.toCodeDescription(),
-                contactType = it.contactType.toCodeDescription(),
-              )
-            },
-            audit = visitor.toAudit(),
+    return officialVisit.toOfficialVisitResponse()
+  }
+
+  fun getVisitsForPrisoner(offenderNo: String, fromDate: LocalDate?, toDate: LocalDate?): List<OfficialVisitResponse> = visitRepository.findAllOfficialVisitsByOffenderNoWithDateFilter(
+    offenderNo = offenderNo,
+    fromDate = fromDate,
+    toDate = toDate,
+  ).map { it.toOfficialVisitResponse() }
+
+  fun Visit.toOfficialVisitResponse() = OfficialVisitResponse(
+    visitId = id,
+    // only one social visit has no slot
+    visitSlotId = agencyVisitSlot!!.id,
+    prisonId = location.id,
+    offenderNo = offenderBooking.offender.nomsId,
+    bookingId = offenderBooking.bookingId,
+    currentTerm = offenderBooking.bookingSequence == 1,
+    startDateTime = startDateTime,
+    endDateTime = endDateTime,
+    // only one social visit has no location
+    internalLocationId = agencyInternalLocation!!.locationId,
+    visitStatus = visitStatus.toCodeDescription(),
+    visitOutcome = outcomeVisitor()?.eventStatus?.toCodeDescription(),
+    // A couple of outcome reason codes have no NOMIS reference data - so fall back on code ony for a NotFound scenario
+    cancellationReason = outcomeVisitor()?.outcomeReason?.toCodeDescription() ?: outcomeVisitor()?.outcomeReasonCode?.let { CodeDescription(it, it) },
+    prisonerAttendanceOutcome = outcomeVisitor()?.eventOutcome?.toCodeDescription(),
+    prisonerSearchType = searchLevel?.toCodeDescription(),
+    visitorConcernText = visitorConcernText,
+    commentText = commentText,
+    overrideBanStaffUsername = overrideBanStaff?.usernamePreferringGeneralAccount(),
+    visitOrder = visitOrder?.let { OfficialVisitResponse.VisitOrder(number = it.visitOrderNumber) },
+    visitors = visitors.filter { it.person != null }.map { visitor ->
+      OfficialVisitResponse.OfficialVisitor(
+        id = visitor.id,
+        personId = visitor.person!!.id,
+        firstName = visitor.person!!.firstName,
+        lastName = visitor.person!!.lastName,
+        dateOfBirth = visitor.person!!.birthDate,
+        leadVisitor = visitor.groupLeader,
+        assistedVisit = visitor.assistedVisit,
+        visitorAttendanceOutcome = visitor.eventOutcome?.toCodeDescription(),
+        cancellationReason = visitor.outcomeReason?.toCodeDescription() ?: visitor.outcomeReasonCode?.let { CodeDescription(it, it) },
+        eventStatus = visitor.eventStatus?.toCodeDescription(),
+        commentText = visitor.commentText,
+        relationships = offenderContactPersonRepository.findByPersonAndOffenderBooking(visitor.person!!, offenderBooking).sortedWith(latestOfficialContactFirst()).map {
+          OfficialVisitResponse.OfficialVisitor.ContactRelationship(
+            relationshipType = it.relationshipType.toCodeDescription(),
+            contactType = it.contactType.toCodeDescription(),
           )
         },
-        audit = toAudit(),
+        audit = visitor.toAudit(),
       )
-    }
-  }
+    },
+    audit = toAudit(),
+  )
 }
 
 private fun latestOfficialContactFirst() = compareByDescending<OffenderContactPerson> { it.relationshipType.code }.thenByDescending { it.createDatetime }
