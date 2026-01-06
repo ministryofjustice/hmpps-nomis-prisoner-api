@@ -29,10 +29,6 @@ class OffenderTemporaryAbsence(
   @OneToOne(cascade = [CascadeType.ALL])
   @JoinColumn(name = "EVENT_ID")
   var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
-
-  @OneToOne
-  @JoinColumn(name = "TO_ADDRESS_ID", insertable = false, updatable = false)
-  val toAddressView: OffenderMovementAddress? = null,
 ) : OffenderExternalMovement(
   id = id,
   movementDate = movementDate,

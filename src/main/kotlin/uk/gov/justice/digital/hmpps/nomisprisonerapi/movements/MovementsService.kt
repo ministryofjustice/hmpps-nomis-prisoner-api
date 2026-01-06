@@ -571,8 +571,8 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress?.trim(),
-    toAddressPostcode = toAddress?.postalCode,
+    toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)),
+    toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     contactPersonName = contactPersonName,
@@ -595,7 +595,6 @@ class MovementsService(
   private fun OffenderTemporaryAbsence.toResponse(): TemporaryAbsence {
     // The address may only exist on the schedule so check there too
     val toAddress = toAddress ?: scheduledTemporaryAbsence?.toAddress
-    val toAddressView = toAddressView ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsence(
       sequence = id.sequence,
       movementDate = movementDate,
@@ -610,8 +609,8 @@ class MovementsService(
       toAddressId = toAddress?.addressId,
       toAddressOwnerClass = toAddress?.addressOwnerClass,
       toAddressDescription = getAddressDescription(toAddress),
-      toFullAddress = toAddressView?.fullAddress?.trim(),
-      toAddressPostcode = toAddress?.postalCode,
+      toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)),
+      toAddressPostcode = toAddress?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -621,9 +620,6 @@ class MovementsService(
     val address = fromAddress
       ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
       ?: scheduledTemporaryAbsence?.toAddress
-    val addressView = fromAddressView
-      ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddressView
-      ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceReturn(
       sequence = id.sequence,
       movementDate = movementDate,
@@ -637,8 +633,8 @@ class MovementsService(
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
       fromAddressDescription = getAddressDescription(address),
-      fromFullAddress = addressView?.fullAddress?.trim(),
-      fromAddressPostcode = address?.postalCode,
+      fromFullAddress = address?.toFullAddress(getAddressDescription(address)),
+      fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -657,8 +653,8 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress?.trim() ?: toCity?.description,
-    toAddressPostcode = toAddress?.postalCode,
+    toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)) ?: toCity?.description,
+    toAddressPostcode = toAddress?.postalCode?.trim(),
     audit = toAudit(),
   )
 
@@ -675,8 +671,8 @@ class MovementsService(
     fromAddressId = fromAddress?.addressId,
     fromAddressOwnerClass = fromAddress?.addressOwnerClass,
     fromAddressDescription = getAddressDescription(fromAddress),
-    fromFullAddress = fromAddressView?.fullAddress?.trim() ?: fromCity?.description,
-    fromAddressPostcode = fromAddress?.postalCode,
+    fromFullAddress = fromAddress?.toFullAddress(getAddressDescription(fromAddress)) ?: fromCity?.description,
+    fromAddressPostcode = fromAddress?.postalCode?.trim(),
     audit = toAudit(),
   )
 
@@ -723,8 +719,8 @@ class MovementsService(
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddressView?.fullAddress,
-    toAddressPostcode = toAddress?.postalCode,
+    toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)),
+    toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     contactPersonName = contactPersonName,
@@ -752,7 +748,6 @@ class MovementsService(
   private fun OffenderTemporaryAbsence.toSingleResponse(): TemporaryAbsenceResponse {
     // The address may only exist on the schedule so check there too
     val toAddress = toAddress ?: scheduledTemporaryAbsence?.toAddress
-    val toAddressView = toAddressView ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
@@ -770,8 +765,8 @@ class MovementsService(
       toAddressId = toAddress?.addressId,
       toAddressOwnerClass = toAddress?.addressOwnerClass,
       toAddressDescription = getAddressDescription(toAddress),
-      toFullAddress = toAddressView?.fullAddress ?: toCity?.description,
-      toAddressPostcode = toAddress?.postalCode,
+      toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)) ?: toCity?.description,
+      toAddressPostcode = toAddress?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -781,9 +776,6 @@ class MovementsService(
     val address = fromAddress
       ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
       ?: scheduledTemporaryAbsence?.toAddress
-    val addressView = fromAddressView
-      ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddressView
-      ?: scheduledTemporaryAbsence?.toAddressView
     return TemporaryAbsenceReturnResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
@@ -801,8 +793,8 @@ class MovementsService(
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
       fromAddressDescription = getAddressDescription(address),
-      fromFullAddress = addressView?.fullAddress ?: fromCity?.description,
-      fromAddressPostcode = address?.postalCode,
+      fromFullAddress = address?.toFullAddress(getAddressDescription(address)) ?: fromCity?.description,
+      fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
@@ -813,5 +805,44 @@ class MovementsService(
       "AGY" -> agencyLocationAddressRepository.findByIdOrNull(it)?.agencyLocation?.description
       else -> null
     }
+  }
+
+  private fun Address.toFullAddress(description: String?): String {
+    val address = mutableListOf<String>()
+
+    fun MutableList<String>.addIfNotEmpty(value: String?) {
+      if (!value.isNullOrBlank()) {
+        add(value.trim())
+      }
+    }
+
+    // Append "Flat" if there is one
+    if (!flat.isNullOrBlank()) {
+      val flatText = if (flat!!.contains("flat", ignoreCase = true)) "" else "Flat "
+      address.add("$flatText${flat!!.trim()}")
+    }
+
+    // remove corporate/agency description from any address elements that might contain it
+    val cleanPremise = description?.let { premise?.replace(description, "") } ?: premise
+    val cleanStreet = description?.let { street?.replace(description, "") } ?: street
+    val cleanLocality = description?.let { locality?.replace(description, "") } ?: locality
+
+    // Don't separate a numeric premise from the street, only if it's a name
+    val hasPremise = !cleanPremise.isNullOrBlank()
+    val premiseIsNumber = cleanPremise?.all { char -> char.isDigit() } ?: false
+    val hasStreet = !cleanStreet.isNullOrBlank()
+    when {
+      hasPremise && premiseIsNumber && hasStreet -> address.add("$cleanPremise $cleanStreet")
+      hasPremise && !premiseIsNumber && hasStreet -> address.add("$cleanPremise, $cleanStreet")
+      hasPremise -> address.add(cleanPremise)
+      hasStreet -> address.add(cleanStreet)
+    }
+    // Add others if they exist
+    address.addIfNotEmpty(cleanLocality)
+    address.addIfNotEmpty(city?.description)
+    address.addIfNotEmpty(county?.description)
+    address.addIfNotEmpty(country?.description)
+
+    return address.joinToString(", ").trim()
   }
 }

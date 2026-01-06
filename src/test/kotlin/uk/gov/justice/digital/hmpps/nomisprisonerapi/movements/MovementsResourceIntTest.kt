@@ -232,7 +232,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").isEqualTo("${offenderAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressOwnerClass").isEqualTo("OFF")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").doesNotExist()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("S1 1AA")
     }
 
@@ -264,7 +264,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").isEqualTo("${corporateAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressOwnerClass").isEqualTo("CORP")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").isEqualTo("Boots")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S2 2AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("S2 2AA")
     }
 
@@ -296,7 +296,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").isEqualTo("${agencyAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressOwnerClass").isEqualTo("AGY")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").isEqualTo("Big Hospital")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("2 Gloucester Terrace, Stanningley Road, Leeds, West Yorkshire, England")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("LS3 3AA")
     }
 
@@ -346,7 +346,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${offenderAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("OFF")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").doesNotExist()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("S1 1AA")
     }
 
@@ -380,7 +380,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${corporateAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("CORP")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").isEqualTo("Boots")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("41  High Street  Sheffield    S2 2AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("S2 2AA")
     }
 
@@ -414,7 +414,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${agencyAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("AGY")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").isEqualTo("Big Hospital")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("2 Gloucester Terrace, Stanningley Road, Leeds, West Yorkshire, England")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("LS3 3AA")
     }
 
@@ -450,7 +450,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressId").isEqualTo("${agencyAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressOwnerClass").isEqualTo("AGY")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressDescription").isEqualTo("Big Hospital")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toFullAddress").isEqualTo("2 Gloucester Terrace, Stanningley Road, Leeds, West Yorkshire, England")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.toAddressPostcode").isEqualTo("LS3 3AA")
     }
 
@@ -545,7 +545,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${offenderAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("OFF")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").doesNotExist()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("S1 1AA")
     }
 
@@ -583,7 +583,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${corporateAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("CORP")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Boots")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("41  High Street  Sheffield    S2 2AA")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("S2 2AA")
     }
 
@@ -621,7 +621,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${agencyAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("AGY")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Big Hospital")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2 Gloucester Terrace, Stanningley Road, Leeds, West Yorkshire, England")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("LS3 3AA")
     }
 
@@ -660,7 +660,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${agencyAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("AGY")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Big Hospital")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2 Gloucester Terrace, Stanningley Road, Leeds, West Yorkshire, England")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("LS3 3AA")
     }
 
@@ -701,7 +701,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressId").isEqualTo("${agencyAddress.addressId}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressOwnerClass").isEqualTo("AGY")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressDescription").isEqualTo("Big Hospital")
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2  Gloucester Terrace  Stanningley Road  29059  W.YORKSHIRE  LS3 3AA  ENG")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromFullAddress").isEqualTo("2 Gloucester Terrace, Stanningley Road, Leeds, West Yorkshire, England")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.fromAddressPostcode").isEqualTo("LS3 3AA")
     }
 
@@ -746,7 +746,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressId").isEqualTo(offenderAddress.addressId)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressDescription").doesNotExist()
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressPostcode").isEqualTo("S1 1AA")
     }
 
@@ -819,7 +819,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressId").isEqualTo(offenderAddress.addressId)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressDescription").doesNotExist()
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromFullAddress").isEqualTo("41  High Street  Sheffield    S1 1AA")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromFullAddress").isEqualTo("41 High Street, Sheffield")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressPostcode").isEqualTo("S1 1AA")
     }
 
@@ -1079,6 +1079,75 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressId").doesNotExist()
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressId").doesNotExist()
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.fromAddressId").doesNotExist()
+    }
+
+    @Test
+    fun `should format address`() {
+      lateinit var corporateAddress: CorporateAddress
+      nomisDataBuilder.build {
+        corporate(corporateName = "Boots") {
+          corporateAddress = address(
+            premise = "Boots",
+            street = "High Street",
+            locality = "Sheffield",
+            country = "ENG",
+            postcode = "S2 2AA",
+          )
+        }
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(
+                toAddress = corporateAddress,
+              )
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").isEqualTo("Boots")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("High Street, Sheffield, England")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("S2 2AA")
+    }
+
+    @Test
+    fun `should format address with whitespace instead of postcode`() {
+      lateinit var corporateAddress: CorporateAddress
+      nomisDataBuilder.build {
+        corporate(corporateName = "Boots") {
+          corporateAddress = address(
+            street = "High Street",
+            locality = "Sheffield",
+            country = "ENG",
+            postcode = " ",
+          )
+        }
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(
+                toAddress = corporateAddress,
+              )
+            }
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressDescription").isEqualTo("Boots")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41 High Street, Sheffield, England")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("")
     }
   }
 
@@ -1583,8 +1652,8 @@ class MovementsResourceIntTest(
           ) {
             corporateAddress = address(
               type = "BUS",
-              flat = "3B",
-              premise = "Brown Court",
+              flat = null,
+              premise = "Boots",
               street = "Scotland Street",
               locality = "Hunters Bar",
               postcode = "S1 3GG",
@@ -1626,7 +1695,7 @@ class MovementsResourceIntTest(
             assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
             assertThat(toAddressOwnerClass).isEqualTo("CORP")
             assertThat(toAddressDescription).isEqualTo("Boots")
-            assertThat(toFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+            assertThat(toFullAddress).isEqualTo("Scotland Street, Hunters Bar, Sheffield, South Yorkshire, England")
             assertThat(toAddressPostcode).isEqualTo("S1 3GG")
           }
       }
@@ -1687,7 +1756,7 @@ class MovementsResourceIntTest(
             assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
             assertThat(toAddressOwnerClass).isEqualTo("AGY")
             assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
-            assertThat(toFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+            assertThat(toFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
             assertThat(toAddressPostcode).isEqualTo("S5 7AU")
           }
       }
@@ -2710,7 +2779,7 @@ class MovementsResourceIntTest(
                 assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
                 assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-                assertThat(toFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
+                assertThat(toFullAddress).isEqualTo("Flat 1, 41 High Street, Hillsborough, Sheffield, South Yorkshire, England")
                 assertThat(toAddressPostcode).isEqualTo("S1 1AB")
               }
           }
@@ -2822,7 +2891,7 @@ class MovementsResourceIntTest(
                 assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("CORP")
                 assertThat(toAddressDescription).isEqualTo("Boots")
-                assertThat(toFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(toFullAddress).isEqualTo("Flat 3B, Brown Court, Scotland Street, Hunters Bar, Sheffield, South Yorkshire, England")
                 assertThat(toAddressPostcode).isEqualTo("S1 3GG")
               }
           }
@@ -2884,7 +2953,7 @@ class MovementsResourceIntTest(
                 assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("CORP")
                 assertThat(toAddressDescription).isEqualTo("Boots")
-                assertThat(toFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(toFullAddress).isEqualTo("Flat 3B, Brown Court, Scotland Street, Hunters Bar, Sheffield, South Yorkshire, England")
                 assertThat(toAddressPostcode).isEqualTo("S1 3GG")
               }
           }
@@ -2956,7 +3025,7 @@ class MovementsResourceIntTest(
                 assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("AGY")
                 assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
-                assertThat(toFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(toFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
                 assertThat(toAddressPostcode).isEqualTo("S5 7AU")
               }
           }
@@ -3003,7 +3072,7 @@ class MovementsResourceIntTest(
                 assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("AGY")
                 assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
-                assertThat(toFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(toFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
                 assertThat(toAddressPostcode).isEqualTo("S5 7AU")
               }
           }
@@ -3464,7 +3533,7 @@ class MovementsResourceIntTest(
               .apply {
                 assertThat(fromAddressId).isEqualTo(offenderAddress.addressId)
                 assertThat(fromAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-                assertThat(fromFullAddress).isEqualTo("Flat 1  41  High Street  Hillsborough  25343  S.YORKSHIRE  S1 1AB  ENG")
+                assertThat(fromFullAddress).isEqualTo("Flat 1, 41 High Street, Hillsborough, Sheffield, South Yorkshire, England")
                 assertThat(fromAddressPostcode).isEqualTo("S1 1AB")
               }
           }
@@ -3626,7 +3695,7 @@ class MovementsResourceIntTest(
                 assertThat(fromAddressId).isEqualTo(corporateAddress.addressId)
                 assertThat(fromAddressOwnerClass).isEqualTo("CORP")
                 assertThat(fromAddressDescription).isEqualTo("Boots")
-                assertThat(fromFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(fromFullAddress).isEqualTo("Flat 3B, Brown Court, Scotland Street, Hunters Bar, Sheffield, South Yorkshire, England")
                 assertThat(fromAddressPostcode).isEqualTo("S1 3GG")
               }
           }
@@ -3674,7 +3743,7 @@ class MovementsResourceIntTest(
                 assertThat(fromAddressId).isEqualTo(corporateAddress.addressId)
                 assertThat(fromAddressOwnerClass).isEqualTo("CORP")
                 assertThat(fromAddressDescription).isEqualTo("Boots")
-                assertThat(fromFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(fromFullAddress).isEqualTo("Flat 3B, Brown Court, Scotland Street, Hunters Bar, Sheffield, South Yorkshire, England")
                 assertThat(fromAddressPostcode).isEqualTo("S1 3GG")
               }
           }
@@ -3724,7 +3793,7 @@ class MovementsResourceIntTest(
                 assertThat(fromAddressId).isEqualTo(corporateAddress.addressId)
                 assertThat(fromAddressOwnerClass).isEqualTo("CORP")
                 assertThat(fromAddressDescription).isEqualTo("Boots")
-                assertThat(fromFullAddress).isEqualTo("3B  Brown Court  Scotland Street  Hunters Bar  25343  S.YORKSHIRE  S1 3GG  ENG")
+                assertThat(fromFullAddress).isEqualTo("Flat 3B, Brown Court, Scotland Street, Hunters Bar, Sheffield, South Yorkshire, England")
                 assertThat(fromAddressPostcode).isEqualTo("S1 3GG")
               }
           }
@@ -3791,7 +3860,7 @@ class MovementsResourceIntTest(
                 assertThat(fromAddressId).isEqualTo(agencyAddress.addressId)
                 assertThat(fromAddressOwnerClass).isEqualTo("AGY")
                 assertThat(fromAddressDescription).isEqualTo("Northern General Hospital")
-                assertThat(fromFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(fromFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
                 assertThat(fromAddressPostcode).isEqualTo("S5 7AU")
               }
           }
@@ -3839,7 +3908,7 @@ class MovementsResourceIntTest(
                 assertThat(fromAddressId).isEqualTo(agencyAddress.addressId)
                 assertThat(fromAddressOwnerClass).isEqualTo("AGY")
                 assertThat(fromAddressDescription).isEqualTo("Northern General Hospital")
-                assertThat(fromFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(fromFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
                 assertThat(fromAddressPostcode).isEqualTo("S5 7AU")
               }
           }
@@ -3889,7 +3958,7 @@ class MovementsResourceIntTest(
                 assertThat(fromAddressId).isEqualTo(agencyAddress.addressId)
                 assertThat(fromAddressOwnerClass).isEqualTo("AGY")
                 assertThat(fromAddressDescription).isEqualTo("Northern General Hospital")
-                assertThat(fromFullAddress).isEqualTo("2  Herries Road  Stanningley Road  25343  S.YORKSHIRE  S5 7AU  ENG")
+                assertThat(fromFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
                 assertThat(fromAddressPostcode).isEqualTo("S5 7AU")
               }
           }
