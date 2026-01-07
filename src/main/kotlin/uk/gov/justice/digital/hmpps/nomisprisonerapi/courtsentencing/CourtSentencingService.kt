@@ -1329,6 +1329,7 @@ class CourtSentencingService(
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
     request.sentences.updateSentences()
+    request.sentencesRemoved.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
       storedProcedureRepository.imprisonmentStatusUpdate(
@@ -1347,6 +1348,7 @@ class CourtSentencingService(
       mapOf(
         "bookingId" to bookingIds.joinToString { it.toString() },
         "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
+        "removedSentenceSequences" to request.sentencesRemoved.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
         "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
       ),

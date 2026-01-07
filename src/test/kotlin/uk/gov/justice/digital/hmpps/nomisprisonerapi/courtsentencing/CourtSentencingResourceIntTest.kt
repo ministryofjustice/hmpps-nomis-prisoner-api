@@ -9859,6 +9859,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var staff: Staff
       private lateinit var sentence1: OffenderSentence
       private lateinit var sentence2: OffenderSentence
+      private lateinit var sentence3: OffenderSentence
       private lateinit var request: UpdateRecallRequest
       private lateinit var breachCourtEvent: CourtEvent
 
@@ -9891,6 +9892,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                       term(days = 35, sentenceTermType = "IMP")
                     }
                     sentence2 = sentence(
+                      category = "2020",
+                      calculationType = "FTR_ORA",
+                      statusUpdateStaff = staff,
+                      courtOrder = courtOrder,
+                      status = "A",
+                    ) {
+                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                    sentence3 = sentence(
                       category = "2020",
                       calculationType = "FTR_ORA",
                       statusUpdateStaff = staff,
@@ -9965,6 +9976,42 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
             assertThat(calculationType.isRecallSentence()).isTrue
             assertThat(calculationType.description).isEqualTo("Licence Recall")
+            assertThat(status).isEqualTo("I")
+          }
+        }
+
+        @Test
+        fun `will update removed recall sentence back to ordinary sentence`() {
+          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isTrue
+            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(status).isEqualTo("A")
+          }
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                request.copy(
+                  sentencesRemoved = listOf(
+                    RecallRelatedSentenceDetails(
+                      SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence3.id.sequence),
+                      sentenceCategory = "2020",
+                      sentenceCalcType = "ADIMP",
+                      active = false,
+                    ),
+                  ),
+                ),
+              ),
+            )
+            .exchange()
+            .expectStatus().isOk
+
+          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+            assertThat(calculationType.isRecallSentence()).isFalse
+            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
             assertThat(status).isEqualTo("I")
           }
         }
