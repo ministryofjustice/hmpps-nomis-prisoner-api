@@ -252,7 +252,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
       ),
     ],
   )
-  suspend fun getCourtCasesByOffender(
+  fun getCourtCasesByOffender(
     @Schema(description = "Offender No", example = "AA12345")
     @PathVariable
     offenderNo: String,
@@ -2796,9 +2796,10 @@ data class ConvertToRecallRequest(
   val recallRevocationDate: LocalDate,
 )
 
-@Schema(description = "Recall convert request")
+@Schema(description = "Update Recall request")
 data class UpdateRecallRequest(
   val sentences: List<RecallRelatedSentenceDetails>,
+  val sentencesRemoved: List<RecallRelatedSentenceDetails> = emptyList(),
   val returnToCustody: ReturnToCustodyRequest? = null,
   val recallRevocationDate: LocalDate,
   @Schema(description = "the breach court appearance that require updating")
