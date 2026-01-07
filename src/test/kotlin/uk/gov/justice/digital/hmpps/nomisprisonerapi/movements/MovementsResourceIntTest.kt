@@ -4251,4 +4251,76 @@ class MovementsResourceIntTest(
         assertThat(it).contains("UNKNOWN").contains("invalid")
       }
   }
+
+  @Nested
+  inner class PrisonerMovementsReconciliationCounts {
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `should return basic counts`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking {
+              temporaryAbsenceApplication {
+                scheduledTemporaryAbsence {
+                  externalMovement()
+                  scheduledReturn()
+                }
+              }
+              temporaryAbsence()
+              temporaryAbsenceReturn()
+            }
+          }
+        }
+
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<OffenderTemporaryAbsenceCountsResponse>()
+          .apply {
+            assertThat(applications.count).isEqualTo(1)
+            assertThat(scheduledOutMovements.count).isEqualTo(1)
+            assertThat(movements.count).isEqualTo(4)
+            assertThat(movements.scheduled.outCount).isEqualTo(1)
+            assertThat(movements.scheduled.inCount).isEqualTo(1)
+            assertThat(movements.unscheduled.outCount).isEqualTo(1)
+            assertThat(movements.unscheduled.inCount).isEqualTo(1)
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorized for missing token`() {
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.get()
+          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+  }
 }
