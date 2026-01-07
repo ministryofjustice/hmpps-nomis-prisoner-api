@@ -419,6 +419,16 @@ class MovementsService(
     }
   }
 
+  fun getTemporaryAbsencesAndMovementCounts(offenderNo: String) = OffenderTemporaryAbsenceCountsResponse(
+    applications = Applications(count = 1),
+    scheduledOutMovements = ScheduledOut(count = 1),
+    movements = Movements(
+      count = 4,
+      scheduled = MovementsByDirection(outCount = 1, inCount = 1),
+      unscheduled = MovementsByDirection(outCount = 1, inCount = 1),
+    ),
+  )
+
   private fun offenderBookingOrThrow(offenderNo: String) = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("Offender $offenderNo not found with a booking")
 

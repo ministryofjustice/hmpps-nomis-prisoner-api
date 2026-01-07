@@ -486,4 +486,40 @@ class MovementsResource(
     @RequestBody @Valid
     request: CreateTemporaryAbsenceReturnRequest,
   ): CreateTemporaryAbsenceReturnResponse = movementsService.createTemporaryAbsenceReturn(offenderNo, request)
+
+  @GetMapping("/movements/{offenderNo}/temporary-absences/counts")
+  @Operation(
+    summary = "Get temporary absence applications, schedules and external movement counts for an offender",
+    description = "Get temporary absence applications, schedules and external movement counts for an offender. This is used for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender temporary absence counts returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getTemporaryAbsencesAndMovementCounts(
+    @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
+  ): OffenderTemporaryAbsenceCountsResponse = movementsService.getTemporaryAbsencesAndMovementCounts(offenderNo)
 }
