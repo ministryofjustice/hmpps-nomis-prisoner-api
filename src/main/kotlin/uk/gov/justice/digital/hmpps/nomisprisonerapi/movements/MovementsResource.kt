@@ -487,7 +487,7 @@ class MovementsResource(
     request: CreateTemporaryAbsenceReturnRequest,
   ): CreateTemporaryAbsenceReturnResponse = movementsService.createTemporaryAbsenceReturn(offenderNo, request)
 
-  @GetMapping("/movements/{offenderNo}/temporary-absences/counts")
+  @GetMapping("/movements/{offenderNo}/temporary-absences/summary")
   @Operation(
     summary = "Get temporary absence applications, schedules and external movement counts for an offender",
     description = "Get temporary absence applications, schedules and external movement counts for an offender. This is used for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -521,5 +521,5 @@ class MovementsResource(
   )
   fun getTemporaryAbsencesAndMovementCounts(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
-  ): OffenderTemporaryAbsenceCountsResponse = movementsService.getTemporaryAbsencesAndMovementCounts(offenderNo)
+  ): OffenderTemporaryAbsenceSummaryResponse = movementsService.getTemporaryAbsencesSummary(offenderNo)
 }

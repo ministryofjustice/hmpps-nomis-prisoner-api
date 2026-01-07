@@ -15,4 +15,6 @@ interface OffenderMovementApplicationRepository : JpaRepository<OffenderMovement
 
   @EntityGraph(type = EntityGraphType.FETCH, value = "application-only")
   fun findByMovementApplicationIdAndOffenderBooking_Offender_NomsId(applicationId: Long, offenderNo: String): OffenderMovementApplication?
+
+  fun countByOffenderBooking_Offender_NomsId(offenderNo: String): Long
 }

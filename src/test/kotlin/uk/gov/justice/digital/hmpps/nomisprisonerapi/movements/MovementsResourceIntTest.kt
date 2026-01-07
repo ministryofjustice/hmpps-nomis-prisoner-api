@@ -4266,7 +4266,9 @@ class MovementsResourceIntTest(
               temporaryAbsenceApplication {
                 scheduledTemporaryAbsence {
                   externalMovement()
-                  scheduledReturn()
+                  scheduledReturn {
+                    externalMovement()
+                  }
                 }
               }
               temporaryAbsence()
@@ -4276,11 +4278,11 @@ class MovementsResourceIntTest(
         }
 
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .uri("/movements/$offenderNo/temporary-absences/summary")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
-          .expectBodyResponse<OffenderTemporaryAbsenceCountsResponse>()
+          .expectBodyResponse<OffenderTemporaryAbsenceSummaryResponse>()
           .apply {
             assertThat(applications.count).isEqualTo(1)
             assertThat(scheduledOutMovements.count).isEqualTo(1)
@@ -4299,7 +4301,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return unauthorized for missing token`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .uri("/movements/$offenderNo/temporary-absences/summary")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -4307,7 +4309,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for missing role`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .uri("/movements/$offenderNo/temporary-absences/summary")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -4316,7 +4318,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for wrong role`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/counts")
+          .uri("/movements/$offenderNo/temporary-absences/summary")
           .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
           .exchange()
           .expectStatus().isForbidden
