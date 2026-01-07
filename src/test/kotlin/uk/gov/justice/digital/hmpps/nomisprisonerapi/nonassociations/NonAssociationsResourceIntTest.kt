@@ -5,6 +5,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
@@ -955,7 +959,7 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      // now try to close it again, this time it will fail
+      // now try to close it again, this time it will do nothing
 
       webTestClient.put()
         .uri(
@@ -966,12 +970,17 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
-        .expectStatus().isBadRequest
-        .expectBody()
-        .jsonPath("developerMessage")
-        .isEqualTo("Non-association already closed for offender=A1234TT, nsOffender=A1234TU, typeSequence=1")
-        .jsonPath("userMessage")
-        .isEqualTo("Bad request: Non-association already closed for offender=A1234TT, nsOffender=A1234TU, typeSequence=1")
+        .expectStatus().isOk
+
+      verify(telemetryClient).trackEvent(
+        eq("non-association-closed-no-action"),
+        check<MutableMap<String, String>> {
+          assertThat(it["offender"]).isEqualTo(offenderAtMoorlands.nomsId)
+          assertThat(it["nsOffender"]).isEqualTo(offenderAtLeeds.nomsId)
+          assertThat(it["typeSequence"]).isEqualTo("1")
+        },
+        isNull(),
+      )
     }
 
     @Test
@@ -1008,10 +1017,33 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      // Check the database
-      val na = repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id)
+      verify(telemetryClient).trackEvent(
+        eq("non-association-closed"),
+        check<MutableMap<String, String>> {
+          assertThat(it["offender"]).isEqualTo(offenderAtMoorlands.nomsId)
+          assertThat(it["nsOffender"]).isEqualTo(offenderAtLeeds.nomsId)
+          assertThat(it["typeSequence"]).isEqualTo("1")
+        },
+        isNull(),
+      )
+      verify(telemetryClient).trackEvent(
+        eq("non-association-closed"),
+        check<MutableMap<String, String>> {
+          assertThat(it["offender"]).isEqualTo(offenderAtLeeds.nomsId)
+          assertThat(it["nsOffender"]).isEqualTo(offenderAtMoorlands.nomsId)
+          assertThat(it["typeSequence"]).isEqualTo("1")
+        },
+        isNull(),
+      )
 
-      assertThat(na.offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.now())
+      // Check the database
+
+      assertThat(
+        repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id).offenderNonAssociationDetails.first().expiryDate,
+      ).isEqualTo(LocalDate.now())
+      assertThat(
+        repository.getNonAssociation(offenderAtLeeds.id, offenderAtMoorlands.id).offenderNonAssociationDetails.first().expiryDate,
+      ).isEqualTo(LocalDate.now())
     }
 
     @Test
@@ -1054,9 +1086,13 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       // Check the database
-      val na = repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id)
 
-      assertThat(na.offenderNonAssociationDetails.first().expiryDate).isEqualTo(LocalDate.now())
+      assertThat(
+        repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id).offenderNonAssociationDetails.first().expiryDate,
+      ).isEqualTo(LocalDate.now())
+      assertThat(
+        repository.getNonAssociation(offenderAtLeeds.id, offenderAtMoorlands.id).offenderNonAssociationDetails.first().expiryDate,
+      ).isEqualTo(LocalDate.now())
     }
   }
 
