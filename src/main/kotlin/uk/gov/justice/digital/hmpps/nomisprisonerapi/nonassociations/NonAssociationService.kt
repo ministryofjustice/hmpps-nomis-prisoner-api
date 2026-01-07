@@ -209,9 +209,10 @@ class NonAssociationService(
     ) ?: throw NotFoundException("Non-association detail not found where offender=$nsOffenderNo, nsOffender=$offenderNo, typeSequence=$typeSequence")
 
     val today = LocalDate.now()
-    existing.apply {
-      if (expiryDate != null && !expiryDate!!.isAfter(today)) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
-      expiryDate = today
+    val closed = existing.isClosed(today)
+    val otherClosed = otherExisting.isClosed(today)
+    if (!closed) {
+      existing.expiryDate = today
       telemetryClient.trackEvent(
         "non-association-closed",
         mapOf(
@@ -221,14 +222,23 @@ class NonAssociationService(
         ),
       )
     }
-    otherExisting.apply {
-      if (expiryDate != null && !expiryDate!!.isAfter(today)) throw BadDataException("Non-association already closed for offender=$offenderNo, nsOffender=$nsOffenderNo, typeSequence=$typeSequence")
-      expiryDate = today
+    if (!otherClosed) {
+      otherExisting.expiryDate = today
       telemetryClient.trackEvent(
         "non-association-closed",
         mapOf(
           "offender" to nsOffenderNo,
           "nsOffender" to offenderNo,
+          "typeSequence" to "$typeSequence",
+        ),
+      )
+    }
+    if (closed && otherClosed) {
+      telemetryClient.trackEvent(
+        "non-association-closed-no-action",
+        mapOf(
+          "offender" to offenderNo,
+          "nsOffender" to nsOffenderNo,
           "typeSequence" to "$typeSequence",
         ),
       )
@@ -361,6 +371,9 @@ class NonAssociationService(
       )
     }
 }
+
+private fun OffenderNonAssociationDetail.isClosed(today: LocalDate): Boolean = expiryDate
+  .let { it != null && !it.isAfter(today) }
 
 private val OffenderNonAssociationDetail.updatedBy: String
   get() {
