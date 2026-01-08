@@ -85,7 +85,7 @@ private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetai
   offenderId = offender.id,
   rootOffenderId = offender.rootOffenderId,
   bookingId = bookingId,
-  location = location.id,
+  location = location?.id ?: "OUT",
   active = active,
 )
 

@@ -190,8 +190,8 @@ class AllocationService(
     val courseActivity = activityRepository.findByIdOrNull(courseActivityId)
       ?: throw NotFoundException("Course activity with id=$courseActivityId does not exist")
 
-    if (courseActivity.prison.id != offenderBooking.location.id && newAllocation) {
-      throw BadDataException("Prisoner is at prison=${offenderBooking.location.id}, not the Course activity prison=${courseActivity.prison.id}")
+    if (courseActivity.prison.id != offenderBooking.location?.id && newAllocation) {
+      throw BadDataException("Prisoner is at prison=${offenderBooking.location?.id}, not the Course activity prison=${courseActivity.prison.id}")
     }
 
     requestedPayBand?.run {

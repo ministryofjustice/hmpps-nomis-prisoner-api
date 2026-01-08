@@ -113,7 +113,7 @@ class CaseNotesService(
     authorFirstName = author.firstName,
     authorLastName = author.lastName,
     authorUsernames = author.accounts.map { it.username }.distinct(),
-    prisonId = agencyLocation?.id ?: offenderBooking.location.id,
+    prisonId = agencyLocation?.id ?: offenderBooking.location?.id,
     caseNoteText = if (splitText) parseMainText(caseNoteText) else caseNoteText,
     amendments = if (splitText) parseAmendments(this) else emptyList(),
     noteSourceCode = noteSourceCode,

@@ -64,7 +64,7 @@ class CsraService(
       reviewComment = csraCreateRequest.reviewComment,
       assessmentCommitteeCode = csraCreateRequest.committeeCode,
       approvedLevel = csraCreateRequest.approvedLevel,
-      assessmentCreationLocation = booking.location.id,
+      assessmentCreationLocation = booking.location?.id,
       creationDateTime = csraCreateRequest.createdDateTime,
       creationUser = csraCreateRequest.createdBy,
       // TODO: not sure if needed yet:
@@ -97,9 +97,6 @@ class CsraService(
     status = assessmentStatus,
     assessmentStaffId = assessmentStaff.id,
     type = assessmentType,
-//      assessmentRepository.findByIdOrNull(assessmentTypeId)
-//      ?.let { AssessmentType.valueOf(it.assessmentCode) }
-//      ?: throw BadDataException("Cannot convert assessment type $assessmentTypeId for booking ${id.offenderBooking.bookingId} and sequence ${id.sequence}"),
     committeeCode = assessmentCommitteeCode,
     nextReviewDate = nextReviewDate,
     comment = assessmentComment,

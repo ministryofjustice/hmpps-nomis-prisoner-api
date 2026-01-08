@@ -144,8 +144,8 @@ class AppointmentService(
         ?: throw BadDataException("Room with id=${dto.internalLocationId} does not exist")
     }
       ?.also {
-        if (it.agency.id != offenderBooking.location.id) {
-          throw BadDataException("Room with id=${dto.internalLocationId} is in ${it.agency.id}, not in the offender's prison: ${offenderBooking.location.id}")
+        if (it.agency.id != offenderBooking.location?.id) {
+          throw BadDataException("Room with id=${dto.internalLocationId} is in ${it.agency.id}, not in the offender's prison: ${offenderBooking.location?.id}")
         }
       }
       ?: offenderBooking.assignedLivingUnit
@@ -162,7 +162,7 @@ class AppointmentService(
       eventDate = dto.eventDate,
       startTime = LocalDateTime.of(dto.eventDate, dto.startTime),
       endTime = dto.endTime?.let { LocalDateTime.of(dto.eventDate, it) },
-      prison = offenderBooking.location,
+      prison = offenderBooking.location!!,
       eventStatus = eventStatusRepository.findById(EventStatus.SCHEDULED_APPROVED).orElseThrow(),
       internalLocation = location,
       eventSubType = eventSubType,
@@ -177,12 +177,12 @@ class AppointmentService(
     hour = date.hour,
     minute = date.minute,
   )?.let {
-    return mapModel(it)
+    mapModel(it)
   }
     ?: throw NotFoundException("Appointment not found")
 
   fun getAppointment(eventId: Long): AppointmentResponse = offenderAppointmentRepository.findByIdOrNull(eventId)?.let {
-    return mapModel(it)
+    mapModel(it)
   }
     ?: throw NotFoundException("Appointment not found")
 

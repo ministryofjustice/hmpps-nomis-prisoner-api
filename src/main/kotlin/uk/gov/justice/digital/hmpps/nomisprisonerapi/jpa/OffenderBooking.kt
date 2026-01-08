@@ -48,8 +48,9 @@ data class OffenderBooking(
   val bookingBeginDate: LocalDateTime,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "AGY_LOC_ID", nullable = false)
-  var location: AgencyLocation,
+  @JoinColumn(name = "AGY_LOC_ID")
+  var location: AgencyLocation? = null,
+  // Annoyingly there are just a handful of rows where AGY_LOC_ID is null
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "CREATE_AGY_LOC_ID")

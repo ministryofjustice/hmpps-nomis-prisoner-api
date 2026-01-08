@@ -2148,7 +2148,7 @@ private fun OffenderSentenceTerm.toSentenceTermResponse(): SentenceTermResponse 
   endDate = this.endDate,
   lifeSentenceFlag = this.lifeSentenceFlag,
   sentenceTermType = this.sentenceTermType.toCodeDescription(),
-  prisonId = this.id.offenderBooking.location.id,
+  prisonId = this.id.offenderBooking.location?.id ?: "OUT",
   createdByUsername = this.createUsername,
   modifiedByUsername = this.modifyUserId,
 )
@@ -2210,7 +2210,7 @@ fun OffenderSentence.toSentenceResponse(): SentenceResponse = SentenceResponse(
   sentenceTerms = this.offenderSentenceTerms.map { it.toSentenceTermResponse() },
   offenderCharges = this.offenderSentenceCharges.map { it.offenderCharge.toOffenderCharge() },
   missingCourtOffenderChargeIds = emptyList(),
-  prisonId = this.id.offenderBooking.location.id,
+  prisonId = this.id.offenderBooking.location?.id ?: "OUT",
   recallCustodyDate = this.id.offenderBooking.fixedTermRecall?.takeIf { this.isActiveRecallSentence() }?.let {
     RecallCustodyDate(
       returnToCustodyDate = it.returnToCustodyDate,

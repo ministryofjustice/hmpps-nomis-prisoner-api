@@ -88,7 +88,6 @@ import kotlin.jvm.optionals.getOrNull
 class Repository(
   val genderRepository: ReferenceCodeRepository<Gender>,
   val offenderRepository: OffenderRepository,
-  // val offenderBookingRepository: OffenderBookingRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   val personRepository: PersonRepository,
@@ -326,15 +325,6 @@ class Repository(
   fun deleteAllPrisonBalances() = caseloadCurrentAccountsBaseRepository.deleteAll().also {
     caseloadCurrentAccountsTxnRepository.deleteAll()
   }
-
-//  fun getAssessment(bookingId: Long, sequence: Int) = offenderAssessmentRepository
-//    .findByIdOrNull(
-//      OffenderAssessmentId(
-//        offenderBookingRepository.findByIdOrNull(bookingId)
-//          ?: throw NotFoundException("cant find booking"),
-//        sequence,
-//      ),
-//    )
 
   fun deleteAssessments() = offenderAssessmentRepository.deleteAll()
 
