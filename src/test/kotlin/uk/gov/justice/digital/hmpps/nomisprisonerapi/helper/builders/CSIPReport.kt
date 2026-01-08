@@ -186,7 +186,7 @@ class CSIPReportBuilder(
   ): CSIPReport = CSIPReport(
     offenderBooking = offenderBooking,
     rootOffender = offenderBooking.rootOffender,
-    originalAgencyId = offenderBooking.location.id,
+    originalAgencyId = offenderBooking.location?.id,
     type = repository.lookupType(type),
     location = repository.lookupLocation(location),
     areaOfWork = repository.lookupAreaOfWork(areaOfWork),

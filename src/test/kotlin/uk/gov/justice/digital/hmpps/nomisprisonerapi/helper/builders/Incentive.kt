@@ -45,7 +45,7 @@ class IncentiveBuilder(private val repository: IncentiveBuilderRepository) : Inc
     commentText = commentText,
     iepDate = iepDateTime.toLocalDate(),
     iepTime = iepDateTime,
-    location = offenderBooking.location,
+    location = offenderBooking.location!!,
     iepLevel = repository.lookupIepLevel(iepLevel),
     userId = userId,
     auditModuleName = auditModuleName,

@@ -1816,7 +1816,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("cjaAct").isEqualTo("A")
           .jsonPath("sled2Calc").isEqualTo("2023-01-20")
           .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
-          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location.id)
+          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location?.id)
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(2)
@@ -2119,7 +2119,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("cjaAct").isEqualTo("A")
           .jsonPath("sled2Calc").isEqualTo("2023-01-20")
           .jsonPath("startDate2Calc").isEqualTo("2023-01-21")
-          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location.id)
+          .jsonPath("prisonId").isEqualTo(prisonerAtMoorland.latestBooking().location?.id)
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
           .jsonPath("sentenceTerms.size()").isEqualTo(2)

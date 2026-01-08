@@ -1394,7 +1394,7 @@ class BookingBuilder(
       transactionEntrySequence,
       offenderBooking,
       offenderBooking.offender,
-      offenderBooking.location.id,
+      offenderBooking.location!!.id,
       transactionType,
       entryDate,
     )
