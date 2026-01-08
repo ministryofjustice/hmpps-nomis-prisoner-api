@@ -424,22 +424,28 @@ class MovementsService(
     }
   }
 
-  fun getTemporaryAbsencesSummary(offenderNo: String) = OffenderTemporaryAbsenceSummaryResponse(
-    applications = Applications(count = offenderMovementApplicationRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
-    scheduledOutMovements = ScheduledOut(count = scheduledTemporaryAbsenceRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
-    movements = externalMovementsRepository.countOffenderTemporaryAbsenceMovements(offenderNo).let { counts ->
-      Movements(
-        count = counts.sumOf { it.count },
-        scheduled = MovementsByDirection(outCount = counts.countScheduledOut(), inCount = counts.countScheduledIn()),
-        unscheduled = MovementsByDirection(outCount = counts.countUnscheduledOut(), inCount = counts.countUnscheduledIn()),
-      )
-    },
-  )
+  fun getTemporaryAbsencesSummary(offenderNo: String): OffenderTemporaryAbsenceSummaryResponse {
+    offenderOrThrow(offenderNo)
+    return OffenderTemporaryAbsenceSummaryResponse(
+      applications = Applications(count = offenderMovementApplicationRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
+      scheduledOutMovements = ScheduledOut(count = scheduledTemporaryAbsenceRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
+      movements = externalMovementsRepository.countOffenderTemporaryAbsenceMovements(offenderNo).let { counts ->
+        Movements(
+          count = counts.sumOf { it.count },
+          scheduled = MovementsByDirection(outCount = counts.countScheduledOut(), inCount = counts.countScheduledIn()),
+          unscheduled = MovementsByDirection(outCount = counts.countUnscheduledOut(), inCount = counts.countUnscheduledIn()),
+        )
+      },
+    )
+  }
 
   private fun List<TemporaryAbsenceMovementCounts>.countScheduledOut() = firstOrNull { it.scheduled && it.direction == OUT }?.count ?: 0
   private fun List<TemporaryAbsenceMovementCounts>.countScheduledIn() = firstOrNull { it.scheduled && it.direction == IN }?.count ?: 0
   private fun List<TemporaryAbsenceMovementCounts>.countUnscheduledOut() = firstOrNull { !it.scheduled && it.direction == OUT }?.count ?: 0
   private fun List<TemporaryAbsenceMovementCounts>.countUnscheduledIn() = firstOrNull { !it.scheduled && it.direction == IN }?.count ?: 0
+
+  private fun offenderOrThrow(offenderNo: String) = offenderRepository.findRootByNomsId(offenderNo)
+    ?: throw NotFoundException("Offender $offenderNo not found")
 
   private fun offenderBookingOrThrow(offenderNo: String) = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("Offender $offenderNo not found with a booking")

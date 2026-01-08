@@ -4277,12 +4277,7 @@ class MovementsResourceIntTest(
           }
         }
 
-        webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/summary")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isOk
-          .expectBodyResponse<OffenderTemporaryAbsenceSummaryResponse>()
+        webTestClient.getOffenderSummaryOk(offenderNo)
           .apply {
             assertThat(applications.count).isEqualTo(1)
             assertThat(scheduledOutMovements.count).isEqualTo(1)
@@ -4292,6 +4287,76 @@ class MovementsResourceIntTest(
             assertThat(movements.unscheduled.outCount).isEqualTo(1)
             assertThat(movements.unscheduled.inCount).isEqualTo(1)
           }
+      }
+
+      @Test
+      fun `should handle zero counts`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking()
+          }
+        }
+
+        webTestClient.getOffenderSummaryOk(offenderNo)
+          .apply {
+            assertThat(applications.count).isEqualTo(0)
+            assertThat(scheduledOutMovements.count).isEqualTo(0)
+            assertThat(movements.count).isEqualTo(0)
+            assertThat(movements.scheduled.outCount).isEqualTo(0)
+            assertThat(movements.scheduled.inCount).isEqualTo(0)
+            assertThat(movements.unscheduled.outCount).isEqualTo(0)
+            assertThat(movements.unscheduled.inCount).isEqualTo(0)
+          }
+      }
+
+      @Test
+      fun `should handle multiple bookings and movements`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking {
+              temporaryAbsenceApplication()
+            }
+            booking {
+              temporaryAbsenceApplication {
+                scheduledTemporaryAbsence {
+                  externalMovement()
+                  scheduledReturn()
+                }
+              }
+            }
+            booking {
+              temporaryAbsence()
+              temporaryAbsenceReturn()
+              temporaryAbsence()
+            }
+            booking()
+          }
+          offender(nomsId = "ANY") {
+            booking {
+              temporaryAbsenceApplication()
+            }
+          }
+        }
+
+        webTestClient.getOffenderSummaryOk(offenderNo)
+          .apply {
+            assertThat(applications.count).isEqualTo(2)
+            assertThat(scheduledOutMovements.count).isEqualTo(1)
+            assertThat(movements.count).isEqualTo(4)
+            assertThat(movements.scheduled.outCount).isEqualTo(1)
+            assertThat(movements.scheduled.inCount).isEqualTo(0)
+            assertThat(movements.unscheduled.outCount).isEqualTo(2)
+            assertThat(movements.unscheduled.inCount).isEqualTo(1)
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found for unknown offender`() {
+        webTestClient.getOffenderSummary(offenderNo = "UNKNOWN")
+          .expectStatus().isNotFound
       }
     }
 
@@ -4324,5 +4389,14 @@ class MovementsResourceIntTest(
           .expectStatus().isForbidden
       }
     }
+
+    private fun WebTestClient.getOffenderSummary(offenderNo: String) = get()
+      .uri("/movements/$offenderNo/temporary-absences/summary")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+
+    private fun WebTestClient.getOffenderSummaryOk(offenderNo: String) = getOffenderSummary(offenderNo)
+      .expectStatus().isOk
+      .expectBodyResponse<OffenderTemporaryAbsenceSummaryResponse>()
   }
 }
