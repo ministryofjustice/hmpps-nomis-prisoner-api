@@ -410,7 +410,7 @@ class VisitService(
   }
 
   private fun isDpsInChargeOfAllocation(offenderBooking: OffenderBooking): Boolean = serviceAgencySwitchesService
-    .checkServiceAgency(VISIT_ALLOCATION_SERVICE, offenderBooking.location.id)
+    .checkServiceAgency(VISIT_ALLOCATION_SERVICE, offenderBooking.location?.id ?: "OUT")
 
   private fun mapVisitModel(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
     val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))
