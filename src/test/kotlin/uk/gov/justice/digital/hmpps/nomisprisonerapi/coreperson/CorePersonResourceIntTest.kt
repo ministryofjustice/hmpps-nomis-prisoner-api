@@ -869,14 +869,14 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             lastName = "BOG",
           ) {
             booking1 = booking(bookingBeginDate = LocalDateTime.parse("2024-02-03T12:20:30")) {
-              profileDetail(profileType = "DISABILITY", profileCode = "Y")
+              profileDetail(profileType = "DISABILITY", profileCode = "YES")
             }
             booking2 = booking(
               active = false,
               bookingBeginDate = LocalDateTime.parse("2022-02-03T12:20:30"),
               bookingEndDate = LocalDate.parse("2023-01-23"),
             ) {
-              profileDetail(profileType = "DISABILITY", profileCode = "N")
+              profileDetail(profileType = "DISABILITY", profileCode = "NO")
             }
             alias {
               aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
