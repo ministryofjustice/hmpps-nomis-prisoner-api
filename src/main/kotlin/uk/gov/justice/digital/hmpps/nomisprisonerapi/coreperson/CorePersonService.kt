@@ -103,7 +103,7 @@ class CorePersonService(
           .map { n ->
             OffenderDisability(
               bookingId = b.bookingId,
-              disability = n.profileCodeId == "Y",
+              disability = n.profileCodeId == "YES",
               startDateTime = b.bookingBeginDate,
               endDateTime = b.getReleaseTime(),
               latestBooking = b.bookingSequence == 1,
