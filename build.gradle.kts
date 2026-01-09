@@ -5,12 +5,17 @@ plugins {
   idea
 }
 
+configurations {
+  implementation {
+    exclude(group = "com.fasterxml.jackson.module", module = "jackson-module-kotlin")
+  }
+}
+
 dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.0.0")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-flyway")
-  implementation("org.springframework.boot:spring-boot-jackson2")
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
 
   implementation("org.flywaydb:flyway-core")

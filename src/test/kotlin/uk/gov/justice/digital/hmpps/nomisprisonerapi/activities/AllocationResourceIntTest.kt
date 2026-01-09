@@ -171,7 +171,7 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       upsertAllocationIsBadRequest(request)
         .expectBody().jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Booking with id=0 does not exist")
+          assertThat(it).contains("Missing required creator property 'bookingId'")
         }
     }
 

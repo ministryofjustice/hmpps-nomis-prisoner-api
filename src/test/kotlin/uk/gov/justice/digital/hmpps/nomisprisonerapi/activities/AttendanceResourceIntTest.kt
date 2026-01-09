@@ -51,9 +51,9 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           "eventStatusCode": "SCH",
           "eventOutcomeCode": null,
           "comments": null,
-          "unexcusedAbsence": null,
-          "authorisedAbsence": null,
-          "paid": null,
+          "unexcusedAbsence": false,
+          "authorisedAbsence": false,
+          "paid": false,
           "bonusPay": null
         }
     """.trimIndent()
@@ -75,11 +75,11 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
     )
 
     private fun String.withUnexcusedAbsence(unexcusedAbsence: String?) = replace(
-      """"unexcusedAbsence": null,""",
+      """"unexcusedAbsence": false,""",
       unexcusedAbsence?.let { """"unexcusedAbsence": $unexcusedAbsence,""" } ?: "",
     )
 
-    private fun String.withPaidFlag(paidFlag: String?) = replace(""""paid": null,""", paidFlag?.let { """"paid": $paidFlag,""" } ?: "")
+    private fun String.withPaidFlag(paidFlag: String?) = replace(""""paid": false,""", paidFlag?.let { """"paid": $paidFlag,""" } ?: "")
 
     private fun String.withBonusPay(bonusPay: String?) = replace(""""bonusPay": null""", bonusPay?.let { """"bonusPay": $bonusPay""" } ?: "")
 

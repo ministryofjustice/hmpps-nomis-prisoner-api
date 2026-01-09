@@ -10,15 +10,9 @@ spring:
   http:
     codecs:
       max-in-memory-size: 10MB
-    converters:
-      preferred-json-mapper: jackson2
 
   jackson:
     date-format: "yyyy-MM-dd HH:mm:ss"
-  jackson2:
-    date-format: "yyyy-MM-dd HH:mm:ss"
-    serialization:
-      WRITE_DATES_AS_TIMESTAMPS: false
 
   profiles:
     group:
