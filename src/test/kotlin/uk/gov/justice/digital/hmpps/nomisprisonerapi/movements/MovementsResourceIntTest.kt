@@ -1078,7 +1078,7 @@ class MovementsResourceIntTest(
             }
             release(yesterday)
           }
-          // This the latest booking
+          // This is the latest booking
           booking = booking(bookingSequence = 1) {
             receive(yesterday)
             // these are the only details copied from the merged booking during the merge
@@ -1119,6 +1119,24 @@ class MovementsResourceIntTest(
             where eventId = ${scheduledTemporaryAbsenceReturn2.eventId}
           """.trimIndent(),
         ).executeUpdate()
+
+        // Also corrupt the merged movements by removing the link to the schedules in the same way the NOMIS merge process does
+        entityManager.createQuery(
+          """
+            update OffenderTemporaryAbsence ota
+            set ota.scheduledTemporaryAbsence = null
+            where id.offenderBooking.id = ${mergedBooking.bookingId}
+            and id.sequence in (${mergedTemporaryAbsence.id.sequence}, ${mergedTemporaryAbsence2.id.sequence})
+          """.trimIndent(),
+        ).executeUpdate()
+        entityManager.createQuery(
+          """
+            update OffenderTemporaryAbsenceReturn otar
+            set otar.scheduledTemporaryAbsenceReturn = null
+            where id.offenderBooking.id = ${mergedBooking.bookingId} 
+            and id.sequence in (${mergedTemporaryAbsenceReturn.id.sequence}, ${mergedTemporaryAbsenceReturn2.id.sequence})
+          """.trimIndent(),
+        ).executeUpdate()
       }
     }
 
@@ -1133,10 +1151,13 @@ class MovementsResourceIntTest(
           assertThat(application.movementApplicationId).isEqualTo(mergedApplication.movementApplicationId)
           with(application.absences.first()) {
             assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(mergedScheduledTemporaryAbsence.eventId)
-            assertThat(temporaryAbsence!!.sequence).isEqualTo(mergedTemporaryAbsence.id.sequence)
+            assertThat(temporaryAbsence).isNull()
             assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(mergedScheduledTemporaryAbsenceReturn.eventId)
-            assertThat(temporaryAbsenceReturn!!.sequence).isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
+            assertThat(temporaryAbsenceReturn).isNull()
           }
+          // The actual movements were unlinked by the merge process so should appear as unscheduled
+          assertThat(bookings.first().unscheduledTemporaryAbsences[0].sequence).isEqualTo(mergedTemporaryAbsence.id.sequence)
+          assertThat(bookings.first().unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
         }
     }
 
@@ -1146,10 +1167,13 @@ class MovementsResourceIntTest(
         .apply {
           with(bookings.first().temporaryAbsenceApplications.first().absences[1]) {
             assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(mergedScheduledTemporaryAbsence2.eventId)
-            assertThat(temporaryAbsence!!.sequence).isEqualTo(mergedTemporaryAbsence2.id.sequence)
+            assertThat(temporaryAbsence).isNull()
             assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(mergedScheduledTemporaryAbsenceReturn2.eventId)
-            assertThat(temporaryAbsenceReturn!!.sequence).isEqualTo(mergedTemporaryAbsenceReturn2.id.sequence)
+            assertThat(temporaryAbsenceReturn).isNull()
           }
+          // The actual movements were unlinked by the merge process so should appear as unscheduled
+          assertThat(bookings.first().unscheduledTemporaryAbsences[1].sequence).isEqualTo(mergedTemporaryAbsence2.id.sequence)
+          assertThat(bookings.first().unscheduledTemporaryAbsenceReturns[1].sequence).isEqualTo(mergedTemporaryAbsenceReturn2.id.sequence)
         }
     }
 
@@ -1181,6 +1205,21 @@ class MovementsResourceIntTest(
             assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
             assertThat(temporaryAbsenceReturn).isNull()
           }
+        }
+    }
+
+    @Test
+    fun `reconciliation should reflect the merged movements correctly`() {
+      webTestClient.getOffenderSummaryOk(offenderNo)
+        .apply {
+          assertThat(applications.count).isEqualTo(2)
+          assertThat(scheduledOutMovements.count).isEqualTo(4)
+          assertThat(movements.count).isEqualTo(4)
+          // The merged movements are treated as unscheduled because the merge process removes the link to the underlying scheduled movement
+          assertThat(movements.scheduled.outCount).isEqualTo(0)
+          assertThat(movements.scheduled.inCount).isEqualTo(0)
+          assertThat(movements.unscheduled.outCount).isEqualTo(2)
+          assertThat(movements.unscheduled.inCount).isEqualTo(2)
         }
     }
 
@@ -4430,14 +4469,14 @@ class MovementsResourceIntTest(
           .expectStatus().isForbidden
       }
     }
-
-    private fun WebTestClient.getOffenderSummary(offenderNo: String) = get()
-      .uri("/movements/$offenderNo/temporary-absences/summary")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-      .exchange()
-
-    private fun WebTestClient.getOffenderSummaryOk(offenderNo: String) = getOffenderSummary(offenderNo)
-      .expectStatus().isOk
-      .expectBodyResponse<OffenderTemporaryAbsenceSummaryResponse>()
   }
+
+  private fun WebTestClient.getOffenderSummary(offenderNo: String) = get()
+    .uri("/movements/$offenderNo/temporary-absences/summary")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .exchange()
+
+  private fun WebTestClient.getOffenderSummaryOk(offenderNo: String) = getOffenderSummary(offenderNo)
+    .expectStatus().isOk
+    .expectBodyResponse<OffenderTemporaryAbsenceSummaryResponse>()
 }

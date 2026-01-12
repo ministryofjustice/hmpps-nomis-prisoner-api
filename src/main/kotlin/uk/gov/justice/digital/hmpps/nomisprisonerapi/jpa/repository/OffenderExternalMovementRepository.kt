@@ -13,7 +13,7 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
     """
       select 
         case 
-          when oem.EVENT_ID is not null OR oem.PARENT_EVENT_ID is not null then 'Y'
+          when oem.EVENT_ID is not null then 'Y'
           else 'N'
         end as SCHEDULED,
         DIRECTION_CODE,
@@ -24,7 +24,7 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
       where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender
       group by
         case
-          when oem.EVENT_ID is not null OR oem.PARENT_EVENT_ID is not null then 'Y' 
+          when oem.EVENT_ID is not null then 'Y' 
           else 'N'
         end,
         DIRECTION_CODE
