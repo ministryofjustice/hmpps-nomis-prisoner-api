@@ -892,123 +892,6 @@ class MovementsResourceIntTest(
     }
 
     @Test
-    fun `should retrieve all temporary absences and external movements from a merged prisoner`() {
-      lateinit var mergedBooking: OffenderBooking
-      lateinit var mergedApplication: OffenderMovementApplication
-      lateinit var mergedScheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
-      lateinit var mergedScheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
-      lateinit var mergedTemporaryAbsence: OffenderTemporaryAbsence
-      lateinit var mergedTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
-
-      lateinit var scheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
-      lateinit var scheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
-      lateinit var mergedScheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
-      lateinit var mergedScheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
-      lateinit var mergedTemporaryAbsence2: OffenderTemporaryAbsence
-      lateinit var mergedTemporaryAbsenceReturn2: OffenderTemporaryAbsenceReturn
-
-      val today = LocalDate.now()
-      val tomorrow = today.plusDays(1)
-
-      // Simulate a scenario where a prisoner is merged into another
-      nomisDataBuilder.build {
-        offender = offender(nomsId = offenderNo) {
-          // This booking was moved from the old prisoner during the merge
-          mergedBooking = booking(bookingSequence = 2) {
-            receive(twoDaysAgo)
-            mergedApplication = temporaryAbsenceApplication {
-              mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence(eventDate = today) {
-                mergedTemporaryAbsence = externalMovement()
-                mergedScheduledTemporaryAbsenceReturn = scheduledReturn(eventDate = today) {
-                  mergedTemporaryAbsenceReturn = externalMovement()
-                }
-              }
-              mergedScheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
-                mergedTemporaryAbsence2 = externalMovement()
-                mergedScheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow) {
-                  mergedTemporaryAbsenceReturn2 = externalMovement()
-                }
-              }
-            }
-            release(yesterday)
-          }
-          // This the latest booking
-          booking = booking(bookingSequence = 1) {
-            receive(yesterday)
-            // these are the only details copied from the merged booking during the merge
-            application = temporaryAbsenceApplication {
-              // make the schedules out of order to prove that date handling works
-              scheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
-                scheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow)
-              }
-              scheduledTempAbsence = scheduledTemporaryAbsence(eventDate = today) {
-                scheduledTempAbsenceReturn = scheduledReturn(eventDate = today)
-              }
-            }
-          }
-        }
-      }
-
-      repository.runInTransaction {
-        /*
-         * Corrupt the data copied during the merge in the same way as NOMIS does
-         * - pointing at the original booking's scheduled TAP instead of its own
-         * - pointing at the new application, whereas the original scheduled return has null application
-         */
-        entityManager.createQuery(
-          """
-            update OffenderScheduledTemporaryAbsenceReturn ostr
-            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence.eventId}),
-            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
-            where eventId = ${scheduledTempAbsenceReturn.eventId}
-          """.trimIndent(),
-        ).executeUpdate()
-
-        // Also corrupt the same data for the 2nd scheduled absence from the application to test repeating applications
-        entityManager.createQuery(
-          """
-            update OffenderScheduledTemporaryAbsenceReturn ostr
-            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence2.eventId}),
-            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
-            where eventId = ${scheduledTemporaryAbsenceReturn2.eventId}
-          """.trimIndent(),
-        ).executeUpdate()
-      }
-
-      webTestClient.get()
-        .uri("/movements/${offender.nomsId}/temporary-absences")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
-        .expectBody()
-        .jsonPath("$.bookings[0].bookingId").isEqualTo(mergedBooking.bookingId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications.length()").isEqualTo(1)
-        // The TAP from the 1st merged booking exists with correct child entities
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(mergedApplication.movementApplicationId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence.id.sequence)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
-        // The TAP copied onto the latest booking exists with correct child entities (absences[1] because we deliberately made them out of order)
-        .jsonPath("$.bookings[1].bookingId").isEqualTo(booking.bookingId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications.length()").isEqualTo(1)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTempAbsence.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsence").isEmpty
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTempAbsenceReturn.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[1].temporaryAbsenceReturn").isEmpty
-        // The TAP from the 2nd merged booking exists with correct child entities
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsence.eventId").isEqualTo(mergedScheduledTemporaryAbsence2.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].temporaryAbsence.sequence").isEqualTo(mergedTemporaryAbsence2.id.sequence)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(mergedScheduledTemporaryAbsenceReturn2.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[1].temporaryAbsenceReturn.sequence").isEqualTo(mergedTemporaryAbsenceReturn2.id.sequence)
-        // The TAP copied onto the latest booking exists with correct child entities (absences[1] because we deliberately made them out of order)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTemporaryAbsence2.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsence").isEmpty
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
-        .jsonPath("$.bookings[1].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn").isEmpty
-    }
-
-    @Test
     fun `should take return time from the application if not on the schedule`() {
       val tomorrow = LocalDateTime.now().plusDays(1).withNano(0)
 
@@ -1149,6 +1032,164 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toFullAddress").isEqualTo("41 High Street, Sheffield, England")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.toAddressPostcode").isEqualTo("")
     }
+  }
+
+  @Nested
+  @DisplayName("Merged data")
+  inner class GetTemporaryAbsencesAndMovementsForMergedData {
+    lateinit var mergedBooking: OffenderBooking
+    lateinit var mergedApplication: OffenderMovementApplication
+    lateinit var mergedScheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
+    lateinit var mergedScheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
+    lateinit var mergedTemporaryAbsence: OffenderTemporaryAbsence
+    lateinit var mergedTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
+
+    lateinit var scheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
+    lateinit var scheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
+    lateinit var mergedScheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
+    lateinit var mergedScheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
+    lateinit var mergedTemporaryAbsence2: OffenderTemporaryAbsence
+    lateinit var mergedTemporaryAbsenceReturn2: OffenderTemporaryAbsenceReturn
+
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+
+    @BeforeEach
+    fun setUp() {
+      // Simulate a scenario where a prisoner is merged into another
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          // This booking was moved from the old prisoner during the merge
+          mergedBooking = booking(bookingSequence = 2) {
+            receive(twoDaysAgo)
+            mergedApplication = temporaryAbsenceApplication {
+              mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence(eventDate = today) {
+                mergedTemporaryAbsence = externalMovement()
+                mergedScheduledTemporaryAbsenceReturn = scheduledReturn(eventDate = today) {
+                  mergedTemporaryAbsenceReturn = externalMovement()
+                }
+              }
+              mergedScheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
+                mergedTemporaryAbsence2 = externalMovement()
+                mergedScheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow) {
+                  mergedTemporaryAbsenceReturn2 = externalMovement()
+                }
+              }
+            }
+            release(yesterday)
+          }
+          // This the latest booking
+          booking = booking(bookingSequence = 1) {
+            receive(yesterday)
+            // these are the only details copied from the merged booking during the merge
+            application = temporaryAbsenceApplication {
+              // make the schedules out of order to prove that date handling works
+              scheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
+                scheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow)
+              }
+              scheduledTempAbsence = scheduledTemporaryAbsence(eventDate = today) {
+                scheduledTempAbsenceReturn = scheduledReturn(eventDate = today)
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data copied during the merge in the same way as NOMIS does
+         * - pointing at the original booking's scheduled TAP instead of its own
+         * - pointing at the new application, whereas the original scheduled return has null application
+         */
+        entityManager.createQuery(
+          """
+            update OffenderScheduledTemporaryAbsenceReturn ostr
+            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence.eventId}),
+            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
+            where eventId = ${scheduledTempAbsenceReturn.eventId}
+          """.trimIndent(),
+        ).executeUpdate()
+
+        // Also corrupt the same data for the 2nd scheduled absence from the application to test repeating applications
+        entityManager.createQuery(
+          """
+            update OffenderScheduledTemporaryAbsenceReturn ostr
+            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence2.eventId}),
+            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
+            where eventId = ${scheduledTemporaryAbsenceReturn2.eventId}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+    }
+
+    @Test
+    fun `should retrieve the temporary absence from the merged booking's first application schedule`() {
+      webTestClient.getTapsForMigration()
+        .apply {
+          val book = bookings.first()
+          val application = book.temporaryAbsenceApplications.first()
+          assertThat(book.bookingId).isEqualTo(mergedBooking.bookingId)
+          assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
+          assertThat(application.movementApplicationId).isEqualTo(mergedApplication.movementApplicationId)
+          with(application.absences.first()) {
+            assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(mergedScheduledTemporaryAbsence.eventId)
+            assertThat(temporaryAbsence!!.sequence).isEqualTo(mergedTemporaryAbsence.id.sequence)
+            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(mergedScheduledTemporaryAbsenceReturn.eventId)
+            assertThat(temporaryAbsenceReturn!!.sequence).isEqualTo(mergedTemporaryAbsenceReturn.id.sequence)
+          }
+        }
+    }
+
+    @Test
+    fun `should retrieve the temporary absence from the merged booking's second application schedule`() {
+      webTestClient.getTapsForMigration()
+        .apply {
+          with(bookings.first().temporaryAbsenceApplications.first().absences[1]) {
+            assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(mergedScheduledTemporaryAbsence2.eventId)
+            assertThat(temporaryAbsence!!.sequence).isEqualTo(mergedTemporaryAbsence2.id.sequence)
+            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(mergedScheduledTemporaryAbsenceReturn2.eventId)
+            assertThat(temporaryAbsenceReturn!!.sequence).isEqualTo(mergedTemporaryAbsenceReturn2.id.sequence)
+          }
+        }
+    }
+
+    @Test
+    fun `should retrieve the temporary absence from the TAP copied onto the latest booking`() {
+      webTestClient.getTapsForMigration()
+        .apply {
+          val book = bookings[1]
+          val application = book.temporaryAbsenceApplications.first()
+          assertThat(book.bookingId).isEqualTo(booking.bookingId)
+          assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
+          assertThat(application.movementApplicationId).isEqualTo(application.movementApplicationId)
+          with(application.absences[1]) {
+            assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(scheduledTempAbsence.eventId)
+            assertThat(temporaryAbsence).isNull()
+            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+            assertThat(temporaryAbsenceReturn).isNull()
+          }
+        }
+    }
+
+    @Test
+    fun `should retrieve the temporary absence from the second TAP copied onto the latest booking`() {
+      webTestClient.getTapsForMigration()
+        .apply {
+          with(bookings[1].temporaryAbsenceApplications.first().absences[0]) {
+            assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(scheduledTemporaryAbsence2.eventId)
+            assertThat(temporaryAbsence).isNull()
+            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduledTemporaryAbsenceReturn2.eventId)
+            assertThat(temporaryAbsenceReturn).isNull()
+          }
+        }
+    }
+
+    private fun WebTestClient.getTapsForMigration() = get()
+      .uri("/movements/${offender.nomsId}/temporary-absences")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyResponse<OffenderTemporaryAbsencesResponse>()
   }
 
   @Nested
