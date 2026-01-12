@@ -109,4 +109,17 @@ class OpenApiDocsTest : IntegrationTestBase() {
       .expectBody()
       .jsonPath("components.schemas.LocalTime").doesNotExist()
   }
+
+  @Test
+  fun `the response contains required fields`() {
+    webTestClient.get()
+      .uri("/v3/api-docs")
+      .accept(MediaType.APPLICATION_JSON)
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.components.schemas.ErrorResponse.required").value<List<String>> {
+        assertThat(it).containsExactly("status")
+      }
+  }
 }
