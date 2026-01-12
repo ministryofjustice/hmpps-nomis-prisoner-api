@@ -65,9 +65,14 @@ class MovementsResourceIntTest(
   private val today: LocalDateTime = LocalDateTime.now().roundToNearestSecond()
   private val yesterday: LocalDateTime = today.minusDays(1)
   private val twoDaysAgo: LocalDateTime = today.minusDays(2)
+  private lateinit var orphanedSchedule: OffenderScheduledTemporaryAbsence
 
   @AfterEach
   fun `tear down`() {
+    // This must be removed before the offender booking due to a foreign key constraint (Hibernate is no longer managing this entity)
+    if (this::orphanedSchedule.isInitialized) {
+      scheduledTemporaryAbsenceRepository.delete(orphanedSchedule)
+    }
     if (this::offender.isInitialized) {
       repository.delete(offender)
     }
@@ -4437,6 +4442,51 @@ class MovementsResourceIntTest(
       fun `should return not found for unknown offender`() {
         webTestClient.getOffenderSummary(offenderNo = "UNKNOWN")
           .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class BadData {
+      @Test
+      fun `should ignore scheduled movements where there is no application`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking {
+              temporaryAbsenceApplication {
+                orphanedSchedule = scheduledTemporaryAbsence()
+              }
+              temporaryAbsenceApplication {
+                scheduledTemporaryAbsence {
+                  externalMovement()
+                  scheduledReturn {
+                    externalMovement()
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          /*
+           * Corrupt the data by nulling one of the schedule's temporary absence application - such data exists in NOMIS but we ignore them from the migration and reconciliation
+           */
+          entityManager.createQuery(
+            """
+            update OffenderScheduledTemporaryAbsence ost
+            set ost.temporaryAbsenceApplication = null
+            where eventId = ${orphanedSchedule.eventId}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getOffenderSummaryOk(offenderNo)
+          .apply {
+            assertThat(applications.count).isEqualTo(2)
+            // We don't count the orphaned schedule in the reconciliation
+            assertThat(scheduledOutMovements.count).isEqualTo(1)
+            assertThat(movements.count).isEqualTo(2)
+          }
       }
     }
 

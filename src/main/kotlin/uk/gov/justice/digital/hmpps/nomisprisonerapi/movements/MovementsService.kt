@@ -428,7 +428,7 @@ class MovementsService(
     offenderOrThrow(offenderNo)
     return OffenderTemporaryAbsenceSummaryResponse(
       applications = Applications(count = offenderMovementApplicationRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
-      scheduledOutMovements = ScheduledOut(count = scheduledTemporaryAbsenceRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
+      scheduledOutMovements = ScheduledOut(count = scheduledTemporaryAbsenceRepository.countByOffenderBooking_Offender_NomsId_AndTemporaryAbsenceApplicationIsNotNull(offenderNo)),
       movements = externalMovementsRepository.countOffenderTemporaryAbsenceMovements(offenderNo).let { counts ->
         Movements(
           count = counts.sumOf { it.count },
