@@ -617,11 +617,15 @@ class MovementsService(
     temporaryAbsenceType = temporaryAbsenceType?.code,
     temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
     absences = scheduledTemporaryAbsences.map {
+      // Some old data has multiple scheduled IN movements for a single scheduled OUT - try to find the one with an actual movement IN
+      val scheduledAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull { it.temporaryAbsenceReturn != null }
+        ?: it.scheduledTemporaryAbsenceReturns.firstOrNull()
+      val absenceReturn = scheduledAbsenceReturn?.temporaryAbsenceReturn
       Absence(
         scheduledTemporaryAbsence = it.toResponse(returnTime),
-        scheduledTemporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.toResponse(),
+        scheduledTemporaryAbsenceReturn = scheduledAbsenceReturn?.toResponse(),
         temporaryAbsence = it.temporaryAbsence?.toResponse(),
-        temporaryAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull()?.temporaryAbsenceReturn?.toResponse(),
+        temporaryAbsenceReturn = absenceReturn?.toResponse(),
       )
     },
     audit = toAudit(),
