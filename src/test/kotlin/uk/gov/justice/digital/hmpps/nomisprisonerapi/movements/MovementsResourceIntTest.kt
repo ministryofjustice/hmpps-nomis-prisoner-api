@@ -1326,6 +1326,64 @@ class MovementsResourceIntTest(
   }
 
   @Nested
+  @DisplayName("Migration for multiple schedule IN movements")
+  inner class GetTemporaryAbsencesAndMovementsForMultipleScheduledInMovements {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            receive(yesterday)
+            temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(eventDate = today.toLocalDate()) {
+                externalMovement()
+                // We used to pick up this scheduled IN record - we should pick up the next one with an external movement
+                scheduledReturn()
+                scheduledTempAbsenceReturn = scheduledReturn(eventDate = today.toLocalDate()) {
+                  externalMovement()
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @Test
+    fun `should return the scheduled IN movement with an actual movement attached`() {
+      webTestClient.getTapsForMigration()
+        .apply {
+          val book = bookings.first()
+          assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
+          // The correct scheduled IN movement is chosen
+          with(bookings[0].temporaryAbsenceApplications[0].absences[0]) {
+            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+            assertThat(temporaryAbsenceReturn).isNotNull
+          }
+        }
+    }
+
+    @Test
+    fun `reconciliation should include only one of the scheduled IN movements`() {
+      webTestClient.getOffenderSummaryOk(offenderNo)
+        .apply {
+          assertThat(scheduledOutMovements.count).isEqualTo(1)
+          assertThat(movements.scheduled.outCount).isEqualTo(1)
+          assertThat(movements.scheduled.inCount).isEqualTo(1)
+          assertThat(movements.unscheduled.outCount).isEqualTo(0)
+          assertThat(movements.unscheduled.inCount).isEqualTo(0)
+        }
+    }
+
+    private fun WebTestClient.getTapsForMigration() = get()
+      .uri("/movements/${offender.nomsId}/temporary-absences")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyResponse<OffenderTemporaryAbsencesResponse>()
+  }
+
+  @Nested
   @DisplayName("Reconciliation IDs")
   inner class GetTemporaryAbsencesAndMovementIds {
     private lateinit var booking2: OffenderBooking
