@@ -438,6 +438,56 @@ class MovementsService(
     )
   }
 
+  fun getTemporaryAbsencesAndMovementIds(offenderNo: String): OffenderTemporaryAbsenceIdsResponse = getTemporaryAbsencesAndMovements(offenderNo).let {
+    OffenderTemporaryAbsenceIdsResponse(
+      applicationIds = it.bookings.flatMap { it.temporaryAbsenceApplications.map { it.movementApplicationId } },
+      scheduleIds = it.bookings.flatMap {
+        it.temporaryAbsenceApplications.flatMap {
+          it.absences.flatMap {
+            listOfNotNull(
+              it.scheduledTemporaryAbsence?.eventId,
+              it.scheduledTemporaryAbsenceReturn?.eventId,
+            )
+          }
+        }
+      },
+      scheduledMovementOutIds = it.bookings.flatMap { booking ->
+        booking.temporaryAbsenceApplications.flatMap {
+          it.absences.flatMap {
+            listOfNotNull(
+              it.temporaryAbsence?.let { OffenderTemporaryAbsenceId(booking.bookingId, it.sequence) },
+            )
+          }
+        }
+      },
+      scheduledMovementInIds = it.bookings.flatMap { booking ->
+        booking.temporaryAbsenceApplications.flatMap {
+          it.absences.flatMap {
+            listOfNotNull(
+              it.temporaryAbsenceReturn?.let { OffenderTemporaryAbsenceId(booking.bookingId, it.sequence) },
+            )
+          }
+        }
+      },
+      unscheduledMovementOutIds = it.bookings.flatMap { booking ->
+        booking.unscheduledTemporaryAbsences.map {
+          OffenderTemporaryAbsenceId(
+            booking.bookingId,
+            it.sequence,
+          )
+        }
+      },
+      unscheduledMovementInIds = it.bookings.flatMap { booking ->
+        booking.unscheduledTemporaryAbsenceReturns.map {
+          OffenderTemporaryAbsenceId(
+            booking.bookingId,
+            it.sequence,
+          )
+        }
+      },
+    )
+  }
+
   private fun offenderOrThrow(offenderNo: String) = offenderRepository.findRootByNomsId(offenderNo)
     ?: throw NotFoundException("Offender $offenderNo not found")
 
