@@ -11,33 +11,54 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
 
   @Query(
     """
-      select 
-        case 
-          when oem.EVENT_ID is not null then 'Y'
-          else 'N'
-        end as SCHEDULED,
-        DIRECTION_CODE,
-        count(*)
+      select count(*)
       from OFFENDERS o
         join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
         join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
-      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender
-      group by
-        case
-          when oem.EVENT_ID is not null then 'Y' 
-          else 'N'
-        end,
-        DIRECTION_CODE
+      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'OUT' and oem.event_id is null
     """,
     nativeQuery = true,
   )
-  fun countOffenderTemporaryAbsenceMovements(offender: String): List<TemporaryAbsenceMovementCounts>
-}
+  fun countOffenderUnscheduledOut(offender: String): Long
 
-class TemporaryAbsenceMovementCounts(scheduledFlag: Char, directionCode: String, count: Number) {
-  val scheduled: Boolean = scheduledFlag == 'Y'
-  val direction: MovementDirection = MovementDirection.valueOf(directionCode)
-  val count: Long = count.toLong()
-}
+  @Query(
+    """
+      select count(*)
+      from OFFENDERS o
+        join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
+        join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
+      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'IN' and oem.event_id is null
+    """,
+    nativeQuery = true,
+  )
+  fun countOffenderUnscheduledIn(offender: String): Long
 
-enum class MovementDirection { OUT, IN }
+  @Query(
+    """
+      select count(*)
+      from OFFENDERS o
+        join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
+        join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
+        -- the scheduled OUT movement must exist to be included - some have been deleted
+        join OFFENDER_IND_SCHEDULES ois on oem.EVENT_ID=ois.EVENT_ID
+      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'OUT'
+    """,
+    nativeQuery = true,
+  )
+  fun countOffenderScheduledOut(offender: String): Long
+
+  @Query(
+    """
+      select count(*)
+      from OFFENDERS o
+        join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
+        join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
+        -- the scheduled OUT and IN movements must exist to be included - some have been deleted
+        join OFFENDER_IND_SCHEDULES ois_in on oem.EVENT_ID=ois_in.EVENT_ID
+        join OFFENDER_IND_SCHEDULES ois_out on oem.PARENT_EVENT_ID=ois_out.EVENT_ID
+      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'IN'
+    """,
+    nativeQuery = true,
+  )
+  fun countOffenderScheduledIn(offender: String): Long
+}

@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAdd
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
@@ -43,6 +44,7 @@ class MovementsResourceIntTest(
   @Autowired val repository: Repository,
   @Autowired val applicationRepository: OffenderMovementApplicationRepository,
   @Autowired val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
+  @Autowired val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
   @Autowired val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
   @Autowired val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   @Autowired val offenderExternalMovementRepository: OffenderExternalMovementRepository,
@@ -66,12 +68,16 @@ class MovementsResourceIntTest(
   private val yesterday: LocalDateTime = today.minusDays(1)
   private val twoDaysAgo: LocalDateTime = today.minusDays(2)
   private lateinit var orphanedSchedule: OffenderScheduledTemporaryAbsence
+  private lateinit var orphanedScheduleReturn: OffenderScheduledTemporaryAbsenceReturn
 
   @AfterEach
   fun `tear down`() {
     // This must be removed before the offender booking due to a foreign key constraint (Hibernate is no longer managing this entity)
     if (this::orphanedSchedule.isInitialized) {
       scheduledTemporaryAbsenceRepository.delete(orphanedSchedule)
+    }
+    if (this::orphanedScheduleReturn.isInitialized) {
+      scheduledTemporaryAbsenceReturnRepository.delete(orphanedScheduleReturn)
     }
     if (this::offender.isInitialized) {
       repository.delete(offender)
@@ -1040,7 +1046,7 @@ class MovementsResourceIntTest(
   }
 
   @Nested
-  @DisplayName("Merged data")
+  @DisplayName("Migration with merged data")
   inner class GetTemporaryAbsencesAndMovementsForMergedData {
     lateinit var mergedBooking: OffenderBooking
     lateinit var mergedApplication: OffenderMovementApplication
@@ -1225,6 +1231,89 @@ class MovementsResourceIntTest(
           assertThat(movements.scheduled.inCount).isEqualTo(0)
           assertThat(movements.unscheduled.outCount).isEqualTo(2)
           assertThat(movements.unscheduled.inCount).isEqualTo(2)
+        }
+    }
+
+    private fun WebTestClient.getTapsForMigration() = get()
+      .uri("/movements/${offender.nomsId}/temporary-absences")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyResponse<OffenderTemporaryAbsencesResponse>()
+  }
+
+  @Nested
+  @DisplayName("Migration for deleted schedule with movements")
+  inner class GetTemporaryAbsencesAndMovementsForDeletedScheduleWthMovement {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            receive(yesterday)
+            // TAP for which we will remove the schedule OUT from the DB
+            temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence(eventDate = today.toLocalDate()) {
+                externalMovement()
+                orphanedScheduleReturn = scheduledReturn(eventDate = today.toLocalDate()) {
+                  externalMovement()
+                }
+              }
+            }
+            // Another TAP that should be included in the migration
+            temporaryAbsenceApplication {
+              scheduledTemporaryAbsence(eventDate = yesterday.toLocalDate()) {
+                externalMovement()
+                scheduledReturn(eventDate = yesterday.toLocalDate()) {
+                  externalMovement()
+                }
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Emulate the scenario where a schedule OUT is deleted after movements are created
+         */
+        entityManager.createNativeQuery(
+          """
+            delete from OFFENDER_IND_SCHEDULES
+            where EVENT_ID = ${scheduledTempAbsence.eventId}
+          """.trimIndent(),
+        ).executeUpdate()
+
+        // Reload the scheduled return to reflect the update
+        orphanedScheduleReturn = scheduledTemporaryAbsenceReturnRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
+      }
+    }
+
+    @Test
+    fun `should not include the TAP with deleted schedule OUT`() {
+      webTestClient.getTapsForMigration()
+        .apply {
+          val book = bookings.first()
+          assertThat(book.temporaryAbsenceApplications.size).isEqualTo(2)
+          // The TAP with the deleted scheduled absence is not included in the migration
+          assertThat(book.temporaryAbsenceApplications[0].absences).isEmpty()
+          // The control TAP is migrated
+          with(book.temporaryAbsenceApplications[1].absences.first()) {
+            assertThat(scheduledTemporaryAbsence).isNotNull()
+            assertThat(temporaryAbsence).isNotNull()
+            assertThat(scheduledTemporaryAbsenceReturn).isNotNull()
+            assertThat(temporaryAbsenceReturn).isNotNull()
+          }
+        }
+    }
+
+    @Test
+    fun `reconciliation should not include the TAP with deleted scheduled OUT`() {
+      webTestClient.getOffenderSummaryOk(offenderNo)
+        .apply {
+          assertThat(applications.count).isEqualTo(2)
+          assertThat(scheduledOutMovements.count).isEqualTo(1)
+          assertThat(movements.count).isEqualTo(2)
         }
     }
 

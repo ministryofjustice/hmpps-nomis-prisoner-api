@@ -37,8 +37,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementDirection.IN
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
@@ -49,7 +47,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSche
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.TemporaryAbsenceMovementCounts
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -426,23 +423,20 @@ class MovementsService(
 
   fun getTemporaryAbsencesSummary(offenderNo: String): OffenderTemporaryAbsenceSummaryResponse {
     offenderOrThrow(offenderNo)
+    val scheduledIn = externalMovementsRepository.countOffenderScheduledIn(offenderNo)
+    val scheduledOut = externalMovementsRepository.countOffenderScheduledOut(offenderNo)
+    val unscheduledIn = externalMovementsRepository.countOffenderUnscheduledIn(offenderNo)
+    val unscheduledOut = externalMovementsRepository.countOffenderUnscheduledOut(offenderNo)
     return OffenderTemporaryAbsenceSummaryResponse(
       applications = Applications(count = offenderMovementApplicationRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
       scheduledOutMovements = ScheduledOut(count = scheduledTemporaryAbsenceRepository.countByOffenderBooking_Offender_NomsId_AndTemporaryAbsenceApplicationIsNotNull(offenderNo)),
-      movements = externalMovementsRepository.countOffenderTemporaryAbsenceMovements(offenderNo).let { counts ->
-        Movements(
-          count = counts.sumOf { it.count },
-          scheduled = MovementsByDirection(outCount = counts.countScheduledOut(), inCount = counts.countScheduledIn()),
-          unscheduled = MovementsByDirection(outCount = counts.countUnscheduledOut(), inCount = counts.countUnscheduledIn()),
-        )
-      },
+      movements = Movements(
+        count = scheduledIn + scheduledOut + unscheduledIn + unscheduledOut,
+        scheduled = MovementsByDirection(outCount = scheduledOut, inCount = scheduledIn),
+        unscheduled = MovementsByDirection(outCount = unscheduledOut, inCount = unscheduledIn),
+      ),
     )
   }
-
-  private fun List<TemporaryAbsenceMovementCounts>.countScheduledOut() = firstOrNull { it.scheduled && it.direction == OUT }?.count ?: 0
-  private fun List<TemporaryAbsenceMovementCounts>.countScheduledIn() = firstOrNull { it.scheduled && it.direction == IN }?.count ?: 0
-  private fun List<TemporaryAbsenceMovementCounts>.countUnscheduledOut() = firstOrNull { !it.scheduled && it.direction == OUT }?.count ?: 0
-  private fun List<TemporaryAbsenceMovementCounts>.countUnscheduledIn() = firstOrNull { !it.scheduled && it.direction == IN }?.count ?: 0
 
   private fun offenderOrThrow(offenderNo: String) = offenderRepository.findRootByNomsId(offenderNo)
     ?: throw NotFoundException("Offender $offenderNo not found")
