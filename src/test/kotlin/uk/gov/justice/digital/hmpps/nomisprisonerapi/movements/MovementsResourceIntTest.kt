@@ -1326,6 +1326,130 @@ class MovementsResourceIntTest(
   }
 
   @Nested
+  @DisplayName("Reconciliation IDs")
+  inner class GetTemporaryAbsencesAndMovementIds {
+    private lateinit var booking2: OffenderBooking
+    private lateinit var application2: OffenderMovementApplication
+    private lateinit var scheduledTempAbsence2: OffenderScheduledTemporaryAbsence
+    private lateinit var scheduledTempAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
+    private lateinit var tempAbsence2: OffenderTemporaryAbsence
+    private lateinit var tempAbsenceReturn2: OffenderTemporaryAbsenceReturn
+    private lateinit var unscheduledTemporaryAbsence2: OffenderTemporaryAbsence
+    private lateinit var unscheduledTemporaryAbsenceReturn2: OffenderTemporaryAbsenceReturn
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement()
+                }
+              }
+            }
+            unscheduledTemporaryAbsence = temporaryAbsence()
+            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn()
+          }
+          booking2 = booking {
+            application2 = temporaryAbsenceApplication {
+              scheduledTempAbsence2 = scheduledTemporaryAbsence {
+                tempAbsence2 = externalMovement()
+                scheduledTempAbsenceReturn2 = scheduledReturn {
+                  tempAbsenceReturn2 = externalMovement()
+                }
+              }
+            }
+            unscheduledTemporaryAbsence2 = temporaryAbsence()
+            unscheduledTemporaryAbsenceReturn2 = temporaryAbsenceReturn()
+          }
+        }
+      }
+    }
+
+    @Test
+    fun `should return all IDs`() {
+      webTestClient.getTapIds()
+        .apply {
+          assertThat(applicationIds).containsExactlyInAnyOrder(
+            application.movementApplicationId,
+            application2.movementApplicationId,
+          )
+          assertThat(scheduleIds).containsExactlyInAnyOrder(
+            scheduledTempAbsence.eventId,
+            scheduledTempAbsence2.eventId,
+            scheduledTempAbsenceReturn.eventId,
+            scheduledTempAbsenceReturn2.eventId,
+          )
+          assertThat(scheduledMovementOutIds).containsExactlyInAnyOrder(
+            OffenderTemporaryAbsenceId(tempAbsence.id.offenderBooking.bookingId, tempAbsence.id.sequence),
+            OffenderTemporaryAbsenceId(tempAbsence2.id.offenderBooking.bookingId, tempAbsence2.id.sequence),
+          )
+          assertThat(scheduledMovementInIds).containsExactlyInAnyOrder(
+            OffenderTemporaryAbsenceId(tempAbsenceReturn.id.offenderBooking.bookingId, tempAbsenceReturn.id.sequence),
+            OffenderTemporaryAbsenceId(tempAbsenceReturn2.id.offenderBooking.bookingId, tempAbsenceReturn2.id.sequence),
+          )
+          assertThat(unscheduledMovementOutIds).containsExactlyInAnyOrder(
+            OffenderTemporaryAbsenceId(unscheduledTemporaryAbsence.id.offenderBooking.bookingId, unscheduledTemporaryAbsence.id.sequence),
+            OffenderTemporaryAbsenceId(unscheduledTemporaryAbsence2.id.offenderBooking.bookingId, unscheduledTemporaryAbsence2.id.sequence),
+          )
+          assertThat(unscheduledMovementInIds).containsExactlyInAnyOrder(
+            OffenderTemporaryAbsenceId(unscheduledTemporaryAbsenceReturn.id.offenderBooking.bookingId, unscheduledTemporaryAbsenceReturn.id.sequence),
+            OffenderTemporaryAbsenceId(unscheduledTemporaryAbsenceReturn2.id.offenderBooking.bookingId, unscheduledTemporaryAbsenceReturn2.id.sequence),
+          )
+        }
+    }
+
+    @Test
+    fun `should return correct summary counts`() {
+      webTestClient.getOffenderSummaryOk(offenderNo)
+        .apply {
+          assertThat(applications.count).isEqualTo(2)
+          assertThat(scheduledOutMovements.count).isEqualTo(2)
+          assertThat(movements.scheduled.outCount).isEqualTo(2)
+          assertThat(movements.scheduled.inCount).isEqualTo(2)
+          assertThat(movements.unscheduled.outCount).isEqualTo(2)
+          assertThat(movements.unscheduled.inCount).isEqualTo(2)
+        }
+    }
+
+    @Test
+    fun `should return unauthorised for missing token`() {
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences/ids")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden for missing role`() {
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences/ids")
+        .headers(setAuthorisation())
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden for wrong role`() {
+      webTestClient.get()
+        .uri("/movements/${offender.nomsId}/temporary-absences/ids")
+        .headers(setAuthorisation("ROLE_INVALID"))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    private fun WebTestClient.getTapIds() = get()
+      .uri("/movements/${offender.nomsId}/temporary-absences/ids")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyResponse<OffenderTemporaryAbsenceIdsResponse>()
+  }
+
+  @Nested
   @DisplayName("GET /movements/{offenderNo}/temporary-absences/application/{applicationId}")
   inner class GetTemporaryAbsencesApplication {
 
@@ -4535,7 +4659,7 @@ class MovementsResourceIntTest(
     }
 
     @Nested
-    inner class BadData {
+    inner class DeletedScheduleOut {
       @Test
       fun `should ignore scheduled movements where there is no application`() {
         nomisDataBuilder.build {
@@ -4575,6 +4699,57 @@ class MovementsResourceIntTest(
             // We don't count the orphaned schedule in the reconciliation
             assertThat(scheduledOutMovements.count).isEqualTo(1)
             assertThat(movements.count).isEqualTo(2)
+          }
+      }
+    }
+
+    @Nested
+    inner class LinkFromMovementInToScheduleOutBroken {
+      @Test
+      fun `should handle case where parent event ID missing from movement IN`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking {
+              temporaryAbsenceApplication {
+                scheduledTemporaryAbsence {
+                  externalMovement()
+                  scheduledReturn {
+                    externalMovement()
+                  }
+                }
+              }
+              temporaryAbsenceApplication {
+                scheduledTemporaryAbsence {
+                  externalMovement()
+                  scheduledReturn {
+                    tempAbsenceReturn = externalMovement()
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          /*
+           * Corrupt the data by nulling the movement IN parent event ID (which should point at the schedule OUT)
+           */
+          entityManager.createQuery(
+            """
+            update OffenderTemporaryAbsenceReturn otar
+            set otar.scheduledTemporaryAbsence = null
+            where otar.id.offenderBooking.id = ${tempAbsenceReturn.id.offenderBooking.bookingId}
+            and otar.id.sequence = ${tempAbsenceReturn.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getOffenderSummaryOk(offenderNo)
+          .apply {
+            assertThat(applications.count).isEqualTo(2)
+            assertThat(scheduledOutMovements.count).isEqualTo(2)
+            // Includes the movement IN that doesn't have a parent event id
+            assertThat(movements.count).isEqualTo(4)
           }
       }
     }
