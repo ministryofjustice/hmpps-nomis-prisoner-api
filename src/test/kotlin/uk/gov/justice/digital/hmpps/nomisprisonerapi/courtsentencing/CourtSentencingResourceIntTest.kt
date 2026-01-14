@@ -1234,6 +1234,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetCourtCasesChangedByMergePrisoners {
     private lateinit var prisonerWithRecentMerge: Offender
+    private lateinit var prisonerWithRecentMergeWithInactiveCase: Offender
     private lateinit var prisonerWithRecentMergeWithLinkedCase: Offender
     private lateinit var prisonerWithRecentMergeCasesNotAffected: Offender
     private lateinit var prisonerWithOldMerge: Offender
@@ -1456,6 +1457,38 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               }
             }
           }
+        prisonerWithRecentMergeWithInactiveCase =
+          offender(nomsId = "A1234AG") {
+            booking(agencyLocationId = "MDI") {
+// case added by merge but was already inactive - very rare since we would need an active licence on an inactive case which should not be possible but is via a loophole
+              courtCase(
+                caseInfoNumber = "A/100",
+                reportingStaff = staff,
+                caseStatus = "I",
+                caseSequence = 1,
+              ) {
+                audit(
+                  createDatetime = mergeDate.plusMinutes(1),
+                  auditModule = "MERGE",
+                  createUserId = "SYS",
+                )
+              }
+            }
+            booking(agencyLocationId = "MDI") {
+              release()
+              courtCase(
+                caseInfoNumber = "A/100",
+                reportingStaff = staff,
+                caseStatus = "I",
+                caseSequence = 1,
+              ) {
+// original case cloned by MERGE but already inactive
+                audit(
+                  createDatetime = mergeDate.minusDays(10),
+                )
+              }
+            }
+          }
 
         mergeTransaction(
           requestDate = mergeDate,
@@ -1481,6 +1514,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           requestDate = mergeDate,
           nomsId1 = "A9999AK",
           nomsId2 = "A1234AF",
+        )
+        mergeTransaction(
+          requestDate = mergeDate,
+          nomsId1 = "A9999AK",
+          nomsId2 = "A1234AG",
         )
       }
     }
@@ -1556,6 +1594,22 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         }
         with(response.courtCasesCreated.find { it.caseSequence == 2 }!!) {
           assertThat(this.caseStatus.code).isEqualTo("C")
+          assertThat(this.primaryCaseInfoNumber).isEqualTo("A/100")
+        }
+      }
+
+      @Test
+      fun `will return only the created court cases when already inactive solo case for the offender`() {
+        val response: PostPrisonerMergeCaseChanges =
+          webTestClient.get().uri("/prisoners/${prisonerWithRecentMergeWithInactiveCase.nomsId}/sentencing/court-cases/post-merge")
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(response.courtCasesDeactivated).hasSize(0)
+        assertThat(response.courtCasesCreated).hasSize(1)
+        with(response.courtCasesCreated.find { it.caseSequence == 1 }!!) {
+          assertThat(this.caseStatus.code).isEqualTo("I")
           assertThat(this.primaryCaseInfoNumber).isEqualTo("A/100")
         }
       }
