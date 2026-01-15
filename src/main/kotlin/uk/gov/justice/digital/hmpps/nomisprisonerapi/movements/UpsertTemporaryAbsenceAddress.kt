@@ -15,7 +15,4 @@ data class UpsertTemporaryAbsenceAddress(
 
   @Schema(description = "The postal code")
   val postalCode: String? = null,
-
-  @Schema(description = "The address owner class")
-  val ownerClass: String? = null,
 )

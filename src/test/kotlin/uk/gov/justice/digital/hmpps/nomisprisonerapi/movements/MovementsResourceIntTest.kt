@@ -2585,7 +2585,7 @@ class MovementsResourceIntTest(
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           request = anUpsertRequest(
             movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(ownerClass = "OFF", addressText = "1 House, Street, City", postalCode = "A1 1AA"),
+            toAddress = UpsertTemporaryAbsenceAddress(name = null, addressText = "1 House, Street, City", postalCode = "A1 1AA"),
           ),
         )
           .apply {
@@ -2610,7 +2610,7 @@ class MovementsResourceIntTest(
           request = anUpsertRequest(
             movementApplicationId = application.movementApplicationId,
             toAddress = UpsertTemporaryAbsenceAddress(
-              ownerClass = "OFF",
+              name = null,
               addressText = "1 Very long address that doesn't fit into the PREMISE column so should overflow onto the ........100.........o.........o.........o..... STREET column",
             ),
           ),
@@ -2630,7 +2630,7 @@ class MovementsResourceIntTest(
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           request = anUpsertRequest(
             movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(ownerClass = "CORP", addressText = "1 House, Street, City", postalCode = "A1 1AA", name = "Company"),
+            toAddress = UpsertTemporaryAbsenceAddress(addressText = "1 House, Street, City", postalCode = "A1 1AA", name = "Company"),
           ),
         )
           .apply {
@@ -2651,37 +2651,11 @@ class MovementsResourceIntTest(
       }
 
       @Test
-      fun `should create corporate address and corporate entity for an agency address`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
-            movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(ownerClass = "AGY", addressText = "1 House, Street, City", postalCode = "A1 1AA", name = "Agency"),
-          ),
-        )
-          .apply {
-            val responseAddressId = this.addressId
-            val responseOwnerClass = this.addressOwnerClass
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(toAddress?.addressId).isEqualTo(responseAddressId)
-                assertThat(toAddress?.addressOwnerClass).isEqualTo(responseOwnerClass)
-                assertThat(toAddress?.premise).isEqualTo("1 House, Street, City")
-                assertThat(toAddress?.postalCode).isEqualTo("A1 1AA")
-                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
-                val corporateAddress = corporateAddressRepository.findByIdOrNull(toAddress!!.addressId)!!
-                assertThat(corporateAddress.corporate.corporateName).isEqualTo("Agency")
-              }
-            }
-          }
-      }
-
-      @Test
       fun `should create very long corporate address`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           request = anUpsertRequest(
             movementApplicationId = application.movementApplicationId,
             toAddress = UpsertTemporaryAbsenceAddress(
-              ownerClass = "CORP",
               addressText = "1 Very long address that doesn't fit into the PREMISE column so should overflow onto the ........100.........o.........o.........o STREET column",
               name = "Company",
             ),
@@ -2792,47 +2766,11 @@ class MovementsResourceIntTest(
       }
 
       @Test
-      fun `should return bad request for invalid to address owner class`() {
-        val invalidAddress = UpsertTemporaryAbsenceAddress(ownerClass = "INVALID", addressText = "address")
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("INVALID").contains("not supported")
-          }
-      }
-
-      @Test
-      fun `should return bad request if address owner class not passed`() {
-        val invalidAddress = UpsertTemporaryAbsenceAddress(ownerClass = null, addressText = "address", name = "Business")
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("owner class")
-          }
-      }
-
-      @Test
       fun `should return bad request if address text not passed`() {
-        val invalidAddress = UpsertTemporaryAbsenceAddress(ownerClass = "CORP", addressText = null, name = "Business")
+        val invalidAddress = UpsertTemporaryAbsenceAddress(addressText = null, name = "Business")
         webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
           .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("address text")
-          }
-      }
-
-      @Test
-      fun `should return bad request if name missing for corporate address`() {
-        val invalidAddress = UpsertTemporaryAbsenceAddress(ownerClass = "CORP", addressText = "address", name = null)
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("name is required")
-          }
-      }
-
-      @Test
-      fun `should return bad request if name missing for agency address`() {
-        val invalidAddress = UpsertTemporaryAbsenceAddress(ownerClass = "AGY", addressText = "address", name = null)
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("name is required")
+            assertThat(it).containsIgnoringCase("address text")
           }
       }
     }

@@ -519,17 +519,14 @@ class MovementsService(
     ?: throw BadDataException("Address id $addressId is invalid")
 
   private fun findOrCreateAddress(request: UpsertTemporaryAbsenceAddress, offender: Offender): Address {
-    // If an id is passed then we don't need to create an address
+    // If we have an address id then use that
     if (request.id != null) return addressOrThrow(request.id)
 
-    if (request.addressText == null || request.ownerClass == null) throw BadDataException("Both address text and owner class are required to create a new address")
-    if (request.ownerClass in listOf("AGY", "CORP") && request.name == null) throw BadDataException("Corporate or Agency name is required to create a new address")
+    if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 
-    return when (request.ownerClass) {
-      "OFF" -> createOffenderAddress(request.addressText, request.postalCode, offender)
-      // Agency maintenance is tightly controlled in NOMIS so we'll always create a corporate address (which is the same as users often do now)
-      "AGY", "CORP" -> createCorporateAddress(request.name!!, request.addressText, request.postalCode)
-      else -> throw BadDataException("Address owner class ${request.ownerClass} is not supported")
+    return when (request.name) {
+      null -> createOffenderAddress(request.addressText, request.postalCode, offender)
+      else -> createCorporateAddress(request.name, request.addressText, request.postalCode)
     }
   }
 
