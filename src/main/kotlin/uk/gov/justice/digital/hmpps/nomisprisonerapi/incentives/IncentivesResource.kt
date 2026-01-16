@@ -41,14 +41,6 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @Operation(
     summary = "Creates a new incentive",
     description = "Creates a new incentive using next sequence no.",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreateIncentiveRequest::class),
-        ),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -297,14 +289,6 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @Operation(
     summary = "Creates a new global incentive level",
     description = "Creates a new global incentive level",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreateIncentiveRequest::class),
-        ),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -343,14 +327,6 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @Operation(
     summary = "Updates an existing global incentive level",
     description = "Updates an existing global incentive level, updateable fields are description and active",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreateIncentiveRequest::class),
-        ),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -441,14 +417,6 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @Operation(
     summary = "reorders all global incentive levels",
     description = "reorders all global incentive levels using provided list of Incentive codes, including inactive. 1-based index",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = ReorderRequest::class),
-        ),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -531,14 +499,6 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @Operation(
     summary = "Prison Incentive level data",
     description = "Creates incentive level data associated with a Prison",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreatePrisonIncentiveRequest::class),
-        ),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -580,14 +540,6 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   @Operation(
     summary = "Prison Incentive level data",
     description = "Creates incentive level data associated with a Prison",
-    requestBody = io.swagger.v3.oas.annotations.parameters.RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CreatePrisonIncentiveRequest::class),
-        ),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "200",
