@@ -549,7 +549,7 @@ class MovementsService(
     val (premise, street) = formatAddressText(addressText)
     return offenderAddressRepository.save(
       OffenderAddress(
-        offender = offender,
+        offender = offender.rootOffender!!,
         premise = premise,
         street = street,
         postalCode = postalCode,
