@@ -2626,6 +2626,57 @@ class MovementsResourceIntTest(
       }
 
       @Test
+      fun `should create offender address when booking on an alias`() {
+        var scheduleAddressId: Long
+        var scheduleOwnerClass: String
+        lateinit var alias: Offender
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9999BC") {
+            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
+              temporaryAbsenceApplication()
+              release(date = yesterday)
+            }
+            alias = alias {
+              booking = booking(bookingSequence = 1, bookingBeginDate = today) {
+                application = temporaryAbsenceApplication()
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(
+            movementApplicationId = application.movementApplicationId,
+            toAddress = UpsertTemporaryAbsenceAddress(name = null, addressText = "1 House, Street, City", postalCode = "A1 1AA"),
+          ),
+        )
+          .apply {
+            scheduleAddressId = this.addressId
+            scheduleOwnerClass = this.addressOwnerClass
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(bookingId).isEqualTo(booking.bookingId)
+                assertThat(toAddress?.addressId).isEqualTo(scheduleAddressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(scheduleOwnerClass)
+                assertThat(toAddress?.premise).isEqualTo("1 House, Street, City")
+                assertThat(toAddress?.postalCode).isEqualTo("A1 1AA")
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
+                assertThat(toAddress?.usages?.map { it.addressUsage?.code }).contains("ROTL")
+              }
+            }
+          }
+
+        // And the address is saved against the root offender
+        repository.runInTransaction {
+          with(repository.getOffender(alias.id)!!) {
+            assertThat(addresses).isEmpty()
+            assertThat(rootOffender!!.addresses[0].addressId).isEqualTo(scheduleAddressId)
+            assertThat(rootOffender!!.addresses[0].addressOwnerClass).isEqualTo(scheduleOwnerClass)
+          }
+        }
+      }
+
+      @Test
       fun `should create corporate address and corporate entity`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           request = anUpsertRequest(
