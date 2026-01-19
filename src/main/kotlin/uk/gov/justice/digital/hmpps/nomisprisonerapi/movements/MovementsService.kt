@@ -240,6 +240,9 @@ class MovementsService(
         this.returnTime = request.returnTime
         this.toAddressOwnerClass = toAddress.addressOwnerClass
         this.toAddress = toAddress
+        // Always update application address to latest received from DPS - in case a schedule is created / re-created in NOMIS which takes movement address from the application
+        this.temporaryAbsenceApplication.toAddress = toAddress
+        this.temporaryAbsenceApplication.toAddressOwnerClass = toAddress.addressOwnerClass
       }
       ?: OffenderScheduledTemporaryAbsence(
         offenderBooking = offenderBooking,

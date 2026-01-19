@@ -2508,6 +2508,34 @@ class MovementsResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should update the address on the movement application`() {
+        lateinit var existingAddress: OffenderAddress
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9999AD") {
+            existingAddress = address()
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(toAddress = existingAddress) {
+                scheduledTempAbsence = scheduledTemporaryAbsence(toAddress = existingAddress)
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk(request = anUpsertRequest(eventId = scheduledTempAbsence.eventId))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(temporaryAbsenceApplication.toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
     }
 
     @Nested
