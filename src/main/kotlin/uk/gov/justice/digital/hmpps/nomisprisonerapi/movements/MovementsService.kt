@@ -261,10 +261,9 @@ class MovementsService(
         applicationTime = request.applicationTime,
       )
         .also {
-          // DPS don't send an address for the application - so take it form the first scheduled movement we encounter
-          if (it.temporaryAbsenceApplication.toAddress == null) {
-            it.temporaryAbsenceApplication.toAddress = toAddress
-          }
+          // Always update application address to latest received from DPS - in case a schedule is created / re-created in NOMIS which takes movement address from the application
+          it.temporaryAbsenceApplication.toAddress = toAddress
+          it.temporaryAbsenceApplication.toAddressOwnerClass = toAddress.addressOwnerClass
         }
 
     val scheduledReturn = schedule.scheduledTemporaryAbsenceReturns.firstOrNull()
