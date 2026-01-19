@@ -2387,14 +2387,14 @@ class MovementsResourceIntTest(
               with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
                 assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-                assertThat(temporaryAbsenceApplication.toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+                assertThat(temporaryAbsenceApplication.toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
               }
             }
           }
       }
 
       @Test
-      fun `should NOT override the address on the movement application if ti already exists`() {
+      fun `should override the address on the movement application if it already exists`() {
         lateinit var existingAddress: OffenderAddress
         nomisDataBuilder.build {
           offender = offender(nomsId = "A9999AD") {
@@ -2412,8 +2412,8 @@ class MovementsResourceIntTest(
             repository.runInTransaction {
               with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
-                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(existingAddress.addressId)
-                assertThat(temporaryAbsenceApplication.toAddress?.addressOwnerClass).isEqualTo(existingAddress.addressOwnerClass)
+                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(temporaryAbsenceApplication.toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
               }
             }
           }
