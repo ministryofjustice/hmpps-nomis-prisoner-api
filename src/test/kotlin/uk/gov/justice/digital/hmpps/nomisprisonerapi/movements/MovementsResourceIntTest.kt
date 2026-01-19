@@ -2377,6 +2377,47 @@ class MovementsResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should set the address on the movement application`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(temporaryAbsenceApplication.toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should NOT override the address on the movement application if ti already exists`() {
+        lateinit var existingAddress: OffenderAddress
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9999AD") {
+            existingAddress = address()
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(toAddress = existingAddress)
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(existingAddress.addressId)
+                assertThat(temporaryAbsenceApplication.toAddress?.addressOwnerClass).isEqualTo(existingAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
     }
 
     @Nested
