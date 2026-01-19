@@ -260,6 +260,12 @@ class MovementsService(
         applicationDate = request.applicationDate,
         applicationTime = request.applicationTime,
       )
+        .also {
+          // DPS don't send an address for the application - so take it form the first scheduled movement we encounter
+          if (it.temporaryAbsenceApplication.toAddress == null) {
+            it.temporaryAbsenceApplication.toAddress = toAddress
+          }
+        }
 
     val scheduledReturn = schedule.scheduledTemporaryAbsenceReturns.firstOrNull()
       ?.apply {
