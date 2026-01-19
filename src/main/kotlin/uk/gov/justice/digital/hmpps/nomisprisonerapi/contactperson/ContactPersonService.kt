@@ -405,7 +405,7 @@ class ContactPersonService(
   }
 
   fun updatePersonContact(personId: Long, contactId: Long, request: UpdatePersonContactRequest) {
-    val contact = contactOf(personId = personId, contactId = contactId)
+    val contact = getContactAndLock(personId = personId, contactId = contactId)
     // check if another contact with the same person already has the relationship type
     // e.g. you can't be the BROTHER to teh same prisoner twice
     if (contact.offenderBooking.contacts.filter { it.id != contactId }.any { it.contactType.code == request.contactTypeCode && it.relationshipType.code == request.relationshipTypeCode && personId == it.person!!.id }) {
@@ -777,6 +777,7 @@ class ContactPersonService(
   fun identifierTypeOf(code: String): IdentifierType = identifierRepository.findByIdOrNull(IdentifierType.pk(code)) ?: throw BadDataException("IdentifierType with code $code does not exist")
   fun restrictionTypeOf(code: String): RestrictionType = restrictionTypeRepository.findByIdOrNull(RestrictionType.pk(code)) ?: throw BadDataException("RestrictionType with code $code does not exist")
   fun contactOf(personId: Long, contactId: Long): OffenderContactPerson = (contactRepository.findByIdOrNull(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Contact with id=$contactId on Person with id=$personId does not exist")
+  fun getContactAndLock(personId: Long, contactId: Long): OffenderContactPerson = (contactRepository.findByIdOrNullForUpdate(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Contact with id=$contactId on Person with id=$personId does not exist")
 
   fun getContact(contactId: Long): PersonContact {
     val contact = contactRepository.findByIdOrNull(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")
