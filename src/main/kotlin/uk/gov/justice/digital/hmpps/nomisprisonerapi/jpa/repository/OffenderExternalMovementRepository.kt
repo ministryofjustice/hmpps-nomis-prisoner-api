@@ -42,6 +42,7 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
         -- the scheduled OUT movement must exist to be included - some have been deleted
         join OFFENDER_IND_SCHEDULES ois on oem.EVENT_ID=ois.EVENT_ID
       where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'OUT'
+        and ois.OFFENDER_MOVEMENT_APP_ID is not null
     """,
     nativeQuery = true,
   )
@@ -58,7 +59,7 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
         left join OFFENDER_IND_SCHEDULES ois_out on oem.PARENT_EVENT_ID=ois_out.EVENT_ID
       where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'IN'
       -- we only care about the join to scheduled OUT movement if it is linked from the actual movement IN
-      and ( oem.PARENT_EVENT_ID IS NULL or ois_out.EVENT_ID IS NOT NULL )
+      and ( oem.PARENT_EVENT_ID IS NULL or (ois_out.EVENT_ID IS NOT NULL and ois_out.OFFENDER_MOVEMENT_APP_ID is not null))
     """,
     nativeQuery = true,
   )
