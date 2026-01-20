@@ -7334,6 +7334,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
     @Test
     internal fun `204 when sentence does exist`() {
+      repository.addSentenceCaseNoteLink(caseNote.id, sentence.id.sequence)
       webTestClient.get()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))

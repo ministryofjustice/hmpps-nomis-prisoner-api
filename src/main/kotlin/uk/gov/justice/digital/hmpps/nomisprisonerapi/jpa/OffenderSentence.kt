@@ -228,7 +228,7 @@ data class OffenderSentence(
       JoinColumn(name = "SENTENCE_SEQ", referencedColumnName = "SENTENCE_SEQ"),
     ],
     inverseJoinColumns = [
-      JoinColumn(name = "OFFENDER_CASE_NOTE_ID", referencedColumnName = "CASE_NOTE_ID"),
+      JoinColumn(name = "CASE_NOTE_ID", referencedColumnName = "CASE_NOTE_ID"),
     ],
   )
   var caseNotes: MutableSet<OffenderCaseNote> = mutableSetOf(),
