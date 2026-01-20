@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.Matchers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -30,6 +29,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason.Companio
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode.Companion.RECALL_TO_PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
@@ -39,6 +39,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
@@ -79,6 +80,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderBookingRepository: OffenderBookingRepository
+
+  @Autowired
+  lateinit var offenderCaseNoteRepository: OffenderCaseNoteRepository
 
   private var aLocationInMoorland = 0L
   private lateinit var staff: Staff
@@ -261,7 +265,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("createdByUsername").isEqualTo("SYS")
           .jsonPath("modifiedByUsername").isEqualTo("MOD")
           .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].id").value<Int> { assertThat(it).isGreaterThan(0) }
           .jsonPath("courtEvents[0].offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo(aDateTimeString)
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Trial")
@@ -606,7 +610,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("lidsCombinedCaseId").isEqualTo(3)
           .jsonPath("createdByUsername").isNotEmpty
           .jsonPath("createdDateTime").isNotEmpty
-          .jsonPath("courtEvents[0].id").value(Matchers.greaterThan(0))
+          .jsonPath("courtEvents[0].id").value<Int> { assertThat(it).isGreaterThan(0) }
           .jsonPath("courtEvents[0].offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
           .jsonPath("courtEvents[0].eventDateTime").isEqualTo(aDateTimeString)
           .jsonPath("courtEvents[0].courtEventType.description").isEqualTo("Trial")
@@ -5757,8 +5761,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("id").value(Matchers.greaterThan(0))
-          .jsonPath("caseId").value(Matchers.greaterThan(0))
+          .jsonPath("id").value<Int> { assertThat(it).isGreaterThan(0) }
+          .jsonPath("caseId").value<Int> { assertThat(it).isGreaterThan(0) }
           .jsonPath("offenderNo").isEqualTo(prisonerAtMoorland.nomsId)
           .jsonPath("eventDateTime").isEqualTo(aDateTimeString)
           .jsonPath("courtEventType.description").isEqualTo("Trial")
@@ -7236,6 +7240,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   inner class DeleteSentence {
     private var latestBookingId: Long = 0
     private lateinit var sentence: OffenderSentence
+    private lateinit var caseNote: OffenderCaseNote
     private lateinit var courtCase: CourtCase
     private lateinit var courtOrder: CourtOrder
     private lateinit var offenderCharge: OffenderCharge
@@ -7264,6 +7269,12 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   term(days = 35)
                 }
               }
+              caseNote = caseNote(
+                caseNoteType = "ALERT",
+                caseNoteSubType = "ACTIVE",
+                author = staff,
+                caseNoteText = "A note",
+              )
             }
           }
       }
@@ -7340,6 +7351,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
+
+      repository.runInTransaction {
+        assertThat(offenderCaseNoteRepository.existsById(caseNote.id)).isTrue
+      }
     }
 
     @Test
@@ -7363,6 +7378,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     internal fun deletePrisoner() {
+      repository.deleteCaseNotes()
       repository.delete(prisonerAtMoorland)
       repository.delete(staff)
     }
