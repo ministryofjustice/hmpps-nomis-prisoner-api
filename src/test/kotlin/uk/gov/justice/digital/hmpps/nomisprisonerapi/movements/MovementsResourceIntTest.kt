@@ -2536,6 +2536,57 @@ class MovementsResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should update application release and return time for single schedule`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9999AD") {
+            booking = booking {
+              application = temporaryAbsenceApplication(releaseTime = yesterday, returnTime = today) {
+                scheduledTempAbsence = scheduledTemporaryAbsence(startTime = yesterday, returnTime = today)
+              }
+            }
+          }
+        }
+
+        // Updates schedule so startTime=twoDaysAgo and returnTime=yesterday
+        webTestClient.upsertScheduledTemporaryAbsenceOk(request = anUpsertRequest(eventId = scheduledTempAbsence.eventId))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+                assertThat(releaseTime).isEqualTo(twoDaysAgo)
+                assertThat(returnTime).isEqualTo(yesterday)
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should update application release and return time for multiple schedules`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9999AD") {
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(startTime = yesterday, returnTime = today)
+                scheduledTemporaryAbsence(startTime = today, returnTime = today.plusDays(1))
+              }
+            }
+          }
+        }
+
+        // Updates schedule so startTime=twoDaysAgo and returnTime=yesterday
+        webTestClient.upsertScheduledTemporaryAbsenceOk(request = anUpsertRequest(eventId = scheduledTempAbsence.eventId))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+                assertThat(releaseTime).isEqualTo("${twoDaysAgo.truncatedTo(ChronoUnit.DAYS)}")
+                assertThat(returnTime).isEqualTo("${today.plusDays(2).truncatedTo(ChronoUnit.DAYS)}")
+              }
+            }
+          }
+      }
     }
 
     @Nested

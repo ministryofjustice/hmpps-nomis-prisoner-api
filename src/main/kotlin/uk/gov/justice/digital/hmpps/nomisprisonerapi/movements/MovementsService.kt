@@ -240,9 +240,6 @@ class MovementsService(
         this.returnTime = request.returnTime
         this.toAddressOwnerClass = toAddress.addressOwnerClass
         this.toAddress = toAddress
-        // Always update application address to latest received from DPS - in case a schedule is created / re-created in NOMIS which takes movement address from the application
-        this.temporaryAbsenceApplication.toAddress = toAddress
-        this.temporaryAbsenceApplication.toAddressOwnerClass = toAddress.addressOwnerClass
       }
       ?: OffenderScheduledTemporaryAbsence(
         offenderBooking = offenderBooking,
@@ -263,11 +260,12 @@ class MovementsService(
         applicationDate = request.applicationDate,
         applicationTime = request.applicationTime,
       )
-        .also {
-          // Always update application address to latest received from DPS - in case a schedule is created / re-created in NOMIS which takes movement address from the application
-          it.temporaryAbsenceApplication.toAddress = toAddress
-          it.temporaryAbsenceApplication.toAddressOwnerClass = toAddress.addressOwnerClass
-        }
+
+    // Always update application address to latest received from DPS - in case a schedule is created / re-created in NOMIS which takes movement address from the application
+    schedule.temporaryAbsenceApplication.toAddress = toAddress
+    schedule.temporaryAbsenceApplication.toAddressOwnerClass = toAddress.addressOwnerClass
+    // Application release/return times should match a single schedule, otherwise cover all days for multiple schedules
+    schedule.temporaryAbsenceApplication.deriveReleaseAndReturnTimes()
 
     val scheduledReturn = schedule.scheduledTemporaryAbsenceReturns.firstOrNull()
       ?.apply {
@@ -310,6 +308,23 @@ class MovementsService(
       addressId = toAddress.addressId,
       addressOwnerClass = toAddress.addressOwnerClass,
     )
+  }
+
+  private fun OffenderMovementApplication.deriveReleaseAndReturnTimes() {
+    when (scheduledTemporaryAbsences.size) {
+      0 -> {
+        releaseTime = fromDate.atStartOfDay()
+        returnTime = toDate.atStartOfDay().plusDays(1)
+      }
+      1 -> {
+        releaseTime = scheduledTemporaryAbsences.first().startTime!!
+        returnTime = scheduledTemporaryAbsences.first().returnTime!!
+      }
+      else -> {
+        releaseTime = scheduledTemporaryAbsences.minOf { it.startTime!! }.toLocalDate().atStartOfDay()
+        returnTime = scheduledTemporaryAbsences.maxOf { it.returnTime!! }.toLocalDate().plusDays(1).atStartOfDay()
+      }
+    }
   }
 
   fun getScheduledTemporaryAbsenceReturn(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceReturnResponse {
