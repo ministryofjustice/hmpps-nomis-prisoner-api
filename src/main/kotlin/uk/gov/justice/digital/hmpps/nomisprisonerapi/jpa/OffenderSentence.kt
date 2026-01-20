@@ -10,6 +10,8 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
@@ -217,6 +219,19 @@ data class OffenderSentence(
 
   @OneToMany(mappedBy = "offenderSentence", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderSentenceTerms: MutableList<OffenderSentenceTerm> = mutableListOf(),
+
+  @ManyToMany(fetch = LAZY, cascade = [])
+  @JoinTable(
+    name = "OFFENDER_CASE_NOTE_SENTS",
+    joinColumns = [
+      JoinColumn(name = "OFFENDER_BOOK_ID", referencedColumnName = "OFFENDER_BOOK_ID"),
+      JoinColumn(name = "SENTENCE_SEQ", referencedColumnName = "SENTENCE_SEQ"),
+    ],
+    inverseJoinColumns = [
+      JoinColumn(name = "CASE_NOTE_ID", referencedColumnName = "CASE_NOTE_ID"),
+    ],
+  )
+  var caseNotes: MutableSet<OffenderCaseNote> = mutableSetOf(),
 
   @OneToMany(mappedBy = "sentence", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderSentenceStatuses: MutableList<OffenderSentenceStatus> = mutableListOf(),
