@@ -4922,6 +4922,54 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class LinkFromScheduleOutToApplicationMissing {
+      @Test
+      fun `should handle case where movement application missing from schedule OUT`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9797LL") {
+            booking {
+              application = temporaryAbsenceApplication {
+                orphanedSchedule = scheduledTemporaryAbsence {
+                  externalMovement()
+                  orphanedScheduleReturn = scheduledReturn {
+                    externalMovement()
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          /*
+           * Corrupt the data by nulling the application on the schedule OUT and deleting the application
+           */
+          entityManager.createNativeQuery(
+            """
+            update OFFENDER_IND_SCHEDULES ois set OFFENDER_MOVEMENT_APP_ID = null
+            where ois.EVENT_ID = ${orphanedSchedule.eventId}
+            """.trimIndent(),
+          ).executeUpdate()
+
+          entityManager.createNativeQuery(
+            """
+            delete from OFFENDER_MOVEMENT_APPS oma
+            where oma.OFFENDER_MOVEMENT_APP_ID = ${application.movementApplicationId}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getOffenderSummaryOk("A9797LL")
+          .apply {
+            assertThat(applications.count).isEqualTo(0)
+            assertThat(scheduledOutMovements.count).isEqualTo(0)
+            assertThat(movements.scheduled.outCount).isEqualTo(0)
+            assertThat(movements.scheduled.inCount).isEqualTo(0)
+          }
+      }
+    }
+
+    @Nested
     inner class Security {
 
       @Test
