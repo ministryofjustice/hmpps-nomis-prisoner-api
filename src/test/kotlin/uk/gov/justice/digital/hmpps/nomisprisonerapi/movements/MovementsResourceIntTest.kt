@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSche
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementsService.Companion.MAX_SCHEDULE_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails.roundToNearestSecond
 import java.time.LocalDate
@@ -2310,6 +2311,7 @@ class MovementsResourceIntTest(
       returnEventStatus: String? = null,
       eventStatus: String = "SCH",
       toAddress: UpsertTemporaryAbsenceAddress = UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId),
+      comment: String = "Some comment scheduled temporary absence",
     ) = UpsertScheduledTemporaryAbsenceRequest(
       eventId = eventId,
       movementApplicationId = movementApplicationId ?: application.movementApplicationId,
@@ -2317,7 +2319,7 @@ class MovementsResourceIntTest(
       startTime = twoDaysAgo,
       eventSubType = "C5",
       eventStatus = eventStatus,
-      comment = "Some comment scheduled temporary absence",
+      comment = comment,
       escort = "L",
       fromPrison = "LEI",
       toAgency = "HAZLWD",
@@ -2414,6 +2416,30 @@ class MovementsResourceIntTest(
                 assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
                 assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(temporaryAbsenceApplication.toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should truncate comments`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9999AD") {
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          // comment is 300 long
+          anUpsertRequest(application.movementApplicationId, comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(comment!!.length).isEqualTo(MAX_SCHEDULE_COMMENT_LENGTH)
               }
             }
           }

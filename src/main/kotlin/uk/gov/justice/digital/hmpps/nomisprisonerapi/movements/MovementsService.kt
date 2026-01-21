@@ -80,6 +80,9 @@ class MovementsService(
   addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
+  companion object {
+    val MAX_SCHEDULE_COMMENT_LENGTH = 225
+  }
 
   private val tapMovementType = movementTypeRepository.findByIdOrNull(MovementType.pk("TAP"))
     ?: throw IllegalStateException("TAP movement type not found")
@@ -247,7 +250,7 @@ class MovementsService(
         startTime = request.startTime,
         eventSubType = eventSubType,
         eventStatus = eventStatus,
-        comment = request.comment,
+        comment = request.comment?.substring(0..(minOf(request.comment.length, MAX_SCHEDULE_COMMENT_LENGTH) - 1)),
         escort = escort,
         fromPrison = fromPrison,
         toAgency = toAgency,
