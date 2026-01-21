@@ -325,6 +325,8 @@ class MovementsService(
         returnTime = scheduledTemporaryAbsences.maxOf { it.returnTime!! }.toLocalDate().plusDays(1).atStartOfDay()
       }
     }
+    fromDate = releaseTime.toLocalDate()
+    toDate = returnTime.toLocalDate()
   }
 
   fun getScheduledTemporaryAbsenceReturn(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceReturnResponse {
