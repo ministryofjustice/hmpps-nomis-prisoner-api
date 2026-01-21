@@ -43,12 +43,12 @@ class TruncateToUtf8LengthTest {
   }
 
   @Test
-  fun `will not truncate when text and no dps suffix needed`() {
+  fun `will not truncate when text and no dps suffix needed even when requested`() {
     assertThat("1234".truncateToUtf8Length(30, true)).isEqualTo("1234")
   }
 
   @Test
-  fun `will not truncate when text fits exactly`() {
+  fun `will not truncate when text fits exactly so suffix not needed even when requested`() {
     assertThat("12345".truncateToUtf8Length(5, true)).isEqualTo("12345")
   }
 
@@ -70,5 +70,10 @@ class TruncateToUtf8LengthTest {
 
     assertThat(Utf8.encodedLength(result)).isEqualTo(48) // shorter than 50 because some unicode has been truncated
     assertThat(result).isEqualTo("${"s".repeat(17) + TWO_UNICODE_CHARS}... see DPS for full text")
+  }
+
+  @Test
+  fun `will truncate when text is way over size`() {
+    assertThat("12345678901234567890".repeat(2000).truncateToUtf8Length(4, false)).isEqualTo("1234")
   }
 }
