@@ -82,7 +82,7 @@ class MovementsService(
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
   companion object {
-    val MAX_SCHEDULE_COMMENT_LENGTH = 225
+    val MAX_TAP_COMMENT_LENGTH = 225
   }
 
   private val tapMovementType = movementTypeRepository.findByIdOrNull(MovementType.pk("TAP"))
@@ -191,7 +191,7 @@ class MovementsService(
       this.applicationStatus = applicationStatus
       this.transportType = transportType
       this.escort = escort
-      this.comment = request.comment
+      this.comment = request.comment?.truncateToUtf8Length(MAX_TAP_COMMENT_LENGTH, includeSeeDpsSuffix = true)
       this.toAddressOwnerClass = this.scheduledTemporaryAbsences.firstOrNull()?.toAddressOwnerClass
       this.toAddress = this.scheduledTemporaryAbsences.firstOrNull()?.toAddress
       this.toAgency = this.scheduledTemporaryAbsences.firstOrNull()?.toAgency
@@ -251,7 +251,7 @@ class MovementsService(
         startTime = request.startTime,
         eventSubType = eventSubType,
         eventStatus = eventStatus,
-        comment = request.comment?.truncateToUtf8Length(MAX_SCHEDULE_COMMENT_LENGTH, includeSeeDpsSuffix = true),
+        comment = request.comment?.truncateToUtf8Length(MAX_TAP_COMMENT_LENGTH, includeSeeDpsSuffix = true),
         escort = escort,
         fromPrison = fromPrison,
         toAgency = toAgency,

@@ -33,7 +33,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSche
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementsService.Companion.MAX_SCHEDULE_COMMENT_LENGTH
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementsService.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails.roundToNearestSecond
 import java.time.LocalDate
@@ -1709,6 +1709,20 @@ class MovementsResourceIntTest(
           }
       }
 
+      @Test
+      fun `should truncate comments`() {
+        // comment is 300 long
+        webTestClient.upsertApplicationOk(aRequest().copy(comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                assertThat(comment!!.length).isEqualTo(MAX_TAP_COMMENT_LENGTH)
+              }
+            }
+          }
+      }
+
       @Nested
       inner class Validation {
         @Test
@@ -2439,7 +2453,7 @@ class MovementsResourceIntTest(
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
               with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(comment!!.length).isEqualTo(MAX_SCHEDULE_COMMENT_LENGTH)
+                assertThat(comment!!.length).isEqualTo(MAX_TAP_COMMENT_LENGTH)
               }
             }
           }
