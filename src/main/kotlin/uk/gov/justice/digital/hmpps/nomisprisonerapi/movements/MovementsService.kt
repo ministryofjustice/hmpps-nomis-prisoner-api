@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageId
@@ -250,7 +251,7 @@ class MovementsService(
         startTime = request.startTime,
         eventSubType = eventSubType,
         eventStatus = eventStatus,
-        comment = request.comment?.substring(0..(minOf(request.comment.length, MAX_SCHEDULE_COMMENT_LENGTH) - 1)),
+        comment = request.comment?.truncateToUtf8Length(MAX_SCHEDULE_COMMENT_LENGTH, includeSeeDpsSuffix = true),
         escort = escort,
         fromPrison = fromPrison,
         toAgency = toAgency,
