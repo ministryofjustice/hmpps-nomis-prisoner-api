@@ -2557,6 +2557,8 @@ class MovementsResourceIntTest(
               with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
                 assertThat(releaseTime).isEqualTo(twoDaysAgo)
                 assertThat(returnTime).isEqualTo(yesterday)
+                assertThat(fromDate).isEqualTo(twoDaysAgo.toLocalDate())
+                assertThat(toDate).isEqualTo(yesterday.toLocalDate())
               }
             }
           }
@@ -2583,6 +2585,8 @@ class MovementsResourceIntTest(
               with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
                 assertThat(releaseTime).isEqualTo("${twoDaysAgo.truncatedTo(ChronoUnit.DAYS)}")
                 assertThat(returnTime).isEqualTo("${today.plusDays(2).truncatedTo(ChronoUnit.DAYS)}")
+                assertThat(fromDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
+                assertThat(toDate).isEqualTo("${today.plusDays(2).toLocalDate()}")
               }
             }
           }
