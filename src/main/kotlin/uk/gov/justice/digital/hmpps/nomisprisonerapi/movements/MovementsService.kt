@@ -164,7 +164,7 @@ class MovementsService(
     val applicationType = movementApplicationTypeOrThrow(request.applicationType)
     val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
-    val toAddress = request.toAddress.id?.let { addressOrThrow(request.toAddress.id) }
+    val toAddress = request.toAddress?.id?.let { addressOrThrow(request.toAddress.id) }
 
     val application = request.movementApplicationId
       ?.let {
