@@ -53,6 +53,9 @@ data class UpsertTemporaryAbsenceApplicationRequest(
 
   @Schema(description = "Temporary absence sub type")
   val temporaryAbsenceSubType: String?,
+
+  @Schema(description = "To address")
+  val toAddress: UpsertTemporaryAbsenceAddress,
 )
 
 @Schema(description = "Upsert temporary absence application response")

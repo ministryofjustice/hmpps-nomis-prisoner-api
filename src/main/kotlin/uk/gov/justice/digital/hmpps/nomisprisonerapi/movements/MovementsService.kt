@@ -164,6 +164,7 @@ class MovementsService(
     val applicationType = movementApplicationTypeOrThrow(request.applicationType)
     val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
+    val toAddress = request.toAddress.id?.let { addressOrThrow(request.toAddress.id) }
 
     val application = request.movementApplicationId
       ?.let {
@@ -181,6 +182,8 @@ class MovementsService(
       toDate = request.toDate,
       returnTime = request.returnTime,
       applicationStatus = applicationStatus,
+      toAddress = toAddress,
+      toAddressOwnerClass = toAddress?.addressOwnerClass,
     )
 
     with(application) {
@@ -199,6 +202,8 @@ class MovementsService(
       this.applicationType = applicationType
       this.temporaryAbsenceType = temporaryAbsenceType
       this.temporaryAbsenceSubType = temporaryAbsenceSubType
+      this.toAddress = toAddress
+      this.toAddressOwnerClass = toAddress?.addressOwnerClass
     }
 
     return offenderMovementApplicationRepository.save(application)
@@ -265,12 +270,6 @@ class MovementsService(
         applicationTime = request.applicationTime,
       )
 
-    // Always update application address to latest received from DPS - in case a schedule is created / re-created in NOMIS which takes movement address from the application
-    schedule.temporaryAbsenceApplication.toAddress = toAddress
-    schedule.temporaryAbsenceApplication.toAddressOwnerClass = toAddress.addressOwnerClass
-    // Application release/return times should match a single schedule, otherwise cover all days for multiple schedules
-    schedule.temporaryAbsenceApplication.deriveReleaseAndReturnTimes()
-
     val scheduledReturn = schedule.scheduledTemporaryAbsenceReturns.firstOrNull()
       ?.apply {
         // TODO As we don't create the scheduled return until the outbound movement has happened we should never need to delete the scheduled return. I think. But if we did then we'd set it to null here. Review this.
@@ -312,25 +311,6 @@ class MovementsService(
       addressId = toAddress.addressId,
       addressOwnerClass = toAddress.addressOwnerClass,
     )
-  }
-
-  private fun OffenderMovementApplication.deriveReleaseAndReturnTimes() {
-    when (scheduledTemporaryAbsences.size) {
-      0 -> {
-        releaseTime = fromDate.atStartOfDay()
-        returnTime = toDate.atStartOfDay().plusDays(1)
-      }
-      1 -> {
-        releaseTime = scheduledTemporaryAbsences.first().startTime!!
-        returnTime = scheduledTemporaryAbsences.first().returnTime!!
-      }
-      else -> {
-        releaseTime = scheduledTemporaryAbsences.minOf { it.startTime!! }.toLocalDate().atStartOfDay()
-        returnTime = scheduledTemporaryAbsences.maxOf { it.returnTime!! }.toLocalDate().plusDays(1).atStartOfDay()
-      }
-    }
-    fromDate = releaseTime.toLocalDate()
-    toDate = returnTime.toLocalDate()
   }
 
   fun getScheduledTemporaryAbsenceReturn(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceReturnResponse {

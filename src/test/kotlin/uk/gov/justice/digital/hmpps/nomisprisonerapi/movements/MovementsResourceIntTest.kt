@@ -1659,6 +1659,7 @@ class MovementsResourceIntTest(
       contactPersonName = "Derek",
       temporaryAbsenceType = "RR",
       temporaryAbsenceSubType = "RDR",
+      toAddress = UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId),
     )
 
     @AfterEach
@@ -1673,6 +1674,7 @@ class MovementsResourceIntTest(
       fun setUp() {
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
             booking = booking()
           }
         }
@@ -1699,8 +1701,8 @@ class MovementsResourceIntTest(
                 assertThat(comment).isEqualTo("Some comment application")
                 assertThat(prison.id).isEqualTo("LEI")
                 assertThat(toAgency).isNull()
-                assertThat(toAddress).isNull()
-                assertThat(toAddressOwnerClass).isNull()
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("OFF")
                 assertThat(contactPersonName).isEqualTo("Derek")
                 assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
                 assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
@@ -2395,47 +2397,6 @@ class MovementsResourceIntTest(
       }
 
       @Test
-      fun `should set the address on the movement application`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk()
-          .apply {
-            assertThat(bookingId).isEqualTo(booking.bookingId)
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
-                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-                assertThat(temporaryAbsenceApplication.toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-              }
-            }
-          }
-      }
-
-      @Test
-      fun `should override the address on the movement application if it already exists`() {
-        lateinit var existingAddress: OffenderAddress
-        nomisDataBuilder.build {
-          offender = offender(nomsId = "A9999AD") {
-            existingAddress = address()
-            offenderAddress = address()
-            booking = booking {
-              application = temporaryAbsenceApplication(toAddress = existingAddress)
-            }
-          }
-        }
-
-        webTestClient.upsertScheduledTemporaryAbsenceOk()
-          .apply {
-            assertThat(bookingId).isEqualTo(booking.bookingId)
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
-                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-                assertThat(temporaryAbsenceApplication.toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-              }
-            }
-          }
-      }
-
-      @Test
       fun `should truncate comments`() {
         nomisDataBuilder.build {
           offender = offender(nomsId = "A9999AD") {
@@ -2544,89 +2505,6 @@ class MovementsResourceIntTest(
                 assertThat(applicationDate).isCloseTo(today, within(5, ChronoUnit.MINUTES))
                 assertThat(applicationTime).isCloseTo(today, within(5, ChronoUnit.MINUTES))
                 assertThat(scheduledTemporaryAbsenceReturns).isEmpty()
-              }
-            }
-          }
-      }
-
-      @Test
-      fun `should update the address on the movement application`() {
-        lateinit var existingAddress: OffenderAddress
-        nomisDataBuilder.build {
-          offender = offender(nomsId = "A9999AD") {
-            existingAddress = address()
-            offenderAddress = address()
-            booking = booking {
-              application = temporaryAbsenceApplication(toAddress = existingAddress) {
-                scheduledTempAbsence = scheduledTemporaryAbsence(toAddress = existingAddress)
-              }
-            }
-          }
-        }
-
-        webTestClient.upsertScheduledTemporaryAbsenceOk(request = anUpsertRequest(eventId = scheduledTempAbsence.eventId))
-          .apply {
-            assertThat(bookingId).isEqualTo(booking.bookingId)
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
-                assertThat(temporaryAbsenceApplication.toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-                assertThat(temporaryAbsenceApplication.toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
-              }
-            }
-          }
-      }
-
-      @Test
-      fun `should update application release and return time for single schedule`() {
-        nomisDataBuilder.build {
-          offender = offender(nomsId = "A9999AD") {
-            booking = booking {
-              application = temporaryAbsenceApplication(releaseTime = yesterday, returnTime = today) {
-                scheduledTempAbsence = scheduledTemporaryAbsence(startTime = yesterday, returnTime = today)
-              }
-            }
-          }
-        }
-
-        // Updates schedule so startTime=twoDaysAgo and returnTime=yesterday
-        webTestClient.upsertScheduledTemporaryAbsenceOk(request = anUpsertRequest(eventId = scheduledTempAbsence.eventId))
-          .apply {
-            assertThat(bookingId).isEqualTo(booking.bookingId)
-            repository.runInTransaction {
-              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
-                assertThat(releaseTime).isEqualTo(twoDaysAgo)
-                assertThat(returnTime).isEqualTo(yesterday)
-                assertThat(fromDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(toDate).isEqualTo(yesterday.toLocalDate())
-              }
-            }
-          }
-      }
-
-      @Test
-      fun `should update application release and return time for multiple schedules`() {
-        nomisDataBuilder.build {
-          offender = offender(nomsId = "A9999AD") {
-            booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(startTime = yesterday, returnTime = today)
-                scheduledTemporaryAbsence(startTime = today, returnTime = today.plusDays(1))
-              }
-            }
-          }
-        }
-
-        // Updates schedule so startTime=twoDaysAgo and returnTime=yesterday
-        webTestClient.upsertScheduledTemporaryAbsenceOk(request = anUpsertRequest(eventId = scheduledTempAbsence.eventId))
-          .apply {
-            assertThat(bookingId).isEqualTo(booking.bookingId)
-            repository.runInTransaction {
-              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
-                assertThat(releaseTime).isEqualTo("${twoDaysAgo.truncatedTo(ChronoUnit.DAYS)}")
-                assertThat(returnTime).isEqualTo("${today.plusDays(2).truncatedTo(ChronoUnit.DAYS)}")
-                assertThat(fromDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
-                assertThat(toDate).isEqualTo("${today.plusDays(2).toLocalDate()}")
               }
             }
           }
