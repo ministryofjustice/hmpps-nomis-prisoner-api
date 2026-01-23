@@ -1642,7 +1642,7 @@ class MovementsResourceIntTest(
   @DisplayName("PUT /movements/{offenderNo}/temporary-absences/application")
   inner class UpsertTemporaryAbsenceApplication {
 
-    private fun aRequest(id: Long? = null) = UpsertTemporaryAbsenceApplicationRequest(
+    private fun aRequest(id: Long? = null, toAddress: UpsertTemporaryAbsenceAddress? = null) = UpsertTemporaryAbsenceApplicationRequest(
       movementApplicationId = id,
       eventSubType = "C5",
       applicationDate = twoDaysAgo.toLocalDate(),
@@ -1659,7 +1659,7 @@ class MovementsResourceIntTest(
       contactPersonName = "Derek",
       temporaryAbsenceType = "RR",
       temporaryAbsenceSubType = "RDR",
-      toAddress = UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId),
+      toAddress = toAddress,
     )
 
     @AfterEach
@@ -1701,8 +1701,8 @@ class MovementsResourceIntTest(
                 assertThat(comment).isEqualTo("Some comment application")
                 assertThat(prison.id).isEqualTo("LEI")
                 assertThat(toAgency).isNull()
-                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-                assertThat(toAddressOwnerClass).isEqualTo("OFF")
+                assertThat(toAddress).isNull()
+                assertThat(toAddressOwnerClass).isNull()
                 assertThat(contactPersonName).isEqualTo("Derek")
                 assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
                 assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
@@ -1868,7 +1868,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update application`() {
-        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId))
+        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId)))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -1903,6 +1903,50 @@ class MovementsResourceIntTest(
           .isNotFound
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("9999").contains("not found")
+          }
+      }
+    }
+
+    @Nested
+    inner class UpdateButNotAddress {
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                toAddress = offenderAddress,
+              ) {
+                scheduledTemporaryAbsence(
+                  toAddress = offenderAddress,
+                  toAgency = "HAZLWD",
+                ) {
+                  externalMovement()
+                  scheduledReturn {
+                    externalMovement()
+                  }
+                }
+              }
+              temporaryAbsence()
+              temporaryAbsenceReturn()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should not update address`() {
+        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = null))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("OFF")
+              }
+            }
           }
       }
     }

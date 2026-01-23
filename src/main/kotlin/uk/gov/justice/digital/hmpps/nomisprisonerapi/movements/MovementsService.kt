@@ -164,7 +164,7 @@ class MovementsService(
     val applicationType = movementApplicationTypeOrThrow(request.applicationType)
     val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
-    val toAddress = request.toAddress.id?.let { addressOrThrow(request.toAddress.id) }
+    val toAddress = request.toAddress?.id?.let { addressOrThrow(request.toAddress.id) }
 
     val application = request.movementApplicationId
       ?.let {
@@ -182,8 +182,9 @@ class MovementsService(
       toDate = request.toDate,
       returnTime = request.returnTime,
       applicationStatus = applicationStatus,
-      toAddress = toAddress,
-      toAddressOwnerClass = toAddress?.addressOwnerClass,
+      // Always create an application with null address - it is only set on an update
+      toAddress = null,
+      toAddressOwnerClass = null,
     )
 
     with(application) {
@@ -202,8 +203,9 @@ class MovementsService(
       this.applicationType = applicationType
       this.temporaryAbsenceType = temporaryAbsenceType
       this.temporaryAbsenceSubType = temporaryAbsenceSubType
-      this.toAddress = toAddress
-      this.toAddressOwnerClass = toAddress?.addressOwnerClass
+      // if address is not sent in the request that means don't attempt to update it
+      this.toAddress = request.toAddress?.let { toAddress } ?: this.toAddress
+      this.toAddressOwnerClass = request.toAddress?.let { toAddress!!.addressOwnerClass } ?: this.toAddressOwnerClass
     }
 
     return offenderMovementApplicationRepository.save(application)
