@@ -2553,6 +2553,36 @@ class MovementsResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should truncate comments`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A9999AD") {
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence()
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          // comment is 300 long
+          anUpsertRequest(
+            movementApplicationId = application.movementApplicationId,
+            eventId = scheduledTempAbsence.eventId,
+            comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890",
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(comment!!.length).isEqualTo(MAX_TAP_COMMENT_LENGTH)
+              }
+            }
+          }
+      }
     }
 
     @Nested
