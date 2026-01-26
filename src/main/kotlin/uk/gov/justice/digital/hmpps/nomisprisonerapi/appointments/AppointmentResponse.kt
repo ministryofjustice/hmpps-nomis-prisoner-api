@@ -8,6 +8,8 @@ import java.time.LocalDateTime
 @Schema(description = "Appointment information")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AppointmentResponse(
+  @Schema(description = "The id", required = true)
+  val eventId: Long,
   @Schema(description = "The booking id", required = true)
   val bookingId: Long,
   @Schema(description = "The offender number, aka nomsId, prisonerId", required = true)

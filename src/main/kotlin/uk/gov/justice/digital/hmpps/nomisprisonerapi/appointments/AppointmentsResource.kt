@@ -212,33 +212,9 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
   @GetMapping("/appointments/booking/{bookingId}/location/{locationId}/start/{dateTime}")
   @Operation(
     summary = "Get an appointment",
-    description = "Get an appointment given the booking id, internal location, date and start time. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Appointment information with created id",
-        content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = AppointmentResponse::class)),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Booking, location and timestamp combination does not exist",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
+    description = "Get appointments given the booking id, internal location, date and start time. Returns empty list if none found. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
   )
-  fun getAppointment(
+  fun getAppointments(
     @Schema(description = "NOMIS booking Id", example = "1234567", required = true)
     @PathVariable
     bookingId: Long,
@@ -248,7 +224,7 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
     @Schema(description = "Appointment date and start time", example = "2023-02-27T14:40", required = true)
     @PathVariable
     dateTime: LocalDateTime,
-  ): AppointmentResponse = appointmentService.getAppointment(bookingId, locationId, dateTime)
+  ): List<AppointmentResponse> = appointmentService.getAppointments(bookingId, locationId, dateTime)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/appointments/{eventId}")
