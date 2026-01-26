@@ -178,7 +178,6 @@ class AppointmentService(
       hour = date.hour,
       minute = date.minute,
     ).map { mapModel(it) }
-    .also { println("Result: $it") }
 
   fun getAppointment(eventId: Long): AppointmentResponse = offenderAppointmentRepository
     .findByIdOrNull(eventId)
