@@ -16,13 +16,13 @@ interface OffenderAppointmentRepository :
     "from OffenderAppointment oa where oa.offenderBooking.bookingId = :bookingId and oa.internalLocation.locationId = :locationId " +
       "and oa.eventDate = :date and hour(oa.startTime) = :hour and minute(oa.startTime) = :minute",
   )
-  fun findOneByBookingLocationDateAndStartTime(
+  fun findByBookingLocationDateAndStartTime(
     bookingId: Long,
     locationId: Long,
     date: LocalDate,
     hour: Int,
     minute: Int,
-  ): OffenderAppointment?
+  ): List<OffenderAppointment>
 
   @Query(
     """SELECT event_id FROM  (

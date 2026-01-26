@@ -170,20 +170,19 @@ class AppointmentService(
     )
   }
 
-  fun getAppointment(bookingId: Long, locationId: Long, date: LocalDateTime): AppointmentResponse = offenderAppointmentRepository.findOneByBookingLocationDateAndStartTime(
-    bookingId = bookingId,
-    locationId = locationId,
-    date = date.toLocalDate(),
-    hour = date.hour,
-    minute = date.minute,
-  )?.let {
-    return mapModel(it)
-  }
-    ?: throw NotFoundException("Appointment not found")
+  fun getAppointments(bookingId: Long, locationId: Long, date: LocalDateTime): List<AppointmentResponse> = offenderAppointmentRepository
+    .findByBookingLocationDateAndStartTime(
+      bookingId = bookingId,
+      locationId = locationId,
+      date = date.toLocalDate(),
+      hour = date.hour,
+      minute = date.minute,
+    ).map { mapModel(it) }
+    .also { println("Result: $it") }
 
-  fun getAppointment(eventId: Long): AppointmentResponse = offenderAppointmentRepository.findByIdOrNull(eventId)?.let {
-    return mapModel(it)
-  }
+  fun getAppointment(eventId: Long): AppointmentResponse = offenderAppointmentRepository
+    .findByIdOrNull(eventId)
+    ?.let { mapModel(it) }
     ?: throw NotFoundException("Appointment not found")
 
   fun findIdsByFilter(pageRequest: Pageable, appointmentFilter: AppointmentFilter): Page<AppointmentIdResponse> {
@@ -222,6 +221,7 @@ class AppointmentService(
 }
 
 private fun mapModel(entity: OffenderAppointment): AppointmentResponse = AppointmentResponse(
+  eventId = entity.eventId,
   bookingId = entity.offenderBooking.bookingId,
   offenderNo = entity.offenderBooking.offender.nomsId,
   startDateTime = entity.startTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },

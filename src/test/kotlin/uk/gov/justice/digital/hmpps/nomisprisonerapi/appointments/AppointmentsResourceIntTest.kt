@@ -725,6 +725,152 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
   }
 
   @Nested
+  inner class GetAppointmentsByBookingLocationDate {
+
+    private lateinit var appointment1: OffenderAppointment
+    private lateinit var appointment2: OffenderAppointment
+    private lateinit var appointment3: OffenderAppointment
+
+    @BeforeEach
+    internal fun createAppointments() {
+      appointment1 = repository.save(
+        OffenderAppointment(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = LocalDate.parse("2026-01-01"),
+          startTime = LocalDateTime.parse("2026-01-01T10:00"),
+          endTime = LocalDateTime.parse("2026-01-01T11:00"),
+          eventSubType = repository.lookupEventSubtype("MEDE"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+          internalLocation = repository.lookupAgencyInternalLocation(-1L),
+          comment = "hit the gym",
+        ),
+      )
+      appointment2 = repository.save(
+        OffenderAppointment(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = LocalDate.parse("2026-01-01"),
+          startTime = LocalDateTime.parse("2026-01-01T10:00"),
+          endTime = LocalDateTime.parse("2026-01-01T11:00"),
+          eventSubType = repository.lookupEventSubtype("MEDE"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+          internalLocation = repository.lookupAgencyInternalLocation(-1L),
+          comment = "hit the gym",
+        ),
+      )
+      appointment3 = repository.save(
+        OffenderAppointment(
+          offenderBooking = offenderAtMoorlands.latestBooking(),
+          eventDate = LocalDate.parse("2026-02-02"),
+          startTime = LocalDateTime.parse("2026-02-02T10:00"),
+          endTime = LocalDateTime.parse("2026-02-02T11:00"),
+          eventSubType = repository.lookupEventSubtype("MEDE"),
+          eventStatus = repository.lookupEventStatusCode("SCH"),
+          prison = repository.lookupAgency("MDI"),
+          internalLocation = repository.lookupAgencyInternalLocation(-1L),
+          comment = "hit the gym",
+        ),
+      )
+    }
+
+    @AfterEach
+    internal fun deleteAppointments() {
+      repository.delete(appointment1)
+      repository.delete(appointment2)
+      repository.delete(appointment3)
+    }
+
+    @Test
+    fun `get dupes`() {
+      webTestClient.get().uri("/appointments/booking/${appointment1.offenderBooking.bookingId}/location/${appointment1.internalLocation?.locationId}/start/2026-01-01T10:00:00")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("length()").isEqualTo(2)
+        .jsonPath("$[0].eventId").isEqualTo(appointment1.eventId)
+        .jsonPath("$[0].bookingId").isEqualTo(appointment1.offenderBooking.bookingId)
+        .jsonPath("$[0].offenderNo").isEqualTo(appointment1.offenderBooking.offender.nomsId)
+        .jsonPath("$[0].prisonId").isEqualTo("MDI")
+        .jsonPath("$[0].internalLocation").isEqualTo(appointment1.internalLocation?.locationId.toString())
+        .jsonPath("$[0].startDateTime").isEqualTo("2026-01-01T10:00:00")
+        .jsonPath("$[0].endDateTime").isEqualTo("2026-01-01T11:00:00")
+        .jsonPath("$[0].comment").isEqualTo("hit the gym")
+        .jsonPath("$[0].subtype").isEqualTo("MEDE")
+        .jsonPath("$[0].status").isEqualTo("SCH")
+        .jsonPath("$[0].createdDate").isNotEmpty()
+        .jsonPath("$[0].createdBy").isEqualTo("SA")
+        .jsonPath("$[1].eventId").isEqualTo(appointment2.eventId)
+    }
+
+    @Test
+    fun `get single`() {
+      webTestClient.get().uri("/appointments/booking/${appointment3.offenderBooking.bookingId}/location/${appointment3.internalLocation?.locationId}/start/2026-02-02T10:00:00")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("length()").isEqualTo(1)
+        .jsonPath("$[0].eventId").isEqualTo(appointment3.eventId)
+        .jsonPath("$[0].startDateTime").isEqualTo("2026-02-02T10:00:00")
+    }
+
+    @Test
+    fun `appointments not found`() {
+      webTestClient.get().uri("/appointments/booking/9999/location/8888/start/2023-01-02T10:00:00")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .json("[ ]")
+    }
+
+    @Test
+    fun `malformed booking id returns bad request`() {
+      webTestClient.get().uri("/appointments/booking/invalid/location/888/start/2023-01-01T10:00:00")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `malformed location id returns bad request`() {
+      webTestClient.get().uri("/appointments/booking/9999/location/invalid/start/2023-01-01T10:00:00")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `malformed start date returns bad request`() {
+      webTestClient.get().uri("/appointments/booking/9999/location/8888/start/2023-01-01T10:90")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `get appointments prevents access without appropriate role`() {
+      assertThat(
+        webTestClient.get().uri("/appointments/booking/999/location/888/start/2023-01-01T10:00:00")
+          .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+          .exchange()
+          .expectStatus().isForbidden,
+      )
+    }
+
+    @Test
+    fun `get appointments prevents access without authorization`() {
+      assertThat(
+        webTestClient.get().uri("/appointments/booking/999/location/888/start/2023-01-01T10:00:00")
+          .exchange()
+          .expectStatus().isUnauthorized,
+      )
+    }
+  }
+
+  @Nested
   inner class GetAppointmentIdsByFilterRequest {
 
     private lateinit var appointment1: OffenderAppointment
