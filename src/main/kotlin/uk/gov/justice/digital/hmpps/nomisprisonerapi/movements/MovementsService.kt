@@ -242,7 +242,7 @@ class MovementsService(
         this.startTime = request.startTime
         this.eventSubType = eventSubType
         this.eventStatus = eventStatus
-        this.comment = request.comment
+        this.comment = request.comment?.truncateToUtf8Length(MAX_TAP_COMMENT_LENGTH, includeSeeDpsSuffix = true)
         this.escort = escort
         this.fromAgency = fromPrison
         this.toAgency = toAgency
