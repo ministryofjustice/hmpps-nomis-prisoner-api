@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAd
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -26,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTempor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
@@ -50,6 +52,7 @@ class MovementsResourceIntTest(
   @Autowired val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   @Autowired val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   @Autowired val corporateAddressRepository: CorporateAddressRepository,
+  @Autowired val agencyLocationRepository: AgencyLocationRepository,
   @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
@@ -63,6 +66,7 @@ class MovementsResourceIntTest(
   private lateinit var tempAbsenceReturn: OffenderTemporaryAbsenceReturn
   private lateinit var unscheduledTemporaryAbsence: OffenderTemporaryAbsence
   private lateinit var unscheduledTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
+  private lateinit var agencyLocation: AgencyLocation
 
   private val offenderNo = "D6347ED"
   private val today: LocalDateTime = LocalDateTime.now().roundToNearestSecond()
@@ -82,6 +86,9 @@ class MovementsResourceIntTest(
     }
     if (this::offender.isInitialized) {
       repository.delete(offender)
+    }
+    if (this::agencyLocation.isInitialized) {
+      agencyLocationRepository.delete(agencyLocation)
     }
     corporateAddressRepository.deleteAll()
   }
@@ -284,7 +291,7 @@ class MovementsResourceIntTest(
     fun `should retrieve agency address`() {
       lateinit var agencyAddress: AgencyLocationAddress
       nomisDataBuilder.build {
-        agencyLocation(description = "Big Hospital") {
+        agencyLocation = agencyLocation(agencyLocationId = "BIGHHO", description = "Big Hospital") {
           agencyAddress = address(postcode = "LS3 3AA")
         }
         offender = offender(nomsId = offenderNo) {
@@ -400,7 +407,7 @@ class MovementsResourceIntTest(
     fun `should retrieve agency address from external movement`() {
       lateinit var agencyAddress: AgencyLocationAddress
       nomisDataBuilder.build {
-        agencyLocation(description = "Big Hospital") {
+        agencyLocation = agencyLocation(agencyLocationId = "BIGHHO", description = "Big Hospital") {
           agencyAddress = address(postcode = "LS3 3AA")
         }
         offender = offender(nomsId = offenderNo) {
@@ -434,7 +441,7 @@ class MovementsResourceIntTest(
     fun `should retrieve address from schedule if not on movement`() {
       lateinit var agencyAddress: AgencyLocationAddress
       nomisDataBuilder.build {
-        agencyLocation(description = "Big Hospital") {
+        agencyLocation = agencyLocation(agencyLocationId = "BIGHHO", description = "Big Hospital") {
           agencyAddress = address(postcode = "LS3 3AA")
         }
         offender = offender(nomsId = offenderNo) {
@@ -603,7 +610,7 @@ class MovementsResourceIntTest(
     fun `should retrieve agency address from return movement`() {
       lateinit var agencyAddress: AgencyLocationAddress
       nomisDataBuilder.build {
-        agencyLocation(description = "Big Hospital") {
+        agencyLocation = agencyLocation(agencyLocationId = "BIGHHO", description = "Big Hospital") {
           agencyAddress = address(postcode = "LS3 3AA")
         }
         offender = offender(nomsId = offenderNo) {
@@ -641,7 +648,7 @@ class MovementsResourceIntTest(
     fun `should retrieve address from outbound movement if not on return movement`() {
       lateinit var agencyAddress: AgencyLocationAddress
       nomisDataBuilder.build {
-        agencyLocation(description = "Big Hospital") {
+        agencyLocation = agencyLocation(agencyLocationId = "BIGHHO", description = "Big Hospital") {
           agencyAddress = address(postcode = "LS3 3AA")
         }
         offender = offender(nomsId = offenderNo) {
@@ -680,7 +687,7 @@ class MovementsResourceIntTest(
     fun `should retrieve address from scheduled outbound movement if not on either movement`() {
       lateinit var agencyAddress: AgencyLocationAddress
       nomisDataBuilder.build {
-        agencyLocation(description = "Big Hospital") {
+        agencyLocation = agencyLocation(agencyLocationId = "BIGHHO", description = "Big Hospital") {
           agencyAddress = address(postcode = "LS3 3AA")
         }
         offender = offender(nomsId = offenderNo) {
@@ -2126,7 +2133,7 @@ class MovementsResourceIntTest(
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          agencyLocation(
+          agencyLocation = agencyLocation(
             agencyLocationId = "NGENHO",
             description = "Northern General Hospital",
             type = "HOSPITAL",
@@ -3021,22 +3028,50 @@ class MovementsResourceIntTest(
 
     @Nested
     inner class GetUnscheduledTemporaryAbsence {
+      private lateinit var agencyAddress: AgencyLocationAddress
+      private lateinit var cityBooking: OffenderBooking
+      private lateinit var agencyBooking: OffenderBooking
+      private lateinit var cityTempAbsence: OffenderTemporaryAbsence
+      private lateinit var agencyTempAbsence: OffenderTemporaryAbsence
 
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
+          agencyLocation = agencyLocation(
+            agencyLocationId = "NGENHO",
+            description = "Northern General Hospital",
+            type = "HOSPITAL",
+          ) {
+            agencyAddress = address(
+              type = "BUS",
+              premise = "2",
+              street = "Herries Road",
+              postcode = "S5 7AU",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+            )
+          }
           offender = offender(nomsId = offenderNo) {
-            booking = booking {
-              tempAbsence = temporaryAbsence(
+            cityBooking = booking {
+              cityTempAbsence = temporaryAbsence(
                 date = twoDaysAgo,
                 fromPrison = "LEI",
-                toAgency = "HAZLWD",
+                toAgency = null,
                 movementReason = "C5",
                 arrestAgency = "POL",
                 escort = "L",
                 escortText = "SE",
                 comment = "Tap OUT comment",
                 toCity = "25343",
+              )
+            }
+            agencyBooking = booking {
+              agencyTempAbsence = temporaryAbsence(
+                date = twoDaysAgo,
+                fromPrison = "LEI",
+                toAgency = "NGENHO",
+                toCity = null,
               )
             }
           }
@@ -3046,7 +3081,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return unauthorised for missing token`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/temporary-absence/1/1")
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence/${cityBooking.bookingId}/1")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3054,7 +3089,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for missing role`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/temporary-absence/1/1")
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence/${cityBooking.bookingId}/1")
           .headers(setAuthorisation())
           .exchange()
           .expectStatus().isForbidden
@@ -3063,7 +3098,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for wrong role`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/temporary-absence/1/1")
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence/${cityBooking.bookingId}/1")
           .headers(setAuthorisation("ROLE_INVALID"))
           .exchange()
           .expectStatus().isForbidden
@@ -3072,7 +3107,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return not found if offender not found`() {
         webTestClient.get()
-          .uri("/movements/UNKNOWN/temporary-absences/temporary-absence/1/1")
+          .uri("/movements/UNKNOWN/temporary-absences/temporary-absence/${cityBooking.bookingId}/1")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
@@ -3094,16 +3129,16 @@ class MovementsResourceIntTest(
       }
 
       @Test
-      fun `should retrieve unscheduled temporary absence`() {
+      fun `should retrieve unscheduled temporary absence with city for address`() {
         webTestClient.get()
-          .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+          .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${cityBooking.bookingId}/${cityTempAbsence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse<TemporaryAbsenceResponse>()
           .apply {
-            assertThat(bookingId).isEqualTo(booking.bookingId)
-            assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+            assertThat(bookingId).isEqualTo(cityBooking.bookingId)
+            assertThat(sequence).isEqualTo(cityTempAbsence.id.sequence)
             assertThat(scheduledTemporaryAbsenceId).isNull()
             assertThat(movementApplicationId).isNull()
             assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -3113,12 +3148,34 @@ class MovementsResourceIntTest(
             assertThat(escort).isEqualTo("L")
             assertThat(escortText).isEqualTo("SE")
             assertThat(fromPrison).isEqualTo("LEI")
-            assertThat(toAgency).isEqualTo("HAZLWD")
+            assertThat(toAgency).isNull()
             assertThat(commentText).isEqualTo("Tap OUT comment")
             assertThat(toAddressId).isNull()
             assertThat(toAddressOwnerClass).isNull()
             assertThat(toFullAddress).isEqualTo("Sheffield")
             assertThat(toAddressPostcode).isNull()
+          }
+      }
+
+      @Test
+      fun `should retrieve unscheduled temporary absence with agency for address`() {
+        webTestClient.get()
+          .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${agencyBooking.bookingId}/${agencyTempAbsence.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<TemporaryAbsenceResponse>()
+          .apply {
+            assertThat(bookingId).isEqualTo(agencyBooking.bookingId)
+            assertThat(sequence).isEqualTo(agencyTempAbsence.id.sequence)
+            assertThat(scheduledTemporaryAbsenceId).isNull()
+            assertThat(movementApplicationId).isNull()
+            assertThat(toAgency).isEqualTo("NGENHO")
+            assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
+            assertThat(toAddressOwnerClass).isEqualTo("AGY")
+            assertThat(toFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
+            assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
+            assertThat(toAddressPostcode).isEqualTo("S5 7AU")
           }
       }
     }
@@ -3429,7 +3486,7 @@ class MovementsResourceIntTest(
         @BeforeEach
         fun setUp() {
           nomisDataBuilder.build {
-            agencyLocation(
+            agencyLocation = agencyLocation(
               agencyLocationId = "NGENHO",
               description = "Northern General Hospital",
               type = "HOSPITAL",
@@ -3783,21 +3840,49 @@ class MovementsResourceIntTest(
 
     @Nested
     inner class GetUnscheduledTemporaryAbsenceReturn {
+      private lateinit var agencyAddress: AgencyLocationAddress
+      private lateinit var cityBooking: OffenderBooking
+      private lateinit var agencyBooking: OffenderBooking
+      private lateinit var cityTempAbsenceReturn: OffenderTemporaryAbsenceReturn
+      private lateinit var agencyTempAbsenceReturn: OffenderTemporaryAbsenceReturn
 
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
+          agencyLocation = agencyLocation(
+            agencyLocationId = "NGENHO",
+            description = "Northern General Hospital",
+            type = "HOSPITAL",
+          ) {
+            agencyAddress = address(
+              type = "BUS",
+              premise = "2",
+              street = "Herries Road",
+              postcode = "S5 7AU",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+            )
+          }
           offender = offender(nomsId = offenderNo) {
-            booking = booking {
-              tempAbsenceReturn = temporaryAbsenceReturn(
+            cityBooking = booking {
+              cityTempAbsenceReturn = temporaryAbsenceReturn(
                 date = twoDaysAgo,
-                fromAgency = "HAZLWD",
+                fromAgency = null,
                 toPrison = "LEI",
                 movementReason = "C5",
                 escort = "L",
                 escortText = "SE",
                 comment = "Tap IN comment",
                 fromCity = "25343",
+              )
+            }
+            agencyBooking = booking {
+              agencyTempAbsenceReturn = temporaryAbsenceReturn(
+                date = twoDaysAgo,
+                toPrison = "LEI",
+                fromAgency = "NGENHO",
+                fromCity = null,
               )
             }
           }
@@ -3807,7 +3892,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return unauthorised for missing token`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/1/1")
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/${cityBooking.bookingId}/1")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3815,7 +3900,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for missing role`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/1/1")
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/${cityBooking.bookingId}/1")
           .headers(setAuthorisation())
           .exchange()
           .expectStatus().isForbidden
@@ -3824,7 +3909,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for wrong role`() {
         webTestClient.get()
-          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/1/1")
+          .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/${cityBooking.bookingId}/1")
           .headers(setAuthorisation("ROLE_INVALID"))
           .exchange()
           .expectStatus().isForbidden
@@ -3833,7 +3918,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return not found if offender not found`() {
         webTestClient.get()
-          .uri("/movements/UNKNOWN/temporary-absences/temporary-absence-return/1/1")
+          .uri("/movements/UNKNOWN/temporary-absences/temporary-absence-return/${cityBooking.bookingId}/1")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
@@ -3855,16 +3940,16 @@ class MovementsResourceIntTest(
       }
 
       @Test
-      fun `should retrieve unscheduled temporary absence return`() {
+      fun `should retrieve unscheduled temporary absence return with city address`() {
         webTestClient.get()
-          .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+          .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${cityBooking.bookingId}/${cityTempAbsenceReturn.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
           .expectBodyResponse<TemporaryAbsenceReturnResponse>()
           .apply {
-            assertThat(bookingId).isEqualTo(booking.bookingId)
-            assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+            assertThat(bookingId).isEqualTo(cityBooking.bookingId)
+            assertThat(sequence).isEqualTo(cityTempAbsenceReturn.id.sequence)
             assertThat(scheduledTemporaryAbsenceId).isNull()
             assertThat(scheduledTemporaryAbsenceReturnId).isNull()
             assertThat(movementApplicationId).isNull()
@@ -3873,13 +3958,37 @@ class MovementsResourceIntTest(
             assertThat(movementReason).isEqualTo("C5")
             assertThat(escort).isEqualTo("L")
             assertThat(escortText).isEqualTo("SE")
-            assertThat(fromAgency).isEqualTo("HAZLWD")
+            assertThat(fromAgency).isNull()
             assertThat(toPrison).isEqualTo("LEI")
             assertThat(commentText).isEqualTo("Tap IN comment")
             assertThat(fromAddressId).isNull()
             assertThat(fromAddressOwnerClass).isNull()
             assertThat(fromFullAddress).isEqualTo("Sheffield")
             assertThat(fromAddressPostcode).isNull()
+          }
+      }
+
+      @Test
+      fun `should retrieve unscheduled temporary absence return with agency address`() {
+        webTestClient.get()
+          .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${agencyBooking.bookingId}/${agencyTempAbsenceReturn.id.sequence}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+          .apply {
+            assertThat(bookingId).isEqualTo(agencyBooking.bookingId)
+            assertThat(sequence).isEqualTo(agencyTempAbsenceReturn.id.sequence)
+            assertThat(scheduledTemporaryAbsenceId).isNull()
+            assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+            assertThat(movementApplicationId).isNull()
+            assertThat(fromAgency).isEqualTo("NGENHO")
+            assertThat(toPrison).isEqualTo("LEI")
+            assertThat(fromAddressId).isEqualTo(agencyAddress.addressId)
+            assertThat(fromAddressOwnerClass).isEqualTo("AGY")
+            assertThat(fromFullAddress).isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
+            assertThat(fromAddressDescription).isEqualTo("Northern General Hospital")
+            assertThat(fromAddressPostcode).isEqualTo("S5 7AU")
           }
       }
     }
@@ -4268,7 +4377,7 @@ class MovementsResourceIntTest(
         @BeforeEach
         fun setUp() {
           nomisDataBuilder.build {
-            agencyLocation(
+            agencyLocation = agencyLocation(
               agencyLocationId = "NGENHO",
               description = "Northern General Hospital",
               type = "HOSPITAL",

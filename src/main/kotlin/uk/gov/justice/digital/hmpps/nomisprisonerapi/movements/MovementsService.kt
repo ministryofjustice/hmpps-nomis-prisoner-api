@@ -831,7 +831,9 @@ class MovementsService(
 
   private fun OffenderTemporaryAbsence.toSingleResponse(): TemporaryAbsenceResponse {
     // The address may only exist on the schedule so check there too
-    val toAddress = toAddress ?: scheduledTemporaryAbsence?.toAddress
+    val toAddress = toAddress
+      ?: toAgency?.addresses?.firstOrNull()
+      ?: scheduledTemporaryAbsence?.toAddress
     return TemporaryAbsenceResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
@@ -858,6 +860,7 @@ class MovementsService(
   private fun OffenderTemporaryAbsenceReturn.toSingleResponse(): TemporaryAbsenceReturnResponse {
     // The address may only exist on the outbound movement or the scheduled outbound movement so check there too
     val address = fromAddress
+      ?: fromAgency?.addresses?.firstOrNull()
       ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
       ?: scheduledTemporaryAbsence?.toAddress
     return TemporaryAbsenceReturnResponse(
