@@ -96,6 +96,7 @@ class MovementsResourceIntTest(
   @Nested
   @DisplayName("GET /movements/{offenderNo}/temporary-absences")
   inner class GetTemporaryAbsencesAndMovements {
+    private lateinit var agencyAddress: AgencyLocationAddress
 
     @Test
     fun `should return unauthorised for missing token`() {
@@ -725,8 +726,22 @@ class MovementsResourceIntTest(
     }
 
     @Test
-    fun `should retrieve unscheduled temporary absence external movements`() {
+    fun `should retrieve unscheduled temporary absence external movements with agency address`() {
       nomisDataBuilder.build {
+        agencyLocation = agencyLocation(
+          agencyLocationId = "NGENHO",
+          description = "Northern General Hospital",
+          type = "HOSPITAL",
+        ) {
+          agencyAddress = address(
+            type = "BUS",
+            street = "Herries Road",
+            postcode = "S5 7AU",
+            city = SHEFFIELD,
+            county = "S.YORKSHIRE",
+            country = "ENG",
+          )
+        }
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
@@ -737,9 +752,9 @@ class MovementsResourceIntTest(
               escortText = "SE",
               comment = "Tap OUT comment",
               fromPrison = "LEI",
-              toAgency = "HAZLWD",
-              toCity = SHEFFIELD,
-              toAddress = offenderAddress,
+              toAgency = "NGENHO",
+              toCity = null,
+              toAddress = null,
             )
           }
         }
@@ -760,13 +775,13 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].escort").isEqualTo("U")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].escortText").isEqualTo("SE")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].fromPrison").isEqualTo("LEI")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAgency").isEqualTo("HAZLWD")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAgency").isEqualTo("NGENHO")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].commentText").isEqualTo("Tap OUT comment")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressId").isEqualTo(offenderAddress.addressId)
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressDescription").doesNotExist()
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toFullAddress").isEqualTo("41 High Street, Sheffield")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressPostcode").isEqualTo("S1 1AA")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressId").isEqualTo(agencyAddress.addressId)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressDescription").isEqualTo("Northern General Hospital")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toFullAddress").isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].toAddressPostcode").isEqualTo("S5 7AU")
     }
 
     @Test
@@ -777,6 +792,7 @@ class MovementsResourceIntTest(
           booking = booking {
             unscheduledTemporaryAbsence = temporaryAbsence(
               toCity = SHEFFIELD,
+              toAgency = null,
               toAddress = null,
             )
           }
@@ -797,8 +813,22 @@ class MovementsResourceIntTest(
     }
 
     @Test
-    fun `should retrieve unscheduled temporary absences return external movements`() {
+    fun `should retrieve unscheduled temporary absences return external movements with agency address`() {
       nomisDataBuilder.build {
+        agencyLocation = agencyLocation(
+          agencyLocationId = "NGENHO",
+          description = "Northern General Hospital",
+          type = "HOSPITAL",
+        ) {
+          agencyAddress = address(
+            type = "BUS",
+            street = "Herries Road",
+            postcode = "S5 7AU",
+            city = SHEFFIELD,
+            county = "S.YORKSHIRE",
+            country = "ENG",
+          )
+        }
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
@@ -810,9 +840,9 @@ class MovementsResourceIntTest(
               escortText = "SE",
               comment = "Tap IN comment",
               toPrison = "LEI",
-              fromAgency = "HAZLWD",
-              fromCity = SHEFFIELD,
-              fromAddress = offenderAddress,
+              fromAgency = "NGENHO",
+              fromCity = null,
+              fromAddress = null,
             )
           }
         }
@@ -824,22 +854,25 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence").isEqualTo(unscheduledTemporaryAbsenceReturn.id.sequence)
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementDate").isEqualTo("${today.toLocalDate()}")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence")
+        .isEqualTo(unscheduledTemporaryAbsenceReturn.id.sequence)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementDate")
+        .isEqualTo("${today.toLocalDate()}")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementTime").value<String> {
           assertThat(it).startsWith("${today.toLocalDate()}")
         }
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementReason").isEqualTo("C5")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].escort").isEqualTo("U")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].escortText").isEqualTo("SE")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAgency").isEqualTo("HAZLWD")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAgency").isEqualTo("NGENHO")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].toPrison").isEqualTo("LEI")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].commentText").isEqualTo("Tap IN comment")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressId").isEqualTo(offenderAddress.addressId)
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressDescription").doesNotExist()
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromFullAddress").isEqualTo("41 High Street, Sheffield")
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressPostcode").isEqualTo("S1 1AA")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressId")
+        .isEqualTo(agencyAddress.addressId)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressOwnerClass").isEqualTo("AGY")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressDescription").isEqualTo("Northern General Hospital")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromFullAddress").isEqualTo("2 Herries Road, Stanningley Road, Sheffield, South Yorkshire, England")
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].fromAddressPostcode").isEqualTo("S5 7AU")
     }
 
     @Test

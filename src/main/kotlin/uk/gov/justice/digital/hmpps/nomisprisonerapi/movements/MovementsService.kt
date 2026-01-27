@@ -723,42 +723,48 @@ class MovementsService(
     )
   }
 
-  private fun OffenderTemporaryAbsence.toTemporaryAbsenceResponse() = TemporaryAbsence(
-    sequence = id.sequence,
-    movementDate = movementDate,
-    movementTime = movementTime,
-    movementReason = movementReason.code,
-    arrestAgency = arrestAgency?.code,
-    escort = escort?.code,
-    escortText = escortText,
-    fromPrison = fromAgency?.id,
-    toAgency = toAgency?.id,
-    commentText = commentText,
-    toAddressId = toAddress?.addressId,
-    toAddressOwnerClass = toAddress?.addressOwnerClass,
-    toAddressDescription = getAddressDescription(toAddress),
-    toFullAddress = toAddress?.toFullAddress(getAddressDescription(toAddress)) ?: toCity?.description,
-    toAddressPostcode = toAddress?.postalCode?.trim(),
-    audit = toAudit(),
-  )
+  private fun OffenderTemporaryAbsence.toTemporaryAbsenceResponse(): TemporaryAbsence {
+    val address = toAddress ?: toAgency?.addresses?.firstOrNull()
+    return TemporaryAbsence(
+      sequence = id.sequence,
+      movementDate = movementDate,
+      movementTime = movementTime,
+      movementReason = movementReason.code,
+      arrestAgency = arrestAgency?.code,
+      escort = escort?.code,
+      escortText = escortText,
+      fromPrison = fromAgency?.id,
+      toAgency = toAgency?.id,
+      commentText = commentText,
+      toAddressId = address?.addressId,
+      toAddressOwnerClass = address?.addressOwnerClass,
+      toAddressDescription = getAddressDescription(address),
+      toFullAddress = address?.toFullAddress(getAddressDescription(address)) ?: toCity?.description,
+      toAddressPostcode = address?.postalCode?.trim(),
+      audit = toAudit(),
+    )
+  }
 
-  private fun OffenderTemporaryAbsenceReturn.toTemporaryAbsenceReturnResponse() = TemporaryAbsenceReturn(
-    sequence = id.sequence,
-    movementDate = movementDate,
-    movementTime = movementTime,
-    movementReason = movementReason.code,
-    escort = escort?.code,
-    escortText = escortText,
-    fromAgency = fromAgency?.id,
-    toPrison = toAgency?.id,
-    commentText = commentText,
-    fromAddressId = fromAddress?.addressId,
-    fromAddressOwnerClass = fromAddress?.addressOwnerClass,
-    fromAddressDescription = getAddressDescription(fromAddress),
-    fromFullAddress = fromAddress?.toFullAddress(getAddressDescription(fromAddress)) ?: fromCity?.description,
-    fromAddressPostcode = fromAddress?.postalCode?.trim(),
-    audit = toAudit(),
-  )
+  private fun OffenderTemporaryAbsenceReturn.toTemporaryAbsenceReturnResponse(): TemporaryAbsenceReturn {
+    val address = fromAddress ?: fromAgency?.addresses?.firstOrNull()
+    return TemporaryAbsenceReturn(
+      sequence = id.sequence,
+      movementDate = movementDate,
+      movementTime = movementTime,
+      movementReason = movementReason.code,
+      escort = escort?.code,
+      escortText = escortText,
+      fromAgency = fromAgency?.id,
+      toPrison = toAgency?.id,
+      commentText = commentText,
+      fromAddressId = address?.addressId,
+      fromAddressOwnerClass = address?.addressOwnerClass,
+      fromAddressDescription = getAddressDescription(address),
+      fromFullAddress = address?.toFullAddress(getAddressDescription(fromAddress)) ?: fromCity?.description,
+      fromAddressPostcode = address?.postalCode?.trim(),
+      audit = toAudit(),
+    )
+  }
 
   private fun OffenderMovementApplication.toSingleResponse() = TemporaryAbsenceApplicationResponse(
     bookingId = offenderBooking.bookingId,
