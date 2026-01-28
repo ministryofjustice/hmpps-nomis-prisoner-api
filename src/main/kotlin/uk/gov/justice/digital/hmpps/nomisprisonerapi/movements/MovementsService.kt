@@ -196,8 +196,6 @@ class MovementsService(
       this.transportType = transportType
       this.escort = escort
       this.comment = request.comment?.truncateToUtf8Length(MAX_TAP_COMMENT_LENGTH, includeSeeDpsSuffix = true)
-      this.toAddressOwnerClass = this.scheduledTemporaryAbsences.firstOrNull()?.toAddressOwnerClass
-      this.toAddress = this.scheduledTemporaryAbsences.firstOrNull()?.toAddress
       this.toAgency = this.scheduledTemporaryAbsences.firstOrNull()?.toAgency
       this.contactPersonName = request.contactPersonName
       this.applicationType = applicationType
