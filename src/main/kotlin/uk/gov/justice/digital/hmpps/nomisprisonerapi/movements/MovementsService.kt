@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
@@ -165,6 +166,10 @@ class MovementsService(
     val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
     val toAddress = request.toAddress?.id?.let { addressOrThrow(request.toAddress.id) }
+    val toAddressAgency = request.toAddress?.let { toAddress }
+      .takeIf { it?.addressOwnerClass == "AGY" }
+      ?.let { it as AgencyLocationAddress }
+      ?.agencyLocation
 
     val application = request.movementApplicationId
       ?.let {
@@ -196,12 +201,12 @@ class MovementsService(
       this.transportType = transportType
       this.escort = escort
       this.comment = request.comment?.truncateToUtf8Length(MAX_TAP_COMMENT_LENGTH, includeSeeDpsSuffix = true)
-      this.toAgency = this.scheduledTemporaryAbsences.firstOrNull()?.toAgency
       this.contactPersonName = request.contactPersonName
       this.applicationType = applicationType
       this.temporaryAbsenceType = temporaryAbsenceType
       this.temporaryAbsenceSubType = temporaryAbsenceSubType
       // if address is not sent in the request that means don't attempt to update it
+      this.toAgency = request.toAddress?.let { toAddressAgency } ?: this.toAgency
       this.toAddress = request.toAddress?.let { toAddress } ?: this.toAddress
       this.toAddressOwnerClass = request.toAddress?.let { toAddress!!.addressOwnerClass } ?: this.toAddressOwnerClass
     }

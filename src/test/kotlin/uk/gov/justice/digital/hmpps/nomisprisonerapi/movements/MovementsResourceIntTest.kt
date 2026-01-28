@@ -1926,7 +1926,7 @@ class MovementsResourceIntTest(
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(comment).isEqualTo("Some comment application")
                 assertThat(prison.id).isEqualTo("LEI")
-                assertThat(toAgency?.id).isEqualTo("HAZLWD")
+                assertThat(toAgency?.id).isNull()
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("OFF")
                 assertThat(contactPersonName).isEqualTo("Derek")
@@ -2019,6 +2019,56 @@ class MovementsResourceIntTest(
               with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("OFF")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class UpdateButNotAgencyAddressAndNoSchedules {
+
+      private lateinit var agencyAddress: AgencyLocationAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          agencyLocation = agencyLocation(
+            agencyLocationId = "NGENHO",
+            description = "Northern General Hospital",
+            type = "HOSPITAL",
+          ) {
+            agencyAddress = address(
+              type = "BUS",
+              street = "Herries Road",
+              postcode = "S5 7AU",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                toAgency = "NGENHO",
+                toAddress = agencyAddress,
+              )
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should not update address`() {
+        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = null))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("AGY")
+                assertThat(toAgency?.id).isEqualTo("NGENHO")
               }
             }
           }
