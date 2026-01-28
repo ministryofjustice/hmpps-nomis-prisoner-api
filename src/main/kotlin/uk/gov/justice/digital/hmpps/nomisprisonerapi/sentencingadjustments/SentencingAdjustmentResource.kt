@@ -548,7 +548,7 @@ data class CreateSentenceAdjustmentRequest(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
     required = true,
     example = "RX",
-    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"],
+    allowableValues = ["RSR", "UR", "S240A", "RST", "RX", "TCA", "TSA"],
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
@@ -571,7 +571,7 @@ data class UpdateSentenceAdjustmentRequest(
     description = "NOMIS Adjustment type code from SENTENCE_ADJUSTMENTS",
     required = true,
     example = "RX",
-    allowableValues = ["RSR", "UR", "S240A", "RST", "RX"],
+    allowableValues = ["RSR", "UR", "S240A", "RST", "RX", "TCA", "TSA"],
   )
   @field:NotBlank
   val adjustmentTypeCode: String = "",
