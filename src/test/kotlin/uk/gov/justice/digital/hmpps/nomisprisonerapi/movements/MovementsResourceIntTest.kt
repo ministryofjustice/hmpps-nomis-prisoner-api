@@ -1949,18 +1949,20 @@ class MovementsResourceIntTest(
 
     @Nested
     inner class UpdateButNotAddress {
+      private lateinit var scheduleAddress: OffenderAddress
 
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
+            scheduleAddress = address()
             booking = booking {
               application = temporaryAbsenceApplication(
                 toAddress = offenderAddress,
               ) {
                 scheduledTemporaryAbsence(
-                  toAddress = offenderAddress,
+                  toAddress = scheduleAddress,
                   toAgency = "HAZLWD",
                 ) {
                   externalMovement()
@@ -1971,6 +1973,38 @@ class MovementsResourceIntTest(
               }
               temporaryAbsence()
               temporaryAbsenceReturn()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should not update address`() {
+        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = null))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddressOwnerClass).isEqualTo("OFF")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class UpdateButNotAddressAndNoSchedules {
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                toAddress = offenderAddress,
+              )
             }
           }
         }
