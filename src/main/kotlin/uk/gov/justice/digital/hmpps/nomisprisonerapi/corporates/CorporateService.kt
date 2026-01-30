@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
@@ -64,6 +65,7 @@ class CorporateService(
     )
   }.map { CorporateOrganisationIdResponse(corporateId = it.corporateId) }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun createCorporate(request: CreateCorporateOrganisationRequest) {
     corporateRepository.save(
       request.let {
@@ -82,6 +84,7 @@ class CorporateService(
     )
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun updateCorporate(corporateId: Long, request: UpdateCorporateOrganisationRequest) {
     request.also {
       corporateRepository.findByIdOrNull(corporateId)?.run {
@@ -97,6 +100,7 @@ class CorporateService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun deleteCorporate(corporateId: Long) = corporateRepository.deleteById(corporateId)
 
   fun getCorporateById(corporateId: Long): CorporateOrganisation = corporateRepository.findByIdOrNull(corporateId)?.let {
@@ -170,6 +174,7 @@ class CorporateService(
     )
   } ?: throw NotFoundException("Corporate $corporateId not found")
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun createCorporateAddress(corporateId: Long, request: CreateCorporateAddressRequest): CreateCorporateAddressResponse = corporateAddressRepository.saveAndFlush(
     request.let {
       uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress(
@@ -197,6 +202,7 @@ class CorporateService(
     },
   ).let { CreateCorporateAddressResponse(id = it.addressId) }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun updateCorporateAddress(corporateId: Long, addressId: Long, request: UpdateCorporateAddressRequest) {
     addressOf(corporateId = corporateId, addressId = addressId).run {
       request.also {
@@ -222,6 +228,7 @@ class CorporateService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun deleteCorporateAddress(corporateId: Long, addressId: Long) {
     corporateAddressRepository.findByIdOrNull(addressId)?.also {
       if (it.corporate.id != corporateId) throw BadDataException("Address of $addressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
@@ -229,6 +236,7 @@ class CorporateService(
     corporateAddressRepository.deleteById(addressId)
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun createCorporateAddressPhone(corporateId: Long, addressId: Long, request: CreateCorporatePhoneRequest): CreateCorporatePhoneResponse = addressPhoneRepository.saveAndFlush(
     AddressPhone(
       address = addressOf(corporateId = corporateId, addressId = addressId),
@@ -238,6 +246,7 @@ class CorporateService(
     ),
   ).let { CreateCorporatePhoneResponse(id = it.phoneId) }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun updateCorporateAddressPhone(corporateId: Long, addressId: Long, phoneId: Long, request: UpdateCorporatePhoneRequest) {
     phoneOf(corporateId = corporateId, addressId = addressId, phoneId = phoneId).run {
       request.also {
@@ -248,10 +257,12 @@ class CorporateService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun deleteCorporateAddressPhone(corporateId: Long, phoneId: Long) {
     addressPhoneRepository.deleteById(phoneId)
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun createCorporatePhone(corporateId: Long, request: CreateCorporatePhoneRequest): CreateCorporatePhoneResponse = corporatePhoneRepository.saveAndFlush(
     CorporatePhone(
       corporate = corporateOf(corporateId),
@@ -261,6 +272,7 @@ class CorporateService(
     ),
   ).let { CreateCorporatePhoneResponse(id = it.phoneId) }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun updateCorporatePhone(corporateId: Long, phoneId: Long, request: UpdateCorporatePhoneRequest) {
     phoneOf(corporateId = corporateId, phoneId = phoneId).run {
       request.also {
@@ -271,6 +283,7 @@ class CorporateService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun deleteCorporatePhone(corporateId: Long, phoneId: Long) {
     corporatePhoneRepository.findByIdOrNull(phoneId)?.also {
       if (it.corporate.id != corporateId) throw BadDataException("Phone of $phoneId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
@@ -278,6 +291,7 @@ class CorporateService(
     corporatePhoneRepository.deleteById(phoneId)
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun createCorporateEmail(corporateId: Long, request: CreateCorporateEmailRequest): CreateCorporateEmailResponse = corporateInternetAddressRepository.saveAndFlush(
     uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress(
       corporate = corporateOf(corporateId),
@@ -286,6 +300,7 @@ class CorporateService(
     ),
   ).let { CreateCorporateEmailResponse(id = it.internetAddressId) }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun updateCorporateEmail(corporateId: Long, emailAddressId: Long, request: UpdateCorporateEmailRequest) {
     emailOf(corporateId = corporateId, emailAddressId = emailAddressId).run {
       request.also {
@@ -294,6 +309,7 @@ class CorporateService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun deleteCorporateEmail(corporateId: Long, emailAddressId: Long) {
     corporateInternetAddressRepository.findByIdOrNull(emailAddressId)?.also {
       if (it.corporate.id != corporateId) throw BadDataException("Internet Address of $emailAddressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
@@ -301,6 +317,7 @@ class CorporateService(
     corporateInternetAddressRepository.deleteById(emailAddressId)
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun createCorporateWebAddress(corporateId: Long, request: CreateCorporateWebAddressRequest): CreateCorporateWebAddressResponse = corporateInternetAddressRepository.saveAndFlush(
     uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateInternetAddress(
       corporate = corporateOf(corporateId),
@@ -309,6 +326,7 @@ class CorporateService(
     ),
   ).let { CreateCorporateWebAddressResponse(id = it.internetAddressId) }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun updateCorporateWebAddress(corporateId: Long, webAddressId: Long, request: UpdateCorporateWebAddressRequest) {
     webAddressOf(corporateId = corporateId, webAddressId = webAddressId).run {
       request.also {
@@ -317,6 +335,7 @@ class CorporateService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun deleteCorporateWebAddress(corporateId: Long, webAddressId: Long) {
     corporateInternetAddressRepository.findByIdOrNull(webAddressId)?.also {
       if (it.corporate.id != corporateId) throw BadDataException("Internet Address of $webAddressId does not exist on corporate $corporateId but does on corporate ${it.corporate.id}")
@@ -324,6 +343,7 @@ class CorporateService(
     corporateInternetAddressRepository.deleteById(webAddressId)
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun createCorporateType(corporateId: Long, request: CreateCorporateTypeRequest) {
     val type = corporateOrganisationTypeOf(request.typeCode)
     corporateTypeRepository.saveAndFlush(
@@ -334,6 +354,7 @@ class CorporateService(
     )
   }
 
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun updateCorporateTypes(corporateId: Long, typeCodes: Set<String>) {
     val corporate = corporateOf(corporateId)
     val currentTypeCodes = corporate.types.map { it.type.code }.toSet()
@@ -350,6 +371,8 @@ class CorporateService(
       )
     }
   }
+
+  @Audit("DPS_SYNCHRONISATION_ORGANISATION")
   fun deleteCorporateType(corporateId: Long, typeCode: String) = corporateTypeRepository.deleteById(CorporateOrganisationTypePK(corporateOf(corporateId), typeCode = typeCode))
 
   fun caseloadOf(code: String?): Caseload? = code?.let { caseloadRepository.findByIdOrNull(it) ?: throw BadDataException("Caseload $code not found") }
