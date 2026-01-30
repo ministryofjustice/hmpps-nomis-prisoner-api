@@ -205,6 +205,7 @@ class MovementsService(
       this.applicationType = applicationType
       this.temporaryAbsenceType = temporaryAbsenceType
       this.temporaryAbsenceSubType = temporaryAbsenceSubType
+      this.eventSubType = eventSubType
       // if address is not sent in the request that means don't attempt to update it
       this.toAgency = request.toAddress?.let { toAddressAgency } ?: this.toAgency
       this.toAddress = request.toAddress?.let { toAddress } ?: this.toAddress

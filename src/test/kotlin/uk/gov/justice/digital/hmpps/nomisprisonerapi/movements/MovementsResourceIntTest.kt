@@ -1870,7 +1870,7 @@ class MovementsResourceIntTest(
             offenderAddress = address()
             booking = booking {
               application = temporaryAbsenceApplication(
-                eventSubType = "C5",
+                eventSubType = "C4",
                 applicationDate = twoDaysAgo,
                 applicationTime = twoDaysAgo,
                 fromDate = yesterday.toLocalDate(),
