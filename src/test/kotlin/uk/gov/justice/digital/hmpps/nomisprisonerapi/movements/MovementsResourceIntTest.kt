@@ -29,6 +29,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenc
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
@@ -52,6 +54,8 @@ class MovementsResourceIntTest(
   @Autowired val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   @Autowired val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   @Autowired val corporateAddressRepository: CorporateAddressRepository,
+  @Autowired val corporateRepository: CorporateRepository,
+  @Autowired val offenderAddressRepository: OffenderAddressRepository,
   @Autowired val agencyLocationRepository: AgencyLocationRepository,
   @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
@@ -1682,7 +1686,10 @@ class MovementsResourceIntTest(
   @DisplayName("PUT /movements/{offenderNo}/temporary-absences/application")
   inner class UpsertTemporaryAbsenceApplication {
 
-    private fun aRequest(id: Long? = null, toAddress: UpsertTemporaryAbsenceAddress? = null) = UpsertTemporaryAbsenceApplicationRequest(
+    private fun aRequest(
+      id: Long? = null,
+      toAddresses: List<UpsertTemporaryAbsenceAddress> = listOf(UpsertTemporaryAbsenceAddress(addressText = "some street")),
+    ) = UpsertTemporaryAbsenceApplicationRequest(
       movementApplicationId = id,
       eventSubType = "C5",
       applicationDate = twoDaysAgo.toLocalDate(),
@@ -1699,7 +1706,7 @@ class MovementsResourceIntTest(
       contactPersonName = "Derek",
       temporaryAbsenceType = "RR",
       temporaryAbsenceSubType = "RDR",
-      toAddress = toAddress,
+      toAddresses = toAddresses,
     )
 
     @AfterEach
@@ -1722,7 +1729,9 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should create application`() {
-        webTestClient.upsertApplicationOk()
+        webTestClient.upsertApplicationOk(
+          request = aRequest(toAddresses = listOf(UpsertTemporaryAbsenceAddress(addressText = "some street", postalCode = "S1 9ZZ"))),
+        )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -1741,11 +1750,49 @@ class MovementsResourceIntTest(
                 assertThat(comment).isEqualTo("Some comment application")
                 assertThat(prison.id).isEqualTo("LEI")
                 assertThat(toAgency).isNull()
-                assertThat(toAddress).isNull()
-                assertThat(toAddressOwnerClass).isNull()
+                assertThat(toAddress?.addressId).isNotNull
+                assertThat(toAddress?.premise).isEqualTo("some street")
+                assertThat(toAddress?.postalCode).isEqualTo("S1 9ZZ")
+                assertThat(toAddressOwnerClass).isEqualTo("OFF")
                 assertThat(contactPersonName).isEqualTo("Derek")
                 assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
                 assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should create all addresses requested`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest(
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(addressText = "some street"),
+              UpsertTemporaryAbsenceAddress(name = "Kwikfit", addressText = "another street", postalCode = "S1 9ZZ"),
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // the first address is written to the application
+                assertThat(toAddress?.addressId).isNotNull
+                assertThat(toAddress?.premise).isEqualTo("some street")
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
+                assertThat(toAddressOwnerClass).isEqualTo("OFF")
+              }
+              // the first address was created
+              with(offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)) {
+                val address = find { it.premise == "some street" }!!
+                assertThat(address.street).isNull()
+                assertThat(address.postalCode).isNull()
+              }
+              // the second address was created
+              with(corporateRepository.findAllByCorporateName("Kwikfit").first()) {
+                assertThat(addresses.first().premise).isEqualTo("another street")
+                assertThat(addresses.first().postalCode).isEqualTo("S1 9ZZ")
+                assertThat(addresses.first().street).isNull()
               }
             }
           }
@@ -1884,7 +1931,7 @@ class MovementsResourceIntTest(
                 comment = "Old comment application",
                 prison = "LEI",
                 toAgency = null,
-                toAddress = null,
+                toAddress = offenderAddress,
                 contactPersonName = "Adam",
                 temporaryAbsenceType = "PP",
                 temporaryAbsenceSubType = "ROR",
@@ -1908,7 +1955,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update application`() {
-        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId)))
+        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddresses = listOf(UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId))))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -1948,7 +1995,7 @@ class MovementsResourceIntTest(
     }
 
     @Nested
-    inner class UpdateButNotAddress {
+    inner class UpdateAddress {
       private lateinit var scheduleAddress: OffenderAddress
 
       @BeforeEach
@@ -1979,8 +2026,15 @@ class MovementsResourceIntTest(
       }
 
       @Test
-      fun `should not update address`() {
-        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = null))
+      fun `should update address`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest(
+            id = application.movementApplicationId,
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId),
+            ),
+          ),
+        )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -1991,34 +2045,39 @@ class MovementsResourceIntTest(
             }
           }
       }
-    }
-
-    @Nested
-    inner class UpdateButNotAddressAndNoSchedules {
-
-      @BeforeEach
-      fun setUp() {
-        nomisDataBuilder.build {
-          offender = offender(nomsId = offenderNo) {
-            offenderAddress = address()
-            booking = booking {
-              application = temporaryAbsenceApplication(
-                toAddress = offenderAddress,
-              )
-            }
-          }
-        }
-      }
 
       @Test
-      fun `should not update address`() {
-        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = null))
+      fun `should update address and create new addresses`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest(
+            id = application.movementApplicationId,
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(addressText = "some street", postalCode = "S1 9ZZ"),
+              UpsertTemporaryAbsenceAddress(name = "Kwikfit", addressText = "another street", postalCode = "S2 8YY"),
+            ),
+          ),
+        )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
               with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
-                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                // The first new address is written to the application
+                assertThat(toAddress?.addressId).isNotNull
+                assertThat(toAddress?.premise).isEqualTo("some street")
+                assertThat(toAddress?.postalCode).isEqualTo("S1 9ZZ")
                 assertThat(toAddressOwnerClass).isEqualTo("OFF")
+              }
+              // the first address was created
+              with(offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)) {
+                val address = find { it.premise == "some street" }!!
+                assertThat(address.street).isNull()
+                assertThat(address.postalCode).isEqualTo("S1 9ZZ")
+              }
+              // the second address was created
+              with(corporateRepository.findAllByCorporateName("Kwikfit").first()) {
+                assertThat(addresses.first().premise).isEqualTo("another street")
+                assertThat(addresses.first().postalCode).isEqualTo("S2 8YY")
+                assertThat(addresses.first().street).isNull()
               }
             }
           }
@@ -2061,7 +2120,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should not update address`() {
-        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddress = null))
+        webTestClient.upsertApplicationOk(request = aRequest(id = application.movementApplicationId, toAddresses = listOf(UpsertTemporaryAbsenceAddress(id = agencyAddress.addressId))))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {

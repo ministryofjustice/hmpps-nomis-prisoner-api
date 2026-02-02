@@ -55,7 +55,11 @@ data class UpsertTemporaryAbsenceApplicationRequest(
   val temporaryAbsenceSubType: String?,
 
   @Schema(description = "To address. If this is null, do not update the address. Otherwise use the addressId in the request.")
-  val toAddress: UpsertTemporaryAbsenceAddress?,
+  @Deprecated("Use toAddresses instead", ReplaceWith("toAddresses"))
+  val toAddress: UpsertTemporaryAbsenceAddress? = null,
+
+  @Schema(description = "To addresses linked to schedules. Makes sure they all exist in NOMIS so are available when upserting schedules.")
+  val toAddresses: List<UpsertTemporaryAbsenceAddress> = emptyList(),
 )
 
 @Schema(description = "Upsert temporary absence application response")

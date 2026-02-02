@@ -167,8 +167,11 @@ class MovementsService(
     val applicationType = movementApplicationTypeOrThrow(request.applicationType)
     val temporaryAbsenceType = request.temporaryAbsenceType?.let { temporaryAbsenceTypeOrThrow(request.temporaryAbsenceType) }
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
-    val toAddress = request.toAddress?.id?.let { addressOrThrow(request.toAddress.id) }
-    val toAddressAgency = request.toAddress?.let { toAddress }
+    // Make sure all requested addresses exist, but just take the first one as NOMIS only supports a single address at the application level
+    val toAddress = request.toAddresses
+      .map { findOrCreateAddress(it, offenderBooking.offender) }
+      .firstOrNull()
+    val toAddressAgency = toAddress
       .takeIf { it?.addressOwnerClass == "AGY" }
       ?.let { it as AgencyLocationAddress }
       ?.agencyLocation
@@ -189,9 +192,9 @@ class MovementsService(
       toDate = request.toDate,
       returnTime = request.returnTime,
       applicationStatus = applicationStatus,
-      // Always create an application with null address - it is only set on an update
-      toAddress = null,
-      toAddressOwnerClass = null,
+      toAgency = toAddressAgency,
+      toAddress = toAddress,
+      toAddressOwnerClass = toAddress?.addressOwnerClass,
     )
 
     with(application) {
@@ -208,10 +211,9 @@ class MovementsService(
       this.temporaryAbsenceType = temporaryAbsenceType
       this.temporaryAbsenceSubType = temporaryAbsenceSubType
       this.eventSubType = eventSubType
-      // if address is not sent in the request that means don't attempt to update it
-      this.toAgency = request.toAddress?.let { toAddressAgency } ?: this.toAgency
-      this.toAddress = request.toAddress?.let { toAddress } ?: this.toAddress
-      this.toAddressOwnerClass = request.toAddress?.let { toAddress!!.addressOwnerClass } ?: this.toAddressOwnerClass
+      this.toAgency = toAddressAgency ?: this.toAgency
+      this.toAddress = toAddress ?: this.toAddress
+      this.toAddressOwnerClass = toAddress?.addressOwnerClass ?: this.toAddressOwnerClass
     }
 
     return offenderMovementApplicationRepository.save(application)
@@ -239,6 +241,7 @@ class MovementsService(
     val fromPrison = agencyLocationOrThrow(request.fromPrison)
     val toAgency = request.toAgency?.let { agencyLocationOrThrow(request.toAgency) }
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
+    // TODO SDIT-3405 Once addresses are created when upserting the application, change this to only find the address or throw
     val toAddress = findOrCreateAddress(request.toAddress, offenderBooking.offender)
 
     val schedule = request.eventId
@@ -542,8 +545,8 @@ class MovementsService(
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 
     return when (request.name) {
-      null -> createOffenderAddress(request.addressText, request.postalCode, offender)
-      else -> createCorporateAddress(request.name, request.addressText, request.postalCode)
+      null -> findOrCreateOffenderAddress(request.addressText, request.postalCode, offender)
+      else -> findOrCreateCorporateAddress(request.name, request.addressText, request.postalCode)
     }
   }
 
@@ -562,7 +565,7 @@ class MovementsService(
     return addressText.substring(0, split).trim() to addressText.substring(split, addressText.length).trim()
   }
 
-  private fun createOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress {
+  private fun findOrCreateOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress {
     val (premise, street) = formatAddressText(addressText)
     tapAddressInsertRepository.insertAddressIfNotExists("OFF", offender.rootOffenderId!!, premise, street, postalCode)
 
@@ -577,7 +580,7 @@ class MovementsService(
     return address
   }
 
-  private fun createCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
+  private fun findOrCreateCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
     val (premise, street) = formatAddressText(addressText)
     corporateInsertRepository.insertCorporateIfNotExists(name)
     val corporate = corporateRepository.findAllByCorporateName(name).first()
