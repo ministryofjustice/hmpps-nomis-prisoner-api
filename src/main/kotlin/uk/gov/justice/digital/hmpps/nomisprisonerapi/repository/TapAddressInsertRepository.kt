@@ -27,7 +27,7 @@ class TapAddressInsertRepositoryOracle(
         )
       when not matched then
         insert (address_id, owner_class, owner_id, premise, street, POSTAL_CODE, primary_flag, mail_flag)
-        values (address_id.nextval, s.owner_class, s.owner_id, s.premise, s.street, s.postal_code, 'N', 'N');
+        values (address_id.nextval, s.owner_class, s.owner_id, s.premise, s.street, s.postal_code, 'N', 'N')
       """,
   )
     .setParameter(1, ownerClass)
