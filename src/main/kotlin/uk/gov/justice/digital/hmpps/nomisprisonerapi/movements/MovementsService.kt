@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
@@ -49,7 +48,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSche
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.CorporateInsertRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.TapAddressInsertRepository
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -78,6 +78,8 @@ class MovementsService(
   private val agencyLocationAddressRepository: AgencyLocationAddressRepository,
   private val offenderAddressRepository: OffenderAddressRepository,
   private val corporateRepository: CorporateRepository,
+  private val corporateInsertRepository: CorporateInsertRepository,
+  private val tapAddressInsertRepository: TapAddressInsertRepository,
   private val externalMovementsRepository: OffenderExternalMovementRepository,
   addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
@@ -562,32 +564,27 @@ class MovementsService(
 
   private fun createOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress {
     val (premise, street) = formatAddressText(addressText)
-    return offenderAddressRepository.save(
-      OffenderAddress(
-        offender = offender.rootOffender!!,
-        premise = premise,
-        street = street,
-        postalCode = postalCode,
-        startDate = LocalDate.now(),
-      ).apply {
+    tapAddressInsertRepository.insertAddressIfNotExists("OFF", offender.rootOffenderId!!, premise, street, postalCode)
+
+    val address = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
+      .first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }
+    if (address.usages.none { it.addressUsage == rotlAddressType }) {
+      address.apply {
         usages += AddressUsage(AddressUsageId(this, "ROTL"), true, rotlAddressType)
-      },
-    )
+      }
+    }
+
+    return address
   }
 
   private fun createCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
     val (premise, street) = formatAddressText(addressText)
-    return corporateRepository.save(
-      Corporate(corporateName = name).apply {
-        addresses += CorporateAddress(
-          corporate = this,
-          premise = premise,
-          street = street,
-          postalCode = postalCode,
-          startDate = LocalDate.now(),
-        )
-      },
-    ).addresses.first()
+    corporateInsertRepository.insertCorporateIfNotExists(name)
+    val corporate = corporateRepository.findAllByCorporateName(name).first()
+    tapAddressInsertRepository.insertAddressIfNotExists("CORP", corporate.id, premise, street, postalCode)
+
+    return corporateRepository.findById(corporate.id).get()
+      .addresses.first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }
   }
 
   private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)

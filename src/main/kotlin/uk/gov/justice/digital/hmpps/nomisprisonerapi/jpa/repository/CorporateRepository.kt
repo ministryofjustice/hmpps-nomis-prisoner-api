@@ -36,6 +36,8 @@ interface CorporateRepository : JpaRepository<Corporate, Long> {
     toDate: LocalDateTime?,
     pageable: Pageable,
   ): Page<CorporateIdProjection>
+
+  fun findAllByCorporateName(name: String): List<Corporate>
 }
 
 interface CorporateIdProjection {
