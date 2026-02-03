@@ -1799,6 +1799,35 @@ class MovementsResourceIntTest(
       }
 
       @Test
+      fun `should create addresses with long corporate name`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest(
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(name = "Hm Prison Service The Chief Estates Surveyor", addressText = "another street", postalCode = "S1 9ZZ"),
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // the first address is written to the application
+                assertThat(toAddress?.addressId).isNotNull
+                assertThat(toAddress?.premise).isEqualTo("another street")
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
+                assertThat(toAddressOwnerClass).isEqualTo("CORP")
+              }
+              // the address and corporation were created
+              with(corporateRepository.findAllByCorporateName("Hm Prison Service The Chief Estates Surv").first()) {
+                assertThat(addresses.first().premise).isEqualTo("another street")
+                assertThat(addresses.first().postalCode).isEqualTo("S1 9ZZ")
+                assertThat(addresses.first().street).isNull()
+              }
+            }
+          }
+      }
+
+      @Test
       fun `should truncate comments`() {
         // comment is 300 long
         webTestClient.upsertApplicationOk(aRequest().copy(comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))
