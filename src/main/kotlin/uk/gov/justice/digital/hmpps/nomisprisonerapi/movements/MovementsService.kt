@@ -582,8 +582,9 @@ class MovementsService(
 
   private fun findOrCreateCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
     val (premise, street) = formatAddressText(addressText)
-    corporateInsertRepository.insertCorporateIfNotExists(name)
-    val corporate = corporateRepository.findAllByCorporateName(name).first()
+    val corporateName = name.substring(0..(minOf(name.length, 40) - 1))
+    corporateInsertRepository.insertCorporateIfNotExists(corporateName)
+    val corporate = corporateRepository.findAllByCorporateName(corporateName).first()
     tapAddressInsertRepository.insertAddressIfNotExists("CORP", corporate.id, premise, street, postalCode)
 
     return corporateRepository.findById(corporate.id).get()
