@@ -938,6 +938,13 @@ class CourtSentencingService(
             "\noriginal charges: ${sentence.offenderSentenceCharges.map { it.offenderCharge.id }}",
         )
 
+        if (sentence.statusUpdateStaff == null && sentence.statusUpdateDate != null) {
+          // if we have no statusUpdateStaff but a date we know NOMIS trigger will fail
+          // so for this fudged scenario set the staff to hard coded sync staff record for the user name
+          // TODO: should this always be set?
+          // TODO: can we get the username without hardcoding?
+          sentence.statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API")
+        }
         if (sentence.offenderSentenceCharges.map { it.offenderCharge.id }
             .toSet() != request.offenderChargeIds.toSet()
         ) {
