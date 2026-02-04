@@ -241,8 +241,7 @@ class MovementsService(
     val fromPrison = agencyLocationOrThrow(request.fromPrison)
     val toAgency = request.toAgency?.let { agencyLocationOrThrow(request.toAgency) }
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
-    // TODO SDIT-3405 Once addresses are created when upserting the application, change this to only find the address or throw
-    val toAddress = findOrCreateAddress(request.toAddress, offenderBooking.offender)
+    val toAddress = findAddressOrThrow(request.toAddress, offenderBooking.offender)
 
     val schedule = request.eventId
       ?.let { scheduledTemporaryAbsenceRepository.findById(request.eventId).get() }
@@ -582,13 +581,36 @@ class MovementsService(
 
   private fun findOrCreateCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
     val (premise, street) = formatAddressText(addressText)
-    val corporateName = name.substring(0..(minOf(name.length, 40) - 1))
+    val corporateName = name.toCorporateName()
     corporateInsertRepository.insertCorporateIfNotExists(corporateName)
     val corporate = corporateRepository.findAllByCorporateName(corporateName).first()
     tapAddressInsertRepository.insertAddressIfNotExists("CORP", corporate.id, premise, street, postalCode)
 
     return corporateRepository.findById(corporate.id).get()
       .addresses.first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }
+  }
+
+  private fun findAddressOrThrow(request: UpsertTemporaryAbsenceAddress, offender: Offender): Address {
+    // If we have an address id then use that
+    if (request.id != null) return addressOrThrow(request.id)
+
+    if (request.addressText == null) throw BadDataException("Address text required to create a new address")
+
+    return when (request.name) {
+      null -> findOffenderAddress(request.addressText, request.postalCode, offender)
+      else -> findCorporateAddress(request.name, request.addressText, request.postalCode)
+    }
+      ?: throw BadDataException("Address not found")
+  }
+
+  private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? {
+    val (premise, street) = formatAddressText(addressText)
+    return offenderAddressRepository.findByOffender_RootOffenderIdAndPremiseAndStreetAndPostalCode(offender.rootOffenderId!!, premise, street, postalCode)
+  }
+
+  private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
+    val (premise, street) = formatAddressText(addressText)
+    return corporateAddressRepository.findByCorporate_CorporateNameAndPremiseAndStreetAndPostalCode(name.toCorporateName(), premise, street, postalCode)
   }
 
   private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
@@ -943,4 +965,6 @@ class MovementsService(
 
     return address.joinToString(", ").trim()
   }
+
+  private fun String.toCorporateName() = substring(0..(minOf(this.length, 40) - 1))
 }

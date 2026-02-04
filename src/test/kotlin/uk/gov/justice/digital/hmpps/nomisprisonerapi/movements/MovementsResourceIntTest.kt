@@ -2610,7 +2610,7 @@ class MovementsResourceIntTest(
     }
 
     @Nested
-    inner class CreateSchedule {
+    inner class CreateScheduleWithOffenderAddress {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
@@ -2671,6 +2671,41 @@ class MovementsResourceIntTest(
             repository.runInTransaction {
               with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(comment!!.length).isEqualTo(MAX_TAP_COMMENT_LENGTH)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class CreateScheduleWithCorporateAddress {
+      private lateinit var corporateAddress: CorporateAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Boots") {
+            corporateAddress = address(premise = "Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG")),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
               }
             }
           }
@@ -2896,162 +2931,6 @@ class MovementsResourceIntTest(
     }
 
     @Nested
-    inner class CreateAddress {
-      @BeforeEach
-      fun setUp() {
-        nomisDataBuilder.build {
-          offender = offender(nomsId = offenderNo) {
-            booking = booking {
-              application = temporaryAbsenceApplication()
-            }
-          }
-        }
-      }
-
-      @Test
-      fun `should create offender address`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
-            movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(name = null, addressText = "1 House, Street, City", postalCode = "A1 1AA"),
-          ),
-        )
-          .apply {
-            val responseAddressId = this.addressId
-            val responseOwnerClass = this.addressOwnerClass
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(toAddress?.addressId).isEqualTo(responseAddressId)
-                assertThat(toAddress?.addressOwnerClass).isEqualTo(responseOwnerClass)
-                assertThat(toAddress?.premise).isEqualTo("1 House, Street, City")
-                assertThat(toAddress?.postalCode).isEqualTo("A1 1AA")
-                assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
-                assertThat(toAddress?.usages?.map { it.addressUsage?.code }).contains("ROTL")
-              }
-            }
-          }
-      }
-
-      @Test
-      fun `should create long offender address`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
-            movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(
-              name = null,
-              addressText = "1 Very long address that doesn't fit into the PREMISE column so should overflow onto the ........100.........o.........o.........o..... STREET column",
-            ),
-          ),
-        )
-          .apply {
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(toAddress?.premise).isEqualTo("1 Very long address that doesn't fit into the PREMISE column so should overflow onto the ........100.........o.........o.........o.....")
-                assertThat(toAddress?.street).isEqualTo("STREET column")
-              }
-            }
-          }
-      }
-
-      @Test
-      fun `should create offender address when booking on an alias`() {
-        var scheduleAddressId: Long
-        var scheduleOwnerClass: String
-        lateinit var alias: Offender
-        nomisDataBuilder.build {
-          offender = offender(nomsId = "A9999BC") {
-            booking(bookingSequence = 2, bookingBeginDate = today.minusDays(2)) {
-              temporaryAbsenceApplication()
-              release(date = yesterday)
-            }
-            alias = alias {
-              booking = booking(bookingSequence = 1, bookingBeginDate = today) {
-                application = temporaryAbsenceApplication()
-              }
-            }
-          }
-        }
-
-        webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
-            movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(name = null, addressText = "1 House, Street, City", postalCode = "A1 1AA"),
-          ),
-        )
-          .apply {
-            scheduleAddressId = this.addressId
-            scheduleOwnerClass = this.addressOwnerClass
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(bookingId).isEqualTo(booking.bookingId)
-                assertThat(toAddress?.addressId).isEqualTo(scheduleAddressId)
-                assertThat(toAddress?.addressOwnerClass).isEqualTo(scheduleOwnerClass)
-                assertThat(toAddress?.premise).isEqualTo("1 House, Street, City")
-                assertThat(toAddress?.postalCode).isEqualTo("A1 1AA")
-                assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
-                assertThat(toAddress?.usages?.map { it.addressUsage?.code }).contains("ROTL")
-              }
-            }
-          }
-
-        // And the address is saved against the root offender
-        repository.runInTransaction {
-          with(repository.getOffender(alias.id)!!) {
-            assertThat(addresses).isEmpty()
-            assertThat(rootOffender!!.addresses[0].addressId).isEqualTo(scheduleAddressId)
-            assertThat(rootOffender!!.addresses[0].addressOwnerClass).isEqualTo(scheduleOwnerClass)
-          }
-        }
-      }
-
-      @Test
-      fun `should create corporate address and corporate entity`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
-            movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(addressText = "1 House, Street, City", postalCode = "A1 1AA", name = "Company"),
-          ),
-        )
-          .apply {
-            val responseAddressId = this.addressId
-            val responseOwnerClass = this.addressOwnerClass
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(toAddress?.addressId).isEqualTo(responseAddressId)
-                assertThat(toAddress?.addressOwnerClass).isEqualTo(responseOwnerClass)
-                assertThat(toAddress?.premise).isEqualTo("1 House, Street, City")
-                assertThat(toAddress?.postalCode).isEqualTo("A1 1AA")
-                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
-                val corporateAddress = corporateAddressRepository.findByIdOrNull(toAddress!!.addressId)!!
-                assertThat(corporateAddress.corporate.corporateName).isEqualTo("Company")
-              }
-            }
-          }
-      }
-
-      @Test
-      fun `should create very long corporate address`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
-            movementApplicationId = application.movementApplicationId,
-            toAddress = UpsertTemporaryAbsenceAddress(
-              addressText = "1 Very long address that doesn't fit into the PREMISE column so should overflow onto the ........100.........o.........o.........o STREET column",
-              name = "Company",
-            ),
-          ),
-        )
-          .apply {
-            repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(toAddress?.premise).isEqualTo("1 Very long address that doesn't fit into the PREMISE column so should overflow onto the ........100.........o.........o.........o")
-                assertThat(toAddress?.street).isEqualTo("STREET column")
-              }
-            }
-          }
-      }
-    }
-
-    @Nested
     inner class Validation {
       @BeforeEach
       fun setUp() {
@@ -3141,6 +3020,36 @@ class MovementsResourceIntTest(
         webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("9999").contains("invalid")
+          }
+      }
+
+      @Test
+      fun `should fail if offender address does not exist`() {
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(addressText = "unknown")))
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Address not found")
+          }
+      }
+
+      @Test
+      fun `should fail if corporate entity does not exist`() {
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "unknown", addressText = "unknown")))
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Address not found")
+          }
+      }
+
+      @Test
+      fun `should fail if corporate address does not exist`() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Boots") {
+            address(premise = "Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "unknown")))
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Address not found")
           }
       }
 

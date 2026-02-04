@@ -9,4 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 interface OffenderAddressRepository : JpaRepository<OffenderAddress, Long> {
   @Suppress("ktlint:standard:function-naming")
   fun findByOffender_RootOffenderId(rootOffenderId: Long): List<OffenderAddress>
+
+  @Suppress("ktlint:standard:function-naming")
+  fun findByOffender_RootOffenderIdAndPremiseAndStreetAndPostalCode(rootOffenderId: Long, premise: String, street: String?, postalCode: String?): OffenderAddress?
 }
