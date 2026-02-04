@@ -1,13 +1,17 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
+import jakarta.persistence.LockModeType
+import jakarta.persistence.QueryHint
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import java.util.Optional
+import java.util.*
 
 @Repository
 interface OffenderBookingRepository :
@@ -62,6 +66,11 @@ interface OffenderBookingRepository :
     nativeQuery = true,
   )
   fun findAllLatestActiveIdsFromId(bookingId: Long, pageSize: Int): List<BookingWithIds>
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @Query("from OffenderBooking ob join CourtCase cc on cc.offenderBooking.bookingId = ob.bookingId where cc.id = :caseId")
+  fun findByCaseIdOrNullForUpdate(caseId: Long): OffenderBooking?
 }
 
 interface BookingWithIds {
