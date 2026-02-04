@@ -721,7 +721,7 @@ class CourtSentencingService(
     }
   }
 
-  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
+  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCaseWithOffenderBookingLock(caseId = caseId, offenderNo = offenderNo).let { case ->
 
     val offenderBooking = case.offenderBooking
     checkConsecutiveSentenceExists(request, offenderBooking)
@@ -1464,6 +1464,9 @@ class CourtSentencingService(
 
   private fun findCourtCaseWithLock(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNullForUpdate(id)
     ?: throw NotFoundException("Court case $id for $offenderNo not found")
+
+  private fun findCourtCaseWithOffenderBookingLock(caseId: Long, offenderNo: String): CourtCase = offenderBookingRepository.findByCaseIdOrNullForUpdate(caseId)?.courtCases?.find { it.id == caseId }
+    ?: throw NotFoundException("Court case $caseId for $offenderNo not found")
 
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
