@@ -6,4 +6,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 
 @Repository
-interface CorporateAddressRepository : JpaRepository<CorporateAddress, Long>
+interface CorporateAddressRepository : JpaRepository<CorporateAddress, Long> {
+  @Suppress("ktlint:standard:function-naming")
+  fun findByCorporate_CorporateNameAndPremiseAndStreetAndPostalCode(corporateName: String, premise: String, street: String?, postalCode: String?): CorporateAddress?
+}
