@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.apache.commons.lang3.builder.ToStringExclude
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -23,6 +24,8 @@ import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import org.hibernate.type.YesNoConverter
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Persistable
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -39,9 +42,9 @@ data class SentenceId(
 
 @Entity
 @Table(name = "OFFENDER_SENTENCES")
-data class OffenderSentence(
+class OffenderSentence(
   @EmbeddedId
-  val id: SentenceId,
+  private val id: SentenceId,
   @OneToMany(mappedBy = "sentence", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val adjustments: MutableList<OffenderSentenceAdjustment> = mutableListOf(),
 
@@ -249,7 +252,14 @@ data class OffenderSentence(
     WORKFLOW_ID - not used
    */
 
-) : NomisAuditableEntityBasic() {
+  @Transient
+  @Value("false")
+  val new: Boolean = true,
+
+) : NomisAuditableEntityBasic(),
+  Persistable<SentenceId> {
+  override fun getId(): SentenceId = id
+  override fun isNew(): Boolean = new
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
