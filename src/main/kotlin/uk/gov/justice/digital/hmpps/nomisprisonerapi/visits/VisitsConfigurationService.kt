@@ -39,7 +39,7 @@ class VisitsConfigurationService(val agencyVisitDayRepository: AgencyVisitDayRep
     ActivePrison(it)
   }
   fun getPrisonVisitTimeSlots(prisonId: String, activeOnly: Boolean): VisitTimeSlotForPrisonResponse = if (activeOnly) {
-    agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationIdNotExpired(prisonId)
+    agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationIdNotExpiredIsEffective(prisonId)
   } else {
     agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationId(prisonId)
   }.map { it.toVisitTimeSlotResponse() }.let {
