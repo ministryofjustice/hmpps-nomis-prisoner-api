@@ -13,12 +13,12 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
 
   implementation("org.flywaydb:flyway-core")
-  implementation("org.hibernate.orm:hibernate-community-dialects:7.2.2.Final")
+  implementation("org.hibernate.orm:hibernate-community-dialects:7.2.3.Final")
   implementation("com.google.guava:guava:33.5.0-jre")
 
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.4.240")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc11:23.26.0.0.0")
+  runtimeOnly("com.oracle.database.jdbc:ojdbc11:23.26.1.0.0")
 
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.0.0")
   testImplementation("org.springframework.boot:spring-boot-test-autoconfigure")
