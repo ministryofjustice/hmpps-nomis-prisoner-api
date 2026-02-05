@@ -12,11 +12,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 
 @Service
 @Transactional
-class VisitsConfigurationService(val agencyVisitTimeRepository: AgencyVisitTimeRepository, val agencyLocationRepository: AgencyLocationRepository) {
+class VisitsConfigurationService(val agencyVisitDayRepository: AgencyVisitDayRepository, val agencyVisitTimeRepository: AgencyVisitTimeRepository, val agencyLocationRepository: AgencyLocationRepository) {
   fun getVisitTimeSlotIds(pageRequest: Pageable): Page<VisitTimeSlotIdResponse> = agencyVisitTimeRepository.findAllIds(pageRequest).map {
     VisitTimeSlotIdResponse(
       prisonId = it.prisonId,
@@ -58,7 +59,9 @@ class VisitsConfigurationService(val agencyVisitTimeRepository: AgencyVisitTimeR
     )
   } ?: throw NotFoundException("Visit time slot $prisonId, $dayOfWeek, $timeSlotSequence does not exist")
 
+  fun getActivePrisonsWithTimeSlots(): List<ActivePrison> = agencyVisitDayRepository.findDistinctPrisonIdByActivePrisons().map {
+    ActivePrison(it)
+  }
+
   private fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId) ?: throw BadDataException("Prison $prisonId does not exist")
 }
-
-private fun String.asWeekDay(): WeekDay = WeekDay.entries.find { it.name == this } ?: throw BadDataException("Visit day $this does not exist")

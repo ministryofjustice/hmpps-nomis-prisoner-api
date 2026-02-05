@@ -64,7 +64,7 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     ],
   )
   fun getVisitTimeSlotIds(
-    @PageableDefault(size = 20, sort = ["createDatetime", "agencyVisitTimesId.location", "agencyVisitTimesId.weekDay", "agencyVisitTimesId.timeSlotSequence" ], direction = Sort.Direction.ASC)
+    @PageableDefault(size = 20, sort = ["createDatetime", "agencyVisitTimesId.location", "agencyVisitTimesId.weekDay", "agencyVisitTimesId.timeSlotSequence"], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
   ): PagedModel<VisitTimeSlotIdResponse> = PagedModel(visitsConfigurationService.getVisitTimeSlotIds(pageRequest = pageRequest))
@@ -116,6 +116,39 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     @PathVariable dayOfWeek: WeekDay,
     @PathVariable timeSlotSequence: Int,
   ): VisitTimeSlotResponse = visitsConfigurationService.getVisitTimeSlot(prisonId = prisonId, dayOfWeek = dayOfWeek, timeSlotSequence = timeSlotSequence)
+
+  @GetMapping("/visits/configuration/prisons")
+  @Operation(
+    summary = "Get a list list of prisonIds that are active have timeslots configured",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "List of prisons",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getActivePrisonsWithTimeSlots(): ActivePrisonWithTimeSlotResponse = ActivePrisonWithTimeSlotResponse(visitsConfigurationService.getActivePrisonsWithTimeSlots())
 }
 
 data class VisitTimeSlotIdResponse(
@@ -168,4 +201,12 @@ data class VisitSlotResponse(
 data class VisitInternalLocationResponse(
   val id: Long,
   val code: String,
+)
+
+data class ActivePrison(
+  @Schema(description = "The prison id", example = "MDI")
+  val prisonId: String,
+)
+data class ActivePrisonWithTimeSlotResponse(
+  val prisons: List<ActivePrison>,
 )

@@ -348,6 +348,70 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /visits/configuration/prisons")
+  @Nested
+  inner class GetActivePrisonsWithTimeSlots {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        agencyVisitDay(prisonerId = "MDI", weekDay = WeekDay.MON) {
+          visitTimeSlot(timeSlotSequence = 1, startTime = LocalTime.parse("09:00"), endTime = LocalTime.parse("10:00"))
+        }
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.WED)
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/visits/configuration/prisons")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/visits/configuration/prisons")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/visits/configuration/prisons")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `by default will return all prisons with time slots`() {
+        val prisons: ActivePrisonWithTimeSlotResponse = webTestClient.get().uri {
+          it.path("/visits/configuration/prisons")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+
+        assertThat(prisons.prisons).hasSize(2)
+        assertThat(prisons.prisons).extracting<String> { it.prisonId }.containsExactlyInAnyOrder("MDI", "BXI")
+      }
+    }
+  }
 }
 
 private data class VisitTimeSlotIdPageResponse(
