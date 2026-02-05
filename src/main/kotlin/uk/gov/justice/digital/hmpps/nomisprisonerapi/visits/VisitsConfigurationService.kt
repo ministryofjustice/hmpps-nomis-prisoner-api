@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -32,36 +33,46 @@ class VisitsConfigurationService(val agencyVisitDayRepository: AgencyVisitDayRep
       weekDay = dayOfWeek,
       timeSlotSequence = timeSlotSequence,
     ),
-  )?.let {
-    VisitTimeSlotResponse(
-      prisonId = it.agencyVisitTimesId.location.id,
-      dayOfWeek = it.agencyVisitTimesId.weekDay,
-      timeSlotSequence = it.agencyVisitTimesId.timeSlotSequence,
-      startTime = it.startTime,
-      endTime = it.endTime,
-      effectiveDate = it.effectiveDate,
-      expiryDate = it.expiryDate,
-      audit = it.toAudit(),
-      visitSlots = it.visitSlots.map { visitSlot ->
-        VisitSlotResponse(
-          id = visitSlot.id,
-          internalLocation = visitSlot.agencyInternalLocation.let { location ->
-            VisitInternalLocationResponse(
-              id = location.locationId,
-              code = location.locationCode,
-            )
-          },
-          maxGroups = visitSlot.maxGroups,
-          maxAdults = visitSlot.maxAdults,
-          audit = visitSlot.toAudit(),
-        )
-      },
-    )
-  } ?: throw NotFoundException("Visit time slot $prisonId, $dayOfWeek, $timeSlotSequence does not exist")
+  )?.toVisitTimeSlotResponse() ?: throw NotFoundException("Visit time slot $prisonId, $dayOfWeek, $timeSlotSequence does not exist")
 
   fun getActivePrisonsWithTimeSlots(): List<ActivePrison> = agencyVisitDayRepository.findDistinctPrisonIdByActivePrisons().map {
     ActivePrison(it)
   }
+  fun getPrisonVisitTimeSlots(prisonId: String, activeOnly: Boolean): VisitTimeSlotForPrisonResponse = if (activeOnly) {
+    agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationIdNotExpired(prisonId)
+  } else {
+    agencyVisitTimeRepository.findByAgencyVisitTimesIdLocationId(prisonId)
+  }.map { it.toVisitTimeSlotResponse() }.let {
+    VisitTimeSlotForPrisonResponse(
+      prisonId = prisonId,
+      timeSlots = it,
+    )
+  }
 
   private fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId) ?: throw BadDataException("Prison $prisonId does not exist")
 }
+
+fun AgencyVisitTime.toVisitTimeSlotResponse() = VisitTimeSlotResponse(
+  prisonId = this.agencyVisitTimesId.location.id,
+  dayOfWeek = this.agencyVisitTimesId.weekDay,
+  timeSlotSequence = this.agencyVisitTimesId.timeSlotSequence,
+  startTime = this.startTime,
+  endTime = this.endTime,
+  effectiveDate = this.effectiveDate,
+  expiryDate = this.expiryDate,
+  audit = this.toAudit(),
+  visitSlots = this.visitSlots.map { visitSlot ->
+    VisitSlotResponse(
+      id = visitSlot.id,
+      internalLocation = visitSlot.agencyInternalLocation.let { location ->
+        VisitInternalLocationResponse(
+          id = location.locationId,
+          code = location.locationCode,
+        )
+      },
+      maxGroups = visitSlot.maxGroups,
+      maxAdults = visitSlot.maxAdults,
+      audit = visitSlot.toAudit(),
+    )
+  },
+)

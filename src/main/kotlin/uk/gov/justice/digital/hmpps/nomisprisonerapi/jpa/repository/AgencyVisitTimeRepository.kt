@@ -16,6 +16,16 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
 
   fun findByAgencyVisitTimesIdLocationId(locationId: String): List<AgencyVisitTime>
 
+  // TODO match DPS with expiry and effective date logic
+  @Query(
+    """
+    select avt from AgencyVisitTime avt 
+        where avt.agencyVisitTimesId.location.id = :locationId 
+        and (avt.expiryDate > current_date or avt.expiryDate is null)
+  """,
+  )
+  fun findByAgencyVisitTimesIdLocationIdNotExpired(locationId: String): List<AgencyVisitTime>
+
   fun findByStartTimeAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
     startTime: LocalTime,
     weekDay: WeekDay,

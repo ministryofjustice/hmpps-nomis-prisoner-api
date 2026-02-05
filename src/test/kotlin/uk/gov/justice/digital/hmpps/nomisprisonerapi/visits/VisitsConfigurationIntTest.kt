@@ -412,6 +412,170 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /visits/configuration/time-slots/prison-id/{prisonId}")
+  @Nested
+  inner class GetPrisonVisitTimeSlots {
+    lateinit var room1: AgencyInternalLocation
+    lateinit var room2: AgencyInternalLocation
+    lateinit var moorlandRoom: AgencyInternalLocation
+    var visitSlotId: Long = 0
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        moorlandRoom = agencyInternalLocation(
+          locationCode = "MDI-VISIT-1",
+          locationType = "VISIT",
+          prisonId = "MDI",
+        )
+        room1 = agencyInternalLocation(
+          locationCode = "BXI-VISIT-1",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        room2 = agencyInternalLocation(
+          locationCode = "BXI-VISIT-2",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+          ) {
+            visitSlot(
+              agencyInternalLocation = room1,
+              maxGroups = null,
+              maxAdults = null,
+            )
+            visitSlotId = visitSlot(
+              agencyInternalLocation = room2,
+              maxGroups = 10,
+              maxAdults = 20,
+            ).id
+          }
+          visitTimeSlot(
+            timeSlotSequence = 2,
+            startTime = LocalTime.parse("11:00"),
+            endTime = LocalTime.parse("12:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.now().plusDays(1),
+          ) {
+            visitSlot(
+              agencyInternalLocation = room1,
+              maxGroups = null,
+              maxAdults = null,
+            )
+            visitSlotId = visitSlot(
+              agencyInternalLocation = room2,
+              maxGroups = 10,
+              maxAdults = 20,
+            ).id
+          }
+        }
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.TUE) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.now().plusDays(1),
+            expiryDate = LocalDate.now().minusDays(1),
+          ) {
+            visitSlot(
+              agencyInternalLocation = room1,
+              maxGroups = null,
+              maxAdults = null,
+            )
+            visitSlotId = visitSlot(
+              agencyInternalLocation = room2,
+              maxGroups = 10,
+              maxAdults = 20,
+            ).id
+          }
+        }
+        agencyVisitDay(prisonerId = "MDI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = null,
+          ) {
+            visitSlot(
+              agencyInternalLocation = moorlandRoom,
+              maxGroups = null,
+              maxAdults = null,
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(room1)
+      agencyInternalLocationRepository.delete(room2)
+      agencyInternalLocationRepository.delete(moorlandRoom)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return time all time slot for prison`() {
+        val visitTimeSlot: VisitTimeSlotForPrisonResponse = webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI?activeOnly=false")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(visitTimeSlot.prisonId).isEqualTo("BXI")
+        assertThat(visitTimeSlot.timeSlots).hasSize(3)
+      }
+
+      @Test
+      fun `will by default only return active time slot for prison`() {
+        val visitTimeSlot: VisitTimeSlotForPrisonResponse = webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(visitTimeSlot.prisonId).isEqualTo("BXI")
+        assertThat(visitTimeSlot.timeSlots).hasSize(2)
+        assertThat(visitTimeSlot.timeSlots.find { it.dayOfWeek == WeekDay.MON && it.timeSlotSequence == 1 }).isNotNull()
+        assertThat(visitTimeSlot.timeSlots.find { it.dayOfWeek == WeekDay.MON && it.timeSlotSequence == 2 }).isNotNull()
+      }
+    }
+  }
 }
 
 private data class VisitTimeSlotIdPageResponse(

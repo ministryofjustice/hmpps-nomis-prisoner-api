@@ -18,6 +18,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -119,7 +120,7 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
 
   @GetMapping("/visits/configuration/prisons")
   @Operation(
-    summary = "Get a list list of prisonIds that are active have timeslots configured",
+    summary = "Get a list of prisonIds that are active have timeslots configured",
     description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
@@ -149,6 +150,48 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     ],
   )
   fun getActivePrisonsWithTimeSlots(): ActivePrisonWithTimeSlotResponse = ActivePrisonWithTimeSlotResponse(visitsConfigurationService.getActivePrisonsWithTimeSlots())
+
+  @GetMapping("/visits/configuration/time-slots/prison-id/{prisonId}")
+  @Operation(
+    summary = "Get a list of timeslots for specific prison",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "List of timeslots",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonVisitTimeSlots(
+    @PathVariable
+    prisonId: String,
+    @Schema(description = "If supplied only return time slots that have not expired", required = false, example = "true")
+    @RequestParam(value = "activeOnly", defaultValue = "true")
+    activeOnly: Boolean,
+  ): VisitTimeSlotForPrisonResponse = visitsConfigurationService.getPrisonVisitTimeSlots(
+    prisonId = prisonId,
+    activeOnly = activeOnly,
+  )
 }
 
 data class VisitTimeSlotIdResponse(
@@ -158,6 +201,13 @@ data class VisitTimeSlotIdResponse(
   val dayOfWeek: WeekDay,
   @Schema(description = "The time slot sequence", example = "1")
   val timeSlotSequence: Int,
+)
+
+data class VisitTimeSlotForPrisonResponse(
+  @Schema(description = "The prison id", example = "MDI")
+  val prisonId: String,
+  @Schema(description = "The time slots for the prison")
+  val timeSlots: List<VisitTimeSlotResponse>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
