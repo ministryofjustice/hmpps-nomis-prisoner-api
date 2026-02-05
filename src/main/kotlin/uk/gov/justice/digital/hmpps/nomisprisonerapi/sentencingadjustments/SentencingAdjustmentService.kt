@@ -266,7 +266,7 @@ class SentencingAdjustmentService(
 
   @Transactional(propagation = Propagation.MANDATORY)
   fun activateAllAdjustment(sentences: List<OffenderSentence>): List<SentenceIdAndAdjustments> = sentences.map { sentence ->
-    val adjustmentIds = sentence.adjustments.map {
+    val adjustmentIds = sentence.adjustments.filterNot { it.isHiddenFromUser() }.map {
       // mutate and make active
       it.active = true
       it.id
@@ -279,7 +279,7 @@ class SentencingAdjustmentService(
 
   @Transactional(propagation = Propagation.MANDATORY)
   fun copyAllAdjustment(fromSentences: List<OffenderSentence>, toSentences: List<OffenderSentence>): List<SentenceIdAndAdjustments> = fromSentences.zip(toSentences).map { (fromSentence, toSentence) ->
-    fromSentence.adjustments.map { sourceAdjustment ->
+    fromSentence.adjustments.filterNot { it.isHiddenFromUser() }.map { sourceAdjustment ->
       createSentenceAdjustment(
         toSentence.id.offenderBooking.bookingId,
         toSentence.id.sequence,
@@ -339,6 +339,7 @@ private fun OffenderKeyDateAdjustment.toAdjustmentResponse() = KeyDateAdjustment
   hasBeenReleased = this.offenderBooking.hasBeenReleased(),
   prisonId = this.offenderBooking.location.id,
 )
+fun OffenderSentenceAdjustment.isHiddenFromUser() = this.offenderKeyDateAdjustmentId != null
 
 private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustmentResponse(
   id = this.id,
@@ -352,7 +353,7 @@ private fun OffenderSentenceAdjustment.toAdjustmentResponse() = SentenceAdjustme
   adjustmentDays = this.adjustmentNumberOfDays,
   comment = this.comment,
   active = this.active,
-  hiddenFromUsers = this.offenderKeyDateAdjustmentId != null,
+  hiddenFromUsers = this.isHiddenFromUser(),
   offenderNo = this.offenderBooking.offender.nomsId,
   hasBeenReleased = this.offenderBooking.hasBeenReleased(),
   prisonId = this.offenderBooking.location.id,

@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceTerm
@@ -41,6 +42,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnR
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderKeyDateAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
@@ -74,6 +76,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderSentenceAdjustmentRepository: OffenderSentenceAdjustmentRepository
+
+  @Autowired
+  lateinit var offenderKeyDateAdjustmentRepository: OffenderKeyDateAdjustmentRepository
 
   @Autowired
   lateinit var linkCaseTxnRepository: LinkCaseTxnRepository
@@ -8558,6 +8563,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var remandAdjustment: OffenderSentenceAdjustment
       private lateinit var taggedBailAdjustment: OffenderSentenceAdjustment
       private lateinit var unusedRemandAdjustment: OffenderSentenceAdjustment
+      private lateinit var ualAdjustment: OffenderKeyDateAdjustment
+      private lateinit var linkedUalAdjustment: OffenderSentenceAdjustment
 
       @Nested
       open inner class FirstFixedTermRecall {
@@ -8570,6 +8577,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             prisoner =
               offender(nomsId = "A1234AB") {
                 booking = booking(agencyLocationId = "MDI") {
+                  ualAdjustment = adjustment(adjustmentTypeCode = "UAL", active = false)
                   courtCase1 = courtCase(reportingStaff = staff, agencyId = "ABDRCT", caseSequence = 1) {
                     lateinit var courtOrder: CourtOrder
                     offenderCharge1 = offenderCharge(offenceCode = "RT88074")
@@ -8592,6 +8600,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                       offenderSentenceCharge(offenderCharge = offenderCharge1)
                       term(days = 35, sentenceTermType = "IMP")
                       remandAdjustment = adjustment(adjustmentTypeCode = "RX", active = false)
+                      linkedUalAdjustment = adjustment(adjustmentTypeCode = "UAL", active = false, keyDateAdjustmentId = ualAdjustment.id)
                     }
                     sentence2 = sentence(
                       category = "2020",
@@ -8790,9 +8799,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         }
 
         @Test
-        fun `will activate all sentence adjustments`() {
+        fun `will activate all sentence adjustments and leave key date adjustments`() {
           with(offenderSentenceAdjustmentRepository.findByIdOrNull(unusedRemandAdjustment.id)!!) {
             assertThat(sentenceAdjustment.id).isEqualTo("UR")
+            assertThat(active).isFalse
+          }
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(linkedUalAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UAL")
+            assertThat(active).isFalse
+          }
+          with(offenderKeyDateAdjustmentRepository.findByIdOrNull(ualAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UAL")
             assertThat(active).isFalse
           }
 
@@ -8807,6 +8824,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           with(offenderSentenceAdjustmentRepository.findByIdOrNull(unusedRemandAdjustment.id)!!) {
             assertThat(sentenceAdjustment.id).isEqualTo("UR")
             assertThat(active).isTrue
+          }
+
+          // these are kept inactive
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(linkedUalAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UAL")
+            assertThat(active).isFalse
+          }
+          with(offenderKeyDateAdjustmentRepository.findByIdOrNull(ualAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UAL")
+            assertThat(active).isFalse
           }
 
           assertThat(response.sentenceAdjustmentsActivated).hasSize(2)
@@ -9075,6 +9102,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
       @Nested
       inner class RecallOnPreviousBooking {
+        private lateinit var ualAdjustment: OffenderKeyDateAdjustment
+        private lateinit var linkedUalAdjustment: OffenderSentenceAdjustment
+
         @BeforeEach
         fun createPrisonerAndSentence() {
           nomisDataBuilder.build {
@@ -9086,6 +9116,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 booking = booking(agencyLocationId = "MDI") {
                 }
                 previousBooking = booking(agencyLocationId = "MDI") {
+                  ualAdjustment = adjustment(adjustmentTypeCode = "UAL", active = false)
+
                   release(date = LocalDateTime.parse("2022-06-02T10:00"))
                   courtCase1 = courtCase(reportingStaff = staff, agencyId = "LEICYC", caseSequence = 1) {
                     lateinit var courtOrder: CourtOrder
@@ -9106,6 +9138,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     ) {
                       taggedBailAdjustment = adjustment(adjustmentTypeCode = "S240A", active = false)
                       unusedRemandAdjustment = adjustment(adjustmentTypeCode = "UR", active = false)
+                      linkedUalAdjustment = adjustment(adjustmentTypeCode = "UAL", active = false, keyDateAdjustmentId = ualAdjustment.id)
                       offenderSentenceCharge(offenderCharge = offenderCharge1)
                       term(days = 35, sentenceTermType = "IMP")
                     }
@@ -9258,6 +9291,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(sentenceAdjustment.id).isEqualTo("UR")
             assertThat(active).isFalse
           }
+          with(offenderSentenceAdjustmentRepository.findByIdOrNull(linkedUalAdjustment.id)!!) {
+            assertThat(sentenceAdjustment.id).isEqualTo("UAL")
+            assertThat(active).isFalse
+          }
 
           assertThat(
             offenderSentenceAdjustmentRepository.findByOffenderBookingAndOffenderKeyDateAdjustmentIdIsNull(
@@ -9305,6 +9342,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(active).isTrue
               assertThat(sentence.id).isEqualTo(sentence1OnLatestBookingId)
             }
+
+            // linked UAL adjustment not copied
+            assertThat(adjustmentsOnLatestBooking.find { it.sentenceAdjustment.id == "UAL" }).isNull()
           }
         }
 
