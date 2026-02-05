@@ -5,15 +5,18 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csra.EvaluationResultCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Assessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentCommittee
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentItem
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AssessmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.math.BigDecimal
@@ -24,11 +27,19 @@ import java.time.LocalDateTime
 annotation class OffenderAssessmentDslMarker
 
 @NomisDataDslMarker
-interface OffenderAssessmentDsl
+interface OffenderAssessmentDsl {
+  @OffenderAssessmentItemDslMarker
+  fun assessmentItem(
+    itemSequence: Int,
+    assessmentId: Long,
+    dsl: OffenderAssessmentItemDsl.() -> Unit = {},
+  ): OffenderAssessmentItem
+}
 
 @Component
 class OffenderAssessmentBuilderRepository(
   private val offenderAssessmentRepository: OffenderAssessmentRepository,
+  private val assessmentRepository: AssessmentRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
@@ -40,17 +51,22 @@ class OffenderAssessmentBuilderRepository(
 
   fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)
     ?: throw BadDataException("Prison $prisonId not found")
+
+  fun lookupAssessment(id: Long): Assessment = assessmentRepository.findByIdOrNull(id)
+    ?: throw BadDataException("Assessment $id not found")
 }
 
 @Component
 class OffenderAssessmentBuilderFactory(
   val repository: OffenderAssessmentBuilderRepository,
+  val offenderAssessmentItemBuilderFactory: OffenderAssessmentItemBuilderFactory,
 ) {
-  fun builder() = OffenderAssessmentBuilder(repository)
+  fun builder() = OffenderAssessmentBuilder(repository, offenderAssessmentItemBuilderFactory)
 }
 
 class OffenderAssessmentBuilder(
   private val repository: OffenderAssessmentBuilderRepository,
+  private val offenderAssessmentItemBuilderFactory: OffenderAssessmentItemBuilderFactory,
 ) : OffenderAssessmentDsl {
   lateinit var assessment: OffenderAssessment
 
@@ -96,4 +112,22 @@ class OffenderAssessmentBuilder(
       assessment = repository.save(it)
       return assessment
     }
+
+  override fun assessmentItem(
+    itemSequence: Int,
+    assessmentId: Long,
+    dsl: OffenderAssessmentItemDsl.() -> Unit,
+  ): OffenderAssessmentItem = offenderAssessmentItemBuilderFactory.builder().let { builder ->
+    builder.build(
+      assessment.id.offenderBooking,
+      assessment.id.sequence,
+      itemSequence,
+      assessment,
+      repository.lookupAssessment(assessmentId),
+    )
+      .also {
+        assessment.offenderAssessmentItems.add(it)
+        builder.apply(dsl)
+      }
+  }
 }

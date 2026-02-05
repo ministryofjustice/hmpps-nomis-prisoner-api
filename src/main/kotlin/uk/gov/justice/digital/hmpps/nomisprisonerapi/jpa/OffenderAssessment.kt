@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.AttributeConverter
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Converter
 import jakarta.persistence.Embeddable
@@ -11,7 +12,9 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csra.EvaluationResultCode
 import java.io.Serializable
 import java.math.BigDecimal
@@ -36,8 +39,13 @@ data class OffenderAssessment(
 
   val assessmentDate: LocalDate,
 
+  // Note: uses CsraTypeConverter
   @Column(name = "ASSESSMENT_TYPE_ID")
   val assessmentType: AssessmentType, // nullable but no null rows
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "ASSESSMENT_TYPE_ID", insertable = false, updatable = false)
+  val assessment: Assessment? = null, // not nullable but dont want to have to specify this on creation
 
   val score: BigDecimal, // nullable but no null rows
 
@@ -119,13 +127,26 @@ data class OffenderAssessment(
   val assessorStaff: Staff? = null,
 
   val overrideUserId: String? = null,
+
   @Column(name = "OVERRIDE_REASON")
   val overrideReasonCode: String? = null, // 'PREVIOUS' or 'SECURITY', not sure if used
-) : NomisAuditableEntityBasic()
+
+  @OneToMany(fetch = LAZY, mappedBy = "offenderAssessment", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val offenderAssessmentItems: MutableList<OffenderAssessmentItem> = mutableListOf(),
+) : NomisAuditableEntityBasic() {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as OffenderAssessment
+    return id == other.id
+  }
+
+  override fun hashCode(): Int = javaClass.hashCode()
+}
 
 enum class AssessmentStatusType { I, A, P }
 
-enum class AssessmentType(val id: Int) {
+enum class AssessmentType(val id: Long) {
   CSR(9687), // CSR Rating
   CSR1(9684), // CSR Reception
   CSRDO(9683), // CSR Locate
@@ -158,8 +179,8 @@ class CsraLevelConverter : AttributeConverter<AssessmentLevel?, String?> {
 
 @Converter(autoApply = true)
 class CsraTypeConverter : AttributeConverter<AssessmentType, Long> {
-  override fun convertToDatabaseColumn(type: AssessmentType) = type.id.toLong()
-  override fun convertToEntityAttribute(id: Long) = AssessmentType.entries.first { it.id.toLong() == id }
+  override fun convertToDatabaseColumn(type: AssessmentType) = type.id
+  override fun convertToEntityAttribute(id: Long) = AssessmentType.entries.first { it.id == id }
 }
 /* committee code usages :
 794719	RECP

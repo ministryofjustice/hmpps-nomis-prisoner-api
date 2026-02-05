@@ -12,6 +12,15 @@ import java.time.LocalDateTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CsraGetDto(
+  @Schema(description = "The prisoners booking id", example = "3222111")
+  val bookingId: Long,
+
+  @Schema(description = "The assessment sequence number within the booking", example = "4")
+  val sequence: Int,
+
+  @Schema(description = "The prisoner's prison", example = "LEI")
+  val agencyId: String? = null,
+
   @Schema(description = "Date the CSRA was created", example = "2025-11-22")
   val assessmentDate: LocalDate,
 
@@ -53,10 +62,10 @@ data class CsraGetDto(
   val placementAgencyId: String? = null,
 
   @Schema(description = "Timestamp for when the CSRA was created", example = "2025-12-06T12:34:56")
-  val createdDateTime: LocalDateTime? = null,
+  val createdDateTime: LocalDateTime,
 
   @Schema(description = "The user who created the CSRA", example = "NQP56Y")
-  val createdBy: String? = null,
+  val createdBy: String,
 
   // Review fields:
   @Schema(description = "The review CSRA level")
@@ -82,4 +91,27 @@ data class CsraGetDto(
 
   @Schema(description = "Approval Comment text")
   val reviewComment: String? = null,
+
+  @Schema(description = "Question and answer details by section")
+  val sections: List<CsraSectionDto>,
+)
+
+data class CsraSectionDto(
+  val code: String,
+  val description: String? = null,
+  @Schema(description = "Questions and answers in this section")
+  var questions: List<CsraQuestionDto>,
+)
+
+data class CsraQuestionDto(
+  val code: String,
+  val description: String? = null,
+  @Schema(description = "Answers to this question")
+  val responses: List<CsraResponseDto>,
+)
+
+data class CsraResponseDto(
+  val code: String,
+  val answer: String? = null,
+  val comment: String? = null,
 )
