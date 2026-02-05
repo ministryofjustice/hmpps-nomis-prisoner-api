@@ -28,7 +28,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTempor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
@@ -53,7 +52,6 @@ class MovementsResourceIntTest(
   @Autowired val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
   @Autowired val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   @Autowired val offenderExternalMovementRepository: OffenderExternalMovementRepository,
-  @Autowired val corporateAddressRepository: CorporateAddressRepository,
   @Autowired val corporateRepository: CorporateRepository,
   @Autowired val offenderAddressRepository: OffenderAddressRepository,
   @Autowired val agencyLocationRepository: AgencyLocationRepository,
@@ -94,7 +92,7 @@ class MovementsResourceIntTest(
     if (this::agencyLocation.isInitialized) {
       agencyLocationRepository.delete(agencyLocation)
     }
-    corporateAddressRepository.deleteAll()
+    corporateRepository.deleteAll()
   }
 
   @Nested
@@ -1828,6 +1826,87 @@ class MovementsResourceIntTest(
       }
 
       @Test
+      fun `should not create corporate or address if already exists`() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Boots") {
+            address(premise = "Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+          }
+          offender = offender(nomsId = "A9876CA") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.upsertApplicationOk(
+          request = aRequest(
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG"),
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // the address is used on the application
+                assertThat(toAddress?.addressId).isNotNull
+                assertThat(toAddress?.premise).isEqualTo("Scotland Street, Sheffield")
+                assertThat(toAddress?.postalCode).isEqualTo("S1 3GG")
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
+              }
+              // the corporate was not duplicated
+              with(corporateRepository.findAllByCorporateName("Boots")) {
+                assertThat(size).isEqualTo(1)
+                // The corporate address was not duplicated
+                assertThat(first().addresses.size).isEqualTo(1)
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should not create corporate or address where there is already a duplicate corporate`() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Boots") {
+            address(premise = "Different address", street = null, locality = null, postcode = "S4 4SS")
+          }
+          corporate(corporateName = "Boots") {
+            address(premise = "Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+          }
+          offender = offender(nomsId = "A9876CB") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.upsertApplicationOk(
+          request = aRequest(
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG"),
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // the address is used on the application
+                assertThat(toAddress?.addressId).isNotNull
+                assertThat(toAddress?.premise).isEqualTo("Scotland Street, Sheffield")
+                assertThat(toAddress?.postalCode).isEqualTo("S1 3GG")
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
+                assertThat(toAddressOwnerClass).isEqualTo("CORP")
+              }
+              // the corporate was not duplicated
+              with(corporateRepository.findAllByCorporateName("Boots")) {
+                assertThat(size).isEqualTo(2)
+                // The corporate address was not duplicated
+                assertThat(this[0].addresses.size).isEqualTo(1)
+                assertThat(this[1].addresses.size).isEqualTo(1)
+              }
+            }
+          }
+      }
+
+      @Test
       fun `should truncate comments`() {
         // comment is 300 long
         webTestClient.upsertApplicationOk(aRequest().copy(comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))
@@ -2678,6 +2757,43 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class CreateScheduleWithDuplicateOffenderAddress {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            address(premise = "1 Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+            address(premise = "1 Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = null, addressText = "1 Scotland Street, Sheffield", postalCode = "S1 3GG")),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(toAddress?.premise).isEqualTo("1 Scotland Street, Sheffield")
+                assertThat(toAddress?.postalCode).isEqualTo("S1 3GG")
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
+              }
+              // Should not create another address
+              with(offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)) {
+                assertThat(filter { it.premise == "1 Scotland Street, Sheffield" }.size).isEqualTo(2)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class CreateScheduleWithCorporateAddress {
       private lateinit var corporateAddress: CorporateAddress
 
@@ -2686,6 +2802,44 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           corporate(corporateName = "Boots") {
             corporateAddress = address(premise = "Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG")),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class CreateScheduleWithDuplicatedCorporateAddress {
+      private lateinit var corporateAddress: CorporateAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Boots") {
+            corporateAddress = address(premise = "Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
+          }
+          corporate(corporateName = "Boots") {
+            address(premise = "Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
           }
           offender = offender(nomsId = offenderNo) {
             booking = booking {

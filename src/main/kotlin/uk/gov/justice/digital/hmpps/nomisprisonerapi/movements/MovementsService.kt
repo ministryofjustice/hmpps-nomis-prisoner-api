@@ -582,12 +582,15 @@ class MovementsService(
   private fun findOrCreateCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
     val (premise, street) = formatAddressText(addressText)
     val corporateName = name.toCorporateName()
-    corporateInsertRepository.insertCorporateIfNotExists(corporateName)
-    val corporate = corporateRepository.findAllByCorporateName(corporateName).first()
-    tapAddressInsertRepository.insertAddressIfNotExists("CORP", corporate.id, premise, street, postalCode)
+    return findCorporateAddress(corporateName, addressText, postalCode)
+      ?: let {
+        corporateInsertRepository.insertCorporateIfNotExists(corporateName)
+        val corporate = corporateRepository.findAllByCorporateName(corporateName).first()
+        tapAddressInsertRepository.insertAddressIfNotExists("CORP", corporate.id, premise, street, postalCode)
 
-    return corporateRepository.findById(corporate.id).get()
-      .addresses.first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }
+        corporateRepository.findById(corporate.id).get()
+          .addresses.first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }
+      }
   }
 
   private fun findAddressOrThrow(request: UpsertTemporaryAbsenceAddress, offender: Offender): Address {
@@ -605,12 +608,12 @@ class MovementsService(
 
   private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? {
     val (premise, street) = formatAddressText(addressText)
-    return offenderAddressRepository.findByOffender_RootOffenderIdAndPremiseAndStreetAndPostalCode(offender.rootOffenderId!!, premise, street, postalCode)
+    return offenderAddressRepository.findFirstByOffender_RootOffenderIdAndPremiseAndStreetAndPostalCode(offender.rootOffenderId!!, premise, street, postalCode)
   }
 
   private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
     val (premise, street) = formatAddressText(addressText)
-    return corporateAddressRepository.findByCorporate_CorporateNameAndPremiseAndStreetAndPostalCode(name.toCorporateName(), premise, street, postalCode)
+    return corporateAddressRepository.findFirstByCorporate_CorporateNameAndPremiseAndStreetAndPostalCode(name.toCorporateName(), premise, street, postalCode)
   }
 
   private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
