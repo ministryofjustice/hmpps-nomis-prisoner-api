@@ -45,15 +45,6 @@ class CsraResourceIntTest : IntegrationTestBase() {
       offender(nomsId = "A1111AA") {
         booking1 = booking()
       }
-      offender(nomsId = "A2222BB") {
-        booking2 = booking {
-          assessment(
-            username = "BILLSTAFF",
-            assessmentDate = LocalDate.parse("2025-12-29"),
-            placementAgency = "BXI",
-          )
-        }
-      }
     }
   }
 
@@ -386,6 +377,23 @@ class CsraResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `can get a CSRA with full data`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A2222BB") {
+            booking2 = booking {
+              assessment(
+                username = "BILLSTAFF",
+                assessmentDate = LocalDate.parse("2025-12-29"),
+                placementAgency = "BXI",
+                assessmentType = AssessmentType.CSR1,
+              ) {
+                assessmentItem(1, 9923) // Source for current offence?    	I	Inmate/Prisoner
+                assessmentItem(2, 9928) // Source for previous convictions?	D	Document
+                assessmentItem(3, 9973) // Source for damage to property?	  S	Staff
+              }
+            }
+          }
+        }
+
         val data = webTestClient.get().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -396,7 +404,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
         with(data) {
           assertThat(assessmentDate).isEqualTo("2025-12-29")
-          assertThat(type).isEqualTo(AssessmentType.CSR)
+          assertThat(type).isEqualTo(AssessmentType.CSR1)
           assertThat(calculatedLevel).isEqualTo(AssessmentLevel.STANDARD)
           assertThat(score.toString()).isEqualTo("1000")
           assertThat(status).isEqualTo(AssessmentStatusType.I)
@@ -414,6 +422,47 @@ class CsraResourceIntTest : IntegrationTestBase() {
           assertThat(reviewCommitteeComment).isEqualTo("a-reviewCommitteeComment")
           assertThat(reviewPlacementAgencyId).isNull()
           assertThat(reviewComment).isEqualTo("a-reviewComment")
+          assertThat(sections).hasSize(2)
+          with(sections[0]) {
+            assertThat(code).isEqualTo("2a")
+            assertThat(description).isEqualTo("Section 2A : Questions")
+            assertThat(questions).hasSize(2)
+            with(questions[0]) {
+              assertThat(code).isEqualTo("SRCCURR")
+              assertThat(description).isEqualTo("Source for current offence?")
+              assertThat(responses).hasSize(1)
+              with(responses[0]) {
+                assertThat(code).isEqualTo("I")
+                assertThat(answer).isEqualTo("Inmate/Prisoner")
+                assertThat(comment).isEqualTo("Item comment for sequence 1, item 1")
+              }
+            }
+            with(questions[1]) {
+              assertThat(code).isEqualTo("SRCPREV")
+              assertThat(description).isEqualTo("Source for previous convictions?")
+              assertThat(responses).hasSize(1)
+              with(responses[0]) {
+                assertThat(code).isEqualTo("D")
+                assertThat(answer).isEqualTo("Document")
+                assertThat(comment).isEqualTo("Item comment for sequence 1, item 2")
+              }
+            }
+          }
+          with(sections[1]) {
+            assertThat(code).isEqualTo("2b")
+            assertThat(description).isEqualTo("Section 2B: Indicators")
+            assertThat(questions).hasSize(1)
+            with(questions[0]) {
+              assertThat(code).isEqualTo("SRCDAM")
+              assertThat(description).isEqualTo("Source for damage to property")
+              assertThat(responses).hasSize(1)
+              with(responses[0]) {
+                assertThat(code).isEqualTo("S")
+                assertThat(answer).isEqualTo("Staff")
+                assertThat(comment).isEqualTo("Item comment for sequence 1, item 3")
+              }
+            }
+          }
         }
       }
     }

@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Assessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentItem
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -90,31 +92,62 @@ class CsraService(
       ?: throw NotFoundException("CSRA for booking $bookingId and sequence $sequence not found")
   }
 
-  fun OffenderAssessment.toDto() = CsraGetDto(
-    assessmentDate = assessmentDate,
-    calculatedLevel = calculatedLevel,
-    score = score,
-    status = assessmentStatus,
-    assessmentStaffId = assessmentStaff.id,
-    type = assessmentType,
-//      assessmentRepository.findByIdOrNull(assessmentTypeId)
-//      ?.let { AssessmentType.valueOf(it.assessmentCode) }
-//      ?: throw BadDataException("Cannot convert assessment type $assessmentTypeId for booking ${id.offenderBooking.bookingId} and sequence ${id.sequence}"),
-    committeeCode = assessmentCommitteeCode,
-    nextReviewDate = nextReviewDate,
-    comment = assessmentComment,
-    placementAgencyId = placementAgency?.id,
-    createdDateTime = creationDateTime,
-    createdBy = creationUser,
-    reviewLevel = reviewLevel,
-    approvedLevel = approvedLevel,
-    evaluationDate = evaluationDate,
-    evaluationResultCode = evaluationResultCode,
-    reviewCommitteeCode = reviewCommitteeCode,
-    reviewCommitteeComment = reviewCommitteeComment,
-    reviewPlacementAgencyId = reviewPlacementAgency?.id,
-    reviewComment = reviewComment,
-  )
+  fun OffenderAssessment.toDto(): CsraGetDto {
+    val responseHierarchy = mutableMapOf<Assessment, MutableMap<Assessment, MutableMap<Assessment, OffenderAssessmentItem>>>()
+    offenderAssessmentItems.forEach { offenderAssessmentItem ->
+      val response = offenderAssessmentItem.assessment
+      val question = response.parentAssessment!!
+      val section = question.parentAssessment!!
+      val sectionMap = responseHierarchy.getOrPut(section) { mutableMapOf() }
+      val questionMap = sectionMap.getOrPut(question) { mutableMapOf() }
+      questionMap[response] = offenderAssessmentItem
+    }
+
+    return CsraGetDto(
+      bookingId = id.offenderBooking.bookingId,
+      sequence = id.sequence,
+      agencyId = id.offenderBooking.location.id,
+      assessmentDate = assessmentDate,
+      calculatedLevel = calculatedLevel,
+      score = score,
+      status = assessmentStatus,
+      assessmentStaffId = assessmentStaff.id,
+      type = assessmentType,
+      committeeCode = assessmentCommitteeCode,
+      nextReviewDate = nextReviewDate,
+      comment = assessmentComment,
+      placementAgencyId = placementAgency?.id,
+      createdDateTime = creationDateTime ?: createDatetime,
+      createdBy = creationUser ?: createUsername,
+      reviewLevel = reviewLevel,
+      approvedLevel = approvedLevel,
+      evaluationDate = evaluationDate,
+      evaluationResultCode = evaluationResultCode,
+      reviewCommitteeCode = reviewCommitteeCode,
+      reviewCommitteeComment = reviewCommitteeComment,
+      reviewPlacementAgencyId = reviewPlacementAgency?.id,
+      reviewComment = reviewComment,
+      sections = responseHierarchy.map { sectionEntry ->
+        CsraSectionDto(
+          code = sectionEntry.key.assessmentCode,
+          description = sectionEntry.key.description,
+          questions = sectionEntry.value.map { questionEntry ->
+            CsraQuestionDto(
+              code = questionEntry.key.assessmentCode,
+              description = questionEntry.key.description,
+              responses = questionEntry.value.map { responseEntry ->
+                CsraResponseDto(
+                  code = responseEntry.key.assessmentCode,
+                  answer = responseEntry.key.description,
+                  comment = responseEntry.value.comment,
+                )
+              },
+            )
+          },
+        )
+      },
+    )
+  }
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
