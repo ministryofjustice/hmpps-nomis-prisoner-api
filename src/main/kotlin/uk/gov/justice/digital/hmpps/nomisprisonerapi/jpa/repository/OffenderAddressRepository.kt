@@ -11,5 +11,5 @@ interface OffenderAddressRepository : JpaRepository<OffenderAddress, Long> {
   fun findByOffender_RootOffenderId(rootOffenderId: Long): List<OffenderAddress>
 
   @Suppress("ktlint:standard:function-naming")
-  fun findByOffender_RootOffenderIdAndPremiseAndStreetAndPostalCode(rootOffenderId: Long, premise: String, street: String?, postalCode: String?): OffenderAddress?
+  fun findFirstByOffender_RootOffenderIdAndPremiseAndStreetAndPostalCode(rootOffenderId: Long, premise: String, street: String?, postalCode: String?): OffenderAddress?
 }
