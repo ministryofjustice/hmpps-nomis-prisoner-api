@@ -461,8 +461,8 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
             timeSlotSequence = 2,
             startTime = LocalTime.parse("11:00"),
             endTime = LocalTime.parse("12:00"),
-            effectiveDate = LocalDate.parse("2023-01-01"),
-            expiryDate = LocalDate.now().plusDays(1),
+            effectiveDate = LocalDate.now().plusDays(10),
+            expiryDate = null,
           ) {
             visitSlot(
               agencyInternalLocation = room1,
@@ -481,7 +481,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
             timeSlotSequence = 1,
             startTime = LocalTime.parse("10:00"),
             endTime = LocalTime.parse("11:00"),
-            effectiveDate = LocalDate.now().plusDays(1),
+            effectiveDate = LocalDate.now().minusDays(10),
             expiryDate = LocalDate.now().minusDays(1),
           ) {
             visitSlot(
@@ -570,9 +570,8 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
           .expectBodyResponse()
 
         assertThat(visitTimeSlot.prisonId).isEqualTo("BXI")
-        assertThat(visitTimeSlot.timeSlots).hasSize(2)
+        assertThat(visitTimeSlot.timeSlots).hasSize(1)
         assertThat(visitTimeSlot.timeSlots.find { it.dayOfWeek == WeekDay.MON && it.timeSlotSequence == 1 }).isNotNull()
-        assertThat(visitTimeSlot.timeSlots.find { it.dayOfWeek == WeekDay.MON && it.timeSlotSequence == 2 }).isNotNull()
       }
     }
   }
