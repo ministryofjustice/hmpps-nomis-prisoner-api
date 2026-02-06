@@ -33,9 +33,19 @@ class TransactionsService(
     .findByTransactionId(transactionId)
     .map(::mapGL)
 
-  fun getFirstTransactionIdOn(date: LocalDate): Long = generalLedgerTransactionRepository
+  fun getGeneralLedgerTransactionsForPrison(prisonId: String, date: LocalDate): List<GeneralLedgerTransactionDto> = generalLedgerTransactionRepository
+    .findByPrisonAndEntryDate(prisonId, date)
+    .map(::mapGL)
+
+  fun getFirstGeneralLedgerTransactionIdOn(date: LocalDate): Long = generalLedgerTransactionRepository
     .findMinTransactionIdByEntryDate(date)
     ?: throw NotFoundException("No transactions found with date $date")
+
+  fun getGeneralLedgerTransactionsOn(
+    transactionId: Long,
+  ): List<GeneralLedgerTransactionDto> = generalLedgerTransactionRepository
+    .findByTransactionId(transactionId)
+    .map(::mapGL)
 
   fun findOrphanTransactionsFromId(
     transactionId: Long,

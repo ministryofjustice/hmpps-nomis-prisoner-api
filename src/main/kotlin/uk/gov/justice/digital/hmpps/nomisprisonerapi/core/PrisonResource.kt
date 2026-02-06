@@ -47,7 +47,7 @@ class PrisonResource(val prisonService: PrisonService) {
       ),
     ],
   )
-  fun getPrisonIds(): List<Prison> = prisonService.getAllActivePrisons()
+  fun getActivePrisonIds(): List<Prison> = prisonService.getAllActivePrisons()
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{prisonId}/incentive-levels")
