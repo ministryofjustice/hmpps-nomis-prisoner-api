@@ -2266,6 +2266,113 @@ class MovementsResourceIntTest(
   }
 
   @Nested
+  @DisplayName("DELETE /movements/{offenderNo}/temporary-absences/application/{applicationId}")
+  inner class DeleteApplication {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          offenderAddress = address()
+          booking = booking {
+            application = temporaryAbsenceApplication()
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `should delete application`() {
+        webTestClient.deleteApplication()
+          .expectStatus().isNoContent
+
+        repository.runInTransaction {
+          assertThat(applicationRepository.findByIdOrNull(application.movementApplicationId)).isNull()
+        }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return 204 if unknown application id sent`() {
+        webTestClient.deleteApplication(applicationId = 9999)
+          .expectStatus().isNoContent
+      }
+
+      @Test
+      fun `should return conflict for unknown offender`() {
+        webTestClient.deleteApplication(offenderNo = "UNKNOWN")
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 for wrong offender`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A7897WW")
+        }
+
+        webTestClient.deleteApplication(offenderNo = "A7897WW")
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if application has scheduled movements`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTemporaryAbsence()
+              }
+            }
+          }
+        }
+
+        webTestClient.deleteApplication()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorized for missing token`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/temporary-absences/application/${application.movementApplicationId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/temporary-absences/application/${application.movementApplicationId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/temporary-absences/application/${application.movementApplicationId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    private fun WebTestClient.deleteApplication(offenderNo: String = offender.nomsId, applicationId: Long = application.movementApplicationId): WebTestClient.ResponseSpec = delete()
+      .uri("/movements/$offenderNo/temporary-absences/application/$applicationId")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+  }
+
+  @Nested
   @DisplayName("GET /movements/{offenderNo}/temporary-absences/scheduled-temporary-absence/{eventId}")
   inner class GetScheduledTemporaryAbsence {
 
