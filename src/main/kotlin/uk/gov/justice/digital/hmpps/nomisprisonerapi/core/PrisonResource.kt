@@ -16,8 +16,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @RestController
 @Validated
 @RequestMapping("/prisons", produces = [MediaType.APPLICATION_JSON_VALUE])
+@PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class PrisonResource(val prisonService: PrisonService) {
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping
   @Operation(
     summary = "Retrieve a list of active prisons.",
@@ -49,7 +49,6 @@ class PrisonResource(val prisonService: PrisonService) {
   )
   fun getPrisonIds(): List<Prison> = prisonService.getAllActivePrisons()
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{prisonId}/incentive-levels")
   @Operation(
     summary = "Retrieve a list of active incentive levels for a prison",
