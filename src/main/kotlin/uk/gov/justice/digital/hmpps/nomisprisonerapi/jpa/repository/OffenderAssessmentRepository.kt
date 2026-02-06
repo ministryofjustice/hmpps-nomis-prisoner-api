@@ -16,5 +16,5 @@ interface OffenderAssessmentRepository : JpaRepository<OffenderAssessment, Offen
 
   @Suppress("ktlint:standard:function-naming")
   @EntityGraph(type = EntityGraphType.FETCH, value = "offender-csra")
-  fun findById_OffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderAssessment>
+  fun findById_OffenderBooking_Offender_NomsIdAndAssessment_AssessmentIdIn(offenderNo: String, assessmentIds: List<Long>): List<OffenderAssessment>
 }

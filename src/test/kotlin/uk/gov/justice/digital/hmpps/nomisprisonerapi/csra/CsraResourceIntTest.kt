@@ -546,27 +546,21 @@ class CsraResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.build {
           offender(nomsId = "A2222BB") {
             booking {
-              assessment(
-                username = "BILLSTAFF",
-              ) {
+              assessment(username = "BILLSTAFF") {
                 assessmentItem(1, 9923) // Source for current offence?    	I	Inmate/Prisoner
               }
             }
             booking(active = false, inOutStatus = "OUT") {
-              assessment(
-                sequence = 1,
-                username = "BILLSTAFF",
-              ) {
+              assessment(sequence = 1, username = "BILLSTAFF") {
                 assessmentItem(1, 9928) // Source for previous convictions?	D	Document
               }
-              assessment(
-                sequence = 2,
-                username = "BILLSTAFF",
-              ) {
+              assessment(sequence = 2, username = "BILLSTAFF") {
                 assessmentItem(1, 9973) // Source for damage to property?	  S	Staff
               }
+              assessment(sequence = 3, username = "BILLSTAFF", assessmentType = AssessmentType.CATEGORY)
             }
           }
+          offender(nomsId = "OTHER") { booking { assessment(username = "BILLSTAFF") { assessmentItem(1, 9923) } } }
         }
 
         webTestClient.get().uri("/prisoners/A2222BB/csras")

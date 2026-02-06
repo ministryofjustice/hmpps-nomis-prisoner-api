@@ -182,13 +182,14 @@ data class OffenderAssessment(
 
 enum class AssessmentStatusType { I, A, P }
 
-enum class AssessmentType(val id: Long) {
+enum class AssessmentType(val id: Long, val isCellSharing: Boolean = true) {
   CSR(9687), // CSR Rating
   CSR1(9684), // CSR Reception
   CSRDO(9683), // CSR Locate
   CSRF(9686), // CSR Full
   CSRH(9685), // CSR Health
   CSRREV(9682), // CSR Review
+  CATEGORY(9688, false), // Categorisation
 }
 
 enum class AssessmentLevel { STANDARD, PEND, LOW, MED, HI }
