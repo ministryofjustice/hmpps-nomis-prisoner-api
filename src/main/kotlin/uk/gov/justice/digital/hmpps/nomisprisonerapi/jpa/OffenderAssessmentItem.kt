@@ -8,9 +8,12 @@ import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Persistable
 import java.io.Serializable
 import java.math.BigDecimal
 
@@ -31,7 +34,7 @@ data class OffenderAssessmentItemId(
 @Table(name = "OFFENDER_ASSESSMENT_ITEMS")
 data class OffenderAssessmentItem(
   @EmbeddedId
-  val id: OffenderAssessmentItemId,
+  private val id: OffenderAssessmentItemId,
 
   val score: BigDecimal,
 
@@ -68,7 +71,15 @@ data class OffenderAssessmentItem(
 
   @Column(name = "COMMENT_TEXT")
   val comment: String? = null,
-) : NomisAuditableEntityBasic() {
+
+  @Transient
+  @Value("false")
+  val new: Boolean = true,
+) : NomisAuditableEntityBasic(),
+  Persistable<OffenderAssessmentItemId> {
+  override fun getId() = id
+  override fun isNew() = new
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

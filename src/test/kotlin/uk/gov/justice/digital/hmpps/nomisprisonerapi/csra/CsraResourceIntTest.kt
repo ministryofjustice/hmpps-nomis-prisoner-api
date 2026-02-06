@@ -374,6 +374,33 @@ class CsraResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
+    inner class Validation {
+      @Test
+      fun `Invalid booking`() {
+        webTestClient.get().uri("/prisoners/booking-id/9999/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Booking with id 9999 not found")
+          }
+      }
+
+      @Test
+      fun `Invalid sequence`() {
+        webTestClient.get().uri("/prisoners/booking-id/${booking1.bookingId}/csra/99")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("CSRA for booking ${booking1.bookingId} and sequence 99 not found")
+          }
+      }
+    }
+
+    @Nested
     inner class HappyPath {
       @Test
       fun `can get a CSRA with full data`() {
@@ -464,6 +491,109 @@ class CsraResourceIntTest : IntegrationTestBase() {
             }
           }
         }
+      }
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/csras")
+  @Nested
+  inner class GetCsrasForPrisoner {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/csras")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/csras")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A1234AA/csras")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `Invalid prisoner`() {
+        webTestClient.get().uri("/prisoners/DOESNOTEXIST/csras")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Prisoner DOESNOTEXIST not found")
+          }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `can get multiple CSRAs for a prisoner`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A2222BB") {
+            booking {
+              assessment(
+                username = "BILLSTAFF",
+              ) {
+                assessmentItem(1, 9923) // Source for current offence?    	I	Inmate/Prisoner
+              }
+            }
+            booking(active = false, inOutStatus = "OUT") {
+              assessment(
+                sequence = 1,
+                username = "BILLSTAFF",
+              ) {
+                assessmentItem(1, 9928) // Source for previous convictions?	D	Document
+              }
+              assessment(
+                sequence = 2,
+                username = "BILLSTAFF",
+              ) {
+                assessmentItem(1, 9973) // Source for damage to property?	  S	Staff
+              }
+            }
+          }
+        }
+
+        webTestClient.get().uri("/prisoners/A2222BB/csras")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody<PrisonerCsrasResponse>()
+          .returnResult()
+          .responseBody!!
+          .apply {
+            assertThat(csras).hasSize(3)
+            with(csras[0]) {
+              assertThat(assessmentStaffId).isEqualTo(staff.id)
+              assertThat(comment).isEqualTo("a-comment")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("I")
+            }
+            with(csras[1]) {
+              assertThat(assessmentStaffId).isEqualTo(staff.id)
+              assertThat(comment).isEqualTo("a-comment")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("D")
+            }
+            with(csras[2]) {
+              assertThat(assessmentStaffId).isEqualTo(staff.id)
+              assertThat(comment).isEqualTo("a-comment")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("S")
+            }
+          }
       }
     }
   }

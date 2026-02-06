@@ -15,11 +15,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentItem
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 
 @Service
 @Transactional
 class CsraService(
+  private val offenderRepository: OffenderRepository,
   private val offenderAssessmentRepository: OffenderAssessmentRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
@@ -146,6 +148,16 @@ class CsraService(
           },
         )
       },
+    )
+  }
+
+  fun getCsras(offenderNo: String): PrisonerCsrasResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Prisoner $offenderNo not found")
+    }
+    return PrisonerCsrasResponse(
+      offenderAssessmentRepository.findById_OffenderBooking_Offender_NomsId(offenderNo)
+        .map { it.toDto() },
     )
   }
 }
