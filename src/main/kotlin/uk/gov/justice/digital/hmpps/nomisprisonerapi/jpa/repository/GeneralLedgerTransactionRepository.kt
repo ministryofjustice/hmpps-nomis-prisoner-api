@@ -15,6 +15,28 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
 
   @Query(
     """
+    with txn_range as (
+        select min(txn_id) as min_id,
+               max(txn_id) as max_id
+        from gl_transactions
+        where caseload_id = :prisonId
+          and offender_id is null
+          and txn_entry_date = :entryDate
+    )
+    select *
+    from gl_transactions gl
+    join txn_range tr
+      on gl.txn_id >= tr.min_id
+     and gl.txn_id <= tr.max_id
+    where gl.caseload_id = :prisonId
+      and gl.offender_id is null    
+    """,
+    nativeQuery = true,
+  )
+  fun findByPrisonAndEntryDate(prisonId: String, entryDate: LocalDate): List<GeneralLedgerTransaction>
+
+  @Query(
+    """
       select gl
       from GeneralLedgerTransaction gl
         left join OffenderTransaction ot on gl.transactionId = ot.transactionId and gl.transactionEntrySequence = ot.transactionEntrySequence

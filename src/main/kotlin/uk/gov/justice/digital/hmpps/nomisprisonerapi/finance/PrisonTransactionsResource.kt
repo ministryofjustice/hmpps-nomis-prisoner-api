@@ -19,45 +19,15 @@ import java.time.LocalDate
 
 @RestController
 @Validated
-@RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasRole('NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class TransactionsResource(
+@RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+class PrisonTransactionsResource(
   private val transactionsService: TransactionsService,
 ) {
-  @GetMapping("/transactions/{transactionId}")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-    summary = "get a transaction group by id",
-    description = "Retrieves transactions (all in sequence) identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Transaction does not exist",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  fun getTransaction(
-    @Schema(description = "Id", example = "123456789")
-    @PathVariable
-    transactionId: Long,
-  ): List<OffenderTransactionDto> = transactionsService.getOffenderTransactions(transactionId)
-
   @GetMapping("/transactions/{transactionId}/general-ledger")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "get a transaction by id and sequence number",
+    summary = "Get a transaction by id and sequence number",
     description = "Retrieves a prisoner transaction. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
@@ -87,8 +57,10 @@ class TransactionsResource(
   @GetMapping("/transactions/{date}/first")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "get the first transaction on the given date",
-    description = "Intended to be used to start retrieval of transactions from this date. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "get the first general ledger transaction on the given date",
+    description = """
+      Intended to be used to start retrieval of transactions from this date. 
+      Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(
@@ -112,54 +84,7 @@ class TransactionsResource(
     @Schema(description = "Starting date", example = "2025-08-11")
     @PathVariable
     date: LocalDate,
-  ): Long = transactionsService.getFirstTransactionIdOn(date)
-
-  @GetMapping("/transactions/from/{transactionId}/{transactionEntrySequence}")
-  @ResponseStatus(HttpStatus.OK)
-  @Operation(
-    summary = "get a page of orphan GL transactions starting from an id,seq,glseq onwards",
-    description = "Retrieves transactions to be iterated over. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Transaction does not exist",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  fun findOffenderTransactionsFromId(
-    @Schema(description = "Id of last transaction before intended start", example = "123456789")
-    @PathVariable
-    transactionId: Long,
-    @Schema(description = "Sequence of last transaction before intended start", example = "3")
-    @PathVariable
-    transactionEntrySequence: Int,
-    @Schema(
-      description = """Number of Offender transaction records to get. The first record returned will be the first one *after*
-        the given id/seq combination.""",
-      example = "500",
-      required = false,
-      defaultValue = "100",
-    )
-    @RequestParam(required = false, defaultValue = "100")
-    pageSize: Int,
-  ): List<OffenderTransactionDto> = transactionsService
-    .findOffenderTransactionsFromId(
-      transactionId,
-      transactionEntrySequence,
-      pageSize,
-    )
+  ): Long = transactionsService.getFirstGeneralLedgerTransactionIdOn(date)
 
   @GetMapping("/transactions/from/{transactionId}/{transactionEntrySequence}/{generalLedgerEntrySequence}")
   @ResponseStatus(HttpStatus.OK)
@@ -216,6 +141,41 @@ class TransactionsResource(
       generalLedgerEntrySequence,
       pageSize,
     )
-}
 
-enum class SourceSystem { DPS, NOMIS }
+  @GetMapping("/transactions/prison/{prisonId}/{date}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get all  general ledger (only) transactions for a prison on the given date",
+    description = """
+      Get all prison transactions on this date. It will also return transactions related
+      to the first transaction (from previous day) and end transaction of the day (from next day), to ensure full
+      transactions (ie for all sequence values) are returned.
+      Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction list Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Transaction does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getTransactionsOn(
+    @Schema(description = "prisonId", example = "MDI")
+    @PathVariable
+    prisonId: String,
+    @Schema(description = "Starting date", example = "2025-08-11")
+    @PathVariable
+    date: LocalDate,
+  ): List<GeneralLedgerTransactionDto> = transactionsService.getGeneralLedgerTransactionsForPrison(prisonId, date)
+}

@@ -47,7 +47,7 @@ class PrisonResource(val prisonService: PrisonService) {
       ),
     ],
   )
-  fun getPrisonIds(): List<Prison> = prisonService.getAllActivePrisons()
+  fun getActivePrisonIds(): List<Prison> = prisonService.getAllActivePrisons()
 
   @GetMapping("/{prisonId}/incentive-levels")
   @Operation(
