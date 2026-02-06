@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -157,6 +158,57 @@ class MovementsResource(
     @RequestBody @Valid
     request: UpsertTemporaryAbsenceApplicationRequest,
   ): UpsertTemporaryAbsenceApplicationResponse = movementsService.upsertTemporaryAbsenceApplication(offenderNo, request)
+
+  @DeleteMapping("/movements/{offenderNo}/temporary-absences/application/{applicationId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a temporary absence application for an offender.",
+    description = "Deletes a temporary absence application. This should only be required where we have duplicates! Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Temporary absence application deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Unable to delete the application. See error message for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteTemporaryAbsenceApplication(
+    @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "TAP movement application ID", example = "12345")
+    @PathVariable
+    applicationId: Long,
+  ) = movementsService.deleteTemporaryAbsenceApplication(offenderNo, applicationId)
 
   @GetMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence/{eventId}")
   @Operation(

@@ -4,6 +4,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
@@ -218,6 +219,22 @@ class MovementsService(
 
     return offenderMovementApplicationRepository.save(application)
       .let { UpsertTemporaryAbsenceApplicationResponse(offenderBooking.bookingId, it.movementApplicationId) }
+  }
+
+  @Transactional
+  fun deleteTemporaryAbsenceApplication(offenderNo: String, applicationId: Long) {
+    offenderMovementApplicationRepository.findByIdOrNull(applicationId)
+      ?.also { application ->
+        if (application.scheduledTemporaryAbsences.isNotEmpty()) {
+          throw ConflictException("Cannot delete temporary absence applicationId $applicationId because it has scheduled temporary absences")
+        }
+
+        offenderBookingRepository.findByIdOrNull(application.offenderBooking.bookingId)
+          ?.takeIf { it.offender.nomsId != offenderNo }
+          ?.run { throw ConflictException("ApplicationId $applicationId exists on a different offender") }
+
+        offenderMovementApplicationRepository.delete(application)
+      }
   }
 
   fun getScheduledTemporaryAbsence(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceResponse {
