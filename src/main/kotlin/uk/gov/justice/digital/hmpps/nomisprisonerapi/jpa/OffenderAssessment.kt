@@ -12,9 +12,15 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
+import jakarta.persistence.NamedSubgraph
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.hibernate.Hibernate
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Persistable
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csra.EvaluationResultCode
 import java.io.Serializable
 import java.math.BigDecimal
@@ -33,9 +39,31 @@ data class OffenderAssessmentId(
 
 @Entity
 @Table(name = "OFFENDER_ASSESSMENTS")
+@NamedEntityGraph(
+  name = "offender-csra",
+  attributeNodes = [
+    NamedAttributeNode(value = "id"),
+    NamedAttributeNode(value = "assessment"),
+    NamedAttributeNode(value = "offenderAssessmentItems", subgraph = "items"),
+  ],
+  subgraphs = [
+    NamedSubgraph(
+      name = "items",
+      attributeNodes = [
+        NamedAttributeNode(value = "assessment", subgraph = "parent"),
+      ],
+    ),
+    NamedSubgraph(
+      name = "parent",
+      attributeNodes = [
+        NamedAttributeNode(value = "parentAssessment"),
+      ],
+    ),
+  ],
+)
 data class OffenderAssessment(
   @EmbeddedId
-  val id: OffenderAssessmentId,
+  private val id: OffenderAssessmentId,
 
   val assessmentDate: LocalDate,
 
@@ -133,7 +161,15 @@ data class OffenderAssessment(
 
   @OneToMany(fetch = LAZY, mappedBy = "offenderAssessment", cascade = [CascadeType.ALL], orphanRemoval = true)
   val offenderAssessmentItems: MutableList<OffenderAssessmentItem> = mutableListOf(),
-) : NomisAuditableEntityBasic() {
+
+  @Transient
+  @Value("false")
+  val new: Boolean = true,
+) : NomisAuditableEntityBasic(),
+  Persistable<OffenderAssessmentId> {
+  override fun getId() = id
+  override fun isNew() = new
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -146,13 +182,14 @@ data class OffenderAssessment(
 
 enum class AssessmentStatusType { I, A, P }
 
-enum class AssessmentType(val id: Long) {
+enum class AssessmentType(val id: Long, val isCellSharing: Boolean = true) {
   CSR(9687), // CSR Rating
   CSR1(9684), // CSR Reception
   CSRDO(9683), // CSR Locate
   CSRF(9686), // CSR Full
   CSRH(9685), // CSR Health
   CSRREV(9682), // CSR Review
+  CATEGORY(9688, false), // Categorisation
 }
 
 enum class AssessmentLevel { STANDARD, PEND, LOW, MED, HI }

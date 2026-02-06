@@ -443,7 +443,7 @@ interface BookingDsl {
   fun assessment(
     sequence: Int = 1,
     username: String,
-    assessmentDate: LocalDate,
+    assessmentDate: LocalDate = LocalDate.now(),
     assessmentType: AssessmentType = AssessmentType.CSR,
     placementAgency: String? = null,
     dsl: OffenderAssessmentDsl.() -> Unit = {},

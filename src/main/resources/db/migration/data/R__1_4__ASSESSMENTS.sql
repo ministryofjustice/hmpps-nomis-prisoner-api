@@ -8,9 +8,9 @@ INSERT INTO ASSESSMENTS (ASSESSMENT_ID,ASSESSMENT_CLASS,PARENT_ASSESSMENT_ID,ASS
  (9686,'TYPE', null,'CSRF',    'Y','CSR Full',      1,'Y','Y',to_date('01-01-2000','DD-MM-YYYY'),null,                              'N','N','N','Y',30,  'INST','Y','N','N',       null,'Y','ASSESS'),
  (9687,'TYPE', null,'CSR',     'Y','CSR Rating',    1,'Y','Y',to_date('01-01-2000','DD-MM-YYYY'),null,                              'N','N','N','Y',1,   'INST','Y','N','N',       null,'Y','ASSESS'),
 
- (-2, 'TYPE', null,'CATEGORY','N','Categorisation',                                 1,'Y','Y',to_date('01-01-2000','DD-MM-YYYY'),null,  'Y','Y','Y','Y',180, 'INST','Y','N','N','INCLUSIVE','Y','ASSESS'),
- (-9, 'SECT', -2,  'COMPLETE','N','Section 2: Assessment Completion',               7,'Y','Y',null,                              null,  'N','N','N', 'N',null,null, 'N','N','N',       null,'N',null),
- (-16,'SECT', -2,  '1'       ,'N','Section 1: Categorisation',                      1,'Y','Y',null,                              null,  'Y','Y','Y', 'Y',null,null, 'N','N','N','INCLUSIVE','N',null),
+ (9688, 'TYPE', null,'CATEGORY','N','Categorisation',                                 1,'Y','Y',to_date('01-01-2000','DD-MM-YYYY'),null,  'Y','Y','Y','Y',180, 'INST','Y','N','N','INCLUSIVE','Y','ASSESS'),
+ (-9, 'SECT', 9688,  'COMPLETE','N','Section 2: Assessment Completion',               7,'Y','Y',null,                              null,  'N','N','N', 'N',null,null, 'N','N','N',       null,'N',null),
+ (-16,'SECT', 9688,  '1'       ,'N','Section 1: Categorisation',                      1,'Y','Y',null,                              null,  'Y','Y','Y', 'Y',null,null, 'N','N','N','INCLUSIVE','N',null),
  (-17,'IND' , -16, '1',       'N','What is prisoner`s category',                    1,'Y','Y',null,                              null,  'N','N','N','N',null,null,  'N','N','N',null,       'N',null),
  (-18,'IND' , -17, '1',       'N','Cat A',                                          1,'Y','Y',null,                              null,  'N','N','N','N',null,null,  'N','N','N',null,       'N',null),
  (-19,'IND' , -17, '2',       'N','Cat B',                                          2,'Y','Y',null,                              null,  'N','N','N','N',null,null,  'N','N','N',null,       'N',null);
