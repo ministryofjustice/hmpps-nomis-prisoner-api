@@ -9,6 +9,53 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 class PrisonResourceIntTest : IntegrationTestBase() {
 
   @Nested
+  @DisplayName("GET /prisons")
+  inner class GetPrisonPrisons {
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `should return unauthorised for missing token`() {
+        webTestClient.get()
+          .uri("/prisons")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.get()
+          .uri("/prisons")
+          .headers(setAuthorisation())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.get()
+          .uri("/prisons")
+          .headers(setAuthorisation("ROLE_BANANAS"))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    @Test
+    fun `should retrieve prisons`() {
+      webTestClient.get()
+        .uri("/prisons")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$").value<List<Prison>> {
+          assertThat(it).extracting("id").containsExactly("BMI", "BXI", "LEI", "MDI", "MUL", "RNI", "SYI", "TRO", "WAI")
+        }
+    }
+  }
+
+  @Nested
   @DisplayName("GET /prisons/{prisonId}/incentive-levels")
   inner class GetPrisonIncentiveLevels {
 
