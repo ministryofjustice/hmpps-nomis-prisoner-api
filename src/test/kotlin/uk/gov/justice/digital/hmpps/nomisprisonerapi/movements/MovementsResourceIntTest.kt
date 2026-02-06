@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
@@ -55,6 +56,7 @@ class MovementsResourceIntTest(
   @Autowired val corporateRepository: CorporateRepository,
   @Autowired val offenderAddressRepository: OffenderAddressRepository,
   @Autowired val agencyLocationRepository: AgencyLocationRepository,
+  @Autowired val offenderRepository: OffenderRepository,
   @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
@@ -86,9 +88,7 @@ class MovementsResourceIntTest(
     if (this::orphanedScheduleReturn.isInitialized) {
       scheduledTemporaryAbsenceReturnRepository.delete(orphanedScheduleReturn)
     }
-    if (this::offender.isInitialized) {
-      repository.delete(offender)
-    }
+    offenderRepository.deleteAll()
     if (this::agencyLocation.isInitialized) {
       agencyLocationRepository.delete(agencyLocation)
     }
