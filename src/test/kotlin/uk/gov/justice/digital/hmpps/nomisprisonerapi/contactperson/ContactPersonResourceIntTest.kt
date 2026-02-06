@@ -5793,7 +5793,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      staffRepository.deleteAll()
     }
 
     @Nested
