@@ -42,6 +42,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
   private lateinit var prisoner: Offender
   private lateinit var booking: OffenderBooking
   private lateinit var staff1: Staff
+  private lateinit var staff2: Staff
   private lateinit var casenote1: OffenderCaseNote
   private lateinit var sentence1: OffenderSentence
 
@@ -51,8 +52,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
   fun tearDown() {
     repository.deleteCaseNotes()
     repository.deleteOffenders()
-    // TODO
-    // repository.deleteStaff()
+    repository.delete(staff1)
+    repository.delete(staff2)
   }
 
   @DisplayName("GET /casenotes/{caseNoteId}")
@@ -368,7 +369,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
         staff1 = staff(firstName = "JANE", lastName = "NARK") {
           account(username = "JANE.NARK")
         }
-        staff(firstName = "JANE", lastName = "PEEL") {
+        staff2 = staff(firstName = "JANE", lastName = "PEEL") {
           account(username = "JANE.PEEL")
         }
         prisoner = offender(nomsId = "A1234AB") {
@@ -565,7 +566,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           account(username = "JANE.NARK")
           account(username = "JANE.NARK_ADM", type = "ADMIN")
         }
-        staff(firstName = "TREVOR", lastName = "NACK") {
+        staff2 = staff(firstName = "TREVOR", lastName = "NACK") {
           account(username = "TREV.NACK")
         }
 
@@ -741,7 +742,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           account(username = "JANE.NARK")
           account(username = "JANE.NARK_ADM", type = "ADMIN")
         }
-        staff(firstName = "TREVOR", lastName = "NACK") {
+        staff2 = staff(firstName = "TREVOR", lastName = "NACK") {
           account(username = "TREV.NACK")
         }
 
