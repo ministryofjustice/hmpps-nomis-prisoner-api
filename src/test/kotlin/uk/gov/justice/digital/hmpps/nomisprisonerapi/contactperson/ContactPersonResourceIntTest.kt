@@ -1849,7 +1849,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         assertThat(personContactRepository.existsById(contact.id)).isFalse()
         assertThat(personContactRestrictionRepository.existsById(contactRestriction.id)).isFalse()
 
-        // will obviously will not get deleted
+        // will obviously not get deleted
         assertThat(staffRepository.existsById(staff.id)).isTrue()
         assertThat(offenderRepository.existsById(prisoner.id)).isTrue()
         assertThat(corporateRepository.existsById(corporate.id)).isTrue()
@@ -6324,7 +6324,6 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       offenderRepository.deleteAll()
-      staffRepository.deleteAll()
     }
 
     @Nested
