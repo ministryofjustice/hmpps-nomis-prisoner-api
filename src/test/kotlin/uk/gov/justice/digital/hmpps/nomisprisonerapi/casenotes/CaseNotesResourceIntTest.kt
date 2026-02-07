@@ -42,19 +42,10 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
   private lateinit var prisoner: Offender
   private lateinit var booking: OffenderBooking
   private lateinit var staff1: Staff
-  private lateinit var staff2: Staff
   private lateinit var casenote1: OffenderCaseNote
   private lateinit var sentence1: OffenderSentence
 
   private val now = LocalDateTime.now()
-
-  @AfterEach
-  fun tearDown() {
-    repository.deleteCaseNotes()
-    repository.deleteOffenders()
-    repository.delete(staff1)
-    repository.delete(staff2)
-  }
 
   @DisplayName("GET /casenotes/{caseNoteId}")
   @Nested
@@ -100,6 +91,13 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
+      @AfterEach
+      fun tearDown() {
+        repository.deleteCaseNotes()
+        repository.deleteOffenders()
+        repository.delete(staff1)
+      }
+
       @Test
       fun `returned data for a caseNote`() {
         nomisDataBuilder.build {
@@ -193,6 +191,13 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           }
         }
       }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteCaseNotes()
+      repository.deleteOffenders()
+      repository.delete(staff1)
     }
 
     @Nested
@@ -362,6 +367,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     private val validCaseNote = UpdateCaseNoteRequest(
       text = "An amended note",
     )
+    private lateinit var staff2: Staff
 
     @BeforeEach
     fun setUp() {
@@ -383,6 +389,13 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
           }
         }
       }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.deleteCaseNotes()
+      repository.deleteOffenders()
+      repository.delete(staff1, staff2)
     }
 
     @Nested
@@ -477,6 +490,13 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @AfterEach
+    fun tearDown() {
+      repository.deleteCaseNotes()
+      repository.deleteOffenders()
+      repository.delete(staff1)
+    }
+
     @Nested
     inner class Security {
       @Test
@@ -553,6 +573,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     private lateinit var prisoner: Offender
     private lateinit var prisonerNoCaseNotes: Offender
     private lateinit var prisonerNoBookings: Offender
+    private lateinit var staff2: Staff
     private var id1 = 0L
     private var id2 = 0L
     private var id3 = 0L
@@ -620,6 +641,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       repository.delete(prisoner)
       repository.delete(prisonerNoCaseNotes)
       repository.delete(prisonerNoBookings)
+      repository.delete(staff1, staff2)
     }
 
     @Nested
@@ -729,6 +751,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
     private lateinit var prisoner: Offender
     private lateinit var prisonerNoCaseNotes: Offender
     private lateinit var prisonerNoBookings: Offender
+    private lateinit var staff2: Staff
     private var id1 = 0L
     private var id2 = 0L
     private var id3 = 0L
@@ -796,6 +819,7 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
       repository.delete(prisoner)
       repository.delete(prisonerNoCaseNotes)
       repository.delete(prisonerNoBookings)
+      repository.delete(staff1, staff2)
     }
 
     @Nested
