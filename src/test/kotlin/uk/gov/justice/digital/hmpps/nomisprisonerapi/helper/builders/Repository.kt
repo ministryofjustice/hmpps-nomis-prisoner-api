@@ -169,9 +169,9 @@ class Repository(
 
   fun deleteAttendances() = offenderCourseAttendanceRepository.deleteAll()
 
-  fun delete(staffMember: Staff) = staffRepository.deleteById(staffMember.id)
+  fun delete(vararg staff: Staff) = staff.forEach { staffRepository.delete(it) }
   fun deleteStaffByAccount(vararg staffUserAccount: StaffUserAccount) = staffUserAccount.map { it.staff }.forEach { staffRepository.delete(it) }
-  fun deleteStaff() = staffRepository.deleteAll()
+  fun deleteStaff(staffId: Long) = staffRepository.deleteById(staffId)
 
   fun save(staff: Staff): Staff = staffRepository.save(staff)
 
