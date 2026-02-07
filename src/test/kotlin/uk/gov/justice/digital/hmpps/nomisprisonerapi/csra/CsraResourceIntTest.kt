@@ -52,8 +52,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
   internal fun deleteData() {
     repository.deleteAssessments()
     repository.deleteOffenders()
-    // TODO
-    // repository.deleteStaff()
+    repository.delete(staff)
   }
 
   @DisplayName("POST /prisoners/{offenderNo}/csra")
