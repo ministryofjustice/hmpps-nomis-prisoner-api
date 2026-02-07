@@ -51,7 +51,8 @@ class CaseNotesResourceIntTest : IntegrationTestBase() {
   fun tearDown() {
     repository.deleteCaseNotes()
     repository.deleteOffenders()
-    repository.deleteStaff()
+    // TODO
+    // repository.deleteStaff()
   }
 
   @DisplayName("GET /casenotes/{caseNoteId}")

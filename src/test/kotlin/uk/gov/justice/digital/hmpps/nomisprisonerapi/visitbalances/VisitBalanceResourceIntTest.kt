@@ -98,7 +98,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      repository.deleteStaff()
+      // TODO
+      // repository.deleteStaff()
     }
 
     @Nested
@@ -342,7 +343,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      repository.deleteStaff()
+      // TODO
+      // repository.deleteStaff()
     }
 
     @Nested
@@ -552,7 +554,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      repository.deleteStaff()
+      // TODO
+      // repository.deleteStaff()
     }
 
     @Nested
@@ -699,7 +702,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      repository.deleteStaff()
+      // TODO
+      // repository.deleteStaff()
     }
 
     @Nested
@@ -817,7 +821,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      repository.deleteStaff()
+      // TODO
+      // repository.deleteStaff()
     }
 
     @Nested
@@ -955,7 +960,8 @@ class VisitBalanceResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      repository.deleteStaff()
+      // TODO
+      // repository.deleteStaff()
     }
 
     @Nested

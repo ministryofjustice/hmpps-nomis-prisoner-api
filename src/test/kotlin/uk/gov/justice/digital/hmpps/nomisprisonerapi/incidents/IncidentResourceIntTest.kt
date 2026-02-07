@@ -178,7 +178,8 @@ class IncidentResourceIntTest : IntegrationTestBase() {
   internal fun deleteIncidents() {
     repository.deleteAllIncidents()
     repository.deleteAllQuestionnaires()
-    repository.deleteStaff()
+    // TODO
+    // repository.deleteStaff()
     repository.deleteOffenders()
   }
 
