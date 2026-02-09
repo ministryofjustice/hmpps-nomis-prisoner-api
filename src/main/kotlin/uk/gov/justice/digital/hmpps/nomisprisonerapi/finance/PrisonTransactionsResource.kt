@@ -142,7 +142,7 @@ class PrisonTransactionsResource(
       pageSize,
     )
 
-  @GetMapping("/transactions/prison/{prisonId}/{date}")
+  @GetMapping("/transactions/prison/{prisonId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get all  general ledger (only) transactions for a prison on the given date",
@@ -175,7 +175,7 @@ class PrisonTransactionsResource(
     @PathVariable
     prisonId: String,
     @Schema(description = "Starting date", example = "2025-08-11")
-    @PathVariable
-    date: LocalDate,
-  ): List<GeneralLedgerTransactionDto> = transactionsService.getGeneralLedgerTransactionsForPrison(prisonId, date)
+    @RequestParam
+    entryDate: LocalDate = LocalDate.now(),
+  ): List<GeneralLedgerTransactionDto> = transactionsService.getGeneralLedgerTransactionsForPrison(prisonId, entryDate)
 }

@@ -47,13 +47,13 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /transactions/prison/{prisonId}/{date}")
+  @DisplayName("GET /transactions/prison/{prisonId}")
   inner class PrisonTransactionTests {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/transactions/prison/BXI/2026-01-15")
+        webTestClient.get().uri("/transactions/prison/BXI")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -61,7 +61,7 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/transactions/prison/BXI/2026-01-15")
+        webTestClient.get().uri("/transactions/prison/BXI")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -69,7 +69,7 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/transactions/prison/BXI/2026-01-15")
+        webTestClient.get().uri("/transactions/prison/BXI")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -77,7 +77,7 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonTransactionsWithOverlapBeforeAndAfter() {
-      val results = webTestClient.get().uri("/transactions/prison/BXI/2026-02-08")
+      val results = webTestClient.get().uri("/transactions/prison/BXI?entryDate=2026-02-08")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -108,7 +108,7 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonTransactionsWithOverlapBefore() {
-      val results = webTestClient.get().uri("/transactions/prison/BXI/2026-02-09")
+      val results = webTestClient.get().uri("/transactions/prison/BXI?entryDate=2026-02-09")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -139,7 +139,7 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonTransactionsWithOverlapAfter() {
-      webTestClient.get().uri("/transactions/prison/BXI/2026-02-07")
+      webTestClient.get().uri("/transactions/prison/BXI?entryDate=2026-02-07")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -150,7 +150,7 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonTransactionsSingleResult() {
-      webTestClient.get().uri("/transactions/prison/BXI/2026-02-10")
+      webTestClient.get().uri("/transactions/prison/BXI?entryDate=2026-02-10")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -160,9 +160,18 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `will allow no date passed in`() {
+      webTestClient.get().uri("/transactions/prison/BXI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+    }
+
+    @Test
     fun `none found - missing prison`() {
       // TODO Update to return 404
-      webTestClient.get().uri("/transactions/prison/XXX/2026-01-15")
+      webTestClient.get().uri("/transactions/prison/XXX")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -173,7 +182,7 @@ class PrisonTransactionResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `none found - no matching entries`() {
-      webTestClient.get().uri("/transactions/prison/BXI/2025-01-15")
+      webTestClient.get().uri("/transactions/prison/BXI?entryDate=2025-05-15")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
