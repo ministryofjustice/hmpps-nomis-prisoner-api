@@ -5793,6 +5793,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
+      repository.delete(generalStaffMember, lsaStaffMember)
     }
 
     @Nested
@@ -6295,11 +6296,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
   inner class GetPrisonerRestrictionIdsFromId {
     private var lowestPrisonerRestrictionId = 0L
     private var highestPrisonerRestrictionId = 0L
+    private lateinit var staffMember: Staff
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        val staffMember = staff(firstName = "JANE", lastName = "SMITH") {
+        staffMember = staff(firstName = "JANE", lastName = "SMITH") {
           account(username = "j.smith")
         }
 
@@ -6324,6 +6326,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       offenderRepository.deleteAll()
+      staffRepository.delete(staffMember)
     }
 
     @Nested
