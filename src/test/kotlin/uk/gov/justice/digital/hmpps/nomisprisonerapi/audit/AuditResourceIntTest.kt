@@ -106,7 +106,7 @@ class AuditResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
-      repository.deleteStaff()
+      repository.deleteStaff(staffUserId)
     }
 
     @Test

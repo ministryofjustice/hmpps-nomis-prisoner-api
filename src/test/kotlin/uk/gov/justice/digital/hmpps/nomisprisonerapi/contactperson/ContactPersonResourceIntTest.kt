@@ -1849,7 +1849,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
         assertThat(personContactRepository.existsById(contact.id)).isFalse()
         assertThat(personContactRestrictionRepository.existsById(contactRestriction.id)).isFalse()
 
-        // will obviously will not get deleted
+        // will obviously not get deleted
         assertThat(staffRepository.existsById(staff.id)).isTrue()
         assertThat(offenderRepository.existsById(prisoner.id)).isTrue()
         assertThat(corporateRepository.existsById(corporate.id)).isTrue()
@@ -5793,6 +5793,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
+      repository.delete(generalStaffMember, lsaStaffMember)
     }
 
     @Nested
@@ -6295,11 +6296,12 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
   inner class GetPrisonerRestrictionIdsFromId {
     private var lowestPrisonerRestrictionId = 0L
     private var highestPrisonerRestrictionId = 0L
+    private lateinit var staffMember: Staff
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        val staffMember = staff(firstName = "JANE", lastName = "SMITH") {
+        staffMember = staff(firstName = "JANE", lastName = "SMITH") {
           account(username = "j.smith")
         }
 
@@ -6324,7 +6326,7 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       offenderRepository.deleteAll()
-      staffRepository.deleteAll()
+      staffRepository.delete(staffMember)
     }
 
     @Nested
