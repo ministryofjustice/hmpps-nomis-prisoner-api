@@ -28,7 +28,6 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
     join  txn_range tr on gl.txn_id between tr.min_id and tr.max_id
     where gl.caseload_id = :prisonId
       and gl.offender_id is null
-      and txn_entry_date = :entryDate
     """,
     nativeQuery = true,
   )
