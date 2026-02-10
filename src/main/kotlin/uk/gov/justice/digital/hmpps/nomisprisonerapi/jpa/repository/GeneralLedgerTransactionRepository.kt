@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction.Companion.Pk
+import java.math.BigDecimal
 import java.time.LocalDate
 
 interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransaction, Pk> {
@@ -15,23 +16,30 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
 
   @Query(
     """
-    with txn_range as (
-        select min(txn_id) as min_id,
-               max(txn_id) as max_id
-        from gl_transactions
-        where caseload_id = :prisonId
-          and offender_id is null
-          and txn_entry_date = :entryDate
-    )
+    select min(txn_id) as minTxnId,
+           max(txn_id) as maxTxnId
+    from gl_transactions
+    where
+      caseload_id = :prisonId
+      and offender_id is null
+      and txn_entry_date = :entryDate
+   """,
+    nativeQuery = true,
+  )
+  fun findMinAndMaxTxnIdsByPrisonAndEntryDate(prisonId: String, entryDate: LocalDate): Pair<BigDecimal?, BigDecimal?>
+
+  @Query(
+    """
     select *
     from gl_transactions gl
-    join  txn_range tr on gl.txn_id between tr.min_id and tr.max_id
-    where gl.caseload_id = :prisonId
+    where  
+      gl.txn_id between :minTxnId and :maxTxnId
+      and gl.caseload_id = :prisonId
       and gl.offender_id is null
     """,
     nativeQuery = true,
   )
-  fun findByPrisonAndEntryDate(prisonId: String, entryDate: LocalDate): List<GeneralLedgerTransaction>
+  fun findByTransactionsForPrisonBetween(prisonId: String, minTxnId: BigDecimal, maxTxnId: BigDecimal): List<GeneralLedgerTransaction>
 
   @Query(
     """

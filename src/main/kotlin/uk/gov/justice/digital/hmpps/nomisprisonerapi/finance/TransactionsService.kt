@@ -33,9 +33,15 @@ class TransactionsService(
     .findByTransactionId(transactionId)
     .map(::mapGL)
 
-  fun getGeneralLedgerTransactionsForPrison(prisonId: String, date: LocalDate): List<GeneralLedgerTransactionDto> = generalLedgerTransactionRepository
-    .findByPrisonAndEntryDate(prisonId, date)
-    .map(::mapGL)
+  fun getGeneralLedgerTransactionsForPrison(prisonId: String, date: LocalDate): List<GeneralLedgerTransactionDto> {
+    val (minTxnId, maxTxnId) = generalLedgerTransactionRepository.findMinAndMaxTxnIdsByPrisonAndEntryDate(prisonId, date)
+
+    if (minTxnId == null || maxTxnId == null) return emptyList()
+
+    return generalLedgerTransactionRepository
+      .findByTransactionsForPrisonBetween(prisonId, minTxnId, maxTxnId)
+      .map(::mapGL)
+  }
 
   fun getFirstGeneralLedgerTransactionIdOn(date: LocalDate): Long = generalLedgerTransactionRepository
     .findMinTransactionIdByEntryDate(date)
