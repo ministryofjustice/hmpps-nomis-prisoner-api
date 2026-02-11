@@ -73,6 +73,15 @@ data class TemporaryAbsenceApplication(
   @Schema(description = "To address owner class")
   val toAddressOwnerClass: String?,
 
+  @Schema(description = "To address description")
+  val toAddressDescription: String?,
+
+  @Schema(description = "To full address")
+  val toFullAddress: String?,
+
+  @Schema(description = "To address postcode")
+  val toAddressPostcode: String?,
+
   @Schema(description = "Contact person name")
   val contactPersonName: String?,
 

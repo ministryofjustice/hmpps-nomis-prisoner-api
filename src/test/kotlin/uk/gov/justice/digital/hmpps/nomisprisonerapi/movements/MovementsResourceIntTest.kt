@@ -142,7 +142,7 @@ class MovementsResourceIntTest(
     fun `should retrieve application`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
+          offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
             application = temporaryAbsenceApplication(
               eventSubType = "C5",
@@ -197,6 +197,9 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAgencyId").isEqualTo("HAZLWD")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressId").isEqualTo(offenderAddress.addressId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressOwnerClass").isEqualTo(offenderAddress.addressOwnerClass)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressOwnerDescription").doesNotExist()
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toFullAddress").isEqualTo("41 High Street, Sheffield")
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].toAddressPostcode").isEqualTo("S1 1AA")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].contactPersonName").isEqualTo("Derek")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceType").isEqualTo("RR")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].temporaryAbsenceSubType").isEqualTo("RDR")
@@ -1558,7 +1561,7 @@ class MovementsResourceIntTest(
     fun setUp() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          offenderAddress = address()
+          offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
             application = temporaryAbsenceApplication(
               eventSubType = "C5",
@@ -1673,6 +1676,9 @@ class MovementsResourceIntTest(
           assertThat(toAgencyId).isEqualTo("HAZLWD")
           assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
           assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+          assertThat(toAddressDescription).isNull()
+          assertThat(toFullAddress).isEqualTo("41 High Street, Sheffield")
+          assertThat(toAddressPostcode).isEqualTo("S1 1AA")
           assertThat(contactPersonName).isEqualTo("Derek")
           assertThat(temporaryAbsenceType).isEqualTo("RR")
           assertThat(temporaryAbsenceSubType).isEqualTo("RDR")
