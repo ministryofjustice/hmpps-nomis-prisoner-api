@@ -31,7 +31,7 @@ data class UpsertScheduledTemporaryAbsenceRequest(
   val comment: String?,
 
   @Schema(description = "Escort")
-  val escort: String,
+  val escort: String?,
 
   @Schema(description = "From prison")
   val fromPrison: String,

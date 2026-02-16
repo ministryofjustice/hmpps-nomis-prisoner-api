@@ -254,7 +254,7 @@ class MovementsService(
     val application = movementApplicationOrThrow(request.movementApplicationId)
     val eventSubType = movementReasonOrThrow(request.eventSubType)
     val eventStatus = eventStatusOrThrow(request.eventStatus)
-    val escort = escortOrThrow(request.escort)
+    val escort = request.escort?.let { escortOrThrow(request.escort) }
     val fromPrison = agencyLocationOrThrow(request.fromPrison)
     val toAgency = request.toAgency?.let { agencyLocationOrThrow(request.toAgency) }
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }

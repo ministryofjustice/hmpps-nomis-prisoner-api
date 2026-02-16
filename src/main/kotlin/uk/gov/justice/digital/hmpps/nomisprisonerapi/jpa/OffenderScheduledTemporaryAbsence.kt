@@ -25,7 +25,7 @@ class OffenderScheduledTemporaryAbsence(
   eventSubType: MovementReason,
   eventStatus: EventStatus,
   comment: String? = null,
-  escort: Escort,
+  escort: Escort? = null,
   fromPrison: AgencyLocation,
   toAgency: AgencyLocation? = null,
 
