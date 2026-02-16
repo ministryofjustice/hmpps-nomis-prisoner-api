@@ -560,7 +560,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
               assessment(sequence = 3, username = "BILLSTAFF", assessmentType = AssessmentType.CATEGORY)
             }
           }
-          offender(nomsId = "OTHER") { booking { assessment(username = "BILLSTAFF") { assessmentItem(1, 9923) } } }
+          offender(nomsId = "OTHER") { booking { assessment(username = "BILLSTAFF") { assessmentItem(1, 9923) } } } // todo: make 9923 etc constants?
         }
 
         webTestClient.get().uri("/prisoners/A2222BB/csras")

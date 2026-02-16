@@ -25,6 +25,24 @@ class CsraResource(private val csraService: CsraService) {
   @Operation(
     summary = "Creates a CSRA record for a prisoner",
     description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CsraCreateResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid agency or user",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
   )
   fun createCsra(
     @PathVariable offenderNo: String,
@@ -35,6 +53,19 @@ class CsraResource(private val csraService: CsraService) {
   @Operation(
     summary = "Get a CSRA record for a prisoner",
     description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CsraGetDto::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "CSRA or booking does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
   )
   fun getCsra(
     @Schema(description = "Booking Id", example = "2345678") @PathVariable bookingId: Long,
@@ -46,6 +77,12 @@ class CsraResource(private val csraService: CsraService) {
     summary = "Gets all CSRAs for a prisoner",
     description = "Retrieves all CSRAs for a specific prisoner, for migration. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
+      ApiResponse(
+        responseCode = "200",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = PrisonerCsrasResponse::class)),
+        ],
+      ),
       ApiResponse(
         responseCode = "404",
         description = "Prisoner does not exist",
