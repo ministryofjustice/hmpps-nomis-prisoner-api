@@ -24,6 +24,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentRepository
 import java.time.LocalDate
 
+val RESPONSE_CURRENT_OFFENCE_I = 9923L
+val RESPONSE_PREVIOUS_CONVICTIONS_D = 9928L
+val RESPONSE_DAMAGE_TO_PROPERTY_S = 9973L
+
 class CsraResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
@@ -413,9 +417,9 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 placementAgency = "BXI",
                 assessmentType = AssessmentType.CSR1,
               ) {
-                assessmentItem(1, 9923) // Source for current offence?    	I	Inmate/Prisoner
-                assessmentItem(2, 9928) // Source for previous convictions?	D	Document
-                assessmentItem(3, 9973) // Source for damage to property?	  S	Staff
+                assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I)
+                assessmentItem(2, RESPONSE_PREVIOUS_CONVICTIONS_D)
+                assessmentItem(3, RESPONSE_DAMAGE_TO_PROPERTY_S)
               }
             }
           }
@@ -547,20 +551,20 @@ class CsraResourceIntTest : IntegrationTestBase() {
           offender(nomsId = "A2222BB") {
             booking {
               assessment(username = "BILLSTAFF") {
-                assessmentItem(1, 9923) // Source for current offence?    	I	Inmate/Prisoner
+                assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I)
               }
             }
             booking(active = false, inOutStatus = "OUT") {
               assessment(sequence = 1, username = "BILLSTAFF") {
-                assessmentItem(1, 9928) // Source for previous convictions?	D	Document
+                assessmentItem(1, RESPONSE_PREVIOUS_CONVICTIONS_D)
               }
               assessment(sequence = 2, username = "BILLSTAFF") {
-                assessmentItem(1, 9973) // Source for damage to property?	  S	Staff
+                assessmentItem(1, RESPONSE_DAMAGE_TO_PROPERTY_S)
               }
               assessment(sequence = 3, username = "BILLSTAFF", assessmentType = AssessmentType.CATEGORY)
             }
           }
-          offender(nomsId = "OTHER") { booking { assessment(username = "BILLSTAFF") { assessmentItem(1, 9923) } } }
+          offender(nomsId = "OTHER") { booking { assessment(username = "BILLSTAFF") { assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I) } } }
         }
 
         webTestClient.get().uri("/prisoners/A2222BB/csras")
