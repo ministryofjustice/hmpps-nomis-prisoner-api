@@ -4942,7 +4942,7 @@ class MovementsResourceIntTest(
         }
 
         @Test
-        fun `should retrieve scheduled temporary absence return`() {
+        fun `should retrieve scheduled temporary absence return as unscheduled`() {
           webTestClient.get()
             .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -4952,9 +4952,9 @@ class MovementsResourceIntTest(
             .apply {
               assertThat(bookingId).isEqualTo(booking.bookingId)
               assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
-              assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
-              assertThat(scheduledTemporaryAbsenceReturnId).isEqualTo(scheduledTempAbsenceReturn.eventId)
-              assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+              assertThat(scheduledTemporaryAbsenceId).isNull()
+              assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+              assertThat(movementApplicationId).isNull()
             }
         }
       }
@@ -5201,6 +5201,399 @@ class MovementsResourceIntTest(
       .expectBody().jsonPath("userMessage").value<String> {
         assertThat(it).contains("UNKNOWN").contains("invalid")
       }
+  }
+
+  /*
+   * The general approach where we have movements IN attached to different schedules to the correct scheduled OUT/IN
+   * is to treat the movement as unscheduled.
+   *
+   * This test suite corrupts data to emulate the various flavours of this error that we've seen with production data.
+   *
+   * The goal for each scenario is that the movement is considered unscheduled when either syncing the individual movement
+   * or resyncing all of the offender's movements.
+   */
+  @Nested
+  inner class GetUnscheduledTemporaryAbsenceDueToBadData {
+
+    @Test
+    fun `scheduled OUT has been deleted`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                orphanedScheduleReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement()
+                }
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by deleting the scheduled OUT
+         */
+        entityManager.createNativeQuery(
+          """
+              delete from OFFENDER_IND_SCHEDULES
+              where EVENT_ID = ${scheduledTempAbsence.eventId}
+          """.trimIndent(),
+        ).executeUpdate()
+
+        // Reload the scheduled return to reflect the update
+        orphanedScheduleReturn = scheduledTemporaryAbsenceReturnRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
+      }
+
+      // Sync movement OUT is unscheduled
+      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+        }
+
+      // Sync the movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync offender, the movements are unscheduled
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].temporaryAbsenceApplications[0].absences).isEmpty()
+          assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(tempAbsence.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+        }
+    }
+
+    @Test
+    fun `movement IN has different schedule IN to the schedule OUT`() {
+      lateinit var wrongScheduledReturn: OffenderScheduledTemporaryAbsenceReturn
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement()
+                }
+              }
+            }
+            temporaryAbsenceApplication {
+              scheduledTemporaryAbsence {
+                wrongScheduledReturn = scheduledReturn()
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by linking the movement IN with the wrong scheduled return
+         */
+        entityManager.createNativeQuery(
+          """
+              update OFFENDER_EXTERNAL_MOVEMENTS oem
+              set EVENT_ID = ${wrongScheduledReturn.eventId}
+              where OFFENDER_BOOK_ID=${booking.bookingId} and MOVEMENT_SEQ=${tempAbsenceReturn.id.sequence}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      // Sync movement OUT is scheduled
+      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
+        }
+
+      // Sync movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync offender matches the sync
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+        }
+    }
+
+    /*
+     * This test demonstrates that a resync will not work but a normal sync will find that the movement is unscheduled.
+     */
+    @Test
+    fun `movement IN is unscheduled but points at schedule OUT instead of IN - FAILS`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                scheduledTempAbsenceReturn = scheduledReturn()
+              }
+            }
+            tempAbsenceReturn = temporaryAbsenceReturn()
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by pointing the movement IN at the schedule OUT
+         */
+        entityManager.createNativeQuery(
+          """
+              update OFFENDER_EXTERNAL_MOVEMENTS 
+              set EVENT_ID = ${scheduledTempAbsence.eventId}
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${tempAbsenceReturn.id.sequence}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      // Sync movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync does not work! The JPA model can't handle a movement IN pointing at a scheduled OUT in the EVENT_ID column.
+      webTestClient.getOffenderTemporaryAbsences()
+        .expectStatus().isEqualTo(500)
+    }
+
+    @Test
+    fun `movement IN does not point at schedule OUT`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement()
+                }
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by pointing the movement IN at nothing
+         */
+        entityManager.createNativeQuery(
+          """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set PARENT_EVENT_ID = null
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${tempAbsenceReturn.id.sequence}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      // Sync movement OUT is scheduled
+      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
+        }
+
+      // Sync movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync offender is same as for sync
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+        }
+    }
+
+    @Test
+    fun `movement IN points at a schedule IN that doesn't exist`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement()
+                }
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by pointing the movement IN at a schedule that doesn't exist
+         */
+        entityManager.createNativeQuery(
+          """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set PARENT_EVENT_ID = 99999
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${tempAbsenceReturn.id.sequence}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      // Sync movement OUT is scheduled
+      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
+        }
+
+      // Sync movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync offender is same as for sync
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+        }
+    }
+
+    @Test
+    fun `unscheduled movement IN points at a schedule IN but it shouldn't`() {
+      lateinit var wrongTempAbsenceReturn: OffenderTemporaryAbsenceReturn
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                orphanedScheduleReturn = scheduledReturn()
+              }
+            }
+            wrongTempAbsenceReturn = temporaryAbsenceReturn()
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by pointing the unscheduled movement IN at the schedule IN
+         */
+        entityManager.createNativeQuery(
+          """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set EVENT_ID = ${orphanedScheduleReturn.eventId}
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${wrongTempAbsenceReturn.id.sequence}
+          """.trimIndent(),
+        ).executeUpdate()
+
+        // Reload the scheduled return to reflect the update
+        orphanedScheduleReturn = scheduledTemporaryAbsenceReturnRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
+      }
+
+      // Sync movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = wrongTempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync offender is same as for sync
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(wrongTempAbsenceReturn.id.sequence)
+        }
+    }
+
+    @Test
+    fun `unscheduled movement IN points at a schedule OUT and IN but it shouldn't`() {
+      lateinit var wrongTempAbsenceReturn: OffenderTemporaryAbsenceReturn
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn()
+              }
+            }
+            wrongTempAbsenceReturn = temporaryAbsenceReturn()
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by pointing the unscheduled movement IN at an unrelated schedule IN and a schedule OUT that doesn't exist
+         */
+        entityManager.createNativeQuery(
+          """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set EVENT_ID = ${scheduledTempAbsenceReturn.eventId}, PARENT_EVENT_ID=99999
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${wrongTempAbsenceReturn.id.sequence}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      // Sync movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = wrongTempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync offender is same as for sync
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(wrongTempAbsenceReturn.id.sequence)
+        }
+    }
+
+    private fun WebTestClient.getTemporaryAbsence(offenderNo: String = offender.nomsId, bookingId: Long = booking.bookingId, movementSeq: Int) = get()
+      .uri("/movements/$offenderNo/temporary-absences/temporary-absence/$bookingId/$movementSeq")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyResponse<TemporaryAbsenceResponse>()
+
+    private fun WebTestClient.getTemporaryAbsenceReturnOk(offenderNo: String = offender.nomsId, bookingId: Long = booking.bookingId, movementSeq: Int) = get()
+      .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return/$bookingId/$movementSeq")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+      .expectStatus().isOk
+      .expectBodyResponse<TemporaryAbsenceReturnResponse>()
+
+    private fun WebTestClient.getOffenderTemporaryAbsences(offenderNo: String = offender.nomsId) = get()
+      .uri("/movements/$offenderNo/temporary-absences")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+
+    private fun WebTestClient.getOffenderTemporaryAbsencesOk(offenderNo: String = offender.nomsId) = getOffenderTemporaryAbsences(offenderNo)
+      .expectStatus().isOk
+      .expectBodyResponse<OffenderTemporaryAbsencesResponse>()
   }
 
   @Nested

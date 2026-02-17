@@ -6,6 +6,8 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -24,10 +26,12 @@ class OffenderScheduledTemporaryAbsenceReturn(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PARENT_EVENT_ID")
+  @NotFound(action = NotFoundAction.IGNORE)
   val scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence,
 
   @OneToOne(mappedBy = "scheduledTemporaryAbsenceReturn", cascade = [CascadeType.ALL])
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
   var temporaryAbsenceReturn: OffenderTemporaryAbsenceReturn? = null,
 
   // This will only exist for merged records, and we use it to find the correct application for this scheduled return
