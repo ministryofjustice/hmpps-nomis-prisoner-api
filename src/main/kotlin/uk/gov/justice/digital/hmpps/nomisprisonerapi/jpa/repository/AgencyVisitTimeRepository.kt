@@ -32,6 +32,9 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
     location: AgencyLocation,
   ): AgencyVisitTime?
 
+  @Query(value = "SELECT NVL(MAX(TIME_SLOT_SEQ)+1, 1) FROM AGENCY_VISIT_TIMES WHERE AGY_LOC_ID = :prisonId and WEEK_DAY = :dayOfWeek", nativeQuery = true)
+  fun getNextTimeSlotSequence(prisonId: String, dayOfWeek: String): Int
+
   // roundabout way of getting the max timeslot sequence for a prison and day
   fun findFirstByAgencyVisitTimesIdLocationAndAgencyVisitTimesIdWeekDayOrderByAgencyVisitTimesIdTimeSlotSequenceDesc(
     agencyId: AgencyLocation,

@@ -49,6 +49,28 @@ class VisitsConfigurationService(val agencyVisitDayRepository: AgencyVisitDayRep
     )
   }
 
+  fun createVisitTimeSlot(prisonId: String, dayOfWeek: WeekDay, request: CreateVisitTimeSlotRequest): VisitTimeSlotResponse {
+    val location = lookupAgency(prisonId)
+    val nextSequence = agencyVisitTimeRepository.getNextTimeSlotSequence(prisonId, dayOfWeek.name)
+
+    return agencyVisitTimeRepository.saveAndFlush(
+      AgencyVisitTime(
+        agencyVisitTimesId = AgencyVisitTimeId(
+          location = location,
+          weekDay = dayOfWeek,
+          timeSlotSequence = nextSequence,
+        ),
+        startTime = request.startTime,
+        endTime = request.endTime,
+        effectiveDate = request.effectiveDate,
+        expiryDate = request.expiryDate,
+      ),
+    ).let {
+      agencyVisitTimeRepository.findByIdOrNull(it.agencyVisitTimesId)
+        ?: throw BadDataException("Visit time slot $prisonId, $dayOfWeek, ${it.agencyVisitTimesId.timeSlotSequence} could not be reloaded")
+    }.toVisitTimeSlotResponse()
+  }
+
   private fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId) ?: throw BadDataException("Prison $prisonId does not exist")
 }
 

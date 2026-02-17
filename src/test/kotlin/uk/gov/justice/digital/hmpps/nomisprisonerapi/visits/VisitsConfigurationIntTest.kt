@@ -31,7 +31,109 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var agencyVisitTimeRepository: AgencyVisitTimeRepository
 
-  @DisplayName("GET /visits/configuration/time-slots/ids")
+  @DisplayName("POST /visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}")
+  @Nested
+  inner class CreateVisitTimeSlot {
+    @AfterEach
+    fun tearDown() {
+      agencyVisitTimeRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/MDI/day-of-week/MON")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(
+            CreateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/MDI/day-of-week/MON")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .bodyValue(
+            CreateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/MDI/day-of-week/MON")
+          .bodyValue(
+            CreateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create time slot`() {
+        nomisDataBuilder.build {
+          agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON)
+        }
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .bodyValue(
+            CreateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated
+          .expectBody()
+          .jsonPath("$.prisonId").isEqualTo("BXI")
+          .jsonPath("$.dayOfWeek").isEqualTo("MON")
+          .jsonPath("$.timeSlotSequence").isEqualTo(1)
+          .jsonPath("$.startTime").isEqualTo("10:00")
+          .jsonPath("$.endTime").isEqualTo("11:00")
+          .jsonPath("$.effectiveDate").isEqualTo("2022-09-01")
+
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .bodyValue(
+            CreateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("14:00"),
+              endTime = LocalTime.parse("15:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated
+          .expectBody()
+          .jsonPath("$.timeSlotSequence").isEqualTo(2)
+      }
+    }
+  }
+
   @Nested
   inner class GetVisitTimeSlotIds {
     @BeforeEach

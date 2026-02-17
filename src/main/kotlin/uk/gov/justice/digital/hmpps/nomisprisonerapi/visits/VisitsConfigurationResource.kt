@@ -17,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -192,6 +194,49 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     prisonId = prisonId,
     activeOnly = activeOnly,
   )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
+  @PostMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create a visit time slot",
+    description = "Requires ROLE_NOMIS_VISITS",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Visit time slot created",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISITS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createVisitTimeSlot(
+    @PathVariable
+    prisonId: String,
+    @PathVariable
+    dayOfWeek: WeekDay,
+    @RequestBody
+    @Validated
+    createVisitTimeSlotRequest: CreateVisitTimeSlotRequest,
+  ): VisitTimeSlotResponse = visitsConfigurationService.createVisitTimeSlot(prisonId, dayOfWeek, createVisitTimeSlotRequest)
 }
 
 data class VisitTimeSlotIdResponse(
@@ -246,6 +291,20 @@ data class VisitSlotResponse(
   val maxAdults: Int?,
   @Schema(description = "Audit information")
   val audit: NomisAudit,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateVisitTimeSlotRequest(
+  @Schema(description = "Slot start time", example = "10:00")
+  @JsonFormat(pattern = "HH:mm")
+  val startTime: LocalTime,
+  @Schema(description = "Slot end time", example = "11:00")
+  @JsonFormat(pattern = "HH:mm")
+  val endTime: LocalTime,
+  @Schema(description = "Date slot can first be used", example = "2022-09-01")
+  val effectiveDate: LocalDate,
+  @Schema(description = "Date slot can no longer be used", example = "2032-09-01")
+  val expiryDate: LocalDate?,
 )
 
 data class VisitInternalLocationResponse(
