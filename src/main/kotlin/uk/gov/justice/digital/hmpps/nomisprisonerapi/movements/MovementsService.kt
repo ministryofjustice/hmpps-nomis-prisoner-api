@@ -101,8 +101,13 @@ class MovementsService(
 
     val movementApplications = offenderMovementApplicationRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .also { it.fixMergedSchedules() }
-    val unscheduledTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceIsNull(offenderNo)
-    val unscheduledTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceReturnIsNull(offenderNo)
+      .also { it.unlinkCorruptTemporaryAbsenceReturns() }
+
+    // To find the unscheduled movements we get all movements and remove those linked to a TAP application. This is necessary because of corrupt movements linked to the wrong application.
+    // There is a known edge case where Hibernate throws an IllegalArgumentException because a movement IN points at a schedule OUT in the EVENT_ID column. We cannot resync such offenders until the data is fixed.
+    val unscheduledTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo) - movementApplications.flatMap { it.scheduledTemporaryAbsences.mapNotNull { it.temporaryAbsence } }
+    val unscheduledTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo) - movementApplications.flatMap { it.scheduledTemporaryAbsences.flatMap { it.scheduledTemporaryAbsenceReturns.mapNotNull { it.temporaryAbsenceReturn } } }
+
     val bookingIds = (
       movementApplications.map { it.offenderBooking.bookingId } +
         unscheduledTemporaryAbsences.map { it.offenderBooking.bookingId } +
@@ -143,6 +148,23 @@ class MovementsService(
         ?.firstOrNull { absence -> absence.scheduledTemporaryAbsenceReturns.isEmpty() && absence.returnDate == mergedReturn.eventDate }
         ?.scheduledTemporaryAbsenceReturns += mergedReturn
       mergedReturn.temporaryAbsenceApplication = null
+    }
+  }
+
+  /*
+   * Cut links to any return movements that have ended up on the wrong application due to corrupt data
+   */
+  private fun List<OffenderMovementApplication>.unlinkCorruptTemporaryAbsenceReturns() {
+    forEach {
+      it.scheduledTemporaryAbsences.forEach {
+        it.scheduledTemporaryAbsenceReturns.forEach { scheduledReturn ->
+          scheduledReturn.temporaryAbsenceReturn?.also { returnMovement ->
+            if (returnMovement.unlinkWrongSchedules()) {
+              scheduledReturn.temporaryAbsenceReturn = null
+            }
+          }
+        }
+      }
     }
   }
 
@@ -408,14 +430,19 @@ class MovementsService(
     val temporaryAbsenceReturn = temporaryAbsenceReturnRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSeq)
       ?: throw NotFoundException("Temporary absence return with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
 
-    // If the scheduled outbound TAP is not on the external movement (due to a NOMIS bug) add it here
-    with(temporaryAbsenceReturn) {
-      if (scheduledTemporaryAbsenceReturn != null && scheduledTemporaryAbsence == null) {
-        scheduledTemporaryAbsence = scheduledTemporaryAbsenceReturn!!.scheduledTemporaryAbsence
-      }
-    }
-
+    temporaryAbsenceReturn.unlinkWrongSchedules()
     return temporaryAbsenceReturn.toSingleResponse()
+  }
+
+  // Make a temporary absence return unscheduled if the schedules have been corrupted
+  private fun OffenderTemporaryAbsenceReturn.unlinkWrongSchedules(): Boolean = when (scheduledTemporaryAbsenceReturn) {
+    null -> false
+    in scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns ?: emptyList() -> false
+    else -> {
+      scheduledTemporaryAbsence = null
+      scheduledTemporaryAbsenceReturn = null
+      true
+    }
   }
 
   @Transactional

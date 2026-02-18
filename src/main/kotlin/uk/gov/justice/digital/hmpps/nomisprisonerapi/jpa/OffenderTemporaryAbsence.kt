@@ -6,6 +6,8 @@ import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -28,6 +30,7 @@ class OffenderTemporaryAbsence(
 
   @OneToOne(cascade = [CascadeType.ALL])
   @JoinColumn(name = "EVENT_ID")
+  @NotFound(action = NotFoundAction.IGNORE)
   var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
 ) : OffenderExternalMovement(
   id = id,

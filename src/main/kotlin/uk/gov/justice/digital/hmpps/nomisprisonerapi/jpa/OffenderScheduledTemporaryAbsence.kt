@@ -76,6 +76,7 @@ class OffenderScheduledTemporaryAbsence(
 
   @OneToOne(mappedBy = "scheduledTemporaryAbsence", cascade = [CascadeType.ALL])
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
   var temporaryAbsence: OffenderTemporaryAbsence? = null,
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
