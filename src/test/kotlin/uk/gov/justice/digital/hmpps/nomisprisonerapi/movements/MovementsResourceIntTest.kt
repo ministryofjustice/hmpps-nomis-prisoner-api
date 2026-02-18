@@ -1336,12 +1336,12 @@ class MovementsResourceIntTest(
     }
 
     @Test
-    fun `should not include the TAP with deleted schedule OUT`() {
+    fun `should include the TAP with deleted schedule OUT as unscheduled`() {
       webTestClient.getTapsForMigration()
         .apply {
           val book = bookings.first()
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(2)
-          // The TAP with the deleted scheduled absence is not included in the migration
+          // The TAP with the deleted scheduled absence is not included in the migration as a scheduled movement
           assertThat(book.temporaryAbsenceApplications[0].absences).isEmpty()
           // The control TAP is migrated
           with(book.temporaryAbsenceApplications[1].absences.first()) {
@@ -1350,16 +1350,23 @@ class MovementsResourceIntTest(
             assertThat(scheduledTemporaryAbsenceReturn).isNotNull()
             assertThat(temporaryAbsenceReturn).isNotNull()
           }
+          // The TAP with deleted scheduled absence has both movements included as unscheduled
+          assertThat(book.unscheduledTemporaryAbsences.size).isEqualTo(1)
+          assertThat(book.unscheduledTemporaryAbsenceReturns.size).isEqualTo(1)
         }
     }
 
     @Test
-    fun `reconciliation should not include the TAP with deleted scheduled OUT`() {
+    fun `reconciliation should include the TAP with deleted scheduled OUT as unscheduled`() {
       webTestClient.getOffenderSummaryOk(offenderNo)
         .apply {
           assertThat(applications.count).isEqualTo(2)
           assertThat(scheduledOutMovements.count).isEqualTo(1)
-          assertThat(movements.count).isEqualTo(2)
+          assertThat(movements.count).isEqualTo(4)
+          assertThat(movements.scheduled.outCount).isEqualTo(1)
+          assertThat(movements.scheduled.inCount).isEqualTo(1)
+          assertThat(movements.unscheduled.outCount).isEqualTo(1)
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
         }
     }
 
@@ -5269,6 +5276,15 @@ class MovementsResourceIntTest(
           assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(tempAbsence.id.sequence)
           assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
         }
+
+      // Reconciliation counts reflect both movements as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.scheduled.outCount).isEqualTo(0)
+          assertThat(movements.scheduled.inCount).isEqualTo(0)
+          assertThat(movements.unscheduled.outCount).isEqualTo(1)
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
+        }
     }
 
     @Test
@@ -5328,6 +5344,14 @@ class MovementsResourceIntTest(
           assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
           assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
         }
+
+      // Reconciliation counts the IN movement as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.scheduled.outCount).isEqualTo(1)
+          assertThat(movements.scheduled.inCount).isEqualTo(0)
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
+        }
     }
 
     /*
@@ -5372,6 +5396,12 @@ class MovementsResourceIntTest(
       // Resync does not work! The JPA model can't handle a movement IN pointing at a scheduled OUT in the EVENT_ID column.
       webTestClient.getOffenderTemporaryAbsences()
         .expectStatus().isEqualTo(500)
+
+      // Reconciliation counts the IN movement as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
+        }
     }
 
     @Test
@@ -5424,6 +5454,14 @@ class MovementsResourceIntTest(
         .apply {
           assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
           assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+        }
+
+      // Reconciliation counts OUT as scheduled and IN as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.scheduled.outCount).isEqualTo(1)
+          assertThat(movements.scheduled.inCount).isEqualTo(0)
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
         }
     }
 
@@ -5478,6 +5516,14 @@ class MovementsResourceIntTest(
           assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
           assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
         }
+
+      // Reconciliation counts the OUT movement as scheduled and IN as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.scheduled.outCount).isEqualTo(1)
+          assertThat(movements.scheduled.inCount).isEqualTo(0)
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
+        }
     }
 
     @Test
@@ -5525,6 +5571,12 @@ class MovementsResourceIntTest(
         .apply {
           assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(wrongTempAbsenceReturn.id.sequence)
         }
+
+      // Reconciliation counts the movement as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
+        }
     }
 
     @Test
@@ -5569,6 +5621,14 @@ class MovementsResourceIntTest(
       webTestClient.getOffenderTemporaryAbsencesOk()
         .apply {
           assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(wrongTempAbsenceReturn.id.sequence)
+        }
+
+      // Reconciliation counts the OUT movement as scheduled and IN as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.scheduled.outCount).isEqualTo(1)
+          assertThat(movements.scheduled.inCount).isEqualTo(0)
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
         }
     }
 
