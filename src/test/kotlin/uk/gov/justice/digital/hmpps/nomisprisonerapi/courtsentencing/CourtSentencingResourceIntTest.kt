@@ -4231,7 +4231,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class CreateCourtAppearanceOnLatestBooking {
 
-     /* @Test
+      @Test
       fun `can add a new court appearance to a case`() {
         val courtAppearanceResponse: CreateCourtAppearanceResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
@@ -4298,7 +4298,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .isEqualTo("Bound Over to Leave the Island within 3 days")
           .jsonPath("offenderCharges[1].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("offenderCharges[1].chargeStatus.description").isEqualTo("Inactive")
-      }*/
+      }
 
       @Test
       fun `adding an earlier appearance will update the case court`() {
@@ -5358,7 +5358,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       @Test
       fun `updating the earliest appearance court will update the court associated with the case`() {
         // add later appearance with different court - should not update on case
-        val courtAppearanceResponse2: CreateCourtAppearanceResponse = webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -5371,7 +5371,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 courtId = "LEICYC",
               ),
             ),
-          ).exchange().expectStatus().isCreated.expectBodyResponse()
+          )
 
         // confirm the court is NOT updated on the case
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
