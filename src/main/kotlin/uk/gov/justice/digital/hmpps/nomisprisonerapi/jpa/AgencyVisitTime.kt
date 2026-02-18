@@ -12,7 +12,10 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.hibernate.Hibernate
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Persistable
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalTime
@@ -38,7 +41,13 @@ data class AgencyVisitTime(
   @OneToMany(mappedBy = "agencyVisitTime", cascade = [ALL], orphanRemoval = true)
   val visitSlots: MutableList<AgencyVisitSlot> = mutableListOf(),
 
-) : NomisAuditableEntityBasic() {
+  @Transient
+  @Value("false")
+  val new: Boolean = true,
+) : NomisAuditableEntityBasic(),
+  Persistable<AgencyVisitTimeId> {
+  override fun getId(): AgencyVisitTimeId = agencyVisitTimesId
+  override fun isNew(): Boolean = new
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
