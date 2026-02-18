@@ -15,7 +15,11 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
       from OFFENDERS o
         join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
         join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
-      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'OUT' and oem.event_id is null
+        left join OFFENDER_IND_SCHEDULES ois on oem.EVENT_ID=ois.EVENT_ID
+      where oem.MOVEMENT_TYPE='TAP' 
+        and o.OFFENDER_ID_DISPLAY=:offender 
+        and oem.DIRECTION_CODE = 'OUT' 
+        and (oem.event_id is null or ois.EVENT_ID is null)
     """,
     nativeQuery = true,
   )
@@ -25,9 +29,14 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
     """
       select count(*)
       from OFFENDERS o
-        join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
-        join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
-      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'IN' and oem.event_id is null
+             join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
+             join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
+             left join OFFENDER_IND_SCHEDULES ois_in on oem.EVENT_ID=ois_in.EVENT_ID
+             left join OFFENDER_IND_SCHEDULES ois_out on oem.PARENT_EVENT_ID=ois_out.EVENT_ID
+      where oem.MOVEMENT_TYPE='TAP'
+        and o.OFFENDER_ID_DISPLAY=:offender
+        and oem.DIRECTION_CODE = 'IN'
+        and (ois_in.EVENT_ID is null or ois_out.EVENT_ID is null or ois_in.PARENT_EVENT_ID != ois_out.EVENT_ID)
     """,
     nativeQuery = true,
   )
@@ -52,14 +61,15 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
     """
       select count(*)
       from OFFENDERS o
-        join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
-        join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
-        -- the scheduled OUT and IN movements must exist to be included - some have been deleted
-        join OFFENDER_IND_SCHEDULES ois_in on oem.EVENT_ID=ois_in.EVENT_ID
-        left join OFFENDER_IND_SCHEDULES ois_out on oem.PARENT_EVENT_ID=ois_out.EVENT_ID
-      where oem.MOVEMENT_TYPE='TAP' and o.OFFENDER_ID_DISPLAY=:offender and oem.DIRECTION_CODE = 'IN'
-      -- we only care about the join to scheduled OUT movement if it is linked from the actual movement IN
-      and ( oem.PARENT_EVENT_ID IS NULL or (ois_out.EVENT_ID IS NOT NULL and ois_out.OFFENDER_MOVEMENT_APP_ID is not null))
+             join OFFENDER_BOOKINGS ob on o.offender_id=ob.root_offender_id
+             join OFFENDER_EXTERNAL_MOVEMENTS oem on ob.OFFENDER_BOOK_ID=oem.OFFENDER_BOOK_ID
+             join OFFENDER_IND_SCHEDULES ois_in on oem.EVENT_ID=ois_in.EVENT_ID
+             join OFFENDER_IND_SCHEDULES ois_out on oem.PARENT_EVENT_ID=ois_out.EVENT_ID
+      where oem.MOVEMENT_TYPE='TAP'
+        and o.OFFENDER_ID_DISPLAY=:offender
+        and oem.DIRECTION_CODE = 'IN'
+        and ois_out.EVENT_ID = ois_in.PARENT_EVENT_ID
+        and ois_out.OFFENDER_MOVEMENT_APP_ID is not null
     """,
     nativeQuery = true,
   )
