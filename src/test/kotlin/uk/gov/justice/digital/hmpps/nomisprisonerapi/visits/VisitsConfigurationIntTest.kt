@@ -7,12 +7,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDate
@@ -30,6 +32,9 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var agencyVisitTimeRepository: AgencyVisitTimeRepository
+
+  @Autowired
+  private lateinit var agencyVisitSlotRepository: AgencyVisitSlotRepository
 
   @DisplayName("POST /visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}")
   @Nested
@@ -97,7 +102,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
           agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON)
         }
         webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(
             CreateVisitTimeSlotRequest(
               startTime = LocalTime.parse("10:00"),
@@ -117,7 +122,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
           .jsonPath("$.effectiveDate").isEqualTo("2022-09-01")
 
         webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_VISITS")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(
             CreateVisitTimeSlotRequest(
               startTime = LocalTime.parse("14:00"),
@@ -135,6 +140,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /visits/configuration/time-slots/ids")
   inner class GetVisitTimeSlotIds {
     @BeforeEach
     fun setUp() {
@@ -511,6 +517,159 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
         assertThat(prisons.prisons).hasSize(2)
         assertThat(prisons.prisons).extracting<String> { it.prisonId }.containsExactlyInAnyOrder("MDI", "BXI")
+      }
+    }
+  }
+
+  @DisplayName("POST /visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
+  @Nested
+  inner class CreateVisitSlot {
+    lateinit var room1: AgencyInternalLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        room1 = agencyInternalLocation(
+          locationCode = "BXI-VISIT-1",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(room1)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(
+            CreateVisitSlotRequest(
+              internalLocationId = room1.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .bodyValue(
+            CreateVisitSlotRequest(
+              internalLocationId = room1.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .bodyValue(
+            CreateVisitSlotRequest(
+              internalLocationId = room1.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `400 error when invalid internal location id`() {
+        nomisDataBuilder.build {
+          agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON)
+        }
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateVisitSlotRequest(
+              internalLocationId = 9999,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Internal location 9999 does not exist")
+      }
+
+      @Test
+      fun `400 error when invalid time slot`() {
+        nomisDataBuilder.build {
+          agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON)
+        }
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/99")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateVisitSlotRequest(
+              internalLocationId = room1.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("TimeSlot BXI, MON, 99 does not exist")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create visit slot`() {
+        nomisDataBuilder.build {
+          agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON)
+        }
+        val response: VisitSlotResponse = webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateVisitSlotRequest(
+              internalLocationId = room1.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated
+          .expectBodyResponse()
+
+        assertThat(response.internalLocation.id).isEqualTo(room1.locationId)
+        assertThat(response.internalLocation.code).isEqualTo(room1.locationCode)
+        assertThat(response.maxGroups).isEqualTo(5)
+        assertThat(response.maxAdults).isEqualTo(10)
+
+        assertThat(agencyVisitSlotRepository.findByIdOrNull(response.id)).isNotNull
       }
     }
   }

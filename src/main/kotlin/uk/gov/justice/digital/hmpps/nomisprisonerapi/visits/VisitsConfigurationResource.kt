@@ -195,12 +195,11 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     activeOnly = activeOnly,
   )
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_VISITS')")
   @PostMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create a visit time slot",
-    description = "Requires ROLE_NOMIS_VISITS",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",
@@ -237,6 +236,65 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     @Validated
     createVisitTimeSlotRequest: CreateVisitTimeSlotRequest,
   ): VisitTimeSlotResponse = visitsConfigurationService.createVisitTimeSlot(prisonId, dayOfWeek, createVisitTimeSlotRequest)
+
+  @PostMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create a visit slot",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Visit slot created",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Parameters or internal location are not valid",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISITS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createVisitSlot(
+    @PathVariable
+    prisonId: String,
+    @PathVariable
+    dayOfWeek: WeekDay,
+    @PathVariable
+    timeSlotSequence: Int,
+    @RequestBody
+    @Validated
+    createVisitSlotRequest: CreateVisitSlotRequest,
+  ): VisitSlotResponse = visitsConfigurationService.createVisitSlot(
+    prisonId = prisonId,
+    dayOfWeek = dayOfWeek,
+    timeSlotSequence = timeSlotSequence,
+    request = createVisitSlotRequest,
+  )
 }
 
 data class VisitTimeSlotIdResponse(
@@ -305,6 +363,16 @@ data class CreateVisitTimeSlotRequest(
   val effectiveDate: LocalDate,
   @Schema(description = "Date slot can no longer be used", example = "2032-09-01")
   val expiryDate: LocalDate?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateVisitSlotRequest(
+  @Schema(description = "Internal location room id", example = "1913")
+  val internalLocationId: Long,
+  @Schema(description = "Optional max groups allowed in slot", example = "1")
+  val maxGroups: Int?,
+  @Schema(description = "Optional max adults allowed in slot", example = "1")
+  val maxAdults: Int?,
 )
 
 data class VisitInternalLocationResponse(
