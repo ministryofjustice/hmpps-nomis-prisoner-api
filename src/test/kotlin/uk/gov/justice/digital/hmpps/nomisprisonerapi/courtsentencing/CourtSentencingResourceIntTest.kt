@@ -5053,7 +5053,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
               offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
               offenderCharge4 = offenderCharge(resultCode1 = "1067", offenceCode = "LO72002")
-              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
+              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30), agencyId = "COURT1") {
 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
@@ -5380,7 +5380,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(offenderNo)
-          .jsonPath("courtId").isEqualTo("MDI")
+          .jsonPath("courtId").isEqualTo("COURT1")
 
         // update the earliest appearance which should change the court on the case
 

@@ -315,7 +315,6 @@ class CourtSentencingService(
     findCourtCase(caseId, offenderNo).let {
       val (courtCase, courtAppearanceRequest, clonedCourtCases) = cloneCasesIfRequired(it, request)
 
-      val appearanceCourt = lookupEstablishment(courtAppearanceRequest.courtId)
       val courtEvent = CourtEvent(
         offenderBooking = courtCase.offenderBooking,
         courtCase = courtCase,
@@ -326,7 +325,7 @@ class CourtSentencingService(
           courtAppearanceRequest.eventDateTime.toLocalDate(),
           courtCase.offenderBooking,
         ),
-        court = appearanceCourt,
+        court = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
         nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
         nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
