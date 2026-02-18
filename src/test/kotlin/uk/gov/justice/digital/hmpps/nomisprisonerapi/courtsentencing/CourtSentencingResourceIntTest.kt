@@ -4301,6 +4301,43 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `adding an earlier appearance will update the case court`() {
+        val courtAppearanceResponse: CreateCourtAppearanceResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtAppearanceRequest(
+                  eventDateTime = LocalDateTime.of(2022, 1, 1, 10, 30),
+                  courtEventCharges = mutableListOf(
+                    offenderCharge1.id,
+                    offenderCharge2.id,
+                  ),
+                  courtId = "LEI",
+                ),
+              ),
+            )
+            .exchange().expectStatus().isCreated.expectBodyResponse()
+
+        assertThat(courtAppearanceResponse.id).isGreaterThan(0)
+
+        verify(spRepository).imprisonmentStatusUpdate(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
+        )
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2022-01-01T10:30:00")
+          .jsonPath("courtId").isEqualTo("LEI")
+      }
+
+      @Test
       fun `will track telemetry for the create`() {
         val createResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
@@ -5016,7 +5053,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
               offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
               offenderCharge4 = offenderCharge(resultCode1 = "1067", offenceCode = "LO72002")
-              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
+              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30), agencyId = "COURT1") {
 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
@@ -5033,7 +5070,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   sentencePurpose(purposeCode = "PUNISH")
                 }
               }
-              courtEvent2 = courtEvent(eventDateTime = LocalDateTime.of(2023, 2, 1, 10, 30)) {
+              courtEvent2 = courtEvent(eventDateTime = LocalDateTime.of(2023, 2, 1, 14, 30)) {
 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
@@ -5316,6 +5353,60 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           },
           isNull(),
         )
+      }
+
+      @Test
+      fun `updating the earliest appearance court will update the court associated with the case`() {
+        // add later appearance with different court - should not update on case
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                eventDateTime = LocalDateTime.of(2024, 1, 1, 10, 30),
+                courtEventCharges = mutableListOf(
+                  offenderCharge1.id,
+                ),
+                courtId = "LEICYC",
+              ),
+            ),
+          )
+
+        // confirm the court is NOT updated on the case
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtId").isEqualTo("COURT1")
+
+        // update the earliest appearance which should change the court on the case
+
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtId = "LEEDYC",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        // check the case again
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtId").isEqualTo("LEEDYC")
       }
     }
 

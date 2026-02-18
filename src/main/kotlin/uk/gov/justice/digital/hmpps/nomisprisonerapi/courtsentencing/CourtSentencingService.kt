@@ -337,6 +337,9 @@ class CourtSentencingService(
       courtCase.courtEvents.add(
         courtEvent,
       )
+
+      updateCourtIfNecessary(courtCase)
+
       courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
         refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
         storedProcedureRepository.imprisonmentStatusUpdate(
@@ -584,6 +587,8 @@ class CourtSentencingService(
           )
         }
 
+        updateCourtIfNecessary(courtCase)
+
         return UpdateCourtAppearanceResponse(
           deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
             OffenderChargeIdResponse(
@@ -606,6 +611,15 @@ class CourtSentencingService(
         }
       }
     }
+  }
+
+  private fun updateCourtIfNecessary(courtCase: CourtCase) {
+    courtCase.courtEvents.minWithOrNull(compareBy<CourtEvent> { it.eventDate }.thenBy { it.startTime })
+      ?.let { earliestEvent ->
+        if (courtCase.court != earliestEvent.court) {
+          courtCase.court = earliestEvent.court
+        }
+      }
   }
 
   fun deleteCourtAppearance(
