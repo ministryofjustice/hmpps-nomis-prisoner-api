@@ -315,6 +315,7 @@ class CourtSentencingService(
     findCourtCase(caseId, offenderNo).let {
       val (courtCase, courtAppearanceRequest, clonedCourtCases) = cloneCasesIfRequired(it, request)
 
+      val appearanceCourt = lookupEstablishment(courtAppearanceRequest.courtId)
       val courtEvent = CourtEvent(
         offenderBooking = courtCase.offenderBooking,
         courtCase = courtCase,
@@ -325,7 +326,7 @@ class CourtSentencingService(
           courtAppearanceRequest.eventDateTime.toLocalDate(),
           courtCase.offenderBooking,
         ),
-        court = lookupEstablishment(courtAppearanceRequest.courtId),
+        court = appearanceCourt,
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
         nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
         nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
@@ -337,6 +338,9 @@ class CourtSentencingService(
       courtCase.courtEvents.add(
         courtEvent,
       )
+
+      updateCourtIfNecessary(courtCase)
+
       courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
         refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
         storedProcedureRepository.imprisonmentStatusUpdate(
@@ -584,6 +588,8 @@ class CourtSentencingService(
           )
         }
 
+        updateCourtIfNecessary(courtCase)
+
         return UpdateCourtAppearanceResponse(
           deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
             OffenderChargeIdResponse(
@@ -606,6 +612,15 @@ class CourtSentencingService(
         }
       }
     }
+  }
+
+  private fun updateCourtIfNecessary(courtCase: CourtCase) {
+    courtCase.courtEvents.minWithOrNull(compareBy<CourtEvent> { it.eventDate }.thenBy { it.startTime })
+      ?.let { earliestEvent ->
+        if (courtCase.court != earliestEvent.court) {
+          courtCase.court = earliestEvent.court
+        }
+      }
   }
 
   fun deleteCourtAppearance(
