@@ -5393,9 +5393,11 @@ class MovementsResourceIntTest(
           assertThat(scheduledTemporaryAbsenceReturnId).isNull()
         }
 
-      // Resync does not work! The JPA model can't handle a movement IN pointing at a scheduled OUT in the EVENT_ID column.
-      webTestClient.getOffenderTemporaryAbsences()
-        .expectStatus().isEqualTo(500)
+      // Resync offender is the same as the sync
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+        }
 
       // Reconciliation counts the IN movement as unscheduled
       webTestClient.getOffenderSummaryOk(offender.nomsId)
