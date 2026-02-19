@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.stereotype.Repository
@@ -68,4 +69,8 @@ interface CourtCaseRepository : JpaRepository<CourtCase, Long> {
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
   @Query("SELECT c FROM CourtCase c WHERE c.id = :id")
   fun findByIdOrNullForUpdate(id: Long): CourtCase?
+
+  @Modifying
+  @Query(nativeQuery = true, value = "UPDATE OFFENDER_CASES cc SET cc.CASE_INFO_NUMBER = :caseInfoNumber WHERE cc.CASE_ID = :caseId")
+  fun updatePrimaryCaseInfoNumber(caseId: Long, caseInfoNumber: String)
 }
