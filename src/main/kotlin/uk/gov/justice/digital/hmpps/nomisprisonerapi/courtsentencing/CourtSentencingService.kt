@@ -161,6 +161,10 @@ class CourtSentencingService(
         primaryCaseInfoNumber = request.caseReference,
         court = lookupEstablishment(request.courtId),
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
+        statusUpdateReason = "A",
+        // TODO find a way of not hardcoding this
+        statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API"),
+        statusUpdateDate = LocalDate.now(),
       ),
     )
     courtCaseRepository.saveAndFlush(courtCase)
@@ -194,6 +198,10 @@ class CourtSentencingService(
         court = lookupEstablishment(request.courtId),
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
         primaryCaseInfoNumber = primaryCaseIdentifier,
+        statusUpdateReason = "A",
+        // TODO find a way of not hardcoding this
+        statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API"),
+        statusUpdateDate = LocalDate.now(),
       )
     courtCase.offenderCharges.addAll(
       request.offenderCharges.map {
@@ -618,6 +626,10 @@ class CourtSentencingService(
       ?.let { earliestEvent ->
         if (courtCase.court != earliestEvent.court) {
           courtCase.court = earliestEvent.court
+          courtCase.statusUpdateReason = courtCase.deriveStatusUpdateReason()
+          // TODO find a way of not hardcoding this
+          courtCase.statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API")
+          courtCase.statusUpdateDate = LocalDate.now()
         }
       }
   }
