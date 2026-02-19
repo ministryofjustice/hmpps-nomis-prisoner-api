@@ -595,8 +595,6 @@ class CourtSentencingService(
           )
         }
 
-        updateCourtIfNecessary(courtCase)
-
         return UpdateCourtAppearanceResponse(
           deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
             OffenderChargeIdResponse(
@@ -622,7 +620,7 @@ class CourtSentencingService(
   }
 
   private fun updateCourtIfNecessary(courtCase: CourtCase) {
-    courtCase.courtEvents.minWithOrNull(compareBy<CourtEvent> { it.eventDate }.thenBy { it.startTime })
+    courtCase.courtEvents.maxWithOrNull(compareBy<CourtEvent> { it.eventDate }.thenBy { it.startTime })
       ?.let { earliestEvent ->
         if (courtCase.court != earliestEvent.court) {
           courtCase.court = earliestEvent.court
@@ -1945,7 +1943,10 @@ class CourtSentencingService(
       courtCaseRepository.saveAllAndFlush(clonedCases).also { clonedCases ->
         clonedCases.forEachIndexed { caseIndex, clonedCase ->
           val sourceCase = sourceCourtCases[caseIndex]
-          clonedCase.primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber
+          sourceCase.primaryCaseInfoNumber?.also { primaryCaseInfoNumber ->
+            clonedCase.primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber
+            courtCaseRepository.updatePrimaryCaseInfoNumber(caseId = clonedCase.id, caseInfoNumber = primaryCaseInfoNumber)
+          }
           clonedCase.statusUpdateDate = sourceCase.statusUpdateDate ?: LocalDate.now()
           clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: sourceCase.deriveStatusUpdateReason()
           clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
