@@ -99,14 +99,20 @@ class MovementsService(
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
     }
 
+    // We need to run these queries before findAllByOffenderBooking_Offender_NomsId otherwise if Hibernate finds an entity of
+    // type OffenderTemporaryAbsence in the session where it's expecting an OffenderTemporaryAbsenceReturn it tries (and fails)
+    // to use the wrong type instead of respecting the @NotFound(IGNORE). So we run these queries before the entity is loaded
+    // into the session and the @NotFound is respected.
+    val allTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
+    val allTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
+
     val movementApplications = offenderMovementApplicationRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .also { it.fixMergedSchedules() }
       .also { it.unlinkCorruptTemporaryAbsenceReturns() }
 
     // To find the unscheduled movements we get all movements and remove those linked to a TAP application. This is necessary because of corrupt movements linked to the wrong application.
-    // There is a known edge case where Hibernate throws an IllegalArgumentException because a movement IN points at a schedule OUT in the EVENT_ID column. We cannot resync such offenders until the data is fixed.
-    val unscheduledTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo) - movementApplications.flatMap { it.scheduledTemporaryAbsences.mapNotNull { it.temporaryAbsence } }
-    val unscheduledTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo) - movementApplications.flatMap { it.scheduledTemporaryAbsences.flatMap { it.scheduledTemporaryAbsenceReturns.mapNotNull { it.temporaryAbsenceReturn } } }
+    val unscheduledTemporaryAbsences = allTemporaryAbsences - movementApplications.temporaryAbsences()
+    val unscheduledTemporaryAbsenceReturns = allTemporaryAbsenceReturns - movementApplications.temporaryAbsenceReturns()
 
     val bookingIds = (
       movementApplications.map { it.offenderBooking.bookingId } +
@@ -167,6 +173,20 @@ class MovementsService(
       }
     }
   }
+
+  private fun List<OffenderMovementApplication>.temporaryAbsences() = flatMap {
+    it.scheduledTemporaryAbsences.mapNotNull {
+      it.temporaryAbsence
+    }
+  }.toSet()
+
+  private fun List<OffenderMovementApplication>.temporaryAbsenceReturns() = flatMap {
+    it.scheduledTemporaryAbsences.flatMap {
+      it.scheduledTemporaryAbsenceReturns.mapNotNull {
+        it.temporaryAbsenceReturn
+      }
+    }
+  }.toSet()
 
   fun getTemporaryAbsenceApplication(offenderNo: String, applicationId: Long): TemporaryAbsenceApplicationResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
