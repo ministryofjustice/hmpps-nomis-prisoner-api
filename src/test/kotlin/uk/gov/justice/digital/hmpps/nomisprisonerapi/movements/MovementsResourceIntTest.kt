@@ -5634,6 +5634,145 @@ class MovementsResourceIntTest(
         }
     }
 
+    @Test
+    fun `scheduled movements points at a schedule without an application`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement()
+                }
+              }
+            }
+          }
+        }
+      }
+
+      repository.runInTransaction {
+        /*
+         * Corrupt the data by removing the application from the schedules
+         */
+        entityManager.createNativeQuery(
+          """
+              update OFFENDER_IND_SCHEDULES
+              set OFFENDER_MOVEMENT_APP_ID = null
+              where EVENT_ID in (${scheduledTempAbsence.eventId}, ${scheduledTempAbsenceReturn.eventId})
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      // Sync movement OUT is unscheduled
+      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+        }
+
+      // Sync movement IN is unscheduled
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+        .apply {
+          assertThat(movementApplicationId).isNull()
+          assertThat(scheduledTemporaryAbsenceId).isNull()
+          assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+        }
+
+      // Resync offender is same as for sync
+      webTestClient.getOffenderTemporaryAbsencesOk()
+        .apply {
+          assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(tempAbsence.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+        }
+
+      // Reconciliation counts the movements as unscheduled
+      webTestClient.getOffenderSummaryOk(offender.nomsId)
+        .apply {
+          assertThat(movements.scheduled.outCount).isEqualTo(0)
+          assertThat(movements.scheduled.inCount).isEqualTo(0)
+          assertThat(movements.unscheduled.outCount).isEqualTo(1)
+          assertThat(movements.unscheduled.inCount).isEqualTo(1)
+        }
+    }
+
+    @Nested
+    inner class CorruptScheduleType {
+      @AfterEach
+      fun `clear schedules`() {
+        // We need a special clean up here because we've changed the discriminator on the schedules so they're no longer TAPs
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              delete from OFFENDER_IND_SCHEDULES
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+      }
+
+      @Test
+      fun `scheduled movements point at a schedule that is not a TAP`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence {
+                  tempAbsence = externalMovement()
+                  scheduledTempAbsenceReturn = scheduledReturn {
+                    tempAbsenceReturn = externalMovement()
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          /*
+           * Corrupt the data by making the schedule a non-TAP
+           */
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_IND_SCHEDULES
+              set EVENT_TYPE = 'TRN'
+              where EVENT_ID in (${scheduledTempAbsence.eventId}, ${scheduledTempAbsenceReturn.eventId})
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        // Sync movement OUT is unscheduled
+        webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+          .apply {
+            assertThat(movementApplicationId).isNull()
+            assertThat(scheduledTemporaryAbsenceId).isNull()
+          }
+
+        // Sync movement IN is unscheduled
+        webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+          .apply {
+            assertThat(movementApplicationId).isNull()
+            assertThat(scheduledTemporaryAbsenceId).isNull()
+            assertThat(scheduledTemporaryAbsenceReturnId).isNull()
+          }
+
+        // Resync offender is same as for sync
+        webTestClient.getOffenderTemporaryAbsencesOk()
+          .apply {
+            assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(tempAbsence.id.sequence)
+            assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          }
+
+        // Reconciliation counts the movements as unscheduled
+        webTestClient.getOffenderSummaryOk(offender.nomsId)
+          .apply {
+            assertThat(movements.scheduled.outCount).isEqualTo(0)
+            assertThat(movements.scheduled.inCount).isEqualTo(0)
+            assertThat(movements.unscheduled.outCount).isEqualTo(1)
+            assertThat(movements.unscheduled.inCount).isEqualTo(1)
+          }
+      }
+    }
+
     private fun WebTestClient.getTemporaryAbsence(offenderNo: String = offender.nomsId, bookingId: Long = booking.bookingId, movementSeq: Int) = get()
       .uri("/movements/$offenderNo/temporary-absences/temporary-absence/$bookingId/$movementSeq")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))

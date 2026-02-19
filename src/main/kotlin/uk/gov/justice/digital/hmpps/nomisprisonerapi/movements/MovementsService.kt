@@ -401,6 +401,11 @@ class MovementsService(
     val temporaryAbsence = temporaryAbsenceRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSeq)
       ?: throw NotFoundException("Temporary absence with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
 
+    // Despite being non-nullable, Hibernate happily loads a null application if missing in NOMIS - if so then make the movement unscheduled
+    if (temporaryAbsence.scheduledTemporaryAbsence?.temporaryAbsenceApplication == null) {
+      temporaryAbsence.scheduledTemporaryAbsence = null
+    }
+
     return temporaryAbsence.toSingleResponse()
   }
 
@@ -449,6 +454,12 @@ class MovementsService(
 
     val temporaryAbsenceReturn = temporaryAbsenceReturnRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSeq)
       ?: throw NotFoundException("Temporary absence return with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
+
+    // Despite being non-nullable, Hibernate happily loads a null application if missing in NOMIS - if so then make the movement unscheduled
+    if (temporaryAbsenceReturn.scheduledTemporaryAbsence?.temporaryAbsenceApplication == null) {
+      temporaryAbsenceReturn.scheduledTemporaryAbsence = null
+      temporaryAbsenceReturn.scheduledTemporaryAbsenceReturn = null
+    }
 
     temporaryAbsenceReturn.unlinkWrongSchedules()
     return temporaryAbsenceReturn.toSingleResponse()
