@@ -623,9 +623,9 @@ class CourtSentencingService(
 
   private fun updateCourtIfNecessary(courtCase: CourtCase) {
     courtCase.courtEvents.maxWithOrNull(compareBy<CourtEvent> { it.eventDate }.thenBy { it.startTime })
-      ?.let { earliestEvent ->
-        if (courtCase.court != earliestEvent.court) {
-          courtCase.court = earliestEvent.court
+      ?.let { latestEvent ->
+        if (courtCase.court != latestEvent.court) {
+          courtCase.court = latestEvent.court
           courtCase.statusUpdateReason = courtCase.deriveStatusUpdateReason()
           // TODO find a way of not hardcoding this
           courtCase.statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API")
