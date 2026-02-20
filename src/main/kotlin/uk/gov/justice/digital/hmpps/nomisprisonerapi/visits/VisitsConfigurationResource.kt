@@ -334,6 +334,54 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     @Schema(description = "Visit slot id", example = "12345")
     visitSlotId: Long,
   ) = visitsConfigurationService.deleteVisitSlot(visitSlotId)
+
+  @DeleteMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a visit time slot",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visit time slot deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteVisitTimeSlot(
+    @PathVariable
+    @Schema(description = "Prison id", example = "MDI")
+    prisonId: String,
+    @PathVariable
+    @Schema(description = "Day of the week", example = "MON")
+    dayOfWeek: WeekDay,
+    @PathVariable
+    @Schema(description = "Time slot sequence", example = "1")
+    timeSlotSequence: Int,
+  ) = visitsConfigurationService.deleteVisitTimeSlot(
+    prisonId = prisonId,
+    dayOfWeek = dayOfWeek,
+    timeSlotSequence = timeSlotSequence,
+  )
 }
 
 data class VisitTimeSlotIdResponse(
