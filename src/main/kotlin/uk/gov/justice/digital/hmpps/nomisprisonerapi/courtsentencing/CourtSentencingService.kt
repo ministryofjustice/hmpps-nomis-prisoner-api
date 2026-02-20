@@ -595,6 +595,8 @@ class CourtSentencingService(
           )
         }
 
+        updateCourtIfNecessary(courtCase)
+
         return UpdateCourtAppearanceResponse(
           deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
             OffenderChargeIdResponse(

@@ -5354,6 +5354,35 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           isNull(),
         )
       }
+
+      @Test
+      fun `updating the latest appearance court will update the court associated with the case`() {
+        // update the latest appearance which should change the court on the case
+
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtId = "LEEDYC",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        // check the case again
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("courtId").isEqualTo("LEEDYC")
+      }
     }
 
     @AfterEach
