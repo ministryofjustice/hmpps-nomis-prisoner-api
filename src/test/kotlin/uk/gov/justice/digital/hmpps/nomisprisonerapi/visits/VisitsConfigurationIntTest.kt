@@ -674,6 +674,98 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("DELETE /visits/configuration/visit-slots/{visitSlotId}")
+  @Nested
+  inner class DeleteVisitSlot {
+    lateinit var room1: AgencyInternalLocation
+    var visitSlotId: Long = 0
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        room1 = agencyInternalLocation(
+          locationCode = "BXI-VISIT-1",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+          ) {
+            visitSlotId = visitSlot(
+              agencyInternalLocation = room1,
+              maxGroups = 5,
+              maxAdults = 10,
+            ).id
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyVisitSlotRepository.deleteAll()
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(room1)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/visits/configuration/visit-slots/$visitSlotId")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/visits/configuration/visit-slots/$visitSlotId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/visits/configuration/visit-slots/$visitSlotId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 204 if visit slot does not exist`() {
+        webTestClient.delete().uri("/visits/configuration/visit-slots/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete visit slot`() {
+        assertThat(agencyVisitSlotRepository.findByIdOrNull(visitSlotId)).isNotNull
+
+        webTestClient.delete().uri("/visits/configuration/visit-slots/$visitSlotId")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNoContent
+
+        assertThat(agencyVisitSlotRepository.findByIdOrNull(visitSlotId)).isNull()
+      }
+    }
+  }
+
   @DisplayName("GET /visits/configuration/time-slots/prison-id/{prisonId}")
   @Nested
   inner class GetPrisonVisitTimeSlots {

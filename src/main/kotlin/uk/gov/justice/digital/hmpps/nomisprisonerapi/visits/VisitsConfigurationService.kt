@@ -109,6 +109,11 @@ class VisitsConfigurationService(
     }.toVisitTimeSlotResponse()
   }
 
+  @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
+  fun deleteVisitSlot(visitSlotId: Long) {
+    agencyVisitSlotRepository.deleteById(visitSlotId)
+  }
+
   private fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId) ?: throw BadDataException("Prison $prisonId does not exist")
   private fun lookupInternalLocation(internalLocationId: Long): AgencyInternalLocation = agencyInternalLocationRepository.findByIdOrNull(internalLocationId) ?: throw BadDataException("Internal location $internalLocationId does not exist")
   private fun lookupTimeSlot(location: AgencyLocation, weekDay: WeekDay, timeSlotSequence: Int): AgencyVisitTime = agencyVisitTimeRepository.findByIdOrNull(
