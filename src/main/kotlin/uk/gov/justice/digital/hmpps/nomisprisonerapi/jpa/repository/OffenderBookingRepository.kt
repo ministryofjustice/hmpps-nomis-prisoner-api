@@ -67,6 +67,32 @@ interface OffenderBookingRepository :
   )
   fun findAllLatestActiveIdsFromId(bookingId: Long, pageSize: Int): List<BookingWithIds>
 
+  @Query(
+    """
+        select ROOT_OFFENDER_ID from (
+          select ROOT_OFFENDER_ID, rownum as seqnum from (
+            select distinct ROOT_OFFENDER_ID
+            from OFFENDER_BOOKINGS
+            where ACTIVE_FLAG = 'Y'
+            order by ROOT_OFFENDER_ID
+          )
+        ) where mod(seqnum, :pageSize) = 0;
+    """,
+    nativeQuery = true,
+  )
+  fun findAllActiveRootOffenderIds(pageSize: Int): List<Long>
+
+  @Query(
+    """
+    select distinct rootOffender.id
+     from OffenderBooking
+    where rootOffender.id > :fromRootOffenderId and rootOffender.id <= :toRootOffenderId
+      and active = true
+    order by rootOffender.id
+  """,
+  )
+  fun findActiveRootOffenderIdsBetweenId(fromRootOffenderId: Long, toRootOffenderId: Long): List<Long>
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
   @Query("from OffenderBooking ob join CourtCase cc on cc.offenderBooking.bookingId = ob.bookingId where cc.id = :caseId")

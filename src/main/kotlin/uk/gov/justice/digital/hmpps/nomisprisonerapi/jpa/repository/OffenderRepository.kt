@@ -113,6 +113,21 @@ interface OffenderRepository :
     nativeQuery = true,
   )
   fun findAllIdsFromId(offenderId: Long, pageSize: Int): List<PrisonerWithId>
+
+  @Query(
+    """
+        select ROOT_OFFENDER_ID from (
+          select ROOT_OFFENDER_ID, rownum as seqnum from (
+            select ROOT_OFFENDER_ID
+            from OFFENDERS
+            where ROOT_OFFENDER_ID = OFFENDER_ID
+            order by ROOT_OFFENDER_ID
+          )
+        ) where mod(seqnum, :pageSize) = 0;
+    """,
+    nativeQuery = true,
+  )
+  fun findAllRootOffenderIds(pageSize: Int): List<Long>
 }
 
 fun OffenderRepository.findLatestAliasByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()
