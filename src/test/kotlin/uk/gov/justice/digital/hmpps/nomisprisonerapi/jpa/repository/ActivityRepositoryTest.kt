@@ -101,7 +101,7 @@ class ActivityRepositoryTest {
 
     assertThat(persistedRecord.courseActivityId).isGreaterThan(0)
     assertThat(persistedRecord.code).isEqualTo("CA")
-    assertThat(persistedRecord.program?.programCode).isEqualTo("TESTPS")
+    assertThat(persistedRecord.program.programCode).isEqualTo("TESTPS")
     assertThat(persistedRecord.description).isEqualTo("test description")
     assertThat(persistedRecord.capacity).isEqualTo(23)
     assertThat(persistedRecord.active).isTrue()
@@ -117,7 +117,7 @@ class ActivityRepositoryTest {
     assertThat(persistedRecord.outsideWork).isFalse()
     assertThat(persistedRecord.payPerSession).isEqualTo(PayPerSession.F)
     val rate = persistedRecord.payRates.first()
-    assertThat(rate.id.courseActivity.courseActivityId).isEqualTo(persistedRecord?.courseActivityId)
+    assertThat(rate.id.courseActivity.courseActivityId).isEqualTo(persistedRecord.courseActivityId)
     assertThat(rate.id.iepLevelCode).isEqualTo("STD")
     assertThat(rate.id.payBandCode).isEqualTo("4")
     assertThat(rate.id.startDate).isEqualTo(LocalDate.parse("2022-12-01"))

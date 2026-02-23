@@ -99,7 +99,7 @@ internal class LocationServiceTest {
 
     @BeforeEach
     fun setup() {
-      whenever(agencyInternalLocationRepository.save(any())).thenAnswer {
+      whenever(agencyInternalLocationRepository.save(any<AgencyInternalLocation>())).thenAnswer {
         (it.arguments[0] as AgencyInternalLocation).copy(locationId = LOCATION_ID)
       }
     }
