@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.visits
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
-import org.hamcrest.Matchers
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -1674,24 +1673,22 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `get visit ids by prisons - Leeds`() {
-      val leedsVisitIds = offenderAtLeeds.latestBooking().visits.map { it.id.toInt() }.toTypedArray()
+      val leedsVisitIds = offenderAtLeeds.latestBooking().visits.map { it.id.toInt() }
       webTestClient.get().uri("/visits/ids?prisonIds=LEI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.numberOfElements").isEqualTo(2)
-        .jsonPath("$.content..visitId").value(
-          Matchers.contains(
-            *leedsVisitIds,
-          ),
-        )
+        .jsonPath("$.content..visitId").value<List<Int>> {
+          assertThat(it).containsExactlyInAnyOrderElementsOf(leedsVisitIds)
+        }
     }
 
     @Test
     fun `get visit by prison ID - Leeds and Brixton`() {
-      val brixtonVisitIds = offenderAtBrixton.latestBooking().visits.map { it.id.toInt() }.toTypedArray()
-      val leedsVisitIds = offenderAtLeeds.latestBooking().visits.map { it.id.toInt() }.toTypedArray()
+      val brixtonVisitIds = offenderAtBrixton.latestBooking().visits.map { it.id.toInt() }
+      val leedsVisitIds = offenderAtLeeds.latestBooking().visits.map { it.id.toInt() }
       webTestClient.get().uri {
         it.path("/visits/ids")
           .queryParam("prisonIds", "LEI")
@@ -1703,11 +1700,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.content..visitId").value(
-          Matchers.contains(
-            *brixtonVisitIds + leedsVisitIds,
-          ),
-        )
+        .jsonPath("$.content..visitId").value<List<Int>> {
+          assertThat(it).containsExactlyInAnyOrderElementsOf(brixtonVisitIds + leedsVisitIds)
+        }
     }
 
     @Test
@@ -1717,11 +1712,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.content..visitId").value(
-          Matchers.contains(
-            offenderAtBrixton.latestBooking().visits[0].id.toInt(),
-          ),
-        )
+        .jsonPath("$.content..visitId").value<List<Int>> {
+          assertThat(it).containsOnly(offenderAtBrixton.latestBooking().visits[0].id.toInt())
+        }
     }
 
     @Test
@@ -1747,12 +1740,12 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.content..visitId").value(
-          Matchers.contains(
+        .jsonPath("$.content..visitId").value<List<Int>> {
+          assertThat(it).containsOnly(
             offenderAtBrixton.latestBooking().visits[0].id.toInt(),
             offenderAtMoorlands.latestBooking().visits[0].id.toInt(),
-          ),
-        )
+          )
+        }
     }
 
     @Test
@@ -1767,13 +1760,13 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.content..visitId").value(
-          Matchers.contains(
+        .jsonPath("$.content..visitId").value<List<Int>> {
+          assertThat(it).containsOnly(
             offenderAtBrixton.latestBooking().visits[1].id.toInt(),
             offenderAtBrixton.latestBooking().visits[2].id.toInt(),
             offenderAtBrixton.latestBooking().visits[3].id.toInt(),
-          ),
-        )
+          )
+        }
     }
 
     @Test
@@ -1791,11 +1784,9 @@ class VisitResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.content..visitId").value(
-          Matchers.contains(
-            offenderAtMoorlands.latestBooking().visits[0].id.toInt(),
-          ),
-        )
+        .jsonPath("$.content..visitId").value<List<Int>> {
+          assertThat(it).containsOnly(offenderAtMoorlands.latestBooking().visits[0].id.toInt())
+        }
     }
 
     @Test

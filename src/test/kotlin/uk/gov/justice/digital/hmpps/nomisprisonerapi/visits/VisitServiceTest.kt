@@ -197,11 +197,11 @@ internal class VisitServiceTest {
     whenever(visitVisitorRepository.getEventId()).thenReturn(EVENT_ID)
     whenever(visitOrderRepository.getVisitOrderNumber()).thenReturn(VISIT_ORDER)
 
-    whenever(visitDayRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitDay }
-    whenever(visitTimeRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitTime }
-    whenever(visitSlotRepository.save(any())).thenAnswer { it.arguments[0] as AgencyVisitSlot }
-    whenever(internalLocationRepository.save(any())).thenAnswer { it.arguments[0] as AgencyInternalLocation }
-    whenever(visitRepository.save(any())).thenAnswer { (it.arguments[0] as Visit).copy(id = VISIT_ID) }
+    whenever(visitDayRepository.save(any<AgencyVisitDay>())).thenAnswer { it.arguments[0] }
+    whenever(visitTimeRepository.save(any<AgencyVisitTime>())).thenAnswer { it.arguments[0] }
+    whenever(visitSlotRepository.save(any<AgencyVisitSlot>())).thenAnswer { it.arguments[0] }
+    whenever(internalLocationRepository.save(any<AgencyInternalLocation>())).thenAnswer { it.arguments[0] }
+    whenever(visitRepository.save(any<Visit>())).thenAnswer { (it.arguments[0] as Visit).copy(id = VISIT_ID) }
     whenever(
       internalLocationRepository.findByAgencyIdAndActiveAndLocationCodeInAndParentLocationIsNull(
         eq(PRISON_ID),
@@ -361,7 +361,7 @@ internal class VisitServiceTest {
           ),
         )
 
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
@@ -378,7 +378,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `privilege balance decrement is saved correctly when available`() {
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
@@ -407,7 +407,7 @@ internal class VisitServiceTest {
           ),
         )
 
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
@@ -418,7 +418,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `privilege balance decrement is not saved if DPS in charge of allocation`() {
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
@@ -441,7 +441,7 @@ internal class VisitServiceTest {
           ),
         )
 
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -452,7 +452,7 @@ internal class VisitServiceTest {
     @Test
     fun `No visit order or balance adjustment is created when no balance record exists`() {
       defaultVisit.offenderBooking.visitBalance = null
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -462,7 +462,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visitor records are saved correctly`() {
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -480,7 +480,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `agency visit days are created if not found`() {
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
 
       visitService.createVisit(OFFENDER_NO, createVisitRequest)
 
@@ -542,7 +542,7 @@ internal class VisitServiceTest {
           ),
         )
 
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
       whenever(personRepository.findById(45)).thenAnswer {
         // child
@@ -580,7 +580,7 @@ internal class VisitServiceTest {
           ),
         )
 
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
       whenever(personRepository.findById(45)).thenAnswer {
         // child
@@ -618,7 +618,7 @@ internal class VisitServiceTest {
           ),
         )
 
-      whenever(visitRepository.save(any())).thenReturn(defaultVisit)
+      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
       whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
       whenever(personRepository.findById(45)).thenAnswer {
         // child

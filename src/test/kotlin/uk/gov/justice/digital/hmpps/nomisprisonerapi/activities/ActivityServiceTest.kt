@@ -127,7 +127,7 @@ class ActivityServiceTest {
         defaultProgramService,
       )
       whenever(agencyInternalLocationRepository.findById(ROOM_ID)).thenReturn(Optional.of(defaultRoom))
-      whenever(activityRepository.save(any())).thenAnswer {
+      whenever(activityRepository.save(any<CourseActivity>())).thenAnswer {
         returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
         returnedCourseActivity
       }
@@ -244,7 +244,7 @@ class ActivityServiceTest {
         Optional.of(defaultPrison),
       )
       whenever(agencyInternalLocationRepository.findById(ROOM_ID + 1)).thenReturn(Optional.of(defaultRoom.copy(locationId = ROOM_ID + 1)))
-      whenever(activityRepository.saveAndFlush(any())).thenAnswer {
+      whenever(activityRepository.saveAndFlush(any<CourseActivity>())).thenAnswer {
         returnedCourseActivity = (it.arguments[0] as CourseActivity).copy(courseActivityId = 1)
         returnedCourseActivity
       }

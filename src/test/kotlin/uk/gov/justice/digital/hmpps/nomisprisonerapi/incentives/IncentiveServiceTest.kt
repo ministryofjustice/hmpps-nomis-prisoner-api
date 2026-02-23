@@ -87,7 +87,7 @@ internal class IncentiveServiceTest {
     whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(
       Optional.of(AgencyLocation(PRISON_ID, "desc")),
     )
-    whenever(incentiveRepository.save(any())).thenAnswer {
+    whenever(incentiveRepository.save(any<Incentive>())).thenAnswer {
       (it.arguments[0] as Incentive).copy(id = IncentiveId(defaultOffenderBooking, 1))
     }
   }
@@ -164,7 +164,7 @@ internal class IncentiveServiceTest {
       whenever(incentivesCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL)).thenReturn(
         listOf(IEPLevel("AAA", "desc", true, 1)),
       )
-      whenever(incentivesCodeRepository.save(any())).thenReturn(IEPLevel("BIG", "desc"))
+      whenever(incentivesCodeRepository.save(any<IEPLevel>())).thenReturn(IEPLevel("BIG", "desc"))
       incentivesService.createGlobalIncentiveLevel(CreateGlobalIncentiveRequest("BIG", "desc", true))
 
       verify(incentivesCodeRepository).save(
@@ -183,7 +183,7 @@ internal class IncentiveServiceTest {
       whenever(incentivesCodeRepository.findAllByDomainOrderBySequenceAsc(IEPLevel.IEP_LEVEL)).thenReturn(
         emptyList(),
       )
-      whenever(incentivesCodeRepository.save(any())).thenReturn(IEPLevel("BIG", "desc"))
+      whenever(incentivesCodeRepository.save(any<IEPLevel>())).thenReturn(IEPLevel("BIG", "desc"))
 
       incentivesService.createGlobalIncentiveLevel(CreateGlobalIncentiveRequest("BIG", "desc", true))
       verify(incentivesCodeRepository).save(
@@ -270,8 +270,8 @@ internal class IncentiveServiceTest {
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
         Optional.empty(),
       )
-      whenever(prisonIncentiveLevelRepository.save(any())).thenReturn(getPrisonIncentiveLevel())
-      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+      whenever(prisonIncentiveLevelRepository.save(any<PrisonIepLevel>())).thenReturn(getPrisonIncentiveLevel())
+      whenever(visitAllowanceLevelRepository.save(any<VisitAllowanceLevel>())).thenReturn(getVisitAllowanceLevel())
       incentivesService.createPrisonIncentiveLevelData(
         "MDI",
         CreatePrisonIncentiveRequest(
@@ -323,8 +323,8 @@ internal class IncentiveServiceTest {
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
         Optional.empty(),
       )
-      whenever(prisonIncentiveLevelRepository.save(any())).thenReturn(getPrisonIncentiveLevel())
-      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+      whenever(prisonIncentiveLevelRepository.save(any<PrisonIepLevel>())).thenReturn(getPrisonIncentiveLevel())
+      whenever(visitAllowanceLevelRepository.save(any<VisitAllowanceLevel>())).thenReturn(getVisitAllowanceLevel())
       incentivesService.createPrisonIncentiveLevelData(
         "MDI",
         CreatePrisonIncentiveRequest(
@@ -375,7 +375,7 @@ internal class IncentiveServiceTest {
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
         Optional.empty(),
       )
-      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+      whenever(visitAllowanceLevelRepository.save(any<VisitAllowanceLevel>())).thenReturn(getVisitAllowanceLevel())
 
       val updatedResponse = incentivesService.updatePrisonIncentiveLevelData(
         "MDI",
@@ -411,8 +411,8 @@ internal class IncentiveServiceTest {
       whenever(visitAllowanceLevelRepository.findById(VisitAllowanceLevelId(prison, "NSTD"))).thenReturn(
         Optional.empty(),
       )
-      whenever(prisonIncentiveLevelRepository.save(any())).thenReturn(getPrisonIncentiveLevel())
-      whenever(visitAllowanceLevelRepository.save(any())).thenReturn(getVisitAllowanceLevel())
+      whenever(prisonIncentiveLevelRepository.save(any<PrisonIepLevel>())).thenReturn(getPrisonIncentiveLevel())
+      whenever(visitAllowanceLevelRepository.save(any<VisitAllowanceLevel>())).thenReturn(getVisitAllowanceLevel())
       incentivesService.createPrisonIncentiveLevelData(
         "MDI",
         CreatePrisonIncentiveRequest(
