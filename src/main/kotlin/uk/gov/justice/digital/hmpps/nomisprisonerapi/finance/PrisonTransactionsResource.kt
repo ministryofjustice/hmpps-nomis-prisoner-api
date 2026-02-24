@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -15,7 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
+import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -179,3 +183,48 @@ class PrisonTransactionsResource(
     entryDate: LocalDate = LocalDate.now(),
   ): List<GeneralLedgerTransactionDto> = transactionsService.getGeneralLedgerTransactionsForPrison(prisonId, entryDate)
 }
+
+@Schema(description = "The data held in NOMIS about a general ledger transaction")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class GeneralLedgerTransactionDto(
+  @Schema(description = "The transaction id", example = "12345678")
+  val transactionId: Long,
+
+  @Schema(description = "The sequence number", example = "3")
+  val transactionEntrySequence: Int,
+
+  @Schema(description = "The GL entry number", example = "2")
+  val generalLedgerEntrySequence: Int,
+
+  @Schema(description = "The caseload", example = "MDI")
+  val caseloadId: String,
+
+  @Schema(description = "The transaction amount", example = "2.14")
+  val amount: BigDecimal,
+
+  @Schema(description = "The transaction type defined in the TRANSACTION_TYPES table", example = "CANT")
+  val type: String,
+
+  @Schema(description = "Whether credit or debit")
+  val postingType: PostingType,
+
+  @Schema(description = "The account code", example = "21020")
+  val accountCode: Int,
+
+  @Schema(description = "A description of the transaction entry", example = "???")
+  val description: String,
+
+  @Schema(description = "When the transaction occurred", example = "2025-07-14T12:13:14")
+  val transactionTimestamp: LocalDateTime,
+
+  @Schema(description = "The transaction reference", example = "1423558449")
+  val reference: String?,
+
+  val createdAt: LocalDateTime,
+  val createdBy: String,
+  val createdByDisplayName: String,
+
+  val lastModifiedAt: LocalDateTime? = null,
+  val lastModifiedBy: String? = null,
+  val lastModifiedByDisplayName: String? = null,
+)
