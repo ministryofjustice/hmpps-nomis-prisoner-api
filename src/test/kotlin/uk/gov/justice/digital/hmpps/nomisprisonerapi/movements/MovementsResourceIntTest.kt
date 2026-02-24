@@ -175,6 +175,7 @@ class MovementsResourceIntTest(
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
+        .jsonPath("$.bookings[0].activeBooking").isEqualTo(true)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].eventSubType").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationDate").value<String> {
@@ -1204,6 +1205,7 @@ class MovementsResourceIntTest(
           val book = bookings.first()
           val application = book.temporaryAbsenceApplications.first()
           assertThat(book.bookingId).isEqualTo(mergedBooking.bookingId)
+          assertThat(book.activeBooking).isEqualTo(false)
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           assertThat(application.movementApplicationId).isEqualTo(mergedApplication.movementApplicationId)
           with(application.absences.first()) {
@@ -1241,6 +1243,7 @@ class MovementsResourceIntTest(
           val book = bookings[1]
           val application = book.temporaryAbsenceApplications.first()
           assertThat(book.bookingId).isEqualTo(booking.bookingId)
+          assertThat(book.activeBooking).isEqualTo(true)
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           assertThat(application.movementApplicationId).isEqualTo(application.movementApplicationId)
           with(application.absences[1]) {
@@ -1563,13 +1566,15 @@ class MovementsResourceIntTest(
   @Nested
   @DisplayName("GET /movements/{offenderNo}/temporary-absences/application/{applicationId}")
   inner class GetTemporaryAbsencesApplication {
+    private lateinit var inactiveBooking: OffenderBooking
+    private lateinit var inactiveBookingApplication: OffenderMovementApplication
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
-          booking = booking {
+          booking = booking(bookingSequence = 1) {
             application = temporaryAbsenceApplication(
               eventSubType = "C5",
               applicationDate = twoDaysAgo,
@@ -1599,6 +1604,11 @@ class MovementsResourceIntTest(
             }
             temporaryAbsence()
             temporaryAbsenceReturn()
+          }
+          inactiveBooking = booking(bookingSequence = 2) {
+            receive(twoDaysAgo)
+            inactiveBookingApplication = temporaryAbsenceApplication()
+            release(yesterday)
           }
         }
       }
@@ -1667,6 +1677,7 @@ class MovementsResourceIntTest(
         .expectBodyResponse<TemporaryAbsenceApplicationResponse>()
         .apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(activeBooking).isEqualTo(true)
           assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
           assertThat(eventSubType).isEqualTo("C5")
           assertThat(applicationDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -1689,6 +1700,24 @@ class MovementsResourceIntTest(
           assertThat(contactPersonName).isEqualTo("Derek")
           assertThat(temporaryAbsenceType).isEqualTo("RR")
           assertThat(temporaryAbsenceSubType).isEqualTo("RDR")
+        }
+    }
+
+    @Test
+    fun `should retrieve application on inactive booking`() {
+      webTestClient.get()
+        .uri(
+          "/movements/${offender.nomsId}/temporary-absences/application/{applicationId}",
+          inactiveBookingApplication.movementApplicationId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBodyResponse<TemporaryAbsenceApplicationResponse>()
+        .apply {
+          assertThat(bookingId).isEqualTo(inactiveBooking.bookingId)
+          assertThat(activeBooking).isEqualTo(false)
+          assertThat(movementApplicationId).isEqualTo(inactiveBookingApplication.movementApplicationId)
         }
     }
   }

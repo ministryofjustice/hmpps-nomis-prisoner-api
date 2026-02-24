@@ -114,16 +114,19 @@ class MovementsService(
     val unscheduledTemporaryAbsences = allTemporaryAbsences - movementApplications.temporaryAbsences()
     val unscheduledTemporaryAbsenceReturns = allTemporaryAbsenceReturns - movementApplications.temporaryAbsenceReturns()
 
-    val bookingIds = (
-      movementApplications.map { it.offenderBooking.bookingId } +
-        unscheduledTemporaryAbsences.map { it.offenderBooking.bookingId } +
-        unscheduledTemporaryAbsenceReturns.map { it.offenderBooking.bookingId }
+    data class Booking(val id: Long, val active: Boolean)
+
+    val bookings = (
+      movementApplications.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active) } +
+        unscheduledTemporaryAbsences.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active) } +
+        unscheduledTemporaryAbsenceReturns.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active) }
       ).toSet()
 
     return OffenderTemporaryAbsencesResponse(
-      bookings = bookingIds.map { bookingId ->
+      bookings = bookings.map { (bookingId, active) ->
         BookingTemporaryAbsences(
           bookingId = bookingId,
+          activeBooking = active,
           temporaryAbsenceApplications = movementApplications.filter { it.offenderBooking.bookingId == bookingId }
             .map { it.toResponse() },
           unscheduledTemporaryAbsences = unscheduledTemporaryAbsences.filter { it.offenderBooking.bookingId == bookingId }
@@ -876,6 +879,7 @@ class MovementsService(
 
   private fun OffenderMovementApplication.toSingleResponse() = TemporaryAbsenceApplicationResponse(
     bookingId = offenderBooking.bookingId,
+    activeBooking = offenderBooking.active,
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate.toLocalDate(),
