@@ -1566,13 +1566,15 @@ class MovementsResourceIntTest(
   @Nested
   @DisplayName("GET /movements/{offenderNo}/temporary-absences/application/{applicationId}")
   inner class GetTemporaryAbsencesApplication {
+    private lateinit var inactiveBooking: OffenderBooking
+    private lateinit var inactiveBookingApplication: OffenderMovementApplication
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
-          booking = booking {
+          booking = booking(bookingSequence = 1) {
             application = temporaryAbsenceApplication(
               eventSubType = "C5",
               applicationDate = twoDaysAgo,
@@ -1602,6 +1604,11 @@ class MovementsResourceIntTest(
             }
             temporaryAbsence()
             temporaryAbsenceReturn()
+          }
+          inactiveBooking = booking(bookingSequence = 2) {
+            receive(twoDaysAgo)
+            inactiveBookingApplication = temporaryAbsenceApplication()
+            release(yesterday)
           }
         }
       }
@@ -1670,6 +1677,7 @@ class MovementsResourceIntTest(
         .expectBodyResponse<TemporaryAbsenceApplicationResponse>()
         .apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(activeBooking).isEqualTo(true)
           assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
           assertThat(eventSubType).isEqualTo("C5")
           assertThat(applicationDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -1692,6 +1700,24 @@ class MovementsResourceIntTest(
           assertThat(contactPersonName).isEqualTo("Derek")
           assertThat(temporaryAbsenceType).isEqualTo("RR")
           assertThat(temporaryAbsenceSubType).isEqualTo("RDR")
+        }
+    }
+
+    @Test
+    fun `should retrieve application on inactive booking`() {
+      webTestClient.get()
+        .uri(
+          "/movements/${offender.nomsId}/temporary-absences/application/{applicationId}",
+          inactiveBookingApplication.movementApplicationId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBodyResponse<TemporaryAbsenceApplicationResponse>()
+        .apply {
+          assertThat(bookingId).isEqualTo(inactiveBooking.bookingId)
+          assertThat(activeBooking).isEqualTo(false)
+          assertThat(movementApplicationId).isEqualTo(inactiveBookingApplication.movementApplicationId)
         }
     }
   }

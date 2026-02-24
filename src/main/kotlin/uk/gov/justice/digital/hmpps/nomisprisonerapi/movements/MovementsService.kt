@@ -879,6 +879,7 @@ class MovementsService(
 
   private fun OffenderMovementApplication.toSingleResponse() = TemporaryAbsenceApplicationResponse(
     bookingId = offenderBooking.bookingId,
+    activeBooking = offenderBooking.active,
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate.toLocalDate(),

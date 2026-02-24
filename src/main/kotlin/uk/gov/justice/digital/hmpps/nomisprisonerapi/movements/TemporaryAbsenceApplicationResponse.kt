@@ -10,6 +10,9 @@ data class TemporaryAbsenceApplicationResponse(
   @Schema(description = "Booking ID")
   val bookingId: Long,
 
+  @Schema(description = "Whether this is an active booking")
+  val activeBooking: Boolean,
+
   @Schema(description = "Movement application ID")
   val movementApplicationId: Long,
 
