@@ -263,7 +263,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /transactions/from/{transactionId}/{transactionEntrySequence}/{generalLedgerEntrySequence}")
-  inner class GLTransactionsFromId {
+  inner class GLTransactionsFromIdAndSequence {
     @Nested
     inner class Security {
       @Test
@@ -392,7 +392,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /transactions/from/{transactionId}/{transactionEntrySequence}")
-  inner class OffenderTransactionsFromId {
+  inner class OffenderTransactionsFromIdAndSequence {
     @Nested
     inner class Security {
       @Test
@@ -482,6 +482,104 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBody()
           .json("[]")
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /transactions/from/{transactionId}")
+  inner class OffenderTransactionIdsFromIdOnDate {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/transactions/from/99")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/transactions/from/99?entryDate=2026-02-07")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/transactions/from/99?entryDate=2026-02-07")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+        }
+      }
+
+      @Test
+      fun getAll() {
+        webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}?entryDate=2025-08-11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(2)
+          .jsonPath("ids[0].transactionId").isEqualTo(transaction1.transactionId)
+          .jsonPath("ids[1].transactionId").isEqualTo(transaction2.transactionId)
+      }
+
+      @Test
+      fun `get transactions limited by pagesize`() {
+        webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}?size=1&entryDate=2025-08-11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(1)
+          .jsonPath("ids[0].transactionId").isEqualTo(transaction1.transactionId)
+      }
+
+      @Test
+      fun `get transactions when first id of the day`() {
+        webTestClient.get().uri("/transactions/from/0?size=1&entryDate=2025-08-11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(1)
+          .jsonPath("ids[0].transactionId").isEqualTo(transaction2.transactionId)
+      }
+
+      @Test
+      fun `get transactions when first id of the day but no matching transactions`() {
+        webTestClient.get().uri("/transactions/from/0?size=1&entryDate=2025-08-15")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(0)
+      }
+
+      @Test
+      fun `none found`() {
+        webTestClient.get().uri("/transactions/from/9999")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(0)
       }
     }
   }
