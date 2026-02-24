@@ -24,6 +24,9 @@ data class BookingTemporaryAbsences(
 
   @Schema(description = "Unscheduled temporary absences IN - those without an application or a schedule")
   val unscheduledTemporaryAbsenceReturns: List<TemporaryAbsenceReturn>,
+
+  @Schema(description = "Whether this is an active booking")
+  val activeBooking: Boolean,
 )
 
 @Schema(description = "Temporary absence application response")

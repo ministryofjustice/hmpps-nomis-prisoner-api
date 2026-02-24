@@ -175,6 +175,7 @@ class MovementsResourceIntTest(
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
+        .jsonPath("$.bookings[0].activeBooking").isEqualTo(true)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].eventSubType").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationDate").value<String> {
@@ -1204,6 +1205,7 @@ class MovementsResourceIntTest(
           val book = bookings.first()
           val application = book.temporaryAbsenceApplications.first()
           assertThat(book.bookingId).isEqualTo(mergedBooking.bookingId)
+          assertThat(book.activeBooking).isEqualTo(false)
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           assertThat(application.movementApplicationId).isEqualTo(mergedApplication.movementApplicationId)
           with(application.absences.first()) {
@@ -1241,6 +1243,7 @@ class MovementsResourceIntTest(
           val book = bookings[1]
           val application = book.temporaryAbsenceApplications.first()
           assertThat(book.bookingId).isEqualTo(booking.bookingId)
+          assertThat(book.activeBooking).isEqualTo(true)
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           assertThat(application.movementApplicationId).isEqualTo(application.movementApplicationId)
           with(application.absences[1]) {
