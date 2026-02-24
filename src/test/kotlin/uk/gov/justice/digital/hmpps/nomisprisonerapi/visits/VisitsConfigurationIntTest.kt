@@ -829,6 +829,144 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /visits/configuration/visit-slots/{visitSlotId}")
+  @Nested
+  inner class UpdateVisitSlot {
+    lateinit var room1: AgencyInternalLocation
+    lateinit var room2: AgencyInternalLocation
+    var visitSlotId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        room1 = agencyInternalLocation(
+          locationCode = "BXI-VISIT-1",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        room2 = agencyInternalLocation(
+          locationCode = "BXI-VISIT-2",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+            visitSlotId = visitSlot(
+              agencyInternalLocation = room1,
+              maxGroups = 5,
+              maxAdults = 10,
+            ).id
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(room1)
+      agencyInternalLocationRepository.delete(room2)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("visits/configuration/visit-slots/$visitSlotId")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(
+            UpdateVisitSlotRequest(
+              internalLocationId = room2.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("visits/configuration/visit-slots/$visitSlotId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .bodyValue(
+            UpdateVisitSlotRequest(
+              internalLocationId = room2.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("visits/configuration/visit-slots/$visitSlotId")
+          .bodyValue(
+            UpdateVisitSlotRequest(
+              internalLocationId = room2.locationId,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `400 error when invalid internal location id`() {
+        webTestClient.put().uri("visits/configuration/visit-slots/$visitSlotId")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            UpdateVisitSlotRequest(
+              internalLocationId = 999,
+              maxGroups = 5,
+              maxAdults = 10,
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Internal location 999 does not exist")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update visit slot`() {
+        webTestClient.put().uri("visits/configuration/visit-slots/$visitSlotId")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            UpdateVisitSlotRequest(
+              internalLocationId = room2.locationId,
+              maxGroups = 15,
+              maxAdults = 20,
+            ),
+          )
+          .exchange()
+          .expectStatus().isNoContent
+
+        with(agencyVisitSlotRepository.findByIdOrNull(visitSlotId)!!) {
+          assertThat(this.maxGroups).isEqualTo(15)
+          assertThat(this.maxAdults).isEqualTo(20)
+          assertThat(this.agencyInternalLocation.locationId).isEqualTo(room2.locationId)
+        }
+      }
+    }
+  }
+
   @DisplayName("DELETE /visits/configuration/visit-slots/{visitSlotId}")
   @Nested
   inner class DeleteVisitSlot {
