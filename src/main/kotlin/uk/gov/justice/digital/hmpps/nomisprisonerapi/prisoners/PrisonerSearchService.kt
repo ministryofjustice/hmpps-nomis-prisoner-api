@@ -11,11 +11,11 @@ class PrisonerSearchService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
 ) {
-  fun findAllPrisonerIds(active: Boolean, pageSize: Int): List<RootOffenderIdRange> = (
+  fun findRootOffenderIdRanges(active: Boolean, pageSize: Int): List<RootOffenderIdRange> = (
     if (active) {
-      bookingRepository.findAllActiveRootOffenderIds(pageSize)
+      bookingRepository.findEveryPageSizeActiveRootOffenderId(pageSize)
     } else {
-      offenderRepository.findAllRootOffenderIds(pageSize)
+      offenderRepository.findEveryPageSizeRootOffenderId(pageSize)
     } + Long.MAX_VALUE
     )
     .fold(Pair(0L, mutableListOf<RootOffenderIdRange>())) { acc, current ->
@@ -26,4 +26,10 @@ class PrisonerSearchService(
         },
       )
     }.second
+
+  fun findRootOffenderIds(active: Boolean, fromRootOffenderId: Long, toRootOffenderId: Long): List<Long> = if (active) {
+    bookingRepository.findActiveRootOffenderIdsBetweenId(fromRootOffenderId, toRootOffenderId)
+  } else {
+    offenderRepository.findRootOffenderIdsBetweenId(fromRootOffenderId, toRootOffenderId)
+  }
 }

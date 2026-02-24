@@ -58,7 +58,51 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
     @RequestParam(value = "size", defaultValue = "1000")
     @Parameter(description = "Number of prisoners to get")
     pageSize: Int,
-  ): List<RootOffenderIdRange> = prisonerSearchService.findAllPrisonerIds(active, pageSize)
+  ): List<RootOffenderIdRange> = prisonerSearchService.findRootOffenderIdRanges(active, pageSize)
+
+  @GetMapping("/prisoners/ids")
+  @Operation(
+    summary = "Gets every prisoner root offender id between range for prisoner search.",
+    description = """Returns a list of root offender ids greater than the specified fromRootOffenderId and less than or
+      equal to the specified toRootOffenderId.
+      Requires role NOMIS_PRISONER_API__PRISONER_SEARCH_R.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of root offender ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__PRISONER_SEARCH_R not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAllPrisonersIds(
+    @RequestParam(value = "active", required = true)
+    @Parameter(
+      description = "When true only return active prisoners currently in prison else all prisoners are returned.",
+    )
+    active: Boolean,
+    @RequestParam(value = "fromRootOffenderId", required = true)
+    @Parameter(description = "Return prisoners with root offender id greater than this value.")
+    fromRootOffenderId: Long,
+    @RequestParam(value = "toRootOffenderId", required = true)
+    @Parameter(description = "Return prisoners with root offender id less than or equal to this value.")
+    toRootOffenderId: Long,
+  ): List<Long> = prisonerSearchService.findRootOffenderIds(active, fromRootOffenderId, toRootOffenderId)
 }
 
 @Schema(description = "Root offender ID range.")

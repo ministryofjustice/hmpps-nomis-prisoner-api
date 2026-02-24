@@ -76,11 +76,11 @@ interface OffenderBookingRepository :
             where ACTIVE_FLAG = 'Y'
             order by ROOT_OFFENDER_ID
           )
-        ) where mod(seqnum, :pageSize) = 0;
+        ) where mod(seqnum, :pageSize) = 0
     """,
     nativeQuery = true,
   )
-  fun findAllActiveRootOffenderIds(pageSize: Int): List<Long>
+  fun findEveryPageSizeActiveRootOffenderId(pageSize: Int): List<Long>
 
   @Query(
     """
