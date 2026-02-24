@@ -32,11 +32,7 @@ interface OffenderTransactionRepository : JpaRepository<OffenderTransaction, Pk>
         (select distinct(ot.txn_id) as id
           from offender_transactions ot
           where 
-            ot.txn_id > case :prisonerTransactionId 
-                          when 0 
-                            then (select min(txn_id)-1 from gl_transactions where txn_entry_date = :entryDate) 
-                          else :prisonerTransactionId
-                        end
+            ot.txn_id > :prisonerTransactionId
             and ot.txn_id <= (select max(txn_id) from gl_transactions where txn_entry_date = :entryDate)
           order by ot.txn_id
         )
@@ -49,6 +45,22 @@ interface OffenderTransactionRepository : JpaRepository<OffenderTransaction, Pk>
     prisonerTransactionId: Long,
     pageSize: Int,
   ): List<PrisonerTransactionIdProjection>
+
+  @Query(
+    """
+      select * from 
+        (select distinct(ot.txn_id) as id
+          from offender_transactions ot
+          where 
+            ot.txn_id > :minTxnId
+            and ot.txn_id <= :maxTxnId
+          order by ot.txn_id
+        )
+      where rownum <= :pageSize
+  """,
+    nativeQuery = true,
+  )
+  fun findTransactionIdsBetween(minTxnId: Long, maxTxnId: Long, pageSize: Int): List<PrisonerTransactionIdProjection>
 }
 
 interface PrisonerTransactionIdProjection {

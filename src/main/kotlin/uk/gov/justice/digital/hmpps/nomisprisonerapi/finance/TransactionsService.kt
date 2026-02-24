@@ -24,7 +24,10 @@ class TransactionsService(
     .map(::mapGL)
 
   fun getGeneralLedgerTransactionsForPrison(prisonId: String, date: LocalDate): List<GeneralLedgerTransactionDto> {
-    val (minTxnId, maxTxnId) = generalLedgerTransactionRepository.findMinAndMaxTxnIdsByPrisonAndEntryDate(prisonId, date)
+    val (minTxnId, maxTxnId) = generalLedgerTransactionRepository.findMinAndMaxTxnIdsByPrisonAndEntryDate(
+      prisonId,
+      date,
+    )
 
     if (minTxnId == null || maxTxnId == null) return emptyList()
 
@@ -77,12 +80,15 @@ class TransactionsService(
     transactionId: Long,
     pageSize: Int,
     entryDate: LocalDate,
-  ): PrisonerTransactionIdsPage = offenderTransactionRepository.findAllPrisonerTransactionIdsWithDateFilter(
-    entryDate = entryDate,
-    prisonerTransactionId = transactionId,
-    pageSize = pageSize,
-  )
-    .map { PrisonerTransactionIdResponse(transactionId = it.id) }.let { PrisonerTransactionIdsPage(it) }
+  ): PrisonerTransactionIdsPage {
+    val (minTxnId, maxTxnId) = generalLedgerTransactionRepository.findMinAndMaxTxnIdsForEntryDate(entryDate)
+    if (minTxnId == null || maxTxnId == null) return PrisonerTransactionIdsPage(emptyList())
+
+    val transactionFrom = if (transactionId == 0L) minTxnId - 1 else transactionId
+
+    return offenderTransactionRepository.findTransactionIdsBetween(transactionFrom, maxTxnId, pageSize = pageSize)
+      .map { PrisonerTransactionIdResponse(transactionId = it.id) }.let { PrisonerTransactionIdsPage(it) }
+  }
 }
 
 private fun mapOT(transaction: OffenderTransaction): OffenderTransactionDto = OffenderTransactionDto(

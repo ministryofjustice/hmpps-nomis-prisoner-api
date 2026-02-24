@@ -26,7 +26,30 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
    """,
     nativeQuery = true,
   )
-  fun findMinAndMaxTxnIdsByPrisonAndEntryDate(prisonId: String, entryDate: LocalDate): Pair<BigDecimal?, BigDecimal?>
+  fun findMinAndMaxTxnIdsByPrisonAndEntryDateBigDecimals(prisonId: String, entryDate: LocalDate): Pair<BigDecimal?, BigDecimal?>
+
+  fun findMinAndMaxTxnIdsByPrisonAndEntryDate(prisonId: String, entryDate: LocalDate): Pair<Long?, Long?> {
+    val (minTxn, maxTxn) = findMinAndMaxTxnIdsByPrisonAndEntryDateBigDecimals(prisonId, entryDate)
+    return minTxn?.toLong() to maxTxn?.toLong()
+  }
+
+  @Query(
+    """
+    select min(txn_id) as minTxnId,
+           max(txn_id) as maxTxnId
+    from 
+        gl_transactions
+    where 
+        txn_entry_date = :entryDate
+   """,
+    nativeQuery = true,
+  )
+  fun findMinAndMaxTxnIdsForEntryDateBigDecimals(entryDate: LocalDate): Pair<BigDecimal?, BigDecimal?>
+
+  fun findMinAndMaxTxnIdsForEntryDate(entryDate: LocalDate): Pair<Long?, Long?> {
+    val (minTxn, maxTxn) = findMinAndMaxTxnIdsForEntryDateBigDecimals(entryDate)
+    return minTxn?.toLong() to maxTxn?.toLong()
+  }
 
   @Query(
     """
@@ -39,7 +62,7 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
     """,
     nativeQuery = true,
   )
-  fun findByTransactionsForPrisonBetween(prisonId: String, minTxnId: BigDecimal, maxTxnId: BigDecimal): List<GeneralLedgerTransaction>
+  fun findByTransactionsForPrisonBetween(prisonId: String, minTxnId: Long, maxTxnId: Long): List<GeneralLedgerTransaction>
 
   @Query(
     """
