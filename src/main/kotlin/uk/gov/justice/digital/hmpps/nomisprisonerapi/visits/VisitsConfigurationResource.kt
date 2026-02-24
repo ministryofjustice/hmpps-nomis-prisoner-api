@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -238,6 +239,55 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     createVisitTimeSlotRequest: CreateVisitTimeSlotRequest,
   ): VisitTimeSlotResponse = visitsConfigurationService.createVisitTimeSlot(prisonId, dayOfWeek, createVisitTimeSlotRequest)
 
+  @PutMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Updates a time slot",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visit updated",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_VISITS",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateVisitTimeSlot(
+    @PathVariable
+    prisonId: String,
+    @PathVariable
+    dayOfWeek: WeekDay,
+    @PathVariable
+    timeSlotSequence: Int,
+    @RequestBody
+    @Validated
+    updateVisitTimeSlotRequest: UpdateVisitTimeSlotRequest,
+  ) = visitsConfigurationService.updateVisitTimeSlot(
+    prisonId = prisonId,
+    dayOfWeek = dayOfWeek,
+    timeSlotSequence = timeSlotSequence,
+    request = updateVisitTimeSlotRequest,
+  )
+
   @PostMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -440,6 +490,20 @@ data class VisitSlotResponse(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateVisitTimeSlotRequest(
+  @Schema(description = "Slot start time", example = "10:00")
+  @JsonFormat(pattern = "HH:mm")
+  val startTime: LocalTime,
+  @Schema(description = "Slot end time", example = "11:00")
+  @JsonFormat(pattern = "HH:mm")
+  val endTime: LocalTime,
+  @Schema(description = "Date slot can first be used", example = "2022-09-01")
+  val effectiveDate: LocalDate,
+  @Schema(description = "Date slot can no longer be used", example = "2032-09-01")
+  val expiryDate: LocalDate?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateVisitTimeSlotRequest(
   @Schema(description = "Slot start time", example = "10:00")
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,

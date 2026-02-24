@@ -84,6 +84,18 @@ class VisitsConfigurationService(
   }
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
+  fun updateVisitTimeSlot(prisonId: String, dayOfWeek: WeekDay, timeSlotSequence: Int, request: UpdateVisitTimeSlotRequest) {
+    val timeSlot = agencyVisitTimeRepository.findByIdOrNull(AgencyVisitTimeId(lookupAgency(prisonId), dayOfWeek, timeSlotSequence)) ?: throw NotFoundException("Visit time slot $prisonId, $dayOfWeek, $timeSlotSequence does not exist")
+
+    with(timeSlot) {
+      startTime = request.startTime
+      endTime = request.endTime
+      effectiveDate = request.effectiveDate
+      expiryDate = request.expiryDate
+    }
+  }
+
+  @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun createVisitSlot(prisonId: String, dayOfWeek: WeekDay, timeSlotSequence: Int, request: CreateVisitSlotRequest): VisitSlotResponse {
     val location = lookupAgency(prisonId)
     val agencyInternalLocation = lookupInternalLocation(request.internalLocationId)
