@@ -457,6 +457,161 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("PUT /visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
+  @Nested
+  inner class UpdateVisitTimeSlot {
+    lateinit var room1: AgencyInternalLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        room1 = agencyInternalLocation(
+          locationCode = "BXI-VISIT-1",
+          locationType = "VISIT",
+          prisonId = "BXI",
+        )
+        agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+            visitSlot(
+              agencyInternalLocation = room1,
+              maxGroups = null,
+              maxAdults = null,
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(room1)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(
+            UpdateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(
+            UpdateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .bodyValue(
+            UpdateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if slot not found`() {
+        webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/99")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            UpdateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 400 if day of week in not valid is not valid`() {
+        webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/AUG/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            UpdateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update time slot`() {
+        webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            UpdateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:10"),
+              endTime = LocalTime.parse("11:10"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = LocalDate.parse("2032-09-01"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNoContent
+
+        val visitTimeSlot: VisitTimeSlotResponse = webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(visitTimeSlot.prisonId).isEqualTo("BXI")
+        assertThat(visitTimeSlot.startTime).isEqualTo(LocalTime.parse("10:10"))
+        assertThat(visitTimeSlot.endTime).isEqualTo(LocalTime.parse("11:10"))
+        assertThat(visitTimeSlot.effectiveDate).isEqualTo(LocalDate.parse("2022-09-01"))
+        assertThat(visitTimeSlot.expiryDate).isEqualTo(LocalDate.parse("2032-09-01"))
+        assertThat(visitTimeSlot.visitSlots).hasSize(1)
+      }
+    }
+  }
+
   @DisplayName("GET /visits/configuration/prisons")
   @Nested
   inner class GetActivePrisonsWithTimeSlots {

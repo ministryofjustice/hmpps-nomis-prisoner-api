@@ -27,16 +27,16 @@ data class AgencyVisitTime(
   var agencyVisitTimesId: AgencyVisitTimeId,
 
   @Column(name = "START_TIME", nullable = false)
-  val startTime: LocalTime,
+  var startTime: LocalTime,
 
   @Column(name = "END_TIME", nullable = false)
-  val endTime: LocalTime,
+  var endTime: LocalTime,
 
   @Column(nullable = false)
-  val effectiveDate: LocalDate,
+  var effectiveDate: LocalDate,
 
   @Column
-  val expiryDate: LocalDate?,
+  var expiryDate: LocalDate?,
 
   @OneToMany(mappedBy = "agencyVisitTime", cascade = [ALL], orphanRemoval = true)
   val visitSlots: MutableList<AgencyVisitSlot> = mutableListOf(),
