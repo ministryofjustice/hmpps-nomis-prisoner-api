@@ -20,12 +20,11 @@ import java.time.LocalDate
 @Service
 @Transactional(readOnly = true)
 class PrisonerService(
-  private val bookingRepository: OffenderBookingRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
-  private val offenderBookingRepository: OffenderBookingRepository,
 ) {
-  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> = bookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
+  fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> = offenderBookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
     .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
 
   fun findAllPrisonersWithBookings(pageRequest: Pageable): Page<PrisonerIds> = offenderRepository.findAllWithBookings(
@@ -45,15 +44,15 @@ class PrisonerService(
 
   fun findAllPrisonersFromId(offenderId: Long, pageSize: Int): PrisonerNosWithLast = offenderRepository.findAllIdsFromId(offenderId, pageSize).let {
     PrisonerNosWithLast(
-      it.map { PrisonerId(it.getPrisonerId()) },
+      it.map { prisoner -> PrisonerId(prisoner.getPrisonerId()) },
       it.lastOrNull()?.getOffenderId() ?: 0,
     )
   }
 
-  fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> = bookingRepository.findAllById(bookingIds)
+  fun findPrisonerDetails(bookingIds: List<Long>): List<PrisonerDetails> = offenderBookingRepository.findAllById(bookingIds)
     .map { it.toPrisonerDetails() }
 
-  fun findPrisonerDetails(offenderNo: String): PrisonerDetails = bookingRepository.findLatestByOffenderNomsId(offenderNo)?.toPrisonerDetails()
+  fun findPrisonerDetails(offenderNo: String): PrisonerDetails = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)?.toPrisonerDetails()
     ?: throw NotFoundException("No prisoner with offender $offenderNo found")
 
   fun findPrisonerMerges(offenderNo: String, fromDate: LocalDate?): List<MergeDetail> = mergeTransactionRepository.findByNomsIdAndAfterRequestDate(offenderNo, fromDate?.atStartOfDay())
