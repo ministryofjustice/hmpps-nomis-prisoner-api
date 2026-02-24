@@ -123,11 +123,21 @@ interface OffenderRepository :
             where ROOT_OFFENDER_ID = OFFENDER_ID
             order by ROOT_OFFENDER_ID
           )
-        ) where mod(seqnum, :pageSize) = 0;
+        ) where mod(seqnum, :pageSize) = 0
     """,
     nativeQuery = true,
   )
-  fun findAllRootOffenderIds(pageSize: Int): List<Long>
+  fun findEveryPageSizeRootOffenderId(pageSize: Int): List<Long>
+
+  @Query(
+    """
+    select distinct rootOffender.id
+     from Offender
+    where rootOffender.id > :fromRootOffenderId and rootOffender.id <= :toRootOffenderId
+    order by rootOffender.id
+  """,
+  )
+  fun findRootOffenderIdsBetweenId(fromRootOffenderId: Long, toRootOffenderId: Long): List<Long>
 }
 
 fun OffenderRepository.findLatestAliasByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()
