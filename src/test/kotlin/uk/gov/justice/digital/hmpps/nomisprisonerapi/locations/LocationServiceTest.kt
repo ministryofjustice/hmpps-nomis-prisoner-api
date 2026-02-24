@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -19,13 +18,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsage
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsageLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LivingUnitReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.InternalLocationUsageRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.util.Optional
 
@@ -39,7 +35,7 @@ internal class LocationServiceTest {
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val housingUnitTypeRepository: ReferenceCodeRepository<HousingUnitType> = mock()
   private val livingUnitReasonRepository: ReferenceCodeRepository<LivingUnitReason> = mock()
-  private val internalLocationUsageRepository: InternalLocationUsageRepository = mock()
+
   private val telemetryClient: TelemetryClient = mock()
 
   private val locationService = LocationService(
@@ -47,7 +43,6 @@ internal class LocationServiceTest {
     agencyLocationRepository,
     housingUnitTypeRepository,
     livingUnitReasonRepository,
-    internalLocationUsageRepository,
     telemetryClient,
   )
 
@@ -64,14 +59,6 @@ internal class LocationServiceTest {
     whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(
       Optional.of(agencyLocation),
     )
-    whenever(
-      internalLocationUsageRepository.findOneByAgency_IdAndInternalLocationUsage(
-        eq(PRISON_ID),
-        any(),
-      ),
-    ).thenAnswer {
-      return@thenAnswer InternalLocationUsage(99L, agencyLocation, it.arguments[1] as String)
-    }
   }
 
   @Nested
@@ -131,13 +118,6 @@ internal class LocationServiceTest {
 
           assertThat(it.profiles).extracting("id.profileType", "id.profileCode").containsExactly(
             tuple("HOU_SANI_FIT", "MOB"),
-          )
-          assertThat(it.usages).extracting(
-            "capacity",
-            "internalLocationUsage.internalLocationUsage",
-            "listSequence",
-          ).containsExactly(
-            tuple(12, "GENERAL", 1),
           )
         },
       )
@@ -200,22 +180,6 @@ internal class LocationServiceTest {
             this,
           ),
         )
-        usages.add(
-          InternalLocationUsageLocation(
-            internalLocationUsage = InternalLocationUsage(1L, this.agency, "OLD"),
-            agencyInternalLocation = this,
-            capacity = 12,
-            listSequence = 1,
-          ),
-        )
-        usages.add(
-          InternalLocationUsageLocation(
-            internalLocationUsage = InternalLocationUsage(2L, this.agency, "GENERAL"),
-            agencyInternalLocation = this,
-            capacity = 13,
-            listSequence = 2,
-          ),
-        )
       }
 
     @BeforeEach
@@ -237,45 +201,17 @@ internal class LocationServiceTest {
         tuple("HOU_SANI_FIT", "MOB"),
         tuple("HOU_SANI_ATT", "NEW"),
       )
-      assertThat(agencyInternalLocation.usages).extracting(
-        "capacity",
-        "internalLocationUsage.internalLocationUsage",
-        "listSequence",
-      ).containsExactly(
-        tuple(14, "GENERAL", 2),
-        tuple(15, "NEW", 3),
-      )
-    }
-
-    @Test
-    fun `invalid location usage code`() {
-      whenever(
-        internalLocationUsageRepository.findOneByAgency_IdAndInternalLocationUsage(PRISON_ID, "NEW"),
-      ).thenReturn(null)
-
-      assertThat(
-        assertThrows<BadDataException> { locationService.updateLocation(LOCATION_ID, updateRequest) }.message,
-      ).isEqualTo("Internal location usage with code=NEW at prison $PRISON_ID does not exist")
     }
 
     @Test
     fun `addition to lists`() {
       agencyInternalLocation.profiles.clear()
-      agencyInternalLocation.usages.clear()
 
       locationService.updateLocation(LOCATION_ID, updateRequest)
 
       assertThat(agencyInternalLocation.profiles).extracting("id.profileType", "id.profileCode").containsExactly(
         tuple("HOU_SANI_FIT", "MOB"),
         tuple("HOU_SANI_ATT", "NEW"),
-      )
-      assertThat(agencyInternalLocation.usages).extracting(
-        "capacity",
-        "internalLocationUsage.internalLocationUsage",
-        "listSequence",
-      ).containsExactly(
-        tuple(14, "GENERAL", 2),
-        tuple(15, "NEW", 3),
       )
     }
 
@@ -284,7 +220,6 @@ internal class LocationServiceTest {
       locationService.updateLocation(LOCATION_ID, updateRequest.copy(profiles = null, usages = null))
 
       assertThat(agencyInternalLocation.profiles).isEmpty()
-      assertThat(agencyInternalLocation.usages).isEmpty()
     }
   }
 }

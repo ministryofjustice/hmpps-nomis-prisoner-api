@@ -116,9 +116,6 @@ data class AgencyInternalLocation(
   val profiles: MutableList<AgencyInternalLocationProfile> = mutableListOf(),
 
   @OneToMany(mappedBy = "agencyInternalLocation", cascade = [CascadeType.ALL], orphanRemoval = true)
-  val usages: MutableList<InternalLocationUsageLocation> = mutableListOf(),
-
-  @OneToMany(mappedBy = "agencyInternalLocation", cascade = [CascadeType.ALL], orphanRemoval = true)
   val amendments: MutableList<AgencyInternalLocationAmendment> = mutableListOf(),
 
 ) {

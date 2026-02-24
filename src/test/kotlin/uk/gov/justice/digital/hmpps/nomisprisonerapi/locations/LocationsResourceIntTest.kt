@@ -255,15 +255,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           assertThat(this[1].id.profileType).isEqualTo("SUP_LVL_TYPE")
           assertThat(this[1].id.profileCode).isEqualTo("EL")
         }
-        with(usages) {
-          assertThat(this).hasSize(2)
-          assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
-          assertThat(this[0].capacity).isEqualTo(41)
-          assertThat(this[0].listSequence).isEqualTo(2)
-          assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
-          assertThat(this[1].capacity).isEqualTo(42)
-          assertThat(this[1].listSequence).isEqualTo(3)
-        }
       }
     }
 
@@ -334,7 +325,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           comment = "this is an UPDATE test!",
         ) {
           attributes("HOU_UNIT_ATT", "OTH")
-          usages(-3L, 41, "APP")
         }
       }
     }
@@ -453,15 +443,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           assertThat(this[0].id.profileCode).isEqualTo("NSMC")
           assertThat(this[1].id.profileType).isEqualTo("SUP_LVL_TYPE")
           assertThat(this[1].id.profileCode).isEqualTo("EL")
-        }
-        with(usages) {
-          assertThat(this).hasSize(2)
-          assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
-          assertThat(this[0].capacity).isEqualTo(41)
-          assertThat(this[0].listSequence).isEqualTo(2)
-          assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
-          assertThat(this[1].capacity).isEqualTo(42)
-          assertThat(this[1].listSequence).isEqualTo(3)
         }
       }
     }
@@ -842,7 +823,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           reactivationDate = LocalDate.parse("2024-01-02"),
         ) {
           attributes("HOU_UNIT_ATT", "OTH")
-          usages(-3L, 41, "MEDI", 2)
           amendments(
             amendDateTime = LocalDateTime.parse("2024-01-02T10:15:30"),
             columnName = "CAPACITY",
@@ -895,9 +875,6 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .jsonPath("$.tracking").isEqualTo(false)
         .jsonPath("$.profiles[0].profileType").isEqualTo("HOU_UNIT_ATT")
         .jsonPath("$.profiles[0].profileCode").isEqualTo("OTH")
-        .jsonPath("$.usages[0].capacity").isEqualTo(41)
-        .jsonPath("$.usages[0].sequence").isEqualTo(2)
-        .jsonPath("$.usages[0].internalLocationUsageType").isEqualTo("MOVEMENT")
         .jsonPath("$.amendments[0].amendDateTime").isEqualTo("2024-01-02T10:15:30")
         .jsonPath("$.amendments[0].columnName").isEqualTo("CAPACITY")
         .jsonPath("$.amendments[0].oldValue").isEqualTo("4")

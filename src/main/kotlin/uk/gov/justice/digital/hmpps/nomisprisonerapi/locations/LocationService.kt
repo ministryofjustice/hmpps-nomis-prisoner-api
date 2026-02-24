@@ -14,11 +14,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocationProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationUsageLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LivingUnitReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.InternalLocationUsageRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 
@@ -29,7 +27,6 @@ class LocationService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val housingUnitTypeRepository: ReferenceCodeRepository<HousingUnitType>,
   private val livingUnitReasonRepository: ReferenceCodeRepository<LivingUnitReason>,
-  private val internalLocationUsageRepository: InternalLocationUsageRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   companion object {
@@ -55,7 +52,6 @@ class LocationService(
         locationDto.toAgencyInternalLocation(locationDto.locationType, housingUnitType, agency, parent),
       ).also {
         saveProfiles(it, locationDto.profiles)
-        saveUsages(it, locationDto.usages)
 
         telemetryClient.trackEvent(
           "location-created",
@@ -98,7 +94,6 @@ class LocationService(
       // DPS needs to do some work to ensure an amend event is raised for all deactivate / reactivate scenarios before this can happen.
 
       saveProfiles(this, locationDto.profiles)
-      saveUsages(this, locationDto.usages)
     }.also {
       telemetryClient.trackEvent(
         "location-updated",
@@ -241,50 +236,11 @@ class LocationService(
     }
   }
 
-  private fun saveUsages(
-    agencyInternalLocation: AgencyInternalLocation,
-    usages: List<UsageRequest>?,
-  ) {
-    agencyInternalLocation.usages.removeIf { usage ->
-      usages == null ||
-        usages.none {
-          it.internalLocationUsageType == usage.internalLocationUsage.internalLocationUsage
-        }
-    }
-    usages?.forEach { usageRequest ->
-      val usage = findExistingUsage(agencyInternalLocation, usageRequest)
-      if (usage == null) {
-        agencyInternalLocation.usages.add(
-          InternalLocationUsageLocation(
-            internalLocationUsage = internalLocationUsageRepository.findOneByAgency_IdAndInternalLocationUsage(
-              agencyInternalLocation.agency.id,
-              usageRequest.internalLocationUsageType,
-            )
-              ?: throw BadDataException("Internal location usage with code=${usageRequest.internalLocationUsageType} at prison ${agencyInternalLocation.agency.id} does not exist"),
-            capacity = usageRequest.capacity,
-            listSequence = usageRequest.sequence,
-            agencyInternalLocation = agencyInternalLocation,
-          ),
-        )
-      } else {
-        usage.capacity = usageRequest.capacity
-        usage.listSequence = usageRequest.sequence
-      }
-    }
-  }
-
   private fun findExistingProfile(
     agencyInternalLocation: AgencyInternalLocation,
     profileRequest: ProfileRequest,
   ): AgencyInternalLocationProfile? = agencyInternalLocation.profiles.find {
     it.id.profileType == profileRequest.profileType && it.id.profileCode == profileRequest.profileCode
-  }
-
-  private fun findExistingUsage(
-    agencyInternalLocation: AgencyInternalLocation,
-    usageRequest: UsageRequest,
-  ): InternalLocationUsageLocation? = agencyInternalLocation.usages.find {
-    it.internalLocationUsage.internalLocationUsage == usageRequest.internalLocationUsageType
   }
 
   private fun AgencyInternalLocation.toLocationResponse(): LocationResponse = LocationResponse(
@@ -309,7 +265,6 @@ class LocationService(
     reasonCode = deactivateReason?.code,
     tracking = tracking,
     profiles = profiles.map { toProfileResponse(it.id) },
-    usages = usages.map { toUsageResponse(it) },
     amendments = amendments.map { toAmendmentResponse(it) },
     createDatetime = createDatetime,
     createUsername = createUsername,
@@ -319,12 +274,6 @@ class LocationService(
   private fun toProfileResponse(id: AgencyInternalLocationProfileId) = ProfileRequest(
     profileType = id.profileType,
     profileCode = id.profileCode,
-  )
-
-  private fun toUsageResponse(usage: InternalLocationUsageLocation) = UsageRequest(
-    internalLocationUsageType = usage.internalLocationUsage.internalLocationUsage,
-    capacity = usage.capacity,
-    sequence = usage.listSequence,
   )
 
   private fun toAmendmentResponse(it: AgencyInternalLocationAmendment) = AmendmentResponse(

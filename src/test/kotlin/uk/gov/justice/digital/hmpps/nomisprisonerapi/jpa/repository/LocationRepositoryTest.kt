@@ -55,11 +55,6 @@ class LocationRepositoryTest {
           profileType = "HOU_SANI_FIT",
           profileCode = "MOB",
         )
-        usages(
-          internalLocationUsage = -2,
-          capacity = 12,
-          usageLocationType = "CELL",
-        )
       }
     }
     val agencyInternalLocation = repository.findById(location1.locationId).orElseThrow()
@@ -72,9 +67,6 @@ class LocationRepositoryTest {
       assertThat(active).isFalse
       assertThat(profiles).extracting("id.profileType", "id.profileCode").containsExactly(
         Tuple("HOU_SANI_FIT", "MOB"),
-      )
-      assertThat(usages).extracting("usageLocationType.code", "capacity").containsExactly(
-        Tuple("CELL", 12),
       )
     }
 

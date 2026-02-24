@@ -206,7 +206,6 @@ class Repository(
 
   fun lookupAgencyInternalLocation(locationId: Long): AgencyInternalLocation? = agencyInternalLocationRepository.findByIdOrNull(locationId).also {
     it?.profiles?.size // hydrate
-    it?.usages?.map { m -> m.toString() }
   }
 
   fun lookupPayBandCode(code: String): PayBand = payBandRepository.findByIdOrNull(PayBand.pk(code))!!
