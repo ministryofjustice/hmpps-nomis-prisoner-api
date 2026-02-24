@@ -385,6 +385,47 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
     visitSlotId: Long,
   ) = visitsConfigurationService.deleteVisitSlot(visitSlotId)
 
+  @PutMapping("/visits/configuration/visit-slots/{visitSlotId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Updates a visit slot",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visit slot update",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateVisitSlot(
+    @PathVariable
+    @Schema(description = "Visit slot id", example = "12345")
+    visitSlotId: Long,
+    @RequestBody
+    @Validated
+    updateVisitSlotRequest: UpdateVisitSlotRequest,
+  ) = visitsConfigurationService.updateVisitSlot(visitSlotId, updateVisitSlotRequest)
+
   @DeleteMapping("/visits/configuration/time-slots/prison-id/{prisonId}/day-of-week/{dayOfWeek}/time-slot-sequence/{timeSlotSequence}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
@@ -518,6 +559,16 @@ data class UpdateVisitTimeSlotRequest(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateVisitSlotRequest(
+  @Schema(description = "Internal location room id", example = "1913")
+  val internalLocationId: Long,
+  @Schema(description = "Optional max groups allowed in slot", example = "1")
+  val maxGroups: Int?,
+  @Schema(description = "Optional max adults allowed in slot", example = "1")
+  val maxAdults: Int?,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateVisitSlotRequest(
   @Schema(description = "Internal location room id", example = "1913")
   val internalLocationId: Long,
   @Schema(description = "Optional max groups allowed in slot", example = "1")

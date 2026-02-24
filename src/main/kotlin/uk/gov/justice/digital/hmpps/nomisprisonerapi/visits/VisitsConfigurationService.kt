@@ -122,6 +122,18 @@ class VisitsConfigurationService(
   }
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
+  fun updateVisitSlot(visitSlotId: Long, request: UpdateVisitSlotRequest) {
+    val visitSlot = agencyVisitSlotRepository.findByIdOrNull(visitSlotId) ?: throw NotFoundException("Visit slot $visitSlotId does not exist")
+    val agencyInternalLocation = lookupInternalLocation(request.internalLocationId)
+
+    with(visitSlot) {
+      this.agencyInternalLocation = agencyInternalLocation
+      maxGroups = request.maxGroups
+      maxAdults = request.maxAdults
+    }
+  }
+
+  @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun deleteVisitSlot(visitSlotId: Long) {
     agencyVisitSlotRepository.deleteById(visitSlotId)
   }
