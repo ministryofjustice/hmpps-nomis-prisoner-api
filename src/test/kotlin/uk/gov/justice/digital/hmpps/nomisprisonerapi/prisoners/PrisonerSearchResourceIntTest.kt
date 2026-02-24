@@ -249,7 +249,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return list of all root offender ids ordered by rootOffenderId ASC`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=1000")
+        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
@@ -263,7 +263,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return list of all active root offender ids ordered by rootOffenderId ASC`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=1000")
+        webTestClient.get().uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
