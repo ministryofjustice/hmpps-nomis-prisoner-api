@@ -84,14 +84,13 @@ interface OffenderBookingRepository :
 
   @Query(
     """
-    select distinct rootOffender.id
+    select distinct rootOffender.nomsId
      from OffenderBooking
     where rootOffender.id > :fromRootOffenderId and rootOffender.id <= :toRootOffenderId
       and active = true
-    order by rootOffender.id
   """,
   )
-  fun findActiveRootOffenderIdsBetweenId(fromRootOffenderId: Long, toRootOffenderId: Long): List<Long>
+  fun findActivePrisonNumbersBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long): List<String>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])

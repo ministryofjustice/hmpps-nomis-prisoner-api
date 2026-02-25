@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -153,7 +154,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /search/prisoners/ids")
-  inner class GetAllPrisonersIds {
+  inner class GetAllPrisonersInRange {
     @Nested
     inner class Security {
       @Test
@@ -217,71 +218,77 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      private var activePrisoner1: Long = 0
-      private var activePrisoner2: Long = 0
-      private var inactivePrisoner1: Long = 0
-      private var prisoner4: Long = 0
+      private lateinit var activePrisoner1: String
+      private var activePrisoner1Id: Long = 0
+      private lateinit var activePrisoner2: String
+      private lateinit var inactivePrisoner1: String
+      private lateinit var prisoner4: String
 
       @BeforeEach
       internal fun createPrisoners() {
         nomisDataBuilder.build {
-          activePrisoner1 = offender(nomsId = "A1234TT") {
+          offender(nomsId = "A1234TT") {
             booking {}
             booking {
               release()
             }
-          }.rootOffenderId!!
+          }.also {
+            activePrisoner1 = it.nomsId
+            activePrisoner1Id = it.rootOffenderId!!
+          }
           activePrisoner2 = offender(nomsId = "A1234SS") {
             alias(lastName = "SMITH")
             alias {
               booking {}
             }
-          }.rootOffenderId!!
+          }.nomsId
           inactivePrisoner1 = offender(nomsId = "A1234WW") {
             alias()
             booking {
               release()
             }
-          }.rootOffenderId!!
-          prisoner4 = offender(nomsId = "A1234YY").rootOffenderId!!
+          }.nomsId
+          prisoner4 = offender(nomsId = "A1234YY").nomsId
         }
       }
 
       @Test
-      fun `will return list of all root offender ids ordered by rootOffenderId ASC`() {
+      fun `will return list of all root offender ids`() {
         webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(4)
-          .jsonPath("$.[0]").isEqualTo(activePrisoner1)
-          .jsonPath("$.[1]").isEqualTo(activePrisoner2)
-          .jsonPath("$.[2]").isEqualTo(inactivePrisoner1)
-          .jsonPath("$.[3]").isEqualTo(prisoner4)
+          .jsonPath("$").value<List<String>> {
+            assertThat(it).containsOnly(activePrisoner1, activePrisoner2, inactivePrisoner1, prisoner4)
+          }
       }
 
       @Test
-      fun `will return list of all active root offender ids ordered by rootOffenderId ASC`() {
+      fun `will return list of all active root offender ids`() {
         webTestClient.get().uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(2)
-          .jsonPath("$.[0]").isEqualTo(activePrisoner1)
-          .jsonPath("$.[1]").isEqualTo(activePrisoner2)
+          .jsonPath("$").value<List<String>> {
+            assertThat(it).containsOnly(activePrisoner1, activePrisoner2)
+          }
       }
 
       @Test
-      fun `will return specified list of root offender ids ordered by rootOffenderId ASC`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=$activePrisoner1")
+      fun `will return specified list of root offender ids`() {
+        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=$activePrisoner1Id")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(1)
-          .jsonPath("$.[0]").isEqualTo(activePrisoner1)
+          .jsonPath("$").value<List<String>> {
+            assertThat(it).containsOnly(activePrisoner1)
+          }
       }
     }
   }

@@ -131,13 +131,12 @@ interface OffenderRepository :
 
   @Query(
     """
-    select distinct rootOffender.id
+    select distinct nomsId
      from Offender
     where rootOffender.id > :fromRootOffenderId and rootOffender.id <= :toRootOffenderId
-    order by rootOffender.id
   """,
   )
-  fun findRootOffenderIdsBetweenId(fromRootOffenderId: Long, toRootOffenderId: Long): List<Long>
+  fun findPrisonNumbersBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long): List<String>
 }
 
 fun OffenderRepository.findLatestAliasByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()
