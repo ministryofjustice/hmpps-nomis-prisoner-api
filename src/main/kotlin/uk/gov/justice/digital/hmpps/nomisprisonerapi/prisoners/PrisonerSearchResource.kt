@@ -62,12 +62,12 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
 
   @GetMapping("/prisoners/ids")
   @Operation(
-    summary = "Gets every prisoner root offender id between range for prisoner search.",
-    description = """Returns a list of root offender ids greater than the specified fromRootOffenderId and less than or
-      equal to the specified toRootOffenderId.
+    summary = "Gets every prison number between range for prisoner search.",
+    description = """Returns a list of prison numbers for root offender ids greater than the specified
+      fromRootOffenderId and less than or equal to the specified toRootOffenderId.
       Requires role NOMIS_PRISONER_API__PRISONER_SEARCH_R.""",
     responses = [
-      ApiResponse(responseCode = "200", description = "list of root offender ids"),
+      ApiResponse(responseCode = "200", description = "list of prison numbers"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
@@ -90,7 +90,7 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
       ),
     ],
   )
-  fun getAllPrisonersIds(
+  fun getAllPrisonersInRange(
     @RequestParam(value = "active", required = true)
     @Parameter(
       description = "When true only return active prisoners currently in prison else all prisoners are returned.",
@@ -102,7 +102,7 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
     @RequestParam(value = "toRootOffenderId", required = true)
     @Parameter(description = "Return prisoners with root offender id less than or equal to this value.")
     toRootOffenderId: Long,
-  ): List<Long> = prisonerSearchService.findRootOffenderIds(active, fromRootOffenderId, toRootOffenderId)
+  ): List<String> = prisonerSearchService.findPrisonNumbersInRange(active, fromRootOffenderId, toRootOffenderId)
 }
 
 @Schema(description = "Root offender ID range.")

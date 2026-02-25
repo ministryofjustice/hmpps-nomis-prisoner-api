@@ -27,9 +27,9 @@ class PrisonerSearchService(
       )
     }.second
 
-  fun findRootOffenderIds(active: Boolean, fromRootOffenderId: Long, toRootOffenderId: Long): List<Long> = if (active) {
-    bookingRepository.findActiveRootOffenderIdsBetweenId(fromRootOffenderId, toRootOffenderId)
+  fun findPrisonNumbersInRange(active: Boolean, fromRootOffenderId: Long, toRootOffenderId: Long): List<String> = if (active) {
+    bookingRepository.findActivePrisonNumbersBetweenIds(fromRootOffenderId, toRootOffenderId)
   } else {
-    offenderRepository.findRootOffenderIdsBetweenId(fromRootOffenderId, toRootOffenderId)
+    offenderRepository.findPrisonNumbersBetweenIds(fromRootOffenderId, toRootOffenderId)
   }
 }
