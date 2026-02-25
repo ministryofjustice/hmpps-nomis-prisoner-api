@@ -288,6 +288,49 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     offenderNo = offenderNo,
     request = request,
   )
+
+  @PostMapping("/official-visits/{visitId}/official-visitor")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an official visit for a visit",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Visitor details created",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createOfficialVisitor(
+    @PathVariable
+    visitId: Long,
+    @Validated
+    @RequestBody
+    request: CreateOfficialVisitorRequest,
+  ): OfficialVisitResponse.OfficialVisitor = officialVisitsService.createVisitorForVisit(
+    visitId = visitId,
+    request = request,
+  )
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -411,4 +454,18 @@ data class CreateOfficialVisitRequest(
   val commentText: String? = null,
   @Schema(description = "A username associated with the staff user who override ban")
   val overrideBanStaffUsername: String? = null,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateOfficialVisitorRequest(
+  @Schema(description = "visitor NOMIS person Id")
+  val personId: Long,
+  @Schema(description = "Indicates lead visitor for the visit")
+  val leadVisitor: Boolean? = null,
+  @Schema(description = "Indicates visitor requires assistance")
+  val assistedVisit: Boolean? = null,
+  @Schema(description = "The status of visitor, Attended or Absent")
+  val visitorAttendanceOutcomeCode: String? = null,
+  @Schema(description = "Visitor comments")
+  val commentText: String? = null,
 )
