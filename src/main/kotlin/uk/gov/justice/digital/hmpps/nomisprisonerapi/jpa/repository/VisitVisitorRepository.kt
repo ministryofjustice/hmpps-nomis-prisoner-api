@@ -2,15 +2,15 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import jakarta.persistence.LockModeType
 import jakarta.persistence.QueryHint
+import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.QueryHints
-import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
 
 @Repository
-interface VisitVisitorRepository : CrudRepository<VisitVisitor, Long> {
+interface VisitVisitorRepository : JpaRepository<VisitVisitor, Long> {
   @Query(value = "SELECT EVENT_ID.nextval FROM dual d", nativeQuery = true)
   fun getEventId(): Long
 

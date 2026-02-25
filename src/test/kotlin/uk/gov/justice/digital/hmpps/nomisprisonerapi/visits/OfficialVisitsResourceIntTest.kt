@@ -25,12 +25,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-class OfficialVisitsResourceIntTest : IntegrationTestBase() {
+class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepository: VisitVisitorRepository) : IntegrationTestBase() {
   @Autowired
   private lateinit var nomisDataBuilder: NomisDataBuilder
 
@@ -1309,6 +1310,203 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.size()").isEqualTo(2)
+      }
+    }
+  }
+
+  @DisplayName("POST /official-visits/{visitId}/official-visitor")
+  @Nested
+  inner class CreateOfficialVisitor {
+    lateinit var visitHall: AgencyInternalLocation
+    lateinit var visitSlot: AgencyVisitSlot
+    val prisonId = "BXI"
+    private lateinit var personContact: Person
+    private lateinit var contact: OffenderContactPerson
+    private var latestBookingId = 0L
+    private val offenderNo = "A1234KT"
+    private var officialVisitId = 0L
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+        }
+
+        visitHall = agencyInternalLocation(
+          locationCode = "$prisonId-VISIT-1",
+          locationType = "VISIT",
+          prisonId = prisonId,
+        )
+        agencyVisitDay(prisonerId = prisonId, weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+            visitSlot = visitSlot(
+              agencyInternalLocation = visitHall,
+              maxGroups = 10,
+              maxAdults = 20,
+            )
+          }
+        }
+
+        personContact = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = offenderNo) {
+          latestBookingId = booking {
+            contact = contact(
+              person = personContact,
+              contactType = "O",
+              relationshipType = "DR",
+            )
+            officialVisitId = officialVisit(
+              visitDate = LocalDate.parse("2023-01-01"),
+              visitSlot = visitSlot,
+              visitStatusCode = "SCH",
+            ) {
+              visitOutcome(
+                eventOutcomeCode = "ATT",
+                eventStatusCode = "SCH",
+                outcomeReasonCode = null,
+              )
+            }.id
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(visitHall)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = personContact.id,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = personContact.id,
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = personContact.id,
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `when visit not found`() {
+        webTestClient.post().uri("/official-visits/{visitId}/official-visitor", 999)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = personContact.id,
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `when person is not valid`() {
+        webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = 9999,
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Person with id 9999 not found")
+      }
+
+      @Test
+      fun `when attendance status is not valid`() {
+        webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = personContact.id,
+              visitorAttendanceOutcomeCode = "ZZZ",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Event Outcome code ZZZ does not exist")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create visitor`() {
+        val createdVisitor: OfficialVisitResponse.OfficialVisitor =
+          webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .bodyValue(
+              CreateOfficialVisitorRequest(
+                personId = personContact.id,
+                visitorAttendanceOutcomeCode = "ATT",
+                assistedVisit = true,
+                commentText = "First visit",
+              ),
+            )
+            .exchange()
+            .expectBodyResponse()
+
+        assertThat(createdVisitor.id).isNotNull()
+        nomisDataBuilder.runInTransaction {
+          with(visitVisitorRepository.findByIdOrNull(createdVisitor.id)!!) {
+            assertThat(this.person!!.id).isEqualTo(personContact.id)
+            assertThat(this.offenderBooking).isNull()
+            assertThat(this.visit).isNotNull
+            assertThat(this.groupLeader).isFalse
+            assertThat(this.assistedVisit).isTrue
+            assertThat(this.commentText).isEqualTo("First visit")
+          }
+        }
       }
     }
   }

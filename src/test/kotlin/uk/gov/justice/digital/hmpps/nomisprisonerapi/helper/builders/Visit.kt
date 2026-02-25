@@ -42,7 +42,7 @@ interface VisitDsl {
 
   @VisitOutcomeDslMarker
   fun visitOutcome(
-    outcomeReasonCode: String,
+    outcomeReasonCode: String? = null,
     eventOutcomeCode: String = "ATT",
     eventStatusCode: String = "COMP",
     dsl: VisitOutcomeDsl.() -> Unit = {},
@@ -156,7 +156,7 @@ class VisitBuilderRepositoryBuilder(
   }
 
   override fun visitOutcome(
-    outcomeReasonCode: String,
+    outcomeReasonCode: String?,
     eventOutcomeCode: String,
     eventStatusCode: String,
     dsl: VisitOutcomeDsl.() -> Unit,

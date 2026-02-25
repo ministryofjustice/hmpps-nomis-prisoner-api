@@ -36,7 +36,7 @@ class VisitOutcomeBuilderFactory(
 class VisitOutcomeBuilderRepositoryBuilder(private val repository: VisitOutcomeBuilderRepository) : VisitOutcomeDsl {
   fun build(
     visit: Visit,
-    outcomeReasonCode: String,
+    outcomeReasonCode: String? = null,
     eventOutcomeCode: String,
     eventStatusCode: String,
   ): VisitVisitor = VisitVisitor(
