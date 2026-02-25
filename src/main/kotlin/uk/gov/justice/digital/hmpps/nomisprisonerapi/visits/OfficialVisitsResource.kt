@@ -17,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -243,6 +245,49 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     fromDate = fromDate,
     toDate = toDate,
   )
+
+  @PostMapping("/prisoner/{offenderNo}/official-visits")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an official visit for a prisoner",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Visit details created",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createOfficialVisit(
+    @PathVariable
+    offenderNo: String,
+    @Validated
+    @RequestBody
+    request: CreateOfficialVisitRequest,
+  ): OfficialVisitResponse = officialVisitsService.createVisitForPrisoner(
+    offenderNo = offenderNo,
+    request = request,
+  )
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -338,4 +383,32 @@ data class OfficialVisitResponse(
 data class VisitIdsPage(
   @Schema(description = "Page of visit IDs")
   val ids: List<VisitIdResponse>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Official Visit information")
+data class CreateOfficialVisitRequest(
+  val visitSlotId: Long,
+  @Schema(description = "Prison where the visit is to occur")
+  val prisonId: String,
+  @Schema(description = "The offender booking id")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "Visit end date and time")
+  val endDateTime: LocalDateTime,
+  @Schema(description = "The room where the visit will take place")
+  val internalLocationId: Long,
+  @Schema(description = "The status of the visit; Scheduled, Normal, Cancelled")
+  val visitStatusCode: String,
+  @Schema(description = "The outcome of the visit; Completed, Cancelled, Scheduled, Expired")
+  val visitOutcomeCode: String? = null,
+  @Schema(description = "The status of prisoner, Attended or Absent")
+  val prisonerAttendanceCode: String? = null,
+  @Schema(description = "The type of search to apply to prisoner")
+  val prisonerSearchTypeCode: String? = null,
+  @Schema(description = "Visitor concerns text")
+  val visitorConcernText: String? = null,
+  @Schema(description = "Visit comments")
+  val commentText: String? = null,
+  @Schema(description = "A username associated with the staff user who override ban")
+  val overrideBanStaffUsername: String? = null,
 )
