@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -113,6 +114,7 @@ class OfficialVisitsService(
     )
   }.let { VisitIdsPage(it) }
 
+  @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun createVisitForPrisoner(offenderNo: String, request: CreateOfficialVisitRequest): OfficialVisitResponse {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Prisoner $offenderNo not found with a booking")
