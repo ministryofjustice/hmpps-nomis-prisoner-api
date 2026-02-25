@@ -7,12 +7,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.GENERAL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
@@ -473,6 +475,345 @@ class OfficialVisitsResourceIntTest : IntegrationTestBase() {
         assertThat(pageResponse.ids).hasSize(2)
         assertThat(pageResponse.ids[0].visitId).isEqualTo(visitIds[0])
         assertThat(pageResponse.ids[1].visitId).isEqualTo(visitIds[1])
+      }
+    }
+  }
+
+  @DisplayName("POST /prisoner/{offenderNo}/official-visits")
+  @Nested
+  inner class CreateOfficialVisit {
+    lateinit var visitHall: AgencyInternalLocation
+    var visitSlotId: Long = 0
+    val prisonId = "BXI"
+    private lateinit var person: Person
+    private lateinit var contact: OffenderContactPerson
+    private var latestBookingId = 0L
+    private val offenderNo = "A1234KT"
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+        }
+
+        visitHall = agencyInternalLocation(
+          locationCode = "$prisonId-VISIT-1",
+          locationType = "VISIT",
+          prisonId = prisonId,
+        )
+        agencyVisitDay(prisonerId = prisonId, weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+            visitSlotId = visitSlot(
+              agencyInternalLocation = visitHall,
+              maxGroups = 10,
+              maxAdults = 20,
+            ).id
+          }
+        }
+
+        person = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = offenderNo) {
+          latestBookingId = booking {
+            contact = contact(
+              person = person,
+              contactType = "O",
+              relationshipType = "DR",
+            )
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(visitHall)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `when prisoner not found`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", "A9999ZZ")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `when prisonId is not valid`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = "ZZZZ",
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Prison ZZZZ does not exist")
+      }
+
+      @Test
+      fun `when location room is not valid`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = 9999,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Internal location 9999 does not exist")
+      }
+
+      @Test
+      fun `when visit slot is not valid`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = 99,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Visit slot 99 does not exist")
+      }
+
+      @Test
+      fun `when visit status is not valid`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "ZZZ",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Visit status code ZZZ does not exist")
+      }
+
+      @Test
+      fun `when search type status is not valid`() {
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+              prisonerSearchTypeCode = "ZZZ",
+            ),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Search Level code ZZZ does not exist")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create visit only mandatory data`() {
+        val createdVisitId: Long = webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectBodyResponse<OfficialVisitResponse>().visitId
+
+        nomisDataBuilder.runInTransaction {
+          with(visitRepository.findByIdOrNull(createdVisitId)!!) {
+            assertThat(id).isEqualTo(createdVisitId)
+            assertThat(agencyVisitSlot!!.id).isEqualTo(visitSlotId)
+            assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
+            assertThat(location.id).isEqualTo(prisonId)
+            assertThat(agencyInternalLocation!!.locationCode).isEqualTo("BXI-VISIT-1")
+            assertThat(startDateTime).isEqualTo(LocalDateTime.parse("2024-01-01T10:00:00"))
+            assertThat(endDateTime).isEqualTo(LocalDateTime.parse("2024-01-01T11:00:00"))
+            assertThat(visitDate).isEqualTo(LocalDate.parse("2024-01-01"))
+            assertThat(visitStatus.description).isEqualTo("Scheduled")
+            assertThat(visitType.description).isEqualTo("Official Visit")
+
+            assertThat(commentText).isNull()
+            assertThat(visitorConcernText).isNull()
+            assertThat(searchLevel).isNull()
+            assertThat(visitOrder).isNull()
+            assertThat(visitors).hasSize(1)
+            assertThat(overrideBanStaff).isNull()
+          }
+        }
+      }
+
+      @Test
+      fun `will create visit with all data`() {
+        val createdVisitId: Long = webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+              visitOutcomeCode = "CANC",
+              prisonerAttendanceCode = "ATT",
+              prisonerSearchTypeCode = "FULL",
+              visitorConcernText = "Quite concerned",
+              commentText = "First visit",
+              overrideBanStaffUsername = "KOFEADDY_GEN",
+            ),
+          )
+          .exchange()
+          .expectBodyResponse<OfficialVisitResponse>().visitId
+
+        nomisDataBuilder.runInTransaction {
+          with(visitRepository.findByIdOrNull(createdVisitId)!!) {
+            assertThat(id).isEqualTo(createdVisitId)
+            assertThat(agencyVisitSlot!!.id).isEqualTo(visitSlotId)
+            assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
+            assertThat(location.id).isEqualTo(prisonId)
+            assertThat(agencyInternalLocation!!.locationCode).isEqualTo("BXI-VISIT-1")
+            assertThat(startDateTime).isEqualTo(LocalDateTime.parse("2024-01-01T10:00:00"))
+            assertThat(endDateTime).isEqualTo(LocalDateTime.parse("2024-01-01T11:00:00"))
+            assertThat(visitDate).isEqualTo(LocalDate.parse("2024-01-01"))
+            assertThat(visitStatus.description).isEqualTo("Scheduled")
+            assertThat(visitType.description).isEqualTo("Official Visit")
+
+            assertThat(commentText).isEqualTo("First visit")
+            assertThat(visitorConcernText).isEqualTo("Quite concerned")
+            assertThat(searchLevel!!.description).isEqualTo("Full Search")
+            assertThat(visitOrder).isNull()
+            assertThat(visitors.filter { it.person != null }).isEmpty()
+            assertThat(visitors.filter { it.offenderBooking != null }).hasSize(1)
+            with(visitors.first { it.offenderBooking != null }) {
+              assertThat(offenderBooking!!.bookingId).isEqualTo(latestBookingId)
+              assertThat(eventOutcome!!.description).isEqualTo("Attended")
+              assertThat(eventStatus!!.description).isEqualTo("Scheduled (Approved)")
+              assertThat(eventId).isNotNull()
+            }
+            assertThat(overrideBanStaff!!.firstName).isEqualTo("KOFE")
+          }
+        }
       }
     }
   }
