@@ -5382,6 +5382,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(offenderNo)
           .jsonPath("courtId").isEqualTo("LEEDYC")
+          // should nott have updated the statusUpdateReason as not a status change
+          .jsonPath("statusUpdateReason").isEqualTo("a reason")
       }
     }
 
