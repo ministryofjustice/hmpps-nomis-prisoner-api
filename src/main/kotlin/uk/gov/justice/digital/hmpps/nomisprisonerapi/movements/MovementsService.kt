@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 
+import jakarta.persistence.EntityManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -82,6 +83,7 @@ class MovementsService(
   private val corporateInsertRepository: CorporateInsertRepository,
   private val tapAddressInsertRepository: TapAddressInsertRepository,
   private val externalMovementsRepository: OffenderExternalMovementRepository,
+  private val entityManager: EntityManager,
   addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
@@ -665,6 +667,7 @@ class MovementsService(
         corporateInsertRepository.insertCorporateIfNotExists(corporateName)
         val corporate = corporateRepository.findAllByCorporateName(corporateName).first()
         tapAddressInsertRepository.insertAddressIfNotExists("CORP", corporate.id, premise, street, postalCode)
+          .also { entityManager.refresh(corporate) }
 
         corporateRepository.findById(corporate.id).get()
           .addresses.first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }

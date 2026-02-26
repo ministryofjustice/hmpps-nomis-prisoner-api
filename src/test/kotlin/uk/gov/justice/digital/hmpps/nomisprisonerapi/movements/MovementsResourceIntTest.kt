@@ -1949,6 +1949,40 @@ class MovementsResourceIntTest(
       }
 
       @Test
+      fun `should handle multiple new addresses on a corporate`() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Boots") {
+            address(premise = "Some address", street = null, locality = null, postcode = "S1 1XX")
+          }
+          offender = offender(nomsId = "A9876CB") {
+            booking = booking()
+          }
+        }
+
+        webTestClient.upsertApplicationOk(
+          request = aRequest(
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "New address 1, Sheffield", postalCode = "S2 2XX"),
+              UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "New address 2, Sheffield", postalCode = "S3 3XX"),
+            ),
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // one of the new addresses is used on the application
+                assertThat(toAddress?.postalCode).isIn("S2 2XX", "S3 3XX")
+              }
+              // the new addresses have been saved on the corporates
+              with(corporateRepository.findAllByCorporateName("Boots")) {
+                assertThat(flatMap { it.addresses.map { it.postalCode } })
+                  .containsExactlyInAnyOrder("S1 1XX", "S2 2XX", "S3 3XX")
+              }
+            }
+          }
+      }
+
+      @Test
       fun `should truncate comments`() {
         // comment is 300 long
         webTestClient.upsertApplicationOk(aRequest().copy(comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))
