@@ -626,10 +626,13 @@ class CourtSentencingService(
       ?.let { latestEvent ->
         if (courtCase.court != latestEvent.court) {
           courtCase.court = latestEvent.court
-          courtCase.statusUpdateReason = courtCase.deriveStatusUpdateReason()
-          // TODO find a way of not hardcoding this
-          courtCase.statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API")
-          courtCase.statusUpdateDate = LocalDate.now()
+          // only update the status fields if the reason was previously null, this is really fixing any incorrect nulls
+          courtCase.statusUpdateReason ?: let {
+            courtCase.statusUpdateReason = courtCase.deriveStatusUpdateReason()
+            // TODO find a way of not hardcoding this
+            courtCase.statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API")
+            courtCase.statusUpdateDate = LocalDate.now()
+          }
         }
       }
   }
