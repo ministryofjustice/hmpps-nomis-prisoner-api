@@ -183,6 +183,17 @@ class OfficialVisitsService(
     ).toOfficialVisitor(visit.offenderBooking)
   }
 
+  @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
+  fun deleteVisitorForVisit(visitId: Long, visitorId: Long) {
+    visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    visitVisitorRepository.findByIdOrNull(visitorId)?.also { visitor ->
+      if (visitor.visit.id != visitId) {
+        throw BadDataException("Visitor with id $visitorId does not belong to visit with id $visitId")
+      }
+      visitVisitorRepository.delete(visitor)
+    }
+  }
+
   fun getVisit(visitId: Long): OfficialVisitResponse {
     val officialVisit = (visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")).takeIf { it.visitType.isOfficial() } ?: throw BadDataException("Visit with id $visitId is not an official visit")
 

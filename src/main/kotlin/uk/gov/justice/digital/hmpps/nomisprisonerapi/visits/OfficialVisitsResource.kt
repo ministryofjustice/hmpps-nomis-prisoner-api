@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -331,6 +332,70 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     visitId = visitId,
     request = request,
   )
+
+  @DeleteMapping("/official-visits/{visitId}/official-visitor/{visitorId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete an official visitor from a visit",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visitor details deleted",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Visitor is on a different visit",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Visit does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteOfficialVisitor(
+    @PathVariable
+    visitId: Long,
+    @PathVariable
+    visitorId: Long,
+  ) {
+    officialVisitsService.deleteVisitorForVisit(
+      visitId = visitId,
+      visitorId = visitorId,
+    )
+  }
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
