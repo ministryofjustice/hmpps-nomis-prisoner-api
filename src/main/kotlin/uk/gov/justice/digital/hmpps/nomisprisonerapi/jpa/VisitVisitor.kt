@@ -42,14 +42,14 @@ data class VisitVisitor(
 
   @Column(name = "GROUP_LEADER_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val groupLeader: Boolean = false,
+  var groupLeader: Boolean = false,
 
   @Column(name = "ASSISTED_VISIT_FLAG", nullable = false)
   @Convert(converter = YesNoConverter::class)
-  val assistedVisit: Boolean = false,
+  var assistedVisit: Boolean = false,
 
   @Column
-  val commentText: String? = null,
+  var commentText: String? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
