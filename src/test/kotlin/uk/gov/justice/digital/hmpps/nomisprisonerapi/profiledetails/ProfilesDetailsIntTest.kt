@@ -13,22 +13,14 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 class ProfilesDetailsIntTest : IntegrationTestBase() {
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
-  private lateinit var repository: Repository
-
   @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
 

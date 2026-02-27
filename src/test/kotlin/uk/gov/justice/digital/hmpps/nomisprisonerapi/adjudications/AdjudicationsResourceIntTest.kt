@@ -9,10 +9,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_CONTROL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.STAFF_REPORTING_OFFICER
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.SUSPECT
@@ -42,12 +40,7 @@ const val ADJUDICATION_NUMBER = 9000123L
 const val PREVIOUS_ADJUDICATION_NUMBER = 8000123L
 
 class AdjudicationsResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  lateinit var repository: Repository
   private var aLocationInMoorland = 0L
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @BeforeEach
   fun setUp() {

@@ -1,32 +1,19 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 
+@TestInstance(PER_CLASS)
 class BookingResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @AfterEach
-  fun cleanUp() {
-    repository.deleteOffenders()
-  }
-
-  @BeforeEach
-  fun setup() {
-    repository.deleteOffenders()
-  }
+  @BeforeAll
+  fun tearDown(): Unit = deleteOffenders()
 
   @Nested
   inner class GetAllLatestBookingsFromId {
@@ -65,9 +52,10 @@ class BookingResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
+    @TestInstance(PER_CLASS)
     inner class HappyPath {
 
-      @BeforeEach
+      @BeforeAll
       fun setUp() {
         // create:
         // 10 latest active bookings
@@ -97,6 +85,9 @@ class BookingResourceIntTest : IntegrationTestBase() {
           }
         }
       }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteOffenders()
 
       @Test
       fun `will find all latest booking with a large page size`() {
@@ -173,5 +164,3 @@ class BookingResourceIntTest : IntegrationTestBase() {
     }
   }
 }
-
-inline fun <reified B : Any> WebTestClient.ResponseSpec.expectBodyResponse(): B = this.expectStatus().is2xxSuccessful.expectBody(B::class.java).returnResult().responseBody!!

@@ -6,19 +6,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 
 class QuestionnaireResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
   private lateinit var questionnaire1: Questionnaire
   private lateinit var questionnaire2: Questionnaire
   private lateinit var questionnaire3: Questionnaire

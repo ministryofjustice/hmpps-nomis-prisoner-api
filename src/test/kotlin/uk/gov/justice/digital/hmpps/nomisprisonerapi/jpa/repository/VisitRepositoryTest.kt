@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -26,7 +25,7 @@ class VisitRepositoryTest : IntegrationTestBase() {
   lateinit var builderRepository: Repository
 
   @Autowired
-  lateinit var repository: VisitRepository
+  private lateinit var visitRepository: VisitRepository
 
   @Autowired
   lateinit var visitVisitorRepository: VisitVisitorRepository
@@ -51,9 +50,6 @@ class VisitRepositoryTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @Test
   fun saveVisit() {
@@ -104,9 +100,9 @@ class VisitRepositoryTest : IntegrationTestBase() {
     )
 
     builderRepository.runInTransaction {
-      repository.save(visit)
+      visitRepository.save(visit)
 
-      val persistedVisitList = repository.findByOffenderBooking(seedOffenderBooking)
+      val persistedVisitList = visitRepository.findByOffenderBooking(seedOffenderBooking)
       assertThat(persistedVisitList).isNotEmpty
       val persistedVisit = persistedVisitList[0]
 

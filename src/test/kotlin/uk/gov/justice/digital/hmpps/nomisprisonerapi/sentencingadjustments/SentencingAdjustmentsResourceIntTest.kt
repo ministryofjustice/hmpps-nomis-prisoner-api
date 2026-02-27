@@ -10,12 +10,9 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -25,12 +22,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureR
 import java.time.LocalDateTime
 
 class SentencingAdjustmentsResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
   lateinit var prisoner: Offender
   var bookingId: Long = 0
 

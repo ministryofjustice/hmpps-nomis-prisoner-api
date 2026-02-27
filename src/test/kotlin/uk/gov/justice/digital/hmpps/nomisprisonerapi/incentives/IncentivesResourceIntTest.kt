@@ -13,12 +13,9 @@ import org.mockito.kotlin.isNull
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IEPLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -38,12 +35,6 @@ private val createIncentive: () -> CreateIncentiveRequest = {
 }
 
 class IncentivesResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
   @DisplayName("Create")
   @Nested
   inner class CreateIncentive {

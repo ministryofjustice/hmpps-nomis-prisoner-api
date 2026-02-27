@@ -6,20 +6,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import java.time.LocalDate
 
 class CSIPFactorResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
   private lateinit var csip1: CSIPReport
   private lateinit var csip2: CSIPReport
 

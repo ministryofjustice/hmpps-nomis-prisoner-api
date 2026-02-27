@@ -7,9 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -19,12 +16,6 @@ import java.time.LocalDate
 
 @WithMockAuthUser
 class FinanceResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
-  private lateinit var repository: Repository
-
   private lateinit var offender: Offender
   private lateinit var transaction1: OffenderTransaction
   private lateinit var transaction2: OffenderTransaction

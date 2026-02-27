@@ -8,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
@@ -35,14 +33,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class TemporaryAbsenceRepositoryIntTest(
-  @Autowired private val nomisDataBuilder: NomisDataBuilder,
   @Autowired private val movementApplicationRepository: OffenderMovementApplicationRepository,
   @Autowired private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
   @Autowired private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
   @Autowired private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
   @Autowired private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
   @Autowired private val offenderBookingRepository: OffenderBookingRepository,
-  @Autowired private val repository: Repository,
   @Autowired private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTestBase() {
 

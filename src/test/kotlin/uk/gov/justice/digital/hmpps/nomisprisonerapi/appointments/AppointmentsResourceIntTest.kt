@@ -5,11 +5,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventClass
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
@@ -24,13 +21,6 @@ private const val MDI_ROOM_ID: Long = -46 // random locations from R__3_2__AGENC
 private const val MDI_ROOM_ID_2: Long = -47
 
 class AppointmentsResourceIntTest : IntegrationTestBase() {
-
-  @Autowired
-  private lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
   lateinit var offenderAtMoorlands: Offender
   lateinit var offenderAtOtherPrison: Offender
 

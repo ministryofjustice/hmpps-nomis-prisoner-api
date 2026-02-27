@@ -9,12 +9,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
@@ -31,15 +28,10 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  lateinit var repository: Repository
   lateinit var aLocationInMoorland: AgencyInternalLocation
 
   @MockitoSpyBean
   lateinit var hearingRepository: AdjudicationHearingRepository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @BeforeEach
   fun setUp() {

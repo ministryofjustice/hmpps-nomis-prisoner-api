@@ -20,8 +20,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Componen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.INTERVIEW
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.PLAN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.REVIEW
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CSIPReportRepository
@@ -33,16 +31,10 @@ import java.time.temporal.ChronoUnit.SECONDS
 
 class CSIPResourceIntTest : IntegrationTestBase() {
   @Autowired
-  private lateinit var repository: Repository
-
-  @Autowired
   private lateinit var csipRepository: CSIPReportRepository
 
   @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   private lateinit var csip1: CSIPReport
   private lateinit var csip2: CSIPReport

@@ -7,11 +7,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -19,12 +16,6 @@ import java.time.temporal.ChronoUnit.SECONDS
 
 @WithMockAuthUser
 class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
-  private lateinit var repository: Repository
-
   private var id1: Long = 0
   private var id2: Long = 0
   private var id3: Long = 0

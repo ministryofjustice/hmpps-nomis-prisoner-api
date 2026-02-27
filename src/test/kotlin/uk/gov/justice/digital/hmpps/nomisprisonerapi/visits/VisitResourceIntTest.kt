@@ -22,8 +22,6 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -69,12 +67,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var jdbcTemplate: JdbcTemplate
-
-  @Autowired
-  lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   lateinit var offenderNo: String
   lateinit var offenderAtMoorlands: Offender

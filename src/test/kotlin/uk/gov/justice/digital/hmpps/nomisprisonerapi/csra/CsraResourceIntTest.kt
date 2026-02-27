@@ -11,8 +11,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters.fromValue
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentCommittee
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
@@ -29,12 +27,6 @@ val RESPONSE_PREVIOUS_CONVICTIONS_D = 9928L
 val RESPONSE_DAMAGE_TO_PROPERTY_S = 9973L
 
 class CsraResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
-  private lateinit var repository: Repository
-
   @Autowired
   private lateinit var offenderAssessmentRepository: OffenderAssessmentRepository
 
