@@ -5,9 +5,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearingResult
@@ -21,12 +18,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  lateinit var repository: Repository
   lateinit var aLocationInMoorland: AgencyInternalLocation
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @BeforeEach
   fun setUp() {

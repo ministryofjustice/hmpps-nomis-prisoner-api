@@ -18,9 +18,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
@@ -45,7 +44,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderKeyDateAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.math.BigDecimal
@@ -58,9 +56,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   private val aDateTimeString = "2023-01-01T10:30:00"
   private val aLaterDateString = "2023-01-05"
   private val aLaterDateTimeString = "2023-01-05T10:30:00"
-
-  @Autowired
-  lateinit var repository: Repository
 
   @Autowired
   lateinit var offenderSentenceRepository: OffenderSentenceRepository
@@ -92,9 +87,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   private var aLocationInMoorland = 0L
   private lateinit var staff: Staff
   private lateinit var prisonerAtMoorland: Offender
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
 
   @MockitoSpyBean
   private lateinit var spRepository: StoredProcedureRepository

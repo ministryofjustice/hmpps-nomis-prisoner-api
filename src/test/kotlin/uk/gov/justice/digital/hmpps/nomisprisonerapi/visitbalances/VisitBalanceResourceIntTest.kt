@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -26,13 +24,7 @@ import java.time.LocalDateTime
 
 class VisitBalanceResourceIntTest : IntegrationTestBase() {
   @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  @Autowired
-  private lateinit var repository: Repository
 
   @DisplayName("POST /prisoners/{prisonNumber}/visit-balance-adjustments")
   @Nested

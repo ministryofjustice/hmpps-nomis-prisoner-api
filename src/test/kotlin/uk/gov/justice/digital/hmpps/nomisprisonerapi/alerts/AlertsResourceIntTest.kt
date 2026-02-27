@@ -16,8 +16,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.RequestHeadersSpec
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
@@ -39,13 +37,7 @@ import java.time.temporal.ChronoUnit.SECONDS
 
 class AlertsResourceIntTest : IntegrationTestBase() {
   @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  @Autowired
-  private lateinit var repository: Repository
 
   @Autowired
   private lateinit var alertCodeRepository: ReferenceCodeRepository<AlertCode>

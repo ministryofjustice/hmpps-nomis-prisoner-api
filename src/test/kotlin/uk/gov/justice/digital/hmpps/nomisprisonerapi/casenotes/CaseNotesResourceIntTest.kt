@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
@@ -28,16 +26,10 @@ import java.time.temporal.ChronoUnit.SECONDS
 
 class CaseNotesResourceIntTest : IntegrationTestBase() {
   @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
   private lateinit var offenderCaseNoteRepository: OffenderCaseNoteRepository
 
   @Autowired
   private lateinit var offenderSentenceRepository: OffenderSentenceRepository
-
-  @Autowired
-  private lateinit var repository: Repository
 
   private lateinit var prisoner: Offender
   private lateinit var booking: OffenderBooking

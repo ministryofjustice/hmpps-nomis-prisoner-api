@@ -14,8 +14,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.UpsertCSIPRequest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.UpsertCSIPResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.visitbalances.CreateVisitBalanceAdjustmentRequest
@@ -23,13 +21,7 @@ import java.time.LocalDate
 
 class AuditResourceIntTest : IntegrationTestBase() {
   @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @Autowired
   private lateinit var offenderBookingRepository: OffenderBookingRepository
-
-  @Autowired
-  private lateinit var repository: Repository
 
   @MockitoSpyBean
   lateinit var auditConnectionHandler: AuditConnectionHandler

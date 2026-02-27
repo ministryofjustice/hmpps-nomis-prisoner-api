@@ -1,32 +1,19 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisDataBuilder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 
+@TestInstance(PER_CLASS)
 class PrisonerSearchResourceIntTest : IntegrationTestBase() {
-  @Autowired
-  lateinit var repository: Repository
-
-  @Autowired
-  private lateinit var nomisDataBuilder: NomisDataBuilder
-
-  @BeforeEach
-  fun setup() {
-    repository.deleteOffenders()
-  }
-
-  @AfterEach
-  fun cleanUp() {
-    repository.deleteOffenders()
-  }
+  @BeforeAll
+  fun tearDown(): Unit = deleteOffenders()
 
   @Nested
   @DisplayName("GET /search/prisoners/id-ranges")
@@ -77,13 +64,14 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
+    @TestInstance(PER_CLASS)
     inner class HappyPath {
       private var activePrisoner1: Long = 0
       private var activePrisoner2: Long = 0
       private var inactivePrisoner1: Long = 0
       private var prisoner4: Long = 0
 
-      @BeforeEach
+      @BeforeAll
       internal fun createPrisoners() {
         nomisDataBuilder.build {
           activePrisoner1 = offender(nomsId = "A1234TT") {
@@ -107,6 +95,9 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
           prisoner4 = offender(nomsId = "A1234YY").rootOffenderId!!
         }
       }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteOffenders()
 
       @Test
       fun `will return list of pages of root offender ids ordered by rootOffenderId ASC`() {
@@ -217,6 +208,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
+    @TestInstance(PER_CLASS)
     inner class HappyPath {
       private lateinit var activePrisoner1: String
       private var activePrisoner1Id: Long = 0
@@ -224,7 +216,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
       private lateinit var inactivePrisoner1: String
       private lateinit var prisoner4: String
 
-      @BeforeEach
+      @BeforeAll
       internal fun createPrisoners() {
         nomisDataBuilder.build {
           offender(nomsId = "A1234TT") {
@@ -251,6 +243,9 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
           prisoner4 = offender(nomsId = "A1234YY").nomsId
         }
       }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteOffenders()
 
       @Test
       fun `will return list of all root offender ids`() {
