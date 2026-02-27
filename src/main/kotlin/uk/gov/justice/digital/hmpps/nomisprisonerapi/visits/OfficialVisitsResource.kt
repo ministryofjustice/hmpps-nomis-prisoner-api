@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -333,6 +334,73 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     request = request,
   )
 
+  @PutMapping("/official-visits/{visitId}/official-visitor/{visitorId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Updates an official visitor from a visit",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visitor details updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Visitor is on a different visit or attendance code is incorrect",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Visit or visitor does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateOfficialVisitor(
+    @PathVariable
+    visitId: Long,
+    @PathVariable
+    visitorId: Long,
+    @RequestBody
+    request: UpdateOfficialVisitorRequest,
+  ) {
+    officialVisitsService.updateVisitorForVisit(
+      visitId = visitId,
+      visitorId = visitorId,
+      request = request,
+    )
+  }
+
   @DeleteMapping("/official-visits/{visitId}/official-visitor/{visitorId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
@@ -525,6 +593,18 @@ data class CreateOfficialVisitRequest(
 data class CreateOfficialVisitorRequest(
   @Schema(description = "visitor NOMIS person Id")
   val personId: Long,
+  @Schema(description = "Indicates lead visitor for the visit")
+  val leadVisitor: Boolean? = null,
+  @Schema(description = "Indicates visitor requires assistance")
+  val assistedVisit: Boolean? = null,
+  @Schema(description = "The status of visitor, Attended or Absent")
+  val visitorAttendanceOutcomeCode: String? = null,
+  @Schema(description = "Visitor comments")
+  val commentText: String? = null,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateOfficialVisitorRequest(
   @Schema(description = "Indicates lead visitor for the visit")
   val leadVisitor: Boolean? = null,
   @Schema(description = "Indicates visitor requires assistance")

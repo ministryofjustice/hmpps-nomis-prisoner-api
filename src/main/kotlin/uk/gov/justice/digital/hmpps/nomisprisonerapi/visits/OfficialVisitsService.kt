@@ -184,6 +184,26 @@ class OfficialVisitsService(
   }
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
+  fun updateVisitorForVisit(
+    visitId: Long,
+    visitorId: Long,
+    request: UpdateOfficialVisitorRequest,
+  ) {
+    visitVisitorRepository.findByIdOrNull(visitorId)?.also { visitor ->
+      val visit = visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+      if (visitor.visit != visit) {
+        throw BadDataException("Visitor with id $visitorId does not belong to visit with id $visitId")
+      }
+      with(visitor) {
+        groupLeader = request.leadVisitor ?: false
+        assistedVisit = request.assistedVisit ?: false
+        commentText = request.commentText
+        this.eventOutcome = lookupAttendance(request.visitorAttendanceOutcomeCode)
+      }
+    } ?: throw NotFoundException("Visitor with id $visitorId is not found")
+  }
+
+  @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun deleteVisitorForVisit(visitId: Long, visitorId: Long) {
     visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
     visitVisitorRepository.findByIdOrNull(visitorId)?.also { visitor ->
