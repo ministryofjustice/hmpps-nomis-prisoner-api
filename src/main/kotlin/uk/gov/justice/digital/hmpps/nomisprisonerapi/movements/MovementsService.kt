@@ -387,6 +387,22 @@ class MovementsService(
     )
   }
 
+  @Transactional
+  fun deleteScheduledTemporaryAbsence(offenderNo: String, eventId: Long) {
+    scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)
+      ?.also { schedule ->
+        if (schedule.temporaryAbsence != null) {
+          throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has a movement ${schedule.temporaryAbsence!!.id.offenderBooking.bookingId} / ${schedule.temporaryAbsence!!.id.sequence}}")
+        }
+
+        offenderBookingRepository.findByIdOrNull(schedule.offenderBooking.bookingId)
+          ?.takeIf { it.offender.nomsId != offenderNo }
+          ?.run { throw ConflictException("EventId $eventId exists on a different offender") }
+
+        scheduledTemporaryAbsenceRepository.delete(schedule)
+      }
+  }
+
   fun getScheduledTemporaryAbsenceReturn(offenderNo: String, eventId: Long): ScheduledTemporaryAbsenceReturnResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Offender with nomsId=$offenderNo not found")

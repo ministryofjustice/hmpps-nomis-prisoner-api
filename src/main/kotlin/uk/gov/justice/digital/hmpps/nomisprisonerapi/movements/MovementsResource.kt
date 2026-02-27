@@ -343,6 +343,57 @@ class MovementsResource(
     request: UpsertScheduledTemporaryAbsenceRequest,
   ): UpsertScheduledTemporaryAbsenceResponse = movementsService.upsertScheduledTemporaryAbsence(offenderNo, request)
 
+  @DeleteMapping("/movements/{offenderNo}/temporary-absences/scheduled-temporary-absence/{eventId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete a scheduled temporary absence for an offender.",
+    description = "Deletes a scheduled temporary absence. This should only be required where we have duplicates! Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Temporary absence application deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Unable to delete the schedule. See error message for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteScheduledTemporaryAbsence(
+    @Schema(description = "Offender no (aka prisoner number)", example = "A1234AK")
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Scheduled TAP movement event ID", example = "12345")
+    @PathVariable
+    eventId: Long,
+  ) = movementsService.deleteScheduledTemporaryAbsence(offenderNo, eventId)
+
   @GetMapping("/movements/{offenderNo}/temporary-absences/temporary-absence/{bookingId}/{movementSeq}")
   @Operation(
     summary = "Get a specific temporary absence for an offender",
