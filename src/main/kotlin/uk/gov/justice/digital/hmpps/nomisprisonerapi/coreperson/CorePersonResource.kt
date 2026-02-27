@@ -118,6 +118,54 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       example = "A1234BC",
     ) @PathVariable prisonNumber: String,
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
+
+  @GetMapping("/core-person/root-offender-id/{rootOffenderId}/religions")
+  @Operation(
+    summary = "Get all the religion information for an offender by root offender id",
+    description = "Retrieves the religion information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Core religion information returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderReligions(
+    @Schema(
+      description = "Root offender id",
+      example = "12345",
+    ) @PathVariable rootOffenderId: Long,
+  ): List<OffenderBelief> = corePersonService.getOffenderReligions(rootOffenderId)
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
