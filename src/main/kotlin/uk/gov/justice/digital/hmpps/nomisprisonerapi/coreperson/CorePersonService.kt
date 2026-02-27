@@ -172,7 +172,7 @@ class CorePersonService(
           email = address.internetAddress,
         )
       },
-      beliefs = offenderBeliefRepository.findByRootOffenderOrderByStartDateDescCreateDatetimeDesc(rootOffender).map { belief ->
+      beliefs = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { belief ->
         OffenderBelief(
           beliefId = belief.beliefId,
           belief = belief.beliefCode.toCodeDescription(),
@@ -190,7 +190,7 @@ class CorePersonService(
   fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> {
     val rootOffender =
       offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-    return offenderBeliefRepository.findByRootOffenderOrderByStartDateDescCreateDatetimeDesc(rootOffender).map { belief ->
+    return offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { belief ->
       OffenderBelief(
         beliefId = belief.beliefId,
         belief = belief.beliefCode.toCodeDescription(),
@@ -202,5 +202,18 @@ class CorePersonService(
         audit = belief.toAudit(),
       )
     }
+  }
+
+  fun getOffenderReligions(rootOffenderId: Long): List<OffenderBelief> = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffenderId).map { belief ->
+    OffenderBelief(
+      beliefId = belief.beliefId,
+      belief = belief.beliefCode.toCodeDescription(),
+      startDate = belief.startDate,
+      endDate = belief.endDate,
+      changeReason = belief.changeReason,
+      comments = belief.comments,
+      verified = belief.verified ?: false,
+      audit = belief.toAudit(),
+    )
   }
 }
