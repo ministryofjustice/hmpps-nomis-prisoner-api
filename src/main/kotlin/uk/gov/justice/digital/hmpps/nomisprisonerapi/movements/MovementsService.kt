@@ -307,6 +307,15 @@ class MovementsService(
     val transportType = request.transportType?.let { transportTypeOrThrow(request.transportType) }
     val toAddress = findAddressOrThrow(request.toAddress, offenderBooking.offender)
 
+    if (request.eventId == null) {
+      if (application.isUnapproved()) {
+        throw ConflictException("Cannot add schedules to application ${application.movementApplicationId} because it's not approved (applicationStatus=${application.applicationStatus.code})")
+      }
+      if (application.isSingle() && application.hasSchedules()) {
+        throw ConflictException("Cannot add schedules to application ${application.movementApplicationId} because it already has a single schedule")
+      }
+    }
+
     val schedule = request.eventId
       ?.let { scheduledTemporaryAbsenceRepository.findById(request.eventId).get() }
       ?.apply {
@@ -346,7 +355,6 @@ class MovementsService(
 
     val scheduledReturn = schedule.scheduledTemporaryAbsenceReturns.firstOrNull()
       ?.apply {
-        // TODO As we don't create the scheduled return until the outbound movement has happened we should never need to delete the scheduled return. I think. But if we did then we'd set it to null here. Review this.
         this.eventStatus = eventStatusOrThrow(request.returnEventStatus ?: "SCH")
         this.eventDate = request.returnDate
         this.startTime = request.returnTime

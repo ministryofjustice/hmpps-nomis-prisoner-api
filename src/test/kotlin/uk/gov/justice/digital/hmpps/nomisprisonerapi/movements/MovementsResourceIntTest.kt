@@ -3093,6 +3093,64 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class CreateScheduleValidation {
+      @Test
+      fun `should return conflict if adding a schedule to an unapproved application`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(applicationStatus = "PEN")
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsence()
+          .isEqualTo(409)
+      }
+
+      @Test
+      fun `should return conflict if adding a schedule to a single application that already has a schedule`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(applicationType = "SINGLE") {
+                scheduledTempAbsence = scheduledTemporaryAbsence()
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsence()
+          .isEqualTo(409)
+      }
+
+      @Test
+      fun `should allow adding a schedule to a repeating application`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(applicationType = "REPEATING") {
+                scheduledTempAbsence = scheduledTemporaryAbsence()
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk()
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+                assertThat(scheduledTemporaryAbsences.size).isEqualTo(2)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class UpdateSchedule {
 
       @BeforeEach
