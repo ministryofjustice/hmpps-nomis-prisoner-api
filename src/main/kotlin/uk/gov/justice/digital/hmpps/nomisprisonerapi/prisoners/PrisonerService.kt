@@ -77,6 +77,9 @@ class PrisonerService(
     }
     ?.let { PreviousBookingId(bookingId = it.bookingId, bookingSequence = it.bookingSequence.toLong()) }
     ?: throw NotFoundException("Prisoner with offenderNo $offenderNo and booking $bookingId not found or has no previous booking")
+
+  fun findPrisonersInRange(fromRootOffenderId: Long, toRootOffenderId: Long): List<PrisonNumberAndRootOffenderId> = offenderRepository.findPrisonerIdsBetweenIds(fromRootOffenderId, toRootOffenderId)
+    .map { PrisonNumberAndRootOffenderId(it.getOffenderId(), it.getPrisonerId()) }
 }
 
 private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetails(

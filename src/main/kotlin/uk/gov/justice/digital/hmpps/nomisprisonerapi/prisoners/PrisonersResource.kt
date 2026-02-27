@@ -364,6 +364,45 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     @PathVariable
     bookingId: Long,
   ): PreviousBookingId = prisonerService.getPreviousBookingId(offenderNo, bookingId)
+
+  @GetMapping("/prisoners/ids-in-range")
+  @Operation(
+    summary = "Gets every prison number and root offender id between range for prisoner search.",
+    description = """Returns a list of ids for root offender ids greater than the specified
+      fromRootOffenderId and less than or equal to the specified toRootOffenderId.
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of prison numbers and root offender ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAllPrisonersInRange(
+    @RequestParam(value = "fromRootOffenderId", required = true)
+    @Parameter(description = "Return prisoners with root offender id greater than this value.")
+    fromRootOffenderId: Long,
+    @RequestParam(value = "toRootOffenderId", required = true)
+    @Parameter(description = "Return prisoners with root offender id less than or equal to this value.")
+    toRootOffenderId: Long,
+  ): List<PrisonNumberAndRootOffenderId> = prisonerService.findPrisonersInRange(fromRootOffenderId, toRootOffenderId)
 }
 
 @Schema(description = "Prisoner identifiers")
@@ -374,9 +413,17 @@ data class PrisonerIds(
   val offenderNo: String,
 )
 
+@Schema(description = "Prisoner identifiers")
+data class PrisonNumberAndRootOffenderId(
+  @Schema(description = "Root offender id", example = "12345")
+  val rootOffenderId: Long,
+  @Schema(description = "The NOMIS reference AKA prison number", example = "A1234AA")
+  val prisonNumber: String,
+)
+
 @Schema(description = "Prisoner identifier")
 data class PrisonerId(
-  @Schema(description = "The NOMIS reference AKA prisoner number", example = "A1234AA")
+  @Schema(description = "The NOMIS reference AKA prison number", example = "A1234AA")
   val offenderNo: String,
 )
 

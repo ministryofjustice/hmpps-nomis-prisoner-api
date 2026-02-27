@@ -1146,4 +1146,127 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @Nested
+  @DisplayName("GET /prisoners/ids-in-range")
+  inner class GetAllPrisonersInRange {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=100")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=100")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=100")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed for role NOMIS_PRISONER_API__SYNCHRONISATION__RW`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=100")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 if fromRootOffenderId is not provided`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?toRootOffenderId=100")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if toRootOffenderId is not provided`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?fromRootOffenderId=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private lateinit var prisoner1: String
+      private var prisoner1Id: Long = 0
+      private lateinit var prisoner2: String
+      private lateinit var prisoner3: String
+      private lateinit var prisoner4: String
+
+      @BeforeEach
+      internal fun createPrisoners() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234TT") {
+            booking {}
+            booking {
+              release()
+            }
+          }.also {
+            prisoner1 = it.nomsId
+            prisoner1Id = it.rootOffenderId!!
+          }
+          prisoner2 = offender(nomsId = "A1234SS") {
+            alias(lastName = "SMITH")
+            alias {
+              booking {}
+            }
+          }.nomsId
+          prisoner3 = offender(nomsId = "A1234WW") {
+            alias()
+            booking {
+              release()
+            }
+          }.nomsId
+          prisoner4 = offender(nomsId = "A1234YY").nomsId
+        }
+      }
+
+      @Test
+      fun `will return list of all root offender ids`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(4)
+          .jsonPath("$..prisonNumber").value<List<String>> {
+            assertThat(it).containsOnly(prisoner1, prisoner2, prisoner3, prisoner4)
+          }
+      }
+
+      @Test
+      fun `will return specified list of root offender ids`() {
+        webTestClient.get().uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=$prisoner1Id")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(1)
+          .jsonPath("$..prisonNumber").value<List<String>> {
+            assertThat(it).containsOnly(prisoner1)
+          }
+          .jsonPath("$..rootOffenderId").value<List<Int>> {
+            assertThat(it).containsOnly(prisoner1Id.toInt())
+          }
+      }
+    }
+  }
 }
