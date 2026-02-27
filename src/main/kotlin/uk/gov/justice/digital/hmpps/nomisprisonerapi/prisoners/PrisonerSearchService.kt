@@ -30,6 +30,7 @@ class PrisonerSearchService(
   fun findPrisonNumbersInRange(active: Boolean, fromRootOffenderId: Long, toRootOffenderId: Long): List<String> = if (active) {
     bookingRepository.findActivePrisonNumbersBetweenIds(fromRootOffenderId, toRootOffenderId)
   } else {
-    offenderRepository.findPrisonNumbersBetweenIds(fromRootOffenderId, toRootOffenderId)
+    offenderRepository.findPrisonerIdsBetweenIds(fromRootOffenderId, toRootOffenderId)
+      .map { it.getPrisonerId() }
   }
 }
