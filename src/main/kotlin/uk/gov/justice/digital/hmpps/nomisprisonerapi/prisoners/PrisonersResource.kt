@@ -403,6 +403,42 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     @Parameter(description = "Return prisoners with root offender id less than or equal to this value.")
     toRootOffenderId: Long,
   ): List<PrisonNumberAndRootOffenderId> = prisonerService.findPrisonersInRange(fromRootOffenderId, toRootOffenderId)
+
+  @GetMapping("/prisoners/id-ranges")
+  @Operation(
+    summary = "Gets every size prisoner root offender ids.",
+    description = """Returns a list of root offender id ranges for prisoners. Each list item has a from and to 
+      root offender id, with the number of prisoners between the from and to equal to the specified size. 
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of root offender id ranges"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAllPrisonersIdRanges(
+    @RequestParam(value = "size", defaultValue = "1000")
+    @Parameter(description = "Number of prisoners to get")
+    pageSize: Int,
+  ): List<RootOffenderIdRange> = prisonerService.findRootOffenderIdRanges(pageSize)
 }
 
 @Schema(description = "Prisoner identifiers")

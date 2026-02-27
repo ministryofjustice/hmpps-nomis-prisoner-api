@@ -23,6 +23,7 @@ class PrisonerService(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
   private val mergeTransactionRepository: MergeTransactionRepository,
+  private val prisonerSearchService: PrisonerSearchService,
 ) {
   fun findAllActivePrisoners(pageRequest: Pageable): Page<PrisonerIds> = offenderBookingRepository.findAll(ActiveBookingsSpecification(), pageRequest)
     .map { PrisonerIds(bookingId = it.bookingId, offenderNo = it.offender.nomsId) }
@@ -80,6 +81,8 @@ class PrisonerService(
 
   fun findPrisonersInRange(fromRootOffenderId: Long, toRootOffenderId: Long): List<PrisonNumberAndRootOffenderId> = offenderRepository.findPrisonerIdsBetweenIds(fromRootOffenderId, toRootOffenderId)
     .map { PrisonNumberAndRootOffenderId(it.getOffenderId(), it.getPrisonerId()) }
+
+  fun findRootOffenderIdRanges(pageSize: Int): List<RootOffenderIdRange> = prisonerSearchService.findRootOffenderIdRanges(false, pageSize)
 }
 
 private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetails(
