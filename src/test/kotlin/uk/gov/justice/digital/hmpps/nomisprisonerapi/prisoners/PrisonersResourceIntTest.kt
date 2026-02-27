@@ -1306,4 +1306,107 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @Nested
+  @DisplayName("GET /prisoners/id-ranges")
+  inner class GetAllPrisonersIdRanges {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/id-ranges")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/id-ranges")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/id-ranges?active=false")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed for role NOMIS_PRISONER_API__SYNCHRONISATION__RW`() {
+        webTestClient.get().uri("/prisoners/id-ranges?active=false&size=1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class HappyPath {
+      private var activePrisoner1: Long = 0
+      private var activePrisoner2: Long = 0
+      private var inactivePrisoner1: Long = 0
+      private var prisoner4: Long = 0
+
+      @BeforeAll
+      internal fun createPrisoners() {
+        nomisDataBuilder.build {
+          activePrisoner1 = offender(nomsId = "A1234TT") {
+            booking {}
+            booking {
+              release()
+            }
+          }.rootOffenderId!!
+          activePrisoner2 = offender(nomsId = "A1234SS") {
+            alias(lastName = "SMITH")
+            alias {
+              booking {}
+            }
+          }.rootOffenderId!!
+          inactivePrisoner1 = offender(nomsId = "A1234WW") {
+            alias()
+            booking {
+              release()
+            }
+          }.rootOffenderId!!
+          prisoner4 = offender(nomsId = "A1234YY").rootOffenderId!!
+        }
+      }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteOffenders()
+
+      @Test
+      fun `will return list of pages of root offender ids ordered by rootOffenderId ASC`() {
+        webTestClient.get().uri("/prisoners/id-ranges?size=2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("$.[0].fromRootOffenderId").isEqualTo(0)
+          .jsonPath("$.[0].toRootOffenderId").isEqualTo(activePrisoner2)
+          .jsonPath("$.[1].fromRootOffenderId").isEqualTo(activePrisoner2)
+          .jsonPath("$.[1].toRootOffenderId").isEqualTo(prisoner4)
+          .jsonPath("$.[2].fromRootOffenderId").isEqualTo(prisoner4)
+          .jsonPath("$.[2].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+      }
+
+      @Test
+      fun `will default the size if not provided`() {
+        webTestClient.get().uri("/prisoners/id-ranges")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(1)
+          .jsonPath("$.[0].fromRootOffenderId").isEqualTo(0)
+          .jsonPath("$.[0].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+      }
+    }
+  }
 }
