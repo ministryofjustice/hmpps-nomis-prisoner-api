@@ -74,6 +74,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments.Sente
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import javax.sql.DataSource
 
 @Service
 @Transactional
@@ -107,6 +108,7 @@ class CourtSentencingService(
   private val offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository,
   private val sentencingAdjustmentService: SentencingAdjustmentService,
   private val linkCaseTxnRepository: LinkCaseTxnRepository,
+  private val dataSource: DataSource,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -162,8 +164,7 @@ class CourtSentencingService(
         court = lookupEstablishment(request.courtId),
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
         statusUpdateReason = "A",
-        // TODO find a way of not hardcoding this
-        statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API"),
+        statusUpdateStaff = findStaffByUsername(dataSource.connection.metaData.userName.uppercase()),
         statusUpdateDate = LocalDate.now(),
       ),
     )
@@ -199,8 +200,7 @@ class CourtSentencingService(
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
         primaryCaseInfoNumber = primaryCaseIdentifier,
         statusUpdateReason = "A",
-        // TODO find a way of not hardcoding this
-        statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API"),
+        statusUpdateStaff = findStaffByUsername(dataSource.connection.metaData.userName.uppercase()),
         statusUpdateDate = LocalDate.now(),
       )
     courtCase.offenderCharges.addAll(
@@ -629,8 +629,7 @@ class CourtSentencingService(
           // only update the status fields if the reason was previously null, this is really fixing any incorrect nulls
           courtCase.statusUpdateReason ?: let {
             courtCase.statusUpdateReason = courtCase.deriveStatusUpdateReason()
-            // TODO find a way of not hardcoding this
-            courtCase.statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API")
+            courtCase.statusUpdateStaff = findStaffByUsername(dataSource.connection.metaData.userName.uppercase())
             courtCase.statusUpdateDate = LocalDate.now()
           }
         }
@@ -971,8 +970,7 @@ class CourtSentencingService(
           // if we have no statusUpdateStaff but a date we know NOMIS trigger will fail
           // so for this fudged scenario set the staff to hard coded sync staff record for the user name
           // TODO: should this always be set?
-          // TODO: can we get the username without hardcoding?
-          sentence.statusUpdateStaff = findStaffByUsername("PRISONER_MANAGER_API")
+          sentence.statusUpdateStaff = findStaffByUsername(dataSource.connection.metaData.userName.uppercase())
         }
         if (sentence.offenderSentenceCharges.map { it.offenderCharge.id }
             .toSet() != request.offenderChargeIds.toSet()
