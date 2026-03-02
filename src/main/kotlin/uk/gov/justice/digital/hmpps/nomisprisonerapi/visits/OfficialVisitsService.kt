@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SearchLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType.Companion.OFFICIAL
@@ -53,6 +54,7 @@ class OfficialVisitsService(
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
   private val searchLevelRepository: ReferenceCodeRepository<SearchLevel>,
   private val eventOutcomeRepository: ReferenceCodeRepository<EventOutcome>,
+  private val visitOutcomeReasonRepository: ReferenceCodeRepository<VisitOutcomeReason>,
   private val staffUserAccountRepository: StaffUserAccountRepository,
   private val personRepository: PersonRepository,
 ) {
@@ -158,6 +160,29 @@ class OfficialVisitsService(
         eventOutcome = lookupAttendance(request.prisonerAttendanceCode),
       )
     }.toOfficialVisitResponse()
+  }
+
+  @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
+  fun updateVisit(visitId: Long, request: UpdateOfficialVisitRequest) {
+    val visit = visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+
+    with(visit) {
+      commentText = request.commentText
+      visitorConcernText = request.visitorConcernText
+      agencyVisitSlot = lookupVisitSlot(request.visitSlotId)
+      visitDate = request.startDateTime.toLocalDate()
+      startDateTime = request.startDateTime
+      endDateTime = request.endDateTime
+      visitStatus = lookupVisitStatus(request.visitStatusCode)
+      agencyInternalLocation = lookupInternalLocation(request.internalLocationId)
+      searchLevel = lookupSearchLevel(request.prisonerSearchTypeCode)
+      overrideBanStaff = request.overrideBanStaffUsername?.let { staffOf(it) }
+      with(outcomeVisitor()!!) {
+        eventStatus = lookupEventStatus(request.visitStatusCode.asEventStatusCode())
+        outcomeReasonCode = lookupOutcomeReason(request.visitOutcomeCode)?.code
+        eventOutcome = lookupAttendance(request.prisonerAttendanceCode)
+      }
+    }
   }
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
@@ -280,6 +305,7 @@ class OfficialVisitsService(
   private fun lookupVisitSlot(visitSlotId: Long): AgencyVisitSlot = agencyVisitSlotRepository.findByIdOrNull(visitSlotId) ?: throw BadDataException("Visit slot $visitSlotId does not exist")
   private fun lookupVisitStatus(code: String): VisitStatus = visitStatusRepository.findByIdOrNull(VisitStatus.pk(code)) ?: throw BadDataException("Visit status code $code does not exist")
   private fun lookupEventStatus(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code)) ?: throw BadDataException("Event status code $code does not exist")
+  private fun lookupOutcomeReason(code: String?): VisitOutcomeReason? = code?.let { visitOutcomeReasonRepository.findByIdOrNull(VisitOutcomeReason.pk(code)) ?: throw BadDataException("Visit outcome reason code $code does not exist") }
   private fun lookupOfficialVisitType(): VisitType = visitTypeRepository.findByIdOrNull(VisitType.pk(OFFICIAL)) ?: throw BadDataException("Visit status code $OFFICIAL does not exist")
   private fun staffOf(username: String): Staff = staffUserAccountRepository.findByUsername(username)?.staff ?: throw BadDataException("Staff with username=$username does not exist")
   private fun lookupSearchLevel(code: String?) = code?.let { searchLevelRepository.findByIdOrNull(SearchLevel.pk(code)) ?: throw BadDataException("Search Level code $code does not exist") }
