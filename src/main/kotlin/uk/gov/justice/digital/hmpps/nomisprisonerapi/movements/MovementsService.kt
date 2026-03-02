@@ -217,6 +217,7 @@ class MovementsService(
     val temporaryAbsenceSubType = request.temporaryAbsenceSubType?.let { temporaryAbsenceSubTypeOrThrow(request.temporaryAbsenceSubType) }
     // Make sure all requested addresses exist, but just take the first one as NOMIS only supports a single address at the application level
     val toAddress = request.toAddresses
+      .filterNot { it.hasNullValues() }
       .map { findOrCreateAddress(it, offenderBooking.offender) }
       .firstOrNull()
     val toAddressAgency = toAddress
@@ -259,9 +260,13 @@ class MovementsService(
       this.temporaryAbsenceType = temporaryAbsenceType
       this.temporaryAbsenceSubType = temporaryAbsenceSubType
       this.eventSubType = eventSubType
-      this.toAgency = toAddressAgency ?: this.toAgency
-      this.toAddress = toAddress ?: this.toAddress
-      this.toAddressOwnerClass = toAddress?.addressOwnerClass ?: this.toAddressOwnerClass
+      this.toAgency = toAddressAgency
+      this.toAddress = toAddress
+      this.toAddressOwnerClass = toAddress?.addressOwnerClass
+    }
+
+    if (application.isApproved() && application.toAddress == null) {
+      throw BadDataException("The application is approved but no address has been provided")
     }
 
     return offenderMovementApplicationRepository.save(application)

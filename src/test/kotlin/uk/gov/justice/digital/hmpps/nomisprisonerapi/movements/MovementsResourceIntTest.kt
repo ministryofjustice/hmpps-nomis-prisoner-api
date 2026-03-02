@@ -1992,6 +1992,27 @@ class MovementsResourceIntTest(
           }
       }
 
+      @Test
+      fun `should allow create of a pending application without an address`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest().copy(
+            applicationStatus = "PEN",
+            toAddresses = listOf(UpsertTemporaryAbsenceAddress()),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+                assertThat(applicationStatus.code).isEqualTo("PEN")
+                assertThat(toAddress).isNull()
+                assertThat(toAddressOwnerClass).isNull()
+              }
+            }
+          }
+      }
+
       @Nested
       inner class Validation {
         @Test
@@ -2056,6 +2077,26 @@ class MovementsResourceIntTest(
         @Test
         fun `should return bad request for invalid temporary absence sub type`() {
           webTestClient.upsertApplicationBadRequestUnknown(aRequest().copy(temporaryAbsenceSubType = "UNKNOWN"))
+        }
+
+        @Test
+        fun `should return bad request for an approved application without an address`() {
+          webTestClient.upsertApplicationBadRequest(
+            request = aRequest().copy(
+              applicationStatus = "APP-UNSCH",
+              toAddresses = listOf(),
+            ),
+          )
+        }
+
+        @Test
+        fun `should return bad request for an approved application with a null address`() {
+          webTestClient.upsertApplicationBadRequest(
+            request = aRequest().copy(
+              applicationStatus = "APP-UNSCH",
+              toAddresses = listOf(UpsertTemporaryAbsenceAddress()),
+            ),
+          )
         }
       }
 
@@ -2308,6 +2349,45 @@ class MovementsResourceIntTest(
                 assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("AGY")
                 assertThat(toAgency?.id).isEqualTo("NGENHO")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class UpdatePendingApplicationNoAddress {
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                applicationStatus = "APP-UNSCH",
+                toAddress = offenderAddress,
+              )
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should allow update and remove address`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest(id = application.movementApplicationId).copy(
+            applicationStatus = "PEN",
+            toAddresses = listOf(UpsertTemporaryAbsenceAddress()),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+                assertThat(applicationStatus.code).isEqualTo("PEN")
+                assertThat(toAddress).isNull()
+                assertThat(toAddressOwnerClass).isNull()
               }
             }
           }
