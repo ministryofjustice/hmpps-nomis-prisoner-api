@@ -37,7 +37,7 @@ data class Visit(
   var commentText: String? = null,
 
   @Column
-  val visitorConcernText: String? = null,
+  var visitorConcernText: String? = null,
 
   @Column(nullable = false)
   var visitDate: LocalDate,
@@ -60,7 +60,7 @@ data class Visit(
       ), JoinColumnOrFormula(column = JoinColumn(name = "VISIT_TYPE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val visitType: VisitType,
+  var visitType: VisitType,
 
   @ManyToOne(fetch = LAZY)
   @NotFound(action = NotFoundAction.IGNORE)
@@ -94,7 +94,7 @@ data class Visit(
       ), JoinColumnOrFormula(column = JoinColumn(name = "SEARCH_TYPE", referencedColumnName = "code", nullable = true)),
     ],
   )
-  val searchLevel: SearchLevel? = null,
+  var searchLevel: SearchLevel? = null,
 
   @ManyToOne(optional = false, fetch = LAZY)
   @JoinColumn(name = "AGY_LOC_ID", nullable = false)

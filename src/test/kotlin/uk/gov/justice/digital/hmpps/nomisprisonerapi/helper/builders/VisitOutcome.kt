@@ -46,6 +46,7 @@ class VisitOutcomeBuilderRepositoryBuilder(private val repository: VisitOutcomeB
     outcomeReasonCode = outcomeReasonCode,
     eventOutcome = repository.lookupEventOutcome(eventOutcomeCode),
     eventStatus = repository.lookupEventStatus(eventStatusCode),
+    offenderBooking = visit.offenderBooking,
   )
     .let { repository.save(it) }
 }

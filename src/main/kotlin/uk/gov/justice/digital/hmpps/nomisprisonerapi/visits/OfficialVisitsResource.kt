@@ -291,6 +291,61 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     request = request,
   )
 
+  @PutMapping("/official-visits/{visitId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Updates an official visit",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visit details update",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Visit not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateOfficialVisit(
+    @PathVariable
+    visitId: Long,
+    @Validated
+    @RequestBody
+    request: UpdateOfficialVisitRequest,
+  ) {
+    officialVisitsService.updateVisit(
+      visitId = visitId,
+      request = request,
+    )
+  }
+
   @PostMapping("/official-visits/{visitId}/official-visitor")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -564,10 +619,38 @@ data class VisitIdsPage(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Official Visit information")
 data class CreateOfficialVisitRequest(
+  @Schema(description = "Visit slot that typically matches the location and start and end time")
   val visitSlotId: Long,
   @Schema(description = "Prison where the visit is to occur")
   val prisonId: String,
-  @Schema(description = "The offender booking id")
+  @Schema(description = "Visit start date and time")
+  val startDateTime: LocalDateTime,
+  @Schema(description = "Visit end date and time")
+  val endDateTime: LocalDateTime,
+  @Schema(description = "The room where the visit will take place")
+  val internalLocationId: Long,
+  @Schema(description = "The status of the visit; Scheduled, Normal, Cancelled")
+  val visitStatusCode: String,
+  @Schema(description = "The outcome of the visit; Completed, Cancelled, Scheduled, Expired")
+  val visitOutcomeCode: String? = null,
+  @Schema(description = "The status of prisoner, Attended or Absent")
+  val prisonerAttendanceCode: String? = null,
+  @Schema(description = "The type of search to apply to prisoner")
+  val prisonerSearchTypeCode: String? = null,
+  @Schema(description = "Visitor concerns text")
+  val visitorConcernText: String? = null,
+  @Schema(description = "Visit comments")
+  val commentText: String? = null,
+  @Schema(description = "A username associated with the staff user who override ban")
+  val overrideBanStaffUsername: String? = null,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Official Visit information")
+data class UpdateOfficialVisitRequest(
+  @Schema(description = "Visit slot that typically matches the location and start and end time")
+  val visitSlotId: Long,
+  @Schema(description = "Visit start date and time")
   val startDateTime: LocalDateTime,
   @Schema(description = "Visit end date and time")
   val endDateTime: LocalDateTime,
