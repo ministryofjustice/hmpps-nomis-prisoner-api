@@ -230,4 +230,9 @@ class OffenderMovementApplication(
 
   @OneToMany(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL])
   var scheduledTemporaryAbsences: MutableList<OffenderScheduledTemporaryAbsence> = mutableListOf(),
-) : NomisAuditableEntityBasic()
+) : NomisAuditableEntityBasic() {
+
+  fun isUnapproved(): Boolean = applicationStatus.code !in listOf("APP-SCH", "APP-UNSCH")
+  fun isSingle(): Boolean = applicationType.code == "SINGLE"
+  fun hasSchedules(): Boolean = scheduledTemporaryAbsences.isNotEmpty()
+}
