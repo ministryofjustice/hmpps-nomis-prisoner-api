@@ -232,7 +232,8 @@ class OffenderMovementApplication(
   var scheduledTemporaryAbsences: MutableList<OffenderScheduledTemporaryAbsence> = mutableListOf(),
 ) : NomisAuditableEntityBasic() {
 
-  fun isUnapproved(): Boolean = applicationStatus.code !in listOf("APP-SCH", "APP-UNSCH")
+  fun isApproved(): Boolean = applicationStatus.code in listOf("APP-SCH", "APP-UNSCH")
+  fun isUnapproved(): Boolean = !isApproved()
   fun isSingle(): Boolean = applicationType.code == "SINGLE"
   fun hasSchedules(): Boolean = scheduledTemporaryAbsences.isNotEmpty()
 }
