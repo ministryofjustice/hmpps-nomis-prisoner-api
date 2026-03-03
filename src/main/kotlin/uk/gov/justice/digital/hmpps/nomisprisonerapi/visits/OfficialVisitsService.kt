@@ -164,7 +164,7 @@ class OfficialVisitsService(
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun updateVisit(visitId: Long, request: UpdateOfficialVisitRequest) {
-    val visit = visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    val visit = visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
 
     with(visit) {
       commentText = request.commentText
@@ -190,7 +190,7 @@ class OfficialVisitsService(
     visitId: Long,
     request: CreateOfficialVisitorRequest,
   ): OfficialVisitResponse.OfficialVisitor {
-    val visit = visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    val visit = visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
     val person = personRepository.findByIdOrNull(request.personId) ?: throw BadDataException("Person with id ${request.personId} not found")
     return visitVisitorRepository.saveAndFlush(
       VisitVisitor(
@@ -214,8 +214,8 @@ class OfficialVisitsService(
     visitorId: Long,
     request: UpdateOfficialVisitorRequest,
   ) {
-    visitVisitorRepository.findByIdOrNull(visitorId)?.also { visitor ->
-      val visit = visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    visitVisitorRepository.findByIdOrNullForUpdate(visitorId)?.also { visitor ->
+      val visit = visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
       if (visitor.visit != visit) {
         throw BadDataException("Visitor with id $visitorId does not belong to visit with id $visitId")
       }
@@ -230,8 +230,8 @@ class OfficialVisitsService(
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun deleteVisitorForVisit(visitId: Long, visitorId: Long) {
-    visitRepository.findByIdOrNull(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
-    visitVisitorRepository.findByIdOrNull(visitorId)?.also { visitor ->
+    visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    visitVisitorRepository.findByIdOrNullForUpdate(visitorId)?.also { visitor ->
       if (visitor.visit.id != visitId) {
         throw BadDataException("Visitor with id $visitorId does not belong to visit with id $visitId")
       }
