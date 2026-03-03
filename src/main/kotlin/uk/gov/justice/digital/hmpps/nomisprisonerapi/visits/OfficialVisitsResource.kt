@@ -643,6 +643,8 @@ data class CreateOfficialVisitRequest(
   val commentText: String? = null,
   @Schema(description = "A username associated with the staff user who override ban")
   val overrideBanStaffUsername: String? = null,
+  @Schema(description = "Overall visit status")
+  val overallVisitStatus: OverallVisitStatus = OverallVisitStatus.SCH,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -670,6 +672,8 @@ data class UpdateOfficialVisitRequest(
   val commentText: String? = null,
   @Schema(description = "A username associated with the staff user who override ban")
   val overrideBanStaffUsername: String? = null,
+  @Schema(description = "Overall visit status")
+  val overallVisitStatus: OverallVisitStatus = OverallVisitStatus.SCH,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -684,6 +688,8 @@ data class CreateOfficialVisitorRequest(
   val visitorAttendanceOutcomeCode: String? = null,
   @Schema(description = "Visitor comments")
   val commentText: String? = null,
+  @Schema(description = "Overall visit status")
+  val overallVisitStatus: OverallVisitStatus = OverallVisitStatus.SCH,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -696,4 +702,8 @@ data class UpdateOfficialVisitorRequest(
   val visitorAttendanceOutcomeCode: String? = null,
   @Schema(description = "Visitor comments")
   val commentText: String? = null,
+  @Schema(description = "Overall visit status")
+  val overallVisitStatus: OverallVisitStatus = OverallVisitStatus.SCH,
 )
+
+enum class OverallVisitStatus { SCH, EXP, COMP, CANC }
