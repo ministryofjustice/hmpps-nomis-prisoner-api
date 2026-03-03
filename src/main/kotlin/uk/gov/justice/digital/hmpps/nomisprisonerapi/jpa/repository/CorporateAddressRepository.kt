@@ -8,5 +8,5 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 @Repository
 interface CorporateAddressRepository : JpaRepository<CorporateAddress, Long> {
   @Suppress("ktlint:standard:function-naming")
-  fun findFirstByCorporate_CorporateNameAndPremiseAndStreetAndPostalCode(corporateName: String, premise: String, street: String?, postalCode: String?): CorporateAddress?
+  fun findAllByCorporate_CorporateName(corporateName: String): List<CorporateAddress>
 }
