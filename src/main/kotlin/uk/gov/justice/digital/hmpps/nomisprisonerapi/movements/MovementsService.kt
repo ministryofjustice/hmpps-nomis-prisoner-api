@@ -716,14 +716,17 @@ class MovementsService(
       ?: throw BadDataException("Address not found")
   }
 
-  private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? {
-    val (premise, street) = formatAddressText(addressText)
-    return offenderAddressRepository.findFirstByOffender_RootOffenderIdAndPremiseAndStreetAndPostalCode(offender.rootOffenderId!!, premise, street, postalCode)
-  }
+  private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
+    .firstOrNull {
+      it.toFullAddress(null) == addressText && it.postalCode == postalCode
+    }
 
   private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
-    val (premise, street) = formatAddressText(addressText)
-    return corporateAddressRepository.findFirstByCorporate_CorporateNameAndPremiseAndStreetAndPostalCode(name.toCorporateName(), premise, street, postalCode)
+    val corporateName = name.toCorporateName()
+    return corporateAddressRepository.findAllByCorporate_CorporateName(corporateName)
+      .firstOrNull {
+        it.toFullAddress(corporateName) == addressText && it.postalCode == postalCode
+      }
   }
 
   private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)

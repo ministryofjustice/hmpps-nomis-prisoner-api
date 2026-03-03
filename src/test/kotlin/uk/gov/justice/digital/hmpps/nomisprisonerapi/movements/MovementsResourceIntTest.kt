@@ -3016,6 +3016,52 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class CreateScheduleWithOffenderAddressCreatedInNomis {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              premise = "Permanent",
+              street = "16 Main Road",
+              locality = null,
+              city = "28710",
+              postcode = "BD10 9TT",
+              county = null,
+              country = "ENG",
+            )
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence with existing address`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(
+            toAddress = UpsertTemporaryAbsenceAddress(
+              name = null,
+              addressText = "Permanent, 16 Main Road, Bradford, England",
+              postalCode = "BD10 9TT",
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class CreateScheduleWithDuplicateOffenderAddress {
       @BeforeEach
       fun setUp() {
@@ -3074,6 +3120,49 @@ class MovementsResourceIntTest(
       fun `should create scheduled temporary absence`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG")),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class CreateScheduleWithCorporateAddressCreatedInNomis {
+      private lateinit var corporateAddress: CorporateAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Serving Thyme, HMP Ford") {
+            corporateAddress = address(
+              premise = "Serving Thyme, HMP Ford",
+              street = "Ford Road",
+              locality = null,
+              city = "28389",
+              county = "W.SUSSEX",
+              country = "ENG",
+              postcode = "BN18 0BX",
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence with existing address`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Serving Thyme, HMP Ford", addressText = "Ford Road, Arundel, West Sussex, England", postalCode = "BN18 0BX")),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
