@@ -718,14 +718,14 @@ class MovementsService(
 
   private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
     .firstOrNull {
-      it.toFullAddress(null) == addressText && it.postalCode == postalCode
+      it.toFullAddress(null) == addressText.trim() && it.postalCode == postalCode?.trim()
     }
 
   private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
     val corporateName = name.toCorporateName()
     return corporateAddressRepository.findAllByCorporate_CorporateName(corporateName)
       .firstOrNull {
-        it.toFullAddress(corporateName) == addressText && it.postalCode == postalCode
+        it.toFullAddress(corporateName) == addressText.trim() && it.postalCode == postalCode?.trim()
       }
   }
 

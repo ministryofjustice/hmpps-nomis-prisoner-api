@@ -3062,6 +3062,52 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class CreateScheduleWithOffenderAddressFromDpsWithTrailingBlanks {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              premise = "RDR, Preston Town Centre , Lancashire",
+              street = null,
+              locality = null,
+              city = null,
+              postcode = null,
+              county = null,
+              country = null,
+            )
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence with existing address`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(
+            toAddress = UpsertTemporaryAbsenceAddress(
+              name = null,
+              addressText = "RDR, Preston Town Centre , Lancashire ",
+              postalCode = null,
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class CreateScheduleWithDuplicateOffenderAddress {
       @BeforeEach
       fun setUp() {
