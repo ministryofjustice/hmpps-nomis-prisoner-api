@@ -778,6 +778,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
               visitorConcernText = "Quite concerned",
               commentText = "First visit",
               overrideBanStaffUsername = "KOFEADDY_GEN",
+              overallVisitStatus = OverallVisitStatus.CANC,
             ),
           )
           .exchange()
@@ -805,7 +806,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
             with(visitors.first { it.offenderBooking != null }) {
               assertThat(offenderBooking!!.bookingId).isEqualTo(latestBookingId)
               assertThat(eventOutcome!!.description).isEqualTo("Attended")
-              assertThat(eventStatus!!.description).isEqualTo("Scheduled (Approved)")
+              assertThat(eventStatus!!.description).isEqualTo("Cancelled")
               assertThat(eventId).isNotNull()
             }
             assertThat(overrideBanStaff!!.firstName).isEqualTo("KOFE")
@@ -1526,6 +1527,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
               visitorConcernText = "No concerns",
               commentText = "Cancelled due to issues",
               overrideBanStaffUsername = "JIMBOB_GEN",
+              overallVisitStatus = OverallVisitStatus.CANC,
             ),
           )
           .exchange()
@@ -1826,6 +1828,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
                 assistedVisit = true,
                 eventOutcomeCode = "ATT",
                 comment = "First visit",
+                eventStatusCode = "SCH",
               ).id
             }.id
             anotherOfficialVisitId = officialVisit(
@@ -1950,6 +1953,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
           assertThat(groupLeader).isTrue
           assertThat(eventOutcome?.code).isEqualTo("ATT")
           assertThat(commentText).isEqualTo("First visit")
+          assertThat(eventStatus!!.description).isEqualTo("Scheduled (Approved)")
         }
 
         webTestClient.put().uri("/official-visits/{visitId}/official-visitor/{visitorId}", officialVisitId, visitorId)
@@ -1960,6 +1964,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
               assistedVisit = false,
               visitorAttendanceOutcomeCode = "ABS",
               commentText = "Second visit",
+              overallVisitStatus = OverallVisitStatus.COMP,
             ),
           )
           .exchange()
@@ -1970,6 +1975,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
           assertThat(groupLeader).isFalse
           assertThat(eventOutcome?.code).isEqualTo("ABS")
           assertThat(commentText).isEqualTo("Second visit")
+          assertThat(eventStatus!!.description).isEqualTo("Completed")
         }
       }
     }

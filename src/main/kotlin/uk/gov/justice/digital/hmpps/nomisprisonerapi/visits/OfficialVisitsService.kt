@@ -154,7 +154,7 @@ class OfficialVisitsService(
         groupLeader = false,
         assistedVisit = false,
         commentText = null,
-        eventStatus = lookupEventStatus(request.visitStatusCode.asEventStatusCode()),
+        eventStatus = lookupEventStatus(request.overallVisitStatus.name),
         eventId = nextEventId(),
         outcomeReasonCode = null,
         eventOutcome = lookupAttendance(request.prisonerAttendanceCode),
@@ -178,7 +178,7 @@ class OfficialVisitsService(
       searchLevel = lookupSearchLevel(request.prisonerSearchTypeCode)
       overrideBanStaff = request.overrideBanStaffUsername?.let { staffOf(it) }
       with(outcomeVisitor()!!) {
-        eventStatus = lookupEventStatus(request.visitStatusCode.asEventStatusCode())
+        eventStatus = lookupEventStatus(request.overallVisitStatus.name)
         outcomeReasonCode = lookupOutcomeReason(request.visitOutcomeCode)?.code
         eventOutcome = lookupAttendance(request.prisonerAttendanceCode)
       }
@@ -200,7 +200,7 @@ class OfficialVisitsService(
         groupLeader = request.leadVisitor ?: false,
         assistedVisit = request.assistedVisit ?: false,
         commentText = request.commentText,
-        eventStatus = visit.outcomeVisitor()!!.eventStatus,
+        eventStatus = lookupEventStatus(request.overallVisitStatus.name),
         eventId = null,
         outcomeReasonCode = null,
         eventOutcome = lookupAttendance(request.visitorAttendanceOutcomeCode),
@@ -223,7 +223,8 @@ class OfficialVisitsService(
         groupLeader = request.leadVisitor ?: false
         assistedVisit = request.assistedVisit ?: false
         commentText = request.commentText
-        this.eventOutcome = lookupAttendance(request.visitorAttendanceOutcomeCode)
+        eventStatus = lookupEventStatus(request.overallVisitStatus.name)
+        eventOutcome = lookupAttendance(request.visitorAttendanceOutcomeCode)
       }
     } ?: throw NotFoundException("Visitor with id $visitorId is not found")
   }
@@ -314,8 +315,3 @@ class OfficialVisitsService(
 }
 
 private fun latestOfficialContactFirst() = compareByDescending<OffenderContactPerson> { it.relationshipType.code }.thenByDescending { it.createDatetime }
-private fun String.asEventStatusCode() = when (this) {
-  "SCH" -> "SCH"
-  "CANC" -> "CANC"
-  else -> "EXP"
-}
