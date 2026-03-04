@@ -201,7 +201,7 @@ class OfficialVisitsService(
         assistedVisit = request.assistedVisit ?: false,
         commentText = request.commentText,
         eventStatus = lookupEventStatus(request.overallVisitStatus.name),
-        eventId = null,
+        eventId = nextEventId(),
         outcomeReasonCode = null,
         eventOutcome = lookupAttendance(request.visitorAttendanceOutcomeCode),
       ),
