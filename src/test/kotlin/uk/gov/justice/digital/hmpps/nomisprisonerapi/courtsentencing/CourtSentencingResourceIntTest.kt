@@ -2934,7 +2934,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "TARGET",
                 caseSequence = 2,
                 caseStatus = "I",
-                statusUpdateReason = null,
+                statusUpdateReason = "D",
               ) {
                 offenderCaseIdentifier(reference = "TARGET", type = "CASE/INFO#")
                 val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
@@ -3013,11 +3013,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(caseStatus.code).isEqualTo("A")
             assertThat(targetCombinedCase).isNull()
             assertThat(sourceCombinedCases).isEmpty()
-
-            assertThat(statusUpdateDate).isEqualTo(LocalDate.parse("2021-01-02"))
-            assertThat(statusUpdateStaff).isEqualTo(staff)
-            assertThat(statusUpdateComment).isEqualTo("nice")
-            assertThat(statusUpdateReason).isEqualTo("Update")
           }
         }
       }
@@ -3033,32 +3028,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(response.courtCases).hasSize(1)
         assertThat(response.findByCaseInfoNumberOrNull("X0002")).isNotNull
         assertThat(response.findSourceByCaseInfoNumberOrNull("X0002")).isNotNull
-      }
-
-      @Test
-      fun `status update columns are set to allow NOMIS trigger to add to case status table`() {
-        webTestClient.post()
-          .uri("/prisoners/$offenderNo/sentencing/court-cases/clone/$consecutiveCase1Id")
-          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isOk
-
-        transaction {
-          val caseWithNoStatusSet =
-            offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("CON0001")
-
-          assertThat(caseWithNoStatusSet.statusUpdateDate).isEqualTo(LocalDate.now())
-          assertThat(caseWithNoStatusSet.statusUpdateReason).isEqualTo("A")
-          // default to staff ralted to system user
-          assertThat(caseWithNoStatusSet.statusUpdateStaff?.accounts?.map { it.username }).contains("PRISON_API_USER")
-
-          val caseWithStatusAlreadySet =
-            offenderBookingRepository.findByIdOrNull(latestBookingId).getByCaseInfoNumber("CON0002")
-
-          assertThat(caseWithStatusAlreadySet.statusUpdateDate).isEqualTo(LocalDate.parse("2020-01-01"))
-          assertThat(caseWithStatusAlreadySet.statusUpdateReason).isEqualTo("UNLINKED")
-          assertThat(caseWithStatusAlreadySet.statusUpdateStaff?.accounts?.map { it.username }).contains("T_SMITH")
-        }
       }
 
       @Test
@@ -3366,9 +3335,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(extendedDays).isEqualTo(822)
             assertThat(counts).isEqualTo(2)
             assertThat(statusUpdateReason).isEqualTo("A")
-            assertThat(statusUpdateComment).isEqualTo("Reopened")
-            assertThat(statusUpdateDate).isEqualTo(LocalDate.parse("2024-02-15"))
-            assertThat(statusUpdateStaff).isEqualTo(staff)
             assertThat(fineAmount).isEqualTo(BigDecimal.TWO)
             assertThat(nomSentDetailRef).isEqualTo(1)
             assertThat(nomConsToSentDetailRef).isEqualTo(2)
@@ -3674,7 +3640,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           assertThat(sourceCase.courtEvents[0].courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "HP09006" }!!.id.offenderCharge.courtCase).isEqualTo(
             targetCase,
           )
-          assertThat(sourceCase.statusUpdateReason).isEqualTo("LINKED")
 
           assertThat(targetCase.sourceCombinedCases).containsExactly(sourceCase)
           assertThat(targetCase.statusUpdateReason).isEqualTo("D")

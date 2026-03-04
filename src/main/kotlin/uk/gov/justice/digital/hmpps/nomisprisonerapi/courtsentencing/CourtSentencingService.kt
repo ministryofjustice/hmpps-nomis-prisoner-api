@@ -164,8 +164,6 @@ class CourtSentencingService(
         court = lookupEstablishment(request.courtId),
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
         statusUpdateReason = "A",
-        statusUpdateStaff = findStaffByUsername(datasourceUsername.uppercase()),
-        statusUpdateDate = LocalDate.now(),
       ),
     )
     courtCaseRepository.saveAndFlush(courtCase)
@@ -200,8 +198,6 @@ class CourtSentencingService(
         caseSequence = courtCaseRepository.getNextCaseSequence(booking),
         primaryCaseInfoNumber = primaryCaseIdentifier,
         statusUpdateReason = "A",
-        statusUpdateStaff = findStaffByUsername(datasourceUsername.uppercase()),
-        statusUpdateDate = LocalDate.now(),
       )
     courtCase.offenderCharges.addAll(
       request.offenderCharges.map {
@@ -626,12 +622,6 @@ class CourtSentencingService(
       ?.let { latestEvent ->
         if (courtCase.court != latestEvent.court) {
           courtCase.court = latestEvent.court
-          // only update the status fields if the reason was previously null, this is really fixing any incorrect nulls
-          courtCase.statusUpdateReason ?: let {
-            courtCase.statusUpdateReason = courtCase.deriveStatusUpdateReason()
-            courtCase.statusUpdateStaff = findStaffByUsername(datasourceUsername.uppercase())
-            courtCase.statusUpdateDate = LocalDate.now()
-          }
         }
       }
   }
@@ -776,6 +766,7 @@ class CourtSentencingService(
       // this is the sentence sequence this sentence is consecutive to
       consecSequence = request.consecutiveToSentenceSeq?.toInt(),
       lineSequence = offenderSentenceRepository.getNextLineSequence(offenderBooking).toInt(),
+      statusUpdateReason = "A",
     )
 
     sentence.offenderSentenceCharges.addAll(
@@ -965,13 +956,6 @@ class CourtSentencingService(
             "\nwith charges: ${request.offenderChargeIds} " +
             "\noriginal charges: ${sentence.offenderSentenceCharges.map { it.offenderCharge.id }}",
         )
-
-        if (sentence.statusUpdateStaff == null && sentence.statusUpdateDate != null) {
-          // if we have no statusUpdateStaff but a date we know NOMIS trigger will fail
-          // so for this fudged scenario set the staff to hard coded sync staff record for the user name
-          // TODO: should this always be set?
-          sentence.statusUpdateStaff = findStaffByUsername(datasourceUsername.uppercase())
-        }
         if (sentence.offenderSentenceCharges.map { it.offenderCharge.id }
             .toSet() != request.offenderChargeIds.toSet()
         ) {
@@ -1673,9 +1657,6 @@ class CourtSentencingService(
           primaryCaseInfoNumber = null,
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
-          statusUpdateDate = sourceCase.statusUpdateDate,
-          statusUpdateStaff = sourceCase.statusUpdateStaff,
-          statusUpdateComment = sourceCase.statusUpdateComment,
           statusUpdateReason = sourceCase.statusUpdateReason,
 
         ).also { clonedCase ->
@@ -1791,9 +1772,6 @@ class CourtSentencingService(
               extendedDays = offenderSentence.extendedDays,
               counts = offenderSentence.counts,
               statusUpdateReason = offenderSentence.statusUpdateReason,
-              statusUpdateComment = offenderSentence.statusUpdateComment,
-              statusUpdateDate = offenderSentence.statusUpdateDate,
-              statusUpdateStaff = offenderSentence.statusUpdateStaff,
               category = offenderSentence.category,
               fineAmount = offenderSentence.fineAmount,
               dischargeDate = offenderSentence.dischargeDate,
@@ -1857,18 +1835,8 @@ class CourtSentencingService(
       clonedCases.forEachIndexed { caseIndex, clonedCase ->
         val sourceCase = sourceCourtCases[caseIndex]
         if (sourceCase.targetCombinedCase != null) {
-          clonedCase.statusUpdateDate = sourceCase.statusUpdateDate ?: LocalDate.now()
-          clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: sourceCase.deriveStatusUpdateReason()
-          clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
           clonedCase.targetCombinedCase = clonedCases[sourceCourtCases.indexOf(sourceCase.targetCombinedCase)]
           clonedCase.targetCombinedCase!!.sourceCombinedCases += clonedCase
-
-          with(clonedCase.targetCombinedCase!!) {
-            // update target case so trigger for status update is ok
-            this.statusUpdateDate = LocalDate.now()
-            this.statusUpdateReason = this.deriveStatusUpdateReason()
-            this.statusUpdateStaff = findStaffByUsername(clonedCase.createUsername)
-          }
         }
       }
 
@@ -1950,9 +1918,6 @@ class CourtSentencingService(
             clonedCase.primaryCaseInfoNumber = sourceCase.primaryCaseInfoNumber
             courtCaseRepository.updatePrimaryCaseInfoNumber(caseId = clonedCase.id, caseInfoNumber = primaryCaseInfoNumber)
           }
-          clonedCase.statusUpdateDate = sourceCase.statusUpdateDate ?: LocalDate.now()
-          clonedCase.statusUpdateReason = sourceCase.statusUpdateReason ?: sourceCase.deriveStatusUpdateReason()
-          clonedCase.statusUpdateStaff = sourceCase.statusUpdateStaff ?: findStaffByUsername(clonedCase.createUsername)
 
           // NOMIS trigger will insert primaryCaseInfoNumber - so exclude from our manually insert else we will have duplicate keys
           clonedCase.caseInfoNumbers += sourceCase.caseInfoNumbers.filterNot { caseIdentifier -> caseIdentifier.id.identifierType == "CASE/INFO#" && caseIdentifier.id.reference == sourceCase.primaryCaseInfoNumber }.map { caseInfoNumber ->
@@ -1999,16 +1964,6 @@ class CourtSentencingService(
       },
     )
   }
-}
-
-private fun CourtCase.deriveStatusUpdateReason() = if (this.targetCombinedCase != null) {
-  "LINKED"
-} else if (this.caseStatus.code == "A") {
-  // active
-  "A"
-} else {
-  // inactive
-  "D"
 }
 
 private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest = ExistingOffenderChargeRequest(
