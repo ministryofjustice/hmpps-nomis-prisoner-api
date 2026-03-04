@@ -116,19 +116,20 @@ class MovementsService(
     val unscheduledTemporaryAbsences = allTemporaryAbsences - movementApplications.temporaryAbsences()
     val unscheduledTemporaryAbsenceReturns = allTemporaryAbsenceReturns - movementApplications.temporaryAbsenceReturns()
 
-    data class Booking(val id: Long, val active: Boolean)
+    data class Booking(val id: Long, val active: Boolean, val latest: Boolean)
 
     val bookings = (
-      movementApplications.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active) } +
-        unscheduledTemporaryAbsences.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active) } +
-        unscheduledTemporaryAbsenceReturns.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active) }
+      movementApplications.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1) } +
+        unscheduledTemporaryAbsences.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1) } +
+        unscheduledTemporaryAbsenceReturns.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1) }
       ).toSet()
 
     return OffenderTemporaryAbsencesResponse(
-      bookings = bookings.map { (bookingId, active) ->
+      bookings = bookings.map { (bookingId, active, latest) ->
         BookingTemporaryAbsences(
           bookingId = bookingId,
           activeBooking = active,
+          latestBooking = latest,
           temporaryAbsenceApplications = movementApplications.filter { it.offenderBooking.bookingId == bookingId }
             .map { it.toResponse() },
           unscheduledTemporaryAbsences = unscheduledTemporaryAbsences.filter { it.offenderBooking.bookingId == bookingId }
@@ -915,6 +916,7 @@ class MovementsService(
   private fun OffenderMovementApplication.toSingleResponse() = TemporaryAbsenceApplicationResponse(
     bookingId = offenderBooking.bookingId,
     activeBooking = offenderBooking.active,
+    latestBooking = offenderBooking.bookingSequence == 1,
     movementApplicationId = movementApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate.toLocalDate(),

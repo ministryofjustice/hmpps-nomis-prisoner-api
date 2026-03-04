@@ -27,6 +27,9 @@ data class BookingTemporaryAbsences(
 
   @Schema(description = "Whether this is an active booking")
   val activeBooking: Boolean,
+
+  @Schema(description = "Whether this is the latest booking")
+  val latestBooking: Boolean,
 )
 
 @Schema(description = "Temporary absence application response")

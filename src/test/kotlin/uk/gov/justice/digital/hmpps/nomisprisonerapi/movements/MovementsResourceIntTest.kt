@@ -172,6 +172,7 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[0].activeBooking").isEqualTo(true)
+        .jsonPath("$.bookings[0].latestBooking").isEqualTo(true)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].eventSubType").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationDate").value<String> {
@@ -1202,6 +1203,7 @@ class MovementsResourceIntTest(
           val application = book.temporaryAbsenceApplications.first()
           assertThat(book.bookingId).isEqualTo(mergedBooking.bookingId)
           assertThat(book.activeBooking).isEqualTo(false)
+          assertThat(book.latestBooking).isEqualTo(false)
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           assertThat(application.movementApplicationId).isEqualTo(mergedApplication.movementApplicationId)
           with(application.absences.first()) {
@@ -1240,6 +1242,7 @@ class MovementsResourceIntTest(
           val application = book.temporaryAbsenceApplications.first()
           assertThat(book.bookingId).isEqualTo(booking.bookingId)
           assertThat(book.activeBooking).isEqualTo(true)
+          assertThat(book.latestBooking).isEqualTo(true)
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           assertThat(application.movementApplicationId).isEqualTo(application.movementApplicationId)
           with(application.absences[1]) {
@@ -1674,6 +1677,7 @@ class MovementsResourceIntTest(
         .apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(activeBooking).isEqualTo(true)
+          assertThat(latestBooking).isEqualTo(true)
           assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
           assertThat(eventSubType).isEqualTo("C5")
           assertThat(applicationDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -1713,7 +1717,33 @@ class MovementsResourceIntTest(
         .apply {
           assertThat(bookingId).isEqualTo(inactiveBooking.bookingId)
           assertThat(activeBooking).isEqualTo(false)
+          assertThat(latestBooking).isEqualTo(false)
           assertThat(movementApplicationId).isEqualTo(inactiveBookingApplication.movementApplicationId)
+        }
+    }
+
+    @Test
+    fun `should retrieve latest booking even if inactive`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = "A9843AA") {
+          booking = booking(bookingSequence = 1, active = false) {
+            application = temporaryAbsenceApplication()
+          }
+        }
+      }
+
+      webTestClient.get()
+        .uri(
+          "/movements/A9843AA/temporary-absences/application/{applicationId}",
+          application.movementApplicationId,
+        )
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBodyResponse<TemporaryAbsenceApplicationResponse>()
+        .apply {
+          assertThat(activeBooking).isEqualTo(false)
+          assertThat(latestBooking).isEqualTo(true)
         }
     }
   }
