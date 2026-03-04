@@ -1752,6 +1752,7 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
             assertThat(this.groupLeader).isFalse
             assertThat(this.assistedVisit).isTrue
             assertThat(this.commentText).isEqualTo("First visit")
+            assertThat(this.eventId).isNotNull()
           }
         }
       }
