@@ -17,4 +17,5 @@ data class UpsertTemporaryAbsenceAddress(
   val postalCode: String? = null,
 ) {
   fun hasNullValues(): Boolean = id == null && name == null && addressText == null && postalCode == null
+  fun isCorporateAddress(): Boolean = !name.isNullOrBlank() && name != addressText
 }

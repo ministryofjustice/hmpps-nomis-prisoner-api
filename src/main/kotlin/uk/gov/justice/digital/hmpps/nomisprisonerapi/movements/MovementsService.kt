@@ -652,9 +652,9 @@ class MovementsService(
 
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 
-    return when (request.name) {
-      null -> findOrCreateOffenderAddress(request.addressText, request.postalCode, offender)
-      else -> findOrCreateCorporateAddress(request.name, request.addressText, request.postalCode)
+    return when (request.isCorporateAddress()) {
+      true -> findOrCreateCorporateAddress(request.name!!, request.addressText, request.postalCode)
+      false -> findOrCreateOffenderAddress(request.addressText, request.postalCode, offender)
     }
   }
 
@@ -709,9 +709,9 @@ class MovementsService(
 
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 
-    return when (request.name) {
-      null -> findOffenderAddress(request.addressText, request.postalCode, offender)
-      else -> findCorporateAddress(request.name, request.addressText, request.postalCode)
+    return when (request.isCorporateAddress()) {
+      true -> findCorporateAddress(request.name!!, request.addressText, request.postalCode)
+      false -> findOffenderAddress(request.addressText, request.postalCode, offender)
     }
       ?: throw BadDataException("Address not found")
   }
