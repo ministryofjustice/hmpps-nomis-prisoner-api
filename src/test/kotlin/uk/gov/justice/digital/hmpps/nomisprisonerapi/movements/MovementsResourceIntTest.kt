@@ -2013,6 +2013,24 @@ class MovementsResourceIntTest(
           }
       }
 
+      @Test
+      fun `should create a new offender address where corporate name same as address`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest().copy(
+            toAddresses = listOf(UpsertTemporaryAbsenceAddress(name = "Boston", addressText = "Boston")),
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+                assertThat(toAddress?.premise).isEqualTo("Boston")
+                assertThat(toAddressOwnerClass).isEqualTo("OFF")
+              }
+            }
+          }
+      }
+
       @Nested
       inner class Validation {
         @Test
@@ -3173,6 +3191,41 @@ class MovementsResourceIntTest(
               with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class ShouldFindOffenderAddressWhereCorporateNameSameAsAddress {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              premise = "Boston",
+              street = null,
+              locality = null,
+            )
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence with offender address`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boston", addressText = "Boston", postalCode = null)),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(toAddress?.premise).isEqualTo("Boston")
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
               }
             }
           }
