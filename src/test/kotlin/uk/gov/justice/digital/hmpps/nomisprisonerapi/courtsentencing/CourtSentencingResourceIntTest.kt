@@ -2934,7 +2934,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "TARGET",
                 caseSequence = 2,
                 caseStatus = "I",
-                statusUpdateReason = null,
+                statusUpdateReason = "D",
               ) {
                 offenderCaseIdentifier(reference = "TARGET", type = "CASE/INFO#")
                 val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
