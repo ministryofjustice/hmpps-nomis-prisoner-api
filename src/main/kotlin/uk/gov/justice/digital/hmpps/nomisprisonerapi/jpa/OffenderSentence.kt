@@ -153,14 +153,17 @@ class OffenderSentence(
 
   val counts: Int? = null,
 
-  val statusUpdateReason: String? = null,
+  @Column(name = "STATUS_UPDATE_COMMENT", updatable = false)
+  var statusUpdateComment: String? = null,
 
-  val statusUpdateComment: String? = null,
+  @Column(name = "STATUS_UPDATE_REASON", updatable = false)
+  var statusUpdateReason: String? = null,
 
-  val statusUpdateDate: LocalDate? = null,
+  @Column(name = "STATUS_UPDATE_DATE", updatable = false)
+  var statusUpdateDate: LocalDate? = null,
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "STATUS_UPDATE_STAFF_ID")
+  @JoinColumn(name = "STATUS_UPDATE_STAFF_ID", updatable = false)
   var statusUpdateStaff: Staff? = null,
 
   // optional on DB but no nulls in prod
