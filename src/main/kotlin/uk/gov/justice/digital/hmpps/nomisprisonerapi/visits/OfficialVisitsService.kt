@@ -225,6 +225,7 @@ class OfficialVisitsService(
         commentText = request.commentText
         eventStatus = lookupEventStatus(request.overallVisitStatus.name)
         eventOutcome = lookupAttendance(request.visitorAttendanceOutcomeCode)
+        outcomeReasonCode = lookupOutcomeReason(request.visitOutcomeCode)?.code
       }
     } ?: throw NotFoundException("Visitor with id $visitorId is not found")
   }
