@@ -704,6 +704,8 @@ data class UpdateOfficialVisitorRequest(
   val commentText: String? = null,
   @Schema(description = "Overall visit status")
   val overallVisitStatus: OverallVisitStatus = OverallVisitStatus.SCH,
+  @Schema(description = "The outcome of the visit; Completed, Cancelled, Scheduled, Expired")
+  val visitOutcomeCode: String? = null,
 )
 
 enum class OverallVisitStatus { SCH, EXP, COMP, CANC }
