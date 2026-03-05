@@ -2442,6 +2442,95 @@ class MovementsResourceIntTest(
       }
     }
 
+    @Nested
+    inner class UpdateToNotApproved {
+      @Test
+      fun `should remove schedule for single`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                applicationType = "SINGLE",
+                applicationStatus = "APP-SCH",
+              ) {
+                scheduledTempAbsence = scheduledTemporaryAbsence()
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertApplicationOk(
+          request = aRequest(id = application.movementApplicationId).copy(
+            applicationStatus = "PEN",
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+                assertThat(applicationStatus.code).isEqualTo("PEN")
+                assertThat(scheduledTemporaryAbsences).isEmpty()
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should not remove schedule for repeating`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                applicationType = "REPEATING",
+                applicationStatus = "APP-SCH",
+              ) {
+                scheduledTempAbsence = scheduledTemporaryAbsence()
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertApplicationOk(
+          request = aRequest(id = application.movementApplicationId).copy(
+            applicationType = "REPEATING",
+            applicationStatus = "PEN",
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+                assertThat(applicationStatus.code).isEqualTo("PEN")
+                assertThat(scheduledTemporaryAbsences.first()).isNotNull()
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should return bad request if schedule has a movement`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                applicationType = "SINGLE",
+                applicationStatus = "APP-SCH",
+              ) {
+                scheduledTempAbsence = scheduledTemporaryAbsence {
+                  externalMovement()
+                  scheduledReturn()
+                }
+              }
+            }
+          }
+        }
+
+        webTestClient.upsertApplicationBadRequest(
+          request = aRequest(id = application.movementApplicationId).copy(
+            applicationStatus = "PEN",
+          ),
+        )
+      }
+    }
+
     private fun WebTestClient.upsertApplication(
       request: UpsertTemporaryAbsenceApplicationRequest = aRequest(),
       offenderNo: String = offender.nomsId,

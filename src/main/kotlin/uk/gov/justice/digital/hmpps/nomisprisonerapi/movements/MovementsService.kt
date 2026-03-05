@@ -270,6 +270,13 @@ class MovementsService(
       throw BadDataException("The application is approved but no address has been provided")
     }
 
+    // NOMIS does not allow schedules on an unapproved single application - if we find one then remove it
+    if (!application.isApproved() && application.isSingle()) {
+      val schedule = application.scheduledTemporaryAbsences.firstOrNull()
+      if (schedule?.temporaryAbsence != null) throw BadDataException("Attempt to remove a schedule from an unapproved application failed - the schedule (${schedule.eventId}) is attached to a movement (${schedule.temporaryAbsence!!.id.offenderBooking.bookingId}/${schedule.temporaryAbsence!!.id.sequence}).")
+      application.scheduledTemporaryAbsences.remove(schedule)
+    }
+
     return offenderMovementApplicationRepository.save(application)
       .let { UpsertTemporaryAbsenceApplicationResponse(offenderBooking.bookingId, it.movementApplicationId) }
   }

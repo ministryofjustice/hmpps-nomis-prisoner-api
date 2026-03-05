@@ -228,7 +228,7 @@ class OffenderMovementApplication(
   )
   var temporaryAbsenceSubType: TemporaryAbsenceSubType? = null,
 
-  @OneToMany(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL])
+  @OneToMany(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL], orphanRemoval = true)
   var scheduledTemporaryAbsences: MutableList<OffenderScheduledTemporaryAbsence> = mutableListOf(),
 ) : NomisAuditableEntityBasic() {
 
