@@ -737,7 +737,9 @@ class MovementsService(
     val corporateName = name.toCorporateName()
     return corporateAddressRepository.findAllByCorporate_CorporateName(corporateName)
       .firstOrNull {
-        it.toFullAddress(corporateName) == addressText.trim() && it.postalCode == postalCode?.trim()
+        // Need to check address with and without corporate name - it might be included on a DPS address
+        (it.toFullAddress(corporateName) == addressText.trim() || it.toFullAddress() == addressText.trim()) &&
+          it.postalCode == postalCode?.trim()
       }
   }
 
@@ -1063,7 +1065,7 @@ class MovementsService(
     }
   }
 
-  private fun Address.toFullAddress(description: String?): String {
+  private fun Address.toFullAddress(description: String? = null): String {
     val address = mutableListOf<String>()
 
     fun MutableList<String>.addIfNotEmpty(value: String?) {
