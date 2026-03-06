@@ -2061,6 +2061,25 @@ class MovementsResourceIntTest(
           }
       }
 
+      @Test
+      fun `should handle trailing blanks in corporate address`() {
+        webTestClient.upsertApplicationOk(
+          request = aRequest().copy(
+            toAddresses = listOf(UpsertTemporaryAbsenceAddress(name = "HSL ", addressText = "Bowness , Cumbria ", postalCode = "LA23 3AS ")),
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                assertThat(toAddress?.premise).isEqualTo("Bowness , Cumbria")
+                assertThat(toAddress?.postalCode).isEqualTo("LA23 3AS")
+                assertThat(toAddressOwnerClass).isEqualTo("CORP")
+              }
+              assertThat(corporateRepository.findAllByCorporateName("HSL").size).isEqualTo(1)
+            }
+          }
+      }
+
       @Nested
       inner class Validation {
         @Test
@@ -3381,6 +3400,48 @@ class MovementsResourceIntTest(
       fun `should create scheduled temporary absence with existing address`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Serving Thyme, HMP Ford", addressText = "Ford Road, Arundel, West Sussex, England", postalCode = "BN18 0BX")),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class CreateScheduleWithCorporateAddressTrailingBlanks {
+      private lateinit var corporateAddress: CorporateAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "HSL") {
+            corporateAddress = address(
+              premise = "Bowness , Cumbria",
+              street = null,
+              locality = null,
+              postcode = "LA23 3AS",
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = temporaryAbsenceApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should find address despite trailing blanks`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertRequest(
+            toAddress = UpsertTemporaryAbsenceAddress(name = "HSL ", addressText = "Bowness , Cumbria ", postalCode = "LA23 3AS "),
+          ),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)

@@ -660,9 +660,11 @@ class MovementsService(
 
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 
-    return when (request.isCorporateAddress()) {
-      true -> findOrCreateCorporateAddress(request.name!!, request.addressText, request.postalCode)
-      false -> findOrCreateOffenderAddress(request.addressText, request.postalCode, offender)
+    with(request.copyAndTrim()) {
+      return when (isCorporateAddress()) {
+        true -> findOrCreateCorporateAddress(name!!, addressText!!, postalCode)
+        false -> findOrCreateOffenderAddress(addressText!!, postalCode, offender)
+      }
     }
   }
 
@@ -717,11 +719,13 @@ class MovementsService(
 
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 
-    return when (request.isCorporateAddress()) {
-      true -> findCorporateAddress(request.name!!, request.addressText, request.postalCode)
-      false -> findOffenderAddress(request.addressText, request.postalCode, offender)
+    with(request.copyAndTrim()) {
+      return when (isCorporateAddress()) {
+        true -> findCorporateAddress(name!!, addressText!!, postalCode)
+        false -> findOffenderAddress(addressText!!, postalCode, offender)
+      }
+        ?: throw BadDataException("Address not found")
     }
-      ?: throw BadDataException("Address not found")
   }
 
   private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
