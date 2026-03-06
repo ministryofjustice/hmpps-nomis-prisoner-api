@@ -1723,6 +1723,32 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
           .expectBody()
           .jsonPath("$.developerMessage").isEqualTo("Event Outcome code ZZZ does not exist")
       }
+
+      @Test
+      fun `cannot add the same visitor twice, 409 response will return existing visitor id`() {
+        val createdVisitor: OfficialVisitResponse.OfficialVisitor = webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = personContact.id,
+            ),
+          )
+          .exchange()
+          .expectBodyResponse()
+
+        webTestClient.post().uri("/official-visits/{visitId}/official-visitor", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitorRequest(
+              personId = personContact.id,
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Person ${personContact.id} is already on visit $officialVisitId")
+          .jsonPath("$.moreInfo").isEqualTo("${createdVisitor.id}")
+      }
     }
 
     @Nested
