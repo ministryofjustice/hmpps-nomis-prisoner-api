@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
@@ -192,6 +193,10 @@ class OfficialVisitsService(
   ): OfficialVisitResponse.OfficialVisitor {
     val visit = visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
     val person = personRepository.findByIdOrNull(request.personId) ?: throw BadDataException("Person with id ${request.personId} not found")
+    visit.visitors.find { it.person?.id == request.personId }?.also {
+      throw ConflictException("Person ${request.personId} is already on visit $visitId", entityId = it.id.toString())
+    }
+
     return visitVisitorRepository.saveAndFlush(
       VisitVisitor(
         offenderBooking = null,
