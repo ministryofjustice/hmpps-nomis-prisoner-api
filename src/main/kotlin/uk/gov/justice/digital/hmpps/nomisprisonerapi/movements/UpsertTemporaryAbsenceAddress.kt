@@ -21,4 +21,7 @@ data class UpsertTemporaryAbsenceAddress(
 
   @Schema(hidden = true)
   fun isCorporateAddress(): Boolean = !name.isNullOrBlank() && name != addressText
+
+  @Schema(hidden = true)
+  fun copyAndTrim(): UpsertTemporaryAbsenceAddress = this.copy(name = name?.trim(), addressText = addressText?.trim(), postalCode = postalCode?.trim())
 }
