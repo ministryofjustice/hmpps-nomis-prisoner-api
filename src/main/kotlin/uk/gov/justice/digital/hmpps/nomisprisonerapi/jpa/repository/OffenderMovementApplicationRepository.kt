@@ -13,6 +13,9 @@ interface OffenderMovementApplicationRepository : JpaRepository<OffenderMovement
   @EntityGraph(type = EntityGraphType.FETCH, value = "offender-movement-app")
   fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderMovementApplication>
 
+  @EntityGraph(type = EntityGraphType.FETCH, value = "offender-movement-app")
+  fun findAllByOffenderBooking_BookingId(bookingId: Long): List<OffenderMovementApplication>
+
   @EntityGraph(type = EntityGraphType.FETCH, value = "application-only")
   fun findByMovementApplicationIdAndOffenderBooking_Offender_NomsId(applicationId: Long, offenderNo: String): OffenderMovementApplication?
 

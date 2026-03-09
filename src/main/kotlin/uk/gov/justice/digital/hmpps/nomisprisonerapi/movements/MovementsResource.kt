@@ -63,6 +63,42 @@ class MovementsResource(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
   ): OffenderTemporaryAbsencesResponse = movementsService.getTemporaryAbsencesAndMovements(offenderNo)
 
+  @GetMapping("/movements/booking/{bookingId}/temporary-absences")
+  @Operation(
+    summary = "Get temporary absence applications, schedules and external movements for a booking",
+    description = "Get temporary absence applications, schedules and external movements for a booking. This is used to migrate temporary absences to DPS. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Booking temporary absences returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getTemporaryAbsencesAndMovementsForBooking(
+    @Schema(description = "Booking ID", example = "123456") @PathVariable bookingId: Long,
+  ): BookingTemporaryAbsences = movementsService.getTemporaryAbsencesAndMovementsForBooking(bookingId)
+
   @GetMapping("/movements/{offenderNo}/temporary-absences/application/{applicationId}")
   @Operation(
     summary = "Get a specific temporary absence application for an offender",

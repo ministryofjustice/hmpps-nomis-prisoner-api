@@ -6772,6 +6772,99 @@ class MovementsResourceIntTest(
     }
   }
 
+  @Nested
+  @DisplayName("GET /movements/booking/{bookingId}/temporary-absences")
+  inner class GetTemporaryAbsencesByBooking {
+    @Test
+    fun `should return unauthorized for missing token`() {
+      webTestClient.get()
+        .uri("/movements/booking/12345/temporary-absences")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden for missing role`() {
+      webTestClient.get()
+        .uri("/movements/booking/12345/temporary-absences")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden for wrong role`() {
+      webTestClient.get()
+        .uri("/movements/booking/12345/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return not found for unknown booking id`() {
+      webTestClient.get()
+        .uri("/movements/booking/12345/temporary-absences")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Offender booking 12345 not found")
+        }
+    }
+
+    @Test
+    fun `should return only the requested booking`() {
+      lateinit var secondBooking: OffenderBooking
+      lateinit var firstApplication: OffenderMovementApplication
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            firstApplication = temporaryAbsenceApplication {
+              scheduledTempAbsence = scheduledTemporaryAbsence {
+                tempAbsence = externalMovement()
+                scheduledTempAbsenceReturn = scheduledReturn {
+                  tempAbsenceReturn = externalMovement()
+                }
+              }
+            }
+            unscheduledTemporaryAbsence = temporaryAbsence()
+            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn()
+          }
+          secondBooking = booking {
+            application = temporaryAbsenceApplication {
+              scheduledTemporaryAbsence()
+            }
+          }
+        }
+      }
+
+      webTestClient.getBookingTemporaryAbsences(booking.bookingId)
+        .apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(activeBooking).isTrue()
+          assertThat(latestBooking).isTrue()
+          assertThat(temporaryAbsenceApplications).hasSize(1)
+          assertThat(temporaryAbsenceApplications[0].movementApplicationId).isEqualTo(firstApplication.movementApplicationId)
+          assertThat(temporaryAbsenceApplications[0].absences).hasSize(1)
+          assertThat(temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence?.eventId).isEqualTo(scheduledTempAbsence.eventId)
+          assertThat(temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn?.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+          assertThat(temporaryAbsenceApplications[0].absences[0].temporaryAbsence?.sequence).isEqualTo(tempAbsence.id.sequence)
+          assertThat(temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn?.sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          assertThat(unscheduledTemporaryAbsences).extracting<Int> { it.sequence }.containsExactly(unscheduledTemporaryAbsence.id.sequence)
+          assertThat(unscheduledTemporaryAbsenceReturns).extracting<Int> { it.sequence }.containsExactly(unscheduledTemporaryAbsenceReturn.id.sequence)
+        }
+
+      webTestClient.getBookingTemporaryAbsences(secondBooking.bookingId)
+        .apply {
+          assertThat(bookingId).isEqualTo(secondBooking.bookingId)
+          assertThat(temporaryAbsenceApplications).hasSize(1)
+          assertThat(unscheduledTemporaryAbsences).isEmpty()
+          assertThat(unscheduledTemporaryAbsenceReturns).isEmpty()
+        }
+    }
+  }
+
   private fun WebTestClient.getOffenderSummary(offenderNo: String) = get()
     .uri("/movements/$offenderNo/temporary-absences/summary")
     .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -6825,4 +6918,11 @@ class MovementsResourceIntTest(
     .bodyValue(request)
     .exchange()
     .expectStatus()
+
+  private fun WebTestClient.getBookingTemporaryAbsences(bookingId: Long) = get()
+    .uri("/movements/booking/$bookingId/temporary-absences")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .exchange()
+    .expectStatus().isOk
+    .expectBodyResponse<BookingTemporaryAbsences>()
 }

@@ -126,20 +126,65 @@ class MovementsService(
 
     return OffenderTemporaryAbsencesResponse(
       bookings = bookings.map { (bookingId, active, latest) ->
-        BookingTemporaryAbsences(
+        toBookingTemporaryAbsences(
           bookingId = bookingId,
-          activeBooking = active,
-          latestBooking = latest,
-          temporaryAbsenceApplications = movementApplications.filter { it.offenderBooking.bookingId == bookingId }
-            .map { it.toResponse() },
-          unscheduledTemporaryAbsences = unscheduledTemporaryAbsences.filter { it.offenderBooking.bookingId == bookingId }
-            .map { mov -> mov.toTemporaryAbsenceResponse() },
-          unscheduledTemporaryAbsenceReturns = unscheduledTemporaryAbsenceReturns.filter { it.offenderBooking.bookingId == bookingId }
-            .map { mov -> mov.toTemporaryAbsenceReturnResponse() },
+          active = active,
+          latest = latest,
+          movementApplications = movementApplications,
+          unscheduledTemporaryAbsences = unscheduledTemporaryAbsences,
+          unscheduledTemporaryAbsenceReturns = unscheduledTemporaryAbsenceReturns,
         )
       },
     )
   }
+
+  fun getTemporaryAbsencesAndMovementsForBooking(bookingId: Long): BookingTemporaryAbsences {
+    val booking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Offender booking $bookingId not found")
+
+    // We need to run these queries before findAllByOffenderBooking_BookingId otherwise if Hibernate finds an entity of
+    // type OffenderTemporaryAbsence in the session where it's expecting an OffenderTemporaryAbsenceReturn it tries (and fails)
+    // to use the wrong type instead of respecting the @NotFound(IGNORE). So we run these queries before the entity is loaded
+    // into the session and the @NotFound is respected.
+    val allTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_BookingId(bookingId)
+    val allTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_BookingId(bookingId)
+
+    val movementApplications = offenderMovementApplicationRepository.findAllByOffenderBooking_BookingId(bookingId)
+      .also { it.fixMergedSchedules() }
+      .also { it.unlinkCorruptTemporaryAbsenceReturns() }
+
+    // To find the unscheduled movements we get all movements and remove those linked to a TAP application. This is necessary because of corrupt movements linked to the wrong application.
+    val unscheduledTemporaryAbsences = allTemporaryAbsences - movementApplications.temporaryAbsences()
+    val unscheduledTemporaryAbsenceReturns = allTemporaryAbsenceReturns - movementApplications.temporaryAbsenceReturns()
+
+    return toBookingTemporaryAbsences(
+      bookingId = bookingId,
+      active = booking.active,
+      latest = booking.bookingSequence == 1,
+      movementApplications = movementApplications,
+      unscheduledTemporaryAbsences = unscheduledTemporaryAbsences,
+      unscheduledTemporaryAbsenceReturns = unscheduledTemporaryAbsenceReturns,
+    )
+  }
+
+  private fun toBookingTemporaryAbsences(
+    bookingId: Long,
+    active: Boolean,
+    latest: Boolean,
+    movementApplications: List<OffenderMovementApplication>,
+    unscheduledTemporaryAbsences: List<OffenderTemporaryAbsence>,
+    unscheduledTemporaryAbsenceReturns: List<OffenderTemporaryAbsenceReturn>,
+  ) = BookingTemporaryAbsences(
+    bookingId = bookingId,
+    activeBooking = active,
+    latestBooking = latest,
+    temporaryAbsenceApplications = movementApplications.filter { it.offenderBooking.bookingId == bookingId }
+      .map { it.toResponse() },
+    unscheduledTemporaryAbsences = unscheduledTemporaryAbsences.filter { it.offenderBooking.bookingId == bookingId }
+      .map { mov -> mov.toTemporaryAbsenceResponse() },
+    unscheduledTemporaryAbsenceReturns = unscheduledTemporaryAbsenceReturns.filter { it.offenderBooking.bookingId == bookingId }
+      .map { mov -> mov.toTemporaryAbsenceReturnResponse() },
+  )
 
   private fun List<OffenderMovementApplication>.fixMergedSchedules() {
     // find any scheduled returns on the wrong application and remove them (these are created during merges)
