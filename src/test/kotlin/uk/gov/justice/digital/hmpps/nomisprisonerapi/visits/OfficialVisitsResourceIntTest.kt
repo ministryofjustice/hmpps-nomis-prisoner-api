@@ -716,6 +716,58 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
           .expectBody()
           .jsonPath("$.developerMessage").isEqualTo("Search Level code ZZZ does not exist")
       }
+
+      @Test
+      fun `cannot create the same visit twice, 409 response will return the existing visit id`() {
+        val createdVisitId: Long = webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectBodyResponse<OfficialVisitResponse>().visitId
+
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(409)
+          .expectBody()
+          .jsonPath("$.developerMessage").isEqualTo("Visit $createdVisitId already exists for prisoner $offenderNo")
+          .jsonPath("$.moreInfo").isEqualTo("$createdVisitId")
+
+        // but can create another at a different time
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T12:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated
+      }
     }
 
     @Nested
