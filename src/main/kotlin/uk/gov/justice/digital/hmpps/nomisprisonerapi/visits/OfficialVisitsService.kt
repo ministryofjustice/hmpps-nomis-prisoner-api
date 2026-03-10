@@ -131,6 +131,10 @@ class OfficialVisitsService(
     val visitType = lookupOfficialVisitType()
     val searchLevel: SearchLevel? = lookupSearchLevel(request.prisonerSearchTypeCode)
 
+    findMatchingDuplicateVisit(offenderBooking, visitStatus, agencyInternalLocation, request)?.also {
+      throw ConflictException("Visit ${it.id} already exists for prisoner $offenderNo", entityId = it.id.toString())
+    }
+
     return visitRepository.saveAndFlush(
       Visit(
         offenderBooking = offenderBooking,
@@ -318,6 +322,15 @@ class OfficialVisitsService(
   private fun lookupSearchLevel(code: String?) = code?.let { searchLevelRepository.findByIdOrNull(SearchLevel.pk(code)) ?: throw BadDataException("Search Level code $code does not exist") }
   private fun lookupAttendance(code: String?) = code?.let { eventOutcomeRepository.findByIdOrNull(EventOutcome.pk(code)) ?: throw BadDataException("Event Outcome code $code does not exist") }
   private fun nextEventId(): Long = visitVisitorRepository.getEventId()
+  private fun findMatchingDuplicateVisit(offenderBooking: OffenderBooking, visitStatus: VisitStatus, agencyInternalLocation: AgencyInternalLocation, request: CreateOfficialVisitRequest): Visit? = visitRepository
+    .findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
+      offenderBooking = offenderBooking,
+      startDateTime = request.startDateTime,
+      endDateTime = request.endDateTime,
+      commentText = request.commentText,
+      visitStatus = visitStatus,
+      room = agencyInternalLocation,
+    )
 }
 
 private fun latestOfficialContactFirst() = compareByDescending<OffenderContactPerson> { it.relationshipType.code }.thenByDescending { it.createDatetime }
