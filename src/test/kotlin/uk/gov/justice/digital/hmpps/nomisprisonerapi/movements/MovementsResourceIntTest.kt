@@ -1491,9 +1491,11 @@ class MovementsResourceIntTest(
             application.movementApplicationId,
             application2.movementApplicationId,
           )
-          assertThat(scheduleIds).containsExactlyInAnyOrder(
+          assertThat(scheduleOutIds).containsExactlyInAnyOrder(
             scheduledTempAbsence.eventId,
             scheduledTempAbsence2.eventId,
+          )
+          assertThat(scheduleInIds).containsExactlyInAnyOrder(
             scheduledTempAbsenceReturn.eventId,
             scheduledTempAbsenceReturn2.eventId,
           )

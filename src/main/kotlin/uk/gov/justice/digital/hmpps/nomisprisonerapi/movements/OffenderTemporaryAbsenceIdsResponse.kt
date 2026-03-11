@@ -7,7 +7,14 @@ data class OffenderTemporaryAbsenceIdsResponse(
   @Schema(description = "List of TAP application IDs")
   val applicationIds: List<Long>,
 
+  @Schema(description = "List of TAP scheduled movement OUT IDs")
+  val scheduleOutIds: List<Long>,
+
+  @Schema(description = "List of TAP scheduled movement IN IDs")
+  val scheduleInIds: List<Long>,
+
   @Schema(description = "List of TAP scheduled movement IDs")
+  @Deprecated("Use scheduleOutIds and scheduleInIds instead")
   val scheduleIds: List<Long>,
 
   @Schema(description = "List of TAP scheduled movement OUT IDs")
