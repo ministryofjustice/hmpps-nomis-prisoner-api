@@ -622,6 +622,24 @@ class MovementsService(
   fun getTemporaryAbsencesAndMovementIds(offenderNo: String): OffenderTemporaryAbsenceIdsResponse = getTemporaryAbsencesAndMovements(offenderNo).let {
     OffenderTemporaryAbsenceIdsResponse(
       applicationIds = it.bookings.flatMap { it.temporaryAbsenceApplications.map { it.movementApplicationId } },
+      scheduleOutIds = it.bookings.flatMap {
+        it.temporaryAbsenceApplications.flatMap {
+          it.absences.flatMap {
+            listOfNotNull(
+              it.scheduledTemporaryAbsence?.eventId,
+            )
+          }
+        }
+      },
+      scheduleInIds = it.bookings.flatMap {
+        it.temporaryAbsenceApplications.flatMap {
+          it.absences.flatMap {
+            listOfNotNull(
+              it.scheduledTemporaryAbsenceReturn?.eventId,
+            )
+          }
+        }
+      },
       scheduleIds = it.bookings.flatMap {
         it.temporaryAbsenceApplications.flatMap {
           it.absences.flatMap {
