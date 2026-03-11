@@ -486,6 +486,7 @@ class CourtSentencingService(
               "offenderNo" to offenderNo,
               "offenderChargeId" to response.offenderChargeId.toString(),
               "offenceCode" to createdOffenderCharge.offence.id.offenceCode,
+              "resultCode" to (createdOffenderCharge.resultCode1?.code ?: "null"),
             ),
             null,
           )
@@ -518,6 +519,7 @@ class CourtSentencingService(
           } else {
             offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
           }
+          log.info("Adding charge ${offenderCharge.id} to appearance ${courtEvent.id} with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n offenderCharge result code: ${offenderCharge.resultCode1?.code}")
           newChargeList.add(
             CourtEventCharge(
               CourtEventChargeId(
@@ -707,6 +709,7 @@ class CourtSentencingService(
           courtEventCharge.offenceEndDate = request.offenceEndDate
           courtEventCharge.resultCode1 = resultCode
           courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
+          log.info("updateCourtCharge: court_event_charge updated for charge ${offenderCharge.id} on appearance ${courtAppearance.id} with result code ${resultCode?.code}")
 
           refreshOffenderCharge(
             courtEventCharge = courtEventCharge,
@@ -730,6 +733,7 @@ class CourtSentencingService(
                 "bookingId" to courtCase.offenderBooking.bookingId.toString(),
                 "offenderNo" to offenderNo,
                 "offenderChargeId" to chargeId.toString(),
+                "resultCode" to (courtEventCharge.resultCode1?.code ?: "null"),
               ),
               null,
             )
@@ -1071,6 +1075,7 @@ class CourtSentencingService(
         resultCode1 = resultCode
         resultCode1Indicator = resultCode?.dispositionCode
         chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
+        log.info("refreshOffenderCharge: offender charge $id updated with result code ${resultCode?.code} because it is associated with the latest appearance for this offender")
       }
     }
   }
