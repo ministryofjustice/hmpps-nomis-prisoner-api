@@ -336,7 +336,11 @@ class CourtSentencingService(
         directionCode = lookupDirectionType(DirectionType.OUT),
       )
       // 'to update' in this context of a new appearance means that the offender charges exist and are associated
-      associateChargesWithAppearance(courtAppearanceRequest.courtEventCharges, courtEvent)
+      if (courtAppearanceRequest.courtEventChargesWithOutcomes.isNotEmpty()) {
+        associateChargesWithAppearance(courtAppearanceRequest.courtEventChargesWithOutcomes, courtEvent)
+      } else {
+        associateChargesWithAppearance(courtAppearanceRequest.courtEventCharges, courtEvent)
+      }
 
       courtCase.courtEvents.add(
         courtEvent,
@@ -542,6 +546,42 @@ class CourtSentencingService(
     courtEvent.courtEventCharges.addAll(newChargeList)
   }
 
+  // associate (or remove) charges with appearance if not already associated. Use provided outcomes
+  private fun associateChargesWithAppearance(
+    courtEventChargesToUpdate: List<CourtEventChargeRequest>,
+    courtEvent: CourtEvent,
+  ) {
+    val originalList = courtEvent.courtEventCharges
+    val newChargeList = mutableListOf<CourtEventCharge>()
+    courtEventChargesToUpdate.map { cecRequest ->
+      courtEvent.courtEventCharges.firstOrNull { it.id.offenderCharge.id == cecRequest.offenderChargeId }
+        ?.let { existingCourtEventCharge ->
+          newChargeList.add(existingCourtEventCharge)
+        } ?: let {
+        getOffenderCharge(cecRequest.offenderChargeId).let { offenderCharge ->
+          val resultCode = cecRequest.resultCode1?.let { lookupOffenceResultCode(it) }
+          log.info("Adding charge ${offenderCharge.id} to appearance ${courtEvent.id} with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n offenderCharge result code: ${offenderCharge.resultCode1?.code}")
+          newChargeList.add(
+            CourtEventCharge(
+              CourtEventChargeId(
+                courtEvent = courtEvent,
+                offenderCharge = offenderCharge,
+              ),
+              offenceDate = offenderCharge.offenceDate,
+              offenceEndDate = offenderCharge.offenceEndDate,
+              mostSeriousFlag = offenderCharge.mostSeriousFlag,
+              resultCode1 = resultCode,
+              resultCode1Indicator = resultCode?.dispositionCode,
+            ),
+          )
+        }
+      }
+    }
+    log.info("Court event charges for appearance ${courtEvent.id}\noriginalList: $originalList\nnewList: $newChargeList")
+    courtEvent.courtEventCharges.clear()
+    courtEvent.courtEventCharges.addAll(newChargeList)
+  }
+
   fun updateCourtAppearance(
     offenderNo: String,
     caseId: Long,
@@ -564,7 +604,11 @@ class CourtSentencingService(
         courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
         courtAppearance.nextEventStartTime = request.nextEventDateTime
 
-        associateChargesWithAppearance(request.courtEventCharges, courtAppearance)
+        if (request.courtEventChargesWithOutcomes.isNotEmpty()) {
+          associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
+        } else {
+          associateChargesWithAppearance(request.courtEventCharges, courtAppearance, useCourtEventOutcome = true)
+        }
 
         // Offender charges are deleted if no longer associated with an appearance
         val deletedOffenderCharges =

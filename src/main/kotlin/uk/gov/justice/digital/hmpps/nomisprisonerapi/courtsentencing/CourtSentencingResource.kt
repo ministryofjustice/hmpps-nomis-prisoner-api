@@ -2709,8 +2709,10 @@ data class CourtAppearanceRequest(
   val courtId: String,
   val outcomeReasonCode: String?,
   val nextEventDateTime: LocalDateTime?,
-  // update requests will also determine the offences to remove from the appearance
+  // deprecated
   val courtEventCharges: List<Long>,
+  // Other CEC details will be derived from the underlying offender_charges record
+  val courtEventChargesWithOutcomes: List<CourtEventChargeRequest> = emptyList(),
   // nomis UI doesn't allow this during a create but DPS does
   val nextCourtId: String?,
 
@@ -2747,6 +2749,13 @@ data class OffenderChargeRequest(
      */
 
   /* mostSeriousFlag has been removed - DPS not providing */
+)
+
+@Schema(description = "Court Charge")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CourtEventChargeRequest(
+  val offenderChargeId: Long,
+  val resultCode1: String? = null,
 )
 
 @Schema(description = "Court Event")

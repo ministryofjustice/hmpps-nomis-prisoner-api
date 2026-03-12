@@ -4512,6 +4512,49 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Nested
+    inner class CreateCourtAppearanceOnLatestBookingSetChargeOutcomes {
+
+      @Test
+      fun `will use provided charge outcomes`() {
+        val courtAppearanceResponse: CreateCourtAppearanceResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtAppearanceRequestWithChargeOutcomes(
+                  eventDateTime = LocalDateTime.of(2025, 1, 1, 10, 30),
+                  courtEventCharges = mutableListOf(
+                    CourtEventChargeRequest(offenderCharge1.id, resultCode1 = "4560"),
+                    CourtEventChargeRequest(offenderCharge2.id),
+                  ),
+                  courtId = "LEI",
+                ),
+              ),
+            )
+            .exchange().expectStatus().isCreated.expectBodyResponse()
+
+        assertThat(courtAppearanceResponse.id).isGreaterThan(0)
+
+        verify(spRepository).imprisonmentStatusUpdate(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
+        )
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2025-01-01T10:30:00")
+          .jsonPath("courtEvents[1].courtEventCharges[0].resultCode1.code").isEqualTo("4560")
+          .jsonPath("courtEvents[1].courtEventCharges[1].resultCode1").doesNotExist()
+          .jsonPath("courtId").isEqualTo("LEI")
+      }
+    }
+
     @AfterEach
     internal fun deletePrisoner() {
       repository.deleteAllOffenderLinkedTransactions()
@@ -5341,6 +5384,45 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtId").isEqualTo("LEEDYC")
           // should nott have updated the statusUpdateReason as not a status change
           .jsonPath("statusUpdateReason").isEqualTo("a reason")
+      }
+
+      @Test
+      fun `the provided court event charge outcomes will be persisted`() {
+// request object includes 3 offender charges that are already associated with the court case and 1 to be associated
+
+        val courtAppearanceResponse = webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequestWithChargeOutcomes(
+                courtEventCharges = mutableListOf(
+                  CourtEventChargeRequest(offenderCharge1.id, "4560"),
+                  CourtEventChargeRequest(offenderCharge2.id, "4560"),
+                  CourtEventChargeRequest(offenderCharge3.id, "4560"),
+                  CourtEventChargeRequest(offenderCharge4.id, "4560"),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk.expectBody(UpdateCourtAppearanceResponse::class.java)
+          .returnResult().responseBody!!
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(4)
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("4560")
+          .jsonPath("courtEvents[0].courtEventCharges[1].resultCode1.code").isEqualTo("4560")
+          .jsonPath("courtEvents[0].courtEventCharges[2].resultCode1.code").isEqualTo("4560")
+          .jsonPath("courtEvents[0].courtEventCharges[3].resultCode1.code").isEqualTo("4560")
+          .jsonPath("courtEvents[0].courtOrders[0].courtDate").isEqualTo("2023-01-05")
+
+        assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(0)
       }
     }
 
@@ -8336,6 +8418,25 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     outcomeReasonCode = outcomeReasonCode,
     nextCourtId = nextCourtId,
     courtEventCharges = courtEventCharges,
+  )
+
+  private fun createCourtAppearanceRequestWithChargeOutcomes(
+    eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
+    courtId: String = "ABDRCT",
+    courtEventType: String = "CRT",
+    outcomeReasonCode: String = "1004",
+    nextEventDateTime: LocalDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
+    nextCourtId: String = "COURT1",
+    courtEventCharges: MutableList<CourtEventChargeRequest> = mutableListOf(),
+  ) = CourtAppearanceRequest(
+    eventDateTime = eventDateTime,
+    courtId = courtId,
+    courtEventType = courtEventType,
+    nextEventDateTime = nextEventDateTime,
+    outcomeReasonCode = outcomeReasonCode,
+    nextCourtId = nextCourtId,
+    courtEventChargesWithOutcomes = courtEventCharges,
+    courtEventCharges = mutableListOf(),
   )
 
   private fun createSentence(
