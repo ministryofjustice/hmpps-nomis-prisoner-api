@@ -508,6 +508,7 @@ class CourtSentencingService(
   ) {
     val originalList = courtEvent.courtEventCharges
     val newChargeList = mutableListOf<CourtEventCharge>()
+    val appearanceLogText = if (courtEvent.id == 0L) "new appearance" else "existing appearance ${courtEvent.id}"
     courtEventChargesToUpdate.map { requestChargeId ->
       courtEvent.courtEventCharges.firstOrNull { it.id.offenderCharge.id == requestChargeId }
         ?.let { existingCourtEventCharge ->
@@ -519,7 +520,7 @@ class CourtSentencingService(
           } else {
             offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
           }
-          log.info("Adding charge ${offenderCharge.id} to appearance ${courtEvent.id} with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n offenderCharge result code: ${offenderCharge.resultCode1?.code}")
+          log.info("Adding charge ${offenderCharge.id} to $appearanceLogText with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n underlying offenderCharge result code: ${offenderCharge.resultCode1?.code}")
           newChargeList.add(
             CourtEventCharge(
               CourtEventChargeId(
@@ -536,7 +537,7 @@ class CourtSentencingService(
         }
       }
     }
-    log.info("Court event charges for appearance ${courtEvent.id}\noriginalList: $originalList\nnewList: $newChargeList")
+    log.info("Court event charges for $appearanceLogText on date ${courtEvent.eventDate} \noriginalList: $originalList\nnewList: $newChargeList")
     courtEvent.courtEventCharges.clear()
     courtEvent.courtEventCharges.addAll(newChargeList)
   }
@@ -1075,7 +1076,9 @@ class CourtSentencingService(
         resultCode1 = resultCode
         resultCode1Indicator = resultCode?.dispositionCode
         chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
-        log.info("refreshOffenderCharge: offender charge $id updated with result code ${resultCode?.code} because it is associated with the latest appearance for this offender")
+        log.info("refreshOffenderCharge: offender charge $id updated with result code ${resultCode?.code} because this is the latest appearance ${courtEventCharge.id.courtEvent.id} date ${courtEventCharge.id.courtEvent.eventDate}")
+      } else {
+        log.info("refreshOffenderCharge: offender charge $id NOT updated because this is NOT the latest appearance ${courtEventCharge.id.courtEvent.id} date ${courtEventCharge.id.courtEvent.eventDate}")
       }
     }
   }
