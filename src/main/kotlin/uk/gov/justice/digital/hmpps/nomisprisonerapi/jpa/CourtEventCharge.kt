@@ -110,5 +110,5 @@ class CourtEventCharge(
   }
 
   override fun hashCode(): Int = javaClass.hashCode()
-  override fun toString(): String = "CourtEventCharge(offenderChargeId=${id.offenderCharge.id}, eventId=${id.courtEvent.id}, offencesCount=$offencesCount, offenceDate=$offenceDate, offenceEndDate=$offenceEndDate, resultCode1=$resultCode1, resultCode1Indicator=$resultCode1Indicator, mostSeriousFlag=$mostSeriousFlag)"
+  override fun toString(): String = "CourtEventCharge(offenderChargeId=${id.offenderCharge.id}, eventId=${id.courtEvent.id}, offencesCount=$offencesCount, offenceDate=$offenceDate, offenceEndDate=$offenceEndDate, resultCode1=${resultCode1?.code}, resultCode1Indicator=$resultCode1Indicator, mostSeriousFlag=$mostSeriousFlag)"
 }

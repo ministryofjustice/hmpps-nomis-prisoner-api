@@ -5387,7 +5387,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `the provided court event charge outcomes will be persisted`() {
+      fun `the provided court event charge outcomes for any new associations will be persisted`() {
 // request object includes 3 offender charges that are already associated with the court case and 1 to be associated
 
         val courtAppearanceResponse = webTestClient.put()
@@ -5416,9 +5416,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(4)
-          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("4560")
-          .jsonPath("courtEvents[0].courtEventCharges[1].resultCode1.code").isEqualTo("4560")
-          .jsonPath("courtEvents[0].courtEventCharges[2].resultCode1.code").isEqualTo("4560")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1002")
+          .jsonPath("courtEvents[0].courtEventCharges[1].resultCode1.code").isEqualTo("1002")
+          .jsonPath("courtEvents[0].courtEventCharges[2].resultCode1.code").isEqualTo("1002")
           .jsonPath("courtEvents[0].courtEventCharges[3].resultCode1.code").isEqualTo("4560")
           .jsonPath("courtEvents[0].courtOrders[0].courtDate").isEqualTo("2023-01-05")
 

@@ -546,7 +546,8 @@ class CourtSentencingService(
     courtEvent.courtEventCharges.addAll(newChargeList)
   }
 
-  // associate (or remove) charges with appearance if not already associated. Use provided outcomes
+  // associate (or remove) charges with appearance if not already associated.
+  // Use provided outcomes FOR NEW CHARGE associations, a separate charge update event will handle any outcome changes for existing associations
   private fun associateChargesWithAppearance(
     courtEventChargesToUpdate: List<CourtEventChargeRequest>,
     courtEvent: CourtEvent,
