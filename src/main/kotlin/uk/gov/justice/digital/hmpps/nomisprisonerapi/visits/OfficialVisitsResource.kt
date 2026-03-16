@@ -346,6 +346,47 @@ class OfficialVisitsResource(private val officialVisitsService: OfficialVisitsSe
     )
   }
 
+  @DeleteMapping("/official-visits/{visitId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Delete an official visit",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Visit deleted",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteOfficialVisit(
+    @PathVariable
+    visitId: Long,
+  ) {
+    officialVisitsService.deleteVisit(
+      visitId = visitId,
+    )
+  }
+
   @PostMapping("/official-visits/{visitId}/official-visitor")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(

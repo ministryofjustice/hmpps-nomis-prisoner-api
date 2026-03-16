@@ -2064,6 +2064,134 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
   }
 
   @Nested
+  @DisplayName("DELETE /official-visits/{visitId}")
+  inner class DeleteOfficialVisit {
+    private var officialVisitId: Long = 0
+    lateinit var visitHall: AgencyInternalLocation
+    lateinit var visitSlot: AgencyVisitSlot
+    val prisonId = "BXI"
+    private lateinit var personContact: Person
+    private lateinit var contact: OffenderContactPerson
+    private var latestBookingId = 0L
+    private val offenderNo = "A1234KT"
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY_GEN", type = GENERAL)
+        }
+
+        visitHall = agencyInternalLocation(
+          locationCode = "$prisonId-VISIT-1",
+          locationType = "VISIT",
+          prisonId = prisonId,
+        )
+        agencyVisitDay(prisonerId = prisonId, weekDay = WeekDay.MON) {
+          visitTimeSlot(
+            timeSlotSequence = 1,
+            startTime = LocalTime.parse("10:00"),
+            endTime = LocalTime.parse("11:00"),
+            effectiveDate = LocalDate.parse("2023-01-01"),
+            expiryDate = LocalDate.parse("2033-01-31"),
+          ) {
+            visitSlot = visitSlot(
+              agencyInternalLocation = visitHall,
+              maxGroups = 10,
+              maxAdults = 20,
+            )
+          }
+        }
+
+        personContact = person(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offender(nomsId = offenderNo) {
+          latestBookingId = booking {
+            contact = contact(
+              person = personContact,
+              contactType = "O",
+              relationshipType = "DR",
+            )
+            officialVisitId = officialVisit(
+              visitDate = LocalDate.parse("2023-01-01"),
+              visitSlot = visitSlot,
+              visitStatusCode = "SCH",
+            ) {
+              visitOutcome(
+                eventOutcomeCode = "ATT",
+                eventStatusCode = "SCH",
+                outcomeReasonCode = null,
+              )
+
+              visitor(
+                person = personContact,
+              ).id
+            }.id
+          }.bookingId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      offenderRepository.deleteAll()
+      personRepository.deleteAll()
+      agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
+      agencyInternalLocationRepository.delete(visitHall)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/official-visits/{visitId}", officialVisitId)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete visit`() {
+        webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.delete().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNoContent
+
+        webTestClient.get().uri("/official-visits/{visitId}", officialVisitId)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+  }
+
+  @Nested
   @DisplayName("DELETE /official-visits/{visitId}/official-visitor/{visitorId}")
   inner class DeleteOfficialVisitor {
     private var visitorId: Long = 0
