@@ -2632,7 +2632,7 @@ data class OffenderChargeRepairRequest(
   val resultCode1: String?,
 )
 
-@Schema(description = "Court Charge")
+@Schema(description = "Court event charge repair")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtEventChargeRepairRequest(
   val id: String,
@@ -2751,7 +2751,7 @@ data class OffenderChargeRequest(
   /* mostSeriousFlag has been removed - DPS not providing */
 )
 
-@Schema(description = "Court Charge")
+@Schema(description = "Court event charge")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CourtEventChargeRequest(
   val offenderChargeId: Long,

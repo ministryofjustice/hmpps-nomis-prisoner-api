@@ -5442,6 +5442,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
     private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -5456,10 +5457,15 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               statusUpdateStaff = staff,
             ) {
               offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              offenderCharge2 = offenderCharge(resultCode1 = "4560", offenceCode = "RT88074", plea = "G")
               courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
+                  plea = "NG",
+                )
+                courtEventCharge(
+                  offenderCharge = offenderCharge2,
                   plea = "NG",
                 )
                 courtOrder {
@@ -5578,6 +5584,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("eventId", courtEvent.id.toString())
             assertThat(it).containsEntry("caseId", courtEvent.courtCase?.id.toString())
+            assertThat(it).containsEntry("deletedOffenderCharges", "[${offenderCharge2.id}]")
           },
           isNull(),
         )
