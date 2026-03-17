@@ -612,24 +612,11 @@ class CourtSentencingService(
         }
 
         // Offender charges are deleted if no longer associated with an appearance
-        val deletedOffenderCharges =
-          courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
-            orphanedOffenderCharges.forEach {
-              courtCase.offenderCharges.remove(it)
-              log.debug("Offender charge deleted: ${it.id}")
-              telemetryClient.trackEvent(
-                "offender-charge-deleted",
-                mapOf(
-                  "courtCaseId" to caseId.toString(),
-                  "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-                  "offenderNo" to offenderNo,
-                  "offenderChargeId" to it.id.toString(),
-                  "courtEventId" to eventId.toString(),
-                ),
-                null,
-              )
-            }
-          }
+        val deletedOffenderCharges = deleteOrphanedCharges(
+          courtCase = courtCase,
+          offenderNo = offenderNo,
+          eventId = eventId,
+        )
 
         courtEventRepository.saveAndFlush(courtAppearance).also {
           refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
@@ -680,14 +667,23 @@ class CourtSentencingService(
     eventId: Long,
   ) {
     findCourtCase(caseId, offenderNo).let { case ->
-      val telemetry = mapOf(
+      var telemetry = mutableMapOf(
         "bookingId" to case.offenderBooking.bookingId.toString(),
         "offenderNo" to offenderNo,
         "eventId" to eventId.toString(),
         "caseId" to caseId.toString(),
       )
+
       courtEventRepository.findByIdOrNull(eventId)?.also {
-        courtEventRepository.delete(it)
+        case.courtEvents.remove(it)
+        courtCaseRepository.saveAndFlush(case)
+        // Offender charges are deleted if no longer associated with an appearance
+        val deletedOffenderCharges = deleteOrphanedCharges(
+          courtCase = case,
+          offenderNo = offenderNo,
+          eventId = eventId,
+        )
+        telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
         storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = case.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
@@ -703,6 +699,28 @@ class CourtSentencingService(
           telemetry,
           null,
         )
+    }
+  }
+
+  private fun deleteOrphanedCharges(
+    courtCase: CourtCase,
+    offenderNo: String,
+    eventId: Long,
+  ): List<OffenderCharge> = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
+    orphanedOffenderCharges.forEach {
+      courtCase.offenderCharges.remove(it)
+      log.debug("Offender charge deleted: ${it.id}")
+      telemetryClient.trackEvent(
+        "offender-charge-deleted",
+        mapOf(
+          "courtCaseId" to courtCase.id.toString(),
+          "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+          "offenderChargeId" to it.id.toString(),
+          "courtEventId" to eventId.toString(),
+        ),
+        null,
+      )
     }
   }
 
