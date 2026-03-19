@@ -406,8 +406,6 @@ data class OffenderBelief(
   val changeReason: Boolean? = null,
   @Schema(description = "Comments describing reason for change of belief")
   val comments: String? = null,
-  @Schema(description = "Verified flag")
-  val verified: Boolean,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
