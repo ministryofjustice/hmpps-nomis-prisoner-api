@@ -335,12 +335,8 @@ class CourtSentencingService(
         nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
         directionCode = lookupDirectionType(DirectionType.OUT),
       )
-      // 'to update' in this context of a new appearance means that the offender charges exist and are associated
-      if (courtAppearanceRequest.courtEventChargesWithOutcomes.isNotEmpty()) {
-        associateChargesWithAppearance(courtAppearanceRequest.courtEventChargesWithOutcomes, courtEvent)
-      } else {
-        associateChargesWithAppearance(courtAppearanceRequest.courtEventCharges, courtEvent)
-      }
+
+      associateChargesWithAppearance(courtAppearanceRequest.courtEventChargesWithOutcomes, courtEvent)
 
       courtCase.courtEvents.add(
         courtEvent,
@@ -376,7 +372,6 @@ class CourtSentencingService(
     }
   }
 
-  data class ClonedCaseCreateAppearance(val courtCase: CourtCase, val courtAppearanceRequest: CourtAppearanceRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)
   private fun cloneCasesIfRequired(courtCase: CourtCase, courtAppearanceRequest: CourtAppearanceRequest): ClonedCaseCreateAppearance = if (courtCase.offenderBooking.bookingSequence == 1) {
     ClonedCaseCreateAppearance(
       courtCase = courtCase,
@@ -388,14 +383,14 @@ class CourtSentencingService(
       val sourceCase = it.courtCases.find { cases -> cases.sourceCourtCase.id == courtCase.id }!!
       val indexOfSourceCase = it.courtCases.indexOf(sourceCase)
       val clonedCourtCase = findCourtCase(id = it.courtCases[indexOfSourceCase].courtCase.id, sourceCase.sourceCourtCase.offenderNo)
-      val offenderChargesIndexes = courtAppearanceRequest.courtEventCharges.map { courtEventChargeId -> courtCase.offenderCharges.indexOf(courtCase.offenderCharges.find { offenderCharge -> offenderCharge.id == courtEventChargeId }) }
+      val offenderChargesIndexes = courtAppearanceRequest.courtEventChargesWithOutcomes.map { courtEventCharge -> courtCase.offenderCharges.indexOf(courtCase.offenderCharges.find { offenderCharge -> offenderCharge.id == courtEventCharge.offenderChargeId }) }
       val convertedOffenderChargeIds = offenderChargesIndexes.map { index -> clonedCourtCase.offenderCharges[index].id }
       ClonedCaseCreateAppearance(
         // this will switch the case that has been created by the clone if it was cloned
         courtCase = clonedCourtCase,
         // offender charges in request now point at the newly created ones
         courtAppearanceRequest = courtAppearanceRequest.copy(
-          courtEventCharges = convertedOffenderChargeIds,
+          courtEventChargesWithOutcomes = courtAppearanceRequest.courtEventChargesWithOutcomes.mapIndexed { index, dto -> dto.copy(convertedOffenderChargeIds[index]) },
         ),
         clonedCourtCases = it,
       )
@@ -505,10 +500,9 @@ class CourtSentencingService(
   }
 
   // associate (or remove) charges with appearance if not already associated
-  private fun associateChargesWithAppearance(
+  private fun associateChargesWithAppearanceUsingCourtEventOutcome(
     courtEventChargesToUpdate: List<Long>,
     courtEvent: CourtEvent,
-    useCourtEventOutcome: Boolean = false,
   ) {
     val originalList = courtEvent.courtEventCharges
     val newChargeList = mutableListOf<CourtEventCharge>()
@@ -519,11 +513,7 @@ class CourtSentencingService(
           newChargeList.add(existingCourtEventCharge)
         } ?: let {
         getOffenderCharge(requestChargeId).let { offenderCharge ->
-          val resultCode = if (useCourtEventOutcome) {
-            courtEvent.outcomeReasonCode
-          } else {
-            offenderCharge.resultCode1 ?: courtEvent.outcomeReasonCode
-          }
+          val resultCode = courtEvent.outcomeReasonCode
           log.info("Adding charge ${offenderCharge.id} to $appearanceLogText with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n underlying offenderCharge result code: ${offenderCharge.resultCode1?.code}")
           newChargeList.add(
             CourtEventCharge(
@@ -605,11 +595,7 @@ class CourtSentencingService(
         courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
         courtAppearance.nextEventStartTime = request.nextEventDateTime
 
-        if (request.courtEventChargesWithOutcomes.isNotEmpty()) {
-          associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
-        } else {
-          associateChargesWithAppearance(request.courtEventCharges, courtAppearance, useCourtEventOutcome = true)
-        }
+        associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
 
         // Offender charges are deleted if no longer associated with an appearance
         val deletedOffenderCharges = deleteOrphanedCharges(
@@ -1368,10 +1354,9 @@ class CourtSentencingService(
       val offenderChargeIds =
         sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
       // Associate charges with the court event
-      associateChargesWithAppearance(
+      associateChargesWithAppearanceUsingCourtEventOutcome(
         courtEventChargesToUpdate = offenderChargeIds.toList(),
         courtEvent = courtEvent,
-        useCourtEventOutcome = true,
       )
 
       courtEventRepository.saveAndFlush(courtEvent)
@@ -2290,3 +2275,5 @@ fun SentenceCalculationType.isRecallSentence() = with(this.id.calculationType) {
     contains("FTR") ||
     this in listOf("CUR", "CUR_ORA", "HDR", "HDR_ORA")
 }
+
+data class ClonedCaseCreateAppearance(val courtCase: CourtCase, val courtAppearanceRequest: CourtAppearanceRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)

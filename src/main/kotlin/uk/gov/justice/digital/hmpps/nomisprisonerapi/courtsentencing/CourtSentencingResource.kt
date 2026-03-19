@@ -1870,14 +1870,6 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   @Operation(
     summary = "Deletes Court Appearance",
     description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Deletes s Court Appearance for the offender.",
-    requestBody = RequestBody(
-      content = [
-        Content(
-          mediaType = "application/json",
-          schema = Schema(implementation = CourtAppearanceRequest::class),
-        ),
-      ],
-    ),
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -2709,8 +2701,6 @@ data class CourtAppearanceRequest(
   val courtId: String,
   val outcomeReasonCode: String?,
   val nextEventDateTime: LocalDateTime?,
-  // deprecated
-  val courtEventCharges: List<Long>,
   // Other CEC details will be derived from the underlying offender_charges record
   val courtEventChargesWithOutcomes: List<CourtEventChargeRequest> = emptyList(),
   // nomis UI doesn't allow this during a create but DPS does
