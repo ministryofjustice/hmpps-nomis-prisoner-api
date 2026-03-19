@@ -1154,7 +1154,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              listOf<Long>(prisoner1CourtCase.id),
+              listOf(prisoner1CourtCase.id),
             ),
           )
           .exchange()
@@ -1168,7 +1168,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              listOf<Long>(prisoner1CourtCase.id),
+              listOf(prisoner1CourtCase.id),
             ),
           )
           .exchange()
@@ -1181,7 +1181,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              listOf<Long>(prisoner1CourtCase.id),
+              listOf(prisoner1CourtCase.id),
             ),
           )
           .exchange()
@@ -1195,7 +1195,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              listOf<Long>(prisoner1CourtCase.id),
+              listOf(prisoner1CourtCase.id),
             ),
           )
           .exchange()
@@ -1212,7 +1212,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              listOf<Long>(prisoner1CourtCase2.id),
+              listOf(prisoner1CourtCase2.id),
             ),
           )
           .exchange()
@@ -4198,8 +4198,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               BodyInserters.fromValue(
                 createCourtAppearanceRequest(
                   courtEventCharges = mutableListOf(
-                    offenderCharge1.id,
-                    offenderCharge2.id,
+                    CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code),
+                    CourtEventChargeRequest(offenderCharge2.id, offenderCharge2.resultCode1?.code),
                   ),
                 ),
               ),
@@ -4268,8 +4268,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 createCourtAppearanceRequest(
                   eventDateTime = LocalDateTime.of(2025, 1, 1, 10, 30),
                   courtEventCharges = mutableListOf(
-                    offenderCharge1.id,
-                    offenderCharge2.id,
+                    CourtEventChargeRequest(offenderCharge1.id, resultCode1 = offenderCharge1.resultCode1?.code),
+                    CourtEventChargeRequest(offenderCharge2.id, resultCode1 = offenderCharge2.resultCode1?.code),
                   ),
                   courtId = "LEI",
                 ),
@@ -4339,8 +4339,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               BodyInserters.fromValue(
                 createCourtAppearanceRequest(
                   courtEventCharges = mutableListOf(
-                    previousBookingOffenderCharge1.id,
-                    previousBookingOffenderCharge2.id,
+                    CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code),
+                    CourtEventChargeRequest(previousBookingOffenderCharge2.id, previousBookingOffenderCharge2.resultCode1?.code),
                   ),
                 ),
               ),
@@ -4398,8 +4398,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  previousBookingOffenderCharge1.id,
-                  previousBookingOffenderCharge2.id,
+                  CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code),
+                  CourtEventChargeRequest(previousBookingOffenderCharge2.id, previousBookingOffenderCharge2.resultCode1?.code),
                 ),
               ),
             ),
@@ -4432,7 +4432,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  previousBookingSourceCourtCaseOffenderCharge.id,
+                  CourtEventChargeRequest(previousBookingSourceCourtCaseOffenderCharge.id, previousBookingSourceCourtCaseOffenderCharge.resultCode1?.code),
                 ),
               ),
             ),
@@ -4465,7 +4465,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  previousBookingNotLinkedCourtCaseOffenderCharge.id,
+                  CourtEventChargeRequest(previousBookingNotLinkedCourtCaseOffenderCharge.id, previousBookingNotLinkedCourtCaseOffenderCharge.resultCode1?.code),
                 ),
               ),
             ),
@@ -4523,7 +4523,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
-                createCourtAppearanceRequestWithChargeOutcomes(
+                createCourtAppearanceRequest(
                   eventDateTime = LocalDateTime.of(2025, 1, 1, 10, 30),
                   courtEventCharges = mutableListOf(
                     CourtEventChargeRequest(offenderCharge1.id, resultCode1 = "4560"),
@@ -5252,7 +5252,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  offenderCharge1.id,
+                  CourtEventChargeRequest(offenderCharge1.id, resultCode1 = offenderCharge1.resultCode1?.code),
                 ),
               ),
             ),
@@ -5285,10 +5285,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  offenderCharge1.id,
-                  offenderCharge2.id,
-                  offenderCharge3.id,
-                  offenderCharge4.id,
+                  CourtEventChargeRequest(offenderCharge1.id, resultCode1 = offenderCharge1.resultCode1?.code),
+                  CourtEventChargeRequest(offenderCharge2.id, resultCode1 = offenderCharge2.resultCode1?.code),
+                  CourtEventChargeRequest(offenderCharge3.id, resultCode1 = offenderCharge3.resultCode1?.code),
+                  CourtEventChargeRequest(offenderCharge4.id, resultCode1 = offenderCharge4.resultCode1?.code),
                 ),
               ),
             ),
@@ -5318,10 +5318,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  offenderCharge1.id,
-                  offenderCharge2.id,
-                  offenderCharge3.id,
-                  offenderCharge4.id,
+                  CourtEventChargeRequest(offenderCharge1.id, resultCode1 = offenderCharge1.resultCode1?.code),
+                  CourtEventChargeRequest(offenderCharge2.id, resultCode1 = offenderCharge2.resultCode1?.code),
+                  CourtEventChargeRequest(offenderCharge3.id, resultCode1 = offenderCharge3.resultCode1?.code),
+                  CourtEventChargeRequest(offenderCharge4.id, resultCode1 = offenderCharge4.resultCode1?.code),
                 ),
               ),
             ),
@@ -5396,7 +5396,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtAppearanceRequestWithChargeOutcomes(
+              createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
                   CourtEventChargeRequest(offenderCharge1.id, "4560"),
                   CourtEventChargeRequest(offenderCharge2.id, "4560"),
@@ -6394,7 +6394,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
 // keep one of the court event charges
-                courtEventCharges = mutableListOf(offenderCharge1.id),
+                courtEventCharges = mutableListOf(CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code)),
               ),
             ),
 
@@ -6410,7 +6410,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
 // keep one of the court event charges
-                courtEventCharges = mutableListOf(offenderCharge1.id),
+                courtEventCharges = mutableListOf(CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code)),
               ),
             ),
 
@@ -6537,8 +6537,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
-                  offenderCharge1.id,
-                  offenderCharge3.id,
+                  CourtEventChargeRequest(offenderCharge1.id, resultCode1 = offenderCharge1.resultCode1?.code),
+                  CourtEventChargeRequest(offenderCharge3.id, resultCode1 = offenderCharge3.resultCode1?.code),
                 ),
               ),
             ),
@@ -6971,8 +6971,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 // a different date to the court order
                 eventDateTime = LocalDateTime.of(2023, 6, 6, 9, 0),
                 courtEventCharges = mutableListOf(
-                  offenderCharge1.id,
-                  offenderCharge2.id,
+                  CourtEventChargeRequest(offenderCharge1.id, "1004"),
+                  CourtEventChargeRequest(offenderCharge2.id, "1005"),
                 ),
               ),
             ),
@@ -8416,24 +8416,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     outcomeReasonCode: String = "1004",
     nextEventDateTime: LocalDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
     nextCourtId: String = "COURT1",
-    courtEventCharges: MutableList<Long> = mutableListOf(),
-  ) = CourtAppearanceRequest(
-    eventDateTime = eventDateTime,
-    courtId = courtId,
-    courtEventType = courtEventType,
-    nextEventDateTime = nextEventDateTime,
-    outcomeReasonCode = outcomeReasonCode,
-    nextCourtId = nextCourtId,
-    courtEventCharges = courtEventCharges,
-  )
-
-  private fun createCourtAppearanceRequestWithChargeOutcomes(
-    eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 5, 9, 0),
-    courtId: String = "ABDRCT",
-    courtEventType: String = "CRT",
-    outcomeReasonCode: String = "1004",
-    nextEventDateTime: LocalDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
-    nextCourtId: String = "COURT1",
     courtEventCharges: MutableList<CourtEventChargeRequest> = mutableListOf(),
   ) = CourtAppearanceRequest(
     eventDateTime = eventDateTime,
@@ -8443,7 +8425,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     outcomeReasonCode = outcomeReasonCode,
     nextCourtId = nextCourtId,
     courtEventChargesWithOutcomes = courtEventCharges,
-    courtEventCharges = mutableListOf(),
   )
 
   private fun createSentence(
