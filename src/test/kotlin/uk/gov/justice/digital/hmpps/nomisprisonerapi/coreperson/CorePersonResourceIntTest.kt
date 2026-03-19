@@ -1133,7 +1133,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[0].startDate").isEqualTo("2023-01-01")
           .jsonPath("beliefs[0].changeReason").isEqualTo(false)
           .jsonPath("beliefs[0].comments").doesNotExist()
-          .jsonPath("beliefs[0].verified").isEqualTo(false)
           .jsonPath("beliefs[1].beliefId").isEqualTo(belief2.beliefId)
           .jsonPath("beliefs[1].belief.code").isEqualTo("JAIN")
           .jsonPath("beliefs[1].belief.description").isEqualTo("Jain")
@@ -1141,7 +1140,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[1].endDate").doesNotExist()
           .jsonPath("beliefs[1].changeReason").isEqualTo(true)
           .jsonPath("beliefs[1].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("beliefs[1].verified").isEqualTo(true)
           .jsonPath("beliefs[1].audit.createUsername").isNotEmpty
           .jsonPath("beliefs[1].audit.createDatetime").isNotEmpty
           .jsonPath("beliefs[2].beliefId").isEqualTo(belief1.beliefId)
@@ -1151,7 +1149,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[2].endDate").isEqualTo("2019-02-03")
           .jsonPath("beliefs[2].changeReason").doesNotExist()
           .jsonPath("beliefs[2].comments").doesNotExist()
-          .jsonPath("beliefs[2].verified").isEqualTo(false)
           .jsonPath("beliefs[2].audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("beliefs[2].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("beliefs[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
@@ -1172,7 +1169,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[0].endDate").doesNotExist()
           .jsonPath("beliefs[0].changeReason").isEqualTo(true)
           .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("beliefs[0].verified").isEqualTo(true)
       }
     }
   }
@@ -1374,7 +1370,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[0].startDate").isEqualTo("2023-01-01")
           .jsonPath("[0].changeReason").isEqualTo(false)
           .jsonPath("[0].comments").doesNotExist()
-          .jsonPath("[0].verified").isEqualTo(false)
           .jsonPath("[1].beliefId").isEqualTo(belief2.beliefId)
           .jsonPath("[1].belief.code").isEqualTo("JAIN")
           .jsonPath("[1].belief.description").isEqualTo("Jain")
@@ -1382,7 +1377,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[1].endDate").doesNotExist()
           .jsonPath("[1].changeReason").isEqualTo(true)
           .jsonPath("[1].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("[1].verified").isEqualTo(true)
           .jsonPath("[1].audit.createDatetime").isEqualTo("2022-01-01T10:00:00")
           .jsonPath("[2].beliefId").isEqualTo(belief4.beliefId)
           .jsonPath("[2].belief.code").isEqualTo("SATN")
@@ -1397,7 +1391,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[3].endDate").isEqualTo("2019-02-03")
           .jsonPath("[3].changeReason").doesNotExist()
           .jsonPath("[3].comments").doesNotExist()
-          .jsonPath("[3].verified").isEqualTo(false)
           .jsonPath("[3].audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("[3].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
@@ -1418,7 +1411,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[0].endDate").doesNotExist()
           .jsonPath("[0].changeReason").isEqualTo(true)
           .jsonPath("[0].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("[0].verified").isEqualTo(true)
       }
     }
   }
@@ -1610,7 +1602,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[0].startDate").isEqualTo("2023-01-01")
           .jsonPath("[0].changeReason").isEqualTo(false)
           .jsonPath("[0].comments").doesNotExist()
-          .jsonPath("[0].verified").isEqualTo(false)
           .jsonPath("[1].beliefId").isEqualTo(belief2.beliefId)
           .jsonPath("[1].belief.code").isEqualTo("JAIN")
           .jsonPath("[1].belief.description").isEqualTo("Jain")
@@ -1618,7 +1609,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[1].endDate").doesNotExist()
           .jsonPath("[1].changeReason").isEqualTo(true)
           .jsonPath("[1].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("[1].verified").isEqualTo(true)
           .jsonPath("[1].audit.createDatetime").isEqualTo("2022-01-01T10:00:00")
           .jsonPath("[2].beliefId").isEqualTo(belief4.beliefId)
           .jsonPath("[2].belief.code").isEqualTo("SATN")
@@ -1633,7 +1623,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[3].endDate").isEqualTo("2019-02-03")
           .jsonPath("[3].changeReason").doesNotExist()
           .jsonPath("[3].comments").doesNotExist()
-          .jsonPath("[3].verified").isEqualTo(false)
           .jsonPath("[3].audit.createUsername").isEqualTo("KOFEADDY")
           .jsonPath("[3].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
@@ -1654,7 +1643,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[0].endDate").doesNotExist()
           .jsonPath("[0].changeReason").isEqualTo(true)
           .jsonPath("[0].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("[0].verified").isEqualTo(true)
       }
     }
   }

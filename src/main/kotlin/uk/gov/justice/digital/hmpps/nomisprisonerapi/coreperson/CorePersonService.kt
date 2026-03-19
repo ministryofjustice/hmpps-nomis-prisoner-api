@@ -172,48 +172,25 @@ class CorePersonService(
           email = address.internetAddress,
         )
       },
-      beliefs = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { belief ->
-        OffenderBelief(
-          beliefId = belief.beliefId,
-          belief = belief.beliefCode.toCodeDescription(),
-          startDate = belief.startDate,
-          endDate = belief.endDate,
-          changeReason = belief.changeReason,
-          comments = belief.comments,
-          verified = belief.verified ?: false,
-          audit = belief.toAudit(),
-        )
-      },
+      beliefs = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { it.toBelief() },
     )
   }
 
   fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> {
     val rootOffender =
       offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-    return offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { belief ->
-      OffenderBelief(
-        beliefId = belief.beliefId,
-        belief = belief.beliefCode.toCodeDescription(),
-        startDate = belief.startDate,
-        endDate = belief.endDate,
-        changeReason = belief.changeReason,
-        comments = belief.comments,
-        verified = belief.verified ?: false,
-        audit = belief.toAudit(),
-      )
-    }
+    return offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { it.toBelief() }
   }
 
-  fun getOffenderReligions(rootOffenderId: Long): List<OffenderBelief> = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffenderId).map { belief ->
-    OffenderBelief(
-      beliefId = belief.beliefId,
-      belief = belief.beliefCode.toCodeDescription(),
-      startDate = belief.startDate,
-      endDate = belief.endDate,
-      changeReason = belief.changeReason,
-      comments = belief.comments,
-      verified = belief.verified ?: false,
-      audit = belief.toAudit(),
-    )
-  }
+  fun getOffenderReligions(rootOffenderId: Long): List<OffenderBelief> = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffenderId).map { it.toBelief() }
 }
+
+private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
+  beliefId = beliefId,
+  belief = beliefCode.toCodeDescription(),
+  startDate = startDate,
+  endDate = endDate,
+  changeReason = changeReason,
+  comments = comments,
+  audit = toAudit(),
+)
