@@ -8780,20 +8780,22 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `can recall a sentence`() {
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
-          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
+            with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
           }
 
           webTestClient.post()
@@ -8804,20 +8806,22 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
         }
 
@@ -9122,15 +9126,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `can recall a sentence`() {
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("I")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("I")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("I")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("I")
+            }
           }
 
           webTestClient.post()
@@ -9141,15 +9147,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
         }
 
@@ -9328,18 +9336,18 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           // still an original sentence on previous booking
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
 
-          transaction {
             // now exists on the latest booking as now a recall sentence
             with(offenderSentenceRepository.findById(sentence1OnLatestBookingId).orElseThrow()) {
               assertThat(calculationType.isRecallSentence()).isTrue
@@ -9628,15 +9636,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `can recall the sentences on latest booking`() {
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
           }
 
           webTestClient.post()
@@ -9647,29 +9657,33 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
         }
 
         @Test
         fun `recalling a sentence on previous booking will move it to latest booking`() {
           val sentence3OnLatestBookingId = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(booking, 3)
-          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
 
-          // does not exist in the latest booking
-          assertThat(offenderSentenceRepository.findById(sentence3OnLatestBookingId)).isEmpty
+            // does not exist in the latest booking
+            assertThat(offenderSentenceRepository.findById(sentence3OnLatestBookingId)).isEmpty
+          }
 
           webTestClient.post()
             .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
@@ -9680,16 +9694,18 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isOk
 
           // still an original sentence on previous booking
-          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
-          // now exists on the latest booking as now a recall sentence
-          with(offenderSentenceRepository.findById(sentence3OnLatestBookingId).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
+            // now exists on the latest booking as now a recall sentence
+            with(offenderSentenceRepository.findById(sentence3OnLatestBookingId).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
         }
 
@@ -10174,15 +10190,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `can update recall a sentence`() {
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
 
           webTestClient.put()
@@ -10193,24 +10211,28 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("Licence Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("Licence Recall")
-            assertThat(status).isEqualTo("I")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("Licence Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("Licence Recall")
+              assertThat(status).isEqualTo("I")
+            }
           }
         }
 
         @Test
         fun `will update removed recall sentence back to ordinary sentence`() {
-          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
 
           webTestClient.put()
@@ -10234,10 +10256,12 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence3.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
           }
         }
 
@@ -10621,15 +10645,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `can update recall a sentence`() {
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
 
           webTestClient.put()
@@ -10640,15 +10666,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isFalse
-            assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
-            assertThat(status).isEqualTo("I")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+              assertThat(status).isEqualTo("I")
+            }
           }
         }
 
@@ -11049,15 +11077,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         @Test
         fun `can update recall to previous sentence`() {
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
 
           webTestClient.put()
@@ -11068,15 +11098,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
-          }
-          with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
-            assertThat(calculationType.isRecallSentence()).isTrue
-            assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
-            assertThat(status).isEqualTo("A")
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentence1.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
+            with(offenderSentenceRepository.findById(sentence2.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("ORA 14 Day Fixed Term Recall")
+              assertThat(status).isEqualTo("A")
+            }
           }
         }
 

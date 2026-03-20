@@ -99,28 +99,32 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       callCreateEndpoint(bookingId)
 
       // Spot check that the database has been populated.
-      offender = repository.getOffender("A1234TT")
-      booking = offender?.latestBooking()
-      bookingId = booking?.bookingId
+      nomisDataBuilder.runInTransaction {
+        offender = repository.getOffender("A1234TT")
+        booking = offender?.latestBooking()
+        bookingId = booking?.bookingId
 
-      assertThat(booking?.incentives).hasSize(1)
-      var incentive = booking?.incentives?.get(0)
-      assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
-      assertThat(incentive?.id?.sequence).isEqualTo(1)
-      assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+        assertThat(booking?.incentives).hasSize(1)
+        val incentive = booking?.incentives?.get(0)
+        assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+        assertThat(incentive?.id?.sequence).isEqualTo(1)
+        assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+      }
 
       // Add another to cover the case of existing incentive
       callCreateEndpoint(bookingId)
 
-      offender = repository.getOffender("A1234TT")
-      booking = offender?.latestBooking()
-      bookingId = booking?.bookingId
+      nomisDataBuilder.runInTransaction {
+        offender = repository.getOffender("A1234TT")
+        booking = offender?.latestBooking()
+        bookingId = booking?.bookingId
 
-      assertThat(booking?.incentives).hasSize(2)
-      incentive = booking?.incentives?.get(1)
-      assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
-      assertThat(incentive?.id?.sequence).isEqualTo(2)
-      assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+        assertThat(booking?.incentives).hasSize(2)
+        val incentive = booking?.incentives?.get(1)
+        assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+        assertThat(incentive?.id?.sequence).isEqualTo(2)
+        assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+      }
     }
 
     private fun callCreateEndpoint(bookingId: Long?) {

@@ -351,7 +351,7 @@ private fun Incident.toIncidentResponse(): IncidentResponse = IncidentResponse(
   questionnaireId = questionnaire.id,
   title = title,
   description = description,
-  status = status,
+  status = status.toIncidentStatus(),
   type = questionnaire.code,
   agency = agency.toCodeDescription(),
   lockedResponse = lockedResponse,
@@ -466,4 +466,12 @@ private fun Offender.toOffender() = Offender(
   offenderNo = nomsId,
   firstName = firstName,
   lastName = lastName,
+)
+
+private fun IncidentStatus.toIncidentStatus(): IncidentStatusResponse = IncidentStatusResponse(
+  code = code,
+  description = description,
+  listSequence = listSequence,
+  standardUser = standardUser,
+  enhancedUser = enhancedUser,
 )

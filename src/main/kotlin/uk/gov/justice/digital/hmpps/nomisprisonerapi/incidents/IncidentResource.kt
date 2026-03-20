@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -558,7 +557,7 @@ data class IncidentResponse(
   val agency: CodeDescription,
 
   @Schema(description = "Status details")
-  val status: IncidentStatus,
+  val status: IncidentStatusResponse,
   @Schema(description = "The incident questionnaire type")
   val type: String,
 
@@ -775,6 +774,20 @@ data class HistoryResponse(
   val responseDate: LocalDate?,
   @Schema(description = "Recording staff")
   val recordingStaff: Staff,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class IncidentStatusResponse(
+  @Schema(description = "The code of the status")
+  val code: String,
+  @Schema(description = "The description of the incident status")
+  val description: String,
+  @Schema(description = "List sequence for the status")
+  val listSequence: Int?,
+  @Schema(description = "Whether this is a standard user status")
+  val standardUser: Boolean,
+  @Schema(description = "Whether this is an enhanced user status")
+  val enhancedUser: Boolean,
 )
 
 @Schema(description = "Incident Agency Id")

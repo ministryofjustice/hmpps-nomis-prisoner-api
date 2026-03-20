@@ -253,31 +253,33 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val data = offenderAssessmentRepository.findByIdOrNull(
-          OffenderAssessmentId(booking1, created.sequence),
-        )
+        nomisDataBuilder.runInTransaction {
+          val data = offenderAssessmentRepository.findByIdOrNull(
+            OffenderAssessmentId(booking1, created.sequence),
+          )
 
-        with(data!!) {
-          assertThat(assessmentDate.toString()).isEqualTo("2025-12-14")
-          assertThat(assessmentType).isEqualTo(AssessmentType.CSRF)
-          assertThat(calculatedLevel).isEqualTo(AssessmentLevel.HI)
-          assertThat(score.toString()).isEqualTo("1200")
-          assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
-          assertThat(assessmentStaff).isEqualTo(staff)
-          assertThat(assessmentCommitteeCode).isEqualTo(AssessmentCommittee.GOV)
-          assertThat(nextReviewDate).isEqualTo("2026-12-15")
-          assertThat(assessmentComment).isEqualTo("comment")
-          assertThat(placementAgency?.id).isEqualTo("LEI")
-          assertThat(creationDateTime).isEqualTo("2025-12-04T12:34:56")
-          assertThat(creationUser).isEqualTo("BILLSTAFF")
-          assertThat(reviewLevel).isEqualTo(AssessmentLevel.MED)
-          assertThat(approvedLevel).isEqualTo(AssessmentLevel.LOW)
-          assertThat(evaluationDate).isEqualTo("2025-12-16")
-          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
-          assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.SECUR)
-          assertThat(reviewCommitteeComment).isEqualTo("reviewCommitteeComment")
-          assertThat(reviewPlacementAgency?.id).isEqualTo("MDI")
-          assertThat(reviewComment).isEqualTo("reviewComment")
+          with(data!!) {
+            assertThat(assessmentDate.toString()).isEqualTo("2025-12-14")
+            assertThat(assessmentType).isEqualTo(AssessmentType.CSRF)
+            assertThat(calculatedLevel).isEqualTo(AssessmentLevel.HI)
+            assertThat(score.toString()).isEqualTo("1200")
+            assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
+            assertThat(assessmentStaff).isEqualTo(staff)
+            assertThat(assessmentCommitteeCode).isEqualTo(AssessmentCommittee.GOV)
+            assertThat(nextReviewDate).isEqualTo("2026-12-15")
+            assertThat(assessmentComment).isEqualTo("comment")
+            assertThat(placementAgency?.id).isEqualTo("LEI")
+            assertThat(creationDateTime).isEqualTo("2025-12-04T12:34:56")
+            assertThat(creationUser).isEqualTo("BILLSTAFF")
+            assertThat(reviewLevel).isEqualTo(AssessmentLevel.MED)
+            assertThat(approvedLevel).isEqualTo(AssessmentLevel.LOW)
+            assertThat(evaluationDate).isEqualTo("2025-12-16")
+            assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
+            assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.SECUR)
+            assertThat(reviewCommitteeComment).isEqualTo("reviewCommitteeComment")
+            assertThat(reviewPlacementAgency?.id).isEqualTo("MDI")
+            assertThat(reviewComment).isEqualTo("reviewComment")
+          }
         }
       }
 
@@ -293,16 +295,18 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val data = offenderAssessmentRepository.findByIdOrNull(
-          OffenderAssessmentId(booking1, created.sequence),
-        )
+        nomisDataBuilder.runInTransaction {
+          val data = offenderAssessmentRepository.findByIdOrNull(
+            OffenderAssessmentId(booking1, created.sequence),
+          )
 
-        with(data!!) {
-          assertThat(assessmentDate).isEqualTo("2025-12-14")
-          assertThat(assessmentType).isEqualTo(AssessmentType.CSRF)
-          assertThat(score.toString()).isEqualTo("1200")
-          assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
-          assertThat(assessmentStaff).isEqualTo(staff)
+          with(data!!) {
+            assertThat(assessmentDate).isEqualTo("2025-12-14")
+            assertThat(assessmentType).isEqualTo(AssessmentType.CSRF)
+            assertThat(score.toString()).isEqualTo("1200")
+            assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
+            assertThat(assessmentStaff).isEqualTo(staff)
+          }
         }
       }
     }

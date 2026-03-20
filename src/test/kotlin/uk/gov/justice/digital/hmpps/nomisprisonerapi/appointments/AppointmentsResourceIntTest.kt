@@ -244,18 +244,20 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       val id = callCreateEndpoint(true, false)
 
       // Check the database
-      with(repository.getAppointment(id)!!) {
-        assertThat(eventId).isEqualTo(id)
-        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
-        assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-27"))
-        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
-        assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-27T12:10"))
-        assertThat(eventClass).isEqualTo(EventClass.INT_MOV)
-        assertThat(eventType).isEqualTo(EventType.APP)
-        assertThat(eventSubType.code).isEqualTo("ACTI")
-        assertThat(eventStatus.code).isEqualTo("SCH")
-        assertThat(prison.id).isEqualTo("MDI")
-        assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID)
+      nomisDataBuilder.runInTransaction {
+        with(repository.getAppointment(id)!!) {
+          assertThat(eventId).isEqualTo(id)
+          assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+          assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-27"))
+          assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
+          assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-27T12:10"))
+          assertThat(eventClass).isEqualTo(EventClass.INT_MOV)
+          assertThat(eventType).isEqualTo(EventType.APP)
+          assertThat(eventSubType.code).isEqualTo("ACTI")
+          assertThat(eventStatus.code).isEqualTo("SCH")
+          assertThat(prison.id).isEqualTo("MDI")
+          assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID)
+        }
       }
     }
 
@@ -423,18 +425,20 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       callUpdateEndpoint(eventId, true)
 
       // Check the database
-      with(repository.getAppointment(eventId)!!) {
-        assertThat(eventId).isEqualTo(eventId)
-        assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
-        assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
-        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
-        assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
-        assertThat(eventSubType.code).isEqualTo("CABA")
-        assertThat(prison.id).isEqualTo("MDI")
-        assertThat(comment).isEqualTo("Some comment")
-        assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
-        assertThat(modifyUserId).isEqualTo("SA")
-        assertThat(modifyUserId).isNotBlank()
+      nomisDataBuilder.runInTransaction {
+        with(repository.getAppointment(eventId)!!) {
+          assertThat(eventId).isEqualTo(eventId)
+          assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
+          assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
+          assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
+          assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
+          assertThat(eventSubType.code).isEqualTo("CABA")
+          assertThat(prison.id).isEqualTo("MDI")
+          assertThat(comment).isEqualTo("Some comment")
+          assertThat(internalLocation?.locationId).isEqualTo(MDI_ROOM_ID_2)
+          assertThat(modifyUserId).isEqualTo("SA")
+          assertThat(modifyUserId).isNotBlank()
+        }
       }
     }
 
