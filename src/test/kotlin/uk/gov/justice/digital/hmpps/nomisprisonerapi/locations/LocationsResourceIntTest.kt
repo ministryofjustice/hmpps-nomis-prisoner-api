@@ -286,19 +286,21 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .returnResult().responseBody!!
 
       // Check the database
-      createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
-        assertThat(locationCode).isEqualTo("005")
-        assertThat(description).isEqualTo("BXI-A-1-005")
-        assertThat(locationType).isEqualTo("CELL")
-        assertThat(unitType?.code).isEqualTo("NA")
-        assertThat(agency.id).isEqualTo("BXI")
-        assertThat(comment).isEqualTo("this is a cell!")
-        assertThat(capacity).isEqualTo(1)
-        assertThat(operationalCapacity).isNull()
-        assertThat(cnaCapacity).isNull()
-        assertThat(userDescription).isEqualTo("user description")
-        assertThat(listSequence).isEqualTo(5)
-        assertThat(certified).isTrue
+      nomisDataBuilder.runInTransaction {
+        createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
+          assertThat(locationCode).isEqualTo("005")
+          assertThat(description).isEqualTo("BXI-A-1-005")
+          assertThat(locationType).isEqualTo("CELL")
+          assertThat(unitType?.code).isEqualTo("NA")
+          assertThat(agency.id).isEqualTo("BXI")
+          assertThat(comment).isEqualTo("this is a cell!")
+          assertThat(capacity).isEqualTo(1)
+          assertThat(operationalCapacity).isNull()
+          assertThat(cnaCapacity).isNull()
+          assertThat(userDescription).isEqualTo("user description")
+          assertThat(listSequence).isEqualTo(5)
+          assertThat(certified).isTrue
+        }
       }
     }
   }
@@ -428,30 +430,32 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       // Check the database
-      repository.lookupAgencyInternalLocation(location1.locationId)!!.apply {
-        assertThat(locationCode).isEqualTo("CLASS7")
-        assertThat(description).isEqualTo("LEI-CLASS7")
-        assertThat(locationType).isEqualTo("CLAS")
-        assertThat(comment).isEqualTo("this is a test!")
-        assertThat(userDescription).isEqualTo("new description")
-        assertThat(listSequence).isEqualTo(1)
-        assertThat(unitType?.code).isEqualTo("NA")
-        assertThat(tracking).isTrue
-        with(profiles) {
-          assertThat(this).hasSize(2)
-          assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
-          assertThat(this[0].id.profileCode).isEqualTo("NSMC")
-          assertThat(this[1].id.profileType).isEqualTo("SUP_LVL_TYPE")
-          assertThat(this[1].id.profileCode).isEqualTo("EL")
-        }
-        with(usages) {
-          assertThat(this).hasSize(2)
-          assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
-          assertThat(this[0].capacity).isEqualTo(41)
-          assertThat(this[0].listSequence).isEqualTo(2)
-          assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
-          assertThat(this[1].capacity).isEqualTo(42)
-          assertThat(this[1].listSequence).isEqualTo(3)
+      nomisDataBuilder.runInTransaction {
+        repository.lookupAgencyInternalLocation(location1.locationId)!!.apply {
+          assertThat(locationCode).isEqualTo("CLASS7")
+          assertThat(description).isEqualTo("LEI-CLASS7")
+          assertThat(locationType).isEqualTo("CLAS")
+          assertThat(comment).isEqualTo("this is a test!")
+          assertThat(userDescription).isEqualTo("new description")
+          assertThat(listSequence).isEqualTo(1)
+          assertThat(unitType?.code).isEqualTo("NA")
+          assertThat(tracking).isTrue
+          with(profiles) {
+            assertThat(this).hasSize(2)
+            assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
+            assertThat(this[0].id.profileCode).isEqualTo("NSMC")
+            assertThat(this[1].id.profileType).isEqualTo("SUP_LVL_TYPE")
+            assertThat(this[1].id.profileCode).isEqualTo("EL")
+          }
+          with(usages) {
+            assertThat(this).hasSize(2)
+            assertThat(this[0].internalLocationUsage.internalLocationUsage).isEqualTo("APP")
+            assertThat(this[0].capacity).isEqualTo(41)
+            assertThat(this[0].listSequence).isEqualTo(2)
+            assertThat(this[1].internalLocationUsage.internalLocationUsage).isEqualTo("OTH")
+            assertThat(this[1].capacity).isEqualTo(42)
+            assertThat(this[1].listSequence).isEqualTo(3)
+          }
         }
       }
     }
@@ -480,16 +484,18 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       // Check the database
-      repository.lookupAgencyInternalLocation(location1.locationId)!!.apply {
-        assertThat(locationCode).isEqualTo("005")
-        assertThat(description).isEqualTo("MDI-A-1-005")
-        assertThat(locationType).isEqualTo("CELL")
-        assertThat(unitType?.code).isEqualTo("NA")
-        assertThat(parentLocation?.locationId).isEqualTo(-3008)
-        assertThat(comment).isEqualTo("this is a cell!")
-        assertThat(userDescription).isEqualTo("new description")
-        assertThat(listSequence).isEqualTo(5)
-        assertThat(tracking).isFalse
+      nomisDataBuilder.runInTransaction {
+        repository.lookupAgencyInternalLocation(location1.locationId)!!.apply {
+          assertThat(locationCode).isEqualTo("005")
+          assertThat(description).isEqualTo("MDI-A-1-005")
+          assertThat(locationType).isEqualTo("CELL")
+          assertThat(unitType?.code).isEqualTo("NA")
+          assertThat(parentLocation?.locationId).isEqualTo(-3008)
+          assertThat(comment).isEqualTo("this is a cell!")
+          assertThat(userDescription).isEqualTo("new description")
+          assertThat(listSequence).isEqualTo(5)
+          assertThat(tracking).isFalse
+        }
       }
     }
   }
@@ -620,10 +626,12 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       // Check the database
-      repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
-        assertThat(deactivateDate).isEqualTo(LocalDate.parse("2024-02-15"))
-        assertThat(reactivateDate).isEqualTo(LocalDate.parse("2024-02-27"))
-        assertThat(deactivateReason?.code).isEqualTo("C")
+      nomisDataBuilder.runInTransaction {
+        repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
+          assertThat(deactivateDate).isEqualTo(LocalDate.parse("2024-02-15"))
+          assertThat(reactivateDate).isEqualTo(LocalDate.parse("2024-02-27"))
+          assertThat(deactivateReason?.code).isEqualTo("C")
+        }
       }
     }
   }

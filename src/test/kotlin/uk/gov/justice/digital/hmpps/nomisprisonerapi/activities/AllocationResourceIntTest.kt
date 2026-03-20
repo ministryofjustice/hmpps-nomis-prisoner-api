@@ -333,12 +333,14 @@ class AllocationResourceIntTest : IntegrationTestBase() {
       assertThat(response?.created).isTrue()
       assertThat(response?.prisonId).isEqualTo("BXI")
 
-      val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
-      with(saved) {
-        assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
-        assertThat(startDate).isEqualTo("2022-11-14")
-        assertThat(programStatus.code).isEqualTo("ALLOC")
-        assertThat(payBands[0].payBand.code).isEqualTo("5")
+      nomisDataBuilder.runInTransaction {
+        val saved = repository.getOffenderProgramProfile(response!!.offenderProgramReferenceId)
+        with(saved) {
+          assertThat(offenderBooking.bookingId).isEqualTo(bookingId)
+          assertThat(startDate).isEqualTo("2022-11-14")
+          assertThat(programStatus.code).isEqualTo("ALLOC")
+          assertThat(payBands[0].payBand.code).isEqualTo("5")
+        }
       }
     }
 
@@ -412,20 +414,22 @@ class AllocationResourceIntTest : IntegrationTestBase() {
 
       val response = upsertAllocationIsOk(request)!!
 
-      val saved = repository.getOffenderProgramProfiles(courseActivity, offender.latestBooking())
-      with(saved[0]) {
-        assertThat(startDate).isEqualTo("2022-10-31")
-        assertThat(endDate).isEqualTo("2022-11-01")
-        assertThat(programStatus.code).isEqualTo("END")
-        assertThat(payBands[0].payBand.code).isEqualTo("5")
-      }
-      with(saved[1]) {
-        assertThat(response.offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
-        assertThat(response.created).isTrue()
-        assertThat(startDate).isEqualTo("2022-12-01")
-        assertThat(endDate).isNull()
-        assertThat(programStatus.code).isEqualTo("ALLOC")
-        assertThat(payBands[0].payBand.code).isEqualTo("5")
+      nomisDataBuilder.runInTransaction {
+        val saved = repository.getOffenderProgramProfiles(courseActivity, offender.latestBooking())
+        with(saved[0]) {
+          assertThat(startDate).isEqualTo("2022-10-31")
+          assertThat(endDate).isEqualTo("2022-11-01")
+          assertThat(programStatus.code).isEqualTo("END")
+          assertThat(payBands[0].payBand.code).isEqualTo("5")
+        }
+        with(saved[1]) {
+          assertThat(response.offenderProgramReferenceId).isEqualTo(offenderProgramReferenceId)
+          assertThat(response.created).isTrue()
+          assertThat(startDate).isEqualTo("2022-12-01")
+          assertThat(endDate).isNull()
+          assertThat(programStatus.code).isEqualTo("ALLOC")
+          assertThat(payBands[0].payBand.code).isEqualTo("5")
+        }
       }
     }
 
@@ -720,16 +724,18 @@ class AllocationResourceIntTest : IntegrationTestBase() {
           .withEndDate(requestedPayBand?.endDate?.toString())
         upsertAllocationIsOk(request)
 
-        val updated = repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)
-        assertThat(updated.payBands.firstOrNull()?.id?.startDate).isEqualTo(newFirstPayBand?.startDate)
-        assertThat(updated.payBands.firstOrNull()?.endDate).isEqualTo(newFirstPayBand?.endDate)
-        assertThat(updated.payBands.firstOrNull()?.payBand?.code).isEqualTo(newFirstPayBand?.payBandCode)
-        if (newSecondPayBand != null) {
-          assertThat(updated.payBands[1].id.startDate).isEqualTo(newSecondPayBand.startDate)
-          assertThat(updated.payBands[1].endDate).isEqualTo(newSecondPayBand.endDate)
-          assertThat(updated.payBands[1].payBand.code).isEqualTo(newSecondPayBand.payBandCode)
-        } else {
-          assertThat(updated.payBands.size).isEqualTo(newFirstPayBand?.let { 1 } ?: 0)
+        nomisDataBuilder.runInTransaction {
+          val updated = repository.getOffenderProgramProfile(allocation.offenderProgramReferenceId)
+          assertThat(updated.payBands.firstOrNull()?.id?.startDate).isEqualTo(newFirstPayBand?.startDate)
+          assertThat(updated.payBands.firstOrNull()?.endDate).isEqualTo(newFirstPayBand?.endDate)
+          assertThat(updated.payBands.firstOrNull()?.payBand?.code).isEqualTo(newFirstPayBand?.payBandCode)
+          if (newSecondPayBand != null) {
+            assertThat(updated.payBands[1].id.startDate).isEqualTo(newSecondPayBand.startDate)
+            assertThat(updated.payBands[1].endDate).isEqualTo(newSecondPayBand.endDate)
+            assertThat(updated.payBands[1].payBand.code).isEqualTo(newSecondPayBand.payBandCode)
+          } else {
+            assertThat(updated.payBands.size).isEqualTo(newFirstPayBand?.let { 1 } ?: 0)
+          }
         }
       }
 
