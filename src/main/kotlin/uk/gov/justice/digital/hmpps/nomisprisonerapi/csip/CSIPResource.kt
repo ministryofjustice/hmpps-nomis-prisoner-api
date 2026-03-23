@@ -407,8 +407,6 @@ data class SaferCustodyScreening(
   val outcome: CodeDescription?,
   @Schema(description = "The username of the person who recorded the data")
   val recordedBy: String?,
-  @Schema(description = "Real name of who recorded the data")
-  val recordedByDisplayName: String?,
   @Schema(description = "When the the SCS occurred")
   val recordedDate: LocalDate?,
   @Schema(description = "Why the decision was made")
@@ -436,8 +434,6 @@ data class ReportDetails(
   val referralComplete: Boolean,
   @Schema(description = "Who completed the referral")
   val referralCompletedBy: String?,
-  @Schema(description = "Real name of the person who completed the referral")
-  val referralCompletedByDisplayName: String?,
   @Schema(description = "Date the referral was completed")
   val referralCompletedDate: LocalDate?,
 )
@@ -493,8 +489,6 @@ data class Decision(
   var signedOffRole: CodeDescription?,
   @Schema(description = "The username of the person who recorded the decision")
   var recordedBy: String?,
-  @Schema(description = "Real name of who recorded the decision")
-  var recordedByDisplayName: String?,
   @Schema(description = "Recorded Date")
   var recordedDate: LocalDate?,
   @Schema(description = "What to do next")
@@ -591,9 +585,6 @@ data class Review(
   val recordedDate: LocalDate,
   @Schema(description = "The username of the person who recorded the review")
   val recordedBy: String,
-  @Schema(description = "Real name of who recorded the review")
-  val recordedByDisplayName: String?,
-
   @Schema(description = "The date and time the review was created")
   val createDateTime: LocalDateTime,
   @Schema(description = "The username of the person who created the review")

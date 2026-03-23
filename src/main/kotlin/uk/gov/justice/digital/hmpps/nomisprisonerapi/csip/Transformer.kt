@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPPlan
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReview
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 
 fun CSIPReport.toCSIPResponse(documentIds: List<DocumentIdResponse>? = null): CSIPResponse = CSIPResponse(
   id = id,
@@ -60,14 +59,12 @@ private fun CSIPReport.toReportDetailResponse() = ReportDetails(
   saferCustodyTeamInformed = saferCustodyTeamInformed,
   referralComplete = referralComplete,
   referralCompletedBy = referralCompletedBy,
-  referralCompletedByDisplayName = referralCompletedByStaffUserAccount.asDisplayName(),
   referralCompletedDate = referralCompletedDate,
 )
 
 private fun CSIPReport.toSCSResponse() = SaferCustodyScreening(
   outcome = outcome?.toCodeDescription(),
   recordedBy = outcomeCreateUsername,
-  recordedByDisplayName = outcomeCreatedByStaffUserAccount.asDisplayName(),
   recordedDate = outcomeCreateDate,
   reasonForDecision = reasonForDecision,
 )
@@ -109,7 +106,6 @@ private fun CSIPReport.toDecisionResponse() = Decision(
   decisionOutcome = decisionOutcome?.toCodeDescription(),
   signedOffRole = signedOffRole?.toCodeDescription(),
   recordedBy = recordedBy,
-  recordedByDisplayName = recordedByStaffUserAccount.asDisplayName(),
   recordedDate = recordedDate,
   nextSteps = nextSteps,
   otherDetails = otherDetails,
@@ -155,7 +151,6 @@ private fun CSIPReview.toReviewResponse() = Review(
   closeDate = closeDate,
   recordedDate = recordedDate!!,
   recordedBy = recordedUser!!,
-  recordedByDisplayName = recordedByStaffUserAccount.asDisplayName(),
   createDateTime = createDateTime,
   createdBy = createUsername,
   lastModifiedDateTime = lastModifiedDateTime,
@@ -173,5 +168,3 @@ private fun CSIPAttendee.toAttendeeResponse() = Attendee(
   lastModifiedDateTime = lastModifiedDateTime,
   lastModifiedBy = lastModifiedUsername,
 )
-
-private fun StaffUserAccount?.asDisplayName(): String? = this?.staff?.let { "${it.firstName} ${it.lastName}" }

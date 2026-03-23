@@ -73,10 +73,6 @@ class CSIPReview(
   @Column(name = "CREATE_USER")
   val recordedUser: String? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "CREATE_USER", insertable = false, updatable = false)
-  val recordedByStaffUserAccount: StaffUserAccount? = null,
-
   @Column
   var auditModuleName: String? = null,
 

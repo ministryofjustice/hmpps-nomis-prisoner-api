@@ -15,6 +15,7 @@ import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.ATTENDEE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.FACTOR
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.csip.CSIPComponent.Component.INTERVIEW
@@ -276,7 +277,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reportDetails.saferCustodyTeamInformed").isEqualTo(false)
         .jsonPath("reportDetails.referralComplete").isEqualTo(true)
         .jsonPath("reportDetails.referralCompletedBy").isEqualTo("FRED.JAMES")
-        .jsonPath("reportDetails.referralCompletedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("reportDetails.referralCompletedDate").isEqualTo("2024-04-15")
     }
 
@@ -291,7 +291,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("saferCustodyScreening.outcome.code").isEqualTo("ACC")
         .jsonPath("saferCustodyScreening.outcome.description").isEqualTo("ACCT Supporting")
         .jsonPath("saferCustodyScreening.recordedBy").isEqualTo("FRED.JAMES")
-        .jsonPath("saferCustodyScreening.recordedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("saferCustodyScreening.recordedDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("saferCustodyScreening.reasonForDecision").isEqualTo("Further help needed")
     }
@@ -338,7 +337,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("reviews[0].nextReviewDate").isEqualTo("2024-08-01")
         .jsonPath("reviews[0].recordedDate").isNotEmpty
         .jsonPath("reviews[0].recordedBy").isEqualTo("FRED.JAMES")
-        .jsonPath("reviews[0].recordedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("reviews[0].createDateTime").isNotEmpty
         .jsonPath("reviews[0].createdBy").isNotEmpty
         .jsonPath("reviews[0].attendees[0].id").isEqualTo(csip1.reviews[0].attendees[0].id)
@@ -398,7 +396,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
         .jsonPath("decision.signedOffRole.code").isEqualTo("CUSTMAN")
         .jsonPath("decision.signedOffRole.description").isEqualTo("Custodial Manager")
         .jsonPath("decision.recordedBy").isEqualTo("FRED.JAMES")
-        .jsonPath("decision.recordedByDisplayName").isEqualTo("FRED JAMES")
         .jsonPath("decision.recordedDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("decision.nextSteps").isEqualTo("provide help")
         .jsonPath("decision.otherDetails").isEqualTo("Support and assistance needed")
@@ -1072,7 +1069,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         webTestClient.get().uri("/csip/${createdCsip.nomisCSIPReportId}")
@@ -1099,7 +1096,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1139,7 +1136,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip.saferCustodyTeamInformed).isEqualTo(false)
           assertThat(newCsip.referralComplete).isEqualTo(true)
           assertThat(newCsip.referralCompletedBy).isEqualTo("FRED.JAMES")
-          assertThat(newCsip.referralCompletedByStaffUserAccount!!.username).isEqualTo("FRED.JAMES")
           assertThat(newCsip.referralCompletedDate).isEqualTo(LocalDate.parse("2024-04-04"))
 
           // Contributory factors
@@ -1233,7 +1229,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1241,7 +1237,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
           assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
           assertThat(newCsip.referralCompletedBy).isNull()
-          assertThat(newCsip.referralCompletedByStaffUserAccount).isNull()
         }
       }
 
@@ -1268,7 +1263,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1304,7 +1299,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1335,7 +1330,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1371,7 +1366,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1403,7 +1398,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1434,7 +1429,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1463,7 +1458,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1718,7 +1713,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1761,7 +1756,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(updatedCsip.saferCustodyTeamInformed).isEqualTo(false)
           assertThat(updatedCsip.referralComplete).isEqualTo(true)
           assertThat(updatedCsip.referralCompletedBy).isEqualTo("FRED.JAMES")
-          assertThat(updatedCsip.referralCompletedByStaffUserAccount!!.username).isEqualTo("FRED.JAMES")
           assertThat(updatedCsip.referralCompletedDate).isEqualTo(LocalDate.parse("2024-04-04"))
 
           // Contributory factors
@@ -1869,7 +1863,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1912,7 +1906,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1920,7 +1914,6 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           assertThat(newCsip!!.offenderBooking.offender.nomsId).isEqualTo("A1234TT")
           assertThat(newCsip.rootOffender?.id).isEqualTo(booking!!.rootOffender?.id)
           assertThat(newCsip.referralCompletedBy).isNull()
-          assertThat(newCsip.referralCompletedByStaffUserAccount).isNull()
         }
       }
 
@@ -1947,7 +1940,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -1983,7 +1976,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -2014,7 +2007,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -2050,7 +2043,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -2082,7 +2075,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -2111,7 +2104,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -2140,7 +2133,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
           .bodyValue(validCSIP)
           .exchange()
           .expectStatus().isEqualTo(200)
-          .expectBody(UpsertCSIPResponse::class.java)
+          .expectBody<UpsertCSIPResponse>()
           .returnResult().responseBody!!
 
         repository.runInTransaction {
@@ -2258,7 +2251,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             .bodyValue(upsertWithMultipleFactors)
             .exchange()
             .expectStatus().isEqualTo(200)
-            .expectBody(UpsertCSIPResponse::class.java)
+            .expectBody<UpsertCSIPResponse>()
             .returnResult().responseBody!!
 
           assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
@@ -2346,7 +2339,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             )
             .exchange()
             .expectStatus().isEqualTo(200)
-            .expectBody(UpsertCSIPResponse::class.java)
+            .expectBody<UpsertCSIPResponse>()
             .returnResult().responseBody!!
 
           assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
@@ -2434,7 +2427,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             )
             .exchange()
             .expectStatus().isEqualTo(200)
-            .expectBody(UpsertCSIPResponse::class.java)
+            .expectBody<UpsertCSIPResponse>()
             .returnResult().responseBody!!
 
           assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
@@ -2506,7 +2499,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             )
             .exchange()
             .expectStatus().isEqualTo(200)
-            .expectBody(UpsertCSIPResponse::class.java)
+            .expectBody<UpsertCSIPResponse>()
             .returnResult().responseBody!!
 
           assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)
@@ -2582,7 +2575,7 @@ class CSIPResourceIntTest : IntegrationTestBase() {
             )
             .exchange()
             .expectStatus().isEqualTo(200)
-            .expectBody(UpsertCSIPResponse::class.java)
+            .expectBody<UpsertCSIPResponse>()
             .returnResult().responseBody!!
 
           assertThat(response.nomisCSIPReportId).isEqualTo(csip3.id)

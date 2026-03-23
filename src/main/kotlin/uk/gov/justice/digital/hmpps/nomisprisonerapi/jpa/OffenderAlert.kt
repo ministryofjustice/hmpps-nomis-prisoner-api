@@ -17,6 +17,8 @@ import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WorkFlowStatus.DONE
@@ -107,6 +109,7 @@ class OffenderAlert(
 
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
   val createStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "MODIFY_USER_ID")

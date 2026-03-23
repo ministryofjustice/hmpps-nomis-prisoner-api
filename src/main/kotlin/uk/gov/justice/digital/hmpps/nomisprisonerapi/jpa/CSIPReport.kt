@@ -154,10 +154,6 @@ class CSIPReport(
   @Column(name = "REFERRAL_COMPLETED_BY")
   var referralCompletedBy: String? = null,
 
-  @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "REFERRAL_COMPLETED_BY", insertable = false, updatable = false)
-  var referralCompletedByStaffUserAccount: StaffUserAccount? = null,
-
   @Column(name = "REFERRAL_COMPLETED_DATE")
   var referralCompletedDate: LocalDate? = null,
 
@@ -187,10 +183,6 @@ class CSIPReport(
 
   @Column(name = "CDR_OUTCOME_RECORDED_BY")
   var outcomeCreateUsername: String? = null,
-
-  @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "CDR_OUTCOME_RECORDED_BY", insertable = false, updatable = false)
-  val outcomeCreatedByStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "CDR_OUTCOME_DATE")
   var outcomeCreateDate: LocalDate? = null,
@@ -264,10 +256,6 @@ class CSIPReport(
 
   @Column(name = "INV_OUTCOME_RECORDED_BY")
   var recordedBy: String? = null,
-
-  @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "INV_OUTCOME_RECORDED_BY", insertable = false, updatable = false)
-  val recordedByStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "INV_OUTCOME_DATE")
   var recordedDate: LocalDate? = null,
