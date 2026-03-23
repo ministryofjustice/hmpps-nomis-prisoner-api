@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
+import jakarta.transaction.Transactional
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.transaction.TestTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -49,9 +51,13 @@ class VisitRepositoryTest : IntegrationTestBase() {
   lateinit var offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository
 
   @Autowired
+  lateinit var offenderVisitBalanceRepository: OffenderVisitBalanceRepository
+
+  @Autowired
   lateinit var visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>
 
   @Test
+  @Transactional
   fun saveVisit() {
     lateinit var seedOffenderBooking: OffenderBooking
     lateinit var seedPerson1: Person
@@ -99,35 +105,38 @@ class VisitRepositoryTest : IntegrationTestBase() {
       ),
     )
 
-    builderRepository.runInTransaction {
-      visitRepository.save(visit)
+    visitRepository.save(visit)
 
-      val persistedVisitList = visitRepository.findByOffenderBooking(seedOffenderBooking)
-      assertThat(persistedVisitList).isNotEmpty
-      val persistedVisit = persistedVisitList[0]
+    TestTransaction.flagForCommit()
+    TestTransaction.end()
+    TestTransaction.start()
 
-      assertThat(persistedVisit.visitDate).isEqualTo(LocalDate.parse("2009-12-21"))
-      assertThat(persistedVisit.startDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T13:15"))
-      assertThat(persistedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T14:15"))
-      assertThat(persistedVisit.id).isNotNull
-      assertThat(persistedVisit.searchLevel!!.description).isEqualTo("Full Search")
-      assertThat(persistedVisit.visitStatus.description).isEqualTo("Scheduled")
-      assertThat(persistedVisit.visitorConcernText).isEqualTo("visitor concerns")
+    val persistedVisitList = visitRepository.findByOffenderBooking(seedOffenderBooking)
+    assertThat(persistedVisitList).isNotEmpty
+    val persistedVisit = persistedVisitList[0]
 
-      val visitVisitors = persistedVisit.visitors
-      assertThat(visitVisitors.size).isEqualTo(2)
-      val (_, offenderBooking, parentVisit, person, groupLeader, assistedVisit) = visitVisitors[0]
-      assertThat(offenderBooking?.bookingId).isEqualTo(seedOffenderBooking.bookingId)
-      assertThat(parentVisit.id).isEqualTo(visit.id)
-      assertThat(groupLeader).isTrue
-      assertThat(assistedVisit).isTrue
-      assertThat(person?.id).isEqualTo(seedPerson1.id)
-      assertThat(visitVisitors[1].person?.id).isEqualTo(seedPerson2.id)
-      assertThat(visitVisitors[1].eventId).isGreaterThan(0)
-    }
+    assertThat(persistedVisit.visitDate).isEqualTo(LocalDate.parse("2009-12-21"))
+    assertThat(persistedVisit.startDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T13:15"))
+    assertThat(persistedVisit.endDateTime).isEqualTo(LocalDateTime.parse("2009-12-21T14:15"))
+    assertThat(persistedVisit.id).isNotNull
+    assertThat(persistedVisit.searchLevel!!.description).isEqualTo("Full Search")
+    assertThat(persistedVisit.visitStatus.description).isEqualTo("Scheduled")
+    assertThat(persistedVisit.visitorConcernText).isEqualTo("visitor concerns")
+
+    val visitVisitors = persistedVisit.visitors
+    assertThat(visitVisitors.size).isEqualTo(2)
+    val (_, offenderBooking, parentVisit, person, groupLeader, assistedVisit) = visitVisitors[0]
+    assertThat(offenderBooking?.bookingId).isEqualTo(seedOffenderBooking.bookingId)
+    assertThat(parentVisit.id).isEqualTo(visit.id)
+    assertThat(groupLeader).isTrue
+    assertThat(assistedVisit).isTrue
+    assertThat(person?.id).isEqualTo(seedPerson1.id)
+    assertThat(visitVisitors[1].person?.id).isEqualTo(seedPerson2.id)
+    assertThat(visitVisitors[1].eventId).isGreaterThan(0)
   }
 
   @Test
+  @Transactional
   fun saveBalanceAdjustment() {
     lateinit var seedOffenderBooking: OffenderBooking
     lateinit var staffUser: Staff
@@ -146,6 +155,7 @@ class VisitRepositoryTest : IntegrationTestBase() {
     val seedBalance = seedOffenderBooking.visitBalance ?: throw IllegalStateException("No visit balance")
     assertThat(seedBalance.remainingVisitOrders).isEqualTo(25)
     assertThat(seedBalance.remainingPrivilegedVisitOrders).isEqualTo(2)
+    offenderVisitBalanceRepository.save(seedBalance)
 
     val savedVisitBalance = offenderVisitBalanceAdjustmentRepository.save(
       OffenderVisitBalanceAdjustment(
@@ -161,6 +171,10 @@ class VisitRepositoryTest : IntegrationTestBase() {
         endorsedStaffId = staffUser.id,
       ),
     )
+
+    TestTransaction.flagForCommit()
+    TestTransaction.end()
+    TestTransaction.start()
 
     val offenderVisitBalanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll().first()
     assertThat(offenderVisitBalanceAdjustment.id).isEqualTo(savedVisitBalance.id)
