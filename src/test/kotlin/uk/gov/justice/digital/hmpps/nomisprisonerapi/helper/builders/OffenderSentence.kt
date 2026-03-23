@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
@@ -65,6 +66,15 @@ interface OffenderSentenceDsl {
     statusUpdateStaff: Staff,
     dsl: OffenderSentenceStatusDsl.() -> Unit = {},
   ): OffenderSentenceStatus
+
+  @OffenderSentenceStatusDslMarker
+  fun audit(
+    createDatetime: LocalDateTime = LocalDateTime.now(),
+    createUserId: String = "ABC12A",
+    modifyUserId: String? = null,
+    modifyDatetime: LocalDateTime? = null,
+    auditModule: String = "OCDCCASE",
+  )
 }
 
 @Component
@@ -72,12 +82,44 @@ class OffenderSentenceBuilderRepository(
   val sentenceCalculationTypeRepository: SentenceCalculationTypeRepository,
   val sentenceCategoryTypeRepository: ReferenceCodeRepository<SentenceCategoryType>,
   val offenderSentenceRepository: OffenderSentenceRepository,
+  private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) {
   fun lookupSentenceCalculationType(calculationType: String, category: String): SentenceCalculationType = sentenceCalculationTypeRepository.findByIdOrNull(SentenceCalculationTypeId(calculationType, category))!!
 
   fun lookupSentenceCategoryType(code: String): SentenceCategoryType = sentenceCategoryTypeRepository.findByIdOrNull(SentenceCategoryType.pk(code))!!
 
-  fun save(sentence: OffenderSentence): OffenderSentence = offenderSentenceRepository.save(sentence)
+  fun save(sentence: OffenderSentence): OffenderSentence = offenderSentenceRepository.saveAndFlush(sentence)
+
+  fun updateAudit(
+    id: SentenceId,
+    createDatetime: LocalDateTime,
+    createUserId: String,
+    modifyUserId: String?,
+    modifyDatetime: LocalDateTime?,
+    auditModule: String,
+  ) {
+    jdbcTemplate.update(
+      """
+      UPDATE OFFENDER_SENTENCES 
+      SET 
+        CREATE_DATETIME = :createDatetime,
+        CREATE_USER_ID = :createUserId,
+        MODIFY_USER_ID = :modifyUserId,
+        MODIFY_DATETIME = :modifyDatetime,
+        AUDIT_MODULE_NAME = :auditModule
+      WHERE OFFENDER_BOOK_ID = :offenderBookId AND SENTENCE_SEQ = :sentenceSequence 
+      """,
+      mapOf(
+        "createDatetime" to createDatetime,
+        "createUserId" to createUserId,
+        "modifyUserId" to modifyUserId,
+        "modifyDatetime" to modifyDatetime,
+        "auditModule" to auditModule,
+        "offenderBookId" to id.offenderBooking.bookingId,
+        "sentenceSequence" to id.sequence,
+      ),
+    )
+  }
 }
 
 @Component
@@ -279,4 +321,19 @@ class OffenderSentenceBuilder(
     )
       .also { builder.apply(dsl) }
   }
+
+  override fun audit(
+    createDatetime: LocalDateTime,
+    createUserId: String,
+    modifyUserId: String?,
+    modifyDatetime: LocalDateTime?,
+    auditModule: String,
+  ) = repository.updateAudit(
+    id = offenderSentence.id,
+    createDatetime = createDatetime,
+    createUserId = createUserId,
+    modifyUserId = modifyUserId,
+    modifyDatetime = modifyDatetime,
+    auditModule = auditModule,
+  )
 }

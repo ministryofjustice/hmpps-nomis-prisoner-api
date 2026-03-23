@@ -22,4 +22,6 @@ interface OffenderSentenceRepository :
 
   @Query("select coalesce(max(lineSequence), 0) + 1 from OffenderSentence where id.offenderBooking = :offenderBooking")
   fun getNextLineSequence(offenderBooking: OffenderBooking): Long
+
+  fun findByIdOffenderBookingBookingIdInAndAuditModuleNameAndStatusAndCourtCaseIsNotNull(offenderBookingIds: List<Long>, auditModule: String = "MERGE", status: String = "I"): List<OffenderSentence>
 }

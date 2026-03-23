@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtCaseRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.LinkCaseTxnRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixedTermRecallRepository
@@ -83,6 +84,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderCaseNoteRepository: OffenderCaseNoteRepository
+
+  @Autowired
+  lateinit var mergeTransactionRepository: MergeTransactionRepository
 
   private var aLocationInMoorland = 0L
   private lateinit var staff: Staff
@@ -1240,6 +1244,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var prisonerWithRecentMergeCasesNotAffected: Offender
     private lateinit var prisonerWithOldMerge: Offender
     private lateinit var prisonerWithNoMerge: Offender
+    private var previousLatestBookingIdForA1234AG = 0L
+    private var sequenceOfDeactivatedSentence = 0L
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -1475,7 +1481,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 )
               }
             }
-            booking(agencyLocationId = "MDI") {
+            previousLatestBookingIdForA1234AG = booking(agencyLocationId = "MDI") {
               release()
               courtCase(
                 caseInfoNumber = "A/100",
@@ -1487,8 +1493,55 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 audit(
                   createDatetime = mergeDate.minusDays(10),
                 )
+                val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = "2006")
+                lateinit var courtOrder: CourtOrder
+                courtEvent {
+                  courtOrder = courtOrder {
+                    sentencePurpose()
+                  }
+                  courtEventCharge(offenderCharge = charge)
+                }
+                // updated by merge
+                sequenceOfDeactivatedSentence = sentence(
+                  courtOrder = courtOrder,
+                  status = "I",
+                ) {
+                  offenderSentenceCharge(charge)
+                  term()
+                  audit(
+                    createDatetime = mergeDate.minusDays(10),
+                    modifyDatetime = mergeDate.plusMinutes(1),
+                    auditModule = "MERGE",
+                    createUserId = "SYS",
+                  )
+                }.id.sequence
+                // still active - so ignored
+                sentence(
+                  courtOrder = courtOrder,
+                  status = "A",
+                ) {
+                  offenderSentenceCharge(charge)
+                  term()
+                  audit(
+                    createDatetime = mergeDate.minusDays(10),
+                    modifyDatetime = mergeDate.plusMinutes(1),
+                    auditModule = "MERGE",
+                    createUserId = "SYS",
+                  )
+                }
+                // inactive but not by merge so ignored
+                sentence(
+                  courtOrder = courtOrder,
+                  status = "I",
+                ) {
+                  offenderSentenceCharge(charge)
+                  term()
+                  audit(
+                    createDatetime = mergeDate.plusMinutes(1),
+                  )
+                }
               }
-            }
+            }.bookingId
           }
 
         mergeTransaction(
@@ -1520,6 +1573,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           requestDate = mergeDate,
           nomsId1 = "A9999AK",
           nomsId2 = "A1234AG",
+          offenderBookId1 = previousLatestBookingIdForA1234AG,
         )
       }
     }
@@ -1600,7 +1654,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return only the created court cases when already inactive solo case for the offender`() {
+      fun `will return only the created court cases along with sentence made inactive when already inactive solo case for the offender`() {
         val response: PostPrisonerMergeCaseChanges =
           webTestClient.get().uri("/prisoners/${prisonerWithRecentMergeWithInactiveCase.nomsId}/sentencing/court-cases/post-merge")
             .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -1612,6 +1666,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         with(response.courtCasesCreated.find { it.caseSequence == 1 }!!) {
           assertThat(this.caseStatus.code).isEqualTo("I")
           assertThat(this.primaryCaseInfoNumber).isEqualTo("A/100")
+        }
+        assertThat(response.sentencesDeactivated).hasSize(1)
+        with(response.sentencesDeactivated.find { it.sentenceSeq == sequenceOfDeactivatedSentence }!!) {
+          assertThat(this.status).isEqualTo("I")
         }
       }
 
@@ -1669,6 +1727,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     internal fun deletePrisoner() {
       repository.deleteOffenders()
       repository.delete(staff)
+      mergeTransactionRepository.deleteAll()
     }
   }
 

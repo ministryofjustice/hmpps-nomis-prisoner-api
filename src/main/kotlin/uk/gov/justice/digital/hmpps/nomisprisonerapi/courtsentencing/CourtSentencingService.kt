@@ -136,16 +136,21 @@ class CourtSentencingService(
   fun getCourtCasesChangedByMergePrisoners(offenderNo: String): PostPrisonerMergeCaseChanges {
     val lastMerge = mergeTransactionRepository.findLatestByNomsId(offenderNo)
       ?: throw BadDataException("Prisoner $offenderNo has no merges")
+    val sentencesAffected = offenderSentenceRepository.findByIdOffenderBookingBookingIdInAndAuditModuleNameAndStatusAndCourtCaseIsNotNull(listOf(lastMerge.offenderBookId1, lastMerge.offenderBookId2)).filter { it.wasDeactivatedByMerge(lastMerge.requestDate) }
     val allCases = courtCaseRepository.findByOffenderBookingOffenderNomsIdOrderByCreateDatetimeDesc(offenderNo)
     val casesDeactivatedByMerge = allCases.filter { it.wasDeactivatedByMerge(lastMerge.requestDate) }
+    val sentencesInDeactivatedCases = casesDeactivatedByMerge.flatMap { it.sentences }.toSet()
+    val sentencedDeactivatedInCasesNotDeactivated = sentencesAffected - sentencesInDeactivatedCases
     val casesCreated = allCases.filter { it.wasCreatedByMerge(lastMerge.requestDate) }
     return PostPrisonerMergeCaseChanges(
       courtCasesCreated = casesCreated.map { it.toCourtCaseResponse() },
       courtCasesDeactivated = casesDeactivatedByMerge.map { it.toCourtCaseResponse() },
+      sentencesDeactivated = sentencedDeactivatedInCasesNotDeactivated.map { it.toSentenceResponse() },
     )
   }
 
   private fun CourtCase.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = caseStatus.code == CaseStatus.INACTIVE && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime && mergeRequestDate > createDatetime
+  private fun OffenderSentence.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = status == "I" && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime && mergeRequestDate > createDatetime
 
   private fun CourtCase.wasCreatedByMerge(mergeRequestDate: LocalDateTime) = mergeRequestDate < createDatetime && createUsername == "SYS"
 
