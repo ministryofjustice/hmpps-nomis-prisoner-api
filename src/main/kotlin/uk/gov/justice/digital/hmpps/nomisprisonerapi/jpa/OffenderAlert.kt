@@ -117,6 +117,7 @@ class OffenderAlert(
 
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
   val modifyStaffUserAccount: StaffUserAccount? = null,
 
   @Column(name = "MODIFY_DATETIME")
