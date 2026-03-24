@@ -6,6 +6,8 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.MappedSuperclass
 import org.hibernate.annotations.Generated
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
 
@@ -18,10 +20,12 @@ import java.time.LocalDateTime
 class NomisAuditableEntityWithStaff {
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "CREATE_USER_ID", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
   var createStaffUserAccount: StaffUserAccount? = null
 
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "MODIFY_USER_ID", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
   var modifyStaffUserAccount: StaffUserAccount? = null
 
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)

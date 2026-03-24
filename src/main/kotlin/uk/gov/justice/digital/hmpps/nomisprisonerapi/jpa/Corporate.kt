@@ -75,7 +75,7 @@ class Corporate(
   MEMO_TEXT - always null
   SUSPENDED_DATE - always null
    */
-) : NomisAuditableEntityWithStaff() {
+) : NomisAuditableEntityBasic() {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

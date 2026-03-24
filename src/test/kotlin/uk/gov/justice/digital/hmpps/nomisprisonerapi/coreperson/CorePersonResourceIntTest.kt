@@ -1150,7 +1150,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[2].changeReason").doesNotExist()
           .jsonPath("beliefs[2].comments").doesNotExist()
           .jsonPath("beliefs[2].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("beliefs[2].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("beliefs[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
 
@@ -1392,7 +1391,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[3].changeReason").doesNotExist()
           .jsonPath("[3].comments").doesNotExist()
           .jsonPath("[3].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("[3].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
 
@@ -1624,7 +1622,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[3].changeReason").doesNotExist()
           .jsonPath("[3].comments").doesNotExist()
           .jsonPath("[3].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("[3].audit.createDisplayName").isEqualTo("KOFE ADDY")
           .jsonPath("[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
 

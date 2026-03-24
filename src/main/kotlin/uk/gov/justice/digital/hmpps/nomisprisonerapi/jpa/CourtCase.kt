@@ -125,7 +125,7 @@ class CourtCase(
     CASE_INFO_PREFIX - not used
    */
 
-) : NomisAuditableEntityWithStaff() {
+) : NomisAuditableEntityBasic() {
 
   fun getDpsCaseInfoNumbers(): List<OffenderCaseIdentifier> = caseInfoNumbers.filter { it.isDpsCaseInfoNumber() }
 

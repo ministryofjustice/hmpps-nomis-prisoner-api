@@ -19,7 +19,7 @@ abstract class InternetAddress(
 
   @Column(name = "INTERNET_ADDRESS_CLASS")
   open val internetAddressClass: String,
-) : NomisAuditableEntityWithStaff() {
+) : NomisAuditableEntityBasic() {
   companion object {
     const val EMAIL_INTERNET_ADDRESS_CLASS = "EMAIL"
   }

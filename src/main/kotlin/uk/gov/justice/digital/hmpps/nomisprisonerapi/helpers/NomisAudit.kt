@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntityBasic
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntityWithStaff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDateTime
 
@@ -36,22 +35,6 @@ data class NomisAudit(
   val auditClientWorkstationName: String? = null,
   @Schema(description = "Additional information that is audited")
   val auditAdditionalInfo: String? = null,
-)
-
-fun NomisAuditableEntityWithStaff.toAudit() = NomisAudit(
-  createDatetime = createDatetime,
-  createUsername = createUsername,
-  createDisplayName = createStaffUserAccount?.staff.asDisplayName(),
-  modifyDatetime = modifyDatetime,
-  modifyUserId = modifyUserId,
-  modifyDisplayName = modifyStaffUserAccount?.staff.asDisplayName(),
-  auditUserId = auditUserId,
-  auditTimestamp = auditTimestamp,
-  auditModuleName = auditModuleName,
-  auditAdditionalInfo = auditAdditionalInfo,
-  auditClientIpAddress = auditClientIpAddress,
-  auditClientUserId = auditClientUserId,
-  auditClientWorkstationName = auditClientWorkstationName,
 )
 
 fun NomisAuditableEntityBasic.toAudit() = NomisAudit(

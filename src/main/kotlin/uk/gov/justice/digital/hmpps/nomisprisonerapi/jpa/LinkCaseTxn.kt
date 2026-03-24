@@ -62,7 +62,7 @@ data class LinkCaseTxn(
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
   var courtEvent: CourtEvent,
 
-) : NomisAuditableEntityWithStaff() {
+) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
