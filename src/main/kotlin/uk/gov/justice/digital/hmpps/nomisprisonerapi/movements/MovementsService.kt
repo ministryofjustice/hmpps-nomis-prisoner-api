@@ -273,7 +273,7 @@ class MovementsService(
 
     val application = request.movementApplicationId
       ?.let {
-        offenderMovementApplicationRepository.findByIdOrNull(request.movementApplicationId)
+        offenderMovementApplicationRepository.findByIdOrNullForUpdate(request.movementApplicationId)
           ?: throw NotFoundException("Temporary absence application with id=$request.movementApplicationId not found for offender with nomsId=$offenderNo")
       } ?: OffenderMovementApplication(
       offenderBooking = offenderBooking,
