@@ -77,7 +77,7 @@ class IncidentService(
 
     return (
       incidentRepository.findByIdOrNull(incidentId)?.apply {
-        this.title = request.title
+        this.title = request.title.truncateToUtf8Length(240, true)
         this.description = reconstructText(request)
         this.incidentType = questionnaire.code
         this.agency = agency
@@ -90,7 +90,7 @@ class IncidentService(
         this.status = status
       } ?: Incident(
         id = incidentId,
-        title = request.title,
+        title = request.title.truncateToUtf8Length(240, true),
         description = reconstructText(request),
         incidentType = questionnaire.code,
         agency = agency,

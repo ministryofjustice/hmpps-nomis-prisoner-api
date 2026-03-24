@@ -1051,6 +1051,26 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will create an incident with title over 240 chars`() {
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(title = "a".repeat(241)),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/$currentId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(currentId)
+          .jsonPath("title").isEqualTo("${"a".repeat(215)}... see DPS for full text")
+      }
+
+      @Test
       fun `will create an incident with amendments`() {
         webTestClient.put().uri("/incidents/${++currentId}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -1604,6 +1624,27 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .jsonPath("reportedDateTime").isEqualTo("2024-01-02T09:30:00")
           .jsonPath("createDateTime").isNotEmpty
           .jsonPath("createdBy").isNotEmpty
+      }
+
+      @Test
+      fun `will update an incident with title over 240 chars`() {
+        webTestClient.put().uri("/incidents/${incident4.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(title = "a".repeat(241)),
+            ),
+
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/incidents/${incident4.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBody()
+          .jsonPath("incidentId").isEqualTo(incident4.id)
+          .jsonPath("title").isEqualTo("${"a".repeat(215)}... see DPS for full text")
       }
 
       @Test
