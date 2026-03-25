@@ -24,6 +24,11 @@ class TapAddressInsertRepositoryOracle(
           and addr.premise=s.premise 
           and coalesce(addr.street, ' ') = coalesce(s.street, ' ') 
           and coalesce(addr.postal_code, ' ') = coalesce(s.postal_code, ' ')
+          and addr.flat is null
+          and addr.locality is null
+          and addr.city_code is null
+          and addr.county_code is null
+          and addr.country_code is null
         )
       when not matched then
         insert (address_id, owner_class, owner_id, premise, street, POSTAL_CODE, primary_flag, mail_flag)
@@ -49,7 +54,17 @@ class TapAddressInsertRepositoryH2(
       insert into addresses (address_id, owner_class, owner_id, premise, street, postal_code, primary_flag, mail_flag)
       select address_id.nextval, ?, ?, ?, ?, ?, 'N', 'N'
       where not exists (
-        select 1 from addresses where owner_class = ? and owner_id = ? and premise = ? and coalesce(street, ' ') = coalesce(?, ' ') and  coalesce(postal_code, ' ') = coalesce(?, ' ')
+        select 1 from addresses 
+          where owner_class = ? 
+          and owner_id = ? 
+          and premise = ? 
+          and coalesce(street, ' ') = coalesce(?, ' ') 
+          and coalesce(postal_code, ' ') = coalesce(?, ' ')
+          and flat is null
+          and locality is null  
+          and city_code is null  
+          and county_code is null  
+          and country_code is null 
       )
       """,
   )
