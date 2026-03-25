@@ -189,7 +189,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
       ),
     ],
   )
-  fun getCourtCasesByOffender(
+  fun getCourtCasesByOffenderNo(
     @Schema(description = "Offender No", example = "AA12345")
     @PathVariable
     offenderNo: String,
@@ -252,7 +252,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
       ),
     ],
   )
-  fun getCourtCasesByOffender(
+  fun getCourtCasesByOffenderNoAndCaseIds(
     @Schema(description = "Offender No", example = "AA12345")
     @PathVariable
     offenderNo: String,

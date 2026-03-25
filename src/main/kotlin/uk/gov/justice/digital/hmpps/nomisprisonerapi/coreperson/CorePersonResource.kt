@@ -112,7 +112,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ),
     ],
   )
-  fun getOffenderReligions(
+  fun getOffenderReligionsByPrisonNumber(
     @Schema(
       description = "Prison number aka noms id / offender id display",
       example = "A1234BC",
@@ -160,7 +160,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ),
     ],
   )
-  fun getOffenderReligions(
+  fun getOffenderReligionsByRootOffenderId(
     @Schema(
       description = "Root offender id",
       example = "12345",

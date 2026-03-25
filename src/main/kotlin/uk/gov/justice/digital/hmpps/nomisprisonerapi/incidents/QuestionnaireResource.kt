@@ -59,7 +59,7 @@ class QuestionnaireResource(private val questionnaireService: QuestionnaireServi
       ),
     ],
   )
-  fun getIdsByFilter(
+  fun getQuestionnaireIdsByFilter(
     @ParameterObject
     pageRequest: Pageable,
     @RequestParam(value = "fromDate", required = false)

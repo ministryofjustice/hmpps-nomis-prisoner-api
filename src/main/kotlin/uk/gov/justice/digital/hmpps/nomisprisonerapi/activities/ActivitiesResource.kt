@@ -325,7 +325,7 @@ class ActivitiesResource(
       ),
     ],
   )
-  fun deleteAttendance(
+  fun deleteAttendanceByCourseScheduleAndBooking(
     @Schema(description = "Course schedule id") @PathVariable courseScheduleId: Long,
     @Schema(description = "Booking id") @PathVariable bookingId: Long,
   ) = attendanceService.deleteAttendance(courseScheduleId, bookingId)
@@ -753,7 +753,7 @@ class ActivitiesResource(
       ),
     ],
   )
-  fun deleteAttendance(@PathVariable eventId: Long) = attendanceService.deleteAttendance(eventId)
+  fun deleteAttendanceByEventId(@PathVariable eventId: Long) = attendanceService.deleteAttendance(eventId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PutMapping("/activities/{courseActivityId}/end")
