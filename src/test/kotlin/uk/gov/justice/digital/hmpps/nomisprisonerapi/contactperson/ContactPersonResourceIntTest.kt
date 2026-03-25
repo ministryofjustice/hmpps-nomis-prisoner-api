@@ -2150,19 +2150,21 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val newContact = personContactRepository.findByIdOrNull(response.personContactId)!!
+        nomisDataBuilder.runInTransaction {
+          val newContact = personContactRepository.findByIdOrNull(response.personContactId)!!
 
-        with(newContact) {
-          assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
-          assertThat(person?.id).isEqualTo(existingPerson.id)
-          assertThat(nextOfKin).isTrue()
-          assertThat(approvedVisitor).isFalse()
-          assertThat(emergencyContact).isTrue()
-          assertThat(active).isTrue()
-          assertThat(expiryDate).isNull()
-          assertThat(comment).isEqualTo("Best friends forever")
-          assertThat(contactType.description).isEqualTo("Social/Family")
-          assertThat(relationshipType.description).isEqualTo("Brother")
+          with(newContact) {
+            assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
+            assertThat(person?.id).isEqualTo(existingPerson.id)
+            assertThat(nextOfKin).isTrue()
+            assertThat(approvedVisitor).isFalse()
+            assertThat(emergencyContact).isTrue()
+            assertThat(active).isTrue()
+            assertThat(expiryDate).isNull()
+            assertThat(comment).isEqualTo("Best friends forever")
+            assertThat(contactType.description).isEqualTo("Social/Family")
+            assertThat(relationshipType.description).isEqualTo("Brother")
+          }
         }
       }
     }
@@ -2312,19 +2314,21 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
 
-        val updatedContact = personContactRepository.findByIdOrNull(existingContact.id)!!
+        nomisDataBuilder.runInTransaction {
+          val updatedContact = personContactRepository.findByIdOrNull(existingContact.id)!!
 
-        with(updatedContact) {
-          assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
-          assertThat(person?.id).isEqualTo(existingPerson.id)
-          assertThat(nextOfKin).isTrue()
-          assertThat(approvedVisitor).isTrue()
-          assertThat(emergencyContact).isTrue()
-          assertThat(active).isFalse()
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2024-01-01"))
-          assertThat(comment).isEqualTo("Best friends forever")
-          assertThat(contactType.description).isEqualTo("Social/Family")
-          assertThat(relationshipType.description).isEqualTo("Brother")
+          with(updatedContact) {
+            assertThat(offenderBooking.bookingId).isEqualTo(latestBookingId)
+            assertThat(person?.id).isEqualTo(existingPerson.id)
+            assertThat(nextOfKin).isTrue()
+            assertThat(approvedVisitor).isTrue()
+            assertThat(emergencyContact).isTrue()
+            assertThat(active).isFalse()
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2024-01-01"))
+            assertThat(comment).isEqualTo("Best friends forever")
+            assertThat(contactType.description).isEqualTo("Social/Family")
+            assertThat(relationshipType.description).isEqualTo("Brother")
+          }
         }
       }
     }
@@ -4671,17 +4675,17 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val restriction = personContactRestrictionRepository.findByIdOrNull(response.id)!!
-
-        with(restriction) {
-          assertThat(comment).isEqualTo("Banned for life")
-          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
-          assertThat(restrictionType.description).isEqualTo("Banned")
-          assertThat(enteredStaff.id).isEqualTo(staff.id)
-        }
-
         nomisDataBuilder.runInTransaction {
+          val restriction = personContactRestrictionRepository.findByIdOrNull(response.id)!!
+
+          with(restriction) {
+            assertThat(comment).isEqualTo("Banned for life")
+            assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+            assertThat(restrictionType.description).isEqualTo("Banned")
+            assertThat(enteredStaff.id).isEqualTo(staff.id)
+          }
+
           val person = personRepository.findByIdOrNull(existingPerson.id)
           val contact = person!!.contacts.find { it.id == existingContact.id }
           assertThat(contact?.restrictions).anyMatch { it.id == restriction.id }
@@ -4838,17 +4842,17 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
 
-        val restriction = personContactRestrictionRepository.findByIdOrNull(existingRestriction.id)!!
-
-        with(restriction) {
-          assertThat(comment).isEqualTo("Banned for life")
-          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
-          assertThat(restrictionType.description).isEqualTo("Banned")
-          assertThat(enteredStaff.id).isEqualTo(staff.id)
-        }
-
         nomisDataBuilder.runInTransaction {
+          val restriction = personContactRestrictionRepository.findByIdOrNull(existingRestriction.id)!!
+
+          with(restriction) {
+            assertThat(comment).isEqualTo("Banned for life")
+            assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+            assertThat(restrictionType.description).isEqualTo("Banned")
+            assertThat(enteredStaff.id).isEqualTo(staff.id)
+          }
+
           val person = personRepository.findByIdOrNull(existingPerson.id)
           val contact = person!!.contacts.find { it.id == existingContact.id }
           assertThat(contact?.restrictions).anyMatch { it.id == restriction.id }
@@ -5084,17 +5088,17 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val restriction = personRestrictionRepository.findByIdOrNull(response.id)!!
-
-        with(restriction) {
-          assertThat(comment).isEqualTo("Banned for life")
-          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
-          assertThat(restrictionType.description).isEqualTo("Banned")
-          assertThat(enteredStaff.id).isEqualTo(staff.id)
-        }
-
         nomisDataBuilder.runInTransaction {
+          val restriction = personRestrictionRepository.findByIdOrNull(response.id)!!
+
+          with(restriction) {
+            assertThat(comment).isEqualTo("Banned for life")
+            assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+            assertThat(restrictionType.description).isEqualTo("Banned")
+            assertThat(enteredStaff.id).isEqualTo(staff.id)
+          }
+
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.restrictions).anyMatch { it.id == restriction.id }
         }
@@ -5229,16 +5233,18 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
 
-        val restriction = offenderRestrictionsRepository.findByIdOrNull(response.id)!!
+        nomisDataBuilder.runInTransaction {
+          val restriction = offenderRestrictionsRepository.findByIdOrNull(response.id)!!
 
-        with(restriction) {
-          assertThat(comment).isEqualTo("Banned for life")
-          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
-          assertThat(restrictionType.description).isEqualTo("Banned")
-          assertThat(enteredStaff.id).isEqualTo(staff.id)
-          assertThat(authorisedStaff.id).isEqualTo(staff.id)
-          assertThat(offenderBooking.bookingId).isEqualTo(existingPrisonerBookingId)
+          with(restriction) {
+            assertThat(comment).isEqualTo("Banned for life")
+            assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+            assertThat(restrictionType.description).isEqualTo("Banned")
+            assertThat(enteredStaff.id).isEqualTo(staff.id)
+            assertThat(authorisedStaff.id).isEqualTo(staff.id)
+            assertThat(offenderBooking.bookingId).isEqualTo(existingPrisonerBookingId)
+          }
         }
       }
     }
@@ -5376,15 +5382,17 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        val restriction = offenderRestrictionsRepository.findByIdOrNull(existingRestrictionId)!!
+        nomisDataBuilder.runInTransaction {
+          val restriction = offenderRestrictionsRepository.findByIdOrNull(existingRestrictionId)!!
 
-        with(restriction) {
-          assertThat(comment).isEqualTo("Banned for life updated")
-          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
-          assertThat(restrictionType.code).isEqualTo("BAN")
-          assertThat(enteredStaff.id).isEqualTo(staff.id)
-          assertThat(authorisedStaff.id).isEqualTo(staff.id)
+          with(restriction) {
+            assertThat(comment).isEqualTo("Banned for life updated")
+            assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+            assertThat(restrictionType.code).isEqualTo("BAN")
+            assertThat(enteredStaff.id).isEqualTo(staff.id)
+            assertThat(authorisedStaff.id).isEqualTo(staff.id)
+          }
         }
       }
     }
@@ -5523,17 +5531,17 @@ class ContactPersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
 
-        val restriction = personRestrictionRepository.findByIdOrNull(existingRestriction.id)!!
-
-        with(restriction) {
-          assertThat(comment).isEqualTo("Banned for life")
-          assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
-          assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
-          assertThat(restrictionType.description).isEqualTo("Banned")
-          assertThat(enteredStaff.id).isEqualTo(staff.id)
-        }
-
         nomisDataBuilder.runInTransaction {
+          val restriction = personRestrictionRepository.findByIdOrNull(existingRestriction.id)!!
+
+          with(restriction) {
+            assertThat(comment).isEqualTo("Banned for life")
+            assertThat(effectiveDate).isEqualTo(LocalDate.parse("2020-01-01"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2026-01-02"))
+            assertThat(restrictionType.description).isEqualTo("Banned")
+            assertThat(enteredStaff.id).isEqualTo(staff.id)
+          }
+
           val person = personRepository.findByIdOrNull(existingPerson.id)
           assertThat(person?.restrictions).anyMatch { it.id == restriction.id }
         }
