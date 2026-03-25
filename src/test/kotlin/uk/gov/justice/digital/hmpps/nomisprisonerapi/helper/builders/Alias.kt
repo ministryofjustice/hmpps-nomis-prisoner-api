@@ -132,7 +132,7 @@ class AliasBuilder(
         livingUnitId = livingUnitId,
       )
         .also {
-          offenderBuilder.rootOffender.getAllBookings()?.add(it)
+          offenderBuilder.rootOffender.getAllBookingsFromRoot()?.add(it)
         }
         .also { builder.apply(dsl) }
     }

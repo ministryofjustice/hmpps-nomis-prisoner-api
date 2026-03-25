@@ -23,7 +23,7 @@ class CorePersonService(
     // current active alias defined as the one linked to the latest booking or the root if there are no bookings
     val currentAlias = latestBooking?.offender ?: rootOffender
     val allOffenders = offenderRepository.findByNomsId(prisonNumber).sortedBy { it.id }
-    val allBookings = rootOffender.getAllBookings()?.sortedBy { it.bookingSequence }
+    val allBookings = rootOffender.getAllBookingsFromRoot()?.sortedBy { it.bookingSequence }
 
     return CorePerson(
       prisonNumber = prisonNumber,

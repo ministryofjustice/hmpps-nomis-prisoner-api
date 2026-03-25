@@ -218,14 +218,14 @@ class Repository(
 
   fun getOffender(nomsId: String): Offender? {
     val offender = offenderRepository.findByNomsId(nomsId).firstOrNull()
-    offender?.getAllBookings()?.size // hydrate
-    offender?.getAllBookings()?.firstOrNull()?.incentives?.size // hydrate
+    offender?.getAllBookingsFromRoot()?.size // hydrate
+    offender?.getAllBookingsFromRoot()?.firstOrNull()?.incentives?.size // hydrate
     return offender
   }
 
   fun getOffender(offenderId: Long): Offender? {
     val offender = offenderRepository.findByIdOrNull(offenderId)
-    offender?.getAllBookings()?.size // hydrate
+    offender?.getAllBookingsFromRoot()?.size // hydrate
     return offender
   }
 

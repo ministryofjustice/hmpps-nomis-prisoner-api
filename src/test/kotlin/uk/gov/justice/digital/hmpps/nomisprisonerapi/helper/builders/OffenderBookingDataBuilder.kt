@@ -24,6 +24,6 @@ class OffenderBookingDataBuilder(
     createLocation = agencyLocation,
     location = agencyLocation,
   ).apply {
-    offender.getAllBookings()?.add(this)
+    offender.getAllBookingsFromRoot()?.add(this)
   }
 }
