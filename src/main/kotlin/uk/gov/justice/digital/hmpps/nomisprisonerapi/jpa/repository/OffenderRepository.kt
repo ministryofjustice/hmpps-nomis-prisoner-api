@@ -131,9 +131,9 @@ interface OffenderRepository :
 
   @Query(
     """
-    select distinct nomsId as prisonerId, rootOffender.id as offenderId
+    select distinct nomsId as prisonerId, rootOffenderId as offenderId
      from Offender
-    where rootOffender.id > :fromRootOffenderId and rootOffender.id <= :toRootOffenderId
+    where rootOffenderId > :fromRootOffenderId and rootOffenderId <= :toRootOffenderId and id = rootOffenderId
   """,
   )
   fun findPrisonerIdsBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long): List<PrisonerWithId>
