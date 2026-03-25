@@ -23,6 +23,7 @@ annotation class CorporateAddressDslMarker
 interface CorporateAddressDsl {
   companion object {
     const val SHEFFIELD = "25343"
+    const val SWANSEA = "27683"
   }
 
   @AddressPhoneDslMarker

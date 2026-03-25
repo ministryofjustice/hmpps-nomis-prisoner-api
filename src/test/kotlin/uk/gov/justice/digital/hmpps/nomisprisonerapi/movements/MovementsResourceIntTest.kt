@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SWANSEA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -2461,6 +2462,183 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class IgnoreSimilarNomisCorporateAddress {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate(
+            corporateName = "Swansea (Town Visit)",
+          ) {
+            corporateAddress = address(
+              type = "BUS",
+              flat = null,
+              premise = "Swansea",
+              street = null,
+              locality = null,
+              postcode = null,
+              city = SWANSEA,
+              county = null,
+              country = "ENG",
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking()
+          }
+        }
+      }
+
+      @Test
+      fun `should create application with new address`() {
+        webTestClient.upsertApplicationOk(
+          request = anUpsertApplicationRequest(
+            id = null,
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(name = "Swansea (Town Visit)", addressText = "Swansea"),
+            ),
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // We didn't pick up the existing similar NOMIS address
+                assertThat(toAddress?.addressId).isNotEqualTo(corporateAddress.addressId)
+                assertThat(toAddress?.premise).isEqualTo("Swansea")
+                assertThat(toAddressOwnerClass).isEqualTo("CORP")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should create schedule with same address as application`() {
+        var applicationAddressId: Long = 0
+        var applicationId: Long = 0
+
+        // Create the application
+        webTestClient.upsertApplicationOk(
+          request = anUpsertApplicationRequest(
+            id = null,
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(name = "Swansea (Town Visit)", addressText = "Swansea"),
+            ),
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // save the application address ID
+                applicationAddressId = toAddress!!.addressId
+                applicationId = movementApplicationId
+              }
+            }
+          }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertTemporaryAbsenceRequest(
+            eventId = null,
+            movementApplicationId = applicationId,
+            toAddress = UpsertTemporaryAbsenceAddress(name = "Swansea (Town Visit)", addressText = "Swansea"),
+          ),
+        ).apply {
+          repository.runInTransaction {
+            with(scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)!!) {
+              // check the schedule address is the same as the application address
+              assertThat(toAddress?.addressId).isEqualTo(applicationAddressId)
+              assertThat(toAddress?.premise).isEqualTo("Swansea")
+              assertThat(toAddressOwnerClass).isEqualTo("CORP")
+            }
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class IgnoreSimilarNomisOffenderAddress {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              flat = null,
+              premise = "Swansea",
+              street = null,
+              locality = null,
+              postcode = null,
+              city = SWANSEA,
+              county = null,
+              country = "ENG",
+            )
+            booking = booking()
+          }
+        }
+      }
+
+      @Test
+      fun `should create application with new address`() {
+        webTestClient.upsertApplicationOk(
+          request = anUpsertApplicationRequest(
+            id = null,
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(addressText = "Swansea"),
+            ),
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // We didn't pick up the existing similar NOMIS address
+                assertThat(toAddress?.addressId).isNotEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.premise).isEqualTo("Swansea")
+                assertThat(toAddressOwnerClass).isEqualTo("OFF")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should create schedule with same address as application`() {
+        var applicationAddressId: Long = 0
+        var applicationId: Long = 0
+
+        // Create the application
+        webTestClient.upsertApplicationOk(
+          request = anUpsertApplicationRequest(
+            id = null,
+            toAddresses = listOf(
+              UpsertTemporaryAbsenceAddress(addressText = "Swansea"),
+            ),
+          ),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
+                // save the application address ID
+                applicationAddressId = toAddress!!.addressId
+                applicationId = movementApplicationId
+              }
+            }
+          }
+
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertTemporaryAbsenceRequest(
+            eventId = null,
+            movementApplicationId = applicationId,
+            toAddress = UpsertTemporaryAbsenceAddress(addressText = "Swansea"),
+          ),
+        ).apply {
+          repository.runInTransaction {
+            with(scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)!!) {
+              // check the schedule address is the same as the application address
+              assertThat(toAddress?.addressId).isEqualTo(applicationAddressId)
+              assertThat(toAddress?.premise).isEqualTo("Swansea")
+              assertThat(toAddressOwnerClass).isEqualTo("OFF")
+            }
+          }
+        }
+      }
+    }
+
+    @Nested
     inner class UpdateToNotApproved {
       @Test
       fun `should remove schedule for single`() {
@@ -3048,33 +3226,6 @@ class MovementsResourceIntTest(
   @DisplayName("PUT /movements/{offenderNo}/temporary-absences/scheduled-temporary-absence")
   inner class UpsertScheduledTemporaryAbsence {
 
-    private fun anUpsertRequest(
-      movementApplicationId: Long? = null,
-      eventId: Long? = null,
-      returnEventStatus: String? = null,
-      eventStatus: String = "SCH",
-      toAddress: UpsertTemporaryAbsenceAddress = UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId),
-      comment: String = "Some comment scheduled temporary absence",
-    ) = UpsertScheduledTemporaryAbsenceRequest(
-      eventId = eventId,
-      movementApplicationId = movementApplicationId ?: application.movementApplicationId,
-      eventDate = twoDaysAgo.toLocalDate(),
-      startTime = twoDaysAgo,
-      eventSubType = "C5",
-      eventStatus = eventStatus,
-      comment = comment,
-      escort = "L",
-      fromPrison = "LEI",
-      toAgency = "HAZLWD",
-      transportType = "VAN",
-      returnDate = yesterday.toLocalDate(),
-      returnTime = yesterday,
-      toAddress = toAddress,
-      applicationDate = twoDaysAgo,
-      applicationTime = twoDaysAgo,
-      returnEventStatus = returnEventStatus,
-    )
-
     @AfterEach
     fun tearDown() {
       repository.deleteOffenders()
@@ -3135,7 +3286,7 @@ class MovementsResourceIntTest(
 
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           // comment is 300 long
-          anUpsertRequest(application.movementApplicationId, comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+          anUpsertTemporaryAbsenceRequest(application.movementApplicationId, comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -3173,7 +3324,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should create scheduled temporary absence with existing address`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
+          request = anUpsertTemporaryAbsenceRequest(
             toAddress = UpsertTemporaryAbsenceAddress(
               name = null,
               addressText = "Permanent, 16 Main Road, Bradford, England",
@@ -3219,7 +3370,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should create scheduled temporary absence with existing address`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
+          request = anUpsertTemporaryAbsenceRequest(
             toAddress = UpsertTemporaryAbsenceAddress(
               name = null,
               addressText = "RDR, Preston Town Centre , Lancashire ",
@@ -3258,7 +3409,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should create scheduled temporary absence`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = null, addressText = "1 Scotland Street, Sheffield", postalCode = "S1 3GG")),
+          request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = null, addressText = "1 Scotland Street, Sheffield", postalCode = "S1 3GG")),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -3298,7 +3449,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should create scheduled temporary absence`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG")),
+          request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG")),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -3333,7 +3484,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should create scheduled temporary absence with offender address`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boston", addressText = "Boston", postalCode = null)),
+          request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boston", addressText = "Boston", postalCode = null)),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -3372,7 +3523,7 @@ class MovementsResourceIntTest(
         }
 
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "HSL", addressText = "HSL, Bowness, Cumbria", postalCode = "LA23 3AS")),
+          request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "HSL", addressText = "HSL, Bowness, Cumbria", postalCode = "LA23 3AS")),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -3417,7 +3568,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should create scheduled temporary absence with existing address`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Serving Thyme, HMP Ford", addressText = "Ford Road, Arundel, West Sussex, England", postalCode = "BN18 0BX")),
+          request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Serving Thyme, HMP Ford", addressText = "Ford Road, Arundel, West Sussex, England", postalCode = "BN18 0BX")),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -3457,7 +3608,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should find address despite trailing blanks`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(
+          request = anUpsertTemporaryAbsenceRequest(
             toAddress = UpsertTemporaryAbsenceAddress(name = "HSL ", addressText = "Bowness , Cumbria ", postalCode = "LA23 3AS "),
           ),
         )
@@ -3497,7 +3648,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should create scheduled temporary absence`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
-          request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG")),
+          request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "Scotland Street, Sheffield", postalCode = "S1 3GG")),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -3527,7 +3678,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should create scheduled temporary absence and its return schedule`() {
-        val request = anUpsertRequest().copy(
+        val request = anUpsertTemporaryAbsenceRequest().copy(
           eventStatus = "COMP",
           returnEventStatus = "SCH",
         )
@@ -3631,7 +3782,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update scheduled temporary absence`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertRequest(eventId = scheduledTempAbsence.eventId))
+        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduledTempAbsence.eventId))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -3672,7 +3823,7 @@ class MovementsResourceIntTest(
 
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           // comment is 300 long
-          anUpsertRequest(
+          anUpsertTemporaryAbsenceRequest(
             movementApplicationId = application.movementApplicationId,
             eventId = scheduledTempAbsence.eventId,
             comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890",
@@ -3708,7 +3859,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update scheduled temporary absence`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertRequest(eventId = scheduledTempAbsence.eventId, eventStatus = "COMP"))
+        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduledTempAbsence.eventId, eventStatus = "COMP"))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -3751,7 +3902,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update scheduled temporary absence`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertRequest(eventId = scheduledTempAbsence.eventId))
+        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduledTempAbsence.eventId))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -3834,7 +3985,7 @@ class MovementsResourceIntTest(
           }
         }
 
-        webTestClient.upsertScheduledTemporaryAbsence(request = anUpsertRequest(movementApplicationId = 9999))
+        webTestClient.upsertScheduledTemporaryAbsence(request = anUpsertTemporaryAbsenceRequest(movementApplicationId = 9999))
           .isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("9999").contains("does not exist")
@@ -3843,38 +3994,38 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should return bad request for invalid event sub type`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertRequest().copy(eventSubType = "UNKNOWN"))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertTemporaryAbsenceRequest().copy(eventSubType = "UNKNOWN"))
       }
 
       @Test
       fun `should return bad request for invalid event status`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertRequest().copy(eventStatus = "UNKNOWN"))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertTemporaryAbsenceRequest().copy(eventStatus = "UNKNOWN"))
       }
 
       @Test
       fun `should return bad request for invalid escort`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertRequest().copy(escort = "UNKNOWN"))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertTemporaryAbsenceRequest().copy(escort = "UNKNOWN"))
       }
 
       @Test
       fun `should return bad request for invalid from prison`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertRequest().copy(fromPrison = "UNKNOWN"))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertTemporaryAbsenceRequest().copy(fromPrison = "UNKNOWN"))
       }
 
       @Test
       fun `should return bad request for invalid to agency`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertRequest().copy(toAgency = "UNKNOWN"))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertTemporaryAbsenceRequest().copy(toAgency = "UNKNOWN"))
       }
 
       @Test
       fun `should return bad request for invalid transport type`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertRequest().copy(transportType = "UNKNOWN"))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(anUpsertTemporaryAbsenceRequest().copy(transportType = "UNKNOWN"))
       }
 
       @Test
       fun `should return bad request for invalid to address id`() {
         val invalidAddress = UpsertTemporaryAbsenceAddress(id = 9999)
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertTemporaryAbsenceRequest().copy(toAddress = invalidAddress))
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("9999").contains("invalid")
           }
@@ -3882,7 +4033,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should fail if offender address does not exist`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(addressText = "unknown")))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(addressText = "unknown")))
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Address not found")
           }
@@ -3890,7 +4041,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should fail if corporate entity does not exist`() {
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "unknown", addressText = "unknown")))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "unknown", addressText = "unknown")))
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Address not found")
           }
@@ -3904,7 +4055,7 @@ class MovementsResourceIntTest(
           }
         }
 
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "unknown")))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(request = anUpsertTemporaryAbsenceRequest(toAddress = UpsertTemporaryAbsenceAddress(name = "Boots", addressText = "unknown")))
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("Address not found")
           }
@@ -3913,7 +4064,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return bad request if address text not passed`() {
         val invalidAddress = UpsertTemporaryAbsenceAddress(addressText = null, name = "Business")
-        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertRequest().copy(toAddress = invalidAddress))
+        webTestClient.upsertScheduledTemporaryAbsenceBadRequest(anUpsertTemporaryAbsenceRequest().copy(toAddress = invalidAddress))
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).containsIgnoringCase("address text")
           }
@@ -3938,7 +4089,7 @@ class MovementsResourceIntTest(
       fun `should return unauthorized for missing token`() {
         webTestClient.put()
           .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
-          .bodyValue(anUpsertRequest(application.movementApplicationId))
+          .bodyValue(anUpsertTemporaryAbsenceRequest(application.movementApplicationId))
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3948,7 +4099,7 @@ class MovementsResourceIntTest(
         webTestClient.put()
           .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
           .headers(setAuthorisation(roles = listOf()))
-          .bodyValue(anUpsertRequest(application.movementApplicationId))
+          .bodyValue(anUpsertTemporaryAbsenceRequest(application.movementApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -3958,39 +4109,11 @@ class MovementsResourceIntTest(
         webTestClient.put()
           .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
           .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
-          .bodyValue(anUpsertRequest(application.movementApplicationId))
+          .bodyValue(anUpsertTemporaryAbsenceRequest(application.movementApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
     }
-
-    private fun WebTestClient.upsertScheduledTemporaryAbsence(
-      request: UpsertScheduledTemporaryAbsenceRequest = anUpsertRequest(application.movementApplicationId),
-      offenderNo: String = offender.nomsId,
-    ) = put()
-      .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-      .bodyValue(request)
-      .exchange()
-      .expectStatus()
-
-    private fun WebTestClient.upsertScheduledTemporaryAbsenceOk(
-      request: UpsertScheduledTemporaryAbsenceRequest = anUpsertRequest(application.movementApplicationId),
-    ) = upsertScheduledTemporaryAbsence(request)
-      .isOk
-      .expectBodyResponse<UpsertScheduledTemporaryAbsenceResponse>()
-
-    private fun WebTestClient.upsertScheduledTemporaryAbsenceBadRequest(
-      request: UpsertScheduledTemporaryAbsenceRequest = anUpsertRequest(application.movementApplicationId),
-    ) = upsertScheduledTemporaryAbsence(request)
-      .isBadRequest
-
-    private fun WebTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(
-      request: UpsertScheduledTemporaryAbsenceRequest = anUpsertRequest(application.movementApplicationId),
-    ) = upsertScheduledTemporaryAbsenceBadRequest(request)
-      .expectBody().jsonPath("userMessage").value<String> {
-        assertThat(it).contains("UNKNOWN").contains("invalid")
-      }
   }
 
   @Nested
@@ -6927,4 +7050,59 @@ class MovementsResourceIntTest(
     .exchange()
     .expectStatus().isOk
     .expectBodyResponse<BookingTemporaryAbsences>()
+
+  private fun anUpsertTemporaryAbsenceRequest(
+    movementApplicationId: Long? = null,
+    eventId: Long? = null,
+    returnEventStatus: String? = null,
+    eventStatus: String = "SCH",
+    toAddress: UpsertTemporaryAbsenceAddress = UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId),
+    comment: String = "Some comment scheduled temporary absence",
+  ) = UpsertScheduledTemporaryAbsenceRequest(
+    eventId = eventId,
+    movementApplicationId = movementApplicationId ?: application.movementApplicationId,
+    eventDate = twoDaysAgo.toLocalDate(),
+    startTime = twoDaysAgo,
+    eventSubType = "C5",
+    eventStatus = eventStatus,
+    comment = comment,
+    escort = "L",
+    fromPrison = "LEI",
+    toAgency = "HAZLWD",
+    transportType = "VAN",
+    returnDate = yesterday.toLocalDate(),
+    returnTime = yesterday,
+    toAddress = toAddress,
+    applicationDate = twoDaysAgo,
+    applicationTime = twoDaysAgo,
+    returnEventStatus = returnEventStatus,
+  )
+
+  private fun WebTestClient.upsertScheduledTemporaryAbsenceOk(
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+  ) = upsertScheduledTemporaryAbsence(request)
+    .isOk
+    .expectBodyResponse<UpsertScheduledTemporaryAbsenceResponse>()
+
+  private fun WebTestClient.upsertScheduledTemporaryAbsenceBadRequest(
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+  ) = upsertScheduledTemporaryAbsence(request)
+    .isBadRequest
+
+  private fun WebTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+  ) = upsertScheduledTemporaryAbsenceBadRequest(request)
+    .expectBody().jsonPath("userMessage").value<String> {
+      assertThat(it).contains("UNKNOWN").contains("invalid")
+    }
+
+  private fun WebTestClient.upsertScheduledTemporaryAbsence(
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+    offenderNo: String = offender.nomsId,
+  ) = put()
+    .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .bodyValue(request)
+    .exchange()
+    .expectStatus()
 }

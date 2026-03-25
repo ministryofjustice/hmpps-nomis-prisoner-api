@@ -746,12 +746,13 @@ class MovementsService(
     return addressText.substring(0, split).trim() to addressText.substring(split, addressText.length).trim()
   }
 
+  // Note that this assumes the address was created in DPS... a fair assumption because if the address was created in NOMIS we have the ID so never need to find it
   private fun findOrCreateOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress {
     val (premise, street) = formatAddressText(addressText)
     tapAddressInsertRepository.insertAddressIfNotExists("OFF", offender.rootOffenderId!!, premise, street, postalCode)
 
     val address = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
-      .first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }
+      .first { it.matchesDpsAddress(premise, street, postalCode) }
     if (address.usages.none { it.addressUsage == rotlAddressType }) {
       address.apply {
         usages += AddressUsage(AddressUsageId(this, "ROTL"), true, rotlAddressType)
@@ -761,6 +762,7 @@ class MovementsService(
     return address
   }
 
+  // Note that this assumes the address was created in DPS... a fair assumption because if the address was created in NOMIS we have the ID so never need to find it
   private fun findOrCreateCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
     val (premise, street) = formatAddressText(addressText)
     val corporateName = name.toCorporateName()
@@ -772,12 +774,14 @@ class MovementsService(
           .also { entityManager.refresh(corporate) }
 
         corporateRepository.findById(corporate.id).get()
-          .addresses.first { (it.premise == premise && it.street == street && it.postalCode == postalCode) }
+          .addresses.first { it.matchesDpsAddress(premise, street, postalCode) }
       }
   }
 
+  private fun Address.matchesDpsAddress(premise: String?, street: String?, postalCode: String?): Boolean = (this.premise == premise && this.street == street && this.postalCode == postalCode && flat == null && locality == null && city == null && county == null && country == null)
+
   private fun findAddressOrThrow(request: UpsertTemporaryAbsenceAddress, offender: Offender): Address {
-    // If we have an address id then use that
+    // If we have an address id then use that (which means the address was created in NOMIS or has already been syncd from DPS)
     if (request.id != null) return addressOrThrow(request.id)
 
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
