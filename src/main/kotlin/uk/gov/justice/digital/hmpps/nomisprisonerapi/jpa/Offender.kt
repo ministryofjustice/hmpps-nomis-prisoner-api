@@ -119,9 +119,9 @@ data class Offender(
   @JoinColumn(name = "ROOT_OFFENDER_ID", updatable = false, insertable = false)
   var rootOffender: Offender? = null,
 
-  // CAUTION: this list is only populated for the root offender; normally the function getAllBookings() below should be used instead
+  // CAUTION: this list is only populated for the root offender; normally the function getAllBookingsFromRoot() below should be used instead
   @OneToMany(mappedBy = "rootOffender", cascade = [CascadeType.ALL], fetch = LAZY, orphanRemoval = true)
-  private val allBookings: MutableList<OffenderBooking> = mutableListOf(),
+  internal val allBookings: MutableList<OffenderBooking> = mutableListOf(),
 
   @OneToMany(mappedBy = "id.offender", cascade = [CascadeType.ALL], fetch = LAZY)
   val identifiers: MutableList<OffenderIdentifier> = mutableListOf(),
@@ -151,9 +151,9 @@ data class Offender(
   val lastNameAlphaKey: String? = null,
 ) {
 
-  fun getAllBookings(): MutableList<OffenderBooking>? = rootOffender?.allBookings
+  fun getAllBookingsFromRoot(): MutableList<OffenderBooking>? = rootOffender?.allBookings
 
-  fun latestBooking(): OffenderBooking = getAllBookings()?.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no active bookings")
+  fun latestBooking(): OffenderBooking = getAllBookingsFromRoot()?.firstOrNull { it.bookingSequence == 1 } ?: throw IllegalStateException("Offender has no active bookings")
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
