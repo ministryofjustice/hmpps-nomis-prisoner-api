@@ -1169,6 +1169,9 @@ class MovementsService(
     address.addIfNotEmpty(country?.description)
 
     return address.joinToString(", ").trim()
+      .takeIf { it.isNotBlank() }
+      ?: description
+      ?: throw IllegalStateException("Formatted address is blank and description is null - this should not happen so there must be a bug somewhere")
   }
 
   private fun String.toCorporateName() = substring(0..(minOf(this.length, 40) - 1))
