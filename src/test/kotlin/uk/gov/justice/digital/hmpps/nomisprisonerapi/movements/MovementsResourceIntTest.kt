@@ -2977,6 +2977,53 @@ class MovementsResourceIntTest(
             assertThat(toAddressPostcode).isEqualTo("S1 3GG")
           }
       }
+
+      @Test
+      fun `should not remove corporate name from address if they are identical`() {
+        nomisDataBuilder.build {
+          corporate(
+            corporateName = "Newcastle City Centre",
+          ) {
+            corporateAddress = address(
+              type = "BUS",
+              flat = null,
+              premise = "Newcastle City Centre",
+              street = null,
+              locality = null,
+              postcode = null,
+              city = null,
+              county = null,
+              country = null,
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  toAddress = corporateAddress,
+                )
+              }
+            }
+          }
+        }
+
+        webTestClient.get()
+          .uri(
+            "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
+            scheduledTempAbsence.eventId,
+          )
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
+          .apply {
+            assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
+            assertThat(toAddressOwnerClass).isEqualTo("CORP")
+            assertThat(toAddressDescription).isEqualTo("Newcastle City Centre")
+            assertThat(toFullAddress).isEqualTo("Newcastle City Centre")
+          }
+      }
     }
 
     @Nested
