@@ -49,7 +49,7 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
       ),
     ],
   )
-  fun getAllPrisonersIdRanges(
+  fun getAllPrisonersIdRangesForSearch(
     @RequestParam(value = "active", required = true)
     @Parameter(
       description = "When true only return active prisoners currently in prison else all prisoners are returned.",
@@ -90,7 +90,7 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
       ),
     ],
   )
-  fun getAllPrisonersInRange(
+  fun getAllPrisonersInRangeForSearch(
     @RequestParam(value = "active", required = true)
     @Parameter(
       description = "When true only return active prisoners currently in prison else all prisoners are returned.",

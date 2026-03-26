@@ -67,7 +67,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
     ],
   )
-  fun getIdsByFilter(
+  fun getIncidentIdsByFilter(
     @PageableDefault(size = 20)
     @ParameterObject
     pageRequest: Pageable,
@@ -429,7 +429,7 @@ class IncidentResource(private val incidentService: IncidentService) {
       ),
     ],
   )
-  fun deleteIncident(
+  fun deleteIncidentByIncidentId(
     @Schema(description = "Incident id") @PathVariable incidentId: Long,
   ) {
     incidentService.deleteIncident(incidentId)

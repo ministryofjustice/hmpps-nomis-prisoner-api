@@ -314,7 +314,7 @@ class AdjudicationResource(
       ),
     ],
   )
-  fun deleteIncident(
+  fun deleteIncidentByAdjudicationNumber(
     @Schema(description = "Adjudication number", example = "12345")
     @PathVariable
     adjudicationNumber: Long,
