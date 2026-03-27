@@ -1169,6 +1169,10 @@ class MovementsService(
     address.addIfNotEmpty(country?.description)
 
     return address.joinToString(", ").trim()
+      .takeIf { it.isNotBlank() }
+      ?: description
+      // If the NOMIS address is empty that's fine - it just won't match the address we're looking for. Maybe another address will match or if not we'll throw.
+      ?: ""
   }
 
   private fun String.toCorporateName() = substring(0..(minOf(this.length, 40) - 1))

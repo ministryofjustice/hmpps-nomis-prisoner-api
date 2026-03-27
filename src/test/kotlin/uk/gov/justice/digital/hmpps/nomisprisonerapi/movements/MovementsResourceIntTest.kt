@@ -3429,6 +3429,52 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class CreateScheduleWhereOffenderHasEmptyAddress {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            // The existence of this address should not prevent the schedule being created
+            address(
+              flat = null,
+              premise = null,
+              street = null,
+              locality = null,
+              city = null,
+              county = null,
+              country = null,
+              postcode = null,
+            )
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication(toAddress = offenderAddress)
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence despit existing empty address`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertTemporaryAbsenceRequest(
+            movementApplicationId = application.movementApplicationId,
+            toAddress = UpsertTemporaryAbsenceAddress(addressText = "41 High Street, Sheffield"),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class CreateScheduleWithCorporateAddress {
       private lateinit var corporateAddress: CorporateAddress
 
@@ -4681,6 +4727,53 @@ class MovementsResourceIntTest(
               }
           }
         }
+      }
+
+      @Test
+      fun `should not remove corporate name from address if they are identical`() {
+        nomisDataBuilder.build {
+          corporate(
+            corporateName = "Newcastle City Centre",
+          ) {
+            corporateAddress = address(
+              type = "BUS",
+              flat = null,
+              premise = "Newcastle City Centre",
+              street = null,
+              locality = null,
+              postcode = null,
+              city = null,
+              county = null,
+              country = null,
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  toAddress = corporateAddress,
+                )
+              }
+            }
+          }
+        }
+
+        webTestClient.get()
+          .uri(
+            "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
+            scheduledTempAbsence.eventId,
+          )
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
+          .apply {
+            assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
+            assertThat(toAddressOwnerClass).isEqualTo("CORP")
+            assertThat(toAddressDescription).isEqualTo("Newcastle City Centre")
+            assertThat(toFullAddress).isEqualTo("Newcastle City Centre")
+          }
       }
 
       @Nested
