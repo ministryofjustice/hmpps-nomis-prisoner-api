@@ -2890,6 +2890,8 @@ data class PostPrisonerMergeCaseChanges(
   val courtCasesCreated: List<CourtCaseResponse> = emptyList(),
   @Schema(description = "Court cases and related child entities deactivated due to the merge after being cloned from a previous booking")
   val courtCasesDeactivated: List<CourtCaseResponse> = emptyList(),
+  @Schema(description = "Additional sentences deactivated due to the merge after being cloned from a previous booking but not on the courtCasesDeactivated")
+  val sentencesDeactivated: List<SentenceResponse> = emptyList(),
 )
 
 @Schema(description = "Court Cases created due to a booking clone operation")
