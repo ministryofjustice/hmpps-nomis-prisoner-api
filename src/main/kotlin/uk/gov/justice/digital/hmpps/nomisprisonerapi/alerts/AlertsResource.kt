@@ -320,7 +320,7 @@ class AlertsResource(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
+            schema = Schema(implementation = DuplicateErrorResponse::class),
           ),
         ],
       ),
@@ -1080,3 +1080,11 @@ data class UpdateAlertType(
   @NotNull
   val description: String,
 )
+
+data class DuplicateErrorResponse(
+  val developerMessage: String? = null,
+  @Schema(description = "Existing alert id")
+  val moreInfo: AlertId,
+)
+
+data class AlertId(val sequence: Long, val bookingId: Long)

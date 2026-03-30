@@ -14,8 +14,6 @@ import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
-import org.springframework.test.web.reactive.server.WebTestClient
-import org.springframework.test.web.reactive.server.WebTestClient.RequestHeadersSpec
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus.ACTIVE
@@ -1344,6 +1342,9 @@ class AlertsResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isEqualTo(409)
+          .expectBody()
+          .jsonPath("moreInfo.bookingId").isEqualTo(activeBookingId)
+          .jsonPath("moreInfo.sequence").isEqualTo(1)
 
         // Can create another inactive HPI alert
         webTestClient.post().uri("/prisoners/A1234AB/alerts")
@@ -3035,10 +3036,4 @@ class AlertsResourceIntTest : IntegrationTestBase() {
       }
     }
   }
-
-  private fun <T : RequestHeadersSpec<T>> RequestHeadersSpec<T>.validExchangeBody(): WebTestClient.BodyContentSpec = this.headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-    .exchange()
-    .expectStatus()
-    .isOk
-    .expectBody()
 }
