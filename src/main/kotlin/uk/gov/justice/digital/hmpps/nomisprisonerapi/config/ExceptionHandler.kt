@@ -184,14 +184,14 @@ data class ErrorResponse(
   val userMessage: String? = null,
   val developerMessage: String? = null,
   @Schema(description = "For 409 errors this may contain the entity Id for the existing record that causes the duplicate")
-  val moreInfo: String? = null,
+  val moreInfo: Any? = null,
 ) {
   constructor(
     status: HttpStatus,
     errorCode: Int? = null,
     userMessage: String? = null,
     developerMessage: String? = null,
-    moreInfo: String? = null,
+    moreInfo: Any? = null,
   ) :
     this(status.value(), errorCode, userMessage, developerMessage, moreInfo)
 }

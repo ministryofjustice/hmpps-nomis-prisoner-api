@@ -13,7 +13,7 @@ enum class BadRequestError(val errorCode: Int) {
   PRISONER_MOVED_ALLOCATION_ENDED(1002),
 }
 
-class ConflictException(message: String?, val entityId: String? = null) :
+class ConflictException(message: String?, val entityId: Any? = null) :
   RuntimeException(message),
   Supplier<ConflictException> {
   override fun get(): ConflictException = ConflictException(message, entityId)

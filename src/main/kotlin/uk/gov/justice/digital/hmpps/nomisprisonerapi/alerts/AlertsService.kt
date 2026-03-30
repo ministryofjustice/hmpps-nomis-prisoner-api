@@ -44,8 +44,11 @@ class AlertsService(
     val alertCode = alertCodeRepository.findByIdOrNull(AlertCode.pk(request.alertCode))
       ?: throw BadDataException("Alert code ${request.alertCode} is not valid")
 
-    if (request.isActive && offenderBooking.hasActiveAlertOfCode(request.alertCode)) {
-      throw ConflictException("Alert code ${request.alertCode} is already active on booking ${offenderBooking.bookingId} ")
+    offenderBooking.getActiveAlertOfCode(request.alertCode)?.takeIf { request.isActive }?.also {
+      throw ConflictException(
+        message = "Alert code ${request.alertCode} is already active on booking ${offenderBooking.bookingId}",
+        entityId = it.id.asDto(),
+      )
     }
 
     val workActionCode = workFlowActionRepository.findByIdOrNull(WorkFlowAction.pk(WorkFlowAction.DATA_ENTRY))!!
@@ -193,4 +196,5 @@ class AlertsService(
 
 private fun Staff?.asDisplayName(): String? = this?.let { "${it.firstName} ${it.lastName}" }
 
-private fun OffenderBooking.hasActiveAlertOfCode(alertCode: String) = this.alerts.firstOrNull { it.alertCode.code == alertCode && it.alertStatus == ACTIVE } != null
+private fun OffenderBooking.getActiveAlertOfCode(alertCode: String) = this.alerts.firstOrNull { it.alertCode.code == alertCode && it.alertStatus == ACTIVE }
+private fun OffenderAlertId.asDto() = AlertId(sequence = this.sequence, bookingId = this.offenderBooking.bookingId)
