@@ -1048,7 +1048,10 @@ class MovementsService(
     contactPersonName = contactPersonName,
     temporaryAbsenceType = temporaryAbsenceApplication.temporaryAbsenceType?.code,
     temporaryAbsenceSubType = temporaryAbsenceApplication.temporaryAbsenceSubType?.code,
-    audit = toAudit(),
+    audit = toAudit(
+      toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime) },
+      toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime) }?.let { toAddress?.modifyUserId },
+    ),
   )
 
   private fun OffenderScheduledTemporaryAbsenceReturn.toSingleResponse() = ScheduledTemporaryAbsenceReturnResponse(
