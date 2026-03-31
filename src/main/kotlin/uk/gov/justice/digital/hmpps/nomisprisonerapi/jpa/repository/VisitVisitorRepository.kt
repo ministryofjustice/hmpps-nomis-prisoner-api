@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.QueryHints
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitVisitor
 
@@ -26,5 +25,6 @@ interface VisitVisitorRepository : JpaRepository<VisitVisitor, Long> {
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
-  fun findByIdOrNullForUpdate(id: Long): VisitVisitor? = findByIdOrNull(id)
+  @Query("select vv from VisitVisitor vv where vv.id = :id")
+  fun findByIdOrNullForUpdate(id: Long): VisitVisitor?
 }
