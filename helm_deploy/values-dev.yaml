@@ -5,6 +5,7 @@ generic-service:
 
   ingress:
     host: nomis-prisoner-api-dev.prison.service.justice.gov.uk
+    className: "default-non-prod"
 
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
