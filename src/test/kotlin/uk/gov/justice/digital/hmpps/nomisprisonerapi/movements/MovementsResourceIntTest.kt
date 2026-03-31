@@ -3041,6 +3041,54 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    @DisplayName("With updated address")
+    inner class WithUpdatedAddress {
+      private val addressModifyDateTime = LocalDateTime.now().plusHours(1)
+      private val addressModifyUser = "ADDRESS_MODIFY_USER"
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              whenModified = addressModifyDateTime,
+              whoModified = addressModifyUser,
+            )
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  toAddress = offenderAddress,
+                ) {
+                  tempAbsence = externalMovement()
+                  scheduledTempAbsenceReturn = scheduledReturn {
+                    tempAbsenceReturn = externalMovement()
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should retrieve audit details from updated address`() {
+        webTestClient.get()
+          .uri(
+            "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
+            scheduledTempAbsence.eventId,
+          )
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
+          .apply {
+            assertThat(audit.modifyDatetime).isEqualTo(addressModifyDateTime)
+            assertThat(audit.modifyUserId).isEqualTo(addressModifyUser)
+          }
+      }
+    }
+
+    @Nested
     inner class Validation {
       @BeforeEach
       fun setUp() {

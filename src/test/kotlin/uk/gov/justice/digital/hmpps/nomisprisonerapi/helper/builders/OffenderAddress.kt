@@ -77,6 +77,12 @@ class OffenderAddressBuilderRepository(
   fun updateCreateUsername(address: Address, whoCreated: String) {
     jdbcTemplate.update("update ADDRESSES set CREATE_USER_ID = ? where ADDRESS_ID = ?", whoCreated, address.addressId)
   }
+  fun updateModifiedDatetime(address: Address, whenUpdated: LocalDateTime) {
+    jdbcTemplate.update("update ADDRESSES set MODIFY_DATETIME = ? where ADDRESS_ID = ?", whenUpdated, address.addressId)
+  }
+  fun updateModifiedUsername(address: Address, whoUpdated: String) {
+    jdbcTemplate.update("update ADDRESSES set MODIFY_USER_ID = ? where ADDRESS_ID = ?", whoUpdated, address.addressId)
+  }
 }
 
 class OffenderAddressBuilder(
@@ -107,6 +113,8 @@ class OffenderAddressBuilder(
     endDate: LocalDate?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
+    whenModified: LocalDateTime?,
+    whoModified: String?,
   ): OffenderAddress = OffenderAddress(
     addressType = offenderAddressBuilderRepository.addressTypeOf(type),
     offender = offender,
@@ -132,6 +140,12 @@ class OffenderAddressBuilder(
       }
       if (whoCreated != null) {
         offenderAddressBuilderRepository.updateCreateUsername(it, whoCreated)
+      }
+      if (whenModified != null) {
+        offenderAddressBuilderRepository.updateModifiedDatetime(it, whenModified)
+      }
+      if (whoModified != null) {
+        offenderAddressBuilderRepository.updateModifiedUsername(it, whoModified)
       }
     }
     .also { address = it }

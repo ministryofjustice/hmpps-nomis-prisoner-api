@@ -87,6 +87,8 @@ interface OffenderDsl {
     endDate: String? = null,
     whenCreated: LocalDateTime? = null,
     whoCreated: String? = null,
+    whenModified: LocalDateTime? = null,
+    whoModified: String? = null,
     dsl: OffenderAddressDsl.() -> Unit = {},
   ): OffenderAddress
 
@@ -314,6 +316,8 @@ class OffenderBuilder(
     endDate: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
+    whenModified: LocalDateTime?,
+    whoModified: String?,
     dsl: OffenderAddressDsl.() -> Unit,
   ): OffenderAddress = offenderAddressBuilderFactory.builder().let { builder ->
     builder.build(
@@ -336,6 +340,8 @@ class OffenderBuilder(
       endDate = endDate?.let { LocalDate.parse(it) },
       whoCreated = whoCreated,
       whenCreated = whenCreated,
+      whoModified = whoModified,
+      whenModified = whenModified,
     )
       .also { rootOffender.addresses += it }
       .also { builder.apply(dsl) }

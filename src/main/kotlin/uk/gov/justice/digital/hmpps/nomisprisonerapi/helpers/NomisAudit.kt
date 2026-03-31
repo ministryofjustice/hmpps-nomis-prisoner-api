@@ -37,11 +37,11 @@ data class NomisAudit(
   val auditAdditionalInfo: String? = null,
 )
 
-fun NomisAuditableEntityBasic.toAudit() = NomisAudit(
+fun NomisAuditableEntityBasic.toAudit(overrideModifyDateTime: LocalDateTime? = null, overrideModifyUser: String? = null) = NomisAudit(
   createDatetime = createDatetime,
   createUsername = createUsername,
-  modifyDatetime = modifyDatetime,
-  modifyUserId = modifyUserId,
+  modifyDatetime = overrideModifyDateTime ?: modifyDatetime,
+  modifyUserId = overrideModifyUser ?: modifyUserId,
   auditModuleName = auditModuleName,
 )
 
