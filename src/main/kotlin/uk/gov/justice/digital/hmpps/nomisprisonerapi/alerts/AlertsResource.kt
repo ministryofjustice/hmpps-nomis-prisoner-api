@@ -320,7 +320,7 @@ class AlertsResource(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = DuplicateErrorResponse::class),
+            schema = Schema(implementation = DuplicateAlertErrorResponse::class),
           ),
         ],
       ),
@@ -1018,7 +1018,6 @@ data class CreateAlertResponse(
 @Schema(description = "A request to update an alert in NOMIS")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateAlertRequest(
-  // TODO: not sure this can be updated in DPS
   @Schema(description = "Date alert started")
   val date: LocalDate,
   @Schema(description = "Date alert expired")
@@ -1029,7 +1028,6 @@ data class UpdateAlertRequest(
   val comment: String? = null,
   @Schema(description = "Username of person that update the record (might also be a system) ")
   val updateUsername: String,
-  // TODO: not sure this can be updated in DPS
   @Schema(description = "Free format text of person or department that authorised the alert", example = "security")
   val authorisedBy: String? = null,
 )
@@ -1081,7 +1079,7 @@ data class UpdateAlertType(
   val description: String,
 )
 
-data class DuplicateErrorResponse(
+data class DuplicateAlertErrorResponse(
   val developerMessage: String? = null,
   @Schema(description = "Existing alert id")
   val moreInfo: AlertId,
