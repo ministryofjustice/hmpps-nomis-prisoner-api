@@ -1049,8 +1049,8 @@ class MovementsService(
     temporaryAbsenceType = temporaryAbsenceApplication.temporaryAbsenceType?.code,
     temporaryAbsenceSubType = temporaryAbsenceApplication.temporaryAbsenceSubType?.code,
     audit = toAudit(
-      toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime) },
-      toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime) }?.let { toAddress?.modifyUserId },
+      toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime ?: createDatetime) },
+      toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime ?: createDatetime) }?.let { toAddress?.modifyUserId },
     ),
   )
 
