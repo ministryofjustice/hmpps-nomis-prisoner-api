@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SWANSEA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -54,6 +56,7 @@ class MovementsResourceIntTest(
   @Autowired val offenderAddressRepository: OffenderAddressRepository,
   @Autowired val agencyLocationRepository: AgencyLocationRepository,
   @Autowired val offenderRepository: OffenderRepository,
+  @Autowired val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
   @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
@@ -2279,6 +2282,20 @@ class MovementsResourceIntTest(
           .expectBody().jsonPath("userMessage").value<String> {
             assertThat(it).contains("9999").contains("not found")
           }
+      }
+
+      @Test
+      fun `should return 423 if application is locked for update`() {
+        repository.runInTransaction {
+          offenderMovementApplicationRepository.findByIdOrNullForUpdate(application.movementApplicationId)
+
+          webTestClient.upsertApplication(request = anUpsertApplicationRequest(id = application.movementApplicationId))
+            .isEqualTo(423)
+            .expectBody<ErrorResponse>().returnResult().responseBody!!
+            .apply {
+              assertThat(this.status).isEqualTo(423)
+            }
+        }
       }
     }
 
