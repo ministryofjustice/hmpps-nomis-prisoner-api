@@ -3,10 +3,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.config
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
+import org.springframework.dao.PessimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.CONFLICT
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus.LOCKED
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -146,6 +148,20 @@ class ExceptionHandler {
         ErrorResponse(
           status = BAD_REQUEST,
           userMessage = "Missing request parameter: ${e.cause?.message}",
+          developerMessage = e.message,
+        ),
+      )
+  }
+
+  @ExceptionHandler(PessimisticLockingFailureException::class)
+  fun handlePessimisticLockException(e: PessimisticLockingFailureException): ResponseEntity<ErrorResponse> {
+    log.error("Handling pessimistic lock: {}", e.message)
+    return ResponseEntity
+      .status(LOCKED)
+      .body(
+        ErrorResponse(
+          status = LOCKED,
+          userMessage = "Pessimistic lock caused by: ${e.cause?.message}",
           developerMessage = e.message,
         ),
       )
