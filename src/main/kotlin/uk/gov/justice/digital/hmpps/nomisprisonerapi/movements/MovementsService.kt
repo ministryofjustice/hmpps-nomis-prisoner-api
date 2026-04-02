@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.COMPLETED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
@@ -459,6 +460,12 @@ class MovementsService(
       ?.also { schedule ->
         if (schedule.temporaryAbsence != null) {
           throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has a movement ${schedule.temporaryAbsence!!.id.offenderBooking.bookingId} / ${schedule.temporaryAbsence!!.id.sequence}}")
+        }
+        if (schedule.eventStatus.code == COMPLETED) {
+          throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has status $COMPLETED")
+        }
+        if (schedule.scheduledTemporaryAbsenceReturns.isNotEmpty()) {
+          throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has an inbound schedule ${schedule.scheduledTemporaryAbsenceReturns[0].eventId}")
         }
 
         offenderBookingRepository.findByIdOrNull(schedule.offenderBooking.bookingId)

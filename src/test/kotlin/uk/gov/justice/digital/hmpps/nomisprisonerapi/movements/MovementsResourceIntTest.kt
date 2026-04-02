@@ -4237,7 +4237,9 @@ class MovementsResourceIntTest(
           offenderAddress = address()
           booking = booking {
             application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence()
+              scheduledTempAbsence = scheduledTemporaryAbsence(
+                eventStatus = "SCH",
+              )
             }
           }
         }
@@ -4289,8 +4291,50 @@ class MovementsResourceIntTest(
             offenderAddress = address()
             booking = booking {
               application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  eventStatus = "SCH",
+                ) {
                   externalMovement()
+                }
+              }
+            }
+          }
+        }
+
+        webTestClient.deleteSchedule()
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if status is completed`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  eventStatus = "COMP",
+                )
+              }
+            }
+          }
+        }
+
+        webTestClient.deleteSchedule()
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if there is an inbound schedule`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address()
+            booking = booking {
+              application = temporaryAbsenceApplication {
+                scheduledTempAbsence = scheduledTemporaryAbsence(
+                  eventStatus = "SCH",
+                ) {
+                  scheduledReturn()
                 }
               }
             }
