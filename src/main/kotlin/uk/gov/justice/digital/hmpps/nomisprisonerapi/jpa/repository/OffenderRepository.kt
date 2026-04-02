@@ -137,6 +137,9 @@ interface OffenderRepository :
   """,
   )
   fun findPrisonerIdsBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long): List<PrisonerWithId>
+
+  @Query("select b.bookingId from OffenderBooking b join b.offender o where o.nomsId = :prisonerNumber")
+  fun getAllBookingsForPrisoner(prisonerNumber: String): List<Long>
 }
 
 fun OffenderRepository.findLatestAliasByNomisId(nomsId: String): Offender? = findByNomsIdOrderedWithBookings(nomsId).firstOrNull()
