@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 
 @TestInstance(PER_CLASS)
 class PrisonerSearchResourceIntTest : IntegrationTestBase() {
@@ -249,7 +250,8 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return list of all root offender ids`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
+        webTestClient.get()
+          .uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
@@ -262,7 +264,8 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return list of all active root offender ids`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
+        webTestClient.get()
+          .uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
@@ -275,7 +278,8 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return specified list of root offender ids`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=$activePrisoner1Id")
+        webTestClient.get()
+          .uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=$activePrisoner1Id")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
@@ -284,6 +288,99 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
           .jsonPath("$").value<List<String>> {
             assertThat(it).containsOnly(activePrisoner1)
           }
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /search/prisoners/{prisonerNumber}/bookings")
+  inner class GetAllBookingsForPrisoner {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/search/prisoners/A1234AA/bookings")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/search/prisoners/A1234AA/bookings")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/search/prisoners/A1234AA/bookings")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `prisoner does not exist`() {
+        webTestClient.get().uri("/search/prisoners/A1234YZ/bookings")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class HappyPath {
+      private val prisonerNumber1: String = "A4567BB"
+      private val prisonerNumber2: String = "A4567CC"
+      private lateinit var booking1: OffenderBooking
+      private lateinit var booking2: OffenderBooking
+      private lateinit var booking3: OffenderBooking
+
+      @BeforeAll
+      internal fun createPrisoners() {
+        nomisDataBuilder.build {
+          offender(nomsId = prisonerNumber1) {
+            booking1 = booking {}
+            booking2 = booking {}
+            booking3 = booking {}
+          }
+          offender(nomsId = prisonerNumber2)
+        }
+      }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteOffenders()
+
+      @Test
+      fun `will return list of all booking ids`() {
+        webTestClient.get().uri("/search/prisoners/$prisonerNumber1/bookings")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("$").value<List<Int>> {
+            assertThat(it).containsOnly(
+              booking1.bookingId.toInt(),
+              booking2.bookingId.toInt(),
+              booking3.bookingId.toInt(),
+            )
+          }
+      }
+
+      @Test
+      fun `will return empty list if no bookings`() {
+        webTestClient.get().uri("/search/prisoners/$prisonerNumber2/bookings")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(0)
       }
     }
   }

@@ -9,6 +9,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -30,22 +31,12 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__PRISONER_SEARCH_R not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )
@@ -71,22 +62,12 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "403",
         description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__PRISONER_SEARCH_R not present",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )
@@ -103,6 +84,35 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
     @Parameter(description = "Return prisoners with root offender id less than or equal to this value.")
     toRootOffenderId: Long,
   ): List<String> = prisonerSearchService.findPrisonNumbersInRange(active, fromRootOffenderId, toRootOffenderId)
+
+  @GetMapping("/prisoners/{prisonerNumber}/bookings")
+  @Operation(
+    summary = "Gets all booking ids for a prisoner.",
+    description = "Requires role NOMIS_PRISONER_API__PRISONER_SEARCH_R.",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of booking ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__PRISONER_SEARCH_R not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAllBookingsForPrisoner(
+    @PathVariable(required = true)
+    @Parameter(description = "The prisoner number", example = "A4321BZ")
+    prisonerNumber: String,
+  ): List<Long> = prisonerSearchService.getAllBookingsForPrisoner(prisonerNumber)
 }
 
 @Schema(description = "Root offender ID range.")
