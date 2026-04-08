@@ -3457,6 +3457,55 @@ class MovementsResourceIntTest(
     }
 
     @Nested
+    inner class CreateScheduleWithOffenderAddressThatOverflowIntoStreet {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              // Based on a production bug where last character of premise is a comma
+              premise = "Unit 4, Nantcribbau Barns, Private Street From Junction With A490 By Nantcribba Cottages To B4388 By Dol-Y-Maen, Forden, Welshpool,",
+              street = "Powys",
+              locality = null,
+              city = null,
+              postcode = "SY21 8NW",
+              county = null,
+              country = null,
+            )
+            booking = booking {
+              application = temporaryAbsenceApplication(
+                toAddress = offenderAddress,
+              )
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create scheduled temporary absence with existing address`() {
+        webTestClient.upsertScheduledTemporaryAbsenceOk(
+          request = anUpsertTemporaryAbsenceRequest(
+            toAddress = UpsertTemporaryAbsenceAddress(
+              name = null,
+              addressText = "Unit 4, Nantcribbau Barns, Private Street From Junction With A490 By Nantcribba Cottages To B4388 By Dol-Y-Maen, Forden, Welshpool, Powys",
+              postalCode = "SY21 8NW",
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class CreateScheduleWithDuplicateOffenderAddress {
       @BeforeEach
       fun setUp() {
