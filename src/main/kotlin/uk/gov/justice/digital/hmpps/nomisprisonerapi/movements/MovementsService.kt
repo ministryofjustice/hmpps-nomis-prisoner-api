@@ -26,14 +26,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceSubType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceTransportType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapSubType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapTransportType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.activeExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.maxMovementSequence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressRepository
@@ -44,12 +44,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRep
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleInRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.CorporateInsertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.TapAddressInsertRepository
@@ -61,20 +61,20 @@ import java.time.LocalTime
 class MovementsService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
-  private val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
-  private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
-  private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
-  private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
-  private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
+  private val offenderTapApplicationRepository: OffenderTapApplicationRepository,
+  private val temporaryAbsenceRepository: OffenderTapMovementOutRepository,
+  private val temporaryAbsenceReturnRepository: OffenderTapMovementInRepository,
+  private val scheduledTemporaryAbsenceRepository: OffenderTapScheduleOutRepository,
+  private val scheduledTemporaryAbsenceReturnRepository: OffenderTapScheduleInRepository,
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   private val movementApplicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
-  private val transportTypeRepository: ReferenceCodeRepository<TemporaryAbsenceTransportType>,
+  private val transportTypeRepository: ReferenceCodeRepository<TapTransportType>,
   private val addressRepository: AddressRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val movementApplicationTypeRepository: ReferenceCodeRepository<MovementApplicationType>,
-  private val temporaryAbsenceTypeRepository: ReferenceCodeRepository<TemporaryAbsenceType>,
-  private val temporaryAbsenceSubTypeRepository: ReferenceCodeRepository<TemporaryAbsenceSubType>,
+  private val tapTypeRepository: ReferenceCodeRepository<TapType>,
+  private val tapSubTypeRepository: ReferenceCodeRepository<TapSubType>,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val arrestAgencyRepository: ReferenceCodeRepository<ArrestAgency>,
   private val corporateAddressRepository: CorporateAddressRepository,
@@ -109,7 +109,7 @@ class MovementsService(
     val allTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
     val allTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
 
-    val movementApplications = offenderMovementApplicationRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
+    val movementApplications = offenderTapApplicationRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .also { it.fixMergedSchedules() }
       .also { it.unlinkCorruptTemporaryAbsenceReturns() }
 
@@ -150,7 +150,7 @@ class MovementsService(
     val allTemporaryAbsences = temporaryAbsenceRepository.findAllByOffenderBooking_BookingId(bookingId)
     val allTemporaryAbsenceReturns = temporaryAbsenceReturnRepository.findAllByOffenderBooking_BookingId(bookingId)
 
-    val movementApplications = offenderMovementApplicationRepository.findAllByOffenderBooking_BookingId(bookingId)
+    val movementApplications = offenderTapApplicationRepository.findAllByOffenderBooking_BookingId(bookingId)
       .also { it.fixMergedSchedules() }
       .also { it.unlinkCorruptTemporaryAbsenceReturns() }
 
@@ -172,9 +172,9 @@ class MovementsService(
     bookingId: Long,
     active: Boolean,
     latest: Boolean,
-    movementApplications: List<OffenderMovementApplication>,
-    unscheduledTemporaryAbsences: List<OffenderTemporaryAbsence>,
-    unscheduledTemporaryAbsenceReturns: List<OffenderTemporaryAbsenceReturn>,
+    movementApplications: List<OffenderTapApplication>,
+    unscheduledTemporaryAbsences: List<OffenderTapMovementOut>,
+    unscheduledTemporaryAbsenceReturns: List<OffenderTapMovementIn>,
   ) = BookingTemporaryAbsences(
     bookingId = bookingId,
     activeBooking = active,
@@ -187,38 +187,38 @@ class MovementsService(
       .map { mov -> mov.toTemporaryAbsenceReturnResponse() },
   )
 
-  private fun List<OffenderMovementApplication>.fixMergedSchedules() {
+  private fun List<OffenderTapApplication>.fixMergedSchedules() {
     // find any scheduled returns on the wrong application and remove them (these are created during merges)
     val scheduledReturnsWithWrongParent = this.flatMap { application ->
-      application.scheduledTemporaryAbsences.flatMap { it.scheduledTemporaryAbsenceReturns }
-        .filter { it.temporaryAbsenceApplication != null && it.temporaryAbsenceApplication != application }
+      application.tapScheduleOuts.flatMap { it.tapScheduleIns }
+        .filter { it.tapApplication != null && it.tapApplication != application }
     }
 
     // detach the scheduled returns with wrong application from their scheduled absence
-    this.flatMap { it.scheduledTemporaryAbsences }.forEach {
-      it.scheduledTemporaryAbsenceReturns.removeAll(scheduledReturnsWithWrongParent)
+    this.flatMap { it.tapScheduleOuts }.forEach {
+      it.tapScheduleIns.removeAll(scheduledReturnsWithWrongParent)
     }
 
     // put the scheduled returns onto the correct application and schedule
     scheduledReturnsWithWrongParent.forEach { mergedReturn ->
-      this.find { it.movementApplicationId == mergedReturn.temporaryAbsenceApplication?.movementApplicationId }
-        ?.scheduledTemporaryAbsences
-        ?.firstOrNull { absence -> absence.scheduledTemporaryAbsenceReturns.isEmpty() && absence.returnDate == mergedReturn.eventDate }
-        ?.scheduledTemporaryAbsenceReturns += mergedReturn
-      mergedReturn.temporaryAbsenceApplication = null
+      this.find { it.tapApplicationId == mergedReturn.tapApplication?.tapApplicationId }
+        ?.tapScheduleOuts
+        ?.firstOrNull { absence -> absence.tapScheduleIns.isEmpty() && absence.returnDate == mergedReturn.eventDate }
+        ?.tapScheduleIns += mergedReturn
+      mergedReturn.tapApplication = null
     }
   }
 
   /*
    * Cut links to any return movements that have ended up on the wrong application due to corrupt data
    */
-  private fun List<OffenderMovementApplication>.unlinkCorruptTemporaryAbsenceReturns() {
+  private fun List<OffenderTapApplication>.unlinkCorruptTemporaryAbsenceReturns() {
     forEach {
-      it.scheduledTemporaryAbsences.forEach {
-        it.scheduledTemporaryAbsenceReturns.forEach { scheduledReturn ->
-          scheduledReturn.temporaryAbsenceReturn?.also { returnMovement ->
+      it.tapScheduleOuts.forEach {
+        it.tapScheduleIns.forEach { scheduledReturn ->
+          scheduledReturn.tapMovementIn?.also { returnMovement ->
             if (returnMovement.unlinkWrongSchedules()) {
-              scheduledReturn.temporaryAbsenceReturn = null
+              scheduledReturn.tapMovementIn = null
             }
           }
         }
@@ -226,16 +226,16 @@ class MovementsService(
     }
   }
 
-  private fun List<OffenderMovementApplication>.temporaryAbsences() = flatMap {
-    it.scheduledTemporaryAbsences.mapNotNull {
-      it.temporaryAbsence
+  private fun List<OffenderTapApplication>.temporaryAbsences() = flatMap {
+    it.tapScheduleOuts.mapNotNull {
+      it.tapMovementOut
     }
   }.toSet()
 
-  private fun List<OffenderMovementApplication>.temporaryAbsenceReturns() = flatMap {
-    it.scheduledTemporaryAbsences.flatMap {
-      it.scheduledTemporaryAbsenceReturns.mapNotNull {
-        it.temporaryAbsenceReturn
+  private fun List<OffenderTapApplication>.temporaryAbsenceReturns() = flatMap {
+    it.tapScheduleOuts.flatMap {
+      it.tapScheduleIns.mapNotNull {
+        it.tapMovementIn
       }
     }
   }.toSet()
@@ -245,7 +245,7 @@ class MovementsService(
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
     }
 
-    val application = offenderMovementApplicationRepository.findByMovementApplicationIdAndOffenderBooking_Offender_NomsId(applicationId, offenderNo)
+    val application = offenderTapApplicationRepository.findByTapApplicationIdAndOffenderBooking_Offender_NomsId(applicationId, offenderNo)
       ?: throw NotFoundException("Temporary absence application with id=$applicationId not found for offender with nomsId=$offenderNo")
 
     return application.toSingleResponse()
@@ -274,9 +274,9 @@ class MovementsService(
 
     val application = request.movementApplicationId
       ?.let {
-        offenderMovementApplicationRepository.findByIdOrNullForUpdate(request.movementApplicationId)
+        offenderTapApplicationRepository.findByIdOrNullForUpdate(request.movementApplicationId)
           ?: throw NotFoundException("Temporary absence application with id=$request.movementApplicationId not found for offender with nomsId=$offenderNo")
-      } ?: OffenderMovementApplication(
+      } ?: OffenderTapApplication(
       offenderBooking = offenderBooking,
       applicationDate = request.applicationDate.atTime(LocalTime.MIDNIGHT),
       applicationTime = request.applicationDate.atTime(LocalTime.MIDNIGHT),
@@ -304,8 +304,8 @@ class MovementsService(
       this.comment = request.comment?.truncateToUtf8Length(MAX_TAP_COMMENT_LENGTH, includeSeeDpsSuffix = true)
       this.contactPersonName = request.contactPersonName
       this.applicationType = applicationType
-      this.temporaryAbsenceType = temporaryAbsenceType
-      this.temporaryAbsenceSubType = temporaryAbsenceSubType
+      this.tapType = temporaryAbsenceType
+      this.tapSubType = temporaryAbsenceSubType
       this.eventSubType = eventSubType
       this.toAgency = toAddressAgency
       this.toAddress = toAddress
@@ -318,20 +318,20 @@ class MovementsService(
 
     // NOMIS does not allow schedules on an unapproved single application - if we find one then remove it
     if (!application.isApproved() && application.isSingle()) {
-      val schedule = application.scheduledTemporaryAbsences.firstOrNull()
-      if (schedule?.temporaryAbsence != null) throw BadDataException("Attempt to remove a schedule from an unapproved application failed - the schedule (${schedule.eventId}) is attached to a movement (${schedule.temporaryAbsence!!.id.offenderBooking.bookingId}/${schedule.temporaryAbsence!!.id.sequence}).")
-      application.scheduledTemporaryAbsences.remove(schedule)
+      val schedule = application.tapScheduleOuts.firstOrNull()
+      if (schedule?.tapMovementOut != null) throw BadDataException("Attempt to remove a schedule from an unapproved application failed - the schedule (${schedule.eventId}) is attached to a movement (${schedule.tapMovementOut!!.id.offenderBooking.bookingId}/${schedule.tapMovementOut!!.id.sequence}).")
+      application.tapScheduleOuts.remove(schedule)
     }
 
-    return offenderMovementApplicationRepository.save(application)
-      .let { UpsertTemporaryAbsenceApplicationResponse(offenderBooking.bookingId, it.movementApplicationId) }
+    return offenderTapApplicationRepository.save(application)
+      .let { UpsertTemporaryAbsenceApplicationResponse(offenderBooking.bookingId, it.tapApplicationId) }
   }
 
   @Transactional
   fun deleteTemporaryAbsenceApplication(offenderNo: String, applicationId: Long) {
-    offenderMovementApplicationRepository.findByIdOrNull(applicationId)
+    offenderTapApplicationRepository.findByIdOrNull(applicationId)
       ?.also { application ->
-        if (application.scheduledTemporaryAbsences.isNotEmpty()) {
+        if (application.tapScheduleOuts.isNotEmpty()) {
           throw ConflictException("Cannot delete temporary absence applicationId $applicationId because it has scheduled temporary absences")
         }
 
@@ -339,7 +339,7 @@ class MovementsService(
           ?.takeIf { it.offender.nomsId != offenderNo }
           ?.run { throw ConflictException("ApplicationId $applicationId exists on a different offender") }
 
-        offenderMovementApplicationRepository.delete(application)
+        offenderTapApplicationRepository.delete(application)
       }
   }
 
@@ -351,7 +351,7 @@ class MovementsService(
     val scheduledAbsence = scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offenderNo)
       ?: throw NotFoundException("Scheduled temporary absence with eventId=$eventId not found for offender with nomsId=$offenderNo")
 
-    return scheduledAbsence.toSingleResponse(scheduledAbsence.temporaryAbsenceApplication.returnTime)
+    return scheduledAbsence.toSingleResponse(scheduledAbsence.tapApplication.returnTime)
   }
 
   @Transactional
@@ -368,10 +368,10 @@ class MovementsService(
 
     if (request.eventId == null) {
       if (application.isUnapproved()) {
-        throw ConflictException("Cannot add schedules to application ${application.movementApplicationId} because it's not approved (applicationStatus=${application.applicationStatus.code})")
+        throw ConflictException("Cannot add schedules to application ${application.tapApplicationId} because it's not approved (applicationStatus=${application.applicationStatus.code})")
       }
       if (application.isSingle() && application.hasSchedules()) {
-        throw ConflictException("Cannot add schedules to application ${application.movementApplicationId} because it already has a single schedule")
+        throw ConflictException("Cannot add schedules to application ${application.tapApplicationId} because it already has a single schedule")
       }
     }
 
@@ -392,7 +392,7 @@ class MovementsService(
         this.toAddressOwnerClass = toAddress.addressOwnerClass
         this.toAddress = toAddress
       }
-      ?: OffenderScheduledTemporaryAbsence(
+      ?: OffenderTapScheduleOut(
         offenderBooking = offenderBooking,
         eventDate = request.eventDate,
         startTime = request.startTime,
@@ -405,14 +405,14 @@ class MovementsService(
         transportType = transportType,
         returnDate = request.returnDate,
         returnTime = request.returnTime,
-        temporaryAbsenceApplication = application,
+        tapApplication = application,
         toAddressOwnerClass = toAddress.addressOwnerClass,
         toAddress = toAddress,
         applicationDate = request.applicationDate,
         applicationTime = request.applicationTime,
       )
 
-    val scheduledReturn = schedule.scheduledTemporaryAbsenceReturns.firstOrNull()
+    val scheduledReturn = schedule.tapScheduleIns.firstOrNull()
       ?.apply {
         this.eventStatus = eventStatusOrThrow(request.returnEventStatus ?: "SCH")
         this.eventDate = request.returnDate
@@ -424,10 +424,10 @@ class MovementsService(
       }
       ?: let {
         if (request.eventStatus == "COMP") {
-          OffenderScheduledTemporaryAbsenceReturn(
+          OffenderTapScheduleIn(
             offenderBooking = offenderBooking,
-            temporaryAbsenceApplication = application,
-            scheduledTemporaryAbsence = schedule,
+            tapApplication = application,
+            tapScheduleOut = schedule,
             eventStatus = eventStatusOrThrow(request.returnEventStatus ?: "SCH"),
             eventDate = request.returnDate,
             startTime = request.returnTime,
@@ -441,13 +441,13 @@ class MovementsService(
         }
       }
 
-    schedule.scheduledTemporaryAbsenceReturns = scheduledReturn?.let { mutableListOf(scheduledReturn) } ?: mutableListOf()
+    schedule.tapScheduleIns = scheduledReturn?.let { mutableListOf(scheduledReturn) } ?: mutableListOf()
 
     scheduledTemporaryAbsenceRepository.save(schedule)
 
     return UpsertScheduledTemporaryAbsenceResponse(
       bookingId = offenderBooking.bookingId,
-      movementApplicationId = application.movementApplicationId,
+      movementApplicationId = application.tapApplicationId,
       eventId = schedule.eventId,
       addressId = toAddress.addressId,
       addressOwnerClass = toAddress.addressOwnerClass,
@@ -458,14 +458,14 @@ class MovementsService(
   fun deleteScheduledTemporaryAbsence(offenderNo: String, eventId: Long) {
     scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)
       ?.also { schedule ->
-        if (schedule.temporaryAbsence != null) {
-          throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has a movement ${schedule.temporaryAbsence!!.id.offenderBooking.bookingId} / ${schedule.temporaryAbsence!!.id.sequence}}")
+        if (schedule.tapMovementOut != null) {
+          throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has a movement ${schedule.tapMovementOut!!.id.offenderBooking.bookingId} / ${schedule.tapMovementOut!!.id.sequence}}")
         }
         if (schedule.eventStatus.code == COMPLETED) {
           throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has status $COMPLETED")
         }
-        if (schedule.scheduledTemporaryAbsenceReturns.isNotEmpty()) {
-          throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has an inbound schedule ${schedule.scheduledTemporaryAbsenceReturns[0].eventId}")
+        if (schedule.tapScheduleIns.isNotEmpty()) {
+          throw ConflictException("Cannot delete scheduled temporary absence eventId $eventId because it has an inbound schedule ${schedule.tapScheduleIns[0].eventId}")
         }
 
         offenderBookingRepository.findByIdOrNull(schedule.offenderBooking.bookingId)
@@ -496,8 +496,8 @@ class MovementsService(
       ?: throw NotFoundException("Temporary absence with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
 
     // Despite being non-nullable, Hibernate happily loads a null application if missing in NOMIS - if so then make the movement unscheduled
-    if (temporaryAbsence.scheduledTemporaryAbsence?.temporaryAbsenceApplication == null) {
-      temporaryAbsence.scheduledTemporaryAbsence = null
+    if (temporaryAbsence.tapScheduleOut?.tapApplication == null) {
+      temporaryAbsence.tapScheduleOut = null
     }
 
     return temporaryAbsence.toSingleResponse()
@@ -514,9 +514,9 @@ class MovementsService(
     val toAgency = request.toAgency?.let { agencyLocationOrThrow(request.toAgency) }
     val toAddress = request.toAddressId?.let { addressOrThrow(request.toAddressId) }
 
-    return OffenderTemporaryAbsence(
+    return OffenderTapMovementOut(
       id = OffenderExternalMovementId(offenderBooking, offenderBooking.maxMovementSequence() + 1),
-      scheduledTemporaryAbsence = scheduledTemporaryAbsence,
+      tapScheduleOut = scheduledTemporaryAbsence,
       movementDate = request.movementDate,
       movementTime = request.movementTime,
       movementType = tapMovementType,
@@ -550,9 +550,9 @@ class MovementsService(
       ?: throw NotFoundException("Temporary absence return with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
 
     // Despite being non-nullable, Hibernate happily loads a null application if missing in NOMIS - if so then make the movement unscheduled
-    if (temporaryAbsenceReturn.scheduledTemporaryAbsence?.temporaryAbsenceApplication == null) {
-      temporaryAbsenceReturn.scheduledTemporaryAbsence = null
-      temporaryAbsenceReturn.scheduledTemporaryAbsenceReturn = null
+    if (temporaryAbsenceReturn.tapScheduleOut?.tapApplication == null) {
+      temporaryAbsenceReturn.tapScheduleOut = null
+      temporaryAbsenceReturn.tapScheduleIn = null
     }
 
     temporaryAbsenceReturn.unlinkWrongSchedules()
@@ -560,12 +560,12 @@ class MovementsService(
   }
 
   // Make a temporary absence return unscheduled if the schedules have been corrupted
-  private fun OffenderTemporaryAbsenceReturn.unlinkWrongSchedules(): Boolean = when (scheduledTemporaryAbsenceReturn) {
+  private fun OffenderTapMovementIn.unlinkWrongSchedules(): Boolean = when (tapScheduleIn) {
     null -> false
-    in scheduledTemporaryAbsence?.scheduledTemporaryAbsenceReturns ?: emptyList() -> false
+    in tapScheduleOut?.tapScheduleIns ?: emptyList() -> false
     else -> {
-      scheduledTemporaryAbsence = null
-      scheduledTemporaryAbsenceReturn = null
+      tapScheduleOut = null
+      tapScheduleIn = null
       true
     }
   }
@@ -581,10 +581,10 @@ class MovementsService(
     val toPrison = agencyLocationOrThrow(request.toPrison)
     val fromAddress = request.fromAddressId?.let { addressOrThrow(request.fromAddressId) }
 
-    return OffenderTemporaryAbsenceReturn(
+    return OffenderTapMovementIn(
       id = OffenderExternalMovementId(offenderBooking, offenderBooking.maxMovementSequence() + 1),
-      scheduledTemporaryAbsenceReturn = scheduledTemporaryAbsenceReturn,
-      scheduledTemporaryAbsence = scheduledTemporaryAbsenceReturn?.scheduledTemporaryAbsence,
+      tapScheduleIn = scheduledTemporaryAbsenceReturn,
+      tapScheduleOut = scheduledTemporaryAbsenceReturn?.tapScheduleOut,
       movementDate = request.movementDate,
       movementTime = request.movementTime,
       movementType = tapMovementType,
@@ -616,8 +616,8 @@ class MovementsService(
     val unscheduledIn = externalMovementsRepository.countOffenderUnscheduledIn(offenderNo)
     val unscheduledOut = externalMovementsRepository.countOffenderUnscheduledOut(offenderNo)
     return OffenderTemporaryAbsenceSummaryResponse(
-      applications = Applications(count = offenderMovementApplicationRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
-      scheduledOutMovements = ScheduledOut(count = scheduledTemporaryAbsenceRepository.countByOffenderBooking_Offender_NomsId_AndTemporaryAbsenceApplicationIsNotNull(offenderNo)),
+      applications = Applications(count = offenderTapApplicationRepository.countByOffenderBooking_Offender_NomsId(offenderNo)),
+      scheduledOutMovements = ScheduledOut(count = scheduledTemporaryAbsenceRepository.countByOffenderBooking_Offender_NomsId_AndTapApplicationIsNotNull(offenderNo)),
       movements = Movements(
         count = scheduledIn + scheduledOut + unscheduledIn + unscheduledOut,
         scheduled = MovementsByDirection(outCount = scheduledOut, inCount = scheduledIn),
@@ -700,7 +700,7 @@ class MovementsService(
   private fun offenderBookingOrThrow(offenderNo: String) = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
     ?: throw NotFoundException("Offender $offenderNo not found with a booking")
 
-  private fun movementApplicationOrThrow(movementApplicationId: Long) = offenderMovementApplicationRepository.findByIdOrNull(movementApplicationId)
+  private fun movementApplicationOrThrow(movementApplicationId: Long) = offenderTapApplicationRepository.findByIdOrNull(movementApplicationId)
     ?: throw BadDataException("Movement application $movementApplicationId does not exist")
 
   private fun scheduledTemporaryAbsenceOrThrow(eventId: Long) = scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)
@@ -718,7 +718,7 @@ class MovementsService(
   private fun escortOrThrow(escort: String) = escortRepository.findByIdOrNull(Escort.pk(escort))
     ?: throw BadDataException("Escort code $escort is invalid")
 
-  private fun transportTypeOrThrow(transportType: String) = transportTypeRepository.findByIdOrNull(TemporaryAbsenceTransportType.pk(transportType))
+  private fun transportTypeOrThrow(transportType: String) = transportTypeRepository.findByIdOrNull(TapTransportType.pk(transportType))
     ?: throw BadDataException("Transport type $transportType is invalid")
 
   private fun addressOrThrow(addressId: Long) = addressRepository.findByIdOrNull(addressId)
@@ -823,10 +823,10 @@ class MovementsService(
   private fun movementApplicationTypeOrThrow(applicationType: String) = movementApplicationTypeRepository.findByIdOrNull(MovementApplicationType.pk(applicationType))
     ?: throw BadDataException("Application type $applicationType is invalid")
 
-  private fun temporaryAbsenceTypeOrThrow(temporaryAbsenceType: String) = temporaryAbsenceTypeRepository.findByIdOrNull(TemporaryAbsenceType.pk(temporaryAbsenceType))
+  private fun temporaryAbsenceTypeOrThrow(temporaryAbsenceType: String) = tapTypeRepository.findByIdOrNull(TapType.pk(temporaryAbsenceType))
     ?: throw BadDataException("Temporary absence type $temporaryAbsenceType is invalid")
 
-  private fun temporaryAbsenceSubTypeOrThrow(temporaryAbsenceSubType: String) = temporaryAbsenceSubTypeRepository.findByIdOrNull(TemporaryAbsenceSubType.pk(temporaryAbsenceSubType))
+  private fun temporaryAbsenceSubTypeOrThrow(temporaryAbsenceSubType: String) = tapSubTypeRepository.findByIdOrNull(TapSubType.pk(temporaryAbsenceSubType))
     ?: throw BadDataException("Temporary absence sub type $temporaryAbsenceSubType is invalid")
 
   private fun eventStatusOrThrow(eventStatus: String) = eventStatusRepository.findByIdOrNull(EventStatus.pk(eventStatus))
@@ -835,8 +835,8 @@ class MovementsService(
   private fun arrestAgencyOrThrow(arrestAgency: String) = arrestAgencyRepository.findByIdOrNull(ArrestAgency.pk(arrestAgency))
     ?: throw BadDataException("Arrest Agency $arrestAgency is invalid")
 
-  private fun OffenderMovementApplication.toResponse() = TemporaryAbsenceApplication(
-    movementApplicationId = movementApplicationId,
+  private fun OffenderTapApplication.toResponse() = TemporaryAbsenceApplication(
+    movementApplicationId = tapApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate.toLocalDate(),
     fromDate = fromDate,
@@ -856,27 +856,27 @@ class MovementsService(
     toAgencyId = toAgency?.id,
     contactPersonName = contactPersonName,
     applicationType = applicationType.code,
-    temporaryAbsenceType = temporaryAbsenceType?.code,
-    temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
-    absences = scheduledTemporaryAbsences.map {
+    temporaryAbsenceType = tapType?.code,
+    temporaryAbsenceSubType = tapSubType?.code,
+    absences = tapScheduleOuts.map {
       // Some old data has multiple scheduled IN movements for a single scheduled OUT - try to find the one with an actual movement IN
-      val scheduledAbsenceReturn = it.scheduledTemporaryAbsenceReturns.firstOrNull { it.temporaryAbsenceReturn != null }
-        ?: it.scheduledTemporaryAbsenceReturns.firstOrNull()
-      val absenceReturn = scheduledAbsenceReturn?.temporaryAbsenceReturn
+      val scheduledAbsenceReturn = it.tapScheduleIns.firstOrNull { it.tapMovementIn != null }
+        ?: it.tapScheduleIns.firstOrNull()
+      val absenceReturn = scheduledAbsenceReturn?.tapMovementIn
       Absence(
         scheduledTemporaryAbsence = it.toResponse(returnTime),
         scheduledTemporaryAbsenceReturn = scheduledAbsenceReturn?.toResponse(),
-        temporaryAbsence = it.temporaryAbsence?.toResponse(),
+        temporaryAbsence = it.tapMovementOut?.toResponse(),
         temporaryAbsenceReturn = absenceReturn?.toResponse(),
       )
     },
     audit = toAudit(),
   )
 
-  private fun OffenderScheduledTemporaryAbsence.toResponse(applicationReturnTime: LocalDateTime) = ScheduledTemporaryAbsence(
+  private fun OffenderTapScheduleOut.toResponse(applicationReturnTime: LocalDateTime) = ScheduledTemporaryAbsence(
     eventId = eventId,
-    eventDate = eventDate ?: temporaryAbsenceApplication.fromDate,
-    startTime = startTime ?: temporaryAbsenceApplication.releaseTime,
+    eventDate = eventDate ?: tapApplication.fromDate,
+    startTime = startTime ?: tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
@@ -897,10 +897,10 @@ class MovementsService(
     audit = toAudit(),
   )
 
-  private fun OffenderScheduledTemporaryAbsenceReturn.toResponse() = ScheduledTemporaryAbsenceReturn(
+  private fun OffenderTapScheduleIn.toResponse() = ScheduledTemporaryAbsenceReturn(
     eventId = eventId,
-    eventDate = eventDate ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.fromDate,
-    startTime = startTime ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.releaseTime,
+    eventDate = eventDate ?: tapScheduleOut.tapApplication.fromDate,
+    startTime = startTime ?: tapScheduleOut.tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
@@ -910,9 +910,9 @@ class MovementsService(
     audit = toAudit(),
   )
 
-  private fun OffenderTemporaryAbsence.toResponse(): TemporaryAbsence {
+  private fun OffenderTapMovementOut.toResponse(): TemporaryAbsence {
     // The address may only exist on the schedule so check there too
-    val toAddress = toAddress ?: scheduledTemporaryAbsence?.toAddress
+    val toAddress = toAddress ?: tapScheduleOut?.toAddress
     return TemporaryAbsence(
       sequence = id.sequence,
       movementDate = movementDate,
@@ -933,11 +933,11 @@ class MovementsService(
     )
   }
 
-  private fun OffenderTemporaryAbsenceReturn.toResponse(): TemporaryAbsenceReturn {
+  private fun OffenderTapMovementIn.toResponse(): TemporaryAbsenceReturn {
     // The address may only exist on the outbound movement or the scheduled outbound movement so check there too
     val address = fromAddress
-      ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
-      ?: scheduledTemporaryAbsence?.toAddress
+      ?: tapScheduleOut?.tapMovementOut?.toAddress
+      ?: tapScheduleOut?.toAddress
     return TemporaryAbsenceReturn(
       sequence = id.sequence,
       movementDate = movementDate,
@@ -957,7 +957,7 @@ class MovementsService(
     )
   }
 
-  private fun OffenderTemporaryAbsence.toTemporaryAbsenceResponse(): TemporaryAbsence {
+  private fun OffenderTapMovementOut.toTemporaryAbsenceResponse(): TemporaryAbsence {
     val address = toAddress ?: toAgency?.addresses?.firstOrNull()
     return TemporaryAbsence(
       sequence = id.sequence,
@@ -979,7 +979,7 @@ class MovementsService(
     )
   }
 
-  private fun OffenderTemporaryAbsenceReturn.toTemporaryAbsenceReturnResponse(): TemporaryAbsenceReturn {
+  private fun OffenderTapMovementIn.toTemporaryAbsenceReturnResponse(): TemporaryAbsenceReturn {
     val address = fromAddress ?: fromAgency?.addresses?.firstOrNull()
     return TemporaryAbsenceReturn(
       sequence = id.sequence,
@@ -1000,11 +1000,11 @@ class MovementsService(
     )
   }
 
-  private fun OffenderMovementApplication.toSingleResponse() = TemporaryAbsenceApplicationResponse(
+  private fun OffenderTapApplication.toSingleResponse() = TemporaryAbsenceApplicationResponse(
     bookingId = offenderBooking.bookingId,
     activeBooking = offenderBooking.active,
     latestBooking = offenderBooking.bookingSequence == 1,
-    movementApplicationId = movementApplicationId,
+    movementApplicationId = tapApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate.toLocalDate(),
     fromDate = fromDate,
@@ -1024,20 +1024,20 @@ class MovementsService(
     toAgencyId = toAgency?.id,
     contactPersonName = contactPersonName,
     applicationType = applicationType.code,
-    temporaryAbsenceType = temporaryAbsenceType?.code,
-    temporaryAbsenceSubType = temporaryAbsenceSubType?.code,
+    temporaryAbsenceType = tapType?.code,
+    temporaryAbsenceSubType = tapSubType?.code,
     audit = toAudit(),
   )
 
-  private fun OffenderScheduledTemporaryAbsence.toSingleResponse(applicationReturnTime: LocalDateTime) = ScheduledTemporaryAbsenceResponse(
+  private fun OffenderTapScheduleOut.toSingleResponse(applicationReturnTime: LocalDateTime) = ScheduledTemporaryAbsenceResponse(
     bookingId = offenderBooking.bookingId,
-    movementApplicationId = temporaryAbsenceApplication.movementApplicationId,
+    movementApplicationId = tapApplication.tapApplicationId,
     eventId = eventId,
-    eventDate = eventDate ?: temporaryAbsenceApplication.fromDate,
-    startTime = startTime ?: temporaryAbsenceApplication.releaseTime,
+    eventDate = eventDate ?: tapApplication.fromDate,
+    startTime = startTime ?: tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
-    inboundEventStatus = scheduledTemporaryAbsenceReturns.firstOrNull()?.eventStatus?.code,
+    inboundEventStatus = tapScheduleIns.firstOrNull()?.eventStatus?.code,
     comment = comment,
     escort = escort?.code,
     fromPrison = fromAgency?.id,
@@ -1053,21 +1053,21 @@ class MovementsService(
     applicationDate = applicationDate,
     applicationTime = applicationTime,
     contactPersonName = contactPersonName,
-    temporaryAbsenceType = temporaryAbsenceApplication.temporaryAbsenceType?.code,
-    temporaryAbsenceSubType = temporaryAbsenceApplication.temporaryAbsenceSubType?.code,
+    temporaryAbsenceType = tapApplication.tapType?.code,
+    temporaryAbsenceSubType = tapApplication.tapSubType?.code,
     audit = toAudit(
       toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime ?: createDatetime) },
       toAddress?.modifyDatetime?.takeIf { it.isAfter(modifyDatetime ?: createDatetime) }?.let { toAddress?.modifyUserId },
     ),
   )
 
-  private fun OffenderScheduledTemporaryAbsenceReturn.toSingleResponse() = ScheduledTemporaryAbsenceReturnResponse(
+  private fun OffenderTapScheduleIn.toSingleResponse() = ScheduledTemporaryAbsenceReturnResponse(
     bookingId = offenderBooking.bookingId,
-    movementApplicationId = scheduledTemporaryAbsence.temporaryAbsenceApplication.movementApplicationId,
+    movementApplicationId = tapScheduleOut.tapApplication.tapApplicationId,
     eventId = eventId,
-    parentEventId = scheduledTemporaryAbsence.eventId,
-    eventDate = eventDate ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.fromDate,
-    startTime = startTime ?: scheduledTemporaryAbsence.temporaryAbsenceApplication.releaseTime,
+    parentEventId = tapScheduleOut.eventId,
+    eventDate = eventDate ?: tapScheduleOut.tapApplication.fromDate,
+    startTime = startTime ?: tapScheduleOut.tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
@@ -1077,16 +1077,16 @@ class MovementsService(
     audit = toAudit(),
   )
 
-  private fun OffenderTemporaryAbsence.toSingleResponse(): TemporaryAbsenceResponse {
+  private fun OffenderTapMovementOut.toSingleResponse(): TemporaryAbsenceResponse {
     // The address may only exist on the schedule so check there too
     val toAddress = toAddress
       ?: toAgency?.addresses?.firstOrNull()
-      ?: scheduledTemporaryAbsence?.toAddress
+      ?: tapScheduleOut?.toAddress
     return TemporaryAbsenceResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
-      scheduledTemporaryAbsenceId = scheduledTemporaryAbsence?.eventId,
-      movementApplicationId = scheduledTemporaryAbsence?.temporaryAbsenceApplication?.movementApplicationId,
+      scheduledTemporaryAbsenceId = tapScheduleOut?.eventId,
+      movementApplicationId = tapScheduleOut?.tapApplication?.tapApplicationId,
       movementDate = movementDate,
       movementTime = movementTime,
       movementReason = movementReason.code,
@@ -1105,18 +1105,18 @@ class MovementsService(
     )
   }
 
-  private fun OffenderTemporaryAbsenceReturn.toSingleResponse(): TemporaryAbsenceReturnResponse {
+  private fun OffenderTapMovementIn.toSingleResponse(): TemporaryAbsenceReturnResponse {
     // The address may only exist on the outbound movement or the scheduled outbound movement so check there too
     val address = fromAddress
       ?: fromAgency?.addresses?.firstOrNull()
-      ?: scheduledTemporaryAbsence?.temporaryAbsence?.toAddress
-      ?: scheduledTemporaryAbsence?.toAddress
+      ?: tapScheduleOut?.tapMovementOut?.toAddress
+      ?: tapScheduleOut?.toAddress
     return TemporaryAbsenceReturnResponse(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
-      scheduledTemporaryAbsenceId = scheduledTemporaryAbsence?.eventId,
-      scheduledTemporaryAbsenceReturnId = scheduledTemporaryAbsenceReturn?.eventId,
-      movementApplicationId = scheduledTemporaryAbsence?.temporaryAbsenceApplication?.movementApplicationId,
+      scheduledTemporaryAbsenceId = tapScheduleOut?.eventId,
+      scheduledTemporaryAbsenceReturnId = tapScheduleIn?.eventId,
+      movementApplicationId = tapScheduleOut?.tapApplication?.tapApplicationId,
       movementDate = movementDate,
       movementTime = movementTime,
       movementReason = movementReason.code,

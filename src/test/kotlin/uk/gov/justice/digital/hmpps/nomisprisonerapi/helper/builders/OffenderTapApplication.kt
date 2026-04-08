@@ -9,23 +9,23 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStat
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceSubType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceTransportType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TemporaryAbsenceType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapSubType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapTransportType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @DslMarker
-annotation class OffenderTemporaryAbsenceApplicationDslMarker
+annotation class OffenderTapApplicationDslMarker
 
 @NomisDataDslMarker
-interface OffenderTemporaryAbsenceApplicationDsl {
-  @OffenderScheduledTemporaryAbsenceDslMarker
-  fun scheduledTemporaryAbsence(
+interface OffenderTapApplicationDsl {
+  @OffenderTapScheduleOutDslMarker
+  fun tapScheduleOut(
     eventDate: LocalDate = LocalDate.now(),
     startTime: LocalDateTime = eventDate.atTime(12, 0),
     eventSubType: String = "C5",
@@ -39,45 +39,45 @@ interface OffenderTemporaryAbsenceApplicationDsl {
     returnTime: LocalDateTime = startTime.plusHours(1),
     toAddress: Address? = null,
     contactPersonName: String? = null,
-    dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit = {},
-  ): OffenderScheduledTemporaryAbsence
+    dsl: OffenderTapScheduleOutDsl.() -> Unit = {},
+  ): OffenderTapScheduleOut
 }
 
 @Component
-class OffenderTemporaryAbsenceApplicationBuilderRepository(
+class OffenderTapApplicationBuilderRepository(
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   private val applicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
-  private val transportTypeRepository: ReferenceCodeRepository<TemporaryAbsenceTransportType>,
+  private val transportTypeRepository: ReferenceCodeRepository<TapTransportType>,
   private val applicationTypeRepository: ReferenceCodeRepository<MovementApplicationType>,
-  private val temporaryAbsenceTypeRepository: ReferenceCodeRepository<TemporaryAbsenceType>,
-  private val temporaryAbsenceSubTypeRepository: ReferenceCodeRepository<TemporaryAbsenceSubType>,
+  private val tapTypeRepository: ReferenceCodeRepository<TapType>,
+  private val tapSubTypeRepository: ReferenceCodeRepository<TapSubType>,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
   fun movementReasonOf(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
   fun applicationStatusOf(code: String): MovementApplicationStatus = applicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(code))!!
   fun escortOf(code: String): Escort = escortRepository.findByIdOrNull(Escort.pk(code))!!
-  fun transportTypeOf(code: String): TemporaryAbsenceTransportType = transportTypeRepository.findByIdOrNull(TemporaryAbsenceTransportType.pk(code))!!
+  fun transportTypeOf(code: String): TapTransportType = transportTypeRepository.findByIdOrNull(TapTransportType.pk(code))!!
   fun applicationTypeOf(code: String): MovementApplicationType = applicationTypeRepository.findByIdOrNull(MovementApplicationType.pk(code))!!
-  fun temporaryAbsenceTypeOf(code: String): TemporaryAbsenceType = temporaryAbsenceTypeRepository.findByIdOrNull(TemporaryAbsenceType.pk(code))!!
-  fun temporaryAbsenceSubTypeOf(code: String): TemporaryAbsenceSubType = temporaryAbsenceSubTypeRepository.findByIdOrNull(TemporaryAbsenceSubType.pk(code))!!
+  fun tapTypeOf(code: String): TapType = tapTypeRepository.findByIdOrNull(TapType.pk(code))!!
+  fun tapSubTypeOf(code: String): TapSubType = tapSubTypeRepository.findByIdOrNull(TapSubType.pk(code))!!
   fun agencyLocationOf(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id) ?: throw RuntimeException("Agency location with id=$id not found")
 }
 
 @Component
-class OffenderTemporaryAbsenceApplicationBuilderFactory(
-  private val repository: OffenderTemporaryAbsenceApplicationBuilderRepository,
-  private val scheduledTemporaryAbsenceBuilderFactory: OffenderScheduledTemporaryAbsenceBuilderFactory,
+class OffenderTapApplicationBuilderFactory(
+  private val repository: OffenderTapApplicationBuilderRepository,
+  private val tapScheduleOutBuilderFactory: OffenderTapScheduleOutBuilderFactory,
 ) {
-  fun builder() = OffenderTemporaryAbsenceApplicationBuilder(repository, scheduledTemporaryAbsenceBuilderFactory)
+  fun builder() = OffenderTapApplicationBuilder(repository, tapScheduleOutBuilderFactory)
 }
 
-class OffenderTemporaryAbsenceApplicationBuilder(
-  private val repository: OffenderTemporaryAbsenceApplicationBuilderRepository,
-  private val scheduleTemporaryAbsenceBuilderFactory: OffenderScheduledTemporaryAbsenceBuilderFactory,
-) : OffenderTemporaryAbsenceApplicationDsl {
+class OffenderTapApplicationBuilder(
+  private val repository: OffenderTapApplicationBuilderRepository,
+  private val tapScheduleOutBuilderFactory: OffenderTapScheduleOutBuilderFactory,
+) : OffenderTapApplicationDsl {
 
-  private lateinit var temporaryAbsenceApplication: OffenderMovementApplication
+  private lateinit var tapApplication: OffenderTapApplication
 
   fun build(
     offenderBooking: OffenderBooking,
@@ -97,9 +97,9 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     toAgency: String?,
     contactPersonName: String?,
     applicationType: String,
-    temporaryAbsenceType: String?,
-    temporaryAbsenceSubType: String?,
-  ): OffenderMovementApplication = OffenderMovementApplication(
+    tapType: String?,
+    tapSubType: String?,
+  ): OffenderTapApplication = OffenderTapApplication(
     offenderBooking = offenderBooking,
     eventSubType = repository.movementReasonOf(eventSubType),
     applicationDate = applicationDate,
@@ -118,12 +118,12 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     toAgency = toAgency?.let { repository.agencyLocationOf(it) },
     contactPersonName = contactPersonName,
     applicationType = repository.applicationTypeOf(applicationType),
-    temporaryAbsenceType = temporaryAbsenceType?.let { repository.temporaryAbsenceTypeOf(it) },
-    temporaryAbsenceSubType = temporaryAbsenceSubType?.let { repository.temporaryAbsenceSubTypeOf(it) },
+    tapType = tapType?.let { repository.tapTypeOf(it) },
+    tapSubType = tapSubType?.let { repository.tapSubTypeOf(it) },
   )
-    .also { temporaryAbsenceApplication = it }
+    .also { tapApplication = it }
 
-  override fun scheduledTemporaryAbsence(
+  override fun tapScheduleOut(
     eventDate: LocalDate,
     startTime: LocalDateTime,
     eventSubType: String,
@@ -137,10 +137,10 @@ class OffenderTemporaryAbsenceApplicationBuilder(
     returnTime: LocalDateTime,
     toAddress: Address?,
     contactPersonName: String?,
-    dsl: OffenderScheduledTemporaryAbsenceDsl.() -> Unit,
-  ): OffenderScheduledTemporaryAbsence = scheduleTemporaryAbsenceBuilderFactory.builder().let { builder ->
+    dsl: OffenderTapScheduleOutDsl.() -> Unit,
+  ): OffenderTapScheduleOut = tapScheduleOutBuilderFactory.builder().let { builder ->
     builder.build(
-      temporaryAbsenceApplication = temporaryAbsenceApplication,
+      tapApplication = tapApplication,
       eventDate = eventDate,
       startTime = startTime,
       eventSubType = eventSubType,
@@ -155,7 +155,7 @@ class OffenderTemporaryAbsenceApplicationBuilder(
       toAddress = toAddress,
       contactPersonName = contactPersonName,
     )
-      .also { temporaryAbsenceApplication.scheduledTemporaryAbsences += it }
+      .also { tapApplication.tapScheduleOuts += it }
       .also { builder.apply(dsl) }
   }
 }

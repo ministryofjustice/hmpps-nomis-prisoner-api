@@ -24,21 +24,21 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleInRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementsService.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.profiledetails.roundToNearestSecond
 import java.time.LocalDate
@@ -46,17 +46,16 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 class MovementsResourceIntTest(
-  @Autowired val applicationRepository: OffenderMovementApplicationRepository,
-  @Autowired val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
-  @Autowired val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
-  @Autowired val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
-  @Autowired val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
+  @Autowired val applicationRepository: OffenderTapApplicationRepository,
+  @Autowired val scheduleOutRepository: OffenderTapScheduleOutRepository,
+  @Autowired val scheduleInRepository: OffenderTapScheduleInRepository,
+  @Autowired val movementOutRepository: OffenderTapMovementOutRepository,
+  @Autowired val movementInRepository: OffenderTapMovementInRepository,
   @Autowired val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   @Autowired val corporateRepository: CorporateRepository,
   @Autowired val offenderAddressRepository: OffenderAddressRepository,
   @Autowired val agencyLocationRepository: AgencyLocationRepository,
   @Autowired val offenderRepository: OffenderRepository,
-  @Autowired val offenderMovementApplicationRepository: OffenderMovementApplicationRepository,
   @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
@@ -64,30 +63,30 @@ class MovementsResourceIntTest(
   private lateinit var offenderAddress: OffenderAddress
   private lateinit var corporateAddress: CorporateAddress
   private lateinit var booking: OffenderBooking
-  private lateinit var application: OffenderMovementApplication
-  private lateinit var scheduledTempAbsence: OffenderScheduledTemporaryAbsence
-  private lateinit var scheduledTempAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
-  private lateinit var tempAbsence: OffenderTemporaryAbsence
-  private lateinit var tempAbsenceReturn: OffenderTemporaryAbsenceReturn
-  private lateinit var unscheduledTemporaryAbsence: OffenderTemporaryAbsence
-  private lateinit var unscheduledTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
+  private lateinit var application: OffenderTapApplication
+  private lateinit var scheduleOut: OffenderTapScheduleOut
+  private lateinit var scheduleIn: OffenderTapScheduleIn
+  private lateinit var movementOut: OffenderTapMovementOut
+  private lateinit var movementIn: OffenderTapMovementIn
+  private lateinit var unscheduledMovementOut: OffenderTapMovementOut
+  private lateinit var unscheduledMovementIn: OffenderTapMovementIn
   private lateinit var agencyLocation: AgencyLocation
 
   private val offenderNo = "D6347ED"
   private val today: LocalDateTime = LocalDateTime.now().roundToNearestSecond()
   private val yesterday: LocalDateTime = today.minusDays(1)
   private val twoDaysAgo: LocalDateTime = today.minusDays(2)
-  private lateinit var orphanedSchedule: OffenderScheduledTemporaryAbsence
-  private lateinit var orphanedScheduleReturn: OffenderScheduledTemporaryAbsenceReturn
+  private lateinit var orphanedSchedule: OffenderTapScheduleOut
+  private lateinit var orphanedScheduleReturn: OffenderTapScheduleIn
 
   @AfterEach
   fun `tear down`() {
     // This must be removed before the offender booking due to a foreign key constraint (Hibernate is no longer managing this entity)
     if (this::orphanedSchedule.isInitialized) {
-      scheduledTemporaryAbsenceRepository.delete(orphanedSchedule)
+      scheduleOutRepository.delete(orphanedSchedule)
     }
     if (this::orphanedScheduleReturn.isInitialized) {
-      scheduledTemporaryAbsenceReturnRepository.delete(orphanedScheduleReturn)
+      scheduleInRepository.delete(orphanedScheduleReturn)
     }
     offenderRepository.deleteAll()
     if (this::agencyLocation.isInitialized) {
@@ -145,7 +144,7 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            application = temporaryAbsenceApplication(
+            application = tapApplication(
               eventSubType = "C5",
               applicationDate = twoDaysAgo,
               applicationTime = twoDaysAgo,
@@ -162,8 +161,8 @@ class MovementsResourceIntTest(
               toAgency = "HAZLWD",
               toAddress = offenderAddress,
               contactPersonName = "Derek",
-              temporaryAbsenceType = "RR",
-              temporaryAbsenceSubType = "RDR",
+              tapType = "RR",
+              tapSubType = "RDR",
             )
           }
         }
@@ -178,7 +177,7 @@ class MovementsResourceIntTest(
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[0].activeBooking").isEqualTo(true)
         .jsonPath("$.bookings[0].latestBooking").isEqualTo(true)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.tapApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].eventSubType").isEqualTo("C5")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].applicationDate").value<String> {
           assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
@@ -214,8 +213,8 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 eventDate = twoDaysAgo.toLocalDate(),
                 startTime = twoDaysAgo,
                 eventSubType = "C5",
@@ -241,7 +240,7 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTempAbsence.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduleOut.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.startTime").value<String> {
           assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
@@ -274,8 +273,8 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 toAddress = corporateAddress,
               )
             }
@@ -306,8 +305,8 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 toAddress = agencyAddress,
               )
             }
@@ -334,9 +333,9 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut(
                   date = twoDaysAgo,
                   fromPrison = "LEI",
                   toAgency = "HAZLWD",
@@ -359,7 +358,7 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(tempAbsence.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(movementOut.id.sequence)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.movementDate").isEqualTo("${twoDaysAgo.toLocalDate()}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.movementTime").value<String> {
           assertThat(it).startsWith("${twoDaysAgo.toLocalDate()}")
@@ -388,9 +387,9 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut(
                   toAddress = corporateAddress,
                 )
               }
@@ -422,9 +421,9 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut(
                   toAddress = agencyAddress,
                 )
               }
@@ -456,11 +455,11 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 toAddress = agencyAddress,
               ) {
-                tempAbsence = externalMovement(
+                movementOut = tapMovementOut(
                   toAddress = null,
                 )
               }
@@ -488,9 +487,9 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                scheduledTempAbsenceReturn = scheduledReturn(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                scheduleIn = tapScheduleIn(
                   eventDate = yesterday.toLocalDate(),
                   startTime = yesterday,
                   eventSubType = "R25",
@@ -512,7 +511,7 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTempAbsenceReturn.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduleIn.eventId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventDate").isEqualTo("${yesterday.toLocalDate()}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.startTime").value<String> {
           assertThat(it).startsWith("${yesterday.toLocalDate()}")
@@ -531,12 +530,12 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
 
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement(
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn(
                     date = yesterday,
                     fromAgency = "HAZLWD",
                     toPrison = "LEI",
@@ -559,7 +558,7 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(tempAbsenceReturn.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(movementIn.id.sequence)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.movementDate").isEqualTo("${yesterday.toLocalDate()}")
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.movementTime").value<String> {
           assertThat(it).startsWith("${yesterday.toLocalDate()}")
@@ -587,12 +586,12 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
 
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement(
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn(
                     fromAddress = corporateAddress,
                   )
                 }
@@ -625,12 +624,12 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
 
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement(
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn(
                     fromAddress = agencyAddress,
                   )
                 }
@@ -663,13 +662,13 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut(
                   toAddress = agencyAddress,
                 )
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement(
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn(
                     fromAddress = null,
                   )
                 }
@@ -702,15 +701,15 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 toAddress = agencyAddress,
               ) {
-                tempAbsence = externalMovement(
+                movementOut = tapMovementOut(
                   toAddress = null,
                 )
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement(
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn(
                     fromAddress = null,
                   )
                 }
@@ -753,7 +752,7 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            unscheduledTemporaryAbsence = temporaryAbsence(
+            unscheduledMovementOut = tapMovementOut(
               date = yesterday,
               movementReason = "C5",
               escort = "U",
@@ -774,7 +773,7 @@ class MovementsResourceIntTest(
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].sequence").isEqualTo(unscheduledTemporaryAbsence.id.sequence)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].sequence").isEqualTo(unscheduledMovementOut.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].movementDate").isEqualTo("${yesterday.toLocalDate()}")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].movementTime").value<String> {
           assertThat(it).startsWith("${yesterday.toLocalDate()}")
@@ -798,7 +797,7 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            unscheduledTemporaryAbsence = temporaryAbsence(
+            unscheduledMovementOut = tapMovementOut(
               toCity = SHEFFIELD,
               toAgency = null,
               toAddress = null,
@@ -840,8 +839,8 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking {
-            unscheduledTemporaryAbsence = temporaryAbsence()
-            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn(
+            unscheduledMovementOut = tapMovementOut()
+            unscheduledMovementIn = tapMovementIn(
               date = today,
               movementReason = "C5",
               escort = "U",
@@ -863,7 +862,7 @@ class MovementsResourceIntTest(
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence")
-        .isEqualTo(unscheduledTemporaryAbsenceReturn.id.sequence)
+        .isEqualTo(unscheduledMovementIn.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementDate")
         .isEqualTo("${today.toLocalDate()}")
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].movementTime").value<String> {
@@ -889,8 +888,8 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            unscheduledTemporaryAbsence = temporaryAbsence()
-            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn(
+            unscheduledMovementOut = tapMovementOut()
+            unscheduledMovementIn = tapMovementIn(
               fromCity = SHEFFIELD,
               fromAddress = null,
             )
@@ -917,16 +916,16 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
-            unscheduledTemporaryAbsence = temporaryAbsence()
-            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn()
+            unscheduledMovementOut = tapMovementOut()
+            unscheduledMovementIn = tapMovementIn()
           }
         }
       }
@@ -939,16 +938,16 @@ class MovementsResourceIntTest(
         .expectBody()
         .jsonPath("$.bookings[0].bookingId").isEqualTo(booking.bookingId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications.length()").isEqualTo(1)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.movementApplicationId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].movementApplicationId").isEqualTo(application.tapApplicationId)
         .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences.length()").isEqualTo(1)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduledTempAbsence.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(tempAbsence.id.sequence)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduledTempAbsenceReturn.eventId)
-        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(tempAbsenceReturn.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence.eventId").isEqualTo(scheduleOut.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence.sequence").isEqualTo(movementOut.id.sequence)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn.eventId").isEqualTo(scheduleIn.eventId)
+        .jsonPath("$.bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn.sequence").isEqualTo(movementIn.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsences.length()").isEqualTo(1)
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].sequence").isEqualTo(unscheduledTemporaryAbsence.id.sequence)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsences[0].sequence").isEqualTo(unscheduledMovementOut.id.sequence)
         .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns.length()").isEqualTo(1)
-        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence").isEqualTo(unscheduledTemporaryAbsenceReturn.id.sequence)
+        .jsonPath("$.bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence").isEqualTo(unscheduledMovementIn.id.sequence)
     }
 
     @Test
@@ -958,8 +957,8 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication(returnTime = tomorrow) {
-              scheduledTempAbsence = scheduledTemporaryAbsence()
+            application = tapApplication(returnTime = tomorrow) {
+              scheduleOut = tapScheduleOut()
             }
           }
         }
@@ -971,9 +970,9 @@ class MovementsResourceIntTest(
          */
         entityManager.createQuery(
           """
-            update OffenderScheduledTemporaryAbsence ost
+            update OffenderTapScheduleOut ost
             set ost.returnTime = null
-            where eventId = ${scheduledTempAbsence.eventId}
+            where eventId = ${scheduleOut.eventId}
           """.trimIndent(),
         ).executeUpdate()
       }
@@ -993,9 +992,9 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            temporaryAbsenceApplication(toAddress = offenderAddress) {
-              scheduledTemporaryAbsence(toAddress = offenderAddress) {
-                scheduledReturn()
+            tapApplication(toAddress = offenderAddress) {
+              tapScheduleOut(toAddress = offenderAddress) {
+                tapScheduleIn()
               }
             }
           }
@@ -1039,8 +1038,8 @@ class MovementsResourceIntTest(
         }
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 toAddress = corporateAddress,
               )
             }
@@ -1073,8 +1072,8 @@ class MovementsResourceIntTest(
         }
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 toAddress = corporateAddress,
               )
             }
@@ -1098,18 +1097,18 @@ class MovementsResourceIntTest(
   @DisplayName("Migration with merged data")
   inner class GetTemporaryAbsencesAndMovementsForMergedData {
     lateinit var mergedBooking: OffenderBooking
-    lateinit var mergedApplication: OffenderMovementApplication
-    lateinit var mergedScheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence
-    lateinit var mergedScheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn
-    lateinit var mergedTemporaryAbsence: OffenderTemporaryAbsence
-    lateinit var mergedTemporaryAbsenceReturn: OffenderTemporaryAbsenceReturn
+    lateinit var mergedApplication: OffenderTapApplication
+    lateinit var mergedScheduledTemporaryAbsence: OffenderTapScheduleOut
+    lateinit var mergedScheduledTemporaryAbsenceReturn: OffenderTapScheduleIn
+    lateinit var mergedTemporaryAbsence: OffenderTapMovementOut
+    lateinit var mergedTemporaryAbsenceReturn: OffenderTapMovementIn
 
-    lateinit var scheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
-    lateinit var scheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
-    lateinit var mergedScheduledTemporaryAbsence2: OffenderScheduledTemporaryAbsence
-    lateinit var mergedScheduledTemporaryAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
-    lateinit var mergedTemporaryAbsence2: OffenderTemporaryAbsence
-    lateinit var mergedTemporaryAbsenceReturn2: OffenderTemporaryAbsenceReturn
+    lateinit var scheduledTemporaryAbsence2: OffenderTapScheduleOut
+    lateinit var scheduledTemporaryAbsenceReturn2: OffenderTapScheduleIn
+    lateinit var mergedScheduledTemporaryAbsence2: OffenderTapScheduleOut
+    lateinit var mergedScheduledTemporaryAbsenceReturn2: OffenderTapScheduleIn
+    lateinit var mergedTemporaryAbsence2: OffenderTapMovementOut
+    lateinit var mergedTemporaryAbsenceReturn2: OffenderTapMovementIn
 
     val today = LocalDate.now()
     val tomorrow = today.plusDays(1)
@@ -1122,17 +1121,17 @@ class MovementsResourceIntTest(
           // This booking was moved from the old prisoner during the merge
           mergedBooking = booking(bookingSequence = 2) {
             receive(twoDaysAgo)
-            mergedApplication = temporaryAbsenceApplication {
-              mergedScheduledTemporaryAbsence = scheduledTemporaryAbsence(eventDate = today) {
-                mergedTemporaryAbsence = externalMovement()
-                mergedScheduledTemporaryAbsenceReturn = scheduledReturn(eventDate = today) {
-                  mergedTemporaryAbsenceReturn = externalMovement()
+            mergedApplication = tapApplication {
+              mergedScheduledTemporaryAbsence = tapScheduleOut(eventDate = today) {
+                mergedTemporaryAbsence = tapMovementOut()
+                mergedScheduledTemporaryAbsenceReturn = tapScheduleIn(eventDate = today) {
+                  mergedTemporaryAbsenceReturn = tapMovementIn()
                 }
               }
-              mergedScheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
-                mergedTemporaryAbsence2 = externalMovement()
-                mergedScheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow) {
-                  mergedTemporaryAbsenceReturn2 = externalMovement()
+              mergedScheduledTemporaryAbsence2 = tapScheduleOut(eventDate = tomorrow) {
+                mergedTemporaryAbsence2 = tapMovementOut()
+                mergedScheduledTemporaryAbsenceReturn2 = tapScheduleIn(eventDate = tomorrow) {
+                  mergedTemporaryAbsenceReturn2 = tapMovementIn()
                 }
               }
             }
@@ -1142,13 +1141,13 @@ class MovementsResourceIntTest(
           booking = booking(bookingSequence = 1) {
             receive(yesterday)
             // these are the only details copied from the merged booking during the merge
-            application = temporaryAbsenceApplication {
+            application = tapApplication {
               // make the schedules out of order to prove that date handling works
-              scheduledTemporaryAbsence2 = scheduledTemporaryAbsence(eventDate = tomorrow) {
-                scheduledTemporaryAbsenceReturn2 = scheduledReturn(eventDate = tomorrow)
+              scheduledTemporaryAbsence2 = tapScheduleOut(eventDate = tomorrow) {
+                scheduledTemporaryAbsenceReturn2 = tapScheduleIn(eventDate = tomorrow)
               }
-              scheduledTempAbsence = scheduledTemporaryAbsence(eventDate = today) {
-                scheduledTempAbsenceReturn = scheduledReturn(eventDate = today)
+              scheduleOut = tapScheduleOut(eventDate = today) {
+                scheduleIn = tapScheduleIn(eventDate = today)
               }
             }
           }
@@ -1163,19 +1162,19 @@ class MovementsResourceIntTest(
          */
         entityManager.createQuery(
           """
-            update OffenderScheduledTemporaryAbsenceReturn ostr
-            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence.eventId}),
-            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
-            where eventId = ${scheduledTempAbsenceReturn.eventId}
+            update OffenderTapScheduleIn ostr
+            set ostr.tapScheduleOut = (from OffenderTapScheduleOut where eventId = ${mergedScheduledTemporaryAbsence.eventId}),
+            ostr.tapApplication = (from OffenderTapApplication  where tapApplicationId = ${application.tapApplicationId})
+            where eventId = ${scheduleIn.eventId}
           """.trimIndent(),
         ).executeUpdate()
 
         // Also corrupt the same data for the 2nd scheduled absence from the application to test repeating applications
         entityManager.createQuery(
           """
-            update OffenderScheduledTemporaryAbsenceReturn ostr
-            set ostr.scheduledTemporaryAbsence = (from OffenderScheduledTemporaryAbsence where eventId = ${mergedScheduledTemporaryAbsence2.eventId}),
-            ostr.temporaryAbsenceApplication = (from OffenderMovementApplication  where movementApplicationId = ${application.movementApplicationId})
+            update OffenderTapScheduleIn ostr
+            set ostr.tapScheduleOut = (from OffenderTapScheduleOut where eventId = ${mergedScheduledTemporaryAbsence2.eventId}),
+            ostr.tapApplication = (from OffenderTapApplication  where tapApplicationId = ${application.tapApplicationId})
             where eventId = ${scheduledTemporaryAbsenceReturn2.eventId}
           """.trimIndent(),
         ).executeUpdate()
@@ -1183,16 +1182,16 @@ class MovementsResourceIntTest(
         // Also corrupt the merged movements by removing the link to the schedules in the same way the NOMIS merge process does
         entityManager.createQuery(
           """
-            update OffenderTemporaryAbsence ota
-            set ota.scheduledTemporaryAbsence = null
+            update OffenderTapMovementOut ota
+            set ota.tapScheduleOut = null
             where id.offenderBooking.id = ${mergedBooking.bookingId}
             and id.sequence in (${mergedTemporaryAbsence.id.sequence}, ${mergedTemporaryAbsence2.id.sequence})
           """.trimIndent(),
         ).executeUpdate()
         entityManager.createQuery(
           """
-            update OffenderTemporaryAbsenceReturn otar
-            set otar.scheduledTemporaryAbsenceReturn = null
+            update OffenderTapMovementIn otar
+            set otar.tapScheduleIn = null
             where id.offenderBooking.id = ${mergedBooking.bookingId} 
             and id.sequence in (${mergedTemporaryAbsenceReturn.id.sequence}, ${mergedTemporaryAbsenceReturn2.id.sequence})
           """.trimIndent(),
@@ -1210,7 +1209,7 @@ class MovementsResourceIntTest(
           assertThat(book.activeBooking).isEqualTo(false)
           assertThat(book.latestBooking).isEqualTo(false)
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
-          assertThat(application.movementApplicationId).isEqualTo(mergedApplication.movementApplicationId)
+          assertThat(application.movementApplicationId).isEqualTo(mergedApplication.tapApplicationId)
           with(application.absences.first()) {
             assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(mergedScheduledTemporaryAbsence.eventId)
             assertThat(temporaryAbsence).isNull()
@@ -1251,9 +1250,9 @@ class MovementsResourceIntTest(
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           assertThat(application.movementApplicationId).isEqualTo(application.movementApplicationId)
           with(application.absences[1]) {
-            assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(scheduledTempAbsence.eventId)
+            assertThat(scheduledTemporaryAbsence!!.eventId).isEqualTo(scheduleOut.eventId)
             assertThat(temporaryAbsence).isNull()
-            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduleIn.eventId)
             assertThat(temporaryAbsenceReturn).isNull()
           }
         }
@@ -1305,20 +1304,20 @@ class MovementsResourceIntTest(
           booking = booking {
             receive(yesterday)
             // TAP for which we will remove the schedule OUT from the DB
-            temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(eventDate = today.toLocalDate()) {
-                externalMovement()
-                orphanedScheduleReturn = scheduledReturn(eventDate = today.toLocalDate()) {
-                  externalMovement()
+            tapApplication {
+              scheduleOut = tapScheduleOut(eventDate = today.toLocalDate()) {
+                tapMovementOut()
+                orphanedScheduleReturn = tapScheduleIn(eventDate = today.toLocalDate()) {
+                  tapMovementIn()
                 }
               }
             }
             // Another TAP that should be included in the migration
-            temporaryAbsenceApplication {
-              scheduledTemporaryAbsence(eventDate = yesterday.toLocalDate()) {
-                externalMovement()
-                scheduledReturn(eventDate = yesterday.toLocalDate()) {
-                  externalMovement()
+            tapApplication {
+              tapScheduleOut(eventDate = yesterday.toLocalDate()) {
+                tapMovementOut()
+                tapScheduleIn(eventDate = yesterday.toLocalDate()) {
+                  tapMovementIn()
                 }
               }
             }
@@ -1333,12 +1332,12 @@ class MovementsResourceIntTest(
         entityManager.createNativeQuery(
           """
             delete from OFFENDER_IND_SCHEDULES
-            where EVENT_ID = ${scheduledTempAbsence.eventId}
+            where EVENT_ID = ${scheduleOut.eventId}
           """.trimIndent(),
         ).executeUpdate()
 
         // Reload the scheduled return to reflect the update
-        orphanedScheduleReturn = scheduledTemporaryAbsenceReturnRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
+        orphanedScheduleReturn = scheduleInRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
       }
     }
 
@@ -1394,13 +1393,13 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           booking = booking {
             receive(yesterday)
-            temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(eventDate = today.toLocalDate()) {
-                externalMovement()
+            tapApplication {
+              scheduleOut = tapScheduleOut(eventDate = today.toLocalDate()) {
+                tapMovementOut()
                 // We used to pick up this scheduled IN record - we should pick up the next one with an external movement
-                scheduledReturn()
-                scheduledTempAbsenceReturn = scheduledReturn(eventDate = today.toLocalDate()) {
-                  externalMovement()
+                tapScheduleIn()
+                scheduleIn = tapScheduleIn(eventDate = today.toLocalDate()) {
+                  tapMovementIn()
                 }
               }
             }
@@ -1417,7 +1416,7 @@ class MovementsResourceIntTest(
           assertThat(book.temporaryAbsenceApplications.size).isEqualTo(1)
           // The correct scheduled IN movement is chosen
           with(bookings[0].temporaryAbsenceApplications[0].absences[0]) {
-            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+            assertThat(scheduledTemporaryAbsenceReturn!!.eventId).isEqualTo(scheduleIn.eventId)
             assertThat(temporaryAbsenceReturn).isNotNull
           }
         }
@@ -1447,41 +1446,41 @@ class MovementsResourceIntTest(
   @DisplayName("Reconciliation IDs")
   inner class GetTemporaryAbsencesAndMovementIds {
     private lateinit var booking2: OffenderBooking
-    private lateinit var application2: OffenderMovementApplication
-    private lateinit var scheduledTempAbsence2: OffenderScheduledTemporaryAbsence
-    private lateinit var scheduledTempAbsenceReturn2: OffenderScheduledTemporaryAbsenceReturn
-    private lateinit var tempAbsence2: OffenderTemporaryAbsence
-    private lateinit var tempAbsenceReturn2: OffenderTemporaryAbsenceReturn
-    private lateinit var unscheduledTemporaryAbsence2: OffenderTemporaryAbsence
-    private lateinit var unscheduledTemporaryAbsenceReturn2: OffenderTemporaryAbsenceReturn
+    private lateinit var application2: OffenderTapApplication
+    private lateinit var scheduledTempAbsence2: OffenderTapScheduleOut
+    private lateinit var scheduledTempAbsenceReturn2: OffenderTapScheduleIn
+    private lateinit var tempAbsence2: OffenderTapMovementOut
+    private lateinit var tempAbsenceReturn2: OffenderTapMovementIn
+    private lateinit var unscheduledTemporaryAbsence2: OffenderTapMovementOut
+    private lateinit var unscheduledTemporaryAbsenceReturn2: OffenderTapMovementIn
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
-            unscheduledTemporaryAbsence = temporaryAbsence()
-            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn()
+            unscheduledMovementOut = tapMovementOut()
+            unscheduledMovementIn = tapMovementIn()
           }
           booking2 = booking {
-            application2 = temporaryAbsenceApplication {
-              scheduledTempAbsence2 = scheduledTemporaryAbsence {
-                tempAbsence2 = externalMovement()
-                scheduledTempAbsenceReturn2 = scheduledReturn {
-                  tempAbsenceReturn2 = externalMovement()
+            application2 = tapApplication {
+              scheduledTempAbsence2 = tapScheduleOut {
+                tempAbsence2 = tapMovementOut()
+                scheduledTempAbsenceReturn2 = tapScheduleIn {
+                  tempAbsenceReturn2 = tapMovementIn()
                 }
               }
             }
-            unscheduledTemporaryAbsence2 = temporaryAbsence()
-            unscheduledTemporaryAbsenceReturn2 = temporaryAbsenceReturn()
+            unscheduledTemporaryAbsence2 = tapMovementOut()
+            unscheduledTemporaryAbsenceReturn2 = tapMovementIn()
           }
         }
       }
@@ -1492,31 +1491,31 @@ class MovementsResourceIntTest(
       webTestClient.getTapIds()
         .apply {
           assertThat(applicationIds).containsExactlyInAnyOrder(
-            application.movementApplicationId,
-            application2.movementApplicationId,
+            application.tapApplicationId,
+            application2.tapApplicationId,
           )
           assertThat(scheduleOutIds).containsExactlyInAnyOrder(
-            scheduledTempAbsence.eventId,
+            scheduleOut.eventId,
             scheduledTempAbsence2.eventId,
           )
           assertThat(scheduleInIds).containsExactlyInAnyOrder(
-            scheduledTempAbsenceReturn.eventId,
+            scheduleIn.eventId,
             scheduledTempAbsenceReturn2.eventId,
           )
           assertThat(scheduledMovementOutIds).containsExactlyInAnyOrder(
-            OffenderTemporaryAbsenceId(tempAbsence.id.offenderBooking.bookingId, tempAbsence.id.sequence),
+            OffenderTemporaryAbsenceId(movementOut.id.offenderBooking.bookingId, movementOut.id.sequence),
             OffenderTemporaryAbsenceId(tempAbsence2.id.offenderBooking.bookingId, tempAbsence2.id.sequence),
           )
           assertThat(scheduledMovementInIds).containsExactlyInAnyOrder(
-            OffenderTemporaryAbsenceId(tempAbsenceReturn.id.offenderBooking.bookingId, tempAbsenceReturn.id.sequence),
+            OffenderTemporaryAbsenceId(movementIn.id.offenderBooking.bookingId, movementIn.id.sequence),
             OffenderTemporaryAbsenceId(tempAbsenceReturn2.id.offenderBooking.bookingId, tempAbsenceReturn2.id.sequence),
           )
           assertThat(unscheduledMovementOutIds).containsExactlyInAnyOrder(
-            OffenderTemporaryAbsenceId(unscheduledTemporaryAbsence.id.offenderBooking.bookingId, unscheduledTemporaryAbsence.id.sequence),
+            OffenderTemporaryAbsenceId(unscheduledMovementOut.id.offenderBooking.bookingId, unscheduledMovementOut.id.sequence),
             OffenderTemporaryAbsenceId(unscheduledTemporaryAbsence2.id.offenderBooking.bookingId, unscheduledTemporaryAbsence2.id.sequence),
           )
           assertThat(unscheduledMovementInIds).containsExactlyInAnyOrder(
-            OffenderTemporaryAbsenceId(unscheduledTemporaryAbsenceReturn.id.offenderBooking.bookingId, unscheduledTemporaryAbsenceReturn.id.sequence),
+            OffenderTemporaryAbsenceId(unscheduledMovementIn.id.offenderBooking.bookingId, unscheduledMovementIn.id.sequence),
             OffenderTemporaryAbsenceId(unscheduledTemporaryAbsenceReturn2.id.offenderBooking.bookingId, unscheduledTemporaryAbsenceReturn2.id.sequence),
           )
         }
@@ -1573,7 +1572,7 @@ class MovementsResourceIntTest(
   @DisplayName("GET /movements/{offenderNo}/temporary-absences/application/{applicationId}")
   inner class GetTemporaryAbsencesApplication {
     private lateinit var inactiveBooking: OffenderBooking
-    private lateinit var inactiveBookingApplication: OffenderMovementApplication
+    private lateinit var inactiveBookingApplication: OffenderTapApplication
 
     @BeforeEach
     fun setUp() {
@@ -1581,7 +1580,7 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address(postcode = "S1 1AA")
           booking = booking(bookingSequence = 1) {
-            application = temporaryAbsenceApplication(
+            application = tapApplication(
               eventSubType = "C5",
               applicationDate = twoDaysAgo,
               applicationTime = twoDaysAgo,
@@ -1598,22 +1597,22 @@ class MovementsResourceIntTest(
               toAgency = "HAZLWD",
               toAddress = offenderAddress,
               contactPersonName = "Derek",
-              temporaryAbsenceType = "RR",
-              temporaryAbsenceSubType = "RDR",
+              tapType = "RR",
+              tapSubType = "RDR",
             ) {
-              scheduledTemporaryAbsence {
-                externalMovement()
-                scheduledReturn {
-                  externalMovement()
+              tapScheduleOut {
+                tapMovementOut()
+                tapScheduleIn {
+                  tapMovementIn()
                 }
               }
             }
-            temporaryAbsence()
-            temporaryAbsenceReturn()
+            tapMovementOut()
+            tapMovementIn()
           }
           inactiveBooking = booking(bookingSequence = 2) {
             receive(twoDaysAgo)
-            inactiveBookingApplication = temporaryAbsenceApplication()
+            inactiveBookingApplication = tapApplication()
             release(yesterday)
           }
         }
@@ -1675,7 +1674,7 @@ class MovementsResourceIntTest(
       webTestClient.get()
         .uri(
           "/movements/${offender.nomsId}/temporary-absences/application/{applicationId}",
-          application.movementApplicationId,
+          application.tapApplicationId,
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
@@ -1685,7 +1684,7 @@ class MovementsResourceIntTest(
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(activeBooking).isEqualTo(true)
           assertThat(latestBooking).isEqualTo(true)
-          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+          assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
           assertThat(eventSubType).isEqualTo("C5")
           assertThat(applicationDate).isEqualTo(twoDaysAgo.toLocalDate())
           assertThat(fromDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -1715,7 +1714,7 @@ class MovementsResourceIntTest(
       webTestClient.get()
         .uri(
           "/movements/${offender.nomsId}/temporary-absences/application/{applicationId}",
-          inactiveBookingApplication.movementApplicationId,
+          inactiveBookingApplication.tapApplicationId,
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
@@ -1725,7 +1724,7 @@ class MovementsResourceIntTest(
           assertThat(bookingId).isEqualTo(inactiveBooking.bookingId)
           assertThat(activeBooking).isEqualTo(false)
           assertThat(latestBooking).isEqualTo(false)
-          assertThat(movementApplicationId).isEqualTo(inactiveBookingApplication.movementApplicationId)
+          assertThat(movementApplicationId).isEqualTo(inactiveBookingApplication.tapApplicationId)
         }
     }
 
@@ -1734,7 +1733,7 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = "A9843AA") {
           booking = booking(bookingSequence = 1, active = false) {
-            application = temporaryAbsenceApplication()
+            application = tapApplication()
           }
         }
       }
@@ -1742,7 +1741,7 @@ class MovementsResourceIntTest(
       webTestClient.get()
         .uri(
           "/movements/A9843AA/temporary-absences/application/{applicationId}",
-          application.movementApplicationId,
+          application.tapApplicationId,
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
@@ -1805,8 +1804,8 @@ class MovementsResourceIntTest(
                 assertThat(toAddress?.postalCode).isEqualTo("S1 9ZZ")
                 assertThat(toAddressOwnerClass).isEqualTo("OFF")
                 assertThat(contactPersonName).isEqualTo("Derek")
-                assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
-                assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
+                assertThat(tapType?.code).isEqualTo("RR")
+                assertThat(tapSubType?.code).isEqualTo("RDR")
               }
             }
           }
@@ -2207,7 +2206,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 eventSubType = "C4",
                 applicationDate = twoDaysAgo,
                 applicationTime = twoDaysAgo,
@@ -2224,21 +2223,21 @@ class MovementsResourceIntTest(
                 toAgency = null,
                 toAddress = offenderAddress,
                 contactPersonName = "Adam",
-                temporaryAbsenceType = "PP",
-                temporaryAbsenceSubType = "ROR",
+                tapType = "PP",
+                tapSubType = "ROR",
               ) {
-                scheduledTemporaryAbsence(
+                tapScheduleOut(
                   toAddress = offenderAddress,
                   toAgency = "HAZLWD",
                 ) {
-                  externalMovement()
-                  scheduledReturn {
-                    externalMovement()
+                  tapMovementOut()
+                  tapScheduleIn {
+                    tapMovementIn()
                   }
                 }
               }
-              temporaryAbsence()
-              temporaryAbsenceReturn()
+              tapMovementOut()
+              tapMovementIn()
             }
           }
         }
@@ -2246,7 +2245,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update application`() {
-        webTestClient.upsertApplicationOk(request = anUpsertApplicationRequest(id = application.movementApplicationId, toAddresses = listOf(UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId))))
+        webTestClient.upsertApplicationOk(request = anUpsertApplicationRequest(id = application.tapApplicationId, toAddresses = listOf(UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId))))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -2268,8 +2267,8 @@ class MovementsResourceIntTest(
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("OFF")
                 assertThat(contactPersonName).isEqualTo("Derek")
-                assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
-                assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
+                assertThat(tapType?.code).isEqualTo("RR")
+                assertThat(tapSubType?.code).isEqualTo("RDR")
               }
             }
           }
@@ -2287,9 +2286,9 @@ class MovementsResourceIntTest(
       @Test
       fun `should return 423 if application is locked for update`() {
         repository.runInTransaction {
-          offenderMovementApplicationRepository.findByIdOrNullForUpdate(application.movementApplicationId)
+          applicationRepository.findByIdOrNullForUpdate(application.tapApplicationId)
 
-          webTestClient.upsertApplication(request = anUpsertApplicationRequest(id = application.movementApplicationId))
+          webTestClient.upsertApplication(request = anUpsertApplicationRequest(id = application.tapApplicationId))
             .isEqualTo(423)
             .expectBody<ErrorResponse>().returnResult().responseBody!!
             .apply {
@@ -2310,21 +2309,21 @@ class MovementsResourceIntTest(
             offenderAddress = address()
             scheduleAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 toAddress = offenderAddress,
               ) {
-                scheduledTemporaryAbsence(
+                tapScheduleOut(
                   toAddress = scheduleAddress,
                   toAgency = "HAZLWD",
                 ) {
-                  externalMovement()
-                  scheduledReturn {
-                    externalMovement()
+                  tapMovementOut()
+                  tapScheduleIn {
+                    tapMovementIn()
                   }
                 }
               }
-              temporaryAbsence()
-              temporaryAbsenceReturn()
+              tapMovementOut()
+              tapMovementIn()
             }
           }
         }
@@ -2334,7 +2333,7 @@ class MovementsResourceIntTest(
       fun `should update address`() {
         webTestClient.upsertApplicationOk(
           request = anUpsertApplicationRequest(
-            id = application.movementApplicationId,
+            id = application.tapApplicationId,
             toAddresses = listOf(
               UpsertTemporaryAbsenceAddress(id = offenderAddress.addressId),
             ),
@@ -2355,7 +2354,7 @@ class MovementsResourceIntTest(
       fun `should update address and create new addresses`() {
         webTestClient.upsertApplicationOk(
           request = anUpsertApplicationRequest(
-            id = application.movementApplicationId,
+            id = application.tapApplicationId,
             toAddresses = listOf(
               UpsertTemporaryAbsenceAddress(addressText = "some street", postalCode = "S1 9ZZ"),
               UpsertTemporaryAbsenceAddress(name = "Kwikfit", addressText = "another street", postalCode = "S2 8YY"),
@@ -2414,7 +2413,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 toAgency = "NGENHO",
                 toAddress = agencyAddress,
               )
@@ -2425,7 +2424,7 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should not update address`() {
-        webTestClient.upsertApplicationOk(request = anUpsertApplicationRequest(id = application.movementApplicationId, toAddresses = listOf(UpsertTemporaryAbsenceAddress(id = agencyAddress.addressId))))
+        webTestClient.upsertApplicationOk(request = anUpsertApplicationRequest(id = application.tapApplicationId, toAddresses = listOf(UpsertTemporaryAbsenceAddress(id = agencyAddress.addressId))))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
@@ -2448,7 +2447,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 applicationStatus = "APP-UNSCH",
                 toAddress = offenderAddress,
               )
@@ -2460,7 +2459,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should allow update and remove address`() {
         webTestClient.upsertApplicationOk(
-          request = anUpsertApplicationRequest(id = application.movementApplicationId).copy(
+          request = anUpsertApplicationRequest(id = application.tapApplicationId).copy(
             applicationStatus = "PEN",
             toAddresses = listOf(UpsertTemporaryAbsenceAddress()),
           ),
@@ -2468,7 +2467,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+              with(applicationRepository.findByIdOrNull(application.tapApplicationId)!!) {
                 assertThat(applicationStatus.code).isEqualTo("PEN")
                 assertThat(toAddress).isNull()
                 assertThat(toAddressOwnerClass).isNull()
@@ -2545,7 +2544,7 @@ class MovementsResourceIntTest(
               with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
                 // save the application address ID
                 applicationAddressId = toAddress!!.addressId
-                applicationId = movementApplicationId
+                applicationId = tapApplicationId
               }
             }
           }
@@ -2558,7 +2557,7 @@ class MovementsResourceIntTest(
           ),
         ).apply {
           repository.runInTransaction {
-            with(scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)!!) {
+            with(scheduleOutRepository.findByIdOrNull(eventId)!!) {
               // check the schedule address is the same as the application address
               assertThat(toAddress?.addressId).isEqualTo(applicationAddressId)
               assertThat(toAddress?.premise).isEqualTo("Swansea")
@@ -2631,7 +2630,7 @@ class MovementsResourceIntTest(
               with(applicationRepository.findByIdOrNull(movementApplicationId)!!) {
                 // save the application address ID
                 applicationAddressId = toAddress!!.addressId
-                applicationId = movementApplicationId
+                applicationId = tapApplicationId
               }
             }
           }
@@ -2644,7 +2643,7 @@ class MovementsResourceIntTest(
           ),
         ).apply {
           repository.runInTransaction {
-            with(scheduledTemporaryAbsenceRepository.findByIdOrNull(eventId)!!) {
+            with(scheduleOutRepository.findByIdOrNull(eventId)!!) {
               // check the schedule address is the same as the application address
               assertThat(toAddress?.addressId).isEqualTo(applicationAddressId)
               assertThat(toAddress?.premise).isEqualTo("Swansea")
@@ -2662,26 +2661,26 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 applicationType = "SINGLE",
                 applicationStatus = "APP-SCH",
               ) {
-                scheduledTempAbsence = scheduledTemporaryAbsence()
+                scheduleOut = tapScheduleOut()
               }
             }
           }
         }
 
         webTestClient.upsertApplicationOk(
-          request = anUpsertApplicationRequest(id = application.movementApplicationId).copy(
+          request = anUpsertApplicationRequest(id = application.tapApplicationId).copy(
             applicationStatus = "PEN",
           ),
         )
           .apply {
             repository.runInTransaction {
-              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+              with(applicationRepository.findByIdOrNull(application.tapApplicationId)!!) {
                 assertThat(applicationStatus.code).isEqualTo("PEN")
-                assertThat(scheduledTemporaryAbsences).isEmpty()
+                assertThat(tapScheduleOuts).isEmpty()
               }
             }
           }
@@ -2692,27 +2691,27 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 applicationType = "REPEATING",
                 applicationStatus = "APP-SCH",
               ) {
-                scheduledTempAbsence = scheduledTemporaryAbsence()
+                scheduleOut = tapScheduleOut()
               }
             }
           }
         }
 
         webTestClient.upsertApplicationOk(
-          request = anUpsertApplicationRequest(id = application.movementApplicationId).copy(
+          request = anUpsertApplicationRequest(id = application.tapApplicationId).copy(
             applicationType = "REPEATING",
             applicationStatus = "PEN",
           ),
         )
           .apply {
             repository.runInTransaction {
-              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
+              with(applicationRepository.findByIdOrNull(application.tapApplicationId)!!) {
                 assertThat(applicationStatus.code).isEqualTo("PEN")
-                assertThat(scheduledTemporaryAbsences.first()).isNotNull()
+                assertThat(tapScheduleOuts.first()).isNotNull()
               }
             }
           }
@@ -2723,13 +2722,13 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 applicationType = "SINGLE",
                 applicationStatus = "APP-SCH",
               ) {
-                scheduledTempAbsence = scheduledTemporaryAbsence {
-                  externalMovement()
-                  scheduledReturn()
+                scheduleOut = tapScheduleOut {
+                  tapMovementOut()
+                  tapScheduleIn()
                 }
               }
             }
@@ -2737,7 +2736,7 @@ class MovementsResourceIntTest(
         }
 
         webTestClient.upsertApplicationBadRequest(
-          request = anUpsertApplicationRequest(id = application.movementApplicationId).copy(
+          request = anUpsertApplicationRequest(id = application.tapApplicationId).copy(
             applicationStatus = "PEN",
           ),
         )
@@ -2754,7 +2753,7 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication()
+            application = tapApplication()
           }
         }
       }
@@ -2769,7 +2768,7 @@ class MovementsResourceIntTest(
           .expectStatus().isNoContent
 
         repository.runInTransaction {
-          assertThat(applicationRepository.findByIdOrNull(application.movementApplicationId)).isNull()
+          assertThat(applicationRepository.findByIdOrNull(application.tapApplicationId)).isNull()
         }
       }
     }
@@ -2804,8 +2803,8 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTemporaryAbsence()
+              application = tapApplication {
+                tapScheduleOut()
               }
             }
           }
@@ -2822,7 +2821,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return unauthorized for missing token`() {
         webTestClient.delete()
-          .uri("/movements/$offenderNo/temporary-absences/application/${application.movementApplicationId}")
+          .uri("/movements/$offenderNo/temporary-absences/application/${application.tapApplicationId}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -2830,7 +2829,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for missing role`() {
         webTestClient.delete()
-          .uri("/movements/$offenderNo/temporary-absences/application/${application.movementApplicationId}")
+          .uri("/movements/$offenderNo/temporary-absences/application/${application.tapApplicationId}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -2839,14 +2838,14 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for wrong role`() {
         webTestClient.delete()
-          .uri("/movements/$offenderNo/temporary-absences/application/${application.movementApplicationId}")
+          .uri("/movements/$offenderNo/temporary-absences/application/${application.tapApplicationId}")
           .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
           .exchange()
           .expectStatus().isForbidden
       }
     }
 
-    private fun WebTestClient.deleteApplication(offenderNo: String = offender.nomsId, applicationId: Long = application.movementApplicationId): WebTestClient.ResponseSpec = delete()
+    private fun WebTestClient.deleteApplication(offenderNo: String = offender.nomsId, applicationId: Long = application.tapApplicationId): WebTestClient.ResponseSpec = delete()
       .uri("/movements/$offenderNo/temporary-absences/application/$applicationId")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
@@ -2866,11 +2865,11 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(
-                temporaryAbsenceType = "RR",
-                temporaryAbsenceSubType = "RDR",
+              application = tapApplication(
+                tapType = "RR",
+                tapSubType = "RDR",
               ) {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+                scheduleOut = tapScheduleOut(
                   eventDate = twoDaysAgo.toLocalDate(),
                   startTime = twoDaysAgo,
                   eventSubType = "C5",
@@ -2885,11 +2884,11 @@ class MovementsResourceIntTest(
                   toAddress = offenderAddress,
                   contactPersonName = "Jeff",
                 ) {
-                  tempAbsence = externalMovement()
-                  scheduledTempAbsenceReturn = scheduledReturn(
+                  movementOut = tapMovementOut()
+                  scheduleIn = tapScheduleIn(
                     eventStatus = "SCH",
                   ) {
-                    tempAbsenceReturn = externalMovement()
+                    movementIn = tapMovementIn()
                   }
                 }
               }
@@ -2903,7 +2902,7 @@ class MovementsResourceIntTest(
         webTestClient.get()
           .uri(
             "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
-            scheduledTempAbsence.eventId,
+            scheduleOut.eventId,
           )
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2911,8 +2910,8 @@ class MovementsResourceIntTest(
           .expectBodyResponse<ScheduledTemporaryAbsenceResponse>()
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
-            assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
-            assertThat(eventId).isEqualTo(scheduledTempAbsence.eventId)
+            assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
+            assertThat(eventId).isEqualTo(scheduleOut.eventId)
             assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
             assertThat(startTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
             assertThat(eventSubType).isEqualTo("C5")
@@ -2960,13 +2959,13 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+              application = tapApplication {
+                scheduleOut = tapScheduleOut(
                   toAddress = corporateAddress,
                 ) {
-                  tempAbsence = externalMovement()
-                  scheduledTempAbsenceReturn = scheduledReturn {
-                    tempAbsenceReturn = externalMovement()
+                  movementOut = tapMovementOut()
+                  scheduleIn = tapScheduleIn {
+                    movementIn = tapMovementIn()
                   }
                 }
               }
@@ -2980,7 +2979,7 @@ class MovementsResourceIntTest(
         webTestClient.get()
           .uri(
             "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
-            scheduledTempAbsence.eventId,
+            scheduleOut.eventId,
           )
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3021,13 +3020,13 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+              application = tapApplication {
+                scheduleOut = tapScheduleOut(
                   toAddress = agencyAddress,
                 ) {
-                  tempAbsence = externalMovement()
-                  scheduledTempAbsenceReturn = scheduledReturn {
-                    tempAbsenceReturn = externalMovement()
+                  movementOut = tapMovementOut()
+                  scheduleIn = tapScheduleIn {
+                    movementIn = tapMovementIn()
                   }
                 }
               }
@@ -3041,7 +3040,7 @@ class MovementsResourceIntTest(
         webTestClient.get()
           .uri(
             "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
-            scheduledTempAbsence.eventId,
+            scheduleOut.eventId,
           )
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3072,13 +3071,13 @@ class MovementsResourceIntTest(
               whoModified = addressModifyUser,
             )
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+              application = tapApplication {
+                scheduleOut = tapScheduleOut(
                   toAddress = offenderAddress,
                 ) {
-                  tempAbsence = externalMovement()
-                  scheduledTempAbsenceReturn = scheduledReturn {
-                    tempAbsenceReturn = externalMovement()
+                  movementOut = tapMovementOut()
+                  scheduleIn = tapScheduleIn {
+                    movementIn = tapMovementIn()
                   }
                 }
               }
@@ -3092,7 +3091,7 @@ class MovementsResourceIntTest(
         webTestClient.get()
           .uri(
             "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
-            scheduledTempAbsence.eventId,
+            scheduleOut.eventId,
           )
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3112,11 +3111,11 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence {
-                  tempAbsence = externalMovement()
-                  scheduledTempAbsenceReturn = scheduledReturn {
-                    tempAbsenceReturn = externalMovement()
+              application = tapApplication {
+                scheduleOut = tapScheduleOut {
+                  movementOut = tapMovementOut()
+                  scheduleIn = tapScheduleIn {
+                    movementIn = tapMovementIn()
                   }
                 }
               }
@@ -3187,10 +3186,10 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn(
                   eventDate = yesterday.toLocalDate(),
                   startTime = yesterday,
                   eventSubType = "C5",
@@ -3200,7 +3199,7 @@ class MovementsResourceIntTest(
                   fromAgency = "HAZLWD",
                   toPrison = "LEI",
                 ) {
-                  tempAbsenceReturn = externalMovement()
+                  movementIn = tapMovementIn()
                 }
               }
             }
@@ -3264,7 +3263,7 @@ class MovementsResourceIntTest(
       webTestClient.get()
         .uri(
           "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence-return/{eventId}",
-          scheduledTempAbsenceReturn.eventId,
+          scheduleIn.eventId,
         )
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
@@ -3272,9 +3271,9 @@ class MovementsResourceIntTest(
         .expectBodyResponse<ScheduledTemporaryAbsenceReturnResponse>()
         .apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
-          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
-          assertThat(eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
-          assertThat(parentEventId).isEqualTo(scheduledTempAbsence.eventId)
+          assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
+          assertThat(eventId).isEqualTo(scheduleIn.eventId)
+          assertThat(parentEventId).isEqualTo(scheduleOut.eventId)
           assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
           assertThat(startTime).isCloseTo(yesterday, within(1, ChronoUnit.MINUTES))
           assertThat(eventSubType).isEqualTo("C5")
@@ -3304,7 +3303,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3316,8 +3315,8 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(eventSubType.code).isEqualTo("C5")
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -3333,7 +3332,7 @@ class MovementsResourceIntTest(
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(applicationDate).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
                 assertThat(applicationTime).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
-                assertThat(scheduledTemporaryAbsenceReturns).isEmpty()
+                assertThat(tapScheduleIns).isEmpty()
               }
             }
           }
@@ -3344,19 +3343,19 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = "A9999AD") {
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
 
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           // comment is 300 long
-          anUpsertTemporaryAbsenceRequest(application.movementApplicationId, comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+          anUpsertTemporaryAbsenceRequest(application.tapApplicationId, comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(comment!!.length).isEqualTo(MAX_TAP_COMMENT_LENGTH)
               }
             }
@@ -3380,7 +3379,7 @@ class MovementsResourceIntTest(
               country = "ENG",
             )
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3400,8 +3399,8 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
               }
@@ -3426,7 +3425,7 @@ class MovementsResourceIntTest(
               country = null,
             )
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3446,8 +3445,8 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
               }
@@ -3473,7 +3472,7 @@ class MovementsResourceIntTest(
               country = null,
             )
             booking = booking {
-              application = temporaryAbsenceApplication(
+              application = tapApplication(
                 toAddress = offenderAddress,
               )
             }
@@ -3495,8 +3494,8 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
               }
@@ -3514,7 +3513,7 @@ class MovementsResourceIntTest(
             address(premise = "1 Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
             address(premise = "1 Scotland Street, Sheffield", street = null, locality = null, postcode = "S1 3GG")
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3528,7 +3527,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.premise).isEqualTo("1 Scotland Street, Sheffield")
                 assertThat(toAddress?.postalCode).isEqualTo("S1 3GG")
                 assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
@@ -3561,7 +3560,7 @@ class MovementsResourceIntTest(
             )
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(toAddress = offenderAddress)
+              application = tapApplication(toAddress = offenderAddress)
             }
           }
         }
@@ -3571,15 +3570,15 @@ class MovementsResourceIntTest(
       fun `should create scheduled temporary absence despit existing empty address`() {
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           request = anUpsertTemporaryAbsenceRequest(
-            movementApplicationId = application.movementApplicationId,
+            movementApplicationId = application.tapApplicationId,
             toAddress = UpsertTemporaryAbsenceAddress(addressText = "41 High Street, Sheffield"),
           ),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
               }
@@ -3600,7 +3599,7 @@ class MovementsResourceIntTest(
           }
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3614,7 +3613,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
               }
@@ -3635,7 +3634,7 @@ class MovementsResourceIntTest(
               locality = null,
             )
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3649,7 +3648,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.premise).isEqualTo("Boston")
                 assertThat(toAddress?.addressOwnerClass).isEqualTo("OFF")
               }
@@ -3688,7 +3687,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddress?.premise).isEqualTo("HSL, Bowness, Cumbria")
                 assertThat(toAddress?.postalCode).isEqualTo("LA23 3AS")
@@ -3719,7 +3718,7 @@ class MovementsResourceIntTest(
           }
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3733,7 +3732,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
               }
@@ -3759,7 +3758,7 @@ class MovementsResourceIntTest(
           }
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3775,7 +3774,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
               }
@@ -3799,7 +3798,7 @@ class MovementsResourceIntTest(
           }
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3813,7 +3812,7 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo("CORP")
               }
@@ -3830,7 +3829,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -3847,10 +3846,10 @@ class MovementsResourceIntTest(
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(eventStatus.code).isEqualTo("COMP")
-                with(scheduledTemporaryAbsenceReturns.first()) {
+                with(tapScheduleIns.first()) {
                   assertThat(eventStatus.code).isEqualTo("SCH")
                   assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
                   assertThat(startTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
@@ -3873,7 +3872,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(applicationStatus = "PEN")
+              application = tapApplication(applicationStatus = "PEN")
             }
           }
         }
@@ -3888,8 +3887,8 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(applicationType = "SINGLE") {
-                scheduledTempAbsence = scheduledTemporaryAbsence()
+              application = tapApplication(applicationType = "SINGLE") {
+                scheduleOut = tapScheduleOut()
               }
             }
           }
@@ -3905,8 +3904,8 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication(applicationType = "REPEATING") {
-                scheduledTempAbsence = scheduledTemporaryAbsence()
+              application = tapApplication(applicationType = "REPEATING") {
+                scheduleOut = tapScheduleOut()
               }
             }
           }
@@ -3915,8 +3914,8 @@ class MovementsResourceIntTest(
         webTestClient.upsertScheduledTemporaryAbsenceOk()
           .apply {
             repository.runInTransaction {
-              with(applicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
-                assertThat(scheduledTemporaryAbsences.size).isEqualTo(2)
+              with(applicationRepository.findByIdOrNull(application.tapApplicationId)!!) {
+                assertThat(tapScheduleOuts.size).isEqualTo(2)
               }
             }
           }
@@ -3932,8 +3931,8 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence()
+              application = tapApplication {
+                scheduleOut = tapScheduleOut()
               }
             }
           }
@@ -3942,12 +3941,12 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update scheduled temporary absence`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduledTempAbsence.eventId))
+        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduleOut.eventId))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(eventSubType.code).isEqualTo("C5")
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -3963,7 +3962,7 @@ class MovementsResourceIntTest(
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(applicationDate).isCloseTo(today, within(5, ChronoUnit.MINUTES))
                 assertThat(applicationTime).isCloseTo(today, within(5, ChronoUnit.MINUTES))
-                assertThat(scheduledTemporaryAbsenceReturns).isEmpty()
+                assertThat(tapScheduleIns).isEmpty()
               }
             }
           }
@@ -3974,8 +3973,8 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = "A9999AD") {
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence()
+              application = tapApplication {
+                scheduleOut = tapScheduleOut()
               }
             }
           }
@@ -3984,15 +3983,15 @@ class MovementsResourceIntTest(
         webTestClient.upsertScheduledTemporaryAbsenceOk(
           // comment is 300 long
           anUpsertTemporaryAbsenceRequest(
-            movementApplicationId = application.movementApplicationId,
-            eventId = scheduledTempAbsence.eventId,
+            movementApplicationId = application.tapApplicationId,
+            eventId = scheduleOut.eventId,
             comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890",
           ),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
                 assertThat(comment!!.length).isEqualTo(MAX_TAP_COMMENT_LENGTH)
               }
             }
@@ -4009,8 +4008,8 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence()
+              application = tapApplication {
+                scheduleOut = tapScheduleOut()
               }
             }
           }
@@ -4019,14 +4018,14 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update scheduled temporary absence`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduledTempAbsence.eventId, eventStatus = "COMP"))
+        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduleOut.eventId, eventStatus = "COMP"))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(eventStatus.code).isEqualTo("COMP")
-                with(scheduledTemporaryAbsenceReturns.first()) {
+                with(tapScheduleIns.first()) {
                   assertThat(eventStatus.code).isEqualTo("SCH")
                   assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
                   assertThat(startTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
@@ -4050,9 +4049,9 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence {
-                  scheduledTempAbsenceReturn = scheduledReturn()
+              application = tapApplication {
+                scheduleOut = tapScheduleOut {
+                  scheduleIn = tapScheduleIn()
                 }
               }
             }
@@ -4062,12 +4061,12 @@ class MovementsResourceIntTest(
 
       @Test
       fun `should update scheduled temporary absence`() {
-        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduledTempAbsence.eventId))
+        webTestClient.upsertScheduledTemporaryAbsenceOk(anUpsertTemporaryAbsenceRequest(eventId = scheduleOut.eventId))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
-              with(scheduledTemporaryAbsenceRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
-                assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(application.movementApplicationId)
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(eventSubType.code).isEqualTo("C5")
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
@@ -4083,7 +4082,7 @@ class MovementsResourceIntTest(
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(applicationDate).isCloseTo(today, within(5, ChronoUnit.MINUTES))
                 assertThat(applicationTime).isCloseTo(today, within(5, ChronoUnit.MINUTES))
-                with(scheduledTemporaryAbsenceReturns.first()) {
+                with(tapScheduleIns.first()) {
                   assertThat(eventStatus.code).isEqualTo("SCH")
                   assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
                   assertThat(startTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
@@ -4106,7 +4105,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -4239,7 +4238,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -4249,7 +4248,7 @@ class MovementsResourceIntTest(
       fun `should return unauthorized for missing token`() {
         webTestClient.put()
           .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
-          .bodyValue(anUpsertTemporaryAbsenceRequest(application.movementApplicationId))
+          .bodyValue(anUpsertTemporaryAbsenceRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -4259,7 +4258,7 @@ class MovementsResourceIntTest(
         webTestClient.put()
           .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
           .headers(setAuthorisation(roles = listOf()))
-          .bodyValue(anUpsertTemporaryAbsenceRequest(application.movementApplicationId))
+          .bodyValue(anUpsertTemporaryAbsenceRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -4269,7 +4268,7 @@ class MovementsResourceIntTest(
         webTestClient.put()
           .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")
           .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
-          .bodyValue(anUpsertTemporaryAbsenceRequest(application.movementApplicationId))
+          .bodyValue(anUpsertTemporaryAbsenceRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -4285,8 +4284,8 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(
                 eventStatus = "SCH",
               )
             }
@@ -4304,7 +4303,7 @@ class MovementsResourceIntTest(
           .expectStatus().isNoContent
 
         repository.runInTransaction {
-          assertThat(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledTempAbsence.eventId)).isNull()
+          assertThat(scheduleOutRepository.findByIdOrNull(scheduleOut.eventId)).isNull()
         }
       }
     }
@@ -4339,11 +4338,11 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+              application = tapApplication {
+                scheduleOut = tapScheduleOut(
                   eventStatus = "SCH",
                 ) {
-                  externalMovement()
+                  tapMovementOut()
                 }
               }
             }
@@ -4360,8 +4359,8 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+              application = tapApplication {
+                scheduleOut = tapScheduleOut(
                   eventStatus = "COMP",
                 )
               }
@@ -4379,11 +4378,11 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+              application = tapApplication {
+                scheduleOut = tapScheduleOut(
                   eventStatus = "SCH",
                 ) {
-                  scheduledReturn()
+                  tapScheduleIn()
                 }
               }
             }
@@ -4401,7 +4400,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return unauthorized for missing token`() {
         webTestClient.delete()
-          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/${scheduledTempAbsence.eventId}")
+          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/${scheduleOut.eventId}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -4409,7 +4408,7 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for missing role`() {
         webTestClient.delete()
-          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/${scheduledTempAbsence.eventId}")
+          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/${scheduleOut.eventId}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -4418,14 +4417,14 @@ class MovementsResourceIntTest(
       @Test
       fun `should return forbidden for wrong role`() {
         webTestClient.delete()
-          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/${scheduledTempAbsence.eventId}")
+          .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/${scheduleOut.eventId}")
           .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
           .exchange()
           .expectStatus().isForbidden
       }
     }
 
-    private fun WebTestClient.deleteSchedule(offenderNo: String = offender.nomsId, eventId: Long = scheduledTempAbsence.eventId): WebTestClient.ResponseSpec = delete()
+    private fun WebTestClient.deleteSchedule(offenderNo: String = offender.nomsId, eventId: Long = scheduleOut.eventId): WebTestClient.ResponseSpec = delete()
       .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence/$eventId")
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .exchange()
@@ -4440,8 +4439,8 @@ class MovementsResourceIntTest(
       private lateinit var agencyAddress: AgencyLocationAddress
       private lateinit var cityBooking: OffenderBooking
       private lateinit var agencyBooking: OffenderBooking
-      private lateinit var cityTempAbsence: OffenderTemporaryAbsence
-      private lateinit var agencyTempAbsence: OffenderTemporaryAbsence
+      private lateinit var cityTempAbsence: OffenderTapMovementOut
+      private lateinit var agencyTempAbsence: OffenderTapMovementOut
 
       @BeforeEach
       fun setUp() {
@@ -4463,7 +4462,7 @@ class MovementsResourceIntTest(
           }
           offender = offender(nomsId = offenderNo) {
             cityBooking = booking {
-              cityTempAbsence = temporaryAbsence(
+              cityTempAbsence = tapMovementOut(
                 date = twoDaysAgo,
                 fromPrison = "LEI",
                 toAgency = null,
@@ -4476,7 +4475,7 @@ class MovementsResourceIntTest(
               )
             }
             agencyBooking = booking {
-              agencyTempAbsence = temporaryAbsence(
+              agencyTempAbsence = tapMovementOut(
                 date = twoDaysAgo,
                 fromPrison = "LEI",
                 toAgency = "NGENHO",
@@ -4600,9 +4599,9 @@ class MovementsResourceIntTest(
           nomisDataBuilder.build {
             offender = offender(nomsId = offenderNo) {
               booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence {
-                    tempAbsence = externalMovement(
+                application = tapApplication {
+                  scheduleOut = tapScheduleOut {
+                    movementOut = tapMovementOut(
                       date = twoDaysAgo,
                       fromPrison = "LEI",
                       toAgency = "HAZLWD",
@@ -4613,8 +4612,8 @@ class MovementsResourceIntTest(
                       comment = "Tap OUT comment",
                       toAddress = null,
                     )
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement()
+                    scheduleIn = tapScheduleIn {
+                      movementIn = tapMovementIn()
                     }
                   }
                 }
@@ -4626,16 +4625,16 @@ class MovementsResourceIntTest(
         @Test
         fun `should retrieve scheduled temporary absence`() {
           webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${movementOut.id.sequence}")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBodyResponse<TemporaryAbsenceResponse>()
             .apply {
               assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
-              assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
-              assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+              assertThat(sequence).isEqualTo(movementOut.id.sequence)
+              assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduleOut.eventId)
+              assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
               assertThat(movementDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
               assertThat(movementTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
               assertThat(movementReason).isEqualTo("C5")
@@ -4676,15 +4675,15 @@ class MovementsResourceIntTest(
                   postcode = "S1 1AB",
                 )
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = offenderAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = null,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -4696,14 +4695,14 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from scheduled temporary absence`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${movementOut.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
               .expectBodyResponse<TemporaryAbsenceResponse>()
               .apply {
                 assertThat(bookingId).isEqualTo(booking.bookingId)
-                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(sequence).isEqualTo(movementOut.id.sequence)
                 assertThat(toAddressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
                 assertThat(toFullAddress).isEqualTo("Flat 1, 41 High Street, Hillsborough, Sheffield, South Yorkshire, England")
@@ -4725,15 +4724,15 @@ class MovementsResourceIntTest(
                 scheduleAddress = address()
                 movementAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = scheduleAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = movementAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -4745,7 +4744,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should take the address from the movement`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${movementOut.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -4787,15 +4786,15 @@ class MovementsResourceIntTest(
               }
               offender = offender(nomsId = offenderNo) {
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = corporateAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = null,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -4807,14 +4806,14 @@ class MovementsResourceIntTest(
           @Test
           fun `should take corporate address from schedule`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${movementOut.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
               .expectBodyResponse<TemporaryAbsenceResponse>()
               .apply {
                 assertThat(bookingId).isEqualTo(booking.bookingId)
-                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(sequence).isEqualTo(movementOut.id.sequence)
                 assertThat(toAddressId).isEqualTo(corporateAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("CORP")
                 assertThat(toAddressDescription).isEqualTo("Boots")
@@ -4850,15 +4849,15 @@ class MovementsResourceIntTest(
                 offender = offender(nomsId = offenderNo) {
                   offenderAddress = address()
                   booking = booking {
-                    application = temporaryAbsenceApplication {
-                      scheduledTempAbsence = scheduledTemporaryAbsence(
+                    application = tapApplication {
+                      scheduleOut = tapScheduleOut(
                         toAddress = offenderAddress,
                       ) {
-                        tempAbsence = externalMovement(
+                        movementOut = tapMovementOut(
                           toAddress = corporateAddress,
                         )
-                        scheduledTempAbsenceReturn = scheduledReturn {
-                          tempAbsenceReturn = externalMovement()
+                        scheduleIn = tapScheduleIn {
+                          movementIn = tapMovementIn()
                         }
                       }
                     }
@@ -4871,7 +4870,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should take corporate address from movement`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${movementOut.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -4908,8 +4907,8 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence(
+              application = tapApplication {
+                scheduleOut = tapScheduleOut(
                   toAddress = corporateAddress,
                 )
               }
@@ -4920,7 +4919,7 @@ class MovementsResourceIntTest(
         webTestClient.get()
           .uri(
             "/movements/${offender.nomsId}/temporary-absences/scheduled-temporary-absence/{eventId}",
-            scheduledTempAbsence.eventId,
+            scheduleOut.eventId,
           )
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -4968,15 +4967,15 @@ class MovementsResourceIntTest(
             nomisDataBuilder.build {
               offender = offender(nomsId = offenderNo) {
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = agencyAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = null,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -4988,14 +4987,14 @@ class MovementsResourceIntTest(
           @Test
           fun `should take agency address from schedule`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${movementOut.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
               .expectBodyResponse<TemporaryAbsenceResponse>()
               .apply {
                 assertThat(bookingId).isEqualTo(booking.bookingId)
-                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(sequence).isEqualTo(movementOut.id.sequence)
                 assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("AGY")
                 assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
@@ -5015,15 +5014,15 @@ class MovementsResourceIntTest(
               offender = offender(nomsId = offenderNo) {
                 offenderAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = offenderAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = agencyAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -5035,14 +5034,14 @@ class MovementsResourceIntTest(
           @Test
           fun `should take agency address from movement`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${tempAbsence.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence/${booking.bookingId}/${movementOut.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
               .expectBodyResponse<TemporaryAbsenceResponse>()
               .apply {
                 assertThat(bookingId).isEqualTo(booking.bookingId)
-                assertThat(sequence).isEqualTo(tempAbsence.id.sequence)
+                assertThat(sequence).isEqualTo(movementOut.id.sequence)
                 assertThat(toAddressId).isEqualTo(agencyAddress.addressId)
                 assertThat(toAddressOwnerClass).isEqualTo("AGY")
                 assertThat(toAddressDescription).isEqualTo("Northern General Hospital")
@@ -5059,7 +5058,7 @@ class MovementsResourceIntTest(
   @DisplayName("POST /movements/{offenderNo}/temporary-absences/temporary-absence")
   inner class CreateTemporaryAbsence {
 
-    private fun aCreateRequest(scheduledTemporaryAbsenceId: Long? = scheduledTempAbsence.eventId) = CreateTemporaryAbsenceRequest(
+    private fun aCreateRequest(scheduledTemporaryAbsenceId: Long? = scheduleOut.eventId) = CreateTemporaryAbsenceRequest(
       scheduledTemporaryAbsenceId = scheduledTemporaryAbsenceId,
       movementDate = twoDaysAgo.toLocalDate(),
       movementTime = twoDaysAgo,
@@ -5080,8 +5079,8 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut()
             }
           }
         }
@@ -5103,9 +5102,9 @@ class MovementsResourceIntTest(
             // Note there is already an admission external movement on sequence 1
             assertThat(movementSequence).isEqualTo(2)
             repository.runInTransaction {
-              with(temporaryAbsenceRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
+              with(movementOutRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
                 assertThat(active).isTrue
-                assertThat(scheduledTemporaryAbsence?.eventId).isEqualTo(scheduledTempAbsence.eventId)
+                assertThat(tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
                 assertThat(movementTime).isEqualTo(twoDaysAgo)
                 assertThat(movementReason.code).isEqualTo("C5")
@@ -5158,7 +5157,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = "C1234DE") {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -5211,7 +5210,7 @@ class MovementsResourceIntTest(
       fun `should return unauthorized for missing token`() {
         webTestClient.post()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence")
-          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .bodyValue(aCreateRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -5221,7 +5220,7 @@ class MovementsResourceIntTest(
         webTestClient.post()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence")
           .headers(setAuthorisation(roles = listOf()))
-          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .bodyValue(aCreateRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -5231,7 +5230,7 @@ class MovementsResourceIntTest(
         webTestClient.post()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence")
           .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
-          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .bodyValue(aCreateRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -5247,9 +5246,9 @@ class MovementsResourceIntTest(
             // Note there is already an admission external movement on sequence 1
             assertThat(movementSequence).isEqualTo(2)
             repository.runInTransaction {
-              with(temporaryAbsenceRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
+              with(movementOutRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
                 assertThat(active).isTrue
-                assertThat(scheduledTemporaryAbsence).isNull()
+                assertThat(tapScheduleOut).isNull()
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
                 assertThat(movementTime).isEqualTo(twoDaysAgo)
               }
@@ -5262,7 +5261,7 @@ class MovementsResourceIntTest(
     }
 
     private fun WebTestClient.createTemporaryAbsence(
-      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduledTempAbsence.eventId),
+      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduleOut.eventId),
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/temporary-absence")
@@ -5272,18 +5271,18 @@ class MovementsResourceIntTest(
       .expectStatus()
 
     private fun WebTestClient.createTemporaryAbsenceOk(
-      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduledTempAbsence.eventId),
+      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduleOut.eventId),
     ) = createTemporaryAbsence(request)
       .isCreated
       .expectBodyResponse<CreateTemporaryAbsenceResponse>()
 
     private fun WebTestClient.createTemporaryAbsenceBadRequest(
-      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduledTempAbsence.eventId),
+      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduleOut.eventId),
     ) = createTemporaryAbsence(request)
       .isBadRequest
 
     private fun WebTestClient.createTemporaryAbsenceBadRequestUnknown(
-      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduledTempAbsence.eventId),
+      request: CreateTemporaryAbsenceRequest = aCreateRequest(scheduleOut.eventId),
     ) = createTemporaryAbsenceBadRequest(request)
       .expectBody().jsonPath("userMessage").value<String> {
         assertThat(it).contains("UNKNOWN").contains("invalid")
@@ -5299,8 +5298,8 @@ class MovementsResourceIntTest(
       private lateinit var agencyAddress: AgencyLocationAddress
       private lateinit var cityBooking: OffenderBooking
       private lateinit var agencyBooking: OffenderBooking
-      private lateinit var cityTempAbsenceReturn: OffenderTemporaryAbsenceReturn
-      private lateinit var agencyTempAbsenceReturn: OffenderTemporaryAbsenceReturn
+      private lateinit var cityTempAbsenceReturn: OffenderTapMovementIn
+      private lateinit var agencyTempAbsenceReturn: OffenderTapMovementIn
 
       @BeforeEach
       fun setUp() {
@@ -5322,7 +5321,7 @@ class MovementsResourceIntTest(
           }
           offender = offender(nomsId = offenderNo) {
             cityBooking = booking {
-              cityTempAbsenceReturn = temporaryAbsenceReturn(
+              cityTempAbsenceReturn = tapMovementIn(
                 date = twoDaysAgo,
                 fromAgency = null,
                 toPrison = "LEI",
@@ -5334,7 +5333,7 @@ class MovementsResourceIntTest(
               )
             }
             agencyBooking = booking {
-              agencyTempAbsenceReturn = temporaryAbsenceReturn(
+              agencyTempAbsenceReturn = tapMovementIn(
                 date = twoDaysAgo,
                 toPrison = "LEI",
                 fromAgency = "NGENHO",
@@ -5460,11 +5459,11 @@ class MovementsResourceIntTest(
           nomisDataBuilder.build {
             offender = offender(nomsId = offenderNo) {
               booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence {
-                    tempAbsence = externalMovement()
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement(
+                application = tapApplication {
+                  scheduleOut = tapScheduleOut {
+                    movementOut = tapMovementOut()
+                    scheduleIn = tapScheduleIn {
+                      movementIn = tapMovementIn(
                         date = twoDaysAgo,
                         fromAgency = "HAZLWD",
                         toPrison = "LEI",
@@ -5485,17 +5484,17 @@ class MovementsResourceIntTest(
         @Test
         fun `should retrieve scheduled temporary absence return`() {
           webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBodyResponse<TemporaryAbsenceReturnResponse>()
             .apply {
               assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
-              assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
-              assertThat(scheduledTemporaryAbsenceReturnId).isEqualTo(scheduledTempAbsenceReturn.eventId)
-              assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
+              assertThat(sequence).isEqualTo(movementIn.id.sequence)
+              assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduleOut.eventId)
+              assertThat(scheduledTemporaryAbsenceReturnId).isEqualTo(scheduleIn.eventId)
+              assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
               assertThat(movementDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
               assertThat(movementTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
               assertThat(movementReason).isEqualTo("C5")
@@ -5533,13 +5532,13 @@ class MovementsResourceIntTest(
                   postcode = "S1 1AB",
                 )
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = offenderAddress,
                     ) {
-                      tempAbsence = externalMovement()
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      movementOut = tapMovementOut()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -5551,7 +5550,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from scheduled OUT`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5578,15 +5577,15 @@ class MovementsResourceIntTest(
                 scheduledOutAddress = address()
                 movementOutAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = scheduledOutAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = movementOutAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement(
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn(
                           fromAddress = null,
                         )
                       }
@@ -5600,7 +5599,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from movement OUT`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5626,15 +5625,15 @@ class MovementsResourceIntTest(
                 movementOutAddress = address()
                 movementInAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = scheduledOutAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = movementOutAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement(
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn(
                           fromAddress = movementInAddress,
                         )
                       }
@@ -5648,7 +5647,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from movement IN`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5694,13 +5693,13 @@ class MovementsResourceIntTest(
               offender = offender(nomsId = offenderNo) {
                 offenderAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = corporateAddress,
                     ) {
-                      tempAbsence = externalMovement()
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      movementOut = tapMovementOut()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -5712,7 +5711,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve corporate address from scheduled OUT`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5738,15 +5737,15 @@ class MovementsResourceIntTest(
               offender = offender(nomsId = offenderNo) {
                 scheduledOutAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = scheduledOutAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = corporateAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement(
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn(
                           fromAddress = null,
                         )
                       }
@@ -5760,7 +5759,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from movement OUT`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5788,15 +5787,15 @@ class MovementsResourceIntTest(
                 scheduledOutAddress = address()
                 movementOutAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = scheduledOutAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = movementOutAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement(
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn(
                           fromAddress = corporateAddress,
                         )
                       }
@@ -5810,7 +5809,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from movement IN`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5859,13 +5858,13 @@ class MovementsResourceIntTest(
               offender = offender(nomsId = offenderNo) {
                 offenderAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = agencyAddress,
                     ) {
-                      tempAbsence = externalMovement()
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement()
+                      movementOut = tapMovementOut()
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn()
                       }
                     }
                   }
@@ -5877,7 +5876,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from scheduled OUT`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5903,15 +5902,15 @@ class MovementsResourceIntTest(
               offender = offender(nomsId = offenderNo) {
                 scheduledOutAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = scheduledOutAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = agencyAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement(
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn(
                           fromAddress = null,
                         )
                       }
@@ -5925,7 +5924,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from movement OUT`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5953,15 +5952,15 @@ class MovementsResourceIntTest(
                 scheduledOutAddress = address()
                 movementOutAddress = address()
                 booking = booking {
-                  application = temporaryAbsenceApplication {
-                    scheduledTempAbsence = scheduledTemporaryAbsence(
+                  application = tapApplication {
+                    scheduleOut = tapScheduleOut(
                       toAddress = scheduledOutAddress,
                     ) {
-                      tempAbsence = externalMovement(
+                      movementOut = tapMovementOut(
                         toAddress = movementOutAddress,
                       )
-                      scheduledTempAbsenceReturn = scheduledReturn {
-                        tempAbsenceReturn = externalMovement(
+                      scheduleIn = tapScheduleIn {
+                        movementIn = tapMovementIn(
                           fromAddress = agencyAddress,
                         )
                       }
@@ -5975,7 +5974,7 @@ class MovementsResourceIntTest(
           @Test
           fun `should retrieve address from movement IN`() {
             webTestClient.get()
-              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+              .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
               .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
               .exchange()
               .expectStatus().isOk
@@ -5999,11 +5998,11 @@ class MovementsResourceIntTest(
           nomisDataBuilder.build {
             offender = offender(nomsId = offenderNo) {
               booking = booking {
-                application = temporaryAbsenceApplication {
-                  scheduledTempAbsence = scheduledTemporaryAbsence {
-                    tempAbsence = externalMovement()
-                    scheduledTempAbsenceReturn = scheduledReturn {
-                      tempAbsenceReturn = externalMovement()
+                application = tapApplication {
+                  scheduleOut = tapScheduleOut {
+                    movementOut = tapMovementOut()
+                    scheduleIn = tapScheduleIn {
+                      movementIn = tapMovementIn()
                     }
                   }
                 }
@@ -6012,21 +6011,21 @@ class MovementsResourceIntTest(
 
             // there's a bug in NOMIS where the external movement parent event id is null if you perform any unscheduled
             // external movements inbetween confirming the scheduled OUT/IN movements
-            tempAbsenceReturn.scheduledTemporaryAbsence = null
+            movementIn.tapScheduleOut = null
           }
         }
 
         @Test
         fun `should retrieve scheduled temporary absence return as unscheduled`() {
           webTestClient.get()
-            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${tempAbsenceReturn.id.sequence}")
+            .uri("/movements/${offender.nomsId}/temporary-absences/temporary-absence-return/${booking.bookingId}/${movementIn.id.sequence}")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
             .exchange()
             .expectStatus().isOk
             .expectBodyResponse<TemporaryAbsenceReturnResponse>()
             .apply {
               assertThat(bookingId).isEqualTo(booking.bookingId)
-              assertThat(sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+              assertThat(sequence).isEqualTo(movementIn.id.sequence)
               assertThat(scheduledTemporaryAbsenceId).isNull()
               assertThat(scheduledTemporaryAbsenceReturnId).isNull()
               assertThat(movementApplicationId).isNull()
@@ -6040,7 +6039,7 @@ class MovementsResourceIntTest(
   @DisplayName("POST /movements/{offenderNo}/temporary-absences/temporary-absence-return")
   inner class CreateTemporaryAbsenceReturn {
 
-    private fun aCreateRequest(scheduledTemporaryAbsenceReturnId: Long? = scheduledTempAbsenceReturn.eventId) = CreateTemporaryAbsenceReturnRequest(
+    private fun aCreateRequest(scheduledTemporaryAbsenceReturnId: Long? = scheduleIn.eventId) = CreateTemporaryAbsenceReturnRequest(
       scheduledTemporaryAbsenceReturnId = scheduledTemporaryAbsenceReturnId,
       movementDate = twoDaysAgo.toLocalDate(),
       movementTime = twoDaysAgo,
@@ -6060,10 +6059,10 @@ class MovementsResourceIntTest(
         offender = offender(nomsId = offenderNo) {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn()
               }
             }
           }
@@ -6086,10 +6085,10 @@ class MovementsResourceIntTest(
             // Note there is already an admission external movement on sequence 1 and the temporary absence external movement on sequence 2
             assertThat(movementSequence).isEqualTo(3)
             repository.runInTransaction {
-              with(temporaryAbsenceReturnRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
+              with(movementInRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
                 assertThat(active).isTrue
-                assertThat(scheduledTemporaryAbsence?.eventId).isEqualTo(scheduledTempAbsence.eventId)
-                assertThat(scheduledTemporaryAbsenceReturn?.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
+                assertThat(tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
+                assertThat(tapScheduleIn?.eventId).isEqualTo(scheduleIn.eventId)
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
                 assertThat(movementTime).isEqualTo(twoDaysAgo)
                 assertThat(movementReason.code).isEqualTo("C5")
@@ -6145,7 +6144,7 @@ class MovementsResourceIntTest(
           offender = offender(nomsId = "C1234DE") {
             offenderAddress = address()
             booking = booking {
-              application = temporaryAbsenceApplication()
+              application = tapApplication()
             }
           }
         }
@@ -6198,7 +6197,7 @@ class MovementsResourceIntTest(
       fun `should return unauthorized for missing token`() {
         webTestClient.post()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
-          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .bodyValue(aCreateRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -6208,7 +6207,7 @@ class MovementsResourceIntTest(
         webTestClient.post()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
           .headers(setAuthorisation(roles = listOf()))
-          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .bodyValue(aCreateRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -6218,7 +6217,7 @@ class MovementsResourceIntTest(
         webTestClient.post()
           .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
           .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
-          .bodyValue(aCreateRequest(application.movementApplicationId))
+          .bodyValue(aCreateRequest(application.tapApplicationId))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -6234,10 +6233,10 @@ class MovementsResourceIntTest(
             // Note there is already an admission external movement on sequence 1 and the temporary absence external movement on sequence 2
             assertThat(movementSequence).isEqualTo(3)
             repository.runInTransaction {
-              with(temporaryAbsenceReturnRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
+              with(movementInRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSequence)!!) {
                 assertThat(active).isTrue
-                assertThat(scheduledTemporaryAbsence).isNull()
-                assertThat(scheduledTemporaryAbsenceReturn).isNull()
+                assertThat(tapScheduleOut).isNull()
+                assertThat(tapScheduleIn).isNull()
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
                 assertThat(movementTime).isEqualTo(twoDaysAgo)
               }
@@ -6250,7 +6249,7 @@ class MovementsResourceIntTest(
     }
 
     private fun WebTestClient.createTemporaryAbsenceReturn(
-      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduleIn.eventId),
       offenderNo: String = offender.nomsId,
     ) = post()
       .uri("/movements/$offenderNo/temporary-absences/temporary-absence-return")
@@ -6260,18 +6259,18 @@ class MovementsResourceIntTest(
       .expectStatus()
 
     private fun WebTestClient.createTemporaryAbsenceReturnOk(
-      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduleIn.eventId),
     ) = createTemporaryAbsenceReturn(request)
       .isCreated
       .expectBodyResponse<CreateTemporaryAbsenceReturnResponse>()
 
     private fun WebTestClient.createTemporaryAbsenceReturnBadRequest(
-      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduleIn.eventId),
     ) = createTemporaryAbsenceReturn(request)
       .isBadRequest
 
     private fun WebTestClient.createTemporaryAbsenceReturnBadRequestUnknown(
-      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduledTempAbsenceReturn.eventId),
+      request: CreateTemporaryAbsenceReturnRequest = aCreateRequest(scheduleIn.eventId),
     ) = createTemporaryAbsenceReturnBadRequest(request)
       .expectBody().jsonPath("userMessage").value<String> {
         assertThat(it).contains("UNKNOWN").contains("invalid")
@@ -6295,11 +6294,11 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                orphanedScheduleReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                orphanedScheduleReturn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
@@ -6314,23 +6313,23 @@ class MovementsResourceIntTest(
         entityManager.createNativeQuery(
           """
               delete from OFFENDER_IND_SCHEDULES
-              where EVENT_ID = ${scheduledTempAbsence.eventId}
+              where EVENT_ID = ${scheduleOut.eventId}
           """.trimIndent(),
         ).executeUpdate()
 
         // Reload the scheduled return to reflect the update
-        orphanedScheduleReturn = scheduledTemporaryAbsenceReturnRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
+        orphanedScheduleReturn = scheduleInRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
       }
 
       // Sync movement OUT is unscheduled
-      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+      webTestClient.getTemporaryAbsence(movementSeq = movementOut.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
         }
 
       // Sync the movement IN is unscheduled
-      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = movementIn.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
@@ -6341,8 +6340,8 @@ class MovementsResourceIntTest(
       webTestClient.getOffenderTemporaryAbsencesOk()
         .apply {
           assertThat(bookings[0].temporaryAbsenceApplications[0].absences).isEmpty()
-          assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(tempAbsence.id.sequence)
-          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(movementIn.id.sequence)
         }
 
       // Reconciliation counts reflect both movements as unscheduled
@@ -6357,21 +6356,21 @@ class MovementsResourceIntTest(
 
     @Test
     fun `movement IN has different schedule IN to the schedule OUT`() {
-      lateinit var wrongScheduledReturn: OffenderScheduledTemporaryAbsenceReturn
+      lateinit var wrongScheduledReturn: OffenderTapScheduleIn
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
-            temporaryAbsenceApplication {
-              scheduledTemporaryAbsence {
-                wrongScheduledReturn = scheduledReturn()
+            tapApplication {
+              tapScheduleOut {
+                wrongScheduledReturn = tapScheduleIn()
               }
             }
           }
@@ -6386,20 +6385,20 @@ class MovementsResourceIntTest(
           """
               update OFFENDER_EXTERNAL_MOVEMENTS oem
               set EVENT_ID = ${wrongScheduledReturn.eventId}
-              where OFFENDER_BOOK_ID=${booking.bookingId} and MOVEMENT_SEQ=${tempAbsenceReturn.id.sequence}
+              where OFFENDER_BOOK_ID=${booking.bookingId} and MOVEMENT_SEQ=${movementIn.id.sequence}
           """.trimIndent(),
         ).executeUpdate()
       }
 
       // Sync movement OUT is scheduled
-      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+      webTestClient.getTemporaryAbsence(movementSeq = movementOut.id.sequence)
         .apply {
-          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
-          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
+          assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
+          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduleOut.eventId)
         }
 
       // Sync movement IN is unscheduled
-      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = movementIn.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
@@ -6409,8 +6408,8 @@ class MovementsResourceIntTest(
       // Resync offender matches the sync
       webTestClient.getOffenderTemporaryAbsencesOk()
         .apply {
-          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
-          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(movementIn.id.sequence)
         }
 
       // Reconciliation counts the IN movement as unscheduled
@@ -6430,12 +6429,12 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                scheduledTempAbsenceReturn = scheduledReturn()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                scheduleIn = tapScheduleIn()
               }
             }
-            tempAbsenceReturn = temporaryAbsenceReturn()
+            movementIn = tapMovementIn()
           }
         }
       }
@@ -6447,14 +6446,14 @@ class MovementsResourceIntTest(
         entityManager.createNativeQuery(
           """
               update OFFENDER_EXTERNAL_MOVEMENTS 
-              set EVENT_ID = ${scheduledTempAbsence.eventId}
-              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${tempAbsenceReturn.id.sequence}
+              set EVENT_ID = ${scheduleOut.eventId}
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${movementIn.id.sequence}
           """.trimIndent(),
         ).executeUpdate()
       }
 
       // Sync movement IN is unscheduled
-      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = movementIn.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
@@ -6464,7 +6463,7 @@ class MovementsResourceIntTest(
       // Resync offender is the same as the sync
       webTestClient.getOffenderTemporaryAbsencesOk()
         .apply {
-          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(movementIn.id.sequence)
         }
 
       // Reconciliation counts the IN movement as unscheduled
@@ -6479,11 +6478,11 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
@@ -6499,20 +6498,20 @@ class MovementsResourceIntTest(
           """
               update OFFENDER_EXTERNAL_MOVEMENTS
               set PARENT_EVENT_ID = null
-              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${tempAbsenceReturn.id.sequence}
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${movementIn.id.sequence}
           """.trimIndent(),
         ).executeUpdate()
       }
 
       // Sync movement OUT is scheduled
-      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+      webTestClient.getTemporaryAbsence(movementSeq = movementOut.id.sequence)
         .apply {
-          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
-          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
+          assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
+          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduleOut.eventId)
         }
 
       // Sync movement IN is unscheduled
-      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = movementIn.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
@@ -6522,8 +6521,8 @@ class MovementsResourceIntTest(
       // Resync offender is same as for sync
       webTestClient.getOffenderTemporaryAbsencesOk()
         .apply {
-          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
-          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(movementIn.id.sequence)
         }
 
       // Reconciliation counts OUT as scheduled and IN as unscheduled
@@ -6540,11 +6539,11 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
@@ -6560,20 +6559,20 @@ class MovementsResourceIntTest(
           """
               update OFFENDER_EXTERNAL_MOVEMENTS
               set PARENT_EVENT_ID = 99999
-              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${tempAbsenceReturn.id.sequence}
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${movementIn.id.sequence}
           """.trimIndent(),
         ).executeUpdate()
       }
 
       // Sync movement OUT is scheduled
-      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+      webTestClient.getTemporaryAbsence(movementSeq = movementOut.id.sequence)
         .apply {
-          assertThat(movementApplicationId).isEqualTo(application.movementApplicationId)
-          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduledTempAbsence.eventId)
+          assertThat(movementApplicationId).isEqualTo(application.tapApplicationId)
+          assertThat(scheduledTemporaryAbsenceId).isEqualTo(scheduleOut.eventId)
         }
 
       // Sync movement IN is unscheduled
-      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = movementIn.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
@@ -6583,8 +6582,8 @@ class MovementsResourceIntTest(
       // Resync offender is same as for sync
       webTestClient.getOffenderTemporaryAbsencesOk()
         .apply {
-          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(tempAbsence.id.sequence)
-          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          assertThat(bookings[0].temporaryAbsenceApplications[0].absences[0].temporaryAbsence!!.sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(movementIn.id.sequence)
         }
 
       // Reconciliation counts the OUT movement as scheduled and IN as unscheduled
@@ -6598,16 +6597,16 @@ class MovementsResourceIntTest(
 
     @Test
     fun `unscheduled movement IN points at a schedule IN but it shouldn't`() {
-      lateinit var wrongTempAbsenceReturn: OffenderTemporaryAbsenceReturn
+      lateinit var wrongTempAbsenceReturn: OffenderTapMovementIn
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                orphanedScheduleReturn = scheduledReturn()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                orphanedScheduleReturn = tapScheduleIn()
               }
             }
-            wrongTempAbsenceReturn = temporaryAbsenceReturn()
+            wrongTempAbsenceReturn = tapMovementIn()
           }
         }
       }
@@ -6625,7 +6624,7 @@ class MovementsResourceIntTest(
         ).executeUpdate()
 
         // Reload the scheduled return to reflect the update
-        orphanedScheduleReturn = scheduledTemporaryAbsenceReturnRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
+        orphanedScheduleReturn = scheduleInRepository.findByIdOrNull(orphanedScheduleReturn.eventId) ?: throw IllegalStateException("Failed to reload scheduled return movement - this should not happen")
       }
 
       // Sync movement IN is unscheduled
@@ -6651,17 +6650,17 @@ class MovementsResourceIntTest(
 
     @Test
     fun `unscheduled movement IN points at a schedule OUT and IN but it shouldn't`() {
-      lateinit var wrongTempAbsenceReturn: OffenderTemporaryAbsenceReturn
+      lateinit var wrongTempAbsenceReturn: OffenderTapMovementIn
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn()
               }
             }
-            wrongTempAbsenceReturn = temporaryAbsenceReturn()
+            wrongTempAbsenceReturn = tapMovementIn()
           }
         }
       }
@@ -6673,7 +6672,7 @@ class MovementsResourceIntTest(
         entityManager.createNativeQuery(
           """
               update OFFENDER_EXTERNAL_MOVEMENTS
-              set EVENT_ID = ${scheduledTempAbsenceReturn.eventId}, PARENT_EVENT_ID=99999
+              set EVENT_ID = ${scheduleIn.eventId}, PARENT_EVENT_ID=99999
               where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_SEQ = ${wrongTempAbsenceReturn.id.sequence}
           """.trimIndent(),
         ).executeUpdate()
@@ -6707,11 +6706,11 @@ class MovementsResourceIntTest(
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
@@ -6727,20 +6726,20 @@ class MovementsResourceIntTest(
           """
               update OFFENDER_IND_SCHEDULES
               set OFFENDER_MOVEMENT_APP_ID = null
-              where EVENT_ID in (${scheduledTempAbsence.eventId}, ${scheduledTempAbsenceReturn.eventId})
+              where EVENT_ID in (${scheduleOut.eventId}, ${scheduleIn.eventId})
           """.trimIndent(),
         ).executeUpdate()
       }
 
       // Sync movement OUT is unscheduled
-      webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+      webTestClient.getTemporaryAbsence(movementSeq = movementOut.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
         }
 
       // Sync movement IN is unscheduled
-      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+      webTestClient.getTemporaryAbsenceReturnOk(movementSeq = movementIn.id.sequence)
         .apply {
           assertThat(movementApplicationId).isNull()
           assertThat(scheduledTemporaryAbsenceId).isNull()
@@ -6750,8 +6749,8 @@ class MovementsResourceIntTest(
       // Resync offender is same as for sync
       webTestClient.getOffenderTemporaryAbsencesOk()
         .apply {
-          assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(tempAbsence.id.sequence)
-          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(movementIn.id.sequence)
         }
 
       // Reconciliation counts the movements as unscheduled
@@ -6783,11 +6782,11 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              application = temporaryAbsenceApplication {
-                scheduledTempAbsence = scheduledTemporaryAbsence {
-                  tempAbsence = externalMovement()
-                  scheduledTempAbsenceReturn = scheduledReturn {
-                    tempAbsenceReturn = externalMovement()
+              application = tapApplication {
+                scheduleOut = tapScheduleOut {
+                  movementOut = tapMovementOut()
+                  scheduleIn = tapScheduleIn {
+                    movementIn = tapMovementIn()
                   }
                 }
               }
@@ -6803,20 +6802,20 @@ class MovementsResourceIntTest(
             """
               update OFFENDER_IND_SCHEDULES
               set EVENT_TYPE = 'TRN'
-              where EVENT_ID in (${scheduledTempAbsence.eventId}, ${scheduledTempAbsenceReturn.eventId})
+              where EVENT_ID in (${scheduleOut.eventId}, ${scheduleIn.eventId})
             """.trimIndent(),
           ).executeUpdate()
         }
 
         // Sync movement OUT is unscheduled
-        webTestClient.getTemporaryAbsence(movementSeq = tempAbsence.id.sequence)
+        webTestClient.getTemporaryAbsence(movementSeq = movementOut.id.sequence)
           .apply {
             assertThat(movementApplicationId).isNull()
             assertThat(scheduledTemporaryAbsenceId).isNull()
           }
 
         // Sync movement IN is unscheduled
-        webTestClient.getTemporaryAbsenceReturnOk(movementSeq = tempAbsenceReturn.id.sequence)
+        webTestClient.getTemporaryAbsenceReturnOk(movementSeq = movementIn.id.sequence)
           .apply {
             assertThat(movementApplicationId).isNull()
             assertThat(scheduledTemporaryAbsenceId).isNull()
@@ -6826,8 +6825,8 @@ class MovementsResourceIntTest(
         // Resync offender is same as for sync
         webTestClient.getOffenderTemporaryAbsencesOk()
           .apply {
-            assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(tempAbsence.id.sequence)
-            assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(tempAbsenceReturn.id.sequence)
+            assertThat(bookings[0].unscheduledTemporaryAbsences[0].sequence).isEqualTo(movementOut.id.sequence)
+            assertThat(bookings[0].unscheduledTemporaryAbsenceReturns[0].sequence).isEqualTo(movementIn.id.sequence)
           }
 
         // Reconciliation counts the movements as unscheduled
@@ -6876,16 +6875,16 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking {
-              temporaryAbsenceApplication {
-                scheduledTemporaryAbsence {
-                  externalMovement()
-                  scheduledReturn {
-                    externalMovement()
+              tapApplication {
+                tapScheduleOut {
+                  tapMovementOut()
+                  tapScheduleIn {
+                    tapMovementIn()
                   }
                 }
               }
-              temporaryAbsence()
-              temporaryAbsenceReturn()
+              tapMovementOut()
+              tapMovementIn()
             }
           }
         }
@@ -6927,26 +6926,26 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking {
-              temporaryAbsenceApplication()
+              tapApplication()
             }
             booking {
-              temporaryAbsenceApplication {
-                scheduledTemporaryAbsence {
-                  externalMovement()
-                  scheduledReturn()
+              tapApplication {
+                tapScheduleOut {
+                  tapMovementOut()
+                  tapScheduleIn()
                 }
               }
             }
             booking {
-              temporaryAbsence()
-              temporaryAbsenceReturn()
-              temporaryAbsence()
+              tapMovementOut()
+              tapMovementIn()
+              tapMovementOut()
             }
             booking()
           }
           offender(nomsId = "ANY") {
             booking {
-              temporaryAbsenceApplication()
+              tapApplication()
             }
           }
         }
@@ -6980,14 +6979,14 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking {
-              temporaryAbsenceApplication {
-                orphanedSchedule = scheduledTemporaryAbsence()
+              tapApplication {
+                orphanedSchedule = tapScheduleOut()
               }
-              temporaryAbsenceApplication {
-                scheduledTemporaryAbsence {
-                  externalMovement()
-                  scheduledReturn {
-                    externalMovement()
+              tapApplication {
+                tapScheduleOut {
+                  tapMovementOut()
+                  tapScheduleIn {
+                    tapMovementIn()
                   }
                 }
               }
@@ -7001,8 +7000,8 @@ class MovementsResourceIntTest(
            */
           entityManager.createQuery(
             """
-            update OffenderScheduledTemporaryAbsence ost
-            set ost.temporaryAbsenceApplication = null
+            update OffenderTapScheduleOut ost
+            set ost.tapApplication = null
             where eventId = ${orphanedSchedule.eventId}
             """.trimIndent(),
           ).executeUpdate()
@@ -7025,19 +7024,19 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking {
-              temporaryAbsenceApplication {
-                scheduledTemporaryAbsence {
-                  externalMovement()
-                  scheduledReturn {
-                    externalMovement()
+              tapApplication {
+                tapScheduleOut {
+                  tapMovementOut()
+                  tapScheduleIn {
+                    tapMovementIn()
                   }
                 }
               }
-              temporaryAbsenceApplication {
-                scheduledTemporaryAbsence {
-                  externalMovement()
-                  scheduledReturn {
-                    tempAbsenceReturn = externalMovement()
+              tapApplication {
+                tapScheduleOut {
+                  tapMovementOut()
+                  tapScheduleIn {
+                    movementIn = tapMovementIn()
                   }
                 }
               }
@@ -7051,10 +7050,10 @@ class MovementsResourceIntTest(
            */
           entityManager.createQuery(
             """
-            update OffenderTemporaryAbsenceReturn otar
-            set otar.scheduledTemporaryAbsence = null
-            where otar.id.offenderBooking.id = ${tempAbsenceReturn.id.offenderBooking.bookingId}
-            and otar.id.sequence = ${tempAbsenceReturn.id.sequence}
+            update OffenderTapMovementIn otar
+            set otar.tapScheduleOut = null
+            where otar.id.offenderBooking.id = ${movementIn.id.offenderBooking.bookingId}
+            and otar.id.sequence = ${movementIn.id.sequence}
             """.trimIndent(),
           ).executeUpdate()
         }
@@ -7076,11 +7075,11 @@ class MovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = "A9797LL") {
             booking {
-              application = temporaryAbsenceApplication {
-                orphanedSchedule = scheduledTemporaryAbsence {
-                  externalMovement()
-                  orphanedScheduleReturn = scheduledReturn {
-                    externalMovement()
+              application = tapApplication {
+                orphanedSchedule = tapScheduleOut {
+                  tapMovementOut()
+                  orphanedScheduleReturn = tapScheduleIn {
+                    tapMovementIn()
                   }
                 }
               }
@@ -7102,7 +7101,7 @@ class MovementsResourceIntTest(
           entityManager.createNativeQuery(
             """
             delete from OFFENDER_MOVEMENT_APPS oma
-            where oma.OFFENDER_MOVEMENT_APP_ID = ${application.movementApplicationId}
+            where oma.OFFENDER_MOVEMENT_APP_ID = ${application.tapApplicationId}
             """.trimIndent(),
           ).executeUpdate()
         }
@@ -7192,24 +7191,24 @@ class MovementsResourceIntTest(
     @Test
     fun `should return only the requested booking`() {
       lateinit var secondBooking: OffenderBooking
-      lateinit var firstApplication: OffenderMovementApplication
+      lateinit var firstApplication: OffenderTapApplication
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            firstApplication = temporaryAbsenceApplication {
-              scheduledTempAbsence = scheduledTemporaryAbsence {
-                tempAbsence = externalMovement()
-                scheduledTempAbsenceReturn = scheduledReturn {
-                  tempAbsenceReturn = externalMovement()
+            firstApplication = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
-            unscheduledTemporaryAbsence = temporaryAbsence()
-            unscheduledTemporaryAbsenceReturn = temporaryAbsenceReturn()
+            unscheduledMovementOut = tapMovementOut()
+            unscheduledMovementIn = tapMovementIn()
           }
           secondBooking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledTemporaryAbsence()
+            application = tapApplication {
+              tapScheduleOut()
             }
           }
         }
@@ -7221,14 +7220,14 @@ class MovementsResourceIntTest(
           assertThat(activeBooking).isTrue()
           assertThat(latestBooking).isTrue()
           assertThat(temporaryAbsenceApplications).hasSize(1)
-          assertThat(temporaryAbsenceApplications[0].movementApplicationId).isEqualTo(firstApplication.movementApplicationId)
+          assertThat(temporaryAbsenceApplications[0].movementApplicationId).isEqualTo(firstApplication.tapApplicationId)
           assertThat(temporaryAbsenceApplications[0].absences).hasSize(1)
-          assertThat(temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence?.eventId).isEqualTo(scheduledTempAbsence.eventId)
-          assertThat(temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn?.eventId).isEqualTo(scheduledTempAbsenceReturn.eventId)
-          assertThat(temporaryAbsenceApplications[0].absences[0].temporaryAbsence?.sequence).isEqualTo(tempAbsence.id.sequence)
-          assertThat(temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn?.sequence).isEqualTo(tempAbsenceReturn.id.sequence)
-          assertThat(unscheduledTemporaryAbsences).extracting<Int> { it.sequence }.containsExactly(unscheduledTemporaryAbsence.id.sequence)
-          assertThat(unscheduledTemporaryAbsenceReturns).extracting<Int> { it.sequence }.containsExactly(unscheduledTemporaryAbsenceReturn.id.sequence)
+          assertThat(temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsence?.eventId).isEqualTo(scheduleOut.eventId)
+          assertThat(temporaryAbsenceApplications[0].absences[0].scheduledTemporaryAbsenceReturn?.eventId).isEqualTo(scheduleIn.eventId)
+          assertThat(temporaryAbsenceApplications[0].absences[0].temporaryAbsence?.sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(temporaryAbsenceApplications[0].absences[0].temporaryAbsenceReturn?.sequence).isEqualTo(movementIn.id.sequence)
+          assertThat(unscheduledTemporaryAbsences).extracting<Int> { it.sequence }.containsExactly(unscheduledMovementOut.id.sequence)
+          assertThat(unscheduledTemporaryAbsenceReturns).extracting<Int> { it.sequence }.containsExactly(unscheduledMovementIn.id.sequence)
         }
 
       webTestClient.getBookingTemporaryAbsences(secondBooking.bookingId)
@@ -7311,7 +7310,7 @@ class MovementsResourceIntTest(
     comment: String = "Some comment scheduled temporary absence",
   ) = UpsertScheduledTemporaryAbsenceRequest(
     eventId = eventId,
-    movementApplicationId = movementApplicationId ?: application.movementApplicationId,
+    movementApplicationId = movementApplicationId ?: application.tapApplicationId,
     eventDate = twoDaysAgo.toLocalDate(),
     startTime = twoDaysAgo,
     eventSubType = "C5",
@@ -7330,25 +7329,25 @@ class MovementsResourceIntTest(
   )
 
   private fun WebTestClient.upsertScheduledTemporaryAbsenceOk(
-    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.tapApplicationId),
   ) = upsertScheduledTemporaryAbsence(request)
     .isOk
     .expectBodyResponse<UpsertScheduledTemporaryAbsenceResponse>()
 
   private fun WebTestClient.upsertScheduledTemporaryAbsenceBadRequest(
-    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.tapApplicationId),
   ) = upsertScheduledTemporaryAbsence(request)
     .isBadRequest
 
   private fun WebTestClient.upsertScheduledTemporaryAbsenceBadRequestUnknown(
-    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.tapApplicationId),
   ) = upsertScheduledTemporaryAbsenceBadRequest(request)
     .expectBody().jsonPath("userMessage").value<String> {
       assertThat(it).contains("UNKNOWN").contains("invalid")
     }
 
   private fun WebTestClient.upsertScheduledTemporaryAbsence(
-    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.movementApplicationId),
+    request: UpsertScheduledTemporaryAbsenceRequest = anUpsertTemporaryAbsenceRequest(application.tapApplicationId),
     offenderNo: String = offender.nomsId,
   ) = put()
     .uri("/movements/$offenderNo/temporary-absences/scheduled-temporary-absence")

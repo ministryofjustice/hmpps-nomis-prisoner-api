@@ -40,8 +40,8 @@ data class OffenderExternalMovementId(
 @DiscriminatorFormula(
   """
     case
-        when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'OUT' then 'OffenderTemporaryAbsence'
-        when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'IN' then 'OffenderTemporaryAbsenceReturn'
+        when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'OUT' then 'OffenderTapMovementOut'
+        when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'IN' then 'OffenderTapMovementIn'
         else 'OffenderExternalMovement'
     end
 """,

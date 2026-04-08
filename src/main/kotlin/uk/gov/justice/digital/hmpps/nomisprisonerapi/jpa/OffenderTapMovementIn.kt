@@ -11,7 +11,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-class OffenderTemporaryAbsenceReturn(
+class OffenderTapMovementIn(
   id: OffenderExternalMovementId,
   movementDate: LocalDate,
   movementTime: LocalDateTime,
@@ -30,12 +30,12 @@ class OffenderTemporaryAbsenceReturn(
   @OneToOne()
   @JoinColumn(name = "EVENT_ID")
   @NotFound(action = NotFoundAction.IGNORE)
-  var scheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn? = null,
+  var tapScheduleIn: OffenderTapScheduleIn? = null,
 
   @OneToOne()
   @JoinColumn(name = "PARENT_EVENT_ID")
   @NotFound(action = NotFoundAction.IGNORE)
-  var scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
+  var tapScheduleOut: OffenderTapScheduleOut? = null,
 ) : OffenderExternalMovement(
   id = id,
   movementDate = movementDate,

@@ -18,39 +18,39 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderMovementApplicationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledTemporaryAbsenceReturnRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTemporaryAbsenceReturnRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleInRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class TemporaryAbsenceRepositoryIntTest(
-  @Autowired private val movementApplicationRepository: OffenderMovementApplicationRepository,
-  @Autowired private val scheduledTemporaryAbsenceRepository: OffenderScheduledTemporaryAbsenceRepository,
-  @Autowired private val scheduledTemporaryAbsenceReturnRepository: OffenderScheduledTemporaryAbsenceReturnRepository,
-  @Autowired private val temporaryAbsenceRepository: OffenderTemporaryAbsenceRepository,
-  @Autowired private val temporaryAbsenceReturnRepository: OffenderTemporaryAbsenceReturnRepository,
+class TapRepositoryIntTest(
+  @Autowired private val tapApplicationRepository: OffenderTapApplicationRepository,
+  @Autowired private val tapScheduleOutRepository: OffenderTapScheduleOutRepository,
+  @Autowired private val tapScheduleInRepository: OffenderTapScheduleInRepository,
+  @Autowired private val tapMovementOutRepository: OffenderTapMovementOutRepository,
+  @Autowired private val tapMovementInRepository: OffenderTapMovementInRepository,
   @Autowired private val offenderBookingRepository: OffenderBookingRepository,
   @Autowired private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTestBase() {
 
   @Nested
-  inner class TemporaryAbsenceRepositoryTest {
+  inner class TapRepositoryTest {
     lateinit var offender: Offender
     lateinit var booking: OffenderBooking
-    lateinit var application: OffenderMovementApplication
-    lateinit var scheduledAbsence: OffenderScheduledTemporaryAbsence
-    lateinit var scheduledReturn: OffenderScheduledTemporaryAbsenceReturn
-    lateinit var absenceMovement: OffenderTemporaryAbsence
-    lateinit var absenceReturnMovement: OffenderTemporaryAbsenceReturn
+    lateinit var application: OffenderTapApplication
+    lateinit var scheduleOut: OffenderTapScheduleOut
+    lateinit var scheduleIn: OffenderTapScheduleIn
+    lateinit var movementOut: OffenderTapMovementOut
+    lateinit var movementIn: OffenderTapMovementIn
 
     @AfterEach
     fun `reset data`() {
@@ -62,7 +62,7 @@ class TemporaryAbsenceRepositoryIntTest(
       nomisDataBuilder.build {
         offender = offender {
           booking = booking {
-            application = temporaryAbsenceApplication(
+            application = tapApplication(
               eventSubType = "C5",
               applicationDate = LocalDateTime.now(),
               applicationTime = LocalDateTime.now(),
@@ -78,15 +78,15 @@ class TemporaryAbsenceRepositoryIntTest(
               prison = "LEI",
               toAgency = "HAZLWD",
               contactPersonName = "Derek",
-              temporaryAbsenceType = "RR",
-              temporaryAbsenceSubType = "RDR",
+              tapType = "RR",
+              tapSubType = "RDR",
             )
           }
         }
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application.movementApplicationId)!!) {
-        assertThat(movementApplicationId).isGreaterThan(0L)
+      with(tapApplicationRepository.findByIdOrNull(application.tapApplicationId)!!) {
+        assertThat(tapApplicationId).isGreaterThan(0L)
         assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
         assertThat(eventClass).isEqualTo("EXT_MOV")
         assertThat(eventType).isEqualTo(EventType.TAP)
@@ -105,8 +105,8 @@ class TemporaryAbsenceRepositoryIntTest(
         assertThat(prison.id).isEqualTo("LEI")
         assertThat(toAgency?.id).isEqualTo("HAZLWD")
         assertThat(contactPersonName).isEqualTo("Derek")
-        assertThat(temporaryAbsenceType?.code).isEqualTo("RR")
-        assertThat(temporaryAbsenceSubType?.code).isEqualTo("RDR")
+        assertThat(tapType?.code).isEqualTo("RR")
+        assertThat(tapSubType?.code).isEqualTo("RDR")
       }
     }
 
@@ -115,11 +115,11 @@ class TemporaryAbsenceRepositoryIntTest(
       nomisDataBuilder.build {
         offender = offender {
           booking = booking {
-            application = temporaryAbsenceApplication(
+            application = tapApplication(
               applicationDate = LocalDateTime.now(),
               applicationTime = LocalDateTime.now(),
             ) {
-              scheduledAbsence = scheduledTemporaryAbsence(
+              scheduleOut = tapScheduleOut(
                 eventDate = LocalDate.now(),
                 startTime = LocalDateTime.now(),
                 eventSubType = "C5",
@@ -137,10 +137,10 @@ class TemporaryAbsenceRepositoryIntTest(
         }
       }
 
-      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence.eventId)!!) {
+      with(tapScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
         assertThat(eventId).isGreaterThan(0L)
         assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
-        assertThat(temporaryAbsenceApplication.movementApplicationId).isEqualTo(scheduledAbsence.temporaryAbsenceApplication.movementApplicationId)
+        assertThat(tapApplication.tapApplicationId).isEqualTo(scheduleOut.tapApplication.tapApplicationId)
         assertThat(eventDate).isEqualTo(LocalDate.now())
         assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now())
         assertThat(eventSubType.code).isEqualTo("C5")
@@ -162,9 +162,9 @@ class TemporaryAbsenceRepositoryIntTest(
       nomisDataBuilder.build {
         offender = offender {
           booking = booking {
-            temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence {
-                scheduledReturn = scheduledReturn(
+            tapApplication {
+              scheduleOut = tapScheduleOut {
+                scheduleIn = tapScheduleIn(
                   eventDate = LocalDate.now().plusDays(1),
                   startTime = LocalDateTime.now().plusDays(1),
                   eventSubType = "R25",
@@ -180,10 +180,10 @@ class TemporaryAbsenceRepositoryIntTest(
         }
       }
 
-      with(scheduledTemporaryAbsenceReturnRepository.findByIdOrNull(scheduledReturn.eventId)!!) {
+      with(tapScheduleInRepository.findByIdOrNull(scheduleIn.eventId)!!) {
         assertThat(eventId).isGreaterThan(0L)
         assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
-        assertThat(scheduledTemporaryAbsence.eventId).isEqualTo(scheduledAbsence.eventId)
+        assertThat(tapScheduleOut.eventId).isEqualTo(scheduleOut.eventId)
         assertThat(eventDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(eventSubType.code).isEqualTo("R25")
@@ -200,9 +200,9 @@ class TemporaryAbsenceRepositoryIntTest(
       lateinit var corporateAddress: CorporateAddress
       lateinit var offenderAddress: OffenderAddress
       lateinit var agencyAddress: AgencyLocationAddress
-      lateinit var application1: OffenderMovementApplication
-      lateinit var application2: OffenderMovementApplication
-      lateinit var application3: OffenderMovementApplication
+      lateinit var application1: OffenderTapApplication
+      lateinit var application2: OffenderTapApplication
+      lateinit var application3: OffenderTapApplication
 
       nomisDataBuilder.build {
         corporate("Kwikfit") {
@@ -214,24 +214,24 @@ class TemporaryAbsenceRepositoryIntTest(
         offender = offender {
           offenderAddress = address()
           booking = booking {
-            application1 = temporaryAbsenceApplication(toAddress = corporateAddress)
-            application2 = temporaryAbsenceApplication(toAddress = offenderAddress)
-            application3 = temporaryAbsenceApplication(toAddress = agencyAddress)
+            application1 = tapApplication(toAddress = corporateAddress)
+            application2 = tapApplication(toAddress = offenderAddress)
+            application3 = tapApplication(toAddress = agencyAddress)
           }
         }
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application1.movementApplicationId)!!) {
+      with(tapApplicationRepository.findByIdOrNull(application1.tapApplicationId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("CORP")
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application2.movementApplicationId)!!) {
+      with(tapApplicationRepository.findByIdOrNull(application2.tapApplicationId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("OFF")
       }
 
-      with(movementApplicationRepository.findByIdOrNull(application3.movementApplicationId)!!) {
+      with(tapApplicationRepository.findByIdOrNull(application3.tapApplicationId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("AGY")
       }
@@ -242,8 +242,8 @@ class TemporaryAbsenceRepositoryIntTest(
       lateinit var corporateAddress: CorporateAddress
       lateinit var offenderAddress: OffenderAddress
       lateinit var agencyAddress: AgencyLocationAddress
-      lateinit var scheduledAbsence2: OffenderScheduledTemporaryAbsence
-      lateinit var scheduledAbsence3: OffenderScheduledTemporaryAbsence
+      lateinit var scheduledAbsence2: OffenderTapScheduleOut
+      lateinit var scheduledAbsence3: OffenderTapScheduleOut
 
       nomisDataBuilder.build {
         corporate("Kwikfit") {
@@ -255,30 +255,30 @@ class TemporaryAbsenceRepositoryIntTest(
         offender = offender {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence(toAddress = corporateAddress)
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(toAddress = corporateAddress)
             }
-            application = temporaryAbsenceApplication {
-              scheduledAbsence2 = scheduledTemporaryAbsence(toAddress = offenderAddress)
+            application = tapApplication {
+              scheduledAbsence2 = tapScheduleOut(toAddress = offenderAddress)
             }
-            application = temporaryAbsenceApplication {
-              scheduledAbsence3 = scheduledTemporaryAbsence(toAddress = agencyAddress)
+            application = tapApplication {
+              scheduledAbsence3 = tapScheduleOut(toAddress = agencyAddress)
             }
           }
         }
       }
 
-      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence.eventId)!!) {
+      with(tapScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("CORP")
       }
 
-      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence2.eventId)!!) {
+      with(tapScheduleOutRepository.findByIdOrNull(scheduledAbsence2.eventId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("OFF")
       }
 
-      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence3.eventId)!!) {
+      with(tapScheduleOutRepository.findByIdOrNull(scheduledAbsence3.eventId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo("AGY")
       }
@@ -287,7 +287,7 @@ class TemporaryAbsenceRepositoryIntTest(
     // This models some strange data in NOMIS where the to address owner class appears to be incorrectly set as the agency location id.
     // Just need to make sure we can read that data from the table
     @Test
-    fun `should load a temporary absence application with where address class is the agency id`() {
+    fun `should load a tap application with where address class is the agency id`() {
       lateinit var agencyAddress: AgencyLocationAddress
 
       nomisDataBuilder.build {
@@ -296,8 +296,8 @@ class TemporaryAbsenceRepositoryIntTest(
         }
         offender = offender {
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence(toAddress = agencyAddress)
+            application = tapApplication {
+              scheduleOut = tapScheduleOut(toAddress = agencyAddress)
             }
           }
         }
@@ -305,23 +305,23 @@ class TemporaryAbsenceRepositoryIntTest(
 
       jdbcTemplate.update("update offender_ind_schedules set TO_ADDRESS_OWNER_CLASS='${agencyAddress.agencyLocation.id}'")
 
-      with(scheduledTemporaryAbsenceRepository.findByIdOrNull(scheduledAbsence.eventId)!!) {
+      with(tapScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
         assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
         assertThat(toAddressOwnerClass).isEqualTo(agencyAddress.agencyLocation.id)
       }
     }
 
     @Test
-    fun `should save and load external movement from scheduled temporary absence`() {
+    fun `should save and load external movement from scheduled OUT`() {
       lateinit var offenderAddress: OffenderAddress
 
       nomisDataBuilder.build {
         offender = offender {
           offenderAddress = address()
           booking = booking {
-            application = temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence {
-                absenceMovement = externalMovement(
+            application = tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut(
                   date = LocalDateTime.now(),
                   fromPrison = "BXI",
                   toAgency = "HAZLWD",
@@ -339,7 +339,7 @@ class TemporaryAbsenceRepositoryIntTest(
         }
       }
 
-      with(temporaryAbsenceRepository.findByIdOrNull(absenceMovement.id)!!) {
+      with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now())
         assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
         assertThat(movementType?.code).isEqualTo("TAP")
@@ -364,7 +364,7 @@ class TemporaryAbsenceRepositoryIntTest(
         offender = offender {
           offenderAddress = address()
           booking = booking {
-            absenceMovement = temporaryAbsence(
+            movementOut = tapMovementOut(
               date = LocalDateTime.now(),
               fromPrison = "BXI",
               toAgency = "HAZLWD",
@@ -380,7 +380,7 @@ class TemporaryAbsenceRepositoryIntTest(
         }
       }
 
-      with(temporaryAbsenceRepository.findByIdOrNull(absenceMovement.id)!!) {
+      with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now())
         assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
         assertThat(movementType?.code).isEqualTo("TAP")
@@ -397,18 +397,18 @@ class TemporaryAbsenceRepositoryIntTest(
     }
 
     @Test
-    fun `should save and load external movement from scheduled temporary absence return`() {
+    fun `should save and load external movement from schedule IN`() {
       lateinit var offenderAddress: OffenderAddress
 
       nomisDataBuilder.build {
         offender = offender {
           offenderAddress = address()
           booking {
-            temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence {
-                absenceMovement = externalMovement()
-                scheduledReturn = scheduledReturn {
-                  absenceReturnMovement = externalMovement(
+            tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn(
                     date = LocalDateTime.now().plusDays(1),
                     fromAgency = "HAZLWD",
                     toPrison = "BXI",
@@ -430,7 +430,7 @@ class TemporaryAbsenceRepositoryIntTest(
         println("done $it")
       }
 
-      with(temporaryAbsenceReturnRepository.findByIdOrNull(absenceReturnMovement.id)!!) {
+      with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(movementType?.code).isEqualTo("TAP")
@@ -443,10 +443,10 @@ class TemporaryAbsenceRepositoryIntTest(
         assertThat(commentText).isEqualTo("TAP IN comment")
         assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
         assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
-        assertThat(scheduledTemporaryAbsenceReturn?.eventId).isEqualTo(scheduledReturn.eventId)
-        assertThat(scheduledTemporaryAbsenceReturn?.scheduledTemporaryAbsence?.eventId).isEqualTo(scheduledAbsence.eventId)
-        assertThat(scheduledTemporaryAbsence?.eventId).isEqualTo(scheduledAbsence.eventId)
-        assertThat(scheduledTemporaryAbsence?.temporaryAbsence?.id).isEqualTo(absenceMovement.id)
+        assertThat(tapScheduleIn?.eventId).isEqualTo(scheduleIn.eventId)
+        assertThat(tapScheduleIn?.tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
+        assertThat(tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
+        assertThat(tapScheduleOut?.tapMovementOut?.id).isEqualTo(movementOut.id)
       }
     }
 
@@ -458,8 +458,8 @@ class TemporaryAbsenceRepositoryIntTest(
         offender = offender {
           offenderAddress = address()
           booking = booking {
-            temporaryAbsence()
-            absenceReturnMovement = temporaryAbsenceReturn(
+            tapMovementOut()
+            movementIn = tapMovementIn(
               date = LocalDateTime.now().plusDays(1),
               fromAgency = "HAZLWD",
               toPrison = "BXI",
@@ -474,7 +474,7 @@ class TemporaryAbsenceRepositoryIntTest(
         }
       }
 
-      with(temporaryAbsenceReturnRepository.findByIdOrNull(absenceReturnMovement.id)!!) {
+      with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(movementType?.code).isEqualTo("TAP")
@@ -487,8 +487,8 @@ class TemporaryAbsenceRepositoryIntTest(
         assertThat(commentText).isEqualTo("TAP IN comment")
         assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
         assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
-        assertThat(scheduledTemporaryAbsenceReturn).isNull()
-        assertThat(scheduledTemporaryAbsence?.eventId).isNull()
+        assertThat(tapScheduleIn).isNull()
+        assertThat(tapScheduleOut?.eventId).isNull()
       }
     }
 
@@ -513,8 +513,8 @@ class TemporaryAbsenceRepositoryIntTest(
 
       repository.runInTransaction {
         with(offenderBookingRepository.findByIdOrNull(booking.bookingId)!!) {
-          assertThat(externalMovements.find { it.id.sequence == 2 }).isExactlyInstanceOf(OffenderTemporaryAbsence::class.java)
-          assertThat(externalMovements.find { it.id.sequence == 3 }).isExactlyInstanceOf(OffenderTemporaryAbsenceReturn::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 2 }).isExactlyInstanceOf(OffenderTapMovementOut::class.java)
+          assertThat(externalMovements.find { it.id.sequence == 3 }).isExactlyInstanceOf(OffenderTapMovementIn::class.java)
           // The TAP missing a direction still comes out as an external movement
           assertThat(externalMovements.find { it.id.sequence == 4 }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
           assertThat(externalMovements.find { it.id.sequence == 5 }).isExactlyInstanceOf(OffenderExternalMovement::class.java)
@@ -527,11 +527,11 @@ class TemporaryAbsenceRepositoryIntTest(
       nomisDataBuilder.build {
         offender = offender {
           booking = booking {
-            temporaryAbsenceApplication {
-              scheduledAbsence = scheduledTemporaryAbsence {
-                absenceMovement = externalMovement()
-                scheduledReturn = scheduledReturn {
-                  absenceReturnMovement = externalMovement()
+            tapApplication {
+              scheduleOut = tapScheduleOut {
+                movementOut = tapMovementOut()
+                scheduleIn = tapScheduleIn {
+                  movementIn = tapMovementIn()
                 }
               }
             }
@@ -541,12 +541,12 @@ class TemporaryAbsenceRepositoryIntTest(
 
       jdbcTemplate.update(
         """
-          update OFFENDER_EXTERNAL_MOVEMENTS set parent_event_id = null where event_id = ${scheduledReturn.eventId}
+          update OFFENDER_EXTERNAL_MOVEMENTS set parent_event_id = null where event_id = ${scheduleIn.eventId}
         """.trimIndent(),
       )
 
       repository.runInTransaction {
-        with(temporaryAbsenceReturnRepository.findAllByOffenderBooking_Offender_NomsIdAndScheduledTemporaryAbsenceReturnIsNull(offender.nomsId)) {
+        with(tapMovementInRepository.findAllByOffenderBooking_Offender_NomsIdAndTapScheduleInIsNull(offender.nomsId)) {
           assertThat(this).isEmpty()
         }
       }
