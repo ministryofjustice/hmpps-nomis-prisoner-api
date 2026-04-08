@@ -1151,16 +1151,25 @@ class MovementsService(
       }
     }
 
+    fun String?.cleanAddressComponent(): String? {
+      // remove corporate/agency description from any address elements that might contain it
+      fun String?.withoutDescription() = description?.let { this?.replace(description, "") } ?: this
+
+      // remove trailing commas because they will be added back when the components are joined together
+      fun String?.withoutTrailingCommas() = this?.trim()?.trimEnd(',')
+
+      return this.withoutDescription().withoutTrailingCommas()
+    }
+
     // Append "Flat" if there is one
     if (!flat.isNullOrBlank()) {
       val flatText = if (flat!!.contains("flat", ignoreCase = true)) "" else "Flat "
       address.add("$flatText${flat!!.trim()}")
     }
 
-    // remove corporate/agency description from any address elements that might contain it
-    val cleanPremise = description?.let { premise?.replace(description, "") } ?: premise
-    val cleanStreet = description?.let { street?.replace(description, "") } ?: street
-    val cleanLocality = description?.let { locality?.replace(description, "") } ?: locality
+    val cleanPremise = premise.cleanAddressComponent()
+    val cleanStreet = street.cleanAddressComponent()
+    val cleanLocality = locality.cleanAddressComponent()
 
     // Don't separate a numeric premise from the street, only if it's a name
     val hasPremise = !cleanPremise.isNullOrBlank()
