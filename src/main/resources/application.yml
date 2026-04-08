@@ -29,9 +29,6 @@ spring:
           hmpps-auth:
             token-uri: ${api.base.url.hmpps-auth}/oauth/token
 
-  devtools:
-    add-properties: false
-
   flyway:
     enabled: false
 
@@ -39,9 +36,6 @@ spring:
     web:
       pageable:
         max-page-size: 20000
-  h2:
-    console:
-      enabled: false
 
   jpa:
     open-in-view: false
