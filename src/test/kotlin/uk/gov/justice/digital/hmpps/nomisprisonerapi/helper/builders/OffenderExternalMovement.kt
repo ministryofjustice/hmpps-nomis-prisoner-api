@@ -14,10 +14,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledTemporaryAbsenceReturn
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -153,7 +153,7 @@ class OffenderExternalMovementBuilder(
     offenderBooking.bookingEndDate = null
   }
 
-  fun buildTemporaryAbsence(
+  fun buildTapMovementOut(
     date: LocalDateTime,
     offenderBooking: OffenderBooking,
     fromPrison: String,
@@ -165,8 +165,8 @@ class OffenderExternalMovementBuilder(
     comment: String?,
     toCity: String?,
     toAddress: Address?,
-    scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence? = null,
-  ): OffenderTemporaryAbsence = OffenderTemporaryAbsence(
+    tapScheduleOut: OffenderTapScheduleOut? = null,
+  ): OffenderTapMovementOut = OffenderTapMovementOut(
     id = OffenderExternalMovementId(
       offenderBooking,
       offenderBooking.externalMovements.size + 1,
@@ -184,13 +184,13 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     toCity = toCity?.let { repository.lookupCity(toCity) },
     toAddress = toAddress,
-    scheduledTemporaryAbsence = scheduledTemporaryAbsence,
+    tapScheduleOut = tapScheduleOut,
   ).also {
     offenderBooking.inOutStatus = "OUT"
     offenderBooking.location = repository.lookupAgency("OUT")
   }
 
-  fun buildTemporaryAbsenceReturn(
+  fun buildTapMovementIn(
     date: LocalDateTime,
     offenderBooking: OffenderBooking,
     fromAgency: String?,
@@ -201,8 +201,8 @@ class OffenderExternalMovementBuilder(
     comment: String?,
     fromCity: String?,
     fromAddress: Address?,
-    scheduledTemporaryAbsenceReturn: OffenderScheduledTemporaryAbsenceReturn? = null,
-  ): OffenderTemporaryAbsenceReturn = OffenderTemporaryAbsenceReturn(
+    tapScheduleIn: OffenderTapScheduleIn? = null,
+  ): OffenderTapMovementIn = OffenderTapMovementIn(
     id = OffenderExternalMovementId(
       offenderBooking,
       offenderBooking.externalMovements.size + 1,
@@ -219,8 +219,8 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     fromCity = fromCity?.let { repository.lookupCity(fromCity) },
     fromAddress = fromAddress,
-    scheduledTemporaryAbsenceReturn = scheduledTemporaryAbsenceReturn,
-    scheduledTemporaryAbsence = scheduledTemporaryAbsenceReturn?.scheduledTemporaryAbsence,
+    tapScheduleIn = tapScheduleIn,
+    tapScheduleOut = tapScheduleIn?.tapScheduleOut,
   ).also {
     offenderBooking.inOutStatus = "IN"
     offenderBooking.location = it.toAgency!!

@@ -12,7 +12,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-class OffenderScheduledTemporaryAbsenceReturn(
+class OffenderTapScheduleIn(
   eventId: Long = 0,
   offenderBooking: OffenderBooking,
   eventDate: LocalDate,
@@ -27,17 +27,17 @@ class OffenderScheduledTemporaryAbsenceReturn(
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "PARENT_EVENT_ID")
   @NotFound(action = NotFoundAction.IGNORE)
-  val scheduledTemporaryAbsence: OffenderScheduledTemporaryAbsence,
+  val tapScheduleOut: OffenderTapScheduleOut,
 
-  @OneToOne(mappedBy = "scheduledTemporaryAbsenceReturn", cascade = [CascadeType.ALL])
+  @OneToOne(mappedBy = "tapScheduleIn", cascade = [CascadeType.ALL])
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
   @NotFound(action = NotFoundAction.IGNORE)
-  var temporaryAbsenceReturn: OffenderTemporaryAbsenceReturn? = null,
+  var tapMovementIn: OffenderTapMovementIn? = null,
 
   // This will only exist for merged records, and we use it to find the correct application for this scheduled return
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_MOVEMENT_APP_ID")
-  var temporaryAbsenceApplication: OffenderMovementApplication? = null,
+  var tapApplication: OffenderTapApplication? = null,
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
   offenderBooking = offenderBooking,

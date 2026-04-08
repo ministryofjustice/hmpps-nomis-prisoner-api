@@ -17,7 +17,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-class OffenderScheduledTemporaryAbsence(
+class OffenderTapScheduleOut(
   eventId: Long = 0,
   offenderBooking: OffenderBooking,
   eventDate: LocalDate,
@@ -34,13 +34,13 @@ class OffenderScheduledTemporaryAbsence(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${TemporaryAbsenceTransportType.TA_TRANSPORT}'",
+          value = "'${TapTransportType.TA_TRANSPORT}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
     ],
   )
-  var transportType: TemporaryAbsenceTransportType? = null,
+  var transportType: TapTransportType? = null,
 
   @JoinColumn(name = "RETURN_DATE")
   var returnDate: LocalDate,
@@ -50,7 +50,7 @@ class OffenderScheduledTemporaryAbsence(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_MOVEMENT_APP_ID")
-  val temporaryAbsenceApplication: OffenderMovementApplication,
+  val tapApplication: OffenderTapApplication,
 
   @Column(name = "TO_ADDRESS_OWNER_CLASS")
   var toAddressOwnerClass: String? = null,
@@ -71,13 +71,13 @@ class OffenderScheduledTemporaryAbsence(
 
   // There should only be a single return, but due to a bug in merges there might be more
   // The current strategy is to move the incorrect returns to the correct parent before mapping to the DTO
-  @OneToMany(mappedBy = "scheduledTemporaryAbsence", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  var scheduledTemporaryAbsenceReturns: MutableList<OffenderScheduledTemporaryAbsenceReturn> = mutableListOf(),
+  @OneToMany(mappedBy = "tapScheduleOut", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  var tapScheduleIns: MutableList<OffenderTapScheduleIn> = mutableListOf(),
 
-  @OneToOne(mappedBy = "scheduledTemporaryAbsence", cascade = [CascadeType.ALL])
+  @OneToOne(mappedBy = "tapScheduleOut", cascade = [CascadeType.ALL])
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
   @NotFound(action = NotFoundAction.IGNORE)
-  var temporaryAbsence: OffenderTemporaryAbsence? = null,
+  var tapMovementOut: OffenderTapMovementOut? = null,
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
   offenderBooking = offenderBooking,

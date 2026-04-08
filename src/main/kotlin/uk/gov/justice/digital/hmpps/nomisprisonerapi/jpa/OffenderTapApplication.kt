@@ -29,23 +29,23 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "OFFENDER_MOVEMENT_APPS")
 @NamedEntityGraph(
-  name = "offender-movement-app",
+  name = "tap-application",
   attributeNodes = [
     NamedAttributeNode(value = "offenderBooking"),
-    NamedAttributeNode(value = "scheduledTemporaryAbsences", subgraph = "scheduled-temporary-absence"),
+    NamedAttributeNode(value = "tapScheduleOuts", subgraph = "tap-schedule-out"),
     NamedAttributeNode(value = "eventSubType"),
     NamedAttributeNode(value = "applicationStatus"),
     NamedAttributeNode(value = "escort"),
     NamedAttributeNode(value = "transportType"),
     NamedAttributeNode(value = "applicationType"),
-    NamedAttributeNode(value = "temporaryAbsenceType"),
-    NamedAttributeNode(value = "temporaryAbsenceSubType"),
+    NamedAttributeNode(value = "tapType"),
+    NamedAttributeNode(value = "tapSubType"),
   ],
   subgraphs = [
     NamedSubgraph(
-      name = "scheduled-temporary-absence",
+      name = "tap-schedule-out",
       attributeNodes = [
-        NamedAttributeNode(value = "temporaryAbsence", subgraph = "external-movement"),
+        NamedAttributeNode(value = "tapMovementOut", subgraph = "tap-movement"),
         NamedAttributeNode(value = "transportType"),
         NamedAttributeNode(value = "escort"),
         NamedAttributeNode(value = "eventStatus"),
@@ -53,7 +53,7 @@ import java.time.LocalDateTime
       ],
     ),
     NamedSubgraph(
-      name = "external-movement",
+      name = "tap-movement",
       attributeNodes = [
         NamedAttributeNode(value = "movementType"),
         NamedAttributeNode(value = "movementReason"),
@@ -66,7 +66,7 @@ import java.time.LocalDateTime
   ],
 )
 @NamedEntityGraph(
-  name = "application-only",
+  name = "tap-application-only",
   attributeNodes = [
     NamedAttributeNode(value = "offenderBooking"),
     NamedAttributeNode(value = "eventSubType"),
@@ -74,17 +74,17 @@ import java.time.LocalDateTime
     NamedAttributeNode(value = "escort"),
     NamedAttributeNode(value = "transportType"),
     NamedAttributeNode(value = "applicationType"),
-    NamedAttributeNode(value = "temporaryAbsenceType"),
-    NamedAttributeNode(value = "temporaryAbsenceSubType"),
+    NamedAttributeNode(value = "tapType"),
+    NamedAttributeNode(value = "tapSubType"),
     NamedAttributeNode(value = "toAddress"),
   ],
 )
-class OffenderMovementApplication(
+class OffenderTapApplication(
   @SequenceGenerator(name = "OFFENDER_MOVEMENT_APP_ID", sequenceName = "OFFENDER_MOVEMENT_APP_ID", allocationSize = 1)
   @GeneratedValue(generator = "OFFENDER_MOVEMENT_APP_ID")
   @Id
   @Column(name = "OFFENDER_MOVEMENT_APP_ID")
-  val movementApplicationId: Long = 0,
+  val tapApplicationId: Long = 0,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
@@ -159,13 +159,13 @@ class OffenderMovementApplication(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${TemporaryAbsenceTransportType.TA_TRANSPORT}'",
+          value = "'${TapTransportType.TA_TRANSPORT}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSPORT_CODE", referencedColumnName = "code")),
     ],
   )
-  var transportType: TemporaryAbsenceTransportType? = null,
+  var transportType: TapTransportType? = null,
 
   @Column(name = "COMMENT_TEXT")
   var comment: String? = null,
@@ -207,33 +207,33 @@ class OffenderMovementApplication(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${TemporaryAbsenceType.TAP_ABS_TYPE}'",
+          value = "'${TapType.TAP_ABS_TYPE}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "TAP_ABS_TYPE", referencedColumnName = "code")),
     ],
   )
-  var temporaryAbsenceType: TemporaryAbsenceType? = null,
+  var tapType: TapType? = null,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${TemporaryAbsenceSubType.TAP_ABS_STYP}'",
+          value = "'${TapSubType.TAP_ABS_STYP}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "TAP_ABS_SUBTYPE", referencedColumnName = "code")),
     ],
   )
-  var temporaryAbsenceSubType: TemporaryAbsenceSubType? = null,
+  var tapSubType: TapSubType? = null,
 
-  @OneToMany(mappedBy = "temporaryAbsenceApplication", cascade = [CascadeType.ALL], orphanRemoval = true)
-  var scheduledTemporaryAbsences: MutableList<OffenderScheduledTemporaryAbsence> = mutableListOf(),
+  @OneToMany(mappedBy = "tapApplication", cascade = [CascadeType.ALL], orphanRemoval = true)
+  var tapScheduleOuts: MutableList<OffenderTapScheduleOut> = mutableListOf(),
 ) : NomisAuditableEntityBasic() {
 
   fun isApproved(): Boolean = applicationStatus.code in listOf("APP-SCH", "APP-UNSCH")
   fun isUnapproved(): Boolean = !isApproved()
   fun isSingle(): Boolean = applicationType.code == "SINGLE"
-  fun hasSchedules(): Boolean = scheduledTemporaryAbsences.isNotEmpty()
+  fun hasSchedules(): Boolean = tapScheduleOuts.isNotEmpty()
 }

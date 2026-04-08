@@ -34,15 +34,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderMovementApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderRestrictions
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTemporaryAbsenceReturn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -313,7 +313,7 @@ interface BookingDsl {
   ): OffenderExternalMovement
 
   @OffenderExternalMovementDslMarker
-  fun temporaryAbsence(
+  fun tapMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
     fromPrison: String = "BXI",
     toAgency: String? = null,
@@ -324,10 +324,10 @@ interface BookingDsl {
     comment: String? = null,
     toCity: String? = null,
     toAddress: Address? = null,
-  ): OffenderTemporaryAbsence
+  ): OffenderTapMovementOut
 
   @OffenderExternalMovementDslMarker
-  fun temporaryAbsenceReturn(
+  fun tapMovementIn(
     date: LocalDateTime = LocalDateTime.now(),
     fromAgency: String? = null,
     toPrison: String = "BXI",
@@ -337,7 +337,7 @@ interface BookingDsl {
     comment: String? = null,
     fromCity: String? = null,
     fromAddress: Address? = null,
-  ): OffenderTemporaryAbsenceReturn
+  ): OffenderTapMovementIn
 
   @VisitBalanceDslMarker
   fun visitBalance(
@@ -449,8 +449,8 @@ interface BookingDsl {
     dsl: OffenderAssessmentDsl.() -> Unit = {},
   ): OffenderAssessment
 
-  @OffenderTemporaryAbsenceApplicationDslMarker
-  fun temporaryAbsenceApplication(
+  @OffenderTapApplicationDslMarker
+  fun tapApplication(
     eventSubType: String = "C5",
     applicationDate: LocalDateTime = LocalDateTime.now(),
     applicationTime: LocalDateTime = LocalDateTime.now(),
@@ -467,10 +467,10 @@ interface BookingDsl {
     toAgency: String? = "HAZLWD",
     contactPersonName: String? = null,
     applicationType: String = "SINGLE",
-    temporaryAbsenceType: String? = "RR",
-    temporaryAbsenceSubType: String? = "RDR",
-    dsl: OffenderTemporaryAbsenceApplicationDsl.() -> Unit = {},
-  ): OffenderMovementApplication
+    tapType: String? = "RR",
+    tapSubType: String? = "RDR",
+    dsl: OffenderTapApplicationDsl.() -> Unit = {},
+  ): OffenderTapApplication
 }
 
 @Component
@@ -512,7 +512,7 @@ class BookingBuilderFactory(
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderAssessmentBuilderFactory: OffenderAssessmentBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
-  private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
+  private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
@@ -542,7 +542,7 @@ class BookingBuilderFactory(
     offenderTransactionBuilderFactory,
     offenderAssessmentBuilderFactory,
     offenderRestrictionsBuilderFactory,
-    offenderTemporaryAbsenceApplicationBuilderFactory,
+    offenderTapApplicationBuilderFactory,
     linkCaseTxnBuilderFactory,
   )
 }
@@ -574,7 +574,7 @@ class BookingBuilder(
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderAssessmentBuilderFactory: OffenderAssessmentBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
-  private val offenderTemporaryAbsenceApplicationBuilderFactory: OffenderTemporaryAbsenceApplicationBuilderFactory,
+  private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
 ) : BookingDsl {
 
@@ -1029,7 +1029,7 @@ class BookingBuilder(
         .also { offenderBooking.externalMovements += it }
     }
 
-  override fun temporaryAbsence(
+  override fun tapMovementOut(
     date: LocalDateTime,
     fromPrison: String,
     toAgency: String?,
@@ -1040,8 +1040,8 @@ class BookingBuilder(
     comment: String?,
     toCity: String?,
     toAddress: Address?,
-  ): OffenderTemporaryAbsence = offenderExternalMovementBuilderFactory.builder()
-    .buildTemporaryAbsence(
+  ): OffenderTapMovementOut = offenderExternalMovementBuilderFactory.builder()
+    .buildTapMovementOut(
       offenderBooking = offenderBooking,
       date = date,
       fromPrison = fromPrison,
@@ -1056,7 +1056,7 @@ class BookingBuilder(
     )
     .also { offenderBooking.externalMovements += it }
 
-  override fun temporaryAbsenceReturn(
+  override fun tapMovementIn(
     date: LocalDateTime,
     fromAgency: String?,
     toPrison: String,
@@ -1066,8 +1066,8 @@ class BookingBuilder(
     comment: String?,
     fromCity: String?,
     fromAddress: Address?,
-  ): OffenderTemporaryAbsenceReturn = offenderExternalMovementBuilderFactory.builder()
-    .buildTemporaryAbsenceReturn(
+  ): OffenderTapMovementIn = offenderExternalMovementBuilderFactory.builder()
+    .buildTapMovementIn(
       offenderBooking = offenderBooking,
       date = date,
       fromAgency = fromAgency,
@@ -1420,7 +1420,7 @@ class BookingBuilder(
       .also { builder.apply(dsl) }
   }
 
-  override fun temporaryAbsenceApplication(
+  override fun tapApplication(
     eventSubType: String,
     applicationDate: LocalDateTime,
     applicationTime: LocalDateTime,
@@ -1437,10 +1437,10 @@ class BookingBuilder(
     toAgency: String?,
     contactPersonName: String?,
     applicationType: String,
-    temporaryAbsenceType: String?,
-    temporaryAbsenceSubType: String?,
-    dsl: OffenderTemporaryAbsenceApplicationDsl.() -> Unit,
-  ): OffenderMovementApplication = offenderTemporaryAbsenceApplicationBuilderFactory.builder().let { builder ->
+    tapType: String?,
+    tapSubType: String?,
+    dsl: OffenderTapApplicationDsl.() -> Unit,
+  ): OffenderTapApplication = offenderTapApplicationBuilderFactory.builder().let { builder ->
     builder.build(
       offenderBooking = offenderBooking,
       eventSubType = eventSubType,
@@ -1459,10 +1459,10 @@ class BookingBuilder(
       toAgency = toAgency,
       contactPersonName = contactPersonName,
       applicationType = applicationType,
-      temporaryAbsenceType = temporaryAbsenceType,
-      temporaryAbsenceSubType = temporaryAbsenceSubType,
+      tapType = tapType,
+      tapSubType = tapSubType,
     )
-      .also { offenderBooking.temporaryAbsenceApplications += it }
+      .also { offenderBooking.tapApplications += it }
       .also { builder.apply(dsl) }
   }
 }
