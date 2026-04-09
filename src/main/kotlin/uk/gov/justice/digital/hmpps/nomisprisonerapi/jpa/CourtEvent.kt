@@ -133,8 +133,6 @@ class CourtEvent(
     OUTCOME_DATE - not used
     OFFENDER_PROCEEDING_ID - not used
    */
-  @Column(name = "AUDIT_ADDITIONAL_INFO")
-  val auditAdditionalInfo: String? = null,
 
 ) : NomisAuditableEntityBasic() {
 

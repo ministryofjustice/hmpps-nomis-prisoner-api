@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -107,6 +108,7 @@ class CourtSentencingService(
   private val offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository,
   private val sentencingAdjustmentService: SentencingAdjustmentService,
   private val linkCaseTxnRepository: LinkCaseTxnRepository,
+  @Value("\${spring.datasource.username}") val datasourceUsername: String,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -656,7 +658,7 @@ class CourtSentencingService(
     eventId: Long,
   ) {
     findCourtCase(caseId, offenderNo).let { case ->
-      val telemetry = mutableMapOf(
+      var telemetry = mutableMapOf(
         "bookingId" to case.offenderBooking.bookingId.toString(),
         "offenderNo" to offenderNo,
         "eventId" to eventId.toString(),
@@ -1717,7 +1719,7 @@ class CourtSentencingService(
           caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
           caseInfoNumbers = mutableListOf(),
           statusUpdateReason = sourceCase.statusUpdateReason,
-          auditAdditionalInfo = "DPS Cloned from ${sourceCase.id}",
+
         ).also { clonedCase ->
           clonedCase.offenderCharges += sourceCase.offenderCharges.map { offenderCharge ->
             OffenderCharge(
@@ -1739,7 +1741,6 @@ class CourtSentencingService(
               resultCode1Indicator = offenderCharge.resultCode1Indicator,
               resultCode2Indicator = offenderCharge.resultCode2Indicator,
               mostSeriousFlag = offenderCharge.mostSeriousFlag,
-              auditAdditionalInfo = "DPS Cloned from ${offenderCharge.id}",
             )
           }
         },
@@ -1762,7 +1763,6 @@ class CourtSentencingService(
             nextEventStartTime = courtEvent.nextEventStartTime,
             directionCode = courtEvent.directionCode,
             holdFlag = courtEvent.holdFlag,
-            auditAdditionalInfo = "DPS Cloned from ${courtEvent.id}",
           ).also { clonedCourtEvent ->
             clonedCourtEvent.courtOrders += courtEvent.courtOrders.map { courtOrder ->
               CourtOrder(
@@ -1779,7 +1779,6 @@ class CourtSentencingService(
                 requestDate = courtOrder.requestDate,
                 nonReportFlag = courtOrder.nonReportFlag,
                 commentText = courtOrder.commentText,
-                auditAdditionalInfo = "DPS Cloned from ${courtOrder.id}",
               ).also { clonedCourtOrder ->
                 clonedCourtOrder.sentencePurposes += courtOrder.sentencePurposes.map { sentencePurpose ->
                   SentencePurpose(
@@ -1848,7 +1847,6 @@ class CourtSentencingService(
               sled2Calc = offenderSentence.sled2Calc,
               startDate2Calc = offenderSentence.startDate2Calc,
               adjustments = mutableListOf(),
-              auditAdditionalInfo = "DPS Cloned from ${offenderSentence.id.offenderBooking.bookingId}/${offenderSentence.id.sequence}",
             ).also { clonedSentence ->
               clonedSentence.offenderSentenceCharges += offenderSentence.offenderSentenceCharges.map { sourceOffenderSentenceCharge ->
                 val clonedOffenderSentenceCharge = clonedCase.offenderCharges[sourceCase.offenderCharges.indexOf(sourceOffenderSentenceCharge.offenderCharge)]
@@ -1860,7 +1858,6 @@ class CourtSentencingService(
                   ),
                   offenderSentence = clonedSentence,
                   offenderCharge = clonedOffenderSentenceCharge,
-                  auditAdditionalInfo = "DPS Cloned from ${sourceOffenderSentenceCharge.id.offenderBooking.bookingId}/${sourceOffenderSentenceCharge.id.sequence}/${sourceOffenderSentenceCharge.id.offenderChargeId}",
                 )
               }
             },
@@ -1887,7 +1884,6 @@ class CourtSentencingService(
                   startDate = sourceOffenderSentenceTerm.startDate,
                   endDate = sourceOffenderSentenceTerm.endDate,
                   sentenceTermType = sourceOffenderSentenceTerm.sentenceTermType,
-                  auditAdditionalInfo = "DPS Cloned from ${sourceOffenderSentenceTerm.id.offenderBooking.bookingId}/${sourceOffenderSentenceTerm.id.sentenceSequence}/${sourceOffenderSentenceTerm.id.termSequence}",
                 ),
               )
             }
@@ -1933,7 +1929,6 @@ class CourtSentencingService(
                 resultCode1Indicator = sourceCourtEventCharge.resultCode1Indicator,
                 resultCode2Indicator = sourceCourtEventCharge.resultCode2Indicator,
                 mostSeriousFlag = sourceCourtEventCharge.mostSeriousFlag,
-                auditAdditionalInfo = "DPS Cloned from ${sourceCourtEventCharge.id}",
               ),
             ).also { clonedCourtEventCharge ->
               if (sourceCourtEventCharge.linkedCaseTransaction != null) {
@@ -1953,7 +1948,6 @@ class CourtSentencingService(
                       targetCase = clonedCase,
                       offenderCharge = clonedCourtEventCharge.id.offenderCharge,
                       courtEvent = clonedCourtEvent,
-                      auditAdditionalInfo = "DPS Cloned from ${sourceCourtEventCharge.linkedCaseTransaction?.id?.caseId} / ${sourceCourtEventCharge.linkedCaseTransaction?.id?.combinedCaseId} / ${sourceCourtEventCharge.linkedCaseTransaction?.id?.offenderChargeId}",
                     ),
                   )
                 }

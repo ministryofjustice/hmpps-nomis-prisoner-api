@@ -136,8 +136,6 @@ class OffenderCharge(
     CHARGE_SEQ - not used
     ORDER_ID - not used
    */
-  @Column(name = "AUDIT_ADDITIONAL_INFO")
-  val auditAdditionalInfo: String? = null,
 
 ) : NomisAuditableEntityBasic() {
 
