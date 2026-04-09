@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -133,7 +134,9 @@ class CourtEvent(
     OUTCOME_DATE - not used
     OFFENDER_PROCEEDING_ID - not used
    */
-
+  @Column(name = "AUDIT_ADDITIONAL_INFO", insertable = false, updatable = false)
+  @Generated
+  var auditAdditionalInfo: String? = null,
 ) : NomisAuditableEntityBasic() {
 
   override fun equals(other: Any?): Boolean {
