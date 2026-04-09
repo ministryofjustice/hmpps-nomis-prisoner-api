@@ -50,6 +50,9 @@ data class OffenderSentenceCharge(
     updatable = false,
   )
   val offenderCharge: OffenderCharge,
+
+  @Column(name = "AUDIT_ADDITIONAL_INFO")
+  val auditAdditionalInfo: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

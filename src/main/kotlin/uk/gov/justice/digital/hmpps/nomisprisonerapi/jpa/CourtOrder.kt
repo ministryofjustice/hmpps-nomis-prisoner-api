@@ -110,6 +110,8 @@ class CourtOrder(
     OFFENDER_PROCEEDING_ID - not used
     WORKFLOW_ID - not used
    */
+  @Column(name = "AUDIT_ADDITIONAL_INFO")
+  val auditAdditionalInfo: String? = null,
 
 ) {
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
