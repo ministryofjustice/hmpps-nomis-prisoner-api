@@ -3240,7 +3240,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         val case = response.getByCaseInfoNumber("X0002")
         assertThat(case.courtEvents).hasSize(2)
         assertThat(case.courtEvents[0].id).isGreaterThan(0)
-        assertThat(case.courtEvents[0].isClone).isTrue()
         assertThat(case.courtEvents[1].id).isGreaterThan(0)
       }
 

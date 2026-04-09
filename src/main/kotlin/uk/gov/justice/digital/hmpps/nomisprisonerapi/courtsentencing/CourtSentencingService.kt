@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -108,7 +107,6 @@ class CourtSentencingService(
   private val offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository,
   private val sentencingAdjustmentService: SentencingAdjustmentService,
   private val linkCaseTxnRepository: LinkCaseTxnRepository,
-  @Value("\${spring.datasource.username}") val datasourceUsername: String,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -658,7 +656,7 @@ class CourtSentencingService(
     eventId: Long,
   ) {
     findCourtCase(caseId, offenderNo).let { case ->
-      var telemetry = mutableMapOf(
+      val telemetry = mutableMapOf(
         "bookingId" to case.offenderBooking.bookingId.toString(),
         "offenderNo" to offenderNo,
         "eventId" to eventId.toString(),
@@ -2165,7 +2163,7 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   modifiedByUsername = this.modifyUserId,
   courtEventCharges = this.courtEventCharges.map { it.toCourtEventCharge() },
   courtOrders = this.courtOrders.map { it.toCourtOrder() },
-  isClone = this.auditAdditionalInfo?.startsWith("DPS Cloned from") == true,
+  isClone = this.auditAdditionalInfo?.startsWith("DPS Cloned") == true,
 )
 
 private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
