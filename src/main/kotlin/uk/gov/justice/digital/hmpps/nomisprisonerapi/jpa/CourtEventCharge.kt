@@ -96,6 +96,10 @@ class CourtEventCharge(
 
   @OneToOne(mappedBy = "courtEventCharge", fetch = FetchType.LAZY)
   var linkedCaseTransaction: LinkCaseTxn? = null,
+
+  @Column(name = "AUDIT_ADDITIONAL_INFO")
+  val auditAdditionalInfo: String? = null,
+
 ) : NomisAuditableEntityBasic() {
 
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)

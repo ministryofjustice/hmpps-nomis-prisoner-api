@@ -3072,6 +3072,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(caseStatus.code).isEqualTo("A")
             assertThat(targetCombinedCase).isNull()
             assertThat(sourceCombinedCases).isEmpty()
+            assertThat(auditAdditionalInfo).isEqualTo("DPS Cloned from $remandCaseId")
           }
         }
       }
@@ -3161,6 +3162,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(offenceDate).isEqualTo(LocalDate.parse("2020-01-02"))
             assertThat(offenceEndDate).isEqualTo(LocalDate.parse("2020-12-02"))
             assertThat(plea?.code).isEqualTo("G")
+            assertThat(auditAdditionalInfo).isEqualTo("DPS Cloned from ${sourceCharge.id}")
 
             assertThat(mostSeriousFlag).isTrue
 
@@ -3216,6 +3218,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
             assertThat(nextEventDate).isEqualTo(LocalDate.parse("2022-02-01"))
             assertThat(nextEventStartTime).isEqualTo(LocalDateTime.parse("2022-02-01T10:00"))
+            assertThat(auditAdditionalInfo).isEqualTo("DPS Cloned from ${sourceEvent.id}")
 
             // derived fields
             assertThat(nextEventRequestFlag).isTrue
@@ -3267,6 +3270,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(horseDrawnVehicleCharge.plea?.code).isEqualTo("NG")
             assertThat(horseDrawnVehicleCharge.propertyValue).isEqualTo(BigDecimal.TEN)
             assertThat(horseDrawnVehicleCharge.totalPropertyValue).isEqualTo(BigDecimal.TWO)
+            assertThat(horseDrawnVehicleCharge.auditAdditionalInfo).contains("DPS Cloned from")
 
             val drunkCharge = courtEventCharges.find { it.id.offenderCharge.offence.id.offenceCode == "LG72004" }!!
             assertThat(drunkCharge.resultCode1?.code).isEqualTo("4506")
@@ -3330,6 +3334,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(courtOrders[0].sentencePurposes).hasSize(1)
             assertThat(courtOrders[0].sentencePurposes[0].id.purposeCode).isEqualTo("PUNISH")
             assertThat(courtOrders[0].sentencePurposes[0].id.orderPartyCode).isEqualTo("CRT")
+            assertThat(courtOrders[0].auditAdditionalInfo).contains("DPS Cloned from")
           }
         }
       }
@@ -3401,6 +3406,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(nomConsWithSentDetailRef).isEqualTo(4)
             assertThat(hdcExclusionFlag).isTrue
             assertThat(hdcExclusionReason).isEqualTo("ABDR")
+            assertThat(auditAdditionalInfo).contains("DPS Cloned from")
 
             //  booking already has a single sentenc with line 20
             assertThat(lineSequence).isEqualTo(21)
@@ -3500,6 +3506,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           with(case.sentences[0]) {
             assertThat(offenderSentenceCharges).hasSize(1)
             assertThat(offenderSentenceCharges[0].offenderCharge).isEqualTo(charge)
+            assertThat(offenderSentenceCharges[0].auditAdditionalInfo).contains("DPS Cloned from")
           }
         }
       }
@@ -3544,6 +3551,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(hours).isEqualTo(3)
               assertThat(sentenceTermType.code).isEqualTo("SEC86")
               assertThat(lifeSentenceFlag).isTrue
+              assertThat(auditAdditionalInfo).contains("DPS Cloned from")
             }
             with(offenderSentenceTerms[1]) {
               assertThat(id.termSequence).isEqualTo(2)

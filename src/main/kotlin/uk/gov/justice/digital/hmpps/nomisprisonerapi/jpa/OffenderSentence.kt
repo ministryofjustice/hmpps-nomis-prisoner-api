@@ -254,6 +254,8 @@ class OffenderSentence(
     AGGREGATE_TERM - not used
     WORKFLOW_ID - not used
    */
+  @Column(name = "AUDIT_ADDITIONAL_INFO")
+  val auditAdditionalInfo: String? = null,
 
   @Transient
   @Value("false")
