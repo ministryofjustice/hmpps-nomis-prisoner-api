@@ -3243,6 +3243,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         val case = response.getByCaseInfoNumber("X0002")
         assertThat(case.courtEvents).hasSize(2)
         assertThat(case.courtEvents[0].id).isGreaterThan(0)
+        assertThat(case.courtEvents[0].isClone).isTrue()
         assertThat(case.courtEvents[1].id).isGreaterThan(0)
       }
 
@@ -5960,6 +5961,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("commentText").isEqualTo("Court event comment")
           .jsonPath("orderRequestedFlag").isEqualTo(false)
           .jsonPath("holdFlag").isEqualTo(false)
+          .jsonPath("isClone").isEqualTo(false)
           .jsonPath("nextEventRequestFlag").isEqualTo(true)
           .jsonPath("nextEventDateTime").isEqualTo(aLaterDateTimeString)
           .jsonPath("createdDateTime").isNotEmpty

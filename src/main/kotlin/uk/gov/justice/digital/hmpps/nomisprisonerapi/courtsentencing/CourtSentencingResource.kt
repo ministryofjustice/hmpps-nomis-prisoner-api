@@ -2376,6 +2376,7 @@ data class CourtEventResponse(
   val modifiedByUsername: String?,
   val courtEventCharges: List<CourtEventChargeResponse>,
   val courtOrders: List<CourtOrderResponse>,
+  val isClone: Boolean,
 )
 
 @Schema(description = "Offender Charge")
