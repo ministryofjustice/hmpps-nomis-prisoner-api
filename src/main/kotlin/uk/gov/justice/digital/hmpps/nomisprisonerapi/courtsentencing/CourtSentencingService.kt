@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.AuditRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -107,6 +108,7 @@ class CourtSentencingService(
   private val offenderFixedTermRecallRepository: OffenderFixedTermRecallRepository,
   private val sentencingAdjustmentService: SentencingAdjustmentService,
   private val linkCaseTxnRepository: LinkCaseTxnRepository,
+  private val auditRepository: AuditRepository,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -1704,192 +1706,194 @@ class CourtSentencingService(
 
   private fun cloneCourtCasesToLatestBookingFrom(latestBooking: OffenderBooking, sourceCourtCases: List<CourtCase>): BookingCourtCaseCloneResponse {
     val clonedCasesWithSource = sourceCourtCases.map { sourceCase ->
-      courtCaseRepository.saveAndFlush(
-        CourtCase(
-          offenderBooking = latestBooking,
-          legalCaseType = sourceCase.legalCaseType,
-          beginDate = sourceCase.beginDate,
-          // make case active unless this is a source of a linked case
-          caseStatus = if (sourceCase.targetCombinedCase != null) sourceCase.caseStatus else lookupCaseStatus("A"),
-          court = sourceCase.court,
-          // set this later as the last update to offender case to prevent NOMIS trigger adding ti identifiers table
-          primaryCaseInfoNumber = null,
-          caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
-          caseInfoNumbers = mutableListOf(),
-          statusUpdateReason = sourceCase.statusUpdateReason,
-
-        ).also { clonedCase ->
-          clonedCase.offenderCharges += sourceCase.offenderCharges.map { offenderCharge ->
-            OffenderCharge(
-              offenderBooking = latestBooking,
-              offence = offenderCharge.offence,
-              courtCase = clonedCase,
-              offencesCount = offenderCharge.offencesCount,
-              offenceDate = offenderCharge.offenceDate,
-              offenceEndDate = offenderCharge.offenceEndDate,
-              plea = offenderCharge.plea,
-              propertyValue = offenderCharge.propertyValue,
-              totalPropertyValue = offenderCharge.totalPropertyValue,
-              cjitCode1 = offenderCharge.cjitCode1,
-              cjitCode2 = offenderCharge.cjitCode2,
-              cjitCode3 = offenderCharge.cjitCode3,
-              chargeStatus = offenderCharge.chargeStatus,
-              resultCode1 = offenderCharge.resultCode1,
-              resultCode2 = offenderCharge.resultCode2,
-              resultCode1Indicator = offenderCharge.resultCode1Indicator,
-              resultCode2Indicator = offenderCharge.resultCode2Indicator,
-              mostSeriousFlag = offenderCharge.mostSeriousFlag,
-            )
-          }
-        },
-      ).also { clonedCase ->
-        clonedCase.courtEvents += sourceCase.courtEvents.map { courtEvent ->
-          CourtEvent(
+      auditRepository.withAdditionalInfo("DPS Clone from case ${sourceCase.id}") {
+        courtCaseRepository.saveAndFlush(
+          CourtCase(
             offenderBooking = latestBooking,
-            courtCase = clonedCase,
-            eventDate = courtEvent.eventDate,
-            startTime = courtEvent.startTime,
-            courtEventType = courtEvent.courtEventType,
-            judgeName = courtEvent.judgeName,
-            eventStatus = courtEvent.eventStatus,
-            court = courtEvent.court,
-            outcomeReasonCode = courtEvent.outcomeReasonCode,
-            commentText = courtEvent.commentText,
-            nextEventRequestFlag = courtEvent.nextEventRequestFlag,
-            orderRequestedFlag = courtEvent.orderRequestedFlag,
-            nextEventDate = courtEvent.nextEventDate,
-            nextEventStartTime = courtEvent.nextEventStartTime,
-            directionCode = courtEvent.directionCode,
-            holdFlag = courtEvent.holdFlag,
-          ).also { clonedCourtEvent ->
-            clonedCourtEvent.courtOrders += courtEvent.courtOrders.map { courtOrder ->
-              CourtOrder(
+            legalCaseType = sourceCase.legalCaseType,
+            beginDate = sourceCase.beginDate,
+            // make case active unless this is a source of a linked case
+            caseStatus = if (sourceCase.targetCombinedCase != null) sourceCase.caseStatus else lookupCaseStatus("A"),
+            court = sourceCase.court,
+            // set this later as the last update to offender case to prevent NOMIS trigger adding ti identifiers table
+            primaryCaseInfoNumber = null,
+            caseSequence = courtCaseRepository.getNextCaseSequence(latestBooking),
+            caseInfoNumbers = mutableListOf(),
+            statusUpdateReason = sourceCase.statusUpdateReason,
+
+          ).also { clonedCase ->
+            clonedCase.offenderCharges += sourceCase.offenderCharges.map { offenderCharge ->
+              OffenderCharge(
                 offenderBooking = latestBooking,
+                offence = offenderCharge.offence,
                 courtCase = clonedCase,
-                courtEvent = clonedCourtEvent,
-                courtDate = courtOrder.courtDate,
-                issuingCourt = courtOrder.issuingCourt,
-                courtInfoId = courtOrder.courtInfoId,
-                orderType = courtOrder.orderType,
-                orderStatus = courtOrder.orderStatus,
-                dueDate = courtOrder.dueDate,
-                seriousnessLevel = courtOrder.seriousnessLevel,
-                requestDate = courtOrder.requestDate,
-                nonReportFlag = courtOrder.nonReportFlag,
-                commentText = courtOrder.commentText,
-              ).also { clonedCourtOrder ->
-                clonedCourtOrder.sentencePurposes += courtOrder.sentencePurposes.map { sentencePurpose ->
-                  SentencePurpose(
-                    id = SentencePurposeId(
-                      order = clonedCourtOrder,
-                      orderPartyCode = sentencePurpose.id.orderPartyCode,
-                      purposeCode = sentencePurpose.id.purposeCode,
-                    ),
-                  )
+                offencesCount = offenderCharge.offencesCount,
+                offenceDate = offenderCharge.offenceDate,
+                offenceEndDate = offenderCharge.offenceEndDate,
+                plea = offenderCharge.plea,
+                propertyValue = offenderCharge.propertyValue,
+                totalPropertyValue = offenderCharge.totalPropertyValue,
+                cjitCode1 = offenderCharge.cjitCode1,
+                cjitCode2 = offenderCharge.cjitCode2,
+                cjitCode3 = offenderCharge.cjitCode3,
+                chargeStatus = offenderCharge.chargeStatus,
+                resultCode1 = offenderCharge.resultCode1,
+                resultCode2 = offenderCharge.resultCode2,
+                resultCode1Indicator = offenderCharge.resultCode1Indicator,
+                resultCode2Indicator = offenderCharge.resultCode2Indicator,
+                mostSeriousFlag = offenderCharge.mostSeriousFlag,
+              )
+            }
+          },
+        ).also { clonedCase ->
+          clonedCase.courtEvents += sourceCase.courtEvents.map { courtEvent ->
+            CourtEvent(
+              offenderBooking = latestBooking,
+              courtCase = clonedCase,
+              eventDate = courtEvent.eventDate,
+              startTime = courtEvent.startTime,
+              courtEventType = courtEvent.courtEventType,
+              judgeName = courtEvent.judgeName,
+              eventStatus = courtEvent.eventStatus,
+              court = courtEvent.court,
+              outcomeReasonCode = courtEvent.outcomeReasonCode,
+              commentText = courtEvent.commentText,
+              nextEventRequestFlag = courtEvent.nextEventRequestFlag,
+              orderRequestedFlag = courtEvent.orderRequestedFlag,
+              nextEventDate = courtEvent.nextEventDate,
+              nextEventStartTime = courtEvent.nextEventStartTime,
+              directionCode = courtEvent.directionCode,
+              holdFlag = courtEvent.holdFlag,
+            ).also { clonedCourtEvent ->
+              clonedCourtEvent.courtOrders += courtEvent.courtOrders.map { courtOrder ->
+                CourtOrder(
+                  offenderBooking = latestBooking,
+                  courtCase = clonedCase,
+                  courtEvent = clonedCourtEvent,
+                  courtDate = courtOrder.courtDate,
+                  issuingCourt = courtOrder.issuingCourt,
+                  courtInfoId = courtOrder.courtInfoId,
+                  orderType = courtOrder.orderType,
+                  orderStatus = courtOrder.orderStatus,
+                  dueDate = courtOrder.dueDate,
+                  seriousnessLevel = courtOrder.seriousnessLevel,
+                  requestDate = courtOrder.requestDate,
+                  nonReportFlag = courtOrder.nonReportFlag,
+                  commentText = courtOrder.commentText,
+                ).also { clonedCourtOrder ->
+                  clonedCourtOrder.sentencePurposes += courtOrder.sentencePurposes.map { sentencePurpose ->
+                    SentencePurpose(
+                      id = SentencePurposeId(
+                        order = clonedCourtOrder,
+                        orderPartyCode = sentencePurpose.id.orderPartyCode,
+                        purposeCode = sentencePurpose.id.purposeCode,
+                      ),
+                    )
+                  }
                 }
               }
             }
           }
-        }
-        clonedCase.sentences += sourceCase.sentences.map { offenderSentence ->
-          val lineSequence = offenderSentenceRepository.getNextLineSequence(latestBooking).toInt()
-          val newSequence = offenderSentenceRepository.getNextSequence(latestBooking)
-          val sourceCourtOrders = sourceCase.courtEvents.flatMap { it.courtOrders }
-          val clonedCourtOrders = clonedCase.courtEvents.flatMap { it.courtOrders }
-          offenderSentenceRepository.saveAndFlush(
-            OffenderSentence(
-              id = SentenceId(
-                offenderBooking = latestBooking,
-                sequence = newSequence,
-              ),
-              status = offenderSentence.status,
-              calculationType = offenderSentence.calculationType,
-              courtOrder = clonedCourtOrders[sourceCourtOrders.indexOf(offenderSentence.courtOrder)],
-              startDate = offenderSentence.startDate,
-              // set to null then reset to real value once all cases have been cloned
-              consecSequence = null,
-              endDate = offenderSentence.endDate,
-              commentText = offenderSentence.commentText,
-              absenceCount = offenderSentence.absenceCount,
-              courtCase = clonedCase,
-              etdCalculatedDate = offenderSentence.etdCalculatedDate,
-              mtdCalculatedDate = offenderSentence.mtdCalculatedDate,
-              ltdCalculatedDate = offenderSentence.ltdCalculatedDate,
-              ardCalculatedDate = offenderSentence.ardCalculatedDate,
-              crdCalculatedDate = offenderSentence.crdCalculatedDate,
-              pedCalculatedDate = offenderSentence.pedCalculatedDate,
-              npdCalculatedDate = offenderSentence.npdCalculatedDate,
-              ledCalculatedDate = offenderSentence.ledCalculatedDate,
-              sedCalculatedDate = offenderSentence.sedCalculatedDate,
-              prrdCalculatedDate = offenderSentence.prrdCalculatedDate,
-              tariffCalculatedDate = offenderSentence.tariffCalculatedDate,
-              dprrdCalculatedDate = offenderSentence.dprrdCalculatedDate,
-              tusedCalculatedDate = offenderSentence.tusedCalculatedDate,
-              aggSentenceSequence = offenderSentence.aggSentenceSequence,
-              aggAdjustDays = offenderSentence.aggAdjustDays,
-              sentenceLevel = offenderSentence.sentenceLevel,
-              extendedDays = offenderSentence.extendedDays,
-              counts = offenderSentence.counts,
-              statusUpdateReason = offenderSentence.statusUpdateReason,
-              category = offenderSentence.category,
-              fineAmount = offenderSentence.fineAmount,
-              dischargeDate = offenderSentence.dischargeDate,
-              nomSentDetailRef = offenderSentence.nomSentDetailRef,
-              nomConsToSentDetailRef = offenderSentence.nomConsToSentDetailRef,
-              nomConsFromSentDetailRef = offenderSentence.nomConsFromSentDetailRef,
-              nomConsWithSentDetailRef = offenderSentence.nomConsWithSentDetailRef,
-              lineSequence = lineSequence,
-              hdcExclusionFlag = offenderSentence.hdcExclusionFlag,
-              hdcExclusionReason = offenderSentence.hdcExclusionReason,
-              cjaAct = offenderSentence.cjaAct,
-              sled2Calc = offenderSentence.sled2Calc,
-              startDate2Calc = offenderSentence.startDate2Calc,
-              adjustments = mutableListOf(),
+          clonedCase.sentences += sourceCase.sentences.map { offenderSentence ->
+            val lineSequence = offenderSentenceRepository.getNextLineSequence(latestBooking).toInt()
+            val newSequence = offenderSentenceRepository.getNextSequence(latestBooking)
+            val sourceCourtOrders = sourceCase.courtEvents.flatMap { it.courtOrders }
+            val clonedCourtOrders = clonedCase.courtEvents.flatMap { it.courtOrders }
+            offenderSentenceRepository.saveAndFlush(
+              OffenderSentence(
+                id = SentenceId(
+                  offenderBooking = latestBooking,
+                  sequence = newSequence,
+                ),
+                status = offenderSentence.status,
+                calculationType = offenderSentence.calculationType,
+                courtOrder = clonedCourtOrders[sourceCourtOrders.indexOf(offenderSentence.courtOrder)],
+                startDate = offenderSentence.startDate,
+                // set to null then reset to real value once all cases have been cloned
+                consecSequence = null,
+                endDate = offenderSentence.endDate,
+                commentText = offenderSentence.commentText,
+                absenceCount = offenderSentence.absenceCount,
+                courtCase = clonedCase,
+                etdCalculatedDate = offenderSentence.etdCalculatedDate,
+                mtdCalculatedDate = offenderSentence.mtdCalculatedDate,
+                ltdCalculatedDate = offenderSentence.ltdCalculatedDate,
+                ardCalculatedDate = offenderSentence.ardCalculatedDate,
+                crdCalculatedDate = offenderSentence.crdCalculatedDate,
+                pedCalculatedDate = offenderSentence.pedCalculatedDate,
+                npdCalculatedDate = offenderSentence.npdCalculatedDate,
+                ledCalculatedDate = offenderSentence.ledCalculatedDate,
+                sedCalculatedDate = offenderSentence.sedCalculatedDate,
+                prrdCalculatedDate = offenderSentence.prrdCalculatedDate,
+                tariffCalculatedDate = offenderSentence.tariffCalculatedDate,
+                dprrdCalculatedDate = offenderSentence.dprrdCalculatedDate,
+                tusedCalculatedDate = offenderSentence.tusedCalculatedDate,
+                aggSentenceSequence = offenderSentence.aggSentenceSequence,
+                aggAdjustDays = offenderSentence.aggAdjustDays,
+                sentenceLevel = offenderSentence.sentenceLevel,
+                extendedDays = offenderSentence.extendedDays,
+                counts = offenderSentence.counts,
+                statusUpdateReason = offenderSentence.statusUpdateReason,
+                category = offenderSentence.category,
+                fineAmount = offenderSentence.fineAmount,
+                dischargeDate = offenderSentence.dischargeDate,
+                nomSentDetailRef = offenderSentence.nomSentDetailRef,
+                nomConsToSentDetailRef = offenderSentence.nomConsToSentDetailRef,
+                nomConsFromSentDetailRef = offenderSentence.nomConsFromSentDetailRef,
+                nomConsWithSentDetailRef = offenderSentence.nomConsWithSentDetailRef,
+                lineSequence = lineSequence,
+                hdcExclusionFlag = offenderSentence.hdcExclusionFlag,
+                hdcExclusionReason = offenderSentence.hdcExclusionReason,
+                cjaAct = offenderSentence.cjaAct,
+                sled2Calc = offenderSentence.sled2Calc,
+                startDate2Calc = offenderSentence.startDate2Calc,
+                adjustments = mutableListOf(),
+              ).also { clonedSentence ->
+                clonedSentence.offenderSentenceCharges += offenderSentence.offenderSentenceCharges.map { sourceOffenderSentenceCharge ->
+                  val clonedOffenderSentenceCharge =
+                    clonedCase.offenderCharges[sourceCase.offenderCharges.indexOf(sourceOffenderSentenceCharge.offenderCharge)]
+                  OffenderSentenceCharge(
+                    id = OffenderSentenceChargeId(
+                      offenderBooking = latestBooking,
+                      sequence = clonedSentence.id.sequence,
+                      offenderChargeId = clonedOffenderSentenceCharge.id,
+                    ),
+                    offenderSentence = clonedSentence,
+                    offenderCharge = clonedOffenderSentenceCharge,
+                  )
+                }
+              },
             ).also { clonedSentence ->
-              clonedSentence.offenderSentenceCharges += offenderSentence.offenderSentenceCharges.map { sourceOffenderSentenceCharge ->
-                val clonedOffenderSentenceCharge = clonedCase.offenderCharges[sourceCase.offenderCharges.indexOf(sourceOffenderSentenceCharge.offenderCharge)]
-                OffenderSentenceCharge(
-                  id = OffenderSentenceChargeId(
-                    offenderBooking = latestBooking,
-                    sequence = clonedSentence.id.sequence,
-                    offenderChargeId = clonedOffenderSentenceCharge.id,
+              clonedSentence.offenderSentenceTerms += offenderSentence.offenderSentenceTerms.map { sourceOffenderSentenceTerm ->
+                val termSequence = offenderSentenceTermRepository.getNextTermSequence(
+                  offenderBookId = latestBooking.bookingId,
+                  sentenceSeq = clonedSentence.id.sequence,
+                )
+                offenderSentenceTermRepository.saveAndFlush(
+                  OffenderSentenceTerm(
+                    id = OffenderSentenceTermId(
+                      offenderBooking = latestBooking,
+                      sentenceSequence = clonedSentence.id.sequence,
+                      termSequence = termSequence,
+                    ),
+                    years = sourceOffenderSentenceTerm.years,
+                    months = sourceOffenderSentenceTerm.months,
+                    weeks = sourceOffenderSentenceTerm.weeks,
+                    days = sourceOffenderSentenceTerm.days,
+                    hours = sourceOffenderSentenceTerm.hours,
+                    lifeSentenceFlag = sourceOffenderSentenceTerm.lifeSentenceFlag,
+                    offenderSentence = clonedSentence,
+                    startDate = sourceOffenderSentenceTerm.startDate,
+                    endDate = sourceOffenderSentenceTerm.endDate,
+                    sentenceTermType = sourceOffenderSentenceTerm.sentenceTermType,
                   ),
-                  offenderSentence = clonedSentence,
-                  offenderCharge = clonedOffenderSentenceCharge,
                 )
               }
-            },
-          ).also { clonedSentence ->
-            clonedSentence.offenderSentenceTerms += offenderSentence.offenderSentenceTerms.map { sourceOffenderSentenceTerm ->
-              val termSequence = offenderSentenceTermRepository.getNextTermSequence(
-                offenderBookId = latestBooking.bookingId,
-                sentenceSeq = clonedSentence.id.sequence,
-              )
-              offenderSentenceTermRepository.saveAndFlush(
-                OffenderSentenceTerm(
-                  id = OffenderSentenceTermId(
-                    offenderBooking = latestBooking,
-                    sentenceSequence = clonedSentence.id.sequence,
-                    termSequence = termSequence,
-                  ),
-                  years = sourceOffenderSentenceTerm.years,
-                  months = sourceOffenderSentenceTerm.months,
-                  weeks = sourceOffenderSentenceTerm.weeks,
-                  days = sourceOffenderSentenceTerm.days,
-                  hours = sourceOffenderSentenceTerm.hours,
-                  lifeSentenceFlag = sourceOffenderSentenceTerm.lifeSentenceFlag,
-                  offenderSentence = clonedSentence,
-                  startDate = sourceOffenderSentenceTerm.startDate,
-                  endDate = sourceOffenderSentenceTerm.endDate,
-                  sentenceTermType = sourceOffenderSentenceTerm.sentenceTermType,
-                ),
-              )
             }
           }
-        }
+        }.let { courtCaseRepository.saveAndFlush(it) }
       }
-    }.let {
-      val clonedCases = courtCaseRepository.saveAllAndFlush(it)
+    }.let { clonedCases ->
       // fix linked case
       clonedCases.forEachIndexed { caseIndex, clonedCase ->
         val sourceCase = sourceCourtCases[caseIndex]
