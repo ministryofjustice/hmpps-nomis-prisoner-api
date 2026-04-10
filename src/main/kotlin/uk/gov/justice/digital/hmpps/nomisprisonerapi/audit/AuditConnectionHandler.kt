@@ -7,6 +7,7 @@ import java.sql.Connection
 
 interface AuditConnectionHandler {
   fun applyAuditModule(conn: Connection)
+  fun applyAuditAdditionalInfo(conn: Connection, additionalInfo: String = "")
 }
 
 @Component
@@ -19,6 +20,10 @@ class H2AuditConnectionHandler : AuditConnectionHandler {
   override fun applyAuditModule(conn: Connection) {
     val module = AuditContextHolder.get()
     log.info("Applying H2 AuditConnectionHandler with audit module $module")
+  }
+
+  override fun applyAuditAdditionalInfo(conn: Connection, additionalInfo: String) {
+    log.info("Applying H2 AuditConnectionHandler with audit additionalInfo $additionalInfo")
   }
 }
 
@@ -35,6 +40,14 @@ class OracleAuditConnectionHandler : AuditConnectionHandler {
     conn.prepareCall("{call OMS_OWNER.nomis_context.set_context(?, ?)}").use { stmt ->
       stmt.setString(1, "AUDIT_MODULE_NAME")
       stmt.setString(2, module)
+      stmt.execute()
+    }
+  }
+  override fun applyAuditAdditionalInfo(conn: Connection, additionalInfo: String) {
+    log.info("Applying Oracle AuditConnectionHandler with audit additionalInfo $additionalInfo")
+    conn.prepareCall("{call OMS_OWNER.nomis_context.set_context(?, ?)}").use { stmt ->
+      stmt.setString(1, "AUDIT_ADDITIONAL_INFO")
+      stmt.setString(2, additionalInfo)
       stmt.execute()
     }
   }
