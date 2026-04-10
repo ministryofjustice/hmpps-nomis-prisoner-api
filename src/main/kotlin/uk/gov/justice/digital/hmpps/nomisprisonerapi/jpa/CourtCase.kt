@@ -124,8 +124,6 @@ class CourtCase(
     VICTIM_LIAISON_UNIT - not used
     CASE_INFO_PREFIX - not used
    */
-  @Column(name = "AUDIT_ADDITIONAL_INFO")
-  val auditAdditionalInfo: String? = null,
 
 ) : NomisAuditableEntityBasic() {
 

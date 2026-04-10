@@ -80,9 +80,6 @@ data class OffenderSentenceTerm(
     ],
   )
   var sentenceTermType: SentenceTermType,
-
-  @Column(name = "AUDIT_ADDITIONAL_INFO")
-  val auditAdditionalInfo: String? = null,
 ) : NomisAuditableEntityBasic() {
 
   override fun equals(other: Any?): Boolean {

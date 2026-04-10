@@ -62,8 +62,6 @@ data class LinkCaseTxn(
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
   var courtEvent: CourtEvent,
 
-  @Column(name = "AUDIT_ADDITIONAL_INFO")
-  val auditAdditionalInfo: String? = null,
 ) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
