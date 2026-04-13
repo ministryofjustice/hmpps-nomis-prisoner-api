@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -109,6 +110,7 @@ class CourtSentencingService(
   private val sentencingAdjustmentService: SentencingAdjustmentService,
   private val linkCaseTxnRepository: LinkCaseTxnRepository,
   private val auditRepository: AuditRepository,
+  @Value("\${spring.datasource.username}") val datasourceUsername: String,
 ) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -1485,7 +1487,7 @@ class CourtSentencingService(
 
   private fun ReturnToCustodyRequest?.createOrUpdateBooking(bookingIds: Set<Long>) {
     if (this != null) {
-      val enteredByStaff = findStaffByUsername(this.enteredByStaffUsername)
+      val enteredByStaff = findStaffByUsername(this.enteredByStaffUsername, fallBackUsername = datasourceUsername.uppercase())
       bookingIds.forEach { bookingId ->
         with(findOffenderBooking(bookingId)) {
           if (fixedTermRecall == null) {
@@ -1630,6 +1632,8 @@ class CourtSentencingService(
 
   private fun findStaffByUsername(username: String): Staff = staffUserAccountRepository.findByUsername(username)?.staff
     ?: throw BadDataException("Username $username not found")
+
+  private fun findStaffByUsername(username: String, fallBackUsername: String): Staff = runCatching { findStaffByUsername(username) }.getOrElse { findStaffByUsername(fallBackUsername) }
 
   fun cloneCourtCasesToLatestBookingFor(offenderNo: String, caseId: Long): BookingCourtCaseCloneResponse {
     val case = courtCaseRepository.findByIdOrNull(caseId) ?: throw NotFoundException("Court case $caseId not found")
