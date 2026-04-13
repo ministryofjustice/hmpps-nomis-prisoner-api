@@ -11192,6 +11192,26 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         }
 
         @Test
+        fun `will update custody data when username is not found`() {
+          assertThat(offenderFixedTermRecallRepository.findByIdOrNull(booking.bookingId)!!.staff.id).isEqualTo(
+            staff.id,
+          )
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall/restore-previous")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request.copy(returnToCustody = request.returnToCustody!!.copy(enteredByStaffUsername = "someclientcredndentials"))))
+            .exchange()
+            .expectStatus().isOk
+
+          // will be system staff ID
+          assertThat(offenderFixedTermRecallRepository.findByIdOrNull(booking.bookingId)!!.staff.id).isEqualTo(
+            -1,
+          )
+        }
+
+        @Test
         fun `will remove breach court appearance data`() {
           assertThat(courtEventRepository.findById(breachCourtEvent.id)).isPresent
           assertThat(courtEventRepository.findById(previousBreachCourtEvent.id)).isPresent
