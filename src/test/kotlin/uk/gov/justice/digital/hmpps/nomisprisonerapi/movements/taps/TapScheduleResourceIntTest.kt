@@ -687,6 +687,53 @@ class TapScheduleResourceIntTest(
     }
 
     @Nested
+    inner class CreateTapScheduleOutFromDpsAddressWithTrailingCommas {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              premise = "32 Tonbridge Road,, Maidstone,, Kent,",
+              street = null,
+              locality = null,
+              city = null,
+              postcode = null,
+              county = null,
+              country = null,
+            )
+            booking = booking {
+              application = tapApplication()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create tap schedule out with existing address`() {
+        webTestClient.upsertTapScheduleOutOk(
+          request = anUpsertTapScheduleOut(
+            toAddress = UpsertTapAddress(
+              name = null,
+              // Another production bug where a DPS address has last character ',' but address fits into NOMIS premise
+              addressText = "32 Tonbridge Road,, Maidstone,, Kent,",
+              postalCode = null,
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class CreateTapScheduleOutWithDuplicateOffenderAddress {
       @BeforeEach
       fun setUp() {
