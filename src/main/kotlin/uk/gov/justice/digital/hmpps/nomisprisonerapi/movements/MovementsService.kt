@@ -742,7 +742,7 @@ class MovementsService(
     val maxPremiseLength = 135
 
     if (addressText.length <= maxPremiseLength) {
-      return addressText.trim() to null
+      return addressText.trimDpsAddress() to null
     }
 
     val split = if (addressText.substring(maxPremiseLength, maxPremiseLength + 1) == " ") {
@@ -804,7 +804,7 @@ class MovementsService(
 
   private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
     .firstOrNull {
-      it.toFullAddress(null) == addressText.trim() && it.postalCode == postalCode?.trim()
+      it.toFullAddress(null) == addressText.trimDpsAddress() && it.postalCode == postalCode?.trim()
     }
 
   private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
@@ -812,10 +812,12 @@ class MovementsService(
     return corporateAddressRepository.findAllByCorporate_CorporateName(corporateName)
       .firstOrNull {
         // Need to check address with and without corporate name - it might be included on a DPS address
-        (it.toFullAddress(corporateName) == addressText.trim() || it.toFullAddress() == addressText.trim()) &&
+        (it.toFullAddress(corporateName) == addressText.trimDpsAddress() || it.toFullAddress() == addressText.trimDpsAddress()) &&
           it.postalCode == postalCode?.trim()
       }
   }
+
+  private fun String.trimDpsAddress() = this.trim().trimEnd(',')
 
   private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw BadDataException("Agency id $agencyId is invalid")

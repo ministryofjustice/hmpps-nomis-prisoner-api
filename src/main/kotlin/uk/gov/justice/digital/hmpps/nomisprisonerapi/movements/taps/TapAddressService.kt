@@ -92,7 +92,7 @@ class TapAddressService(
     val maxPremiseLength = 135
 
     if (addressText.length <= maxPremiseLength) {
-      return addressText.trim() to null
+      return addressText.trimDpsAddress() to null
     }
 
     val split = if (addressText.substring(maxPremiseLength, maxPremiseLength + 1) == " ") {
@@ -105,7 +105,7 @@ class TapAddressService(
 
   private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
     .firstOrNull {
-      it.toFullAddress(null) == addressText.trim() && it.postalCode == postalCode?.trim()
+      it.toFullAddress(null) == addressText.trimDpsAddress().trimEnd(',') && it.postalCode == postalCode?.trim()
     }
 
   private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
@@ -113,7 +113,7 @@ class TapAddressService(
     return corporateAddressRepository.findAllByCorporate_CorporateName(corporateName)
       .firstOrNull {
         // Need to check address with and without corporate name - it might be included on a DPS address
-        (it.toFullAddress(corporateName) == addressText.trim() || it.toFullAddress() == addressText.trim()) &&
+        (it.toFullAddress(corporateName) == addressText.trimDpsAddress().trimEnd(',') || it.toFullAddress() == addressText.trimDpsAddress()) &&
           it.postalCode == postalCode?.trim()
       }
   }
@@ -135,6 +135,8 @@ class TapAddressService(
   }
 
   private fun Address.matchesDpsAddress(premise: String?, street: String?, postalCode: String?): Boolean = (this.premise == premise && this.street == street && this.postalCode == postalCode && flat == null && locality == null && city == null && county == null && country == null)
+
+  private fun String.trimDpsAddress() = this.trim().trimEnd(',')
 }
 
 internal fun Address.toFullAddress(description: String? = null): String {
