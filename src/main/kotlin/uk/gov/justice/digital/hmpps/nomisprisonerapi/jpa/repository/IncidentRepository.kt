@@ -1,9 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
+import jakarta.persistence.LockModeType
+import jakarta.persistence.QueryHint
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents.IncidentsCount
@@ -109,4 +113,9 @@ interface IncidentRepository :
     """,
   )
   fun findAllIncidentsByBookingId(bookingId: Long): List<Incident>
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @Query("SELECT incident FROM Incident incident WHERE incident.id = :incidentId")
+  fun findByIdOrNullForUpdate(incidentId: Long): Incident?
 }
