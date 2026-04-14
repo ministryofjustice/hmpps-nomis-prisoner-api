@@ -76,7 +76,7 @@ class IncidentService(
     val reportedStaff = lookupStaff(request.reportedBy)
 
     return (
-      incidentRepository.findByIdOrNull(incidentId)?.apply {
+      incidentRepository.findByIdOrNullForUpdate(incidentId)?.apply {
         this.title = request.title.truncateToUtf8Length(240, true)
         this.description = reconstructText(request)
         this.incidentType = questionnaire.code
