@@ -742,7 +742,7 @@ class MovementsService(
     val maxPremiseLength = 135
 
     if (addressText.length <= maxPremiseLength) {
-      return addressText.trimDpsAddress() to null
+      return addressText.trimAndRemoveTrailingComma() to null
     }
 
     val split = if (addressText.substring(maxPremiseLength, maxPremiseLength + 1) == " ") {
@@ -804,7 +804,7 @@ class MovementsService(
 
   private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
     .firstOrNull {
-      it.toFullAddress(null) == addressText.trimDpsAddress() && it.postalCode == postalCode?.trim()
+      it.toFullAddress(null) == addressText.trimAndRemoveTrailingComma() && it.postalCode == postalCode?.trim()
     }
 
   private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
@@ -812,12 +812,12 @@ class MovementsService(
     return corporateAddressRepository.findAllByCorporate_CorporateName(corporateName)
       .firstOrNull {
         // Need to check address with and without corporate name - it might be included on a DPS address
-        (it.toFullAddress(corporateName) == addressText.trimDpsAddress() || it.toFullAddress() == addressText.trimDpsAddress()) &&
+        (it.toFullAddress(corporateName) == addressText.trimAndRemoveTrailingComma() || it.toFullAddress() == addressText.trimAndRemoveTrailingComma()) &&
           it.postalCode == postalCode?.trim()
       }
   }
 
-  private fun String.trimDpsAddress() = this.trim().trimEnd(',')
+  private fun String.trimAndRemoveTrailingComma() = this.trim().trimEnd(',')
 
   private fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw BadDataException("Agency id $agencyId is invalid")
