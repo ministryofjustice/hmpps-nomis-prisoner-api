@@ -242,6 +242,9 @@ class OffenderSentence(
   @OneToMany(mappedBy = "sentence", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderSentenceStatuses: MutableList<OffenderSentenceStatus> = mutableListOf(),
 
+  @OneToMany(mappedBy = "sentence", cascade = [CascadeType.ALL], orphanRemoval = true)
+  var offenderIndScheduleSentences: MutableList<OffenderIndScheduleSentence> = mutableListOf(),
+
   /* COLUMNS NOT MAPPED
     TERMINATION_REASON - not used
     TERMINATION_DATE - not used
