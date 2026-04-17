@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStat
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReasonId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
@@ -41,6 +42,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
@@ -67,6 +69,7 @@ class MovementsService(
   private val scheduledTemporaryAbsenceRepository: OffenderTapScheduleOutRepository,
   private val scheduledTemporaryAbsenceReturnRepository: OffenderTapScheduleInRepository,
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
+  private val movementTypeAndReasonRepository: MovementTypeAndReasonRepository,
   private val movementApplicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
   private val transportTypeRepository: ReferenceCodeRepository<TapTransportType>,
@@ -507,7 +510,7 @@ class MovementsService(
   fun createTemporaryAbsence(offenderNo: String, request: CreateTemporaryAbsenceRequest): CreateTemporaryAbsenceResponse {
     val offenderBooking = offenderBookingOrThrow(offenderNo)
     val scheduledTemporaryAbsence = request.scheduledTemporaryAbsenceId?.let { scheduledTemporaryAbsenceOrThrow(request.scheduledTemporaryAbsenceId) }
-    val movementReason = movementReasonOrThrow(request.movementReason)
+    val movementReason = movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
     val arrestAgency = request.arrestAgency?.let { arrestAgencyOrThrow(request.arrestAgency) }
     val escort = request.escort?.let { escortOrThrow(request.escort) }
     val fromPrison = agencyLocationOrThrow(request.fromPrison)
@@ -519,7 +522,6 @@ class MovementsService(
       tapScheduleOut = scheduledTemporaryAbsence,
       movementDate = request.movementDate,
       movementTime = request.movementTime,
-      movementType = tapMovementType,
       movementReason = movementReason,
       arrestAgency = arrestAgency,
       escort = escort,
@@ -574,7 +576,7 @@ class MovementsService(
   fun createTemporaryAbsenceReturn(offenderNo: String, request: CreateTemporaryAbsenceReturnRequest): CreateTemporaryAbsenceReturnResponse {
     val offenderBooking = offenderBookingOrThrow(offenderNo)
     val scheduledTemporaryAbsenceReturn = request.scheduledTemporaryAbsenceReturnId?.let { scheduledTemporaryAbsenceReturnOrThrow(request.scheduledTemporaryAbsenceReturnId) }
-    val movementReason = movementReasonOrThrow(request.movementReason)
+    val movementReason = movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
     val arrestAgency = request.arrestAgency?.let { arrestAgencyOrThrow(request.arrestAgency) }
     val escort = request.escort?.let { escortOrThrow(request.escort) }
     val fromAgency = request.fromAgency?.let { agencyLocationOrThrow(request.fromAgency) }
@@ -587,7 +589,6 @@ class MovementsService(
       tapScheduleOut = scheduledTemporaryAbsenceReturn?.tapScheduleOut,
       movementDate = request.movementDate,
       movementTime = request.movementTime,
-      movementType = tapMovementType,
       movementReason = movementReason,
       arrestAgency = arrestAgency,
       escort = escort,
@@ -711,6 +712,11 @@ class MovementsService(
 
   private fun movementReasonOrThrow(movementReason: String) = movementReasonRepository.findByIdOrNull(MovementReason.pk(movementReason))
     ?: throw BadDataException("Event sub type $movementReason is invalid")
+
+  private fun movementTypeAndReasonOrThrow(movementType: String, movementReason: String) = movementTypeAndReasonRepository.findByIdOrNull(
+    MovementTypeAndReasonId(movementType, movementReason),
+  )
+    ?: throw BadDataException("Event type $movementType and sub type $movementReason is invalid")
 
   private fun applicationStatusOrThrow(applicationStatus: String) = movementApplicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(applicationStatus))
     ?: throw BadDataException("Application status $applicationStatus is invalid")
@@ -919,7 +925,7 @@ class MovementsService(
       sequence = id.sequence,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       arrestAgency = arrestAgency?.code,
       escort = escort?.code,
       escortText = escortText,
@@ -944,7 +950,7 @@ class MovementsService(
       sequence = id.sequence,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       escort = escort?.code,
       escortText = escortText,
       fromAgency = fromAgency?.id,
@@ -965,7 +971,7 @@ class MovementsService(
       sequence = id.sequence,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       arrestAgency = arrestAgency?.code,
       escort = escort?.code,
       escortText = escortText,
@@ -987,7 +993,7 @@ class MovementsService(
       sequence = id.sequence,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       escort = escort?.code,
       escortText = escortText,
       fromAgency = fromAgency?.id,
@@ -1091,7 +1097,7 @@ class MovementsService(
       movementApplicationId = tapScheduleOut?.tapApplication?.tapApplicationId,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       arrestAgency = arrestAgency?.code,
       escort = escort?.code,
       escortText = escortText,
@@ -1121,7 +1127,7 @@ class MovementsService(
       movementApplicationId = tapScheduleOut?.tapApplication?.tapApplicationId,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       escort = escort?.code,
       escortText = escortText,
       fromAgency = fromAgency?.id,

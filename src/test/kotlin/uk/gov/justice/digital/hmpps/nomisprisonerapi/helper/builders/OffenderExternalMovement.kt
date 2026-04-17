@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReasonId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
@@ -19,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDateTime
@@ -41,6 +44,7 @@ class OffenderExternalMovementBuilderFactory(
 class OffenderExternalMovementBuilderRepository(
   val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   val movementTypeRepository: ReferenceCodeRepository<MovementType>,
+  val movementTypeAndReasonRepository: MovementTypeAndReasonRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   val arrestAgencyRepository: ReferenceCodeRepository<ArrestAgency>,
@@ -50,6 +54,8 @@ class OffenderExternalMovementBuilderRepository(
   fun lookupMovementReason(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
 
   fun lookupMovementType(code: String): MovementType = movementTypeRepository.findByIdOrNull(MovementType.pk(code))!!
+
+  fun lookupMovementTypeAndReason(type: String, reason: String): MovementTypeAndReason = movementTypeAndReasonRepository.findByIdOrNull(MovementTypeAndReasonId(type, reason))!!
 
   fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)!!
 
@@ -79,8 +85,7 @@ class OffenderExternalMovementBuilder(
       movementDate = date.toLocalDate(),
       movementTime = date,
       movementDirection = OUT,
-      movementType = repository.lookupMovementType("TRN"),
-      movementReason = repository.lookupMovementReason("28"),
+      movementReason = repository.lookupMovementTypeAndReason("TRN", "28"),
       fromAgency = repository.lookupAgency(fromPrisonId),
       toAgency = repository.lookupAgency(toPrisonId),
       active = false,
@@ -94,8 +99,7 @@ class OffenderExternalMovementBuilder(
       movementDate = date.toLocalDate(),
       movementTime = date.plusSeconds(1),
       movementDirection = IN,
-      movementType = repository.lookupMovementType("ADM"),
-      movementReason = repository.lookupMovementReason("INT"),
+      movementReason = repository.lookupMovementTypeAndReason("ADM", "INT"),
       fromAgency = repository.lookupAgency(fromPrisonId),
       toAgency = repository.lookupAgency(toPrisonId),
       active = true,
@@ -113,8 +117,7 @@ class OffenderExternalMovementBuilder(
       movementDate = date.toLocalDate(),
       movementTime = date,
       movementDirection = OUT,
-      movementType = repository.lookupMovementType("REL"),
-      movementReason = repository.lookupMovementReason("CR"),
+      movementReason = repository.lookupMovementTypeAndReason("REL", "CR"),
       fromAgency = offenderBooking.location,
       toAgency = null,
       active = true,
@@ -140,8 +143,7 @@ class OffenderExternalMovementBuilder(
       movementDate = date.toLocalDate(),
       movementTime = date,
       movementDirection = IN,
-      movementType = repository.lookupMovementType("ADM"),
-      movementReason = repository.lookupMovementReason("N"),
+      movementReason = repository.lookupMovementTypeAndReason("ADM", "N"),
       toAgency = offenderBooking.location,
       fromAgency = null,
       active = false,
@@ -173,8 +175,7 @@ class OffenderExternalMovementBuilder(
     ),
     movementDate = date.toLocalDate(),
     movementTime = date,
-    movementType = repository.lookupMovementType("TAP"),
-    movementReason = repository.lookupMovementReason(movementReason),
+    movementReason = repository.lookupMovementTypeAndReason("TAP", movementReason),
     arrestAgency = arrestAgency?.let { repository.lookupArrestAgency(arrestAgency) },
     escort = escort?.let { repository.lookupEscort(escort) },
     escortText = escortText,
@@ -209,8 +210,7 @@ class OffenderExternalMovementBuilder(
     ),
     movementDate = date.toLocalDate(),
     movementTime = date,
-    movementType = repository.lookupMovementType("TAP"),
-    movementReason = repository.lookupMovementReason(movementReason),
+    movementReason = repository.lookupMovementTypeAndReason("TAP", movementReason),
     escort = escort?.let { repository.lookupEscort(escort) },
     escortText = escortText,
     fromAgency = fromAgency?.let { repository.lookupAgency(fromAgency) },
@@ -242,8 +242,7 @@ class OffenderExternalMovementBuilder(
       movementDate = date.toLocalDate(),
       movementTime = date,
       movementDirection = IN,
-      movementType = repository.lookupMovementType(movementType),
-      movementReason = repository.lookupMovementReason(movementReason),
+      movementReason = repository.lookupMovementTypeAndReason(movementType, movementReason),
       fromAgency = repository.lookupAgency(fromPrisonId),
       toAgency = repository.lookupAgency(toPrisonId),
       active = true,

@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.activeExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.maxMovementSequence
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -26,6 +27,7 @@ class TapMovementService(
   private val tapMovementInRepository: OffenderTapMovementInRepository,
   private val tapAddressService: TapAddressService,
   private val tapHelpers: TapHelpers,
+  private val movementTypeAndReasonRepository: MovementTypeAndReasonRepository,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
   private val tapMovementType = movementTypeRepository.findByIdOrNull(MovementType.pk("TAP"))
@@ -49,7 +51,7 @@ class TapMovementService(
   fun createTapMovementOut(offenderNo: String, request: CreateTapMovementOut): CreateTapMovementOutResponse {
     val offenderBooking = tapHelpers.offenderBookingOrThrow(offenderNo)
     val tapScheduleOut = request.tapScheduleOutId?.let { tapHelpers.tapScheduleOutOrThrow(request.tapScheduleOutId) }
-    val movementReason = tapHelpers.movementReasonOrThrow(request.movementReason)
+    val movementReason = tapHelpers.movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
     val arrestAgency = request.arrestAgency?.let { tapHelpers.arrestAgencyOrThrow(request.arrestAgency) }
     val escort = request.escort?.let { tapHelpers.escortOrThrow(request.escort) }
     val fromPrison = tapHelpers.agencyLocationOrThrow(request.fromPrison)
@@ -61,7 +63,6 @@ class TapMovementService(
       tapScheduleOut = tapScheduleOut,
       movementDate = request.movementDate,
       movementTime = request.movementTime,
-      movementType = tapMovementType,
       movementReason = movementReason,
       arrestAgency = arrestAgency,
       escort = escort,
@@ -103,7 +104,7 @@ class TapMovementService(
   fun createTapMovementIn(offenderNo: String, request: CreateTapMovementIn): CreateTapMovementInResponse {
     val offenderBooking = tapHelpers.offenderBookingOrThrow(offenderNo)
     val tapScheduleIn = request.tapScheduleInId?.let { tapHelpers.tapScheduleInOrThrow(request.tapScheduleInId) }
-    val movementReason = tapHelpers.movementReasonOrThrow(request.movementReason)
+    val movementReason = tapHelpers.movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
     val arrestAgency = request.arrestAgency?.let { tapHelpers.arrestAgencyOrThrow(request.arrestAgency) }
     val escort = request.escort?.let { tapHelpers.escortOrThrow(request.escort) }
     val fromAgency = request.fromAgency?.let { tapHelpers.agencyLocationOrThrow(request.fromAgency) }
@@ -116,7 +117,6 @@ class TapMovementService(
       tapScheduleOut = tapScheduleIn?.tapScheduleOut,
       movementDate = request.movementDate,
       movementTime = request.movementTime,
-      movementType = tapMovementType,
       movementReason = movementReason,
       arrestAgency = arrestAgency,
       escort = escort,
@@ -149,7 +149,7 @@ class TapMovementService(
       tapApplicationId = tapScheduleOut?.tapApplication?.tapApplicationId,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       arrestAgency = arrestAgency?.code,
       escort = escort?.code,
       escortText = escortText,
@@ -179,7 +179,7 @@ class TapMovementService(
       tapApplicationId = tapScheduleOut?.tapApplication?.tapApplicationId,
       movementDate = movementDate,
       movementTime = movementTime,
-      movementReason = movementReason.code,
+      movementReason = movementReason.id.reasonCode,
       escort = escort?.code,
       escortText = escortText,
       fromAgency = fromAgency?.id,

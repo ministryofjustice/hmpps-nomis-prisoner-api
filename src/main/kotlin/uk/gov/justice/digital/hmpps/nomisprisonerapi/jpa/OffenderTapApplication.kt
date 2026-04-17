@@ -55,7 +55,6 @@ import java.time.LocalDateTime
     NamedSubgraph(
       name = "tap-movement",
       attributeNodes = [
-        NamedAttributeNode(value = "movementType"),
         NamedAttributeNode(value = "movementReason"),
         NamedAttributeNode(value = "arrestAgency"),
         NamedAttributeNode(value = "escort"),
