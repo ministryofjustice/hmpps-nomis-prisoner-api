@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.DuplicateInsertException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageBadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageNotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -162,6 +163,20 @@ class ExceptionHandler {
         ErrorResponse(
           status = LOCKED,
           userMessage = "Pessimistic lock caused by: ${e.cause?.message}",
+          developerMessage = e.message,
+        ),
+      )
+  }
+
+  @ExceptionHandler(DuplicateInsertException::class)
+  fun handleDuplicateInsertException(e: DuplicateInsertException): ResponseEntity<ErrorResponse> {
+    log.info("Duplicate insert error: {}", e.message)
+    return ResponseEntity
+      .status(LOCKED)
+      .body(
+        ErrorResponse(
+          status = LOCKED,
+          userMessage = "Duplicate create attempt caused by: ${e.cause?.message}",
           developerMessage = e.message,
         ),
       )

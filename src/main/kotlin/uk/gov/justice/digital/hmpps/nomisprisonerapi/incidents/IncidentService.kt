@@ -1,12 +1,15 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents
 
+import org.hibernate.exception.ConstraintViolationException
 import org.slf4j.LoggerFactory
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.DuplicateInsertException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
@@ -112,7 +115,16 @@ class IncidentService(
       if (request.history.size > it.incidentHistory.size) {
         insertHistory(it.incidentHistory, request.history.drop(it.incidentHistory.size))
       }
-      incidentRepository.save(it)
+
+      try {
+        incidentRepository.save(it)
+      } catch (e: DataIntegrityViolationException) {
+        if (e.isIncidentDuplicate()) {
+          log.error("Attempted to create incident that already exists")
+          throw DuplicateInsertException("Attempted to create incident that already exists")
+        }
+        throw e
+      }
     }
   }
 
@@ -340,6 +352,11 @@ class IncidentService(
 
   fun deleteIncident(incidentId: Long) {
     incidentRepository.deleteById(incidentId)
+  }
+
+  fun DataIntegrityViolationException.isIncidentDuplicate(): Boolean {
+    val constraintViolation = cause as? ConstraintViolationException
+    return (constraintViolation != null && constraintViolation.constraintName == "INCIDENT_CASES_PK")
   }
 }
 
