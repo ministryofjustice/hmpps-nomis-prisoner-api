@@ -1,11 +1,17 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.incidents
 
 import org.assertj.core.api.Assertions.assertThat
+import org.hibernate.exception.ConstraintViolationException
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.whenever
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.NomisData
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -13,10 +19,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incident
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.IncidentRepository
+import java.sql.SQLIntegrityConstraintViolationException
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class IncidentResourceIntTest : IntegrationTestBase() {
+  @MockitoSpyBean
+  private lateinit var incidentRepository: IncidentRepository
+
   private lateinit var offender1: Offender
   private lateinit var offender2: Offender
   private lateinit var partyStaff1: Staff
@@ -996,6 +1007,46 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("userMessage").value<String> {
             assertThat(it).contains("Staff user account UNKNOW not found")
+          }
+      }
+
+      @Test
+      fun `will fail with exception if duplicate`() {
+        val exception = DataIntegrityViolationException(
+          "duplicate",
+          ConstraintViolationException(
+            "duplicate key",
+            SQLIntegrityConstraintViolationException("ORA-00001: duplicate key"),
+            "INCIDENT_CASES_PK",
+          ),
+        )
+
+        doThrow(exception)
+          .whenever(incidentRepository)
+          .save(any())
+
+        webTestClient.put().uri("/incidents/${++currentId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .body(
+            BodyInserters.fromValue(
+              upsertIncidentRequest().copy(
+                title = "Something happened",
+                description = "and people had a fight",
+                statusCode = "AWAN",
+                typeCode = questionnaire1.code,
+                location = "BXI",
+                incidentDateTime = LocalDateTime.parse("2023-12-30T13:45:00"),
+                reportedDateTime = LocalDateTime.parse("2024-01-02T09:30:00"),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(423)
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Duplicate create attempt")
+          }
+          .jsonPath("developerMessage").value<String> {
+            assertThat(it).contains("Attempted to create incident that already exists")
           }
       }
     }
