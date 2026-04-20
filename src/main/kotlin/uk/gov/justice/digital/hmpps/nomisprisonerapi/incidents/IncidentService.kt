@@ -120,7 +120,6 @@ class IncidentService(
         incidentRepository.save(it)
       } catch (e: DataIntegrityViolationException) {
         if (e.isIncidentDuplicate()) {
-          log.error("Attempted to create incident that already exists")
           throw DuplicateInsertException("Attempted to create incident that already exists")
         }
         throw e
