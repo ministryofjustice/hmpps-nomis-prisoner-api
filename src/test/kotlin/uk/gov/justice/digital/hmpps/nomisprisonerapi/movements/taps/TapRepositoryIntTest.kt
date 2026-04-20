@@ -341,8 +341,8 @@ class TapRepositoryIntTest(
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
         Assertions.assertThat(movementDate).isEqualTo(LocalDate.now())
         Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(movementType?.code).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.code).isEqualTo("C5")
+        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
+        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
         Assertions.assertThat(arrestAgency?.code).isEqualTo("POL")
         Assertions.assertThat(escort?.code).isEqualTo("U")
@@ -382,8 +382,8 @@ class TapRepositoryIntTest(
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
         Assertions.assertThat(movementDate).isEqualTo(LocalDate.now())
         Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(movementType?.code).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.code).isEqualTo("C5")
+        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
+        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
         Assertions.assertThat(arrestAgency?.code).isEqualTo("POL")
         Assertions.assertThat(escort?.code).isEqualTo("U")
@@ -432,8 +432,8 @@ class TapRepositoryIntTest(
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
         Assertions.assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
         Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(movementType?.code).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.code).isEqualTo("C5")
+        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
+        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.IN)
         Assertions.assertThat(escort?.code).isEqualTo("U")
         Assertions.assertThat(escortText).isEqualTo("SE")
@@ -476,8 +476,8 @@ class TapRepositoryIntTest(
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
         Assertions.assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
         Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(movementType?.code).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.code).isEqualTo("C5")
+        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
+        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.IN)
         Assertions.assertThat(escort?.code).isEqualTo("U")
         Assertions.assertThat(escortText).isEqualTo("SE")

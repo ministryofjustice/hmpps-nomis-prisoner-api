@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReasonId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapSubType
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapTransportType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
@@ -34,6 +36,7 @@ class TapHelpers(
   private val movementApplicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
   private val movementApplicationTypeRepository: ReferenceCodeRepository<MovementApplicationType>,
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
+  private val movementTypeAndReasonRepository: MovementTypeAndReasonRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
   private val offenderTapApplicationRepository: OffenderTapApplicationRepository,
@@ -65,6 +68,9 @@ class TapHelpers(
 
   fun movementReasonOrThrow(movementReason: String) = movementReasonRepository.findByIdOrNull(MovementReason.pk(movementReason))
     ?: throw BadDataException("Event sub type $movementReason is invalid")
+
+  fun movementTypeAndReasonOrThrow(movementType: String, movementReason: String) = movementTypeAndReasonRepository.findByIdOrNull(MovementTypeAndReasonId(movementType, movementReason))
+    ?: throw BadDataException("Event type $movementType and sub type $movementReason is invalid")
 
   fun applicationStatusOrThrow(applicationStatus: String) = movementApplicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(applicationStatus))
     ?: throw BadDataException("Application status $applicationStatus is invalid")

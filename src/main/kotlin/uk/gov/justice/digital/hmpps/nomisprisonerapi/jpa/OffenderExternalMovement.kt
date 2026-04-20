@@ -8,9 +8,11 @@ import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.Inheritance
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -19,6 +21,7 @@ import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
+import org.springframework.data.jpa.domain.AbstractPersistable_.id
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDate
@@ -58,33 +61,11 @@ class OffenderExternalMovement(
   @Column(name = "MOVEMENT_TIME")
   val movementTime: LocalDateTime,
 
-  @ManyToOne
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + MovementType.MOVE_TYPE + "'",
-          referencedColumnName = "domain",
-        ),
-      ),
-      JoinColumnOrFormula(column = JoinColumn(name = "MOVEMENT_TYPE", referencedColumnName = "code")),
-    ],
+  @ManyToOne(fetch = FetchType.LAZY) @JoinColumns(
+    JoinColumn(name = "MOVEMENT_REASON_CODE", referencedColumnName = "MOVEMENT_REASON_CODE"),
+    JoinColumn(name = "MOVEMENT_TYPE", referencedColumnName = "MOVEMENT_TYPE"),
   )
-  val movementType: MovementType? = null,
-
-  @ManyToOne
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + MovementReason.MOVE_RSN + "'",
-          referencedColumnName = "domain",
-        ),
-      ),
-      JoinColumnOrFormula(column = JoinColumn(name = "MOVEMENT_REASON_CODE", referencedColumnName = "code")),
-    ],
-  )
-  val movementReason: MovementReason,
+  val movementReason: MovementTypeAndReason,
 
   @Column(name = "DIRECTION_CODE")
   @Enumerated(EnumType.STRING)
