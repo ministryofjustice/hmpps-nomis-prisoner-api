@@ -1013,7 +1013,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will fail with exception if duplicate`() {
         val exception = DataIntegrityViolationException(
-          "duplicate",
+          "there was a duplicate problem",
           ConstraintViolationException(
             "duplicate key",
             SQLIntegrityConstraintViolationException("ORA-00001: duplicate key"),
@@ -1043,10 +1043,10 @@ class IncidentResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isEqualTo(423)
           .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("Duplicate create attempt")
+            assertThat(it).isEqualTo("Duplicate create attempt caused by: there was a duplicate problem")
           }
           .jsonPath("developerMessage").value<String> {
-            assertThat(it).contains("Attempted to create incident that already exists")
+            assertThat(it).isEqualTo("Attempted to create incident that already exists")
           }
       }
     }
