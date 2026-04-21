@@ -140,6 +140,37 @@ class PrisonerBalanceResource(
     @PathVariable
     rootOffenderId: Long,
   ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId)
+
+  @GetMapping("/{rootOffenderId}/balance/summary")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner's finance account summary by their root offender id",
+    description = """Retrieves a prisoner's trust account summary, for each sub-account, aggregated for all caseloads. 
+      Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Offender Trust Account Summary Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getPrisonerAccountSummary(
+    @Schema(description = "rootOffenderId", example = "123456")
+    @PathVariable
+    rootOffenderId: Long,
+  ): PrisonerBalanceSummaryDto = prisonerBalanceService.getPrisonerAccountSummary(rootOffenderId)
 }
 
 @Schema(description = "Finance details for a prisoner")
@@ -165,6 +196,30 @@ data class PrisonerAccountDto(
   @Schema(description = "The date and time of the last transaction")
   val transactionDate: LocalDateTime,
 
+  @Schema(description = "The account code for the balance entry", example = "2101")
+  val accountCode: Long,
+
+  @Schema(description = "The account balance", example = "12.50")
+  val balance: BigDecimal,
+
+  @Schema(description = "The amount on hold", example = "12.50")
+  val holdBalance: BigDecimal? = null,
+)
+
+@Schema(description = "Finance details for a prisoner")
+data class PrisonerBalanceSummaryDto(
+  @Schema(description = "The root offender Id", example = "12345")
+  val rootOffenderId: Long,
+
+  @Schema(description = "The prison Number", example = "A1234BC")
+  val prisonNumber: String,
+
+  @Schema(description = "The accounts summary")
+  val accounts: List<AccountSummaryDto>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AccountSummaryDto(
   @Schema(description = "The account code for the balance entry", example = "2101")
   val accountCode: Long,
 

@@ -27,6 +27,16 @@ class PrisonerBalanceService(
     }
     ?: throw NotFoundException("Offender with id $rootOffenderId not found")
 
+  fun getPrisonerAccountSummary(rootOffenderId: Long): PrisonerBalanceSummaryDto = offenderRepository.findByIdOrNull(rootOffenderId)
+    ?.let { offender ->
+      PrisonerBalanceSummaryDto(
+        rootOffenderId,
+        prisonNumber = offender.nomsId,
+        accounts = offenderSubAccountRepository.findOffenderSubAccountSummary(rootOffenderId),
+      )
+    }
+    ?: throw NotFoundException("Offender with id $rootOffenderId not found")
+
   fun findAllPrisonersWithAccountBalance(prisonIds: List<String>?, pageRequest: Pageable): PagedModel<Long> = PagedModel(
     offenderRepository.findAllOffenderIdsWithBalances(prisonIds, pageRequest),
   )
