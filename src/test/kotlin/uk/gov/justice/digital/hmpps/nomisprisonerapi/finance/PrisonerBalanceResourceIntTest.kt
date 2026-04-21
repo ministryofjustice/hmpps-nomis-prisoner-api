@@ -335,4 +335,93 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .isNotFound
     }
   }
+
+  @Nested
+  @DisplayName("GET /finance/prisoners/{prisonerId}/balance/summary")
+  inner class PrisonerBalanceSummaryTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/finance/prisoners/12345/balance/summary")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/finance/prisoners/12345/balance/summary")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/finance/prisoners/12345/balance/summary")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun getPrisonerBalanceSummaryWithDifferentPrisons() {
+      val balance = webTestClient.get().uri("/finance/prisoners/$id1/balance/summary")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyResponse<PrisonerBalanceSummaryDto>()
+
+      with(balance) {
+        assertThat(rootOffenderId).isEqualTo(id1)
+        assertThat(prisonNumber).isEqualTo("A1234BC")
+        assertThat(accounts.size).isEqualTo(2)
+        assertThat(accounts[0].accountCode).isEqualTo(2102)
+        assertThat(accounts[0].balance).isEqualTo(BigDecimal(9.75))
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal.ZERO)
+
+        assertThat(accounts[1].accountCode).isEqualTo(2103)
+        assertThat(accounts[1].balance).isEqualTo(BigDecimal(1.25))
+        assertThat(accounts[1].holdBalance).isNull()
+      }
+    }
+
+    @Test
+    fun getPrisonerBalanceSummary() {
+      val balance = webTestClient.get().uri("/finance/prisoners/$id2/balance/summary")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyResponse<PrisonerBalanceSummaryDto>()
+
+      with(balance) {
+        assertThat(rootOffenderId).isEqualTo(id2)
+        assertThat(prisonNumber).isEqualTo("B2345CD")
+        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts[0].accountCode).isEqualTo(2101)
+        assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[0].holdBalance).isNull()
+
+        assertThat(accounts[1].accountCode).isEqualTo(2102)
+        assertThat(accounts[1].balance).isEqualTo(BigDecimal(12.25))
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
+
+        assertThat(accounts[2].accountCode).isEqualTo(2103)
+        assertThat(accounts[2].balance).isEqualTo("21.25")
+        assertThat(accounts[2].holdBalance).isEqualTo("2.5")
+      }
+    }
+
+    @Test
+    fun `none found`() {
+      webTestClient.get().uri("/finance/prisoners/99999/balance/summary")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isNotFound
+    }
+  }
 }
