@@ -120,7 +120,7 @@ class IncidentService(
         incidentRepository.save(it)
       } catch (e: DataIntegrityViolationException) {
         if (e.isIncidentDuplicate()) {
-          throw DuplicateInsertException("Attempted to create incident that already exists")
+          throw DuplicateInsertException("Attempted to create incident that already exists", e)
         }
         throw e
       }
@@ -355,7 +355,7 @@ class IncidentService(
 
   fun DataIntegrityViolationException.isIncidentDuplicate(): Boolean {
     val constraintViolation = cause as? ConstraintViolationException
-    return (constraintViolation != null && constraintViolation.constraintName == "INCIDENT_CASES_PK")
+    return (constraintViolation?.constraintName?.contains("INCIDENT_CASES_PK") == true)
   }
 }
 

@@ -25,11 +25,6 @@ class NotFoundException(message: String?) :
   override fun get(): NotFoundException = NotFoundException(message)
 }
 
-class DuplicateInsertException(message: String?) :
-  RuntimeException(message),
-  Supplier<DuplicateInsertException> {
-  override fun get(): DuplicateInsertException = DuplicateInsertException(message)
-}
-
+class DuplicateInsertException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 class ImageNotFoundException(message: String) : RuntimeException(message)
 class ImageBadDataException(message: String) : RuntimeException(message)
