@@ -245,6 +245,20 @@ class OffenderSentence(
   @OneToMany(mappedBy = "sentence", cascade = [CascadeType.ALL], orphanRemoval = true)
   var offenderIndScheduleSentences: MutableList<OffenderIndScheduleSentence> = mutableListOf(),
 
+  @ManyToMany(fetch = LAZY, cascade = [])
+  @JoinTable(
+    name = "OFFENDER_LICENCE_SENTENCES",
+    joinColumns = [
+      JoinColumn(name = "OFFENDER_BOOK_ID", referencedColumnName = "OFFENDER_BOOK_ID"),
+      JoinColumn(name = "SENTENCE_SEQ", referencedColumnName = "SENTENCE_SEQ"),
+    ],
+    inverseJoinColumns = [
+      JoinColumn(name = "OFFENDER_BOOK_ID", referencedColumnName = "OFFENDER_BOOK_ID", updatable = false, insertable = false),
+      JoinColumn(name = "LICENCE_SENTENCE_SEQ", referencedColumnName = "SENTENCE_SEQ", updatable = false, insertable = false),
+    ],
+  )
+  var licenceSentences: MutableSet<OffenderSentence> = mutableSetOf(),
+
   /* COLUMNS NOT MAPPED
     TERMINATION_REASON - not used
     TERMINATION_DATE - not used
