@@ -1023,7 +1023,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
 
         doThrow(exception)
           .whenever(incidentRepository)
-          .save(any())
+          .saveAndFlush(any())
 
         webTestClient.put().uri("/incidents/${++currentId}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
