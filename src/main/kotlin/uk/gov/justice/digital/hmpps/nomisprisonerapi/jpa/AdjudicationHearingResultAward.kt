@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Generated
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -16,6 +17,8 @@ import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.domain.Persistable
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -35,7 +38,7 @@ class AdjudicationHearingResultAwardId(
 class AdjudicationHearingResultAward(
 
   @EmbeddedId
-  val id: AdjudicationHearingResultAwardId,
+  private val id: AdjudicationHearingResultAwardId,
 
   @ManyToOne(optional = true, fetch = FetchType.LAZY)
   @JoinColumns(
@@ -143,7 +146,14 @@ class AdjudicationHearingResultAward(
     ],
   )
   var sanctionType: AdjudicationSanctionType? = null,
-) {
+
+  @Transient
+  @Value("false")
+  val new: Boolean = true,
+) : Persistable<AdjudicationHearingResultAwardId> {
+  override fun getId(): AdjudicationHearingResultAwardId = id
+  override fun isNew(): Boolean = new
+
   @Column(name = "CREATE_USER_ID", insertable = false, updatable = false)
   @Generated
   lateinit var createUsername: String
