@@ -795,7 +795,7 @@ class AdjudicationService(
             "hearing-result-award-created",
             mapOf(
               "adjudicationNumber" to party.adjudicationNumber.toString(),
-              "sanctionSequence" to sanctionSeq.toString(),
+              "sanctionSequence" to it.id.sanctionSequence.toString(),
               "bookingId" to offenderBookId.toString(),
               "resultSequence" to hearingResult.id.resultSequence.toString(),
               "hearingId" to hearingResult.id.oicHearingId.toString(),
