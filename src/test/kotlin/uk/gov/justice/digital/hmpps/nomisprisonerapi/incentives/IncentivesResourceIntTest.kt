@@ -14,6 +14,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -127,6 +128,29 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Test
+    fun `will allow create incentive with minimal fields`() {
+      val offender = repository.getOffender("A1234TT")
+      val booking = offender?.latestBooking()
+      val bookingId = booking?.bookingId
+
+      webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            CreateIncentiveRequest(
+              iepLevel = "STD",
+              iepDateTime = LocalDateTime.parse("2021-11-04T15:04"),
+              prisonId = "WAI",
+            ),
+
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+    }
+
     private fun callCreateEndpoint(bookingId: Long?) {
       val response = webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -144,7 +168,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody(CreateIncentiveResponse::class.java)
+        .expectBody<CreateIncentiveResponse>()
         .returnResult().responseBody
       assertThat(response?.bookingId).isEqualTo(bookingId)
       assertThat(response?.sequence).isGreaterThan(0)
@@ -761,7 +785,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody(ReferenceCode::class.java)
+        .expectBody<ReferenceCode>()
         .returnResult().responseBody
       assertThat(response?.code).isEqualTo("NIEP")
       assertThat(response?.domain).isEqualTo("IEP_LEVEL")
@@ -830,7 +854,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBody(ReferenceCode::class.java)
+        .expectBody<ReferenceCode>()
         .returnResult().responseBody
       assertThat(response?.code).isEqualTo("EN2")
       assertThat(response?.domain).isEqualTo("IEP_LEVEL")
@@ -1021,7 +1045,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
+        .expectBody<PrisonIncentiveLevelDataResponse>()
         .returnResult().responseBody
       assertThat(response?.iepLevelCode).isEqualTo("PILD")
       assertThat(response?.prisonId).isEqualTo("MDI")
@@ -1080,8 +1104,9 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
+        .expectBody<PrisonIncentiveLevelDataResponse>()
         .returnResult().responseBody
+
       assertThat(response?.iepLevelCode).isEqualTo("PILD")
       assertThat(response?.prisonId).isEqualTo("MDI")
       assertThat(response?.active).isTrue
@@ -1278,7 +1303,7 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isOk
-        .expectBody(PrisonIncentiveLevelDataResponse::class.java)
+        .expectBody<PrisonIncentiveLevelDataResponse>()
         .returnResult().responseBody
       assertThat(response?.iepLevelCode).isEqualTo("ABC")
       assertThat(response?.prisonId).isEqualTo("MDI")
