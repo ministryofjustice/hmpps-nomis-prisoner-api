@@ -15,6 +15,6 @@ data class CreateIncentiveRequest(
   val iepDateTime: LocalDateTime,
   @Schema(description = "Prison ID", example = "MDI", required = true)
   val prisonId: String,
-  @Schema(description = "Username of the reviewer", example = "AJONES", required = true)
-  val userId: String?,
+  @Schema(description = "Username of the reviewer", example = "AJONES")
+  val userId: String? = null,
 )
