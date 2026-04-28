@@ -27,6 +27,9 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderSentenceDslMarker
 
+@DslMarker
+annotation class OffenderSentenceLicenceDslMarker
+
 @NomisDataDslMarker
 interface OffenderSentenceDsl {
   @OffenderSentenceAdjustmentDslMarker
@@ -75,6 +78,9 @@ interface OffenderSentenceDsl {
     modifyDatetime: LocalDateTime? = null,
     auditModule: String = "OCDCCASE",
   )
+
+  @OffenderSentenceLicenceDslMarker
+  fun licence(): OffenderSentence
 }
 
 @Component
@@ -89,6 +95,22 @@ class OffenderSentenceBuilderRepository(
   fun lookupSentenceCategoryType(code: String): SentenceCategoryType = sentenceCategoryTypeRepository.findByIdOrNull(SentenceCategoryType.pk(code))!!
 
   fun save(sentence: OffenderSentence): OffenderSentence = offenderSentenceRepository.saveAndFlush(sentence)
+
+  fun link(sentence: OffenderSentence, licence: OffenderSentence) {
+    jdbcTemplate.update(
+      """
+      INSERT INTO OFFENDER_LICENCE_SENTENCES
+      (OFFENDER_BOOK_ID, SENTENCE_SEQ, LICENCE_SENTENCE_SEQ, CASE_ID) VALUES
+      (:offenderBookId, :sentenceSequence, :licenceSentenceSequence, :caseId)
+      """,
+      mapOf(
+        "offenderBookId" to sentence.id.offenderBooking.bookingId,
+        "sentenceSequence" to sentence.id.sequence,
+        "licenceSentenceSequence" to licence.id.sequence,
+        "caseId" to sentence.courtCase!!.id,
+      ),
+    )
+  }
 
   fun updateAudit(
     id: SentenceId,
@@ -135,6 +157,7 @@ class OffenderSentenceBuilderFactory(
     sentenceTermBuilderFactory,
     sentenceChargeBuilderFactory,
     offenderSentenceStatusBuilderFactory,
+    this,
     repository,
   )
 }
@@ -144,12 +167,13 @@ class OffenderSentenceBuilder(
   private val sentenceTermBuilderFactory: OffenderSentenceTermBuilderFactory,
   private val sentenceChargeBuilderFactory: OffenderSentenceChargeBuilderFactory,
   private val offenderSentenceStatusBuilderFactory: OffenderSentenceStatusBuilderFactory,
+  private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
   private val repository: OffenderSentenceBuilderRepository,
 ) : OffenderSentenceDsl {
   private lateinit var offenderSentence: OffenderSentence
 
   fun build(
-    courtCase: CourtCase?,
+    courtCase: CourtCase? = null,
     calculationType: String,
     category: String,
     startDate: LocalDate,
@@ -157,44 +181,44 @@ class OffenderSentenceBuilder(
     sentenceLevel: String,
     offenderBooking: OffenderBooking,
     sequence: Long,
-    consecLineSequence: Int?,
-    courtOrder: CourtOrder?,
-    endDate: LocalDate,
-    commentText: String?,
-    absenceCount: Int?,
-    etdCalculatedDate: LocalDate?,
-    mtdCalculatedDate: LocalDate?,
-    ltdCalculatedDate: LocalDate?,
-    ardCalculatedDate: LocalDate?,
-    crdCalculatedDate: LocalDate?,
-    pedCalculatedDate: LocalDate?,
-    npdCalculatedDate: LocalDate?,
-    ledCalculatedDate: LocalDate?,
-    sedCalculatedDate: LocalDate?,
-    prrdCalculatedDate: LocalDate?,
-    tariffCalculatedDate: LocalDate?,
-    dprrdCalculatedDate: LocalDate?,
-    tusedCalculatedDate: LocalDate?,
-    aggAdjustDays: Int?,
-    aggSentenceSequence: Int?,
-    extendedDays: Int?,
-    counts: Int?,
-    statusUpdateReason: String?,
-    statusUpdateComment: String?,
-    statusUpdateDate: LocalDate?,
-    statusUpdateStaff: Staff?,
-    fineAmount: BigDecimal?,
-    dischargeDate: LocalDate?,
-    nomSentDetailRef: Long?,
-    nomConsToSentDetailRef: Long?,
-    nomConsFromSentDetailRef: Long?,
-    nomConsWithSentDetailRef: Long?,
-    lineSequence: Int?,
-    hdcExclusionFlag: Boolean?,
-    hdcExclusionReason: String?,
-    cjaAct: String?,
-    sled2Calc: LocalDate?,
-    startDate2Calc: LocalDate?,
+    consecLineSequence: Int? = null,
+    courtOrder: CourtOrder? = null,
+    endDate: LocalDate? = null,
+    commentText: String? = null,
+    absenceCount: Int? = null,
+    etdCalculatedDate: LocalDate? = null,
+    mtdCalculatedDate: LocalDate? = null,
+    ltdCalculatedDate: LocalDate? = null,
+    ardCalculatedDate: LocalDate? = null,
+    crdCalculatedDate: LocalDate? = null,
+    pedCalculatedDate: LocalDate? = null,
+    npdCalculatedDate: LocalDate? = null,
+    ledCalculatedDate: LocalDate? = null,
+    sedCalculatedDate: LocalDate? = null,
+    prrdCalculatedDate: LocalDate? = null,
+    tariffCalculatedDate: LocalDate? = null,
+    dprrdCalculatedDate: LocalDate? = null,
+    tusedCalculatedDate: LocalDate? = null,
+    aggAdjustDays: Int? = null,
+    aggSentenceSequence: Int? = null,
+    extendedDays: Int? = null,
+    counts: Int? = null,
+    statusUpdateReason: String? = null,
+    statusUpdateComment: String? = null,
+    statusUpdateDate: LocalDate? = null,
+    statusUpdateStaff: Staff? = null,
+    fineAmount: BigDecimal? = null,
+    dischargeDate: LocalDate? = null,
+    nomSentDetailRef: Long? = null,
+    nomConsToSentDetailRef: Long? = null,
+    nomConsFromSentDetailRef: Long? = null,
+    nomConsWithSentDetailRef: Long? = null,
+    lineSequence: Int? = null,
+    hdcExclusionFlag: Boolean? = null,
+    hdcExclusionReason: String? = null,
+    cjaAct: String? = null,
+    sled2Calc: LocalDate? = null,
+    startDate2Calc: LocalDate? = null,
   ): OffenderSentence = OffenderSentence(
     id = SentenceId(offenderBooking = offenderBooking, sequence = sequence),
     courtCase = courtCase,
@@ -267,6 +291,10 @@ class OffenderSentenceBuilder(
       .also { builder.apply(dsl) }
   }
 
+  fun link(sentence: OffenderSentence, licence: OffenderSentence) {
+    repository.link(sentence, licence)
+  }
+
   override fun term(
     startDate: LocalDate,
     endDate: LocalDate?,
@@ -320,6 +348,22 @@ class OffenderSentenceBuilder(
       statusUpdateStaff = statusUpdateStaff,
     )
       .also { builder.apply(dsl) }
+  }
+
+  override fun licence() = offenderSentenceBuilderFactory.builder().let { builder ->
+    builder.build(
+      category = "LICENCE",
+      startDate = LocalDate.now(),
+      status = "A",
+      sentenceLevel = "IND",
+      offenderBooking = offenderSentence.id.offenderBooking,
+      calculationType = "AP",
+      sequence = offenderSentence.id.sequence + 1000,
+      endDate = LocalDate.now().plusDays(1),
+    )
+      .also {
+        builder.link(offenderSentence, it)
+      }
   }
 
   override fun audit(
