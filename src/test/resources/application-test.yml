@@ -1,6 +1,14 @@
 server:
   shutdown: immediate
 
+logging:
+  level:
+    org:
+      springframework:
+        jdbc:
+          core:
+            JdbcTemplate: TRACE
+
 management.endpoint:
   health.cache.time-to-live: 0
   info.cache.time-to-live: 0

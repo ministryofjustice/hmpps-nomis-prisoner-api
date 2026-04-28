@@ -45,6 +45,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderFixe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderKeyDateAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceStatusRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.math.BigDecimal
@@ -60,6 +61,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var offenderSentenceRepository: OffenderSentenceRepository
+
+  @Autowired
+  lateinit var offenderSentenceStatusRepository: OffenderSentenceStatusRepository
 
   @Autowired
   lateinit var courtCaseRepository: CourtCaseRepository
@@ -7422,7 +7426,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var caseNote: OffenderCaseNote
     private lateinit var courtCase: CourtCase
     private lateinit var courtOrder: CourtOrder
+    private lateinit var courtEvent: CourtEvent
     private lateinit var offenderCharge: OffenderCharge
+    private lateinit var offenderBooking: OffenderBooking
+    private var licenceSeq: Long = 0
+    private var sentenceStatusId: Long = 0
     private lateinit var offenderCharge2: OffenderCharge
     private val aLaterDateString = "2023-01-05"
 
@@ -7434,11 +7442,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         }
         prisonerAtMoorland =
           offender(nomsId = "A1234AB") {
-            booking(agencyLocationId = "MDI") {
+            offenderBooking = booking(agencyLocationId = "MDI") {
               courtCase = courtCase(reportingStaff = staff) {
                 offenderCharge = offenderCharge(offenceCode = "RT88074")
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
-                courtEvent {
+                courtEvent = courtEvent {
                   courtOrder = courtOrder { }
                 }
                 sentence = sentence(courtOrder = courtOrder, statusUpdateStaff = staff) {
@@ -7446,6 +7454,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   offenderSentenceCharge(offenderCharge = offenderCharge2)
                   term {}
                   term(days = 35)
+                  licenceSeq = licence().id.sequence
+                  sentenceStatusId = offenderSentenceStatus(statusUpdateStaff = staff) {}.id
                 }
               }
               caseNote = caseNote(
@@ -7514,11 +7524,13 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     @Test
     internal fun `204 when sentence does exist`() {
       repository.addSentenceCaseNoteLink(caseNote.id, sentence.id.sequence)
-      webTestClient.get()
-        .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
+
+      repository.runInTransaction {
+        assertThat(offenderSentenceRepository.existsById(uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(offenderBooking = offenderBooking, sequence = sentence.id.sequence))).isTrue
+        assertThat(offenderSentenceRepository.existsById(uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(offenderBooking = offenderBooking, sequence = licenceSeq))).isTrue
+        assertThat(offenderSentenceStatusRepository.existsById(sentenceStatusId)).isTrue
+        assertThat(offenderSentenceRepository.findByIdOrNull(uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(offenderBooking = offenderBooking, sequence = sentence.id.sequence))?.licenceSentences).hasSize(1)
+      }
 
       webTestClient.delete()
         .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
@@ -7526,14 +7538,14 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isNoContent
 
-      webTestClient.get()
-        .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isNotFound
-
       repository.runInTransaction {
         assertThat(offenderCaseNoteRepository.existsById(caseNote.id)).isTrue
+        // sentence has been deleted
+        assertThat(offenderSentenceRepository.existsById(uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(offenderBooking = offenderBooking, sequence = sentence.id.sequence))).isFalse
+        // licence remains
+        assertThat(offenderSentenceRepository.existsById(uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(offenderBooking = offenderBooking, sequence = licenceSeq))).isTrue
+        // status has been deleted
+        assertThat(offenderSentenceStatusRepository.existsById(sentenceStatusId)).isFalse
       }
     }
 
