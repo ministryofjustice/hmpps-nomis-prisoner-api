@@ -703,7 +703,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      internal fun `a different end time does not cause a new time of day to be created`() {
+      internal fun `a different end time causes a new time of day to be created`() {
         assertThat(repository.getAllAgencyVisitTimes(PRISON_ID)).isEmpty()
 
         repository.runInTransaction {
@@ -727,8 +727,19 @@ class VisitResourceIntTest : IntegrationTestBase() {
               openClosedStatus = "OPEN",
             ),
           )
-          assertThat(repository.getAllAgencyVisitTimes(PRISON_ID)).hasSize(1)
+          assertThat(repository.getAllAgencyVisitTimes(PRISON_ID)).hasSize(2)
             .anyMatch { it.agencyVisitTimesId == visitThatEndAtDifferentTime.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId }
+
+          val visitThatEndAtDifferentTimeButSameDayOfWeek = repository.getVisit(
+            createVisit(
+              startDateTime = "2021-11-11T14:00",
+              endTime = "14:30",
+              room = "Main visit room",
+              openClosedStatus = "OPEN",
+            ),
+          )
+          assertThat(repository.getAllAgencyVisitTimes(PRISON_ID)).hasSize(2)
+            .anyMatch { it.agencyVisitTimesId == visitThatEndAtDifferentTimeButSameDayOfWeek.agencyVisitSlot!!.agencyVisitTime.agencyVisitTimesId }
         }
       }
 

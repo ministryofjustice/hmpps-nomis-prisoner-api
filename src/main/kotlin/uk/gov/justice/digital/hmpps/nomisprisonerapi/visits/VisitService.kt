@@ -496,8 +496,9 @@ class VisitService(
     endDateTime: LocalDateTime,
   ): AgencyVisitTime {
     val weekDay = getOrCreateVisitDay(startDateTime = startDateTime, location = location)
-    return visitTimeRepository.findByStartTimeAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
+    return visitTimeRepository.findByStartTimeAndEndTimeAndExpiryDateIsNotNullAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
       startTime = startDateTime.toLocalTime(),
+      endTime = endDateTime.toLocalTime(),
       weekDay = weekDay.agencyVisitDayId.weekDay,
       location = location,
     ) ?: createVisitTime(
