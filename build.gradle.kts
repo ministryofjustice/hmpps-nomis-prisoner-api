@@ -19,6 +19,10 @@ dependencies {
   implementation("org.hibernate.orm:hibernate-community-dialects")
   implementation("com.google.guava:guava:33.6.0-jre")
 
+  val appinsightsCore = "core:2.6.4"
+  implementation("io.micrometer:micrometer-registry-azure-monitor:1.16.5")
+  implementation("com.microsoft.azure:applicationinsights-$appinsightsCore")
+
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.4.240")
   runtimeOnly("com.oracle.database.jdbc:ojdbc11:23.26.1.0.0")
