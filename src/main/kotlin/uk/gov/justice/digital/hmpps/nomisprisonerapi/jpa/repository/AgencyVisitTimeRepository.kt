@@ -26,7 +26,7 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
   )
   fun findByAgencyVisitTimesIdLocationIdNotExpiredIsEffective(locationId: String): List<AgencyVisitTime>
 
-  fun findByStartTimeAndEndTimeAndExpiryDateIsNotNullAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
+  fun findByStartTimeAndEndTimeAndAgencyVisitTimesIdWeekDayAndAgencyVisitTimesIdLocation(
     startTime: LocalTime,
     endTime: LocalTime,
     weekDay: WeekDay,
