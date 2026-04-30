@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPDocument
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IWPTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Incentive
@@ -231,6 +232,18 @@ interface BookingDsl {
     targetCourtEvent: CourtEvent,
     whenCreated: LocalDateTime = LocalDateTime.now(),
   ): List<LinkCaseTxn>
+
+  @CourtEventDslMarker
+  fun courtEvent(
+    commentText: String? = "Court event comment",
+    agencyId: String = "LEEDYC",
+    courtEventType: String = "TRIAL",
+    eventStatusCode: String = "SCH",
+    eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
+    directionCode: String = DirectionType.OUT,
+    whenCreated: LocalDateTime? = null,
+    dsl: CourtEventDsl.() -> Unit = {},
+  ): CourtEvent
 
   @OffenderFixedTermRecallDslMarker
   fun fixedTermRecall(
@@ -514,6 +527,7 @@ class BookingBuilderFactory(
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
+  private val courtEventBuilderFactory: CourtEventBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -522,6 +536,7 @@ class BookingBuilderFactory(
     adjudicationPartyBuilderFactory,
     offenderSentenceBuilderFactory,
     courtCaseBuilderFactory,
+    courtEventBuilderFactory,
     offenderFixedTermRecallBuilderFactory,
     offenderKeyDateAdjustmentBuilderFactory,
     offenderExternalMovementBuilderFactory,
@@ -554,6 +569,7 @@ class BookingBuilder(
   private val adjudicationPartyBuilderFactory: AdjudicationPartyBuilderFactory,
   private val offenderSentenceBuilderFactory: OffenderSentenceBuilderFactory,
   private val courtCaseBuilderFactory: CourtCaseBuilderFactory,
+  private val courtEventBuilderFactory: CourtEventBuilderFactory,
   private val offenderFixedTermRecallBuilderFactory: OffenderFixedTermRecallBuilderFactory,
   private val offenderKeyDateAdjustmentBuilderFactory: OffenderKeyDateAdjustmentBuilderFactory,
   private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
@@ -843,6 +859,34 @@ class BookingBuilder(
           builder.apply(dsl)
         }
     }
+
+  override fun courtEvent(
+    commentText: String?,
+    agencyId: String,
+    courtEventType: String,
+    eventStatusCode: String,
+    eventDateTime: LocalDateTime,
+    directionCode: String,
+    whenCreated: LocalDateTime?,
+    dsl: CourtEventDsl.() -> Unit,
+  ) = courtEventBuilderFactory.builder().let { builder ->
+    builder.build(
+      commentText = commentText,
+      agencyId = agencyId,
+      courtEventType = courtEventType,
+      eventStatusCode = eventStatusCode,
+      outcomeReasonCode = null,
+      judgeName = null,
+      eventDateTime = eventDateTime,
+      nextEventDateTime = null,
+      offenderBooking = offenderBooking,
+      courtCase = null,
+      orderRequestedFlag = null,
+      directionCode = directionCode,
+      whenCreated = whenCreated,
+    )
+      .also { builder.apply(dsl) }
+  }
 
   override fun linkCases(
     sourceCourtCase: CourtCase,
