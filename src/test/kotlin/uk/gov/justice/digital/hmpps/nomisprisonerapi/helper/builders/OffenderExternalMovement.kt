@@ -94,7 +94,7 @@ class OffenderExternalMovementBuilder(
     OffenderExternalMovement(
       id = OffenderExternalMovementId(
         offenderBooking,
-        offenderBooking.externalMovements.size + 1,
+        offenderBooking.externalMovements.size + 2,
       ),
       movementDate = date.toLocalDate(),
       movementTime = date.plusSeconds(1),

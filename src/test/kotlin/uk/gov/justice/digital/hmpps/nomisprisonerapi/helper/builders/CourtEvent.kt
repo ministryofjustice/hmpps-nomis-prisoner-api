@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -84,8 +85,9 @@ class CourtEventBuilderRepository(
   val courtEventTypeRepository: ReferenceCodeRepository<MovementReason>,
   val agencyLocationRepository: AgencyLocationRepository,
   val offenceResultCodeRepository: OffenceResultCodeRepository,
+  private val jdbcTemplate: JdbcTemplate,
 ) {
-  fun save(courtEvent: CourtEvent): CourtEvent = repository.save(courtEvent)
+  fun save(courtEvent: CourtEvent): CourtEvent = repository.saveAndFlush(courtEvent)
 
   fun lookupEventStatus(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
 
@@ -96,6 +98,10 @@ class CourtEventBuilderRepository(
   fun lookupCourtEventType(code: String): MovementReason = courtEventTypeRepository.findByIdOrNull(MovementReason.pk(code))!!
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
+
+  fun updateCreateDatetime(courtEvent: CourtEvent, whenCreated: LocalDateTime) {
+    jdbcTemplate.update("update COURT_EVENTS set CREATE_DATETIME = ? where EVENT_ID = ?", whenCreated, courtEvent.id)
+  }
 }
 
 class CourtEventBuilder(
@@ -117,6 +123,8 @@ class CourtEventBuilder(
     offenderBooking: OffenderBooking,
     courtCase: CourtCase?,
     orderRequestedFlag: Boolean?,
+    directionCode: String,
+    whenCreated: LocalDateTime?,
   ): CourtEvent = CourtEvent(
     offenderBooking = offenderBooking,
     courtCase = courtCase,
@@ -132,9 +140,10 @@ class CourtEventBuilder(
     nextEventStartTime = nextEventDateTime,
     nextEventDate = nextEventDateTime?.toLocalDate(),
     nextEventRequestFlag = nextEventDateTime != null,
-    directionCode = repository.lookupDirectionType(DirectionType.OUT),
+    directionCode = repository.lookupDirectionType(directionCode),
   )
     .let { repository.save(it) }
+    .also { whenCreated?.run { repository.updateCreateDatetime(it, whenCreated) } }
     .also { courtEvent = it }
 
   override fun courtEventCharge(

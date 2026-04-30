@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LegalCaseType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseIdentifier
@@ -41,6 +42,7 @@ interface CourtCaseDsl {
     eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
     nextEventDateTime: LocalDateTime? = LocalDateTime.of(2023, 1, 5, 10, 30),
     orderRequestedFlag: Boolean? = false,
+    whenCreated: LocalDateTime? = null,
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
 
@@ -304,6 +306,7 @@ class CourtCaseBuilder(
     eventDateTime: LocalDateTime,
     nextEventDateTime: LocalDateTime?,
     orderRequestedFlag: Boolean?,
+    whenCreated: LocalDateTime?,
     dsl: CourtEventDsl.() -> Unit,
   ) = courtEventBuilderFactory.builder().let { builder ->
     builder.build(
@@ -318,6 +321,8 @@ class CourtCaseBuilder(
       offenderBooking = courtCase.offenderBooking,
       courtCase = courtCase,
       orderRequestedFlag = orderRequestedFlag,
+      directionCode = DirectionType.OUT,
+      whenCreated = whenCreated,
     )
       .also { courtCase.courtEvents += it }
       .also { builder.apply(dsl) }

@@ -94,4 +94,7 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
     nativeQuery = true,
   )
   fun countOffenderScheduledIn(offender: String): Long
+
+  @Suppress("ktlint:standard:function-naming")
+  fun findAllById_OffenderBooking_BookingId(bookingId: Long): List<OffenderExternalMovement>
 }
