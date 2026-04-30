@@ -4,7 +4,9 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -21,21 +23,7 @@ class CourtScheduleService(
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
     }
-    return courtEventRepository.findByIdOrNull(eventId)
-      ?.let {
-        CourtScheduleOut(
-          bookingId = it.offenderBooking.bookingId,
-          eventId = it.id,
-          eventDate = it.eventDate,
-          startTime = it.startTime,
-          eventType = it.courtEventType.code,
-          eventStatus = it.eventStatus.code,
-          comment = it.commentText,
-          prison = findPrisonAt(it.createDatetime, it.offenderBooking.bookingId)?.id
-            ?: it.offenderBooking.location.id,
-          courtCaseId = it.courtCase?.id,
-        )
-      }
+    return courtEventRepository.findByIdOrNull(eventId)?.toResponse()
       ?: throw NotFoundException("Court event with id=$eventId not found for prisoner with nomsId=$offenderNo")
   }
 
@@ -46,4 +34,17 @@ class CourtScheduleService(
       ?: admissions.minByOrNull { it.movementTime }
     return admission?.toAgency
   }
+
+  private fun CourtEvent.toResponse() = CourtScheduleOut(
+    bookingId = offenderBooking.bookingId,
+    eventId = id,
+    eventDate = eventDate,
+    startTime = startTime,
+    eventType = courtEventType.code,
+    eventStatus = eventStatus.code,
+    comment = commentText,
+    prison = findPrisonAt(createDatetime, offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
+    courtCaseId = courtCase?.id,
+    audit = toAudit(),
+  )
 }

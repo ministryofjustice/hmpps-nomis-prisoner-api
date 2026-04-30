@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule
 
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -32,4 +33,7 @@ data class CourtScheduleOut(
 
   @Schema(description = "Court case ID")
   val courtCaseId: Long? = null,
+
+  @Schema(description = "Audit data associated with the records")
+  val audit: NomisAudit,
 )

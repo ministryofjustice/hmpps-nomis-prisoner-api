@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.CourtScheduleOut
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit.SECONDS
 
 class CourtScheduleResourceIntTest : IntegrationTestBase() {
 
@@ -93,6 +95,8 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
             assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
             assertThat(comment).isEqualTo(scheduleOut.commentText)
             assertThat(prison).isEqualTo(booking.location.id)
+            assertThat(audit.createUsername).isEqualTo("SA")
+            assertThat(audit.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           }
       }
 
