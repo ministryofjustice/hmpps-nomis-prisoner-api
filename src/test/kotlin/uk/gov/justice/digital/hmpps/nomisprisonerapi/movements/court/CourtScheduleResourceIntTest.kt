@@ -70,6 +70,7 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
             assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
             assertThat(comment).isEqualTo(scheduleOut.commentText)
             assertThat(prison).isEqualTo(booking.location.id)
+            assertThat(court).isEqualTo(scheduleOut.court.id)
             assertThat(courtCaseId).isEqualTo(courtCase.id)
           }
       }

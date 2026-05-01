@@ -31,6 +31,9 @@ data class CourtScheduleOut(
   @Schema(description = "Prison code at time of scheduling")
   val prison: String,
 
+  @Schema(description = "Court code")
+  val court: String,
+
   @Schema(description = "Court case ID")
   val courtCaseId: Long? = null,
 

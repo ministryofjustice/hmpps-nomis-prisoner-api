@@ -44,6 +44,7 @@ class CourtScheduleService(
     eventStatus = eventStatus.code,
     comment = commentText,
     prison = findPrisonAt(createDatetime, offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
+    court = court.id,
     courtCaseId = courtCase?.id,
     audit = toAudit(),
   )

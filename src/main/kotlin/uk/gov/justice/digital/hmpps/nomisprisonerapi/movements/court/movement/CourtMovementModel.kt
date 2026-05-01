@@ -28,8 +28,8 @@ data class CourtMovementOut(
   @Schema(description = "From prison")
   val fromPrison: String,
 
-  @Schema(description = "To agency")
-  val toAgency: String?,
+  @Schema(description = "To court")
+  val toCourt: String?,
 
   @Schema(description = "Comment text")
   val commentText: String?,
@@ -58,8 +58,8 @@ data class CourtMovementIn(
   @Schema(description = "Movement reason")
   val movementReason: String,
 
-  @Schema(description = "From agency")
-  val fromAgency: String,
+  @Schema(description = "From court")
+  val fromCourt: String,
 
   @Schema(description = "To prison")
   val toPrison: String?,
