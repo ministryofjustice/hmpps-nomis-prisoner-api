@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.movement.CourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.movement.CourtMovementOut
 import java.time.Duration
 import java.time.temporal.ChronoUnit
@@ -192,6 +193,122 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /movements/{offenderNo}/court/movement/in/{bookingId}/{movementSeq}")
   inner class GetCourtMovementIn {
 
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account()
+        }
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            scheduleOut = courtEvent {
+              movementOut = courtMovementOut()
+              movementIn = courtMovementIn()
+            }
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should get all court movement details`() {
+        webTestClient.getCourtMovementInOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementIn.id.sequence)
+          assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
+          assertThat(movementDate).isEqualTo(movementIn.movementDate)
+          assertThat(movementTime).isCloseTo(movementIn.movementTime, within(Duration.ofSeconds(1)))
+          assertThat(movementReason).isEqualTo(movementIn.movementReason.id.reasonCode)
+          assertThat(toPrison).isEqualTo(movementIn.toAgency!!.id)
+          assertThat(fromCourt).isEqualTo(movementIn.fromAgency!!.id)
+          assertThat(commentText).isEqualTo(movementIn.commentText)
+          assertThat(audit.createUsername).isEqualTo("SA")
+          assertThat(audit.createDatetime).isCloseTo(movementOut.createDatetime, within(10, ChronoUnit.SECONDS))
+        }
+      }
+
+      @Test
+      fun `should get unscheduled court movement details`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              movementOut = courtMovementOut()
+              movementIn = courtMovementIn()
+            }
+          }
+        }
+
+        webTestClient.getCourtMovementInOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementIn.id.sequence)
+          assertThat(courtScheduleOutId).isNull()
+        }
+      }
+
+      @Test
+      fun `should get court movement details linked to a court case`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              courtCase(reportingStaff = staff) {
+                scheduleOut = courtEvent {
+                  movementOut = courtMovementOut()
+                  movementIn = courtMovementIn()
+                }
+              }
+            }
+          }
+        }
+
+        webTestClient.getCourtMovementInOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementIn.id.sequence)
+          assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
+        }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found if offender unknown`() {
+        webTestClient.getCourtMovementIn(offenderNo = "UNKNOWN")
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `should return not found if booking doesn't exist`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              movementOut = courtMovementOut()
+              movementIn = courtMovementIn()
+            }
+          }
+        }
+
+        webTestClient.getCourtMovementIn(offenderNo = offender.nomsId, bookingId = 9999, sequence = 1)
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `should return not found if court movement doesn't exist`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              movementOut = courtMovementOut()
+              movementIn = courtMovementIn()
+            }
+          }
+        }
+
+        webTestClient.getCourtMovementIn(offenderNo = offender.nomsId, bookingId = booking.bookingId, sequence = 9999)
+          .expectStatus().isNotFound
+      }
+    }
+
     @Nested
     inner class Security {
       @BeforeEach
@@ -239,4 +356,13 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
   private fun WebTestClient.getCourtMovementOutOk(offenderNo: String = offender.nomsId, bookingId: Long = movementOut.id.offenderBooking.bookingId, sequence: Int = movementOut.id.sequence) = getCourtMovementOut(offenderNo, bookingId, sequence)
     .expectStatus().isOk
     .expectBodyResponse<CourtMovementOut>()
+
+  private fun WebTestClient.getCourtMovementIn(offenderNo: String = offender.nomsId, bookingId: Long = movementIn.id.offenderBooking.bookingId, sequence: Int = movementIn.id.sequence) = get()
+    .uri("/movements/$offenderNo/court/movement/in/$bookingId/$sequence")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .exchange()
+
+  private fun WebTestClient.getCourtMovementInOk(offenderNo: String = offender.nomsId, bookingId: Long = movementIn.id.offenderBooking.bookingId, sequence: Int = movementIn.id.sequence) = getCourtMovementIn(offenderNo, bookingId, sequence)
+    .expectStatus().isOk
+    .expectBodyResponse<CourtMovementIn>()
 }
