@@ -31,6 +31,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBookingImage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
@@ -351,6 +353,35 @@ interface BookingDsl {
     fromCity: String? = null,
     fromAddress: Address? = null,
   ): OffenderTapMovementIn
+
+  @CourtEventDslMarker
+  fun courtScheduleOut(
+    commentText: String? = "Court event comment",
+    fromPrison: String = "MDI",
+    courtEventType: String = "TRIAL",
+    eventStatusCode: String = "SCH",
+    eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
+    whenCreated: LocalDateTime? = null,
+    dsl: CourtEventDsl.() -> Unit = {},
+  ): CourtEvent
+
+  @OffenderExternalMovementDslMarker
+  fun courtMovementOut(
+    date: LocalDateTime = LocalDateTime.now(),
+    fromPrison: String = "BXI",
+    toCourt: String = "ABDRCT",
+    movementReason: String = "CRT",
+    comment: String? = null,
+  ): OffenderCourtMovementOut
+
+  @OffenderExternalMovementDslMarker
+  fun courtMovementIn(
+    date: LocalDateTime = LocalDateTime.now(),
+    toPrison: String = "BXI",
+    fromCourt: String = "ABDRCT",
+    movementReason: String = "CRT",
+    comment: String? = null,
+  ): OffenderCourtMovementIn
 
   @VisitBalanceDslMarker
   fun visitBalance(
@@ -1122,6 +1153,67 @@ class BookingBuilder(
       comment = comment,
       fromCity = fromCity,
       fromAddress = fromAddress,
+    )
+    .also { offenderBooking.externalMovements += it }
+
+  override fun courtScheduleOut(
+    commentText: String?,
+    fromPrison: String,
+    courtEventType: String,
+    eventStatusCode: String,
+    eventDateTime: LocalDateTime,
+    whenCreated: LocalDateTime?,
+    dsl: CourtEventDsl.() -> Unit,
+  ) = courtEventBuilderFactory.builder().let { builder ->
+    builder.build(
+      commentText = commentText,
+      agencyId = fromPrison,
+      courtEventType = courtEventType,
+      eventStatusCode = eventStatusCode,
+      eventDateTime = eventDateTime,
+      offenderBooking = offenderBooking,
+      directionCode = DirectionType.OUT,
+      whenCreated = whenCreated,
+      outcomeReasonCode = null,
+      judgeName = null,
+      nextEventDateTime = null,
+      courtCase = null,
+      orderRequestedFlag = null,
+    )
+      .also { builder.apply(dsl) }
+  }
+
+  override fun courtMovementOut(
+    date: LocalDateTime,
+    fromPrison: String,
+    toCourt: String,
+    movementReason: String,
+    comment: String?,
+  ): OffenderCourtMovementOut = offenderExternalMovementBuilderFactory.builder()
+    .buildCourtMovementOut(
+      offenderBooking = offenderBooking,
+      date = date,
+      fromPrison = fromPrison,
+      toCourt = toCourt,
+      movementReason = movementReason,
+      comment = comment,
+    )
+    .also { offenderBooking.externalMovements += it }
+
+  override fun courtMovementIn(
+    date: LocalDateTime,
+    toPrison: String,
+    fromCourt: String,
+    movementReason: String,
+    comment: String?,
+  ): OffenderCourtMovementIn = offenderExternalMovementBuilderFactory.builder()
+    .buildCourtMovementIn(
+      offenderBooking = offenderBooking,
+      date = date,
+      toPrison = toPrison,
+      fromCourt = fromCourt,
+      movementReason = movementReason,
+      comment = comment,
     )
     .also { offenderBooking.externalMovements += it }
 
