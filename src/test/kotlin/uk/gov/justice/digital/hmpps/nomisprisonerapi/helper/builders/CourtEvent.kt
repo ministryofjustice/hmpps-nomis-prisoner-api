@@ -14,6 +14,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenceResultCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenceResultCodeRepository
@@ -62,6 +64,24 @@ interface CourtEventDsl {
     nonReportFlag: Boolean = false,
     dsl: CourtOrderDsl.() -> Unit = {},
   ): CourtOrder
+
+  @OffenderExternalMovementDslMarker
+  fun courtMovementOut(
+    date: LocalDateTime = LocalDateTime.now(),
+    fromPrison: String = "BXI",
+    toCourt: String = "ABDRCT",
+    movementReason: String = "CRT",
+    comment: String? = null,
+  ): OffenderCourtMovementOut
+
+  @OffenderExternalMovementDslMarker
+  fun courtMovementIn(
+    date: LocalDateTime = LocalDateTime.now(),
+    toPrison: String = "BXI",
+    fromCourt: String = "ABDRCT",
+    movementReason: String = "CRT",
+    comment: String? = null,
+  ): OffenderCourtMovementIn
 }
 
 @Component
@@ -69,11 +89,13 @@ class CourtEventBuilderFactory(
   private val repository: CourtEventBuilderRepository,
   private val courtEventChargeBuilderFactory: CourtEventChargeBuilderFactory,
   private val courtOrderBuilderFactory: CourtOrderBuilderFactory,
+  private val externalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) {
   fun builder(): CourtEventBuilder = CourtEventBuilder(
     repository,
     courtEventChargeBuilderFactory,
     courtOrderBuilderFactory,
+    externalMovementBuilderFactory,
   )
 }
 
@@ -108,6 +130,7 @@ class CourtEventBuilder(
   private val repository: CourtEventBuilderRepository,
   private val courtEventChargeBuilderFactory: CourtEventChargeBuilderFactory,
   private val courtOrderBuilderFactory: CourtOrderBuilderFactory,
+  private val externalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) : CourtEventDsl {
   private lateinit var courtEvent: CourtEvent
 
@@ -217,4 +240,44 @@ class CourtEventBuilder(
       .also { courtEvent.courtOrders += it }
       .also { builder.apply(dsl) }
   }
+
+  override fun courtMovementOut(
+    date: LocalDateTime,
+    fromPrison: String,
+    toCourt: String,
+    movementReason: String,
+    comment: String?,
+  ): OffenderCourtMovementOut = externalMovementBuilderFactory.builder()
+    .buildCourtMovementOut(
+      offenderBooking = courtEvent.offenderBooking,
+      date = date,
+      fromPrison = fromPrison,
+      toCourt = toCourt,
+      movementReason = movementReason,
+      comment = comment,
+      courtScheduleOut = courtEvent,
+    )
+    .also {
+      courtEvent.offenderBooking.externalMovements += it
+    }
+
+  override fun courtMovementIn(
+    date: LocalDateTime,
+    toPrison: String,
+    fromCourt: String,
+    movementReason: String,
+    comment: String?,
+  ): OffenderCourtMovementIn = externalMovementBuilderFactory.builder()
+    .buildCourtMovementIn(
+      offenderBooking = courtEvent.offenderBooking,
+      date = date,
+      toPrison = toPrison,
+      fromCourt = fromCourt,
+      movementReason = movementReason,
+      comment = comment,
+      courtScheduleOut = courtEvent,
+    )
+    .also {
+      courtEvent.offenderBooking.externalMovements += it
+    }
 }

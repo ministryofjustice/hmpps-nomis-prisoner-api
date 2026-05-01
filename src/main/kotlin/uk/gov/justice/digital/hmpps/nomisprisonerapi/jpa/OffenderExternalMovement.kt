@@ -21,7 +21,6 @@ import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
 import org.hibernate.type.YesNoConverter
-import org.springframework.data.jpa.domain.AbstractPersistable_.id
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.time.LocalDate
@@ -45,6 +44,8 @@ data class OffenderExternalMovementId(
     case
         when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'OUT' then 'OffenderTapMovementOut'
         when MOVEMENT_TYPE = 'TAP' and DIRECTION_CODE = 'IN' then 'OffenderTapMovementIn'
+        when MOVEMENT_TYPE = 'CRT' and DIRECTION_CODE = 'OUT' then 'OffenderCourtMovementOut'
+        when MOVEMENT_TYPE = 'CRT' and DIRECTION_CODE = 'IN' then 'OffenderCourtMovementIn'
         else 'OffenderExternalMovement'
     end
 """,
