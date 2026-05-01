@@ -605,6 +605,34 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
         assertThat(visitTimeSlot.expiryDate).isEqualTo(LocalDate.parse("2032-09-01"))
         assertThat(visitTimeSlot.visitSlots).hasSize(1)
       }
+
+      @Test
+      fun `can update just effective and expiry dates slot`() {
+        webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            UpdateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = LocalDate.parse("2032-09-01"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNoContent
+
+        val visitTimeSlot: VisitTimeSlotResponse = webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(visitTimeSlot.prisonId).isEqualTo("BXI")
+        assertThat(visitTimeSlot.startTime).isEqualTo(LocalTime.parse("10:00"))
+        assertThat(visitTimeSlot.endTime).isEqualTo(LocalTime.parse("11:00"))
+        assertThat(visitTimeSlot.effectiveDate).isEqualTo(LocalDate.parse("2022-09-01"))
+        assertThat(visitTimeSlot.expiryDate).isEqualTo(LocalDate.parse("2032-09-01"))
+        assertThat(visitTimeSlot.visitSlots).hasSize(1)
+      }
     }
   }
 
