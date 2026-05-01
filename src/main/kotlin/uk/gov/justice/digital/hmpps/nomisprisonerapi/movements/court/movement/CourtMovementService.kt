@@ -17,7 +17,7 @@ class CourtMovementService {
     movementTime = LocalDateTime.now(),
     movementReason = "COURT",
     fromPrison = "LEI",
-    toAgency = "LEEDMC",
+    toCourt = "LEEDMC",
     commentText = "Court movement",
     audit = NomisAudit(createUsername = "USER", createDatetime = LocalDateTime.now()),
   )
@@ -30,7 +30,7 @@ class CourtMovementService {
     movementDate = LocalDate.now(),
     movementTime = LocalDateTime.now(),
     movementReason = "COURT",
-    fromAgency = "LEEDMC",
+    fromCourt = "LEEDMC",
     toPrison = "LEI",
     commentText = "Court movement",
     audit = NomisAudit(createUsername = "USER", createDatetime = LocalDateTime.now()),
