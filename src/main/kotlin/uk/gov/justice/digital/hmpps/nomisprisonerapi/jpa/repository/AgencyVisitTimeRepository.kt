@@ -3,12 +3,14 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
+import java.time.LocalDate
 import java.time.LocalTime
 
 @Repository
@@ -54,6 +56,20 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
   fun findAllIds(
     pageable: Pageable,
   ): Page<VisitTimeSlotIdProjection>
+
+  @Modifying
+  @Query(
+    """
+      update AgencyVisitTime avt
+      set avt.effectiveDate = :effectiveDate, avt.expiryDate = :expiryDate
+      where avt.agencyVisitTimesId = :agencyVisitTimesId
+    """,
+  )
+  fun updateActivationDates(
+    agencyVisitTimesId: AgencyVisitTimeId,
+    effectiveDate: LocalDate,
+    expiryDate: LocalDate?,
+  )
 }
 
 interface VisitTimeSlotIdProjection {

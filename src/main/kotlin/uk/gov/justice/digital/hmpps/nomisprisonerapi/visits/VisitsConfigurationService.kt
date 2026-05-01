@@ -87,11 +87,19 @@ class VisitsConfigurationService(
   fun updateVisitTimeSlot(prisonId: String, dayOfWeek: WeekDay, timeSlotSequence: Int, request: UpdateVisitTimeSlotRequest) {
     val timeSlot = agencyVisitTimeRepository.findByIdOrNull(AgencyVisitTimeId(lookupAgency(prisonId), dayOfWeek, timeSlotSequence)) ?: throw NotFoundException("Visit time slot $prisonId, $dayOfWeek, $timeSlotSequence does not exist")
 
-    with(timeSlot) {
-      startTime = request.startTime
-      endTime = request.endTime
-      effectiveDate = request.effectiveDate
-      expiryDate = request.expiryDate
+    // if times have not changed then just update the effective and expiry dates
+    // this is a temporary hack to prevent the date element of start and endTime being set to
+    // 1970-01-01 while the NOMIS unique index is investigated
+    if (timeSlot.startTime == request.startTime && timeSlot.endTime == request.endTime) {
+      agencyVisitTimeRepository.updateActivationDates(timeSlot.agencyVisitTimesId, request.effectiveDate, request.expiryDate)
+    } else {
+      with(timeSlot) {
+        startTime = request.startTime
+        endTime = request.endTime
+        effectiveDate = request.effectiveDate
+        expiryDate = request.expiryDate
+        agencyVisitTimeRepository.saveAndFlush(this)
+      }
     }
   }
 
