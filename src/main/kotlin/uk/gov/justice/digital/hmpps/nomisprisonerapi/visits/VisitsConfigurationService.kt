@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -64,43 +65,37 @@ class VisitsConfigurationService(
   fun createVisitTimeSlot(prisonId: String, dayOfWeek: WeekDay, request: CreateVisitTimeSlotRequest): VisitTimeSlotResponse {
     val location = lookupAgency(prisonId)
     val nextSequence = agencyVisitTimeRepository.getNextTimeSlotSequence(prisonId, dayOfWeek.name)
-
-    return agencyVisitTimeRepository.saveAndFlush(
-      AgencyVisitTime(
-        agencyVisitTimesId = AgencyVisitTimeId(
-          location = location,
-          weekDay = dayOfWeek,
-          timeSlotSequence = nextSequence,
-        ),
-        startTime = request.startTime,
-        endTime = request.endTime,
-        effectiveDate = request.effectiveDate,
-        expiryDate = request.expiryDate,
-      ),
-    ).let {
-      agencyVisitTimeRepository.findByIdOrNull(it.agencyVisitTimesId)
-        ?: throw BadDataException("Visit time slot $prisonId, $dayOfWeek, ${it.agencyVisitTimesId.timeSlotSequence} could not be reloaded")
-    }.toVisitTimeSlotResponse()
+    val agencyVisitTimesId = AgencyVisitTimeId(
+      location = location,
+      weekDay = dayOfWeek,
+      timeSlotSequence = nextSequence,
+    )
+    // To prevent clashes with deactivated start and end times - use today as date portion
+    // rather than default of 1/1/1970 while the NOMIS constraint exists
+    agencyVisitTimeRepository.createDates(
+      agencyVisitTimesId = agencyVisitTimesId,
+      startDateTime = request.startTime.atDate(LocalDate.now()),
+      endDateTime = request.endTime.atDate(LocalDate.now()),
+      effectiveDate = request.effectiveDate,
+      expiryDate = request.expiryDate,
+    )
+    return agencyVisitTimeRepository.findByIdOrNull(agencyVisitTimesId)?.toVisitTimeSlotResponse()
+      ?: throw BadDataException("Visit time slot $prisonId, $dayOfWeek, ${agencyVisitTimesId.timeSlotSequence} could not be reloaded")
   }
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun updateVisitTimeSlot(prisonId: String, dayOfWeek: WeekDay, timeSlotSequence: Int, request: UpdateVisitTimeSlotRequest) {
     val timeSlot = agencyVisitTimeRepository.findByIdOrNull(AgencyVisitTimeId(lookupAgency(prisonId), dayOfWeek, timeSlotSequence)) ?: throw NotFoundException("Visit time slot $prisonId, $dayOfWeek, $timeSlotSequence does not exist")
 
-    // if times have not changed then just update the effective and expiry dates
-    // this is a temporary hack to prevent the date element of start and endTime being set to
-    // 1970-01-01 while the NOMIS unique index is investigated
-    if (timeSlot.startTime == request.startTime && timeSlot.endTime == request.endTime) {
-      agencyVisitTimeRepository.updateActivationDates(timeSlot.agencyVisitTimesId, request.effectiveDate, request.expiryDate)
-    } else {
-      with(timeSlot) {
-        startTime = request.startTime
-        endTime = request.endTime
-        effectiveDate = request.effectiveDate
-        expiryDate = request.expiryDate
-        agencyVisitTimeRepository.saveAndFlush(this)
-      }
-    }
+    // To prevent clashes with deactivated start and end times - use the date portion
+    // from original slot details rather than default of 1/1/1970 while the NOMIS constraint exists
+    agencyVisitTimeRepository.updateDates(
+      agencyVisitTimesId = timeSlot.agencyVisitTimesId,
+      startDateTime = request.startTime.atDate(timeSlot.startDateTime.toLocalDate()),
+      endDateTime = request.endTime.atDate(timeSlot.endDateTime.toLocalDate()),
+      effectiveDate = request.effectiveDate,
+      expiryDate = request.expiryDate,
+    )
   }
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
