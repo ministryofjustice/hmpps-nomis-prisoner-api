@@ -160,6 +160,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   category = "1991",
                 ) {
                   term(startDate = LocalDate.parse("2022-01-01"), years = 2)
+                  offenderSentenceCharge(offenderCharge1)
                 }
               }
               courtCaseTwo = courtCase(
