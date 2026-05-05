@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Repository
@@ -61,12 +62,35 @@ interface AgencyVisitTimeRepository : JpaRepository<AgencyVisitTime, AgencyVisit
   @Query(
     """
       update AgencyVisitTime avt
-      set avt.effectiveDate = :effectiveDate, avt.expiryDate = :expiryDate
+      set 
+        avt.effectiveDate = :effectiveDate, 
+        avt.expiryDate = :expiryDate,
+        avt.startDateTime = :startDateTime, 
+        avt.endDateTime = :endDateTime
       where avt.agencyVisitTimesId = :agencyVisitTimesId
     """,
   )
-  fun updateActivationDates(
+  fun updateDates(
     agencyVisitTimesId: AgencyVisitTimeId,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+    effectiveDate: LocalDate,
+    expiryDate: LocalDate?,
+  )
+
+  @Modifying
+  @Query(
+    """
+      insert into AgencyVisitTime
+            (agencyVisitTimesId, effectiveDate, expiryDate, startDateTime, endDateTime) 
+        values 
+            (:agencyVisitTimesId, :effectiveDate, :expiryDate, :startDateTime, :endDateTime)
+    """,
+  )
+  fun createDates(
+    agencyVisitTimesId: AgencyVisitTimeId,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
     effectiveDate: LocalDate,
     expiryDate: LocalDate?,
   )

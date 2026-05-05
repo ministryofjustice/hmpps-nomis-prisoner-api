@@ -11,15 +11,21 @@ import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 class VisitsConfigurationIntTest : IntegrationTestBase() {
+  @Autowired
+  private lateinit var agencyLocationRepository: AgencyLocationRepository
+
   @Autowired
   private lateinit var agencyInternalLocationRepository: AgencyInternalLocationRepository
 
@@ -131,6 +137,40 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
           .expectStatus().isCreated
           .expectBody()
           .jsonPath("$.timeSlotSequence").isEqualTo(2)
+      }
+
+      @Test
+      fun `will create time slot start and end times with date part set to today`() {
+        nomisDataBuilder.build {
+          agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON)
+        }
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated
+
+        with(
+          agencyVisitTimeRepository.findByIdOrNull(
+            AgencyVisitTimeId(
+              location = agencyLocationRepository.findByIdOrNull("BXI")!!,
+              weekDay = WeekDay.MON,
+              timeSlotSequence = 1,
+            ),
+          )!!,
+        ) {
+          assertThat(startTime).isEqualTo(LocalTime.parse("10:00"))
+          assertThat(startDateTime.toLocalDate()).isToday
+          assertThat(endTime).isEqualTo(LocalTime.parse("11:00"))
+          assertThat(endDateTime.toLocalDate()).isToday
+        }
       }
     }
   }
@@ -469,8 +509,8 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
         agencyVisitDay(prisonerId = "BXI", weekDay = WeekDay.MON) {
           visitTimeSlot(
             timeSlotSequence = 1,
-            startTime = LocalTime.parse("10:00"),
-            endTime = LocalTime.parse("11:00"),
+            startDateTime = LocalDateTime.parse("2020-07-19T10:00"),
+            endDateTime = LocalDateTime.parse("2020-07-19T11:00"),
             effectiveDate = LocalDate.parse("2023-01-01"),
             expiryDate = LocalDate.parse("2033-01-31"),
           ) {
@@ -607,13 +647,26 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `can update just effective and expiry dates slot`() {
+      fun `will leave date portion of start and end times alone`() {
+        val id = AgencyVisitTimeId(
+          location = agencyLocationRepository.findByIdOrNull("BXI")!!,
+          weekDay = WeekDay.MON,
+          timeSlotSequence = 1,
+        )
+
+        with(agencyVisitTimeRepository.findByIdOrNull(id)!!) {
+          assertThat(startTime).isEqualTo(LocalTime.parse("10:00"))
+          assertThat(startDateTime.toLocalDate()).isEqualTo(LocalDate.parse("2020-07-19"))
+          assertThat(endTime).isEqualTo(LocalTime.parse("11:00"))
+          assertThat(endDateTime.toLocalDate()).isEqualTo(LocalDate.parse("2020-07-19"))
+        }
+
         webTestClient.put().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(
             UpdateVisitTimeSlotRequest(
-              startTime = LocalTime.parse("10:00"),
-              endTime = LocalTime.parse("11:00"),
+              startTime = LocalTime.parse("10:10"),
+              endTime = LocalTime.parse("11:10"),
               effectiveDate = LocalDate.parse("2022-09-01"),
               expiryDate = LocalDate.parse("2032-09-01"),
             ),
@@ -621,14 +674,21 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNoContent
 
+        with(agencyVisitTimeRepository.findByIdOrNull(id)!!) {
+          assertThat(startTime).isEqualTo(LocalTime.parse("10:10"))
+          assertThat(startDateTime.toLocalDate()).isEqualTo(LocalDate.parse("2020-07-19"))
+          assertThat(endTime).isEqualTo(LocalTime.parse("11:10"))
+          assertThat(endDateTime.toLocalDate()).isEqualTo(LocalDate.parse("2020-07-19"))
+        }
+
         val visitTimeSlot: VisitTimeSlotResponse = webTestClient.get().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON/time-slot-sequence/1")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
         assertThat(visitTimeSlot.prisonId).isEqualTo("BXI")
-        assertThat(visitTimeSlot.startTime).isEqualTo(LocalTime.parse("10:00"))
-        assertThat(visitTimeSlot.endTime).isEqualTo(LocalTime.parse("11:00"))
+        assertThat(visitTimeSlot.startTime).isEqualTo(LocalTime.parse("10:10"))
+        assertThat(visitTimeSlot.endTime).isEqualTo(LocalTime.parse("11:10"))
         assertThat(visitTimeSlot.effectiveDate).isEqualTo(LocalDate.parse("2022-09-01"))
         assertThat(visitTimeSlot.expiryDate).isEqualTo(LocalDate.parse("2032-09-01"))
         assertThat(visitTimeSlot.visitSlots).hasSize(1)

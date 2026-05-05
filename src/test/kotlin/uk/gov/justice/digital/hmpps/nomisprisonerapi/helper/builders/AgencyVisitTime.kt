@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -8,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @DslMarker
@@ -37,6 +39,19 @@ class AgencyVisitTimeBuilderRepository(
   private val agencyVisitTimeRepository: AgencyVisitTimeRepository,
 ) {
   fun save(agencyVisitTime: AgencyVisitTime): AgencyVisitTime = agencyVisitTimeRepository.save(agencyVisitTime)
+  fun create(
+    agencyVisitTimesId: AgencyVisitTimeId,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+    effectiveDate: LocalDate,
+    expiryDate: LocalDate?,
+  ): AgencyVisitTime = agencyVisitTimeRepository.createDates(
+    agencyVisitTimesId = agencyVisitTimesId,
+    startDateTime = startDateTime,
+    endDateTime = endDateTime,
+    effectiveDate = effectiveDate,
+    expiryDate = expiryDate,
+  ).let { agencyVisitTimeRepository.findByIdOrNull(id = agencyVisitTimesId)!! }
 }
 
 class AgencyVisitTimeBuilder(
@@ -64,6 +79,26 @@ class AgencyVisitTimeBuilder(
     expiryDate = expiryDate,
   )
     .let { repository.save(it) }
+    .also { agencyVisitTime = it }
+
+  fun build(
+    weekDay: AgencyVisitDay,
+    timeSlotSequence: Int,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+    effectiveDate: LocalDate,
+    expiryDate: LocalDate?,
+  ): AgencyVisitTime = repository.create(
+    agencyVisitTimesId = AgencyVisitTimeId(
+      location = weekDay.agencyVisitDayId.location,
+      weekDay = weekDay.agencyVisitDayId.weekDay,
+      timeSlotSequence = timeSlotSequence,
+    ),
+    startDateTime = startDateTime,
+    endDateTime = endDateTime,
+    effectiveDate = effectiveDate,
+    expiryDate = expiryDate,
+  )
     .also { agencyVisitTime = it }
 
   override fun visitSlot(

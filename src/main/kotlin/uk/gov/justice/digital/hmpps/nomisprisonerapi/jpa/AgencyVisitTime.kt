@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Persistable
 import java.io.Serializable
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Entity
@@ -31,6 +32,13 @@ data class AgencyVisitTime(
 
   @Column(name = "END_TIME", nullable = false)
   var endTime: LocalTime,
+
+  // used to be able to set date element of what is only used by the NOMIS as the time
+  @Column(name = "START_TIME", nullable = false, updatable = false, insertable = false)
+  var startDateTime: LocalDateTime = startTime.atDate(LocalDate.now()),
+
+  @Column(name = "END_TIME", nullable = false, updatable = false, insertable = false)
+  var endDateTime: LocalDateTime = endTime.atDate(LocalDate.now()),
 
   @Column(nullable = false)
   var effectiveDate: LocalDate,

@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @DslMarker
@@ -21,6 +22,16 @@ interface AgencyVisitDayDsl {
     timeSlotSequence: Int,
     startTime: LocalTime = LocalTime.now(),
     endTime: LocalTime = LocalTime.now().plusHours(1),
+    effectiveDate: LocalDate = LocalDate.now(),
+    expiryDate: LocalDate? = null,
+    dsl: AgencyVisitTimeDsl.() -> Unit = {},
+  ): AgencyVisitTime
+
+  @AgencyVisitTimeDslMarker
+  fun visitTimeSlot(
+    timeSlotSequence: Int,
+    startDateTime: LocalDateTime = LocalDateTime.now(),
+    endDateTime: LocalDateTime = LocalDateTime.now().plusHours(1),
     effectiveDate: LocalDate = LocalDate.now(),
     expiryDate: LocalDate? = null,
     dsl: AgencyVisitTimeDsl.() -> Unit = {},
@@ -40,7 +51,7 @@ class AgencyVisitDayBuilderRepository(
   private val agencyVisitDayRepository: AgencyVisitDayRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
 ) {
-  fun save(agencyVisitDay: AgencyVisitDay): AgencyVisitDay = agencyVisitDayRepository.save(agencyVisitDay)
+  fun save(agencyVisitDay: AgencyVisitDay): AgencyVisitDay = agencyVisitDayRepository.saveAndFlush(agencyVisitDay)
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findById(id).orElseThrow()
 }
 
@@ -75,6 +86,24 @@ class AgencyVisitDayBuilder(
       timeSlotSequence = timeSlotSequence,
       startTime = startTime,
       endTime = endTime,
+      effectiveDate = effectiveDate,
+      expiryDate = expiryDate,
+    )
+      .also { builder.apply(dsl) }
+  }
+  override fun visitTimeSlot(
+    timeSlotSequence: Int,
+    startDateTime: LocalDateTime,
+    endDateTime: LocalDateTime,
+    effectiveDate: LocalDate,
+    expiryDate: LocalDate?,
+    dsl: AgencyVisitTimeDsl.() -> Unit,
+  ): AgencyVisitTime = agencyVisitTimeBuilderFactory.builder().let { builder ->
+    builder.build(
+      weekDay = agencyVisitDay,
+      timeSlotSequence = timeSlotSequence,
+      startDateTime = startDateTime,
+      endDateTime = endDateTime,
       effectiveDate = effectiveDate,
       expiryDate = expiryDate,
     )
