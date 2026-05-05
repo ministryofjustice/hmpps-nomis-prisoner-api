@@ -2071,7 +2071,7 @@ private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseRespon
   courtEvents = this.courtEvents.map { it.toCourtEvent() },
   offenderCharges = this.offenderCharges.map { it.toOffenderCharge() },
   caseInfoNumbers = this.caseInfoNumbers.filter { it.isDpsCaseInfoNumber() }.map { it.toCaseIdentifier() },
-  sentences = this.sentences.map { it.toSentenceResponse() },
+  sentences = this.sentences.filter { it.offenderSentenceCharges.isNotEmpty() }.map { it.toSentenceResponse() },
 )
 
 private fun OffenderCaseIdentifier.toCaseIdentifier(): CaseIdentifierResponse = CaseIdentifierResponse(
