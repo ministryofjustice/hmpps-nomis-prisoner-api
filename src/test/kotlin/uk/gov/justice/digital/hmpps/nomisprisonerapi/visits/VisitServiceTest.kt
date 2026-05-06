@@ -12,13 +12,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.ServiceAgencySwitchesService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
@@ -36,7 +33,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
@@ -48,8 +44,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
@@ -76,8 +70,6 @@ internal class VisitServiceTest {
   private val visitOrderRepository: VisitOrderRepository = mock()
   private val offenderBookingRepository: OffenderBookingRepository = mock()
   private val personRepository: PersonRepository = mock()
-  private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository = mock()
-  private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository = mock()
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus> = mock()
   private val visitTypeRepository: ReferenceCodeRepository<VisitType> = mock()
   private val visitOrderTypeRepository: ReferenceCodeRepository<VisitOrderType> = mock()
@@ -88,26 +80,21 @@ internal class VisitServiceTest {
   private val internalLocationRepository: AgencyInternalLocationRepository = mock()
   private val visitOutcomeRepository: ReferenceCodeRepository<VisitOutcomeReason> = mock()
   private val eventOutcomeRepository: ReferenceCodeRepository<EventOutcome> = mock()
-  private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason> = mock()
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val visitOrderVisitorRepository: VisitOrderVisitorRepository = mock()
-  private val serviceAgencySwitchesService: ServiceAgencySwitchesService = mock()
 
   private val visitService: VisitService = VisitService(
     visitRepository,
     visitVisitorRepository,
     visitOrderRepository,
     offenderBookingRepository,
-    offenderVisitBalanceAdjustmentRepository,
-    offenderVisitBalanceRepository,
     eventStatusRepository,
     visitTypeRepository,
     visitOrderTypeRepository,
     visitStatusRepository,
     visitOutcomeRepository,
     eventOutcomeRepository,
-    visitOrderAdjustmentReasonRepository,
     agencyLocationRepository,
     telemetryClient,
     personRepository,
@@ -116,7 +103,6 @@ internal class VisitServiceTest {
     visitSlotRepository,
     internalLocationRepository,
     visitOrderVisitorRepository,
-    serviceAgencySwitchesService,
   )
 
   val visitType = VisitType("SCON", "desc")
@@ -177,9 +163,6 @@ internal class VisitServiceTest {
     }
     whenever(eventStatusRepository.findById(any())).thenAnswer {
       Optional.of(EventStatus((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
-    }
-    whenever(visitOrderAdjustmentReasonRepository.findById(any())).thenAnswer {
-      Optional.of(VisitOrderAdjustmentReason((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
     }
     whenever(visitOrderTypeRepository.findById(any())).thenAnswer {
       Optional.of(VisitOrderType((it.arguments[0] as ReferenceCode.Pk).code, "desc"))
@@ -348,119 +331,6 @@ internal class VisitServiceTest {
     }
 
     @Test
-    fun `balance decrement is saved correctly when no privileged is available`() {
-      defaultVisit.offenderBooking.visitBalance =
-        OffenderVisitBalance(
-          remainingVisitOrders = 3,
-          remainingPrivilegedVisitOrders = 0,
-          offenderBooking = OffenderBooking(
-            bookingId = OFFENDER_BOOKING_ID,
-            bookingBeginDate = LocalDateTime.now(),
-            offender = defaultOffender,
-            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
-          ),
-        )
-
-      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
-
-      visitService.createVisit(OFFENDER_NO, createVisitRequest)
-
-      verify(offenderVisitBalanceAdjustmentRepository).save(
-        check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_ISSUE)
-          assertThat(balanceArgument.remainingVisitOrders).isEqualTo(-1)
-          assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
-          assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
-        },
-      )
-    }
-
-    @Test
-    fun `privilege balance decrement is saved correctly when available`() {
-      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
-
-      visitService.createVisit(OFFENDER_NO, createVisitRequest)
-
-      verify(offenderVisitBalanceAdjustmentRepository).save(
-        check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_ISSUE)
-          assertThat(balanceArgument.remainingVisitOrders).isNull()
-          assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(-1)
-          assertThat(balanceArgument.commentText).isEqualTo("Created by VSIP")
-        },
-      )
-    }
-
-    @Test
-    fun `balance decrement is not saved if DPS in charge of allocation`() {
-      defaultVisit.offenderBooking.visitBalance =
-        OffenderVisitBalance(
-          remainingVisitOrders = 3,
-          remainingPrivilegedVisitOrders = 0,
-          offenderBooking = OffenderBooking(
-            bookingId = OFFENDER_BOOKING_ID,
-            bookingBeginDate = LocalDateTime.now(),
-            offender = defaultOffender,
-            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
-          ),
-        )
-
-      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
-
-      visitService.createVisit(OFFENDER_NO, createVisitRequest)
-
-      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
-      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
-    }
-
-    @Test
-    fun `privilege balance decrement is not saved if DPS in charge of allocation`() {
-      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
-
-      visitService.createVisit(OFFENDER_NO, createVisitRequest)
-
-      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
-      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
-    }
-
-    @Test
-    fun `Visit order and balance adjustment is still created when balance is negative`() {
-      defaultVisit.offenderBooking.visitBalance =
-        OffenderVisitBalance(
-          remainingVisitOrders = -1,
-          remainingPrivilegedVisitOrders = 0,
-          offenderBooking = OffenderBooking(
-            bookingId = OFFENDER_BOOKING_ID,
-            bookingBeginDate = LocalDateTime.now(),
-            offender = defaultOffender,
-            location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
-          ),
-        )
-
-      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-
-      visitService.createVisit(OFFENDER_NO, createVisitRequest)
-
-      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNotNull() })
-      verify(offenderVisitBalanceAdjustmentRepository).save(any())
-    }
-
-    @Test
-    fun `No visit order or balance adjustment is created when no balance record exists`() {
-      defaultVisit.offenderBooking.visitBalance = null
-      whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-
-      visitService.createVisit(OFFENDER_NO, createVisitRequest)
-
-      verify(visitRepository).save(check { visit -> assertThat(visit.visitOrder).isNull() })
-      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
-    }
-
-    @Test
     fun `visitor records are saved correctly`() {
       whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
 
@@ -543,7 +413,6 @@ internal class VisitServiceTest {
         )
 
       whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
       whenever(personRepository.findById(45)).thenAnswer {
         // child
         Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now()))
@@ -581,7 +450,6 @@ internal class VisitServiceTest {
         )
 
       whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
       whenever(personRepository.findById(45)).thenAnswer {
         // child
         Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now()))
@@ -619,7 +487,6 @@ internal class VisitServiceTest {
         )
 
       whenever(visitRepository.save(any<Visit>())).thenReturn(defaultVisit)
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
       whenever(personRepository.findById(45)).thenAnswer {
         // child
         Optional.of(Person(id = it.arguments[0] as Long, firstName = "Hi", lastName = "There", birthDate = LocalDate.now()))
@@ -669,96 +536,6 @@ internal class VisitServiceTest {
           assertThat(expiryDate).isEqualTo(LocalDate.now())
         }
       }
-    }
-
-    @Test
-    fun `balance increment is saved correctly`() {
-      defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
-
-      whenever(visitRepository.findByIdOrNullForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
-      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
-
-      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
-
-      verify(offenderVisitBalanceAdjustmentRepository).save(
-        check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.VISIT_ORDER_CANCEL)
-          assertThat(balanceArgument.remainingVisitOrders).isEqualTo(1)
-          assertThat(balanceArgument.remainingPrivilegedVisitOrders).isNull()
-          assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
-        },
-      )
-      verify(serviceAgencySwitchesService).checkServiceAgency("VISIT_ALLOCATION", "MKI")
-    }
-
-    @Test
-    fun `balance increment is not saved if DPS in charge of allocation`() {
-      defaultVisit.visitOrder?.visitOrderType = VisitOrderType("VO", "desc")
-
-      whenever(visitRepository.findByIdOrNullForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
-
-      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
-
-      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
-      verify(serviceAgencySwitchesService).checkServiceAgency("VISIT_ALLOCATION", "MKI")
-    }
-
-    @Test
-    fun `privilege balance increment is saved correctly`() {
-      whenever(visitRepository.findByIdOrNullForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
-      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(false)
-
-      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
-
-      verify(offenderVisitBalanceAdjustmentRepository).save(
-        check { balanceArgument ->
-          assertThat(balanceArgument.adjustReasonCode.code).isEqualTo(VisitOrderAdjustmentReason.PRIVILEGED_VISIT_ORDER_CANCEL)
-          assertThat(balanceArgument.remainingPrivilegedVisitOrders).isEqualTo(1)
-          assertThat(balanceArgument.remainingVisitOrders).isNull()
-          assertThat(balanceArgument.commentText).isEqualTo("Booking cancelled by VSIP")
-        },
-      )
-    }
-
-    @Test
-    fun `privilege balance increment is not saved if DPS in charge of balance`() {
-      whenever(visitRepository.findByIdOrNullForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-      whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
-      whenever(offenderVisitBalanceRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(Optional.of(defaultOffenderBooking.visitBalance!!))
-      whenever(serviceAgencySwitchesService.checkServiceAgency(any(), any())).thenReturn(true)
-
-      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
-
-      verifyNoInteractions(offenderVisitBalanceAdjustmentRepository)
-      verify(serviceAgencySwitchesService).checkServiceAgency("VISIT_ALLOCATION", "MKI")
-    }
-
-    @Test
-    fun `No balance exists`() {
-      defaultVisit.offenderBooking.visitBalance = null
-
-      whenever(visitRepository.findByIdOrNullForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-
-      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
-
-      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
-    }
-
-    @Test
-    fun `No visit order exists`() {
-      defaultVisit.visitOrder = null
-
-      whenever(visitRepository.findByIdOrNullForUpdate(VISIT_ID)).thenReturn(defaultVisit)
-
-      visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)
-
-      verify(offenderVisitBalanceAdjustmentRepository, never()).save(any())
     }
   }
 
