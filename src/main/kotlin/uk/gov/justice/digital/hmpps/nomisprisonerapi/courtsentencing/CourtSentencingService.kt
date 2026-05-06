@@ -125,6 +125,29 @@ class CourtSentencingService(
       ?: throw NotFoundException("Court case $id not found")
   }
 
+  fun updateCourtCase(
+    offenderNo: String,
+    caseId: Long,
+    request: UpdateCourtCaseRequest,
+  ) {
+    checkOffenderExists(offenderNo)
+    findCourtCase(caseId, offenderNo).also { courtCase ->
+      // immigration - status only
+      courtCase.caseStatus = lookupCaseStatus(request.status)
+
+      telemetryClient.trackEvent(
+        "court-case-updated",
+        mapOf(
+          "courtCaseId" to caseId.toString(),
+          "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+          "offenderNo" to offenderNo,
+          "status" to courtCase.caseStatus.code,
+        ),
+        null,
+      )
+    }
+  }
+
   fun getCourtCaseForMigration(id: Long): CourtCaseResponse = courtCaseRepository.findByIdOrNull(id)?.toCourtCaseResponse()
     ?: throw NotFoundException("Court case $id not found")
 

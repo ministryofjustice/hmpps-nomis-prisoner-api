@@ -2317,7 +2317,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -2331,7 +2331,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -2344,7 +2344,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -2361,7 +2361,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -2397,7 +2397,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(legalCaseType = "AXXX"),
+              createCourtCaseRequest(legalCaseType = "AXXX"),
             ),
           )
           .exchange()
@@ -2416,7 +2416,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -2448,7 +2448,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -2468,7 +2468,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -2482,6 +2482,183 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("offenderNo").isEqualTo(offenderNo)
           .jsonPath("caseSequence").isEqualTo(2)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(prisonerAtMoorland)
+      repository.deleteOffenderChargeByBooking(latestBookingId)
+    }
+  }
+
+  @Nested
+  @DisplayName("PUT /prisoners/{offenderNo}/sentencing/court-cases/{id}")
+  inner class UpdateCourtCase {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private var latestBookingId: Long = 0
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland = offender(nomsId = offenderNo) {
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
+            courtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            )
+          }
+        }
+      }
+      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createUpdateCourtCaseRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createUpdateCourtCaseRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createUpdateCourtCaseRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when offender does not exist`() {
+        webTestClient.put()
+          .uri("/prisoners/AB765/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createUpdateCourtCaseRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner AB765 not found")
+      }
+
+      @Test
+      internal fun `404 when case does not exist`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/1234")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createUpdateCourtCaseRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Court case 1234 for $offenderNo not found")
+      }
+    }
+
+    @Nested
+    inner class UpdateCourtCaseSuccess {
+
+      @Test
+      fun `can update the case`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createUpdateCourtCaseRequest(
+                status = "I",
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offenderNo").isEqualTo(offenderNo)
+          .jsonPath("caseSequence").isEqualTo(1)
+          .jsonPath("courtId").isEqualTo("COURT1")
+          .jsonPath("caseStatus.code").isEqualTo("I")
+          .jsonPath("caseStatus.description").isEqualTo("Inactive")
+          .jsonPath("legalCaseType.code").isEqualTo("A")
+          .jsonPath("legalCaseType.description").isEqualTo("Adult")
+          .jsonPath("primaryCaseInfoNumber").isEqualTo("AB1")
+      }
+
+      @Test
+      fun `will track telemetry for the update`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createUpdateCourtCaseRequest(status = "I"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-case-updated"),
+          check {
+            assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("status", "I")
+          },
+          isNull(),
+        )
       }
     }
 
@@ -3936,7 +4113,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createCourtCase(),
+              createCourtCaseRequest(),
             ),
           )
           .exchange()
@@ -8416,7 +8593,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun createCourtCase(
+  private fun createCourtCaseRequest(
     courtId: String = "COURT1",
     legalCaseType: String = "A",
     startDate: LocalDate = LocalDate.of(2023, 1, 1),
@@ -8428,6 +8605,13 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     status = status,
     caseReference = "caseRef1",
   )
+
+  private fun createUpdateCourtCaseRequest(
+    status: String = "A",
+  ) = UpdateCourtCaseRequest(
+    status = status,
+  )
+
   private fun createCourtCaseRepairRequest(
     courtId: String = "COURT1",
     legalCaseType: String = "A",
