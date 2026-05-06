@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Role
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
@@ -43,6 +44,7 @@ class NomisDataBuilder(
   private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
+  private val roleBuilderFactory: RoleBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
   private val personBuilderFactory: PersonBuilderFactory? = null,
@@ -66,6 +68,7 @@ class NomisDataBuilder(
     agencyInternalLocationBuilderFactory,
     questionnaireBuilderFactory,
     incidentBuilderFactory,
+    roleBuilderFactory,
     mergeTransactionBuilderFactory,
     templateBuilderFactory,
     personBuilderFactory,
@@ -89,6 +92,7 @@ class NomisData(
   private val agencyInternalLocationBuilderFactory: AgencyInternalLocationBuilderFactory? = null,
   private val questionnaireBuilderFactory: QuestionnaireBuilderFactory? = null,
   private val incidentBuilderFactory: IncidentBuilderFactory? = null,
+  private val roleBuilderFactory: RoleBuilderFactory? = null,
   private val mergeTransactionBuilderFactory: MergeTransactionBuilderFactory? = null,
   private val templateBuilderFactory: IWPTemplateBuilderFactory? = null,
   private val personBuilderFactory: PersonBuilderFactory? = null,
@@ -219,6 +223,25 @@ class NomisData(
         incidentStatus = incidentStatus,
         followUpDate = followUpDate,
         questionnaire = questionnaire,
+      )
+        .also {
+          builder.apply(dsl)
+        }
+    }
+
+  override fun role(
+    code: String,
+    name: String,
+    userAccountType: String,
+    type: String,
+    dsl: RoleDsl.() -> Unit,
+  ): Role = roleBuilderFactory!!.builder()
+    .let { builder ->
+      builder.build(
+        code = code,
+        name = name,
+        userAccountType = userAccountType,
+        type = type,
       )
         .also {
           builder.apply(dsl)
@@ -605,6 +628,15 @@ interface NomisDataDsl {
     questionnaire: Questionnaire,
     dsl: IncidentDsl.() -> Unit = {},
   ): Incident
+
+  @RoleDslMarker
+  fun role(
+    code: String,
+    name: String,
+    userAccountType: String,
+    type: String = "APP",
+    dsl: RoleDsl.() -> Unit = {},
+  ): Role
 
   @ExternalServiceDslMarker
   fun externalService(
