@@ -1617,6 +1617,92 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PutMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Updates Court case",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Updates a court case for the offender, currently only changes 1 field - status",
+    requestBody = RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateCourtCaseRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Case updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Case does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateCourtCase(
+    @Schema(description = "Offender no", example = "AA668EC", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "4565456", required = true)
+    @PathVariable
+    caseId: Long,
+    @org.springframework.web.bind.annotation.RequestBody @Valid
+    request: UpdateCourtCaseRequest,
+  ) = courtSentencingService.updateCourtCase(
+    caseId = caseId,
+    offenderNo = offenderNo,
+    request = request,
+  )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/court-appearances")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -2590,6 +2676,13 @@ data class CreateCourtCaseRequest(
     lidsCaseNumber: Int,
     lidsCombinedCaseId: Int?
      */
+)
+
+@Schema(description = "Court case update request")
+data class UpdateCourtCaseRequest(
+  // ACTIVE, INACTIVE, CLOSED
+  val status: String,
+  // currently just used by immigration
 )
 
 @Schema(description = "Court case repair request")
