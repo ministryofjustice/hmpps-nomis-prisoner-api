@@ -1626,7 +1626,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateCourtCaseRequest::class),
+          schema = Schema(implementation = UpdateCourtCaseRequest::class),
         ),
       ],
     ),
