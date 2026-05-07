@@ -19,6 +19,7 @@ interface StaffDsl {
   fun account(
     username: String = "G_BYD",
     type: String = GENERAL,
+    activeCaseloadId: String? = null,
     dsl: StaffUserAccountDsl.() -> Unit = {},
   ): StaffUserAccount
 }
@@ -54,10 +55,16 @@ class StaffBuilder(
     .let { repository.save(it) }
     .also { staff = it }
 
-  override fun account(username: String, type: String, dsl: StaffUserAccountDsl.() -> Unit): StaffUserAccount = staffUserAccountBuilderFactory.builder().let { builder ->
+  override fun account(
+    username: String,
+    type: String,
+    activeCaseloadId: String?,
+    dsl: StaffUserAccountDsl.() -> Unit,
+  ): StaffUserAccount = staffUserAccountBuilderFactory.builder().let { builder ->
     builder.build(
       username = username,
       staff = staff,
+      activeCaseloadId = activeCaseloadId,
       type = type,
     )
       .also { staff.accounts += it }

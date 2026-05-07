@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.findActiveCaseloadId
 import java.time.LocalDateTime
 
 @Transactional(readOnly = true)
@@ -46,6 +47,7 @@ class CourtScheduleService(
     prison = findPrisonAt(createDatetime, offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
     court = court.id,
     courtCaseId = courtCase?.id,
+    userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
     audit = toAudit(),
   )
 }

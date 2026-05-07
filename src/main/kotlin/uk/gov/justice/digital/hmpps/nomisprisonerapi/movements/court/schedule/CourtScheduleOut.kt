@@ -37,6 +37,9 @@ data class CourtScheduleOut(
   @Schema(description = "Court case ID")
   val courtCaseId: Long? = null,
 
+  @Schema(description = "Audit user's active caseload ID (modified user else create user)")
+  val userActiveCaseloadId: String?,
+
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )

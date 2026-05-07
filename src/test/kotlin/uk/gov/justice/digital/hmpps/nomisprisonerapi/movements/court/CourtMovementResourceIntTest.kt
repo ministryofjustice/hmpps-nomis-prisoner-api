@@ -67,6 +67,7 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
           assertThat(commentText).isEqualTo(movementOut.commentText)
           assertThat(audit.createUsername).isEqualTo("SA")
           assertThat(audit.createDatetime).isCloseTo(movementOut.createDatetime, within(10, ChronoUnit.SECONDS))
+          assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
       }
 
@@ -107,6 +108,7 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementOut.id.sequence)
           assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
+          assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
       }
     }
@@ -226,6 +228,7 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
           assertThat(commentText).isEqualTo(movementIn.commentText)
           assertThat(audit.createUsername).isEqualTo("SA")
           assertThat(audit.createDatetime).isCloseTo(movementOut.createDatetime, within(10, ChronoUnit.SECONDS))
+          assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
       }
 
@@ -244,6 +247,7 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
           assertThat(courtScheduleOutId).isNull()
+          assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
       }
 

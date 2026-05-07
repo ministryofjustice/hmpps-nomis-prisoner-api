@@ -72,6 +72,9 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
             assertThat(prison).isEqualTo(booking.location.id)
             assertThat(court).isEqualTo(scheduleOut.court.id)
             assertThat(courtCaseId).isEqualTo(courtCase.id)
+            assertThat(audit.createUsername).isEqualTo("SA")
+            assertThat(audit.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+            assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
           }
       }
 
@@ -98,6 +101,7 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
             assertThat(prison).isEqualTo(booking.location.id)
             assertThat(audit.createUsername).isEqualTo("SA")
             assertThat(audit.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+            assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
           }
       }
 

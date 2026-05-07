@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntityBasic
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NomisAuditableEntityWithStaff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import java.time.LocalDateTime
 
@@ -38,6 +39,14 @@ data class NomisAudit(
 )
 
 fun NomisAuditableEntityBasic.toAudit(overrideModifyDateTime: LocalDateTime? = null, overrideModifyUser: String? = null) = NomisAudit(
+  createDatetime = createDatetime,
+  createUsername = createUsername,
+  modifyDatetime = overrideModifyDateTime ?: modifyDatetime,
+  modifyUserId = overrideModifyUser ?: modifyUserId,
+  auditModuleName = auditModuleName,
+)
+
+fun NomisAuditableEntityWithStaff.toAudit(overrideModifyDateTime: LocalDateTime? = null, overrideModifyUser: String? = null) = NomisAudit(
   createDatetime = createDatetime,
   createUsername = createUsername,
   modifyDatetime = overrideModifyDateTime ?: modifyDatetime,

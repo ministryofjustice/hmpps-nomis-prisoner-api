@@ -24,6 +24,9 @@ class StaffUserAccount(
 
   @Column(name = "ID_SOURCE", nullable = false)
   val source: String,
+
+  @Column(name = "WORKING_CASELOAD_ID")
+  val activeCaseloadId: String? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

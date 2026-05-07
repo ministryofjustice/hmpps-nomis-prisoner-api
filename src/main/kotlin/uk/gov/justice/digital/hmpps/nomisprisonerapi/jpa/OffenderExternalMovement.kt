@@ -150,7 +150,7 @@ class OffenderExternalMovement(
   @ManyToOne
   @JoinColumn(name = "TO_ADDRESS_ID")
   val toAddress: Address? = null,
-) : NomisAuditableEntityBasic() {
+) : NomisAuditableEntityWithStaff() {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

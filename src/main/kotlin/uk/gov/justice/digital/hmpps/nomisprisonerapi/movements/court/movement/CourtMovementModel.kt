@@ -34,6 +34,9 @@ data class CourtMovementOut(
   @Schema(description = "Comment text")
   val commentText: String?,
 
+  @Schema(description = "Audit user's active caseload ID (modified user else create user)")
+  val userActiveCaseloadId: String?,
+
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -66,6 +69,9 @@ data class CourtMovementIn(
 
   @Schema(description = "Comment text")
   val commentText: String?,
+
+  @Schema(description = "Audit user's active caseload ID (modified user else create user)")
+  val userActiveCaseloadId: String?,
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
