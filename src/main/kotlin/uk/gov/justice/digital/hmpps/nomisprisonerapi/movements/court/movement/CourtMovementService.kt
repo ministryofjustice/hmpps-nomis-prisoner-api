@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.findActiveCaseloadId
 
 @Transactional(readOnly = true)
 @Service
@@ -59,6 +60,7 @@ class CourtMovementService(
     fromPrison = fromAgency!!.id,
     toCourt = toAgency!!.id,
     commentText = commentText,
+    userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
     audit = toAudit(),
   )
 
@@ -72,6 +74,7 @@ class CourtMovementService(
     fromCourt = fromAgency!!.id,
     toPrison = toAgency!!.id,
     commentText = commentText,
+    userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
     audit = toAudit(),
   )
 }

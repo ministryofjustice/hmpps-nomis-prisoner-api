@@ -34,10 +34,12 @@ class StaffUserAccountBuilder(
     username: String,
     staff: Staff,
     type: String,
+    activeCaseloadId: String?,
   ): StaffUserAccount = StaffUserAccount(
     username = username,
     staff = staff,
     type = type,
+    activeCaseloadId = activeCaseloadId,
     source = "USER",
   )
     .let { repository.save(it) }
