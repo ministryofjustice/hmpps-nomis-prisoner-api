@@ -13,6 +13,9 @@ data class CourtMovementOut(
   @Schema(description = "Movement sequence")
   val sequence: Int,
 
+  @Schema(description = "Schedule out ID")
+  val eventId: Long?,
+
   @Schema(description = "Court schedule out event ID. Empty for unscheduled movements.")
   val courtScheduleOutId: Long?,
 
@@ -48,6 +51,9 @@ data class CourtMovementIn(
 
   @Schema(description = "Movement sequence")
   val sequence: Int,
+
+  @Schema(description = "Schedule out ID")
+  val eventId: Long?,
 
   @Schema(description = "Court schedule out event ID. Empty for unscheduled movements.")
   val courtScheduleOutId: Long?,
