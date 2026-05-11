@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court
 
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
@@ -20,7 +22,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.movement.Co
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
-class CourtMovementResourceIntTest : IntegrationTestBase() {
+class CourtMovementResourceIntTest(
+  @Autowired private val entityManager: EntityManager,
+) : IntegrationTestBase() {
 
   private val offenderNo = "B7463BB"
   private lateinit var offender: Offender
@@ -152,6 +156,28 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getCourtMovementOut(offenderNo = offender.nomsId, bookingId = booking.bookingId, sequence = 9999)
           .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class BadData {
+      @Test
+      fun `should handle null court`() {
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS set TO_AGY_LOC_ID = null 
+              where OFFENDER_BOOK_ID = ${movementOut.id.offenderBooking.bookingId} 
+              and MOVEMENT_SEQ = ${movementOut.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getCourtMovementOutOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(toCourt).isNull()
+        }
       }
     }
 
@@ -316,6 +342,28 @@ class CourtMovementResourceIntTest : IntegrationTestBase() {
 
         webTestClient.getCourtMovementIn(offenderNo = offender.nomsId, bookingId = booking.bookingId, sequence = 9999)
           .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class BadData {
+      @Test
+      fun `should handle null court`() {
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS set FROM_AGY_LOC_ID = null 
+              where OFFENDER_BOOK_ID = ${movementIn.id.offenderBooking.bookingId} 
+              and MOVEMENT_SEQ = ${movementIn.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getCourtMovementInOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementIn.id.sequence)
+          assertThat(fromCourt).isNull()
+        }
       }
     }
 

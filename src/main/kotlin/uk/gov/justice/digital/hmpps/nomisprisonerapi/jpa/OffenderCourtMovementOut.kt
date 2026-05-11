@@ -18,7 +18,7 @@ class OffenderCourtMovementOut(
   movementTime: LocalDateTime,
   movementReason: MovementTypeAndReason,
   fromPrison: AgencyLocation,
-  toCourt: AgencyLocation,
+  toCourt: AgencyLocation? = null,
   active: Boolean = false,
   commentText: String? = null,
 
