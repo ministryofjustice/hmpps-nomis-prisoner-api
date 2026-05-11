@@ -157,6 +157,20 @@ class CourtMovementResourceIntTest(
         webTestClient.getCourtMovementOut(offenderNo = offender.nomsId, bookingId = booking.bookingId, sequence = 9999)
           .expectStatus().isNotFound
       }
+
+      @Test
+      fun `should return not found if court movement not OUT`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              movementIn = courtMovementIn()
+            }
+          }
+        }
+
+        webTestClient.getCourtMovementOut(offenderNo = offender.nomsId, bookingId = booking.bookingId, sequence = movementIn.id.sequence)
+          .expectStatus().isNotFound
+      }
     }
 
     @Nested
@@ -341,6 +355,20 @@ class CourtMovementResourceIntTest(
         }
 
         webTestClient.getCourtMovementIn(offenderNo = offender.nomsId, bookingId = booking.bookingId, sequence = 9999)
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `should return not found if court movement not IN`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              movementOut = courtMovementOut()
+            }
+          }
+        }
+
+        webTestClient.getCourtMovementIn(offenderNo = offender.nomsId, bookingId = booking.bookingId, sequence = movementOut.id.sequence)
           .expectStatus().isNotFound
       }
     }

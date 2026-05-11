@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -24,8 +25,10 @@ class CourtScheduleService(
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
     }
-    return courtEventRepository.findByIdOrNull(eventId)?.toResponse()
-      ?: throw NotFoundException("Court event with id=$eventId not found for prisoner with nomsId=$offenderNo")
+    return courtEventRepository.findByIdOrNull(eventId)
+      ?.takeIf { it.directionCode?.code == DirectionType.OUT }
+      ?.toResponse()
+      ?: throw NotFoundException("Court event OUT with id=$eventId not found for prisoner with nomsId=$offenderNo")
   }
 
   private fun findPrisonAt(time: LocalDateTime, bookingId: Long): AgencyLocation? {
