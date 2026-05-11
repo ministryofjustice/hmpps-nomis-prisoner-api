@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
@@ -28,6 +30,7 @@ class CourtMovementService(
     val offenderBooking = findOffenderBookingOrThrow(offenderNo, bookingId)
 
     return courtMovementOutRepository.findByIdOrNull(OffenderExternalMovementId(offenderBooking, sequence))
+      ?.takeIf { it.movementDirection == OUT }
       ?.toResponse()
       ?: throw NotFoundException("Court movement out with bookingId=$bookingId and sequence=$sequence not found for offender with nomsId=$offenderNo")
   }
@@ -36,6 +39,7 @@ class CourtMovementService(
     val offenderBooking = findOffenderBookingOrThrow(offenderNo, bookingId)
 
     return courtMovementInRepository.findByIdOrNull(OffenderExternalMovementId(offenderBooking, sequence))
+      ?.takeIf { it.movementDirection == IN }
       ?.toResponse()
       ?: throw NotFoundException("Court movement in with bookingId=$bookingId and sequence=$sequence not found for offender with nomsId=$offenderNo")
   }

@@ -145,6 +145,20 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
         webTestClient.getCourtScheduleOut(offenderNo = offenderNo, eventId = 9999)
           .expectStatus().isNotFound
       }
+
+      @Test
+      fun `should return not found if court schedule not OUT`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent(directionCode = "IN")
+            }
+          }
+        }
+
+        webTestClient.getCourtScheduleOut(offenderNo, scheduleOut.id)
+          .expectStatus().isNotFound
+      }
     }
 
     @Nested
