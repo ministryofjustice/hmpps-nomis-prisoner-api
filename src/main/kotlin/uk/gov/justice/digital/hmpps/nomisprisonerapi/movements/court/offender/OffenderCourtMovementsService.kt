@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender
 
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
@@ -10,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 
 @Service
 @Transactional
@@ -18,9 +20,14 @@ class OffenderCourtMovementsService(
   private val courtMovementOutRepository: OffenderCourtMovementOutRepository,
   private val courtMovementInRepository: OffenderCourtMovementInRepository,
   private val externalMovementRepository: OffenderExternalMovementRepository,
+  private val offenderRepository: OffenderRepository,
 ) {
 
   fun getOffenderCourtMovements(offenderNo: String): OffenderCourtMovementsResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Offender with nomsId=$offenderNo not found")
+    }
+
     val allMovementsOut = courtMovementOutRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
     val allMovementsIn = courtMovementInRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
     val allSchedulesOut = courtEventRepository.findAllByOffenderBooking_Offender_NomsIdAndDirectionCode_CodeIs(offenderNo, "OUT")
@@ -49,6 +56,7 @@ class OffenderCourtMovementsService(
             .filter { it.offenderBooking.bookingId == bk.id }
             .map { it.toResponse() },
           unscheduledCourtMovementIns = unscheduledMovementsIn
+            .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
             .filter { it.offenderBooking.bookingId == bk.id }
             .map { it.toResponse() },
         )
