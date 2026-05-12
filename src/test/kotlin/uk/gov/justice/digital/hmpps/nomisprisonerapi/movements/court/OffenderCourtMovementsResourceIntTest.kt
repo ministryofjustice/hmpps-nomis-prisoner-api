@@ -1,16 +1,20 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court
 
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType.Companion.IN
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType.Companion.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
@@ -21,7 +25,9 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
 
-class OffenderCourtMovementsResourceIntTest : IntegrationTestBase() {
+class OffenderCourtMovementsResourceIntTest(
+  @Autowired private val entityManager: EntityManager,
+) : IntegrationTestBase() {
 
   private val offenderNo = "C7463CC"
   private lateinit var offender: Offender
@@ -31,11 +37,17 @@ class OffenderCourtMovementsResourceIntTest : IntegrationTestBase() {
   private lateinit var movementIn: OffenderCourtMovementIn
   private lateinit var staff: Staff
   private lateinit var courtCase: CourtCase
+  private lateinit var mergeBooking: OffenderBooking
+  private lateinit var mergeMovementIn: OffenderCourtMovementIn
+  private lateinit var scheduleIn: CourtEvent
 
   @AfterEach
   fun tearDown() {
     if (::scheduleOut.isInitialized) {
       repository.delete(scheduleOut)
+    }
+    if (::scheduleIn.isInitialized) {
+      repository.delete(scheduleIn)
     }
     repository.deleteOffenders()
   }
@@ -263,6 +275,230 @@ class OffenderCourtMovementsResourceIntTest : IntegrationTestBase() {
           .apply {
             with(bookings[0].unscheduledCourtMovementIns[0]) {
               assertThat(sequence).isEqualTo(movementIn.id.sequence)
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found if offender unknown`() {
+        webTestClient.getOffenderCourtMovements(offenderNo = "UNKNOWN")
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class BadData {
+
+      @Test
+      fun `should not return any movements IN created during merges`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent {
+                movementOut = courtMovementOut()
+                movementIn = courtMovementIn()
+              }
+            }
+            mergeBooking = booking {
+              scheduleOut = courtEvent()
+              mergeMovementIn = courtMovementIn()
+            }
+          }
+        }
+
+        // Set the audit columns on the movement IN created by a merge to indicate a merge was responsible
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set CREATE_USER_ID = 'SYS', AUDIT_MODULE_NAME = 'MERGE'
+              where OFFENDER_BOOK_ID = ${mergeBooking.bookingId} and MOVEMENT_SEQ = ${mergeMovementIn.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        // The movement IN created by a merge should not be returned
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            with(bookings.first { it.bookingId == mergeBooking.bookingId }) {
+              assertThat(unscheduledCourtMovementIns).isEmpty()
+            }
+          }
+      }
+
+      @Test
+      fun `should ignore orphaned schedule IN`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent(directionCode = OUT)
+              scheduleIn = courtEvent(directionCode = IN)
+              movementOut = courtMovementOut()
+              movementIn = courtMovementIn()
+            }
+          }
+        }
+
+        // Link the schedule IN to the schedule OUT, but then delete the schedule OUT
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              update COURT_EVENTS
+              set PARENT_EVENT_ID = ${scheduleOut.id}
+              where EVENT_ID = ${scheduleIn.id}
+            """.trimIndent(),
+          ).executeUpdate()
+          entityManager.createNativeQuery(
+            """
+              delete from COURT_EVENTS
+              where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        // The orphaned schedule IN doesn't break anything
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            with(bookings[0]) {
+              assertThat(courtSchedules).isEmpty()
+              assertThat(unscheduledCourtMovementOuts).hasSize(1)
+              assertThat(unscheduledCourtMovementIns).hasSize(1)
+            }
+          }
+      }
+
+      @Test
+      fun `should treat orphaned movements as unscheduled`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent {
+                movementOut = courtMovementOut()
+                movementIn = courtMovementIn()
+              }
+            }
+          }
+        }
+
+        // Remove the schedule OUT attached to the movements
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              delete from COURT_EVENTS
+              where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        // The movements are returned as unscheduled
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            with(bookings[0]) {
+              assertThat(unscheduledCourtMovementOuts).hasSize(1)
+              assertThat(unscheduledCourtMovementIns).hasSize(1)
+            }
+          }
+      }
+
+      @Test
+      fun `should not return any schedules with null direction code`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent {
+                movementOut = courtMovementOut()
+              }
+            }
+          }
+        }
+
+        // Set the schedule direction code to null
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              update COURT_EVENTS
+              set DIRECTION_CODE = null
+              where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        // The court schedule without direction code should not be returned
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            with(bookings[0]) {
+              assertThat(courtSchedules).isEmpty()
+              assertThat(unscheduledCourtMovementOuts).hasSize(1)
+            }
+          }
+      }
+
+      @Test
+      fun `should return incorrect data where prison or court transposed`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent(agencyId = "LEI") {
+                movementOut = courtMovementOut(fromPrison = "LEEDYC", toCourt = "LEI")
+                movementIn = courtMovementIn(fromCourt = "LEI", toPrison = "LEEDYC")
+              }
+            }
+          }
+        }
+
+        // The court schedule without direction code should not be returned
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            with(bookings[0].courtSchedules[0]) {
+              assertThat(this.court).isEqualTo("LEI")
+              assertThat(courtMovementOut?.fromPrison).isEqualTo("LEEDYC")
+              assertThat(courtMovementOut?.toCourt).isEqualTo("LEI")
+              assertThat(courtMovementIn?.fromCourt).isEqualTo("LEI")
+              assertThat(courtMovementIn?.toPrison).isEqualTo("LEEDYC")
+            }
+          }
+      }
+
+      @Test
+      fun `should return null court if it is missing`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent {
+                movementOut = courtMovementOut()
+                movementIn = courtMovementIn()
+              }
+            }
+          }
+        }
+
+        // Set the movement courts to null
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set TO_AGY_LOC_ID = null
+              where OFFENDER_BOOK_ID = ${movementOut.id.offenderBooking.bookingId} and MOVEMENT_SEQ = ${movementOut.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set FROM_AGY_LOC_ID = null
+              where OFFENDER_BOOK_ID = ${movementIn.id.offenderBooking.bookingId} and MOVEMENT_SEQ = ${movementIn.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        // The null courts are returned
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            with(bookings[0].courtSchedules[0]) {
+              assertThat(courtMovementOut?.toCourt).isNull()
+              assertThat(courtMovementIn?.fromCourt).isNull()
             }
           }
       }
