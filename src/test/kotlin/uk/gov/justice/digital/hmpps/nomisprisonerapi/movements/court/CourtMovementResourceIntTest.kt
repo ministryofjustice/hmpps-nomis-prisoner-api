@@ -262,7 +262,6 @@ class CourtMovementResourceIntTest(
         webTestClient.getCourtMovementInOk().apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
-          assertThat(eventId).isEqualTo(scheduleOut.id)
           assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
           assertThat(movementDate).isEqualTo(movementIn.movementDate)
           assertThat(movementTime).isCloseTo(movementIn.movementTime, within(Duration.ofSeconds(1)))
@@ -290,7 +289,6 @@ class CourtMovementResourceIntTest(
         webTestClient.getCourtMovementInOk().apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
-          assertThat(eventId).isNull()
           assertThat(courtScheduleOutId).isNull()
           assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
@@ -314,7 +312,6 @@ class CourtMovementResourceIntTest(
         webTestClient.getCourtMovementInOk().apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
-          assertThat(eventId).isEqualTo(scheduleOut.id)
           assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
         }
       }
