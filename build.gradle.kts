@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.2.5"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.3.0"
   kotlin("plugin.spring") version "2.3.21"
   kotlin("plugin.jpa") version "2.3.21"
   idea
@@ -28,7 +28,7 @@ dependencies {
 
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.4.240")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc11:23.26.1.0.0")
+  runtimeOnly("com.oracle.database.jdbc:ojdbc11:23.26.2.0.0")
 
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.2.0")
   testImplementation("org.springframework.boot:spring-boot-test-autoconfigure")
