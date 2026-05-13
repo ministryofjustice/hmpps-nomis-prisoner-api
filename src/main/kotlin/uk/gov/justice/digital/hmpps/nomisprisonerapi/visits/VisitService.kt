@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.ServiceAgencySwitchesService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -24,11 +24,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.SCHEDULED_APPROVED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VISIT_ALLOCATION_SERVICE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderVisitor
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOutcomeReason
@@ -42,8 +39,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitSlotRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceAdjustmentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderVisitBalanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
@@ -62,15 +57,12 @@ class VisitService(
   private val visitVisitorRepository: VisitVisitorRepository,
   private val visitOrderRepository: VisitOrderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
-  private val offenderVisitBalanceAdjustmentRepository: OffenderVisitBalanceAdjustmentRepository,
-  private val offenderVisitBalanceRepository: OffenderVisitBalanceRepository,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val visitTypeRepository: ReferenceCodeRepository<VisitType>,
   private val visitOrderTypeRepository: ReferenceCodeRepository<VisitOrderType>,
   private val visitStatusRepository: ReferenceCodeRepository<VisitStatus>,
   private val visitOutcomeRepository: ReferenceCodeRepository<VisitOutcomeReason>,
   private val eventOutcomeRepository: ReferenceCodeRepository<EventOutcome>,
-  private val visitOrderAdjustmentReasonRepository: ReferenceCodeRepository<VisitOrderAdjustmentReason>,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val telemetryClient: TelemetryClient,
   private val personRepository: PersonRepository,
@@ -79,7 +71,6 @@ class VisitService(
   private val visitSlotRepository: AgencyVisitSlotRepository,
   private val internalLocationRepository: AgencyInternalLocationRepository,
   private val visitOrderVisitorRepository: VisitOrderVisitorRepository,
-  private val serviceAgencySwitchesService: ServiceAgencySwitchesService,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -199,8 +190,6 @@ class VisitService(
       visitOrder.status = cancelledVisitStatus
       visitOrder.outcomeReason = visitOutcome
       visitOrder.expiryDate = today
-
-      cancelBalance(visitOrder, visit.offenderBooking, today)
     }
 
     telemetryClient.trackEvent(
@@ -303,21 +292,6 @@ class VisitService(
   ) {
     offenderBooking.visitBalance?.let { offenderVisitBalance ->
       if (offenderVisitBalance.remainingPrivilegedVisitOrders!! > 0) {
-        if (!isDpsInChargeOfAllocation(offenderBooking)) {
-          val adjustReasonCode =
-            visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_ISSUE).orElseThrow()
-
-          offenderVisitBalanceAdjustmentRepository.save(
-            OffenderVisitBalanceAdjustment(
-              adjustDate = visitDto.issueDate,
-              adjustReasonCode = adjustReasonCode,
-              remainingPrivilegedVisitOrders = -1,
-              previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
-              commentText = visitDto.visitOrderComment,
-              visitBalance = offenderBooking.visitBalance!!,
-            ),
-          )
-        }
         visit.visitOrder = VisitOrder(
           offenderBooking = offenderBooking,
           visitOrderNumber = visitOrderRepository.getVisitOrderNumber(),
@@ -330,21 +304,6 @@ class VisitService(
           this.visitors = createVisitors(visitDto.visitorPersonIds)
         }
       } else {
-        if (!isDpsInChargeOfAllocation(offenderBooking)) {
-          val adjustReasonCode =
-            visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_ISSUE).orElseThrow()
-
-          offenderVisitBalanceAdjustmentRepository.save(
-            OffenderVisitBalanceAdjustment(
-              adjustDate = visitDto.issueDate,
-              adjustReasonCode = adjustReasonCode,
-              remainingVisitOrders = -1,
-              previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
-              commentText = visitDto.visitOrderComment,
-              visitBalance = offenderBooking.visitBalance!!,
-            ),
-          )
-        }
         visit.visitOrder = VisitOrder(
           offenderBooking = offenderBooking,
           visitOrderNumber = visitOrderRepository.getVisitOrderNumber(),
@@ -373,44 +332,6 @@ class VisitService(
       VisitOrderVisitor(visitOrder = this, person = it, groupLeader = it == lead)
     }.toMutableList()
   }
-
-  private fun cancelBalance(
-    visitOrder: VisitOrder,
-    offenderBooking: OffenderBooking,
-    today: LocalDate,
-  ) {
-    offenderVisitBalanceRepository.findByIdOrNull(offenderBooking.bookingId)?.takeUnless {
-      isDpsInChargeOfAllocation(offenderBooking)
-    }?.let { offenderVisitBalance ->
-      offenderVisitBalanceAdjustmentRepository.save(
-
-        if (visitOrder.visitOrderType.isPrivileged()) {
-          OffenderVisitBalanceAdjustment(
-            adjustDate = today,
-            commentText = "Booking cancelled by VSIP",
-            adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.PVO_CANCEL)
-              .orElseThrow(),
-            remainingPrivilegedVisitOrders = 1,
-            previousRemainingPrivilegedVisitOrders = offenderVisitBalance.remainingPrivilegedVisitOrders,
-            visitBalance = offenderBooking.visitBalance!!,
-          )
-        } else {
-          OffenderVisitBalanceAdjustment(
-            adjustDate = today,
-            commentText = "Booking cancelled by VSIP",
-            adjustReasonCode = visitOrderAdjustmentReasonRepository.findById(VisitOrderAdjustmentReason.VO_CANCEL)
-              .orElseThrow(),
-            remainingVisitOrders = 1,
-            previousRemainingVisitOrders = offenderVisitBalance.remainingVisitOrders,
-            visitBalance = offenderBooking.visitBalance!!,
-          )
-        },
-      )
-    }
-  }
-
-  private fun isDpsInChargeOfAllocation(offenderBooking: OffenderBooking): Boolean = serviceAgencySwitchesService
-    .checkServiceAgency(VISIT_ALLOCATION_SERVICE, offenderBooking.location.id)
 
   private fun mapVisitModel(visitDto: CreateVisitRequest, offenderBooking: OffenderBooking): Visit {
     val visitType = visitTypeRepository.findById(VisitType.pk(visitDto.visitType))

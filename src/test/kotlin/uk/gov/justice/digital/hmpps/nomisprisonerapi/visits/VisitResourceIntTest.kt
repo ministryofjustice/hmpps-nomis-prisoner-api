@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.ColumnMapRowMapper
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -282,7 +283,7 @@ class VisitResourceIntTest : IntegrationTestBase() {
         )
         .exchange()
         .expectStatus().isCreated
-        .expectBody(CreateVisitResponse::class.java)
+        .expectBody<CreateVisitResponse>()
         .returnResult().responseBody
       assertThat(response?.visitId).isGreaterThan(0)
 
@@ -292,13 +293,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(visit.visitOrder).isNotNull
       assertThat(visit.visitOrder?.commentText).isEqualTo("VSIP Order Ref: asd-fff-ddd")
       // lead visitor assigned randomly to first visitor in list to create a valid order
-
-      val balanceAdjustment = offenderVisitBalanceAdjustmentRepository.findAll()
-
-      assertThat(balanceAdjustment).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
-        .containsExactly(
-          tuple(offenderBookingId, -1),
-        )
     }
 
     @Test
@@ -874,14 +868,6 @@ class VisitResourceIntTest : IntegrationTestBase() {
       assertThat(visit.visitOrder?.status?.code).isEqualTo("CANC")
       assertThat(visit.visitOrder?.outcomeReason?.code).isEqualTo("VISCANC")
       assertThat(visit.visitOrder?.expiryDate).isEqualTo(LocalDate.now())
-
-      val balanceAdjustments = offenderVisitBalanceAdjustmentRepository.findAll()
-
-      assertThat(balanceAdjustments).extracting("offenderBooking.bookingId", "remainingPrivilegedVisitOrders")
-        .containsExactly(
-          tuple(offenderBookingId, -1),
-          tuple(offenderBookingId, 1),
-        )
     }
 
     @Test
