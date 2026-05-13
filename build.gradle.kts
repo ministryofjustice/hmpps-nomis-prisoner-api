@@ -28,7 +28,9 @@ dependencies {
 
   runtimeOnly("com.zaxxer:HikariCP")
   implementation("com.h2database:h2:2.4.240")
-  runtimeOnly("com.oracle.database.jdbc:ojdbc11:23.26.2.0.0")
+  // Ensure that the oracle version doesn't automatically get updated
+  val oracleVersion = ":23.26.1.0.0"
+  runtimeOnly("com.oracle.database.jdbc:ojdbc11$oracleVersion")
 
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.2.0")
   testImplementation("org.springframework.boot:spring-boot-test-autoconfigure")
