@@ -2194,7 +2194,7 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   modifiedByUsername = this.modifyUserId,
   courtEventCharges = this.courtEventCharges.map { it.toCourtEventCharge() },
   courtOrders = this.courtOrders.map { it.toCourtOrder() },
-  isClone = this.auditAdditionalInfo?.startsWith("DPS Cloned") == true,
+  isClone = this.auditAdditionalInfo?.startsWith("DPS Clone") == true,
 )
 
 private fun CourtOrder.toCourtOrder(): CourtOrderResponse = CourtOrderResponse(
