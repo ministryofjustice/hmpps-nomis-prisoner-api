@@ -37,10 +37,10 @@ data class BookingCourtScheduleOut(
   val eventId: Long,
 
   @Schema(description = "Court movement out")
-  val courtMovementOut: BookingCourtMovementOut? = null,
+  val courtMovementOut: BookingCourtMovementOut,
 
   @Schema(description = "Court movement in")
-  val courtMovementIn: BookingCourtMovementIn? = null,
+  val courtMovementIn: BookingCourtMovementIn,
 
   @Schema(description = "Event date")
   val eventDate: LocalDate,
@@ -66,6 +66,9 @@ data class BookingCourtScheduleOut(
   @Schema(description = "Court case ID")
   val courtCaseId: Long? = null,
 
+  @Schema(description = "Audit user's active caseload ID (modified user else create user)")
+  val userActiveCaseloadId: String?,
+
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -74,6 +77,12 @@ data class BookingCourtMovementOut(
 
   @Schema(description = "Movement sequence")
   val sequence: Int,
+
+  @Schema(description = "Schedule out ID")
+  val eventId: Long?,
+
+  @Schema(description = "Court schedule out event ID. Empty for unscheduled movements.")
+  val courtScheduleOutId: Long?,
 
   @Schema(description = "Movement date")
   val movementDate: LocalDate,
@@ -93,6 +102,9 @@ data class BookingCourtMovementOut(
   @Schema(description = "Comment text")
   val commentText: String?,
 
+  @Schema(description = "Audit user's active caseload ID (modified user else create user)")
+  val userActiveCaseloadId: String?,
+
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
@@ -101,6 +113,12 @@ data class BookingCourtMovementIn(
 
   @Schema(description = "Movement sequence")
   val sequence: Int,
+
+  @Schema(description = "Schedule out ID")
+  val eventId: Long?,
+
+  @Schema(description = "Court schedule out event ID. Empty for unscheduled movements.")
+  val courtScheduleOutId: Long?,
 
   @Schema(description = "Movement date")
   val movementDate: LocalDate,
@@ -119,6 +137,9 @@ data class BookingCourtMovementIn(
 
   @Schema(description = "Comment text")
   val commentText: String?,
+
+  @Schema(description = "Audit user's active caseload ID (modified user else create user)")
+  val userActiveCaseloadId: String?,
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
