@@ -5,12 +5,14 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.findActiveCaseloadId
+import java.time.LocalDateTime
 
 @Transactional(readOnly = true)
 @Service
@@ -29,6 +31,14 @@ class CourtScheduleService(
       ?: throw NotFoundException("Court event OUT with id=$eventId not found for prisoner with nomsId=$offenderNo")
   }
 
+  private fun findPrisonAt(time: LocalDateTime, bookingId: Long): AgencyLocation? {
+    val admissions = externalMovementRepository.findAllById_OffenderBooking_BookingId(bookingId)
+      .filter { it.movementReason.id.type == "ADM" }
+    val admission = admissions.filter { it.movementTime < time }.maxByOrNull { it.movementTime }
+      ?: admissions.minByOrNull { it.movementTime }
+    return admission?.toAgency
+  }
+
   private fun CourtEvent.toResponse() = CourtScheduleOut(
     bookingId = offenderBooking.bookingId,
     eventId = id,
@@ -37,7 +47,7 @@ class CourtScheduleService(
     eventType = courtEventType.code,
     eventStatus = eventStatus.code,
     comment = commentText,
-    prison = externalMovementRepository.findPrisonAt(createDatetime, offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
+    prison = findPrisonAt(createDatetime, offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
     court = court.id,
     courtCaseId = courtCase?.id,
     userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
