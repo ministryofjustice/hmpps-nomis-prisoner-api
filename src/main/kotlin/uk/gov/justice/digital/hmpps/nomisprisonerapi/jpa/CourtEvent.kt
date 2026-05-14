@@ -10,12 +10,15 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
@@ -125,6 +128,16 @@ class CourtEvent(
   // Only ever 1 order of type "AUTO" for an event
   @OneToMany(mappedBy = "courtEvent", cascade = [CascadeType.ALL], orphanRemoval = true)
   val courtOrders: MutableList<CourtOrder> = mutableListOf(),
+
+  @OneToOne(mappedBy = "courtScheduleOut", cascade = [CascadeType.ALL])
+  @JoinColumn(name = "EVENT_ID")
+  @NotFound(action = NotFoundAction.IGNORE)
+  var courtMovementOut: OffenderCourtMovementOut? = null,
+
+  @OneToOne(mappedBy = "courtScheduleOut", cascade = [CascadeType.ALL])
+  @JoinColumn(name = "EVENT_ID")
+  @NotFound(action = NotFoundAction.IGNORE)
+  var courtMovementIn: OffenderCourtMovementIn? = null,
 
   /* COLUMNS NOT MAPPED
     END_TIME - not used
