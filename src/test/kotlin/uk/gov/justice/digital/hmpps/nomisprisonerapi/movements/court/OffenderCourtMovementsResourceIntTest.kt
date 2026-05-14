@@ -43,12 +43,6 @@ class OffenderCourtMovementsResourceIntTest(
 
   @AfterEach
   fun tearDown() {
-    if (::scheduleOut.isInitialized) {
-      repository.delete(scheduleOut)
-    }
-    if (::scheduleIn.isInitialized) {
-      repository.delete(scheduleIn)
-    }
     repository.deleteOffenders()
   }
 
