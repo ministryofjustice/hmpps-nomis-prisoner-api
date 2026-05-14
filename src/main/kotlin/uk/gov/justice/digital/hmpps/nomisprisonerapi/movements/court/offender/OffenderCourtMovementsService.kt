@@ -32,15 +32,16 @@ class OffenderCourtMovementsService(
     val allMovementsIn = courtMovementInRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
     val allSchedulesOut = courtEventRepository.findAllByOffenderBooking_Offender_NomsIdAndDirectionCode_CodeIs(offenderNo, "OUT")
 
-    val unscheduledMovementsOut = allMovementsOut.toSet() - allSchedulesOut.mapNotNull { it.courtMovementOut }.toSet()
-    val unscheduledMovementsIn = allMovementsIn.toSet() - allSchedulesOut.mapNotNull { it.courtMovementIn }.toSet()
+    // When finding unscheduled movements we also have to cross reference with the schedules we loaded - just in case any are linked to a schedule without a direction (bad old NOMIS data that we are ignoring)
+    val unscheduledMovementsOut = allMovementsOut.filter { it.courtScheduleOutId == null || it.courtScheduleOutId !in(allSchedulesOut.map { it.id }) }
+    val unscheduledMovementsIn = allMovementsIn.filter { it.courtScheduleOutId == null || it.courtScheduleOutId !in(allSchedulesOut.map { it.id }) }
 
-    data class Booking(val id: Long, val active: Boolean, val latest: Boolean, val prison: String)
+    data class Booking(val id: Long, val active: Boolean, val latest: Boolean)
 
     val bookings = (
-      allSchedulesOut.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1, it.offenderBooking.location.id) } +
-        allMovementsOut.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1, it.offenderBooking.location.id) } +
-        allMovementsIn.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1, it.offenderBooking.location.id) }
+      allSchedulesOut.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1) } +
+        allMovementsOut.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1) } +
+        allMovementsIn.map { Booking(it.offenderBooking.bookingId, it.offenderBooking.active, it.offenderBooking.bookingSequence == 1) }
       ).toSet()
 
     return OffenderCourtMovementsResponse(
@@ -51,7 +52,12 @@ class OffenderCourtMovementsService(
           latestBooking = bk.latest,
           courtSchedules = allSchedulesOut
             .filter { it.offenderBooking.bookingId == bk.id }
-            .map { it.toResponse(it.courtMovementOut, it.courtMovementIn) },
+            .map { schedule ->
+              schedule.toResponse(
+                moveOut = allMovementsOut.find { it.courtScheduleOutId == schedule.id },
+                moveIn = allMovementsIn.find { it.courtScheduleOutId == schedule.id },
+              )
+            },
           unscheduledCourtMovementOuts = unscheduledMovementsOut
             .filter { it.offenderBooking.bookingId == bk.id }
             .map { it.toResponse() },

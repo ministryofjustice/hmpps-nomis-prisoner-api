@@ -249,7 +249,7 @@ class OffenderExternalMovementBuilder(
     toCourt = repository.lookupAgency(toCourt),
     active = true,
     commentText = comment,
-    courtScheduleOut = courtScheduleOut,
+    courtScheduleOutId = courtScheduleOut?.id,
   ).also {
     offenderBooking.inOutStatus = "OUT"
     offenderBooking.location = repository.lookupAgency("OUT")
@@ -275,7 +275,7 @@ class OffenderExternalMovementBuilder(
     toPrison = repository.lookupAgency(toPrison),
     active = true,
     commentText = comment,
-    courtScheduleOut = courtScheduleOut,
+    courtScheduleOutId = courtScheduleOut?.id,
   ).also {
     offenderBooking.inOutStatus = "IN"
     offenderBooking.location = it.toAgency!!
