@@ -57,8 +57,8 @@ class CourtMovementService(
   private fun OffenderCourtMovementOut.toResponse() = CourtMovementOut(
     bookingId = id.offenderBooking.bookingId,
     sequence = id.sequence,
-    eventId = courtScheduleOut?.id,
-    courtScheduleOutId = courtScheduleOut?.id,
+    eventId = courtScheduleOutId,
+    courtScheduleOutId = courtScheduleOutId,
     movementDate = movementDate,
     movementTime = movementTime,
     movementReason = movementReason.id.reasonCode,
@@ -72,8 +72,7 @@ class CourtMovementService(
   private fun OffenderCourtMovementIn.toResponse() = CourtMovementIn(
     bookingId = id.offenderBooking.bookingId,
     sequence = id.sequence,
-    eventId = courtScheduleOut?.id,
-    courtScheduleOutId = courtScheduleOut?.id,
+    courtScheduleOutId = courtScheduleOutId,
     movementDate = movementDate,
     movementTime = movementTime,
     movementReason = movementReason.id.reasonCode,

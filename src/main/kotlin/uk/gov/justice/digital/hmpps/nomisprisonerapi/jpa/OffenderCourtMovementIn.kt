@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToOne
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
@@ -21,10 +21,9 @@ class OffenderCourtMovementIn(
   active: Boolean = false,
   commentText: String? = null,
 
-  @OneToOne()
-  @JoinColumn(name = "PARENT_EVENT_ID")
+  @Column(name = "PARENT_EVENT_ID")
   @NotFound(action = NotFoundAction.IGNORE)
-  var courtScheduleOut: CourtEvent? = null,
+  var courtScheduleOutId: Long? = null,
 ) : OffenderExternalMovement(
   id = id,
   movementDate = movementDate,

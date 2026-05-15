@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court
 import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -33,6 +34,11 @@ class CourtMovementResourceIntTest(
   private lateinit var movementIn: OffenderCourtMovementIn
   private lateinit var scheduleOut: CourtEvent
   private lateinit var staff: Staff
+
+  @AfterEach
+  fun tearDown() {
+    repository.deleteOffenders()
+  }
 
   @Nested
   @DisplayName("GET /movements/{offenderNo}/court/movement/out/{bookingId}/{movementSeq}")
@@ -262,7 +268,6 @@ class CourtMovementResourceIntTest(
         webTestClient.getCourtMovementInOk().apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
-          assertThat(eventId).isEqualTo(scheduleOut.id)
           assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
           assertThat(movementDate).isEqualTo(movementIn.movementDate)
           assertThat(movementTime).isCloseTo(movementIn.movementTime, within(Duration.ofSeconds(1)))
@@ -290,7 +295,6 @@ class CourtMovementResourceIntTest(
         webTestClient.getCourtMovementInOk().apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
-          assertThat(eventId).isNull()
           assertThat(courtScheduleOutId).isNull()
           assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
@@ -314,7 +318,6 @@ class CourtMovementResourceIntTest(
         webTestClient.getCourtMovementInOk().apply {
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
-          assertThat(eventId).isEqualTo(scheduleOut.id)
           assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
         }
       }
