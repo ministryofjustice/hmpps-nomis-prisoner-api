@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import java.time.LocalDateTime
 
 @Entity
 @Table(name = "STAFF_USER_ACCOUNTS")
@@ -27,7 +28,11 @@ class StaffUserAccount(
 
   @Column(name = "WORKING_CASELOAD_ID")
   val activeCaseloadId: String? = null,
-) {
+
+  @Column(name = "LAST_LOGON_DATE")
+  var lastLoggedIn: LocalDateTime? = null,
+
+) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

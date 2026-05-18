@@ -1361,7 +1361,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .consumeWith(System.out::println)
           .jsonPath("$.length()").isEqualTo(4)
           .jsonPath("[0].beliefId").isEqualTo(belief3.beliefId)
           .jsonPath("[0].belief.code").isEqualTo("DRU")
@@ -1592,7 +1591,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .consumeWith(System.out::println)
           .jsonPath("$.length()").isEqualTo(4)
           .jsonPath("[0].beliefId").isEqualTo(belief3.beliefId)
           .jsonPath("[0].belief.code").isEqualTo("DRU")

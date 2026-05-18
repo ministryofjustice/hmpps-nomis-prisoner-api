@@ -2,8 +2,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class StaffDslMarker
@@ -20,16 +22,24 @@ interface StaffDsl {
     username: String = "G_BYD",
     type: String = GENERAL,
     activeCaseloadId: String? = null,
+    lastLoggedIn: LocalDateTime? = null,
     dsl: StaffUserAccountDsl.() -> Unit = {},
   ): StaffUserAccount
+
+  @StaffEmailDslMarker
+  fun email(
+    emailAddress: String,
+    dsl: StaffEmailDsl.() -> Unit = {},
+  ): StaffInternetAddress
 }
 
 @Component
 class StaffBuilderFactory(
   private val repository: StaffBuilderRepository,
+  private val staffEmailBuilderFactory: StaffEmailBuilderFactory,
   private val staffUserAccountBuilderFactory: StaffUserAccountBuilderFactory,
 ) {
-  fun builder(): StaffBuilder = StaffBuilder(repository, staffUserAccountBuilderFactory)
+  fun builder(): StaffBuilder = StaffBuilder(repository, staffEmailBuilderFactory, staffUserAccountBuilderFactory)
 }
 
 @Component
@@ -41,6 +51,7 @@ class StaffBuilderRepository(
 
 class StaffBuilder(
   private val repository: StaffBuilderRepository,
+  private val staffEmailBuilderFactory: StaffEmailBuilderFactory,
   private val staffUserAccountBuilderFactory: StaffUserAccountBuilderFactory,
 ) : StaffDsl {
   private lateinit var staff: Staff
@@ -55,17 +66,31 @@ class StaffBuilder(
     .let { repository.save(it) }
     .also { staff = it }
 
+  override fun email(
+    emailAddress: String,
+    dsl: StaffEmailDsl.() -> Unit,
+  ): StaffInternetAddress = staffEmailBuilderFactory.builder().let { builder ->
+    builder.build(
+      staff = staff,
+      emailAddress = emailAddress,
+    )
+      .also { staff.emails += it }
+      .also { builder.apply(dsl) }
+  }
+
   override fun account(
     username: String,
     type: String,
     activeCaseloadId: String?,
+    lastLoggedIn: LocalDateTime?,
     dsl: StaffUserAccountDsl.() -> Unit,
   ): StaffUserAccount = staffUserAccountBuilderFactory.builder().let { builder ->
     builder.build(
       username = username,
       staff = staff,
-      activeCaseloadId = activeCaseloadId,
       type = type,
+      activeCaseloadId = activeCaseloadId,
+      lastLoggedIn = lastLoggedIn,
     )
       .also { staff.accounts += it }
       .also { builder.apply(dsl) }
