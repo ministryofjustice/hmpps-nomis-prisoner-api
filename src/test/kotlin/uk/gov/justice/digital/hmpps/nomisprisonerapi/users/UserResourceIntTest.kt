@@ -82,7 +82,7 @@ class UserResourceIntTest : IntegrationTestBase() {
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
         .jsonPath("email").isEqualTo("jim.staffa@justice.gov.uk")
-        .jsonPath("statusCode").isEqualTo(UserStatus.ACTIVE)
+        .jsonPath("statusCode").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
     }
