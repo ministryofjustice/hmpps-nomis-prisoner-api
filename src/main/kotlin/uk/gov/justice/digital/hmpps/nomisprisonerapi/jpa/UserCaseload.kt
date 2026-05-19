@@ -33,7 +33,7 @@ data class UserCaseload(
 
   @ManyToOne
   @MapsId("caseloadId")
-  @JoinColumn(name = "CASELOAD_ID", updatable = false, insertable = false)
+  @JoinColumn(name = "CASELOAD_ID")
   val caseload: Caseload,
 ) {
   override fun equals(other: Any?): Boolean {
