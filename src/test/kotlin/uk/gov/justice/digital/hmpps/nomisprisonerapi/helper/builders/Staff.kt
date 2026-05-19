@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import java.time.LocalDateTime
 
@@ -22,6 +23,7 @@ interface StaffDsl {
     username: String = "G_BYD",
     type: String = GENERAL,
     activeCaseloadId: String? = null,
+    caseloads: List<UserCaseload> = listOf(),
     lastLoggedIn: LocalDateTime? = null,
     dsl: StaffUserAccountDsl.() -> Unit = {},
   ): StaffUserAccount
@@ -82,6 +84,7 @@ class StaffBuilder(
     username: String,
     type: String,
     activeCaseloadId: String?,
+    caseloads: List<UserCaseload>,
     lastLoggedIn: LocalDateTime?,
     dsl: StaffUserAccountDsl.() -> Unit,
   ): StaffUserAccount = staffUserAccountBuilderFactory.builder().let { builder ->
