@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Role
@@ -20,25 +21,43 @@ class UserResourceIntTest : IntegrationTestBase() {
   private lateinit var staff1: Staff
   private lateinit var staff2: Staff
   private lateinit var role1: Role
+  private lateinit var role2: Role
+  private lateinit var role3: Role
 
   @BeforeEach
   fun setup() {
     nomisDataBuilder.build {
       role1 = role(
         code = "CODE_1",
-        name = "This is a test role",
+        name = "This is test role 1",
         userAccountType = "GENERAL",
       )
-      role(
+      role2 = role(
+        code = "ANOTHER_CODE",
+        name = "This is test role 2",
+        userAccountType = "ADMIN",
+      )
+      role3 = role(
         code = "CODE_2",
-        name = "This is the second test role",
+        name = "This is test role 3",
+        userAccountType = "ADMIN",
+      )
+      role(
+        code = "DPS_CODE_1",
+        name = "This is test role 4",
         userAccountType = "ADMIN",
       )
       staff1 = staff(firstName = "JIM", lastName = "STAFFA") {
         email(emailAddress = "jim.staffa@justice.gov.uk")
         account(username = "JIIMSTAFFA_GEN", activeCaseloadId = "MDI", lastLoggedIn = LocalDateTime.parse("2026-03-17T12:30"))
         account(username = "JIIMSTAFFA_ADM", type = ADMIN) {
-          userCaseload(caseloadId = "MDI")
+          userCaseload(caseloadId = "MDI") {
+            userCaseloadRole(role = role3)
+          }
+          userCaseload(caseloadId = "NWEB") {
+            userCaseloadRole(role = role1)
+            userCaseloadRole(role = role2)
+          }
         }
       }
 
@@ -50,9 +69,9 @@ class UserResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   fun tearDown() {
-    rolesRepository.deleteAll()
     repository.delete(staff1)
     repository.delete(staff2)
+    rolesRepository.deleteAll()
   }
 
   @Nested
@@ -114,26 +133,56 @@ class UserResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return a user's account details`() {
-      webTestClient.get().uri("/users/${staff1.id}")
+    fun `will return user details with no email`() {
+      webTestClient.get().uri("/users/${staff2.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(staff1.id)
-        .jsonPath("accounts.size()").isEqualTo(2)
-        .jsonPath("accounts[0].username").isEqualTo("JIIMSTAFFA_GEN")
-        .jsonPath("accounts[0].sourceCode").isEqualTo("USER")
-        .jsonPath("accounts[0].typeCode").isEqualTo("GENERAL")
-        .jsonPath("accounts[0].activeCaseloadId").isEqualTo("MDI")
-        .jsonPath("accounts[0].lastLoggedIn").isEqualTo("2026-03-17T12:30:00")
-        .jsonPath("accounts[0].caseloads.size()").isEqualTo(0)
+        .jsonPath("id").isEqualTo(staff2.id)
+        .jsonPath("firstName").isEqualTo("JOE")
+        .jsonPath("lastName").isEqualTo("STAFFB")
+        .jsonPath("email").doesNotExist()
+        .jsonPath("statusCode").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
-        .jsonPath("accounts[1].typeCode").isEqualTo("ADMIN")
-        .jsonPath("accounts[1].lastLoggedIn").doesNotExist()
-        .jsonPath("accounts[1].caseloads.size()").isEqualTo(1)
-        .jsonPath("accounts[1].caseloads[0]]").isEqualTo("MDI")
+    }
+
+    @Test
+    fun `will return a user's account details`() {
+      val userDetails = webTestClient.get().uri("/users/${staff1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<UserDetails>()
+        .returnResult()
+        .responseBody!!
+
+      with(userDetails) {
+        assertThat(id).isEqualTo(staff1.id)
+        assertThat(accounts.size).isEqualTo(2)
+        with(accounts[0]) {
+          assertThat(username).isEqualTo("JIIMSTAFFA_GEN")
+          assertThat(sourceCode).isEqualTo("USER")
+          assertThat(typeCode).isEqualTo("GENERAL")
+          assertThat(activeCaseloadId).isEqualTo("MDI")
+          assertThat(lastLoggedIn).isEqualTo("2026-03-17T12:30:00")
+          assertThat(caseloads.size).isEqualTo(0)
+          assertThat(roles.size).isEqualTo(0)
+          assertThat(audit.createDatetime).isNotNull
+          assertThat(audit.createUsername).isEqualTo("SA")
+        }
+        with(accounts[1]) {
+          assertThat(typeCode).isEqualTo("ADMIN")
+          assertThat(lastLoggedIn).isNull()
+          assertThat(caseloads.size).isEqualTo(2)
+          assertThat(caseloads).contains("NWEB", "MDI")
+          assertThat(roles.size).isEqualTo(3)
+          assertThat(roles).contains("CODE_1", "CODE_2", "ANOTHER_CODE")
+          assertThat(audit.createDatetime).isNotNull
+          assertThat(audit.createUsername).isEqualTo("SA")
+        }
+      }
     }
   }
 }

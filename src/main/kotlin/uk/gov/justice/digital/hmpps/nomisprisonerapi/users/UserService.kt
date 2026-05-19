@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 
 @Service
@@ -28,8 +29,7 @@ fun Staff.toUserDetails(): UserDetails = UserDetails(
   id = id,
   firstName = firstName,
   lastName = lastName,
-  // TODO can this ever be empty? check preprod
-  email = emails.firstOrNull()?.internetAddress ?: "",
+  email = emails.firstOrNull()?.internetAddress,
   // TODO status - from DBA_USERS.ACCOUNT_STATUS  e.g ACTIVE, INACTIVE
   statusCode = "ACTIVE",
   accounts = accounts.map { it.toUserAccount() },
@@ -46,5 +46,6 @@ fun StaffUserAccount.toUserAccount() = UserAccount(
   activeCaseloadId = activeCaseloadId,
   lastLoggedIn = lastLoggedIn,
   caseloads = caseloads.map { it.id.caseloadId },
+  roles = caseloads.flatMap(UserCaseload::roles).map { it.role.code },
   audit = toAudit(),
 )
