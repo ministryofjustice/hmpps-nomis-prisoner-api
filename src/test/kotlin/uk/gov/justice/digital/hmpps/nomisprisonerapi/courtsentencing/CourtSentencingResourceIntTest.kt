@@ -5269,6 +5269,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   inner class UpdateCourtAppearance {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
+    private lateinit var courtCaseBeingUpdatedWithChargeUpdate: CourtCase
     private lateinit var courtEvent: CourtEvent
     private lateinit var courtEvent2: CourtEvent
     private var latestBookingId: Long = 0
@@ -5276,7 +5277,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
     private lateinit var offenderCharge4: OffenderCharge
+    private lateinit var offenderChargeAdjourned: OffenderCharge
     private lateinit var order: CourtOrder
+    private lateinit var courtEventAdjourned: CourtEvent
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -5290,7 +5293,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              offenderCharge1 = offenderCharge(resultCode1 = "1002", offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
               offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
               offenderCharge4 = offenderCharge(resultCode1 = "1067", offenceCode = "LO72002")
@@ -5322,6 +5325,25 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 )
                 order = courtOrder {
                   sentencePurpose(purposeCode = "REPAIR")
+                  sentencePurpose(purposeCode = "PUNISH")
+                }
+              }
+            }
+
+            courtCaseBeingUpdatedWithChargeUpdate = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+              caseSequence = 10,
+            ) {
+              // charge is still adjourned at point data is read
+              offenderChargeAdjourned = offenderCharge(resultCode1 = "4001", offenceCode = "RT88074")
+              courtEventAdjourned = courtEvent(outcomeReasonCode = "4001") {
+                courtEventCharge(
+                  offenderCharge = offenderChargeAdjourned,
+                  resultCode1 = "4001",
+                )
+                // in this scenario court order just been created by charge update on another thread
+                courtOrder {
                   sentencePurpose(purposeCode = "PUNISH")
                 }
               }
@@ -5628,7 +5650,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `the provided court event charge outcomes for any new associations will be persisted`() {
+      fun `the provided court event charge outcomes for any new or existing associations will be persisted`() {
 // request object includes 3 offender charges that are already associated with the court case and 1 to be associated
 
         val courtAppearanceResponse = webTestClient.put()
@@ -5640,7 +5662,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               createCourtAppearanceRequest(
                 courtEventCharges = mutableListOf(
                   CourtEventChargeRequest(offenderCharge1.id, "4560"),
-                  CourtEventChargeRequest(offenderCharge2.id, "4560"),
+                  CourtEventChargeRequest(offenderCharge2.id, "1002"),
                   CourtEventChargeRequest(offenderCharge3.id, "4560"),
                   CourtEventChargeRequest(offenderCharge4.id, "4560"),
                 ),
@@ -5657,13 +5679,65 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(4)
-          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("1002")
+          .jsonPath("courtEvents[0].courtEventCharges[0].resultCode1.code").isEqualTo("4560")
           .jsonPath("courtEvents[0].courtEventCharges[1].resultCode1.code").isEqualTo("1002")
-          .jsonPath("courtEvents[0].courtEventCharges[2].resultCode1.code").isEqualTo("1002")
+          .jsonPath("courtEvents[0].courtEventCharges[2].resultCode1.code").isEqualTo("4560")
           .jsonPath("courtEvents[0].courtEventCharges[3].resultCode1.code").isEqualTo("4560")
           .jsonPath("courtEvents[0].courtOrders[0].courtDate").isEqualTo("2023-01-05")
 
         assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(0)
+      }
+
+      @Test
+      fun `will delete court order when no longer required`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseBeingUpdatedWithChargeUpdate.id}/court-appearances/${courtEventAdjourned.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                outcomeReasonCode = "1004",
+                courtEventCharges = mutableListOf(
+                  CourtEventChargeRequest(offenderChargeAdjourned.id, resultCode1 = offenderChargeAdjourned.resultCode1?.code),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-order-deleted"),
+          any(),
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will not update delete court order when updated charges require it`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCaseBeingUpdatedWithChargeUpdate.id}/court-appearances/${courtEventAdjourned.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                outcomeReasonCode = "1004",
+                courtEventCharges = mutableListOf(
+                  CourtEventChargeRequest(offenderChargeAdjourned.id, resultCode1 = "1004"),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-order-updated"),
+          any(),
+          isNull(),
+        )
       }
     }
 
@@ -5697,7 +5771,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              offenderCharge1 = offenderCharge(resultCode1 = "1002", offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "4560", offenceCode = "RT88074", plea = "G")
               courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
 // overrides from the parent offender charge fields
@@ -5863,7 +5937,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
+              offenderCharge1 = offenderCharge(resultCode1 = "1002", offenceCode = "RT88074", plea = "G")
               courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
 // overrides from the parent offender charge fields
                 courtEventCharge(

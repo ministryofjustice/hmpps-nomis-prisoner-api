@@ -575,12 +575,14 @@ class CourtSentencingService(
     val originalList = courtEvent.courtEventCharges
     val newChargeList = mutableListOf<CourtEventCharge>()
     courtEventChargesToUpdate.map { cecRequest ->
+      val resultCode = cecRequest.resultCode1?.let { lookupOffenceResultCode(it) }
       courtEvent.courtEventCharges.firstOrNull { it.id.offenderCharge.id == cecRequest.offenderChargeId }
         ?.let { existingCourtEventCharge ->
+          existingCourtEventCharge.resultCode1 = resultCode
+          existingCourtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
           newChargeList.add(existingCourtEventCharge)
         } ?: let {
         getOffenderCharge(cecRequest.offenderChargeId).let { offenderCharge ->
-          val resultCode = cecRequest.resultCode1?.let { lookupOffenceResultCode(it) }
           log.info("Adding charge ${offenderCharge.id} to appearance ${courtEvent.id} with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n offenderCharge result code: ${offenderCharge.resultCode1?.code}")
           newChargeList.add(
             CourtEventCharge(
