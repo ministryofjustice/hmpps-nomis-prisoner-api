@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
@@ -7,6 +8,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.MapsId
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import java.io.Serializable
@@ -35,6 +37,9 @@ data class UserCaseload(
   @MapsId("caseloadId")
   @JoinColumn(name = "CASELOAD_ID")
   val caseload: Caseload,
+
+  @OneToMany(mappedBy = "userCaseload", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val roles: MutableList<UserCaseloadRole> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

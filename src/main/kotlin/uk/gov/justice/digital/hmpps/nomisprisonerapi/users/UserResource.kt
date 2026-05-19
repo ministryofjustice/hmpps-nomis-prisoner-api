@@ -96,6 +96,8 @@ data class UserAccount(
   val activeCaseloadId: String? = null,
   @Schema(description = "Caseloads associated with the user")
   val caseloads: List<String>,
+  @Schema(description = "Roles associated with the user")
+  val roles: List<String>,
   @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,
 )

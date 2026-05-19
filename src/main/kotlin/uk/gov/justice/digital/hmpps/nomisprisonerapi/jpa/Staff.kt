@@ -10,6 +10,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.SQLRestriction
 
 @Entity
 @Table(name = "STAFF_MEMBERS")
@@ -25,6 +26,7 @@ class Staff(
   val lastName: String,
 
   @OneToMany(mappedBy = "staff", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @SQLRestriction("INTERNET_ADDRESS_CLASS = 'EMAIL'")
   val emails: MutableSet<StaffInternetAddress> = mutableSetOf(),
 
   @OneToMany(mappedBy = "staff", cascade = [CascadeType.ALL], orphanRemoval = true)
