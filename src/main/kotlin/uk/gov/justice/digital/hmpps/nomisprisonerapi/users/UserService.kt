@@ -45,5 +45,6 @@ fun StaffUserAccount.toUserAccount() = UserAccount(
   sourceCode = source,
   activeCaseloadId = activeCaseloadId,
   lastLoggedIn = lastLoggedIn,
+  caseloads = caseloads.map { it.id.caseloadId },
   audit = toAudit(),
 )

@@ -24,8 +24,6 @@ class Staff(
   @Column
   val lastName: String,
 
-  // TODO - do we need  AND INTERNET_ADDRESS_CLASS = 'EMAIL' on the sql restriction - there is only EMAIL in dev
-  // check preprod
   @OneToMany(mappedBy = "staff", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val emails: MutableSet<StaffInternetAddress> = mutableSetOf(),
 

@@ -76,9 +76,8 @@ data class UserDetails(
   val lastName: String,
   @Schema(description = "Status of the user")
   val statusCode: String,
-
+  @Schema(description = "Accounts for the user")
   val accounts: List<UserAccount>,
-
   @Schema(description = "Audit data associated with the staff user")
   val audit: NomisAudit,
 )
@@ -87,13 +86,16 @@ data class UserAccount(
   val username: String,
   @Schema(description = "The type of account", example = "GENERAL")
   val typeCode: String,
-  @Schema(description = "Status of the user account", example = "USER")
+  @Schema(description = "Status of the user account", example = "ACTIVE")
   val statusCode: String,
+  @Schema(description = "How the account was created", example = "USER")
   val sourceCode: String,
+  @Schema(description = "Date and time when the user last logged in", example = "2023-12-23T11:17:00")
   val lastLoggedIn: LocalDateTime? = null,
   @Schema(description = "The current active caseload on the account")
   val activeCaseloadId: String? = null,
-  @Schema(description = "Audit data associated with the staff user")
+  @Schema(description = "Caseloads associated with the user")
+  val caseloads: List<String>,
+  @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,
-
 )
