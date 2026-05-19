@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class StaffUserAccountDslMarker
@@ -35,12 +36,14 @@ class StaffUserAccountBuilder(
     staff: Staff,
     type: String,
     activeCaseloadId: String?,
+    lastLoggedIn: LocalDateTime?,
   ): StaffUserAccount = StaffUserAccount(
     username = username,
     staff = staff,
     type = type,
     activeCaseloadId = activeCaseloadId,
     source = "USER",
+    lastLoggedIn = lastLoggedIn,
   )
     .let { repository.save(it) }
     .also { staffUserAccount = it }

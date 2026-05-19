@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
@@ -23,10 +24,15 @@ class Staff(
   @Column
   val lastName: String,
 
+  // TODO - do we need  AND INTERNET_ADDRESS_CLASS = 'EMAIL' on the sql restriction - there is only EMAIL in dev
+  // check preprod
+  @OneToMany(mappedBy = "staff", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  val emails: MutableSet<StaffInternetAddress> = mutableSetOf(),
+
   @OneToMany(mappedBy = "staff", cascade = [CascadeType.ALL], orphanRemoval = true)
   val accounts: MutableList<StaffUserAccount> = mutableListOf(),
 
-) {
+) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
