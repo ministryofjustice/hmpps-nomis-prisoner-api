@@ -1428,9 +1428,9 @@ class CourtSentencingService(
   }
 
   fun updateRecallSentences(offenderNo: String, request: UpdateRecallRequest) {
+    val removedBreachCourtEventIds = mutableListOf<Long>()
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
-
-    request.sentences.updateSentences()
+    val courtCasesStillInRecall = request.sentences.updateSentences().mapNotNull { it.courtCase }.toSet()
     request.sentencesRemoved.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
@@ -1441,8 +1441,13 @@ class CourtSentencingService(
     }
     request.beachCourtEventIds.forEach {
       courtEventRepository.findByIdOrNull(it)?.also { courtEvent ->
-        courtEvent.eventDate = request.recallRevocationDate
-        courtEvent.startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT)
+        if (courtEvent.courtCase in courtCasesStillInRecall) {
+          courtEvent.eventDate = request.recallRevocationDate
+          courtEvent.startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT)
+        } else {
+          courtEventRepository.delete(courtEvent)
+          removedBreachCourtEventIds.add(it)
+        }
       }
     }
     telemetryClient.trackEvent(
@@ -1452,7 +1457,8 @@ class CourtSentencingService(
         "sentenceSequences" to request.sentences.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "removedSentenceSequences" to request.sentencesRemoved.map { it.sentenceId.sentenceSequence }.joinToString { it.toString() },
         "offenderNo" to offenderNo,
-        "beachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
+        "breachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
+        "removedBreachCourtEventIds" to removedBreachCourtEventIds.joinToString { it.toString() },
       ),
       null,
     )
