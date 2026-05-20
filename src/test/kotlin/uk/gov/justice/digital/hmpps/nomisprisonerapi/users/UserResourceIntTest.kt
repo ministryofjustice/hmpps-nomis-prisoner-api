@@ -127,7 +127,7 @@ class UserResourceIntTest : IntegrationTestBase() {
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
         .jsonPath("email").isEqualTo("jim.staffa@justice.gov.uk")
-        .jsonPath("statusCode").isEqualTo("ACTIVE")
+        .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
     }
@@ -143,7 +143,7 @@ class UserResourceIntTest : IntegrationTestBase() {
         .jsonPath("firstName").isEqualTo("JOE")
         .jsonPath("lastName").isEqualTo("STAFFB")
         .jsonPath("email").doesNotExist()
-        .jsonPath("statusCode").isEqualTo("ACTIVE")
+        .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
     }
@@ -164,6 +164,7 @@ class UserResourceIntTest : IntegrationTestBase() {
         with(accounts[0]) {
           assertThat(username).isEqualTo("JIIMSTAFFA_GEN")
           assertThat(sourceCode).isEqualTo("USER")
+          assertThat(status).isEqualTo("")
           assertThat(typeCode).isEqualTo("GENERAL")
           assertThat(activeCaseloadId).isEqualTo("MDI")
           assertThat(lastLoggedIn).isEqualTo("2026-03-17T12:30:00")
