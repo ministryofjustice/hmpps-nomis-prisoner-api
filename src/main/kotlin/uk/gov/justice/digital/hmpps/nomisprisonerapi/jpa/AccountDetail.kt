@@ -12,7 +12,6 @@ class AccountDetail(
   @Column(name = "USERNAME")
   val username: String = "",
 
-  // TODO switch to enum
   @Column(name = "ACCOUNT_STATUS")
   val status: String = "EXPIRED",
 
