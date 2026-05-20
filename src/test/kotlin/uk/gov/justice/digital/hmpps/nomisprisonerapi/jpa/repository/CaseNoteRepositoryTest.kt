@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskType
 import uk.gov.justice.hmpps.kotlin.auth.HmppsAuthenticationHolder
@@ -57,7 +58,7 @@ class CaseNoteRepositoryTest {
         occurrenceDateTime = timestamp,
         caseNoteType = taskTypeRepository.findById(TaskType.pk("ACP")).orElseThrow(),
         caseNoteSubType = taskSubTypeRepository.findById(TaskSubType.pk("POPEM")).orElseThrow(),
-        author = builderRepository.save(Staff(firstName = "Joe", lastName = "Bloggs")),
+        author = builderRepository.save(Staff(firstName = "Joe", lastName = "Bloggs", status = StaffStatusType.ACTIVE)),
         agencyLocation = seedOffenderBooking.location,
         caseNoteText = "A note",
         amendmentFlag = true,

@@ -13,9 +13,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TaskType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserAccountType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserSourceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -87,15 +90,15 @@ internal class CaseNotesServiceTest {
 
     private val staffUserAccount1 = StaffUserAccount(
       username = "JMORROW_GEN",
-      Staff(12345L, "First1", "Last1"),
-      "type",
-      "source",
+      staff = Staff(12345L, "First1", "Last1", StaffStatusType.ACTIVE),
+      type = UserAccountType.GENERAL,
+      source = UserSourceType.SEQ,
     )
     private val staffUserAccount2 = StaffUserAccount(
       username = "PPHILLIPS_GEN",
-      Staff(67890L, "First2", "Last2"),
-      "type",
-      "source",
+      staff = Staff(67890L, "First2", "Last2", StaffStatusType.ACTIVE),
+      type = UserAccountType.GENERAL,
+      source = UserSourceType.USER,
     )
 
     @Test
@@ -520,9 +523,9 @@ fun caseNote(
   occurrenceDateTime = LocalDateTime.now(),
   caseNoteType = TaskType("CODE", "desc"),
   caseNoteSubType = TaskSubType("SUBCODE", "desc"),
-  author = Staff(firstName = "Joe", lastName = "Bloggs")
+  author = Staff(firstName = "Joe", lastName = "Bloggs", status = StaffStatusType.ACTIVE)
     .apply {
-      accounts.add(StaffUserAccount(username = "USER", staff = this, type = "type", source = "source"))
+      accounts.add(StaffUserAccount(username = "USER", staff = this, type = UserAccountType.GENERAL, source = UserSourceType.USER))
     },
   caseNoteText = caseNoteText,
   amendmentFlag = true,

@@ -25,7 +25,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalanceAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserAccountType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserSourceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.IEP_ENTITLEMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrderAdjustmentReason.Companion.PVO_IEP_ENTITLEMENT
@@ -464,9 +467,9 @@ class VisitBalanceServiceTest {
         whenever(staffUserAccountRepository.findByUsername(any())).thenReturn(
           StaffUserAccount(
             username = "JMORROW_GEN",
-            Staff(12345L, "First1", "Last1"),
-            "type",
-            "source",
+            staff = Staff(12345L, "First1", "Last1", StaffStatusType.ACTIVE),
+            type = UserAccountType.GENERAL,
+            source = UserSourceType.USER,
           ),
         )
         whenever(visitOrderAdjustmentReasonRepository.findById(any())).thenReturn(

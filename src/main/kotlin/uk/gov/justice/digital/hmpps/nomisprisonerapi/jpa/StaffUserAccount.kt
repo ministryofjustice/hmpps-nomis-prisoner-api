@@ -8,8 +8,12 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import java.time.LocalDateTime
 
 @Entity
@@ -19,15 +23,44 @@ class StaffUserAccount(
   @Column(name = "USERNAME", nullable = false)
   val username: String,
 
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(
+    name = "USERNAME",
+    referencedColumnName = "USERNAME",
+    insertable = false,
+    updatable = false,
+  )
+  val accountDetail: AccountDetail? = null,
+
   @ManyToOne
   @JoinColumn(name = "STAFF_ID", nullable = false)
   val staff: Staff,
 
-  @Column(name = "STAFF_USER_TYPE", nullable = false)
-  val type: String,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + UserAccountType.USER_AC_TYPE + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "STAFF_USER_TYPE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val type: UserAccountType,
 
-  @Column(name = "ID_SOURCE", nullable = false)
-  val source: String,
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + UserSourceType.ID_SOURCE + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "ID_SOURCE", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val source: UserSourceType,
 
   @Column(name = "WORKING_CASELOAD_ID")
   val activeCaseloadId: String? = null,
@@ -35,7 +68,7 @@ class StaffUserAccount(
   @Column(name = "LAST_LOGON_DATE")
   var lastLoggedIn: LocalDateTime? = null,
 
-  @OneToMany(mappedBy = "id.username", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "id.username", cascade = [CascadeType.ALL], orphanRemoval = true)
   val caseloads: MutableList<UserCaseload> = mutableListOf(),
 
 ) : NomisAuditableEntityBasic() {

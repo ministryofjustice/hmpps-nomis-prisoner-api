@@ -9,7 +9,7 @@ class UserAccountType(code: String, description: String) : ReferenceCode(USER_AC
   companion object {
     const val USER_AC_TYPE = "USER_AC_TYPE"
     fun pk(code: String): Pk = Pk(USER_AC_TYPE, code)
-
-    const val GENERAL = "GENERAL"
+    val ADMIN = UserAccountType("ADMIN", "Admin")
+    val GENERAL = UserAccountType("GENERAL", "General")
   }
 }

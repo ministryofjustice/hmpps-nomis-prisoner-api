@@ -1,10 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import java.time.LocalDateTime
 
@@ -47,8 +50,10 @@ class StaffBuilderFactory(
 @Component
 class StaffBuilderRepository(
   private val staffRepository: StaffRepository,
+  private val staffStatusType: ReferenceCodeRepository<StaffStatusType>,
 ) {
   fun save(staff: Staff): Staff = staffRepository.save(staff)
+  fun lookupStaffStatus(code: String) = staffStatusType.findByIdOrNull(StaffStatusType.pk(code))!!
 }
 
 class StaffBuilder(
@@ -64,6 +69,7 @@ class StaffBuilder(
   ): Staff = Staff(
     lastName = lastName,
     firstName = firstName,
+    status = repository.lookupStaffStatus("ACTIVE"),
   )
     .let { repository.save(it) }
     .also { staff = it }

@@ -1,12 +1,17 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserAccountType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserSourceType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.plusAssign
 
 @DslMarker
 annotation class StaffUserAccountDslMarker
@@ -27,13 +32,18 @@ class StaffUserAccountBuilderFactory(
   private val repository: StaffUserAccountBuilderRepository,
   private val userCaseloadBuilderFactory: UserCaseloadBuilderFactory,
 ) {
-  fun builder(): StaffUserAccountBuilder = StaffUserAccountBuilder(repository, userCaseloadBuilderFactory)
+  fun builder(): StaffUserAccountBuilder = StaffUserAccountBuilder(
+    repository,
+    userCaseloadBuilderFactory,
+  )
 }
 
 @Component
 class StaffUserAccountBuilderRepository(
   private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val userAccountType: ReferenceCodeRepository<UserAccountType>,
 ) {
+  fun lookupAccountType(code: String) = userAccountType.findByIdOrNull(UserAccountType.pk(code))!!
   fun save(staffUserAccount: StaffUserAccount): StaffUserAccount = staffUserAccountRepository.save(staffUserAccount)
 }
 
@@ -52,9 +62,9 @@ class StaffUserAccountBuilder(
   ): StaffUserAccount = StaffUserAccount(
     username = username,
     staff = staff,
-    type = type,
+    type = repository.lookupAccountType(type),
     activeCaseloadId = activeCaseloadId,
-    source = "USER",
+    source = UserSourceType.USER,
     lastLoggedIn = lastLoggedIn,
   )
     .let { repository.save(it) }

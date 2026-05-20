@@ -66,16 +66,16 @@ class UserResource(private val userService: UserService) {
 }
 
 data class UserDetails(
-  @Schema(description = "The staff user id")
+  @Schema(description = "The unique staff user id", example = "12345")
   val id: Long,
-  @Schema(description = "Primary email address of the user")
+  @Schema(description = "Primary email address of the user", example = "john.smith@internet.co.uk")
   val email: String? = null,
-  @Schema(description = "User's first name")
+  @Schema(description = "User's first name", example = "John")
   val firstName: String,
-  @Schema(description = "User's last name")
+  @Schema(description = "User's last name", example = "Smith")
   val lastName: String,
-  @Schema(description = "Status of the user")
-  val statusCode: String,
+  @Schema(description = "Status of the user", example = "ACTIVE")
+  val status: String,
   @Schema(description = "Accounts for the user")
   val accounts: List<UserAccount>,
   @Schema(description = "Audit data associated with the staff user")
@@ -83,20 +83,21 @@ data class UserDetails(
 )
 
 data class UserAccount(
+  @Schema(description = "The username associated with the account", example = "JOHNSMITH_GEN")
   val username: String,
   @Schema(description = "The type of account", example = "GENERAL")
   val typeCode: String,
-  @Schema(description = "Status of the user account", example = "ACTIVE")
-  val statusCode: String,
+  @Schema(description = "Status of the user account", example = "OPEN")
+  val status: String,
   @Schema(description = "How the account was created", example = "USER")
   val sourceCode: String,
   @Schema(description = "Date and time when the user last logged in", example = "2023-12-23T11:17:00")
   val lastLoggedIn: LocalDateTime? = null,
-  @Schema(description = "The current active caseload on the account")
+  @Schema(description = "The current active caseload on the account", example = "MDI")
   val activeCaseloadId: String? = null,
-  @Schema(description = "Caseloads associated with the user")
+  @Schema(description = "Caseloads associated with the user", example = "['MDI','LEI']")
   val caseloads: List<String>,
-  @Schema(description = "Roles associated with the user")
+  @Schema(description = "Roles associated with the user", example = "['USER_MANAGER','VIEW_INCIDENTS']")
   val roles: List<String>,
   @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,
