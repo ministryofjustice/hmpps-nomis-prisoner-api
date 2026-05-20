@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -34,7 +35,7 @@ class StaffUserAccount(
   @Column(name = "LAST_LOGON_DATE")
   var lastLoggedIn: LocalDateTime? = null,
 
-  @OneToMany(mappedBy = "id.username", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "id.username", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val caseloads: MutableList<UserCaseload> = mutableListOf(),
 
 ) : NomisAuditableEntityBasic() {
