@@ -5,6 +5,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.MapsId
@@ -38,7 +39,7 @@ data class UserCaseload(
   @JoinColumn(name = "CASELOAD_ID")
   val caseload: Caseload,
 
-  @OneToMany(mappedBy = "userCaseload", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "userCaseload", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val roles: MutableList<UserCaseloadRole> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {
