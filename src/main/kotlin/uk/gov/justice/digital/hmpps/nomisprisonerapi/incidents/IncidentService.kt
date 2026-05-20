@@ -463,7 +463,7 @@ private fun JPAStaff.toStaff() = Staff(
   staffId = id,
   firstName = firstName,
   lastName = lastName,
-  username = accounts.maxByOrNull { it.type }?.username ?: "unknown",
+  username = accounts.maxByOrNull { it.type.code }?.username ?: "unknown",
 )
 
 private fun IncidentOffenderParty.toOffenderParty() = OffenderParty(
