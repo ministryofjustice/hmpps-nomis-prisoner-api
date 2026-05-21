@@ -34,12 +34,12 @@ data class UserCaseload(
   @Column(name = "START_DATE")
   val startDate: LocalDate,
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @MapsId("caseloadId")
   @JoinColumn(name = "CASELOAD_ID")
   val caseload: Caseload,
 
-  @OneToMany(mappedBy = "userCaseload", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "userCaseload", cascade = [CascadeType.ALL], orphanRemoval = true)
   val roles: MutableList<UserCaseloadRole> = mutableListOf(),
 ) {
   override fun equals(other: Any?): Boolean {

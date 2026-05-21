@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseloadId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseloadRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadRepository
 import java.time.LocalDate
-import kotlin.collections.plus
 
 @DslMarker
 annotation class UserCaseloadDslMarker
