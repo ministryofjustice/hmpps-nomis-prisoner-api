@@ -1349,49 +1349,20 @@ class CourtSentencingService(
     // it would make sense to not make any assumptions
     val bookingIds = convertToRecallRequest.sentences.map { it.sentenceId.offenderBookingId }.toSet()
 
-    val sentencesUpdated = convertToRecallRequest.sentences.updateSentences()
-    sentencingAdjustmentService.convertAdjustmentsToRecallEquivalents(sentencesUpdated)
-    val adjustmentsUpdated = sentencingAdjustmentService.activateAllAdjustment(sentencesUpdated)
+    val sentencesInRecall = convertToRecallRequest.sentences.updateSentences()
+    sentencingAdjustmentService.convertAdjustmentsToRecallEquivalents(sentencesInRecall)
+    val adjustmentsUpdated = sentencingAdjustmentService.activateAllAdjustment(sentencesInRecall)
     convertToRecallRequest.returnToCustody.createOrUpdateBooking(bookingIds)
 
     // Create a new CourtEvent for each unique CourtCase associated with each OffenderSentence
-    val uniqueCourtCases = sentencesUpdated.mapNotNull { it.courtCase }.toSet()
+    val uniqueCourtCases = sentencesInRecall.mapNotNull { it.courtCase }.toSet()
     // Create a new CourtEvent for each unique CourtCase
     val courtEvents = uniqueCourtCases.map { courtCase ->
-      // Find all sentences associated with this court case that are being recalled
-      val sentencesForCase = sentencesUpdated.filter {
-        it.courtCase == courtCase
-      }
-
-      // Find the court from the last appearance
-      val court = courtCase.courtEvents.maxByOrNull(CourtEvent::eventDate)!!.court
-
-      // Create the court event
-      val courtEvent = CourtEvent(
-        offenderBooking = courtCase.offenderBooking,
+      createRecallBreachCourtAppearance(
         courtCase = courtCase,
-        eventDate = convertToRecallRequest.recallRevocationDate,
-        startTime = LocalDateTime.of(convertToRecallRequest.recallRevocationDate, LocalTime.MIDNIGHT),
-        courtEventType = lookupMovementReasonType(RECALL_BREACH_HEARING),
-        eventStatus = determineEventStatus(
-          convertToRecallRequest.recallRevocationDate,
-          courtCase.offenderBooking,
-        ),
-        court = court,
-        outcomeReasonCode = lookupOffenceResultCode(RECALL_TO_PRISON),
-        directionCode = lookupDirectionType(DirectionType.OUT),
+        recallRevocationDate = convertToRecallRequest.recallRevocationDate,
+        sentencesInRecall = sentencesInRecall,
       )
-
-      // Create CourtEventCharge for each offenderSentenceCharge in the OffenderSentence
-      val offenderChargeIds =
-        sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
-      // Associate charges with the court event
-      associateChargesWithAppearanceUsingCourtEventOutcome(
-        courtEventChargesToUpdate = offenderChargeIds.toList(),
-        courtEvent = courtEvent,
-      )
-
-      courtEventRepository.saveAndFlush(courtEvent)
     }
 
     bookingIds.forEach { bookingId ->
@@ -1427,10 +1398,12 @@ class CourtSentencingService(
     )
   }
 
-  fun updateRecallSentences(offenderNo: String, request: UpdateRecallRequest) {
+  fun updateRecallSentences(offenderNo: String, request: UpdateRecallRequest): UpdateRecallResponse {
     val removedBreachCourtEventIds = mutableListOf<Long>()
+    val updatedBreachCourtEventIds = mutableListOf<Long>()
     val bookingIds = request.sentences.map { it.sentenceId.offenderBookingId }.toSet()
-    val courtCasesStillInRecall = request.sentences.updateSentences().mapNotNull { it.courtCase }.toSet()
+    val sentencesInRecall = request.sentences.updateSentences()
+    val courtCasesInRecall = sentencesInRecall.mapNotNull { it.courtCase }.toSet()
     request.sentencesRemoved.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
@@ -1439,17 +1412,30 @@ class CourtSentencingService(
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
-    request.beachCourtEventIds.forEach {
-      courtEventRepository.findByIdOrNull(it)?.also { courtEvent ->
-        if (courtEvent.courtCase in courtCasesStillInRecall) {
+    val casesUpdated = request.beachCourtEventIds.mapNotNull {
+      courtEventRepository.findByIdOrNull(it)?.let { courtEvent ->
+        if (courtEvent.courtCase in courtCasesInRecall) {
           courtEvent.eventDate = request.recallRevocationDate
           courtEvent.startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT)
+          updatedBreachCourtEventIds.add(it)
+          courtEvent.courtCase
         } else {
           courtEventRepository.delete(courtEvent)
           removedBreachCourtEventIds.add(it)
+          null
         }
       }
     }
+
+    val newCasesAddedToRecall = courtCasesInRecall - casesUpdated.toSet()
+    val createdBreachCourtEventIds = newCasesAddedToRecall.map { courtCase ->
+      createRecallBreachCourtAppearance(
+        courtCase = courtCase,
+        recallRevocationDate = request.recallRevocationDate,
+        sentencesInRecall = sentencesInRecall,
+      )
+    }.map { it.id }
+
     telemetryClient.trackEvent(
       "recall-sentences-updated",
       mapOf(
@@ -1459,8 +1445,15 @@ class CourtSentencingService(
         "offenderNo" to offenderNo,
         "breachCourtEventIds" to request.beachCourtEventIds.joinToString { it.toString() },
         "removedBreachCourtEventIds" to removedBreachCourtEventIds.joinToString { it.toString() },
+        "createdBreachCourtEventIds" to createdBreachCourtEventIds.joinToString { it.toString() },
       ),
       null,
+    )
+
+    return UpdateRecallResponse(
+      createdCourtEventIds = createdBreachCourtEventIds,
+      updatedCourtEventIds = updatedBreachCourtEventIds,
+      deletedCourtEventIds = removedBreachCourtEventIds,
     )
   }
 
@@ -1514,6 +1507,43 @@ class CourtSentencingService(
       ),
       null,
     )
+  }
+
+  private fun createRecallBreachCourtAppearance(courtCase: CourtCase, recallRevocationDate: LocalDate, sentencesInRecall: List<OffenderSentence>): CourtEvent {
+    // Find all sentences associated with this court case that are being recalled
+    val sentencesForCase = sentencesInRecall.filter {
+      it.courtCase == courtCase
+    }
+
+    // Find the court from the last appearance
+    val court = courtCase.courtEvents.maxByOrNull(CourtEvent::eventDate)!!.court
+
+    // Create the court event
+    val courtEvent = CourtEvent(
+      offenderBooking = courtCase.offenderBooking,
+      courtCase = courtCase,
+      eventDate = recallRevocationDate,
+      startTime = LocalDateTime.of(recallRevocationDate, LocalTime.MIDNIGHT),
+      courtEventType = lookupMovementReasonType(RECALL_BREACH_HEARING),
+      eventStatus = determineEventStatus(
+        recallRevocationDate,
+        courtCase.offenderBooking,
+      ),
+      court = court,
+      outcomeReasonCode = lookupOffenceResultCode(RECALL_TO_PRISON),
+      directionCode = lookupDirectionType(DirectionType.OUT),
+    )
+
+    // Create CourtEventCharge for each offenderSentenceCharge in the OffenderSentence
+    val offenderChargeIds =
+      sentencesForCase.flatMap { sentence -> sentence.offenderSentenceCharges.map { it.offenderCharge.id } }.toSet()
+    // Associate charges with the court event
+    associateChargesWithAppearanceUsingCourtEventOutcome(
+      courtEventChargesToUpdate = offenderChargeIds.toList(),
+      courtEvent = courtEvent,
+    )
+
+    return courtEventRepository.saveAndFlush(courtEvent)
   }
 
   private fun ReturnToCustodyRequest?.createOrUpdateBooking(bookingIds: Set<Long>) {

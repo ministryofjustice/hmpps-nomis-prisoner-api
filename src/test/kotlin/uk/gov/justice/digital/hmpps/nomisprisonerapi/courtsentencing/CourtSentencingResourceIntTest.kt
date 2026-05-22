@@ -10433,9 +10433,12 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       private lateinit var sentence2: OffenderSentence
       private lateinit var sentence3: OffenderSentence
       private lateinit var sentenceRemovedFromRecall: OffenderSentence
+      private lateinit var sentenceToBeAddedToRecall: OffenderSentence
       private lateinit var request: UpdateRecallRequest
       private lateinit var breachCourtEvent: CourtEvent
       private lateinit var breachCourtEventFromRemovedCase: CourtEvent
+      private lateinit var caseToBeAddedToRecall: CourtCase
+      val recallRevocationDate: LocalDate = LocalDate.parse("2023-06-06")
 
       @Nested
       inner class FirstFixedTermRecall {
@@ -10519,6 +10522,23 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                       term(days = 35, sentenceTermType = "IMP")
                     }
                   }
+                  caseToBeAddedToRecall = courtCase(reportingStaff = staff, caseSequence = 3) {
+                    val offenderCharge = offenderCharge(offenceCode = "RT88074")
+                    courtEvent {
+                      courtEventCharge(offenderCharge = offenderCharge)
+                      courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                    }
+                    sentenceToBeAddedToRecall = sentence(
+                      category = "2020",
+                      calculationType = "ADIMP",
+                      statusUpdateStaff = staff,
+                      courtOrder = courtOrder,
+                      status = "A",
+                    ) {
+                      offenderSentenceCharge(offenderCharge = offenderCharge)
+                      term(days = 35, sentenceTermType = "IMP")
+                    }
+                  }
 
                   fixedTermRecall(staff = staff)
                 }
@@ -10527,7 +10547,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           request = UpdateRecallRequest(
             returnToCustody = null,
             beachCourtEventIds = listOf(breachCourtEvent.id, breachCourtEventFromRemovedCase.id),
-            recallRevocationDate = LocalDate.parse("2023-06-06"),
+            recallRevocationDate = recallRevocationDate,
             sentences = listOf(
               RecallRelatedSentenceDetails(
                 SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentence1.id.sequence),
@@ -10541,6 +10561,12 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 sentenceCalcType = "LR",
                 // no sure this will ever happen, but lets test it just in case
                 active = false,
+              ),
+              RecallRelatedSentenceDetails(
+                SentenceId(offenderBookingId = booking.bookingId, sentenceSequence = sentenceToBeAddedToRecall.id.sequence),
+                sentenceCategory = "2020",
+                sentenceCalcType = "LR",
+                active = true,
               ),
             ),
             sentencesRemoved = listOf(
@@ -10587,6 +10613,31 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(calculationType.isRecallSentence()).isTrue
               assertThat(calculationType.description).isEqualTo("Licence Recall")
               assertThat(status).isEqualTo("I")
+            }
+          }
+        }
+
+        @Test
+        fun `will update newly added sentence to recall`() {
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentenceToBeAddedToRecall.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isFalse
+              assertThat(calculationType.description).isEqualTo("Sentencing Code Standard Determinate Sentence")
+            }
+          }
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          nomisDataBuilder.runInTransaction {
+            with(offenderSentenceRepository.findById(sentenceToBeAddedToRecall.id).orElseThrow()) {
+              assertThat(calculationType.isRecallSentence()).isTrue
+              assertThat(calculationType.description).isEqualTo("Licence Recall")
             }
           }
         }
@@ -10666,6 +10717,35 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         }
 
         @Test
+        fun `will create breach court appearance for each new court case added`() {
+          nomisDataBuilder.runInTransaction {
+            with(courtCaseRepository.findById(caseToBeAddedToRecall.id).orElseThrow()) {
+              assertThat(this.courtEvents).hasSize(1)
+            }
+          }
+
+          webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          nomisDataBuilder.runInTransaction {
+            with(courtCaseRepository.findById(caseToBeAddedToRecall.id).orElseThrow()) {
+              assertThat(this.courtEvents).hasSize(2)
+              with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
+                assertThat(eventDate).isEqualTo(recallRevocationDate)
+                assertThat(courtEventType.code).isEqualTo("BREACH")
+                assertThat(outcomeReasonCode?.code).isEqualTo("1501")
+                assertThat(courtEventCharges).hasSize(1)
+              }
+            }
+          }
+        }
+
+        @Test
         fun `will remove custody data when absent`() {
           assertThat(offenderFixedTermRecallRepository.findById(booking.bookingId)).isPresent
 
@@ -10738,14 +10818,30 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             eq("recall-sentences-updated"),
             check {
               assertThat(it["bookingId"]).isEqualTo(booking.bookingId.toString())
-              assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}")
+              assertThat(it["sentenceSequences"]).isEqualTo("${sentence1.id.sequence}, ${sentence2.id.sequence}, ${sentenceToBeAddedToRecall.id.sequence}")
               assertThat(it["offenderNo"]).isEqualTo(prisoner.nomsId)
               assertThat(it["breachCourtEventIds"]).isEqualTo("${breachCourtEvent.id}, ${breachCourtEventFromRemovedCase.id}")
               assertThat(it["removedBreachCourtEventIds"]).isEqualTo("${breachCourtEventFromRemovedCase.id}")
               assertThat(it["removedSentenceSequences"]).isEqualTo("${sentenceRemovedFromRecall.id.sequence}")
+              assertThat(it["createdBreachCourtEventIds"]).isNotEmpty
             },
             isNull(),
           )
+        }
+
+        @Test
+        fun `will return information about the breach court appearances`() {
+          val response: UpdateRecallResponse = webTestClient.put()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk.expectBodyResponse()
+
+          assertThat(response.updatedCourtEventIds).isEqualTo(listOf(breachCourtEvent.id))
+          assertThat(response.deletedCourtEventIds).isEqualTo(listOf(breachCourtEventFromRemovedCase.id))
+          assertThat(response.createdCourtEventIds).hasSize(1)
         }
       }
     }
