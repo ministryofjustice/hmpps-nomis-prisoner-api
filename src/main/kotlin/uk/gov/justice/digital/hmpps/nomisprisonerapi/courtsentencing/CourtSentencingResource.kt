@@ -2917,6 +2917,16 @@ data class ConvertToRecallResponse(
   val clonedCourtCases: BookingCourtCaseCloneResponse?,
 )
 
+@Schema(description = "Recall update response")
+data class UpdateRecallResponse(
+  @Schema(description = "the breach court appearance ids created")
+  val createdCourtEventIds: List<Long>,
+  @Schema(description = "the breach court appearance ids updated")
+  val updatedCourtEventIds: List<Long>,
+  @Schema(description = "the breach court appearance ids deleted")
+  val deletedCourtEventIds: List<Long>,
+)
+
 @Schema(description = "Recall convert response")
 data class SentenceIdAndAdjustmentIds(
   val sentenceId: SentenceId,
