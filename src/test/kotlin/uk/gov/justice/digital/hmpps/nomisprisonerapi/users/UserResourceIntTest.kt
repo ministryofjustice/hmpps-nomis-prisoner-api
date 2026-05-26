@@ -289,6 +289,7 @@ class UserResourceIntTest : IntegrationTestBase() {
         val pageResponse: UserIdsPage = webTestClient.get().uri {
           it.path("/users/ids/all-from-id")
             .queryParam("size", "2")
+            .queryParam("userId", userIds[0] - 1)
             .build()
         }
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
