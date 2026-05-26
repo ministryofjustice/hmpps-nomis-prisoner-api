@@ -21,6 +21,15 @@ class UserService(
     ?.toUserDetails(dpsRolesOnly)
     ?: throw NotFoundException("Staff User with id=$userId does not exist")
 
+  fun getUserIds(
+    userId: Long,
+    pageSize: Int,
+  ): UserIdsPage = staffRepository.findAllStaffUserIds(
+    staffUserId = userId,
+    pageSize = pageSize,
+  )
+    .map { UserIdResponse(userId = it.id) }.let { UserIdsPage(it) }
+
   fun Staff.toUserDetails(dpsRolesOnly: Boolean): UserDetails = UserDetails(
     id = id,
     firstName = firstName,

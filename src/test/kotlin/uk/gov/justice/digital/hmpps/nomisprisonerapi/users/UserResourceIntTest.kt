@@ -10,76 +10,83 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Role
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RoleRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import java.time.LocalDateTime
 
 class UserResourceIntTest : IntegrationTestBase() {
+
+  @Autowired
+  lateinit var staffRepository: StaffRepository
+
   @Autowired
   private lateinit var rolesRepository: RoleRepository
-  private lateinit var staff1: Staff
-  private lateinit var staff2: Staff
-  private lateinit var role1: Role
-  private lateinit var role2: Role
-  private lateinit var role3: Role
-
-  @BeforeEach
-  fun setup() {
-    nomisDataBuilder.build {
-      role1 = role(
-        code = "DPS_CODE_1",
-        name = "This is Dps test role 1",
-        userAccountType = "GENERAL",
-      )
-      role2 = role(
-        code = "DPS_CODE_2",
-        name = "This is Dps test role 2",
-        userAccountType = "ADMIN",
-      )
-      role3 = role(
-        code = "NOMIS_CODE_1",
-        name = "This is Nomis test role 1",
-        userAccountType = "ADMIN",
-      )
-      role(
-        code = "DPS_CODE_3",
-        name = "This is Dps test role 3",
-        userAccountType = "ADMIN",
-      )
-      staff1 = staff(firstName = "JIM", lastName = "STAFFA") {
-        email(emailAddress = "jim.staffa@justice.gov.uk")
-        account(username = "JIIMSTAFFA_GEN", activeCaseloadId = "MDI", lastLoggedIn = LocalDateTime.parse("2026-03-17T12:30"))
-        account(username = "JIIMSTAFFA_ADM", type = ADMIN) {
-          userCaseload(caseloadId = "MDI") {
-            userCaseloadRole(role = role3)
-          }
-          userCaseload(caseloadId = "LEI") {
-            userCaseloadRole(role = role3)
-          }
-          userCaseload(caseloadId = "NWEB") {
-            userCaseloadRole(role = role1)
-            userCaseloadRole(role = role2)
-          }
-        }
-      }
-
-      staff2 = staff(firstName = "JOE", lastName = "STAFFB") {
-        account(username = "JOESTAFFB")
-      }
-    }
-  }
-
-  @AfterEach
-  fun tearDown() {
-    repository.delete(staff1)
-    repository.delete(staff2)
-    rolesRepository.deleteAll()
-  }
 
   @Nested
   @DisplayName("GET /users/{staffUserId}")
   inner class GetUser {
+
+    private lateinit var staff1: Staff
+    private lateinit var staff2: Staff
+    private lateinit var role1: Role
+    private lateinit var role2: Role
+    private lateinit var role3: Role
+
+    @BeforeEach
+    fun setup() {
+      nomisDataBuilder.build {
+        role1 = role(
+          code = "DPS_CODE_1",
+          name = "This is Dps test role 1",
+          userAccountType = "GENERAL",
+        )
+        role2 = role(
+          code = "DPS_CODE_2",
+          name = "This is Dps test role 2",
+          userAccountType = "ADMIN",
+        )
+        role3 = role(
+          code = "NOMIS_CODE_1",
+          name = "This is Nomis test role 1",
+          userAccountType = "ADMIN",
+        )
+        role(
+          code = "DPS_CODE_3",
+          name = "This is Dps test role 3",
+          userAccountType = "ADMIN",
+        )
+        staff1 = staff(firstName = "JIM", lastName = "STAFFA") {
+          email(emailAddress = "jim.staffa@justice.gov.uk")
+          account(username = "JIIMSTAFFA_GEN", activeCaseloadId = "MDI", lastLoggedIn = LocalDateTime.parse("2026-03-17T12:30"))
+          account(username = "JIIMSTAFFA_ADM", type = ADMIN) {
+            userCaseload(caseloadId = "MDI") {
+              userCaseloadRole(role = role3)
+            }
+            userCaseload(caseloadId = "LEI") {
+              userCaseloadRole(role = role3)
+            }
+            userCaseload(caseloadId = "NWEB") {
+              userCaseloadRole(role = role1)
+              userCaseloadRole(role = role2)
+            }
+          }
+        }
+
+        staff2 = staff(firstName = "JOE", lastName = "STAFFB") {
+          account(username = "JOESTAFFB")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      repository.delete(staff1)
+      repository.delete(staff2)
+      rolesRepository.deleteAll()
+    }
 
     @Nested
     inner class Security {
@@ -170,19 +177,19 @@ class UserResourceIntTest : IntegrationTestBase() {
           assertThat(status).isEqualTo("")
           assertThat(typeCode).isEqualTo("GENERAL")
           assertThat(activeCaseloadId).isEqualTo("MDI")
-          assertThat(lastLoggedIn).isEqualTo("2026-03-17T12:30:00")
           assertThat(caseloads.size).isEqualTo(0)
           assertThat(roles.size).isEqualTo(0)
+          assertThat(lastLoggedIn).isEqualTo("2026-03-17T12:30:00")
           assertThat(audit.createDatetime).isNotNull
           assertThat(audit.createUsername).isEqualTo("SA")
         }
         with(accounts[1]) {
           assertThat(typeCode).isEqualTo("ADMIN")
-          assertThat(lastLoggedIn).isNull()
           assertThat(caseloads.size).isEqualTo(3)
           assertThat(caseloads).containsExactly("LEI", "MDI", "NWEB")
           assertThat(roles.size).isEqualTo(3)
           assertThat(roles).contains("DPS_CODE_1", "DPS_CODE_2", "NOMIS_CODE_1")
+          assertThat(lastLoggedIn).isNull()
           assertThat(audit.createDatetime).isNotNull
           assertThat(audit.createUsername).isEqualTo("SA")
         }
@@ -201,6 +208,97 @@ class UserResourceIntTest : IntegrationTestBase() {
         .jsonPath("accounts[1].roles[0]").isEqualTo("DPS_CODE_1")
         .jsonPath("accounts[1].roles.size()").isEqualTo(2)
         .jsonPath("accounts[1].roles[1]").isEqualTo("DPS_CODE_2")
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /users/ids/all-from-id")
+  inner class GetUserIdsFromId {
+    lateinit var userIds: MutableList<Long>
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/users/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/users/ids/all-from-id")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/users/ids/all-from-id")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          userIds = (1..30).map { staff(firstName = "John", lastName = "Smith").id }.toMutableList()
+        }
+      }
+
+      @AfterEach
+      fun tearDown() {
+        staffRepository.deleteAllById(userIds)
+      }
+
+      @Test
+      fun `by default will return first 20 user ids`() {
+        webTestClient.get().uri {
+          it.path("/users/ids/all-from-id")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(20)
+      }
+
+      @Test
+      fun `can set page size`() {
+        webTestClient.get().uri {
+          it.path("/users/ids/all-from-id")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("ids.size()").isEqualTo(1)
+      }
+
+      @Test
+      fun `id just contains user id`() {
+        val pageResponse: UserIdsPage = webTestClient.get().uri {
+          it.path("/users/ids/all-from-id")
+            .queryParam("size", "2")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(pageResponse.ids).hasSize(2)
+        assertThat(pageResponse.ids[0].userId).isEqualTo(userIds[0])
+        assertThat(pageResponse.ids[1].userId).isEqualTo(userIds[1])
+      }
     }
   }
 }
