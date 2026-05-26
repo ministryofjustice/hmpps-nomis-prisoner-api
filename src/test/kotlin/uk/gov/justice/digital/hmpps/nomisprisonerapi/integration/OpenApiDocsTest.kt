@@ -4,18 +4,20 @@ import io.swagger.v3.parser.OpenAPIV3Parser
 import net.minidev.json.JSONArray
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.info.BuildProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient(timeout = "PT60S")
-class OpenApiDocsTest : IntegrationTestBase() {
+class OpenApiDocsTest(
+  @Autowired private val buildProperties: BuildProperties,
+) : IntegrationTestBase() {
   @LocalServerPort
   private var port: Int = 0
 
@@ -62,9 +64,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
-      .expectBody().jsonPath("info.version").value<String> {
-        assertThat(it).startsWith(DateTimeFormatter.ISO_DATE.format(LocalDate.now()))
-      }
+      .expectBody().jsonPath("info.version").isEqualTo(buildProperties.version)
   }
 
   @Test
