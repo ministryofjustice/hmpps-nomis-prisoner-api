@@ -29,4 +29,9 @@ class Caseload(
 
   @Override
   override fun toString(): String = "${this::class.simpleName} (id = $id )"
+
+  companion object {
+    const val DPS_CASELOAD = "NWEB"
+  }
+  fun isDpsCaseload(): Boolean = id == DPS_CASELOAD
 }

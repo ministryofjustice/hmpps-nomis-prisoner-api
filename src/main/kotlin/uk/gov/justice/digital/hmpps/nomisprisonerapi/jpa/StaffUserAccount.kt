@@ -14,8 +14,10 @@ import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDateTime
 
+@EntityOpen
 @Entity
 @Table(name = "STAFF_USER_ACCOUNTS")
 class StaffUserAccount(
@@ -36,7 +38,7 @@ class StaffUserAccount(
   @JoinColumn(name = "STAFF_ID", nullable = false)
   val staff: Staff,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -49,7 +51,7 @@ class StaffUserAccount(
   )
   val type: UserAccountType,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumnsOrFormulas(
     value = [
       JoinColumnOrFormula(
@@ -68,7 +70,7 @@ class StaffUserAccount(
   @Column(name = "LAST_LOGON_DATE")
   var lastLoggedIn: LocalDateTime? = null,
 
-  @OneToMany(mappedBy = "id.username", cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "staffUserAccount", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val caseloads: MutableList<UserCaseload> = mutableListOf(),
 
 ) : NomisAuditableEntityBasic() {

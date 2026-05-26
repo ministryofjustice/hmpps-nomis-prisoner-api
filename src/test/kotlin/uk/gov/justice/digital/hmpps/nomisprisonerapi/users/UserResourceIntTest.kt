@@ -28,23 +28,23 @@ class UserResourceIntTest : IntegrationTestBase() {
   fun setup() {
     nomisDataBuilder.build {
       role1 = role(
-        code = "CODE_1",
-        name = "This is test role 1",
+        code = "DPS_CODE_1",
+        name = "This is Dps test role 1",
         userAccountType = "GENERAL",
       )
       role2 = role(
-        code = "ANOTHER_CODE",
-        name = "This is test role 2",
+        code = "DPS_CODE_2",
+        name = "This is Dps test role 2",
         userAccountType = "ADMIN",
       )
       role3 = role(
-        code = "CODE_2",
-        name = "This is test role 3",
+        code = "NOMIS_CODE_1",
+        name = "This is Nomis test role 1",
         userAccountType = "ADMIN",
       )
       role(
-        code = "DPS_CODE_1",
-        name = "This is test role 4",
+        code = "DPS_CODE_3",
+        name = "This is Dps test role 3",
         userAccountType = "ADMIN",
       )
       staff1 = staff(firstName = "JIM", lastName = "STAFFA") {
@@ -52,6 +52,9 @@ class UserResourceIntTest : IntegrationTestBase() {
         account(username = "JIIMSTAFFA_GEN", activeCaseloadId = "MDI", lastLoggedIn = LocalDateTime.parse("2026-03-17T12:30"))
         account(username = "JIIMSTAFFA_ADM", type = ADMIN) {
           userCaseload(caseloadId = "MDI") {
+            userCaseloadRole(role = role3)
+          }
+          userCaseload(caseloadId = "LEI") {
             userCaseloadRole(role = role3)
           }
           userCaseload(caseloadId = "NWEB") {
@@ -75,7 +78,7 @@ class UserResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /users/{username}")
+  @DisplayName("GET /users/{staffUserId}")
   inner class GetUser {
 
     @Nested
@@ -105,14 +108,14 @@ class UserResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `unknown incident should return not found`() {
+    fun `unknown user should return not found`() {
       webTestClient.get().uri("/users/-99999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
         .jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Not Found: User with id=-99999 does not exist")
+          assertThat(it).contains("Not Found: Staff User with id=-99999 does not exist")
         }
     }
 
@@ -176,14 +179,28 @@ class UserResourceIntTest : IntegrationTestBase() {
         with(accounts[1]) {
           assertThat(typeCode).isEqualTo("ADMIN")
           assertThat(lastLoggedIn).isNull()
-          assertThat(caseloads.size).isEqualTo(2)
-          assertThat(caseloads).contains("NWEB", "MDI")
+          assertThat(caseloads.size).isEqualTo(3)
+          assertThat(caseloads).containsExactly("LEI", "MDI", "NWEB")
           assertThat(roles.size).isEqualTo(3)
-          assertThat(roles).contains("CODE_1", "CODE_2", "ANOTHER_CODE")
+          assertThat(roles).contains("DPS_CODE_1", "DPS_CODE_2", "NOMIS_CODE_1")
           assertThat(audit.createDatetime).isNotNull
           assertThat(audit.createUsername).isEqualTo("SA")
         }
       }
+    }
+
+    @Test
+    fun `will return a user's details with dps roles only`() {
+      webTestClient.get().uri("/users/${staff1.id}?dpsRolesOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("accounts[1].caseloads").value<List<String>>
+        { assertThat(it).containsExactlyElementsOf(listOf("LEI", "MDI", "NWEB")) }
+        .jsonPath("accounts[1].roles[0]").isEqualTo("DPS_CODE_1")
+        .jsonPath("accounts[1].roles.size()").isEqualTo(2)
+        .jsonPath("accounts[1].roles[1]").isEqualTo("DPS_CODE_2")
     }
   }
 }

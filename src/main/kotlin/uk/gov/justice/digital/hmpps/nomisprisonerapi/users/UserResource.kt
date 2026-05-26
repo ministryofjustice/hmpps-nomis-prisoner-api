@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
@@ -62,7 +63,10 @@ class UserResource(private val userService: UserService) {
   )
   fun getUser(
     @Schema(description = "user Id") @PathVariable userId: Long,
-  ) = userService.getUserDetails(userId)
+    @RequestParam(name = "dpsRolesOnly")
+    @Schema(description = "Only return dps roles for the user", example = "true")
+    dpsRolesOnly: Boolean = false,
+  ) = userService.getUserDetails(userId, dpsRolesOnly)
 }
 
 data class UserDetails(

@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.util.Objects
 
@@ -27,8 +28,9 @@ class UserCaseloadRoleId(
 ) : Serializable
 
 @Entity
+@EntityOpen
 @Table(name = "USER_CASELOAD_ROLES")
-data class UserCaseloadRole(
+class UserCaseloadRole(
 
   @EmbeddedId
   val id: UserCaseloadRoleId,
@@ -37,7 +39,7 @@ data class UserCaseloadRole(
   @JoinColumn(name = "ROLE_ID", insertable = false, updatable = false)
   val role: Role,
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumns(
     value = [
       JoinColumn(name = "CASELOAD_ID", referencedColumnName = "CASELOAD_ID", insertable = false, updatable = false),
