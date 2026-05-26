@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.users
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
@@ -67,8 +70,56 @@ class UserResource(private val userService: UserService) {
     @Schema(description = "Only return dps roles for the user", example = "true")
     dpsRolesOnly: Boolean = false,
   ) = userService.getUserDetails(userId, dpsRolesOnly)
+
+  @GetMapping("/ids/all-from-id")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get all staff user Ids",
+    description = """
+      Retrieves staff user ids to be iterated over with optional starting from specific staff user Id.
+      Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Page of staff user Ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getUserIdsFromId(
+    @Schema(description = "If supplied get user ids starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "userId", defaultValue = "0")
+    userId: Long,
+    @Schema(description = "Number of ids to get", required = false, defaultValue = "20")
+    @RequestParam(value = "size", defaultValue = "20")
+    size: Int,
+  ): UserIdsPage = userService.getUserIds(
+    userId = userId,
+    pageSize = size,
+  )
 }
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Staff User details")
 data class UserDetails(
   @Schema(description = "The unique staff user id", example = "12345")
   val id: Long,
@@ -86,6 +137,7 @@ data class UserDetails(
   val audit: NomisAudit,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class UserAccount(
   @Schema(description = "The username associated with the account", example = "JOHNSMITH_GEN")
   val username: String,
@@ -105,4 +157,10 @@ data class UserAccount(
   val roles: List<String>,
   @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UserIdsPage(
+  @Schema(description = "Page of user IDs")
+  val ids: List<UserIdResponse>,
 )
