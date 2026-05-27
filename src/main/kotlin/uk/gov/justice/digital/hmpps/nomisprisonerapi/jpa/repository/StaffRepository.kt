@@ -14,15 +14,15 @@ interface StaffRepository : JpaRepository<Staff, Long> {
       from (select s.STAFF_ID as id
             from STAFF_MEMBERS s
             where 
-              s.STAFF_ID > :staffUserId
+              s.STAFF_ID > :staffId
             order by s.STAFF_ID)
       where rownum <= :pageSize
     """,
     nativeQuery = true,
   )
-  fun findAllStaffUserIds(staffUserId: Long, pageSize: Int): List<UserIdProjection>
+  fun findAllStaffIds(staffId: Long, pageSize: Int): List<StaffIdProjection>
 
-  interface UserIdProjection {
+  interface StaffIdProjection {
     val id: Long
   }
 }
