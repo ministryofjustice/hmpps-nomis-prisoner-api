@@ -8,6 +8,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseloadRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.UserCaseloadRoleRepository
 
@@ -47,8 +49,23 @@ class UserService(
     sourceCode = source.code,
     activeCaseloadId = activeCaseloadId,
     lastLoggedIn = lastLoggedIn,
-    caseloads = caseloads.map { it.id.caseloadId }.sorted(),
-    roles = userCaseloadRoleRepository.findAllRoleCodes(username, if (dpsRolesOnly) Caseload.DPS_CASELOAD else null),
+    caseloads = userCaseloads.sortedBy { it.id.caseloadId }.map { it.toResponse(dpsRolesOnly) },
+    audit = toAudit(),
+  )
+
+  fun UserCaseload.toResponse(dpsRolesOnly: Boolean): CaseloadResponse = CaseloadResponse(
+    caseload = id.caseloadId,
+    roles = if (!dpsRolesOnly || id.caseloadId == Caseload.DPS_CASELOAD) {
+      userCaseloadRoles.map { it.toResponse() }
+    } else {
+      emptyList()
+    },
+    audit = toAudit(),
+  )
+
+  fun UserCaseloadRole.toResponse() = RoleResponse(
+    code = role.code,
+    name = role.name,
     audit = toAudit(),
   )
 }

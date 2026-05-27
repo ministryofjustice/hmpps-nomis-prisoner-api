@@ -80,7 +80,7 @@ class StaffUserAccountBuilder(
       caseloadId = caseloadId,
       startDate = startDate,
     )
-      .also { staffUserAccount.caseloads += it }
+      .also { staffUserAccount.userCaseloads += it }
       .also { builder.apply(dsl) }
   }
 }

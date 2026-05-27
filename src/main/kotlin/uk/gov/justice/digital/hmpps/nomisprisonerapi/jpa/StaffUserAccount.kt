@@ -71,7 +71,7 @@ class StaffUserAccount(
   var lastLoggedIn: LocalDateTime? = null,
 
   @OneToMany(mappedBy = "staffUserAccount", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  val caseloads: MutableList<UserCaseload> = mutableListOf(),
+  val userCaseloads: MutableList<UserCaseload> = mutableListOf(),
 
 ) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
