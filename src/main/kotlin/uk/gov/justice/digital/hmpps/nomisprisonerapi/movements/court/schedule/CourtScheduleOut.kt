@@ -43,3 +43,39 @@ data class CourtScheduleOut(
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
+
+@Schema(description = "Upsert court schedule request")
+data class UpsertCourtScheduleOut(
+  @Schema(description = "Event ID")
+  val eventId: Long? = null,
+
+  @Schema(description = "Start time")
+  val startTime: LocalDateTime,
+
+  @Schema(description = "Event type")
+  val eventType: String,
+
+  @Schema(description = "Event status")
+  val eventStatus: String,
+
+  @Schema(description = "Status of the inbound schedule")
+  val returnStatus: String? = null,
+
+  @Schema(description = "Comment")
+  val comment: String? = null,
+
+  @Schema(description = "Prison code")
+  val prison: String,
+
+  @Schema(description = "Court code")
+  val court: String,
+)
+
+@Schema(description = "Upsert court schedule response")
+data class UpsertCourtScheduleOutResponse(
+  @Schema(description = "Booking ID")
+  val bookingId: Long,
+
+  @Schema(description = "Event ID")
+  val eventId: Long,
+)

@@ -29,6 +29,9 @@ class CourtScheduleService(
       ?: throw NotFoundException("Court event OUT with id=$eventId not found for prisoner with nomsId=$offenderNo")
   }
 
+  // TODO SDIT-3738 implement this method
+  fun upsertCourtScheduleOut(offenderNo: String, request: UpsertCourtScheduleOut) = UpsertCourtScheduleOutResponse(1, 1)
+
   private fun CourtEvent.toResponse() = CourtScheduleOut(
     bookingId = offenderBooking.bookingId,
     eventId = id,

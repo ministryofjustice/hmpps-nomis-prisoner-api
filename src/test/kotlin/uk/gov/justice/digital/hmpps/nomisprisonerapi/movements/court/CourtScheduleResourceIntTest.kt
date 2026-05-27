@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.CourtScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.UpsertCourtScheduleOut
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
 
@@ -207,5 +208,63 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
     private fun WebTestClient.getCourtScheduleOutOk(offenderNo: String = offender.nomsId, eventId: Long = scheduleOut.id) = getCourtScheduleOut(offenderNo, eventId)
       .expectStatus().isOk
       .expectBodyResponse<CourtScheduleOut>()
+  }
+
+  @Nested
+  @DisplayName("PUT /movements/{offenderNo}/court/schedule/out/{eventId}")
+  inner class PutCourtScheduleOut {
+    private val today = LocalDateTime.now()
+
+    @Nested
+    inner class Security {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking()
+          }
+        }
+      }
+
+      @Test
+      fun `should return unauthorised for missing token`() {
+        webTestClient.put()
+          .uri("/movements/$offenderNo/court/schedule/out")
+          .bodyValue(aRequest())
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.put()
+          .uri("/movements/$offenderNo/court/schedule/out")
+          .headers(setAuthorisation())
+          .bodyValue(aRequest())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.put()
+          .uri("/movements/$offenderNo/court/schedule/out")
+          .headers(setAuthorisation("ROLE_INVALID"))
+          .bodyValue(aRequest())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      private fun aRequest() = UpsertCourtScheduleOut(
+        eventId = 123,
+        startTime = today,
+        eventType = "CRT",
+        eventStatus = "SCH",
+        returnStatus = null,
+        comment = "court schedule out comment",
+        prison = "BXI",
+        court = "LEEDYC",
+      )
+    }
   }
 }
