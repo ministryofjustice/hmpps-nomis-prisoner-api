@@ -10,8 +10,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReasonId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -45,8 +43,6 @@ class OffenderExternalMovementBuilderFactory(
 
 @Component
 class OffenderExternalMovementBuilderRepository(
-  val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
-  val movementTypeRepository: ReferenceCodeRepository<MovementType>,
   val movementTypeAndReasonRepository: MovementTypeAndReasonRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val offenderExternalMovementRepository: OffenderExternalMovementRepository,
@@ -54,10 +50,6 @@ class OffenderExternalMovementBuilderRepository(
   val escortRepository: ReferenceCodeRepository<Escort>,
   val cityRepository: ReferenceCodeRepository<City>,
 ) {
-  fun lookupMovementReason(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
-
-  fun lookupMovementType(code: String): MovementType = movementTypeRepository.findByIdOrNull(MovementType.pk(code))!!
-
   fun lookupMovementTypeAndReason(type: String, reason: String): MovementTypeAndReason = movementTypeAndReasonRepository.findByIdOrNull(MovementTypeAndReasonId(type, reason))!!
 
   fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)!!
