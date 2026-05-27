@@ -23,7 +23,7 @@ import java.time.LocalDateTime
 @Validated
 @RequestMapping(value = ["/staff"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class UserResource(private val staffService: StaffService) {
+class StaffResource(private val staffService: StaffService) {
 
   @GetMapping("/{staffId}")
   @Operation(
