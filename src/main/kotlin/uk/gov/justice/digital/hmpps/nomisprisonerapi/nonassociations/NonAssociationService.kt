@@ -227,13 +227,7 @@ class NonAssociationService(
   }
 
   fun deleteNonAssociation(offenderNo: String, nsOffenderNo: String, typeSequence: Int) {
-    if (offenderNo == nsOffenderNo) {
-      throw BadDataException("Offender and NS Offender cannot be the same")
-    }
-    val offender = offenderRepository.findCurrentIdByNomsId(offenderNo)
-      ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
-    val nsOffender = offenderRepository.findCurrentIdByNomsId(nsOffenderNo)
-      ?: throw NotFoundException("NS Offender with nomsId=$nsOffenderNo not found")
+    val (offender, nsOffender) = getNAs(offenderNo, nsOffenderNo)
 
     val existingDetail = offenderNonAssociationDetailRepository.findByIdOrNull(
       OffenderNonAssociationDetailId(offenderId = offender, nsOffenderId = nsOffender, typeSequence = typeSequence),
