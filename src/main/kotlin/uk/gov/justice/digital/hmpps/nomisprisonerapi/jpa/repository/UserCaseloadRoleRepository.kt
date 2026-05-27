@@ -12,8 +12,8 @@ interface UserCaseloadRoleRepository : CrudRepository<UserCaseloadRole, UserCase
     """
     select distinct r.role.code
     from StaffUserAccount sua
-    join sua.caseloads uc
-    join uc.roles r
+    join sua.userCaseloads uc
+    join uc.userCaseloadRoles r
     where sua.username = :username
     and (:caseloadId is null or uc.caseload.id = :caseloadId)
     order by r.role.code
