@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.users
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.staff
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RoleReposito
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 import java.time.LocalDateTime
 
-class UserResourceIntTest : IntegrationTestBase() {
+class StaffResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   lateinit var staffRepository: StaffRepository
@@ -27,8 +27,8 @@ class UserResourceIntTest : IntegrationTestBase() {
   private lateinit var rolesRepository: RoleRepository
 
   @Nested
-  @DisplayName("GET /users/{staffUserId}")
-  inner class GetUser {
+  @DisplayName("GET /staff/{staffId}")
+  inner class GetStaffDetails {
 
     private lateinit var staff1: Staff
     private lateinit var staff2: Staff
@@ -93,7 +93,7 @@ class UserResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/users/${staff1.id}")
+        webTestClient.get().uri("/staff/${staff1.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -101,7 +101,7 @@ class UserResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/users/${staff1.id}")
+        webTestClient.get().uri("/staff/${staff1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -109,27 +109,27 @@ class UserResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/users/${staff1.id}")
+        webTestClient.get().uri("/staff/${staff1.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
     }
 
     @Test
-    fun `unknown user should return not found`() {
-      webTestClient.get().uri("/users/-99999")
+    fun `unknown staff should return not found`() {
+      webTestClient.get().uri("/staff/-99999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isNotFound
         .expectBody()
         .jsonPath("userMessage").value<String> {
-          assertThat(it).contains("Not Found: Staff User with id=-99999 does not exist")
+          assertThat(it).contains("Not Found: Staff with id=-99999 does not exist")
         }
     }
 
     @Test
-    fun `will return user details`() {
-      webTestClient.get().uri("/users/${staff1.id}")
+    fun `will return staff details`() {
+      webTestClient.get().uri("/staff/${staff1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
@@ -144,8 +144,8 @@ class UserResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return user details with no email`() {
-      webTestClient.get().uri("/users/${staff2.id}")
+    fun `will return staff details with no email`() {
+      webTestClient.get().uri("/staff/${staff2.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
@@ -160,16 +160,16 @@ class UserResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return a user's account details`() {
-      val userDetails = webTestClient.get().uri("/users/${staff1.id}")
+    fun `will return a staff user's account details`() {
+      val staffDetails = webTestClient.get().uri("/staff/${staff1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
-        .expectBody<UserDetails>()
+        .expectBody<StaffDetails>()
         .returnResult()
         .responseBody!!
 
-      with(userDetails) {
+      with(staffDetails) {
         assertThat(id).isEqualTo(staff1.id)
         assertThat(accounts.size).isEqualTo(2)
         with(accounts[0]) {
@@ -229,8 +229,8 @@ class UserResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `will return a user's details with dps roles only`() {
-      webTestClient.get().uri("/users/${staff1.id}?dpsRolesOnly=true")
+    fun `will return a staff user's details with dps roles only`() {
+      webTestClient.get().uri("/staff/${staff1.id}?dpsRolesOnly=true")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
@@ -249,15 +249,15 @@ class UserResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /users/ids/all-from-id")
-  inner class GetUserIdsFromId {
-    lateinit var userIds: MutableList<Long>
+  @DisplayName("GET /staff/ids/all-from-id")
+  inner class GetStaffIdsFromId {
+    lateinit var staffIds: MutableList<Long>
 
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/users/ids/all-from-id")
+        webTestClient.get().uri("/staff/ids/all-from-id")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -265,7 +265,7 @@ class UserResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/users/ids/all-from-id")
+        webTestClient.get().uri("/staff/ids/all-from-id")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -273,7 +273,7 @@ class UserResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/users/ids/all-from-id")
+        webTestClient.get().uri("/staff/ids/all-from-id")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -285,19 +285,19 @@ class UserResourceIntTest : IntegrationTestBase() {
       @BeforeEach
       fun setUp() {
         nomisDataBuilder.build {
-          userIds = (1..30).map { staff(firstName = "John", lastName = "Smith").id }.toMutableList()
+          staffIds = (1..30).map { staff(firstName = "John", lastName = "Smith").id }.toMutableList()
         }
       }
 
       @AfterEach
       fun tearDown() {
-        staffRepository.deleteAllById(userIds)
+        staffRepository.deleteAllById(staffIds)
       }
 
       @Test
-      fun `by default will return first 20 user ids`() {
+      fun `by default will return first 20 staff ids`() {
         webTestClient.get().uri {
-          it.path("/users/ids/all-from-id")
+          it.path("/staff/ids/all-from-id")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -310,7 +310,7 @@ class UserResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can set page size`() {
         webTestClient.get().uri {
-          it.path("/users/ids/all-from-id")
+          it.path("/staff/ids/all-from-id")
             .queryParam("size", "1")
             .build()
         }
@@ -322,11 +322,11 @@ class UserResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `id just contains user id`() {
-        val pageResponse: UserIdsPage = webTestClient.get().uri {
-          it.path("/users/ids/all-from-id")
+      fun `id just contains staff id`() {
+        val pageResponse: StaffIdsPage = webTestClient.get().uri {
+          it.path("/staff/ids/all-from-id")
             .queryParam("size", "2")
-            .queryParam("userId", userIds[0] - 1)
+            .queryParam("staffId", staffIds[0] - 1)
             .build()
         }
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -334,8 +334,8 @@ class UserResourceIntTest : IntegrationTestBase() {
           .expectBodyResponse()
 
         assertThat(pageResponse.ids).hasSize(2)
-        assertThat(pageResponse.ids[0].userId).isEqualTo(userIds[0])
-        assertThat(pageResponse.ids[1].userId).isEqualTo(userIds[1])
+        assertThat(pageResponse.ids[0].staffId).isEqualTo(staffIds[0])
+        assertThat(pageResponse.ids[1].staffId).isEqualTo(staffIds[1])
       }
     }
   }

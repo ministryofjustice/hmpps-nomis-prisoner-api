@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.users
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.staff
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -11,28 +11,26 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseloadRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.UserCaseloadRoleRepository
 
 @Service
 @Transactional
-class UserService(
+class StaffService(
   private val staffRepository: StaffRepository,
-  private val userCaseloadRoleRepository: UserCaseloadRoleRepository,
 ) {
-  fun getUserDetails(userId: Long, dpsRolesOnly: Boolean): UserDetails = staffRepository.findByIdOrNull(userId)
-    ?.toUserDetails(dpsRolesOnly)
-    ?: throw NotFoundException("Staff User with id=$userId does not exist")
+  fun getStaffDetails(userId: Long, dpsRolesOnly: Boolean): StaffDetails = staffRepository.findByIdOrNull(userId)
+    ?.toStaffDetails(dpsRolesOnly)
+    ?: throw NotFoundException("Staff with id=$userId does not exist")
 
-  fun getUserIds(
-    userId: Long,
+  fun getStaffIds(
+    staffId: Long,
     pageSize: Int,
-  ): UserIdsPage = staffRepository.findAllStaffUserIds(
-    staffUserId = userId,
+  ): StaffIdsPage = staffRepository.findAllStaffIds(
+    staffId = staffId,
     pageSize = pageSize,
   )
-    .map { UserIdResponse(userId = it.id) }.let { UserIdsPage(it) }
+    .map { StaffIdResponse(staffId = it.id) }.let { StaffIdsPage(it) }
 
-  fun Staff.toUserDetails(dpsRolesOnly: Boolean): UserDetails = UserDetails(
+  fun Staff.toStaffDetails(dpsRolesOnly: Boolean) = StaffDetails(
     id = id,
     firstName = firstName,
     lastName = lastName,
@@ -42,7 +40,7 @@ class UserService(
     audit = toAudit(),
   )
 
-  fun StaffUserAccount.toUserAccount(dpsRolesOnly: Boolean): UserAccount = UserAccount(
+  fun StaffUserAccount.toUserAccount(dpsRolesOnly: Boolean) = StaffAccount(
     username = username,
     typeCode = type.code,
     status = accountDetail?.status ?: "",

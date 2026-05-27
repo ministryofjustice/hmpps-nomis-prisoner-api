@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.users
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.staff
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
@@ -21,14 +21,14 @@ import java.time.LocalDateTime
 
 @RestController
 @Validated
-@RequestMapping(value = ["/users"], produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping(value = ["/staff"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class UserResource(private val userService: UserService) {
+class UserResource(private val staffService: StaffService) {
 
-  @GetMapping("/{userId}")
+  @GetMapping("/{staffId}")
   @Operation(
-    summary = "Get staff user details",
-    description = "Gets staff user details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Get staff details",
+    description = "Gets staff details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -65,18 +65,18 @@ class UserResource(private val userService: UserService) {
     ],
   )
   fun getUser(
-    @Schema(description = "user Id") @PathVariable userId: Long,
+    @Schema(description = "staff Id") @PathVariable staffId: Long,
     @RequestParam(name = "dpsRolesOnly")
     @Schema(description = "Only return dps roles for the user", example = "true")
     dpsRolesOnly: Boolean = false,
-  ) = userService.getUserDetails(userId, dpsRolesOnly)
+  ) = staffService.getStaffDetails(staffId, dpsRolesOnly)
 
   @GetMapping("/ids/all-from-id")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Get all staff user Ids",
+    summary = "Get all staff Ids",
     description = """
-      Retrieves staff user ids to be iterated over with optional starting from specific staff user Id.
+      Retrieves staff ids to be iterated over with optional starting from specific staff Id.
       Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(
@@ -105,45 +105,45 @@ class UserResource(private val userService: UserService) {
       ),
     ],
   )
-  fun getUserIdsFromId(
-    @Schema(description = "If supplied get user ids starting after this id", required = false, example = "1555999")
-    @RequestParam(value = "userId", defaultValue = "0")
-    userId: Long,
+  fun getStaffIdsFromId(
+    @Schema(description = "If supplied get staff ids starting after this id", required = false, example = "1555999")
+    @RequestParam(value = "staffId", defaultValue = "0")
+    staffId: Long,
     @Schema(description = "Number of ids to get", required = false, defaultValue = "20")
     @RequestParam(value = "size", defaultValue = "20")
     size: Int,
-  ): UserIdsPage = userService.getUserIds(
-    userId = userId,
+  ): StaffIdsPage = staffService.getStaffIds(
+    staffId = staffId,
     pageSize = size,
   )
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Staff User details")
-data class UserDetails(
-  @Schema(description = "The unique staff user id", example = "12345")
+@Schema(description = "Staff details")
+data class StaffDetails(
+  @Schema(description = "The unique staff id", example = "12345")
   val id: Long,
-  @Schema(description = "Primary email address of the user", example = "john.smith@internet.co.uk")
+  @Schema(description = "Primary email address of the staff user", example = "john.smith@internet.co.uk")
   val email: String? = null,
-  @Schema(description = "User's first name", example = "John")
+  @Schema(description = "Staff user's first name", example = "John")
   val firstName: String,
-  @Schema(description = "User's last name", example = "Smith")
+  @Schema(description = "Staff user's last name", example = "Smith")
   val lastName: String,
-  @Schema(description = "Status of the user", example = "ACTIVE")
+  @Schema(description = "Status of the staff user", example = "ACTIVE")
   val status: String,
-  @Schema(description = "Accounts for the user")
-  val accounts: List<UserAccount>,
+  @Schema(description = "Accounts for the staff user")
+  val accounts: List<StaffAccount>,
   @Schema(description = "Audit data associated with the staff user")
   val audit: NomisAudit,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class UserAccount(
+data class StaffAccount(
   @Schema(description = "The username associated with the account", example = "JOHNSMITH_GEN")
   val username: String,
   @Schema(description = "The type of account", example = "GENERAL")
   val typeCode: String,
-  @Schema(description = "Status of the user account", example = "OPEN")
+  @Schema(description = "Status of the account", example = "OPEN")
   val status: String,
   @Schema(description = "How the account was created", example = "USER")
   val sourceCode: String,
@@ -158,9 +158,9 @@ data class UserAccount(
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class UserIdsPage(
-  @Schema(description = "Page of user IDs")
-  val ids: List<UserIdResponse>,
+data class StaffIdsPage(
+  @Schema(description = "Page of staff IDs")
+  val ids: List<StaffIdResponse>,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
