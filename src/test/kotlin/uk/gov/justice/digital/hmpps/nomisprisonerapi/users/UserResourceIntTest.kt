@@ -11,6 +11,7 @@ import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload.Companion.DPS_CASELOAD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Role
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RoleRepository
@@ -178,17 +179,48 @@ class UserResourceIntTest : IntegrationTestBase() {
           assertThat(typeCode).isEqualTo("GENERAL")
           assertThat(activeCaseloadId).isEqualTo("MDI")
           assertThat(caseloads.size).isEqualTo(0)
-          assertThat(roles.size).isEqualTo(0)
           assertThat(lastLoggedIn).isEqualTo("2026-03-17T12:30:00")
           assertThat(audit.createDatetime).isNotNull
           assertThat(audit.createUsername).isEqualTo("SA")
         }
+
         with(accounts[1]) {
           assertThat(typeCode).isEqualTo("ADMIN")
           assertThat(caseloads.size).isEqualTo(3)
-          assertThat(caseloads).containsExactly("LEI", "MDI", "NWEB")
-          assertThat(roles.size).isEqualTo(3)
-          assertThat(roles).contains("DPS_CODE_1", "DPS_CODE_2", "NOMIS_CODE_1")
+          with(caseloads[0]) {
+            assertThat(caseload).isEqualTo("LEI")
+            assertThat(audit.createDatetime).isNotNull
+            assertThat(audit.createUsername).isEqualTo("SA")
+            assertThat(roles.size).isEqualTo(1)
+            assertThat(roles[0].code).isEqualTo("NOMIS_CODE_1")
+            assertThat(roles[0].name).isEqualTo("This is Nomis test role 1")
+            assertThat(roles[0].audit.createDatetime).isNotNull
+            assertThat(roles[0].audit.createUsername).isEqualTo("SA")
+          }
+          with(caseloads[1]) {
+            assertThat(caseload).isEqualTo("MDI")
+            assertThat(audit.createDatetime).isNotNull
+            assertThat(audit.createUsername).isEqualTo("SA")
+            assertThat(roles.size).isEqualTo(1)
+            assertThat(roles[0].code).isEqualTo("NOMIS_CODE_1")
+            assertThat(roles[0].name).isEqualTo("This is Nomis test role 1")
+            assertThat(roles[0].audit.createDatetime).isNotNull
+            assertThat(roles[0].audit.createUsername).isEqualTo("SA")
+          }
+          with(caseloads[2]) {
+            assertThat(caseload).isEqualTo(DPS_CASELOAD)
+            assertThat(audit.createDatetime).isNotNull
+            assertThat(audit.createUsername).isEqualTo("SA")
+            assertThat(roles.size).isEqualTo(2)
+            assertThat(roles[0].code).isEqualTo("DPS_CODE_1")
+            assertThat(roles[0].name).isEqualTo("This is Dps test role 1")
+            assertThat(roles[0].audit.createDatetime).isNotNull
+            assertThat(roles[0].audit.createUsername).isEqualTo("SA")
+            assertThat(roles[1].code).isEqualTo("DPS_CODE_2")
+            assertThat(roles[1].name).isEqualTo("This is Dps test role 2")
+            assertThat(roles[1].audit.createDatetime).isNotNull
+            assertThat(roles[1].audit.createUsername).isEqualTo("SA")
+          }
           assertThat(lastLoggedIn).isNull()
           assertThat(audit.createDatetime).isNotNull
           assertThat(audit.createUsername).isEqualTo("SA")
@@ -203,11 +235,16 @@ class UserResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
         .expectBody()
-        .jsonPath("accounts[1].caseloads").value<List<String>>
+        .jsonPath("accounts[1].caseloads[*].caseload").value<List<String>>
         { assertThat(it).containsExactlyElementsOf(listOf("LEI", "MDI", "NWEB")) }
-        .jsonPath("accounts[1].roles[0]").isEqualTo("DPS_CODE_1")
-        .jsonPath("accounts[1].roles.size()").isEqualTo(2)
-        .jsonPath("accounts[1].roles[1]").isEqualTo("DPS_CODE_2")
+        .jsonPath("accounts[1].caseloads[0].caseload").isEqualTo("LEI")
+        .jsonPath("accounts[1].caseloads[0].roles.size()").isEqualTo(0)
+        .jsonPath("accounts[1].caseloads[1].caseload").isEqualTo("MDI")
+        .jsonPath("accounts[1].caseloads[1].roles.size()").isEqualTo(0)
+        .jsonPath("accounts[1].caseloads[2].caseload").isEqualTo(DPS_CASELOAD)
+        .jsonPath("accounts[1].caseloads[2].roles.size()").isEqualTo(2)
+        .jsonPath("accounts[1].caseloads[2].roles[0].code").isEqualTo("DPS_CODE_1")
+        .jsonPath("accounts[1].caseloads[2].roles[1].code").isEqualTo("DPS_CODE_2")
     }
   }
 

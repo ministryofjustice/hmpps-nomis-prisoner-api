@@ -61,7 +61,7 @@ class UserCaseloadBuilder(
       userCaseload = userCaseload,
       role = role,
     )
-      .also { userCaseload.roles += it }
+      .also { userCaseload.userCaseloadRoles += it }
       .also { builder.apply(dsl) }
   }
 }

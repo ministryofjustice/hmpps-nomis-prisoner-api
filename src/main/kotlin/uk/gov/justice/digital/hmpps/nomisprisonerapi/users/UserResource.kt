@@ -152,9 +152,7 @@ data class UserAccount(
   @Schema(description = "The current active caseload on the account", example = "MDI")
   val activeCaseloadId: String? = null,
   @Schema(description = "Caseloads associated with the user", example = "['MDI','LEI']")
-  val caseloads: List<String>,
-  @Schema(description = "Roles associated with the user", example = "['USER_MANAGER','VIEW_INCIDENTS']")
-  val roles: List<String>,
+  val caseloads: List<CaseloadResponse>,
   @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,
 )
@@ -163,4 +161,24 @@ data class UserAccount(
 data class UserIdsPage(
   @Schema(description = "Page of user IDs")
   val ids: List<UserIdResponse>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CaseloadResponse(
+  @Schema(description = "Caseload id", example = "MDI")
+  val caseload: String,
+  @Schema(description = "Roles associated with the user caseload")
+  val roles: List<RoleResponse>,
+  @Schema(description = "Audit data associated with the user caseload")
+  val audit: NomisAudit,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class RoleResponse(
+  @Schema(description = "Role code", example = "ROLE_1")
+  val code: String,
+  @Schema(description = "Role Description", example = "Ability to access user details")
+  val name: String,
+  @Schema(description = "Audit data associated with the user role")
+  val audit: NomisAudit,
 )
