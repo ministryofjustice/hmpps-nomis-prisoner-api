@@ -54,10 +54,6 @@ class OffenderExternalMovementBuilderRepository(
   val escortRepository: ReferenceCodeRepository<Escort>,
   val cityRepository: ReferenceCodeRepository<City>,
 ) {
-  fun lookupMovementReason(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
-
-  fun lookupMovementType(code: String): MovementType = movementTypeRepository.findByIdOrNull(MovementType.pk(code))!!
-
   fun lookupMovementTypeAndReason(type: String, reason: String): MovementTypeAndReason = movementTypeAndReasonRepository.findByIdOrNull(MovementTypeAndReasonId(type, reason))!!
 
   fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)!!

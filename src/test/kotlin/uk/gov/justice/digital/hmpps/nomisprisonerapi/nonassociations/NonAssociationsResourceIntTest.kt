@@ -204,6 +204,205 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `open NA already exists`() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) { nonAssociationDetail() }
+        nonAssociation(offenderAtLeeds, offenderAtMoorlands) { nonAssociationDetail() }
+      }
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                  "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                  "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                  "reason"        : "RIV",
+                  "recipReason"   : "PER",
+                  "type"          : "WING",
+                  "effectiveDate" : "2023-02-27"
+                }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Non-association already exists for offender=A1234TT and nsOffender=A1234TU")
+        }
+    }
+
+    @Test
+    fun `existing NA with non-matching sequences`() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) { nonAssociationDetail() }
+        nonAssociation(offenderAtLeeds, offenderAtMoorlands) { nonAssociationDetail(typeSeq = 2) }
+      }
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                  "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                  "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                  "reason"        : "RIV",
+                  "recipReason"   : "PER",
+                  "type"          : "WING",
+                  "effectiveDate" : "2023-02-27"
+                }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().is5xxServerError
+    }
+
+    @Test
+    fun `half closed NA already exists`() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+          nonAssociationDetail(
+            effectiveDate = LocalDate.parse("2025-01-01"),
+            expiryDate = LocalDate.parse("2026-01-31"),
+          )
+        }
+        nonAssociation(offenderAtLeeds, offenderAtMoorlands) {
+          nonAssociationDetail(
+            effectiveDate = LocalDate.parse("2025-01-01"),
+            expiryDate = null,
+          )
+        }
+      }
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                  "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                  "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                  "reason"        : "RIV",
+                  "recipReason"   : "PER",
+                  "type"          : "WING",
+                  "effectiveDate" : "2026-05-25"
+                }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("$.typeSequence").isEqualTo("2")
+
+      // Check the database
+      repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtLeeds.id)
+
+        val existing = offenderNonAssociationDetails.first()
+        assertThat(existing.id.typeSequence).isEqualTo(1)
+        assertThat(existing.effectiveDate).isEqualTo(LocalDate.parse("2025-01-01"))
+        assertThat(existing.expiryDate).isEqualTo(LocalDate.parse("2026-01-31"))
+
+        val nd = offenderNonAssociationDetails.last()
+        assertThat(nd.id.offenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(nd.id.nsOffenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(nd.id.typeSequence).isEqualTo(2)
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2026-05-25"))
+        assertThat(nd.expiryDate).isNull()
+      }
+      repository.getNonAssociation(offenderAtLeeds.id, offenderAtMoorlands.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtMoorlands.id)
+
+        val existing = offenderNonAssociationDetails.first()
+        assertThat(existing.id.typeSequence).isEqualTo(1)
+        assertThat(existing.effectiveDate).isEqualTo(LocalDate.parse("2025-01-01"))
+        assertThat(existing.expiryDate).isEqualTo(LocalDate.parse("2026-01-31"))
+
+        val nd = offenderNonAssociationDetails.last()
+        assertThat(nd.id.offenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(nd.id.nsOffenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(nd.id.typeSequence).isEqualTo(2)
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2026-05-25"))
+        assertThat(nd.expiryDate).isNull()
+      }
+    }
+
+    @Test
+    fun `half closed NA already exists other way round`() {
+      nomisDataBuilder.build {
+        nonAssociation(offenderAtMoorlands, offenderAtLeeds) {
+          nonAssociationDetail(
+            effectiveDate = LocalDate.parse("2025-01-01"),
+            expiryDate = null,
+          )
+        }
+        nonAssociation(offenderAtLeeds, offenderAtMoorlands) {
+          nonAssociationDetail(
+            effectiveDate = LocalDate.parse("2025-01-01"),
+            expiryDate = LocalDate.parse("2026-01-31"),
+          )
+        }
+      }
+      webTestClient.post().uri("/non-associations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                  "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                  "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                  "reason"        : "RIV",
+                  "recipReason"   : "PER",
+                  "type"          : "WING",
+                  "effectiveDate" : "2026-05-25"
+                }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("$.typeSequence").isEqualTo("2")
+
+      // Check the database
+      repository.getNonAssociation(offenderAtMoorlands.id, offenderAtLeeds.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtLeeds.id)
+
+        val existing = offenderNonAssociationDetails.first()
+        assertThat(existing.id.typeSequence).isEqualTo(1)
+        assertThat(existing.effectiveDate).isEqualTo(LocalDate.parse("2025-01-01"))
+        assertThat(existing.expiryDate).isEqualTo(LocalDate.parse("2026-01-31"))
+
+        val nd = offenderNonAssociationDetails.last()
+        assertThat(nd.id.offenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(nd.id.nsOffenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(nd.id.typeSequence).isEqualTo(2)
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2026-05-25"))
+        assertThat(nd.expiryDate).isNull()
+      }
+      repository.getNonAssociation(offenderAtLeeds.id, offenderAtMoorlands.id).apply {
+        assertThat(id.offenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(id.nsOffenderId).isEqualTo(offenderAtMoorlands.id)
+
+        val existing = offenderNonAssociationDetails.first()
+        assertThat(existing.id.typeSequence).isEqualTo(1)
+        assertThat(existing.effectiveDate).isEqualTo(LocalDate.parse("2025-01-01"))
+        assertThat(existing.expiryDate).isEqualTo(LocalDate.parse("2026-01-31"))
+
+        val nd = offenderNonAssociationDetails.last()
+        assertThat(nd.id.offenderId).isEqualTo(offenderAtLeeds.id)
+        assertThat(nd.id.nsOffenderId).isEqualTo(offenderAtMoorlands.id)
+        assertThat(nd.id.typeSequence).isEqualTo(2)
+        assertThat(nd.effectiveDate).isEqualTo(LocalDate.parse("2026-05-25"))
+        assertThat(nd.expiryDate).isNull()
+      }
+    }
+
+    @Test
     fun `will create non-association with correct details`() {
       webTestClient.post().uri("/non-associations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -211,15 +410,15 @@ class NonAssociationsResourceIntTest : IntegrationTestBase() {
         .body(
           BodyInserters.fromValue(
             """{
-                    "offenderNo"    : "${offenderAtMoorlands.nomsId}",
-                    "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
-                    "reason"        : "RIV",
-                    "recipReason"   : "PER",
-                    "type"          : "WING",
-                    "authorisedBy"  : "me!",
-                    "effectiveDate" : "2023-02-27",
-                    "comment"       : "this is a test!"
-                  }
+                  "offenderNo"    : "${offenderAtMoorlands.nomsId}",
+                  "nsOffenderNo"  : "${offenderAtLeeds.nomsId}",
+                  "reason"        : "RIV",
+                  "recipReason"   : "PER",
+                  "type"          : "WING",
+                  "authorisedBy"  : "me!",
+                  "effectiveDate" : "2023-02-27",
+                  "comment"       : "this is a test!"
+                }
             """.trimIndent(),
           ),
         )

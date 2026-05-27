@@ -8,7 +8,6 @@ import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.Inheritance
 import jakarta.persistence.JoinColumn
@@ -62,7 +61,7 @@ class OffenderExternalMovement(
   @Column(name = "MOVEMENT_TIME")
   val movementTime: LocalDateTime,
 
-  @ManyToOne(fetch = FetchType.LAZY) @JoinColumns(
+  @ManyToOne(fetch = LAZY) @JoinColumns(
     JoinColumn(name = "MOVEMENT_REASON_CODE", referencedColumnName = "MOVEMENT_REASON_CODE"),
     JoinColumn(name = "MOVEMENT_TYPE", referencedColumnName = "MOVEMENT_TYPE"),
   )

@@ -11,7 +11,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.activeExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.maxMovementSequence
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -27,7 +26,6 @@ class TapMovementService(
   private val tapMovementInRepository: OffenderTapMovementInRepository,
   private val tapAddressService: TapAddressService,
   private val tapHelpers: TapHelpers,
-  private val movementTypeAndReasonRepository: MovementTypeAndReasonRepository,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
   private val tapMovementType = movementTypeRepository.findByIdOrNull(MovementType.pk("TAP"))
