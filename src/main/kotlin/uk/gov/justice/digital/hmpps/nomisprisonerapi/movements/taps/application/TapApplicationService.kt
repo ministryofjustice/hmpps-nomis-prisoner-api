@@ -13,9 +13,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapAddressService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapHelpers
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapHelpers.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.toFullAddress
 import java.time.LocalTime
 
@@ -26,7 +26,7 @@ class TapApplicationService(
   private val offenderRepository: OffenderRepository,
   private val applicationRepository: OffenderTapApplicationRepository,
   private val tapAddressService: TapAddressService,
-  private val tapHelpers: TapHelpers,
+  private val movementHelpers: MovementHelpers,
 ) {
   fun getTapApplication(offenderNo: String, applicationId: Long): TapApplication {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -41,15 +41,15 @@ class TapApplicationService(
 
   @Transactional
   fun upsertTapApplication(offenderNo: String, request: UpsertTapApplication): UpsertTapApplicationResponse {
-    val offenderBooking = tapHelpers.offenderBookingOrThrow(offenderNo)
-    val eventSubType = tapHelpers.movementReasonOrThrow(request.eventSubType)
-    val applicationStatus = tapHelpers.applicationStatusOrThrow(request.applicationStatus)
-    val escort = request.escortCode?.let { tapHelpers.escortOrThrow(request.escortCode) }
-    val transportType = request.transportType?.let { tapHelpers.transportTypeOrThrow(request.transportType) }
-    val prison = tapHelpers.agencyLocationOrThrow(request.prisonId)
-    val applicationType = tapHelpers.movementApplicationTypeOrThrow(request.applicationType)
-    val tapType = request.tapType?.let { tapHelpers.tapTypeOrThrow(request.tapType) }
-    val tapSubType = request.tapSubType?.let { tapHelpers.tapSubTypeOrThrow(request.tapSubType) }
+    val offenderBooking = movementHelpers.offenderBookingOrThrow(offenderNo)
+    val eventSubType = movementHelpers.movementReasonOrThrow(request.eventSubType)
+    val applicationStatus = movementHelpers.applicationStatusOrThrow(request.applicationStatus)
+    val escort = request.escortCode?.let { movementHelpers.escortOrThrow(request.escortCode) }
+    val transportType = request.transportType?.let { movementHelpers.transportTypeOrThrow(request.transportType) }
+    val prison = movementHelpers.agencyLocationOrThrow(request.prisonId)
+    val applicationType = movementHelpers.movementApplicationTypeOrThrow(request.applicationType)
+    val tapType = request.tapType?.let { movementHelpers.tapTypeOrThrow(request.tapType) }
+    val tapSubType = request.tapSubType?.let { movementHelpers.tapSubTypeOrThrow(request.tapSubType) }
     // Make sure all requested addresses exist, but just take the first one as NOMIS only supports a single address at the application level
     val toAddress = request.toAddresses
       .filterNot { it.hasNullValues() }

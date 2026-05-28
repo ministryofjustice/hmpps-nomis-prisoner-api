@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateAdd
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CorporateRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.CorporateInsertRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.TapAddressInsertRepository
 
@@ -28,7 +29,7 @@ class TapAddressService(
   private val corporateRepository: CorporateRepository,
   private val offenderAddressRepository: OffenderAddressRepository,
   private val tapAddressInsertRepository: TapAddressInsertRepository,
-  private val tapHelpers: TapHelpers,
+  private val movementHelpers: MovementHelpers,
   private val entityManager: EntityManager,
   addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
 ) {
@@ -45,7 +46,7 @@ class TapAddressService(
 
   fun findOrCreateAddress(request: UpsertTapAddress, offender: Offender): Address {
     // If we have an address id then use that
-    if (request.id != null) return tapHelpers.addressOrThrow(request.id)
+    if (request.id != null) return movementHelpers.addressOrThrow(request.id)
 
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 
@@ -59,7 +60,7 @@ class TapAddressService(
 
   fun findAddressOrThrow(request: UpsertTapAddress, offender: Offender): Address {
     // If we have an address id then use that (which means the address was created in NOMIS or has already been syncd from DPS)
-    if (request.id != null) return tapHelpers.addressOrThrow(request.id)
+    if (request.id != null) return movementHelpers.addressOrThrow(request.id)
 
     if (request.addressText == null) throw BadDataException("Address text required to create a new address")
 

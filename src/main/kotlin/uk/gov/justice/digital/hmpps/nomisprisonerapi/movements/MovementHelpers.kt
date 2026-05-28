@@ -1,10 +1,11 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementApplicationStatus
@@ -27,10 +28,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @Service
-class TapHelpers(
+class MovementHelpers(
   private val addressRepository: AddressRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val arrestAgencyRepository: ReferenceCodeRepository<ArrestAgency>,
+  private val directionTypeRepository: ReferenceCodeRepository<DirectionType>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
   private val eventStatusRepository: ReferenceCodeRepository<EventStatus>,
   private val movementApplicationStatusRepository: ReferenceCodeRepository<MovementApplicationStatus>,
@@ -69,10 +71,14 @@ class TapHelpers(
   fun movementReasonOrThrow(movementReason: String) = movementReasonRepository.findByIdOrNull(MovementReason.pk(movementReason))
     ?: throw BadDataException("Event sub type $movementReason is invalid")
 
-  fun movementTypeAndReasonOrThrow(movementType: String, movementReason: String) = movementTypeAndReasonRepository.findByIdOrNull(MovementTypeAndReasonId(movementType, movementReason))
+  fun movementTypeAndReasonOrThrow(movementType: String, movementReason: String) = movementTypeAndReasonRepository.findByIdOrNull(
+    MovementTypeAndReasonId(movementType, movementReason),
+  )
     ?: throw BadDataException("Event type $movementType and sub type $movementReason is invalid")
 
-  fun applicationStatusOrThrow(applicationStatus: String) = movementApplicationStatusRepository.findByIdOrNull(MovementApplicationStatus.pk(applicationStatus))
+  fun applicationStatusOrThrow(applicationStatus: String) = movementApplicationStatusRepository.findByIdOrNull(
+    MovementApplicationStatus.pk(applicationStatus),
+  )
     ?: throw BadDataException("Application status $applicationStatus is invalid")
 
   fun escortOrThrow(escort: String) = escortRepository.findByIdOrNull(Escort.pk(escort))
@@ -87,7 +93,9 @@ class TapHelpers(
   fun agencyLocationOrThrow(agencyId: String) = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw BadDataException("Agency id $agencyId is invalid")
 
-  fun movementApplicationTypeOrThrow(applicationType: String) = movementApplicationTypeRepository.findByIdOrNull(MovementApplicationType.pk(applicationType))
+  fun movementApplicationTypeOrThrow(applicationType: String) = movementApplicationTypeRepository.findByIdOrNull(
+    MovementApplicationType.pk(applicationType),
+  )
     ?: throw BadDataException("Application type $applicationType is invalid")
 
   fun tapTypeOrThrow(tapType: String) = tapTypeRepository.findByIdOrNull(TapType.pk(tapType))
@@ -101,6 +109,9 @@ class TapHelpers(
 
   fun arrestAgencyOrThrow(arrestAgency: String) = arrestAgencyRepository.findByIdOrNull(ArrestAgency.pk(arrestAgency))
     ?: throw BadDataException("Arrest Agency $arrestAgency is invalid")
+
+  fun directionTypeOrThrow(directionType: String) = directionTypeRepository.findByIdOrNull(DirectionType.pk(directionType))
+    ?: throw BadDataException("Direction type $directionType is invalid")
 }
 
 internal fun List<OffenderTapApplication>.tapMovementOuts() = flatMap {

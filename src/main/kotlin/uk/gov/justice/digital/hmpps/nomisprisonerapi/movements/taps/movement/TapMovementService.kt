@@ -14,10 +14,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.maxMovementSequence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapAddressService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.toFullAddress
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.unlinkWrongSchedules
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.unlinkWrongSchedules
 
 @Service
 @Transactional(readOnly = true)
@@ -25,14 +25,14 @@ class TapMovementService(
   private val tapMovementOutRepository: OffenderTapMovementOutRepository,
   private val tapMovementInRepository: OffenderTapMovementInRepository,
   private val tapAddressService: TapAddressService,
-  private val tapHelpers: TapHelpers,
+  private val movementHelpers: MovementHelpers,
   movementTypeRepository: ReferenceCodeRepository<MovementType>,
 ) {
   private val tapMovementType = movementTypeRepository.findByIdOrNull(MovementType.pk("TAP"))
     ?: throw IllegalStateException("TAP movement type not found")
 
   fun getTapMovementOut(offenderNo: String, bookingId: Long, movementSeq: Int): TapMovementOut {
-    tapHelpers.offenderOrThrow(offenderNo)
+    movementHelpers.offenderOrThrow(offenderNo)
 
     val tapMovementOut = tapMovementOutRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSeq)
       ?: throw NotFoundException("Tap movement out with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
@@ -47,14 +47,14 @@ class TapMovementService(
 
   @Transactional
   fun createTapMovementOut(offenderNo: String, request: CreateTapMovementOut): CreateTapMovementOutResponse {
-    val offenderBooking = tapHelpers.offenderBookingOrThrow(offenderNo)
-    val tapScheduleOut = request.tapScheduleOutId?.let { tapHelpers.tapScheduleOutOrThrow(request.tapScheduleOutId) }
-    val movementReason = tapHelpers.movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
-    val arrestAgency = request.arrestAgency?.let { tapHelpers.arrestAgencyOrThrow(request.arrestAgency) }
-    val escort = request.escort?.let { tapHelpers.escortOrThrow(request.escort) }
-    val fromPrison = tapHelpers.agencyLocationOrThrow(request.fromPrison)
-    val toAgency = request.toAgency?.let { tapHelpers.agencyLocationOrThrow(request.toAgency) }
-    val toAddress = request.toAddressId?.let { tapHelpers.addressOrThrow(request.toAddressId) }
+    val offenderBooking = movementHelpers.offenderBookingOrThrow(offenderNo)
+    val tapScheduleOut = request.tapScheduleOutId?.let { movementHelpers.tapScheduleOutOrThrow(request.tapScheduleOutId) }
+    val movementReason = movementHelpers.movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
+    val arrestAgency = request.arrestAgency?.let { movementHelpers.arrestAgencyOrThrow(request.arrestAgency) }
+    val escort = request.escort?.let { movementHelpers.escortOrThrow(request.escort) }
+    val fromPrison = movementHelpers.agencyLocationOrThrow(request.fromPrison)
+    val toAgency = request.toAgency?.let { movementHelpers.agencyLocationOrThrow(request.toAgency) }
+    val toAddress = request.toAddressId?.let { movementHelpers.addressOrThrow(request.toAddressId) }
 
     return OffenderTapMovementOut(
       id = OffenderExternalMovementId(offenderBooking, offenderBooking.maxMovementSequence() + 1),
@@ -83,7 +83,7 @@ class TapMovementService(
   }
 
   fun getTapMovementIn(offenderNo: String, bookingId: Long, movementSeq: Int): TapMovementIn {
-    tapHelpers.offenderOrThrow(offenderNo)
+    movementHelpers.offenderOrThrow(offenderNo)
 
     val tapMovementIn = tapMovementInRepository.findById_OffenderBooking_BookingIdAndId_Sequence(bookingId, movementSeq)
       ?: throw NotFoundException("Tap movement in with bookingId=$bookingId and sequence=$movementSeq not found for offender with nomsId=$offenderNo")
@@ -100,14 +100,14 @@ class TapMovementService(
 
   @Transactional
   fun createTapMovementIn(offenderNo: String, request: CreateTapMovementIn): CreateTapMovementInResponse {
-    val offenderBooking = tapHelpers.offenderBookingOrThrow(offenderNo)
-    val tapScheduleIn = request.tapScheduleInId?.let { tapHelpers.tapScheduleInOrThrow(request.tapScheduleInId) }
-    val movementReason = tapHelpers.movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
-    val arrestAgency = request.arrestAgency?.let { tapHelpers.arrestAgencyOrThrow(request.arrestAgency) }
-    val escort = request.escort?.let { tapHelpers.escortOrThrow(request.escort) }
-    val fromAgency = request.fromAgency?.let { tapHelpers.agencyLocationOrThrow(request.fromAgency) }
-    val toPrison = tapHelpers.agencyLocationOrThrow(request.toPrison)
-    val fromAddress = request.fromAddressId?.let { tapHelpers.addressOrThrow(request.fromAddressId) }
+    val offenderBooking = movementHelpers.offenderBookingOrThrow(offenderNo)
+    val tapScheduleIn = request.tapScheduleInId?.let { movementHelpers.tapScheduleInOrThrow(request.tapScheduleInId) }
+    val movementReason = movementHelpers.movementTypeAndReasonOrThrow(tapMovementType.code, request.movementReason)
+    val arrestAgency = request.arrestAgency?.let { movementHelpers.arrestAgencyOrThrow(request.arrestAgency) }
+    val escort = request.escort?.let { movementHelpers.escortOrThrow(request.escort) }
+    val fromAgency = request.fromAgency?.let { movementHelpers.agencyLocationOrThrow(request.fromAgency) }
+    val toPrison = movementHelpers.agencyLocationOrThrow(request.toPrison)
+    val fromAddress = request.fromAddressId?.let { movementHelpers.addressOrThrow(request.fromAddressId) }
 
     return OffenderTapMovementIn(
       id = OffenderExternalMovementId(offenderBooking, offenderBooking.maxMovementSequence() + 1),

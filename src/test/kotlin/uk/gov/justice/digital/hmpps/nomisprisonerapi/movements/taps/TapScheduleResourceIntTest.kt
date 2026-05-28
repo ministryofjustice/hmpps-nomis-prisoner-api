@@ -30,7 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddr
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapHelpers.Companion.MAX_TAP_COMMENT_LENGTH
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.application.UpsertTapApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.application.UpsertTapApplicationResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.schedule.TapScheduleIn

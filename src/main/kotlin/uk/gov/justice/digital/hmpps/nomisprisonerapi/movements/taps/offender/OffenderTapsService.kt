@@ -17,12 +17,12 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.tapMovementIns
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.tapMovementOuts
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapAddressService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapHelpers
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.tapMovementIns
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.tapMovementOuts
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.toFullAddress
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.unlinkWrongSchedules
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.unlinkWrongSchedules
 import java.time.LocalDateTime
 
 @Service
@@ -35,7 +35,7 @@ class OffenderTapsService(
   private val tapMovementOutRepository: OffenderTapMovementOutRepository,
   private val tapMovementInRepository: OffenderTapMovementInRepository,
   private val externalMovementsRepository: OffenderExternalMovementRepository,
-  private val tapHelpers: TapHelpers,
+  private val movementHelpers: MovementHelpers,
   private val tapAddressService: TapAddressService,
 ) {
 
@@ -111,7 +111,7 @@ class OffenderTapsService(
   }
 
   fun getTapsSummary(offenderNo: String): TapSummary {
-    tapHelpers.offenderOrThrow(offenderNo)
+    movementHelpers.offenderOrThrow(offenderNo)
     val scheduledIn = externalMovementsRepository.countOffenderScheduledIn(offenderNo)
     val scheduledOut = externalMovementsRepository.countOffenderScheduledOut(offenderNo)
     val unscheduledIn = externalMovementsRepository.countOffenderUnscheduledIn(offenderNo)
