@@ -14,9 +14,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapAddressService
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapHelpers
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapHelpers.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.toFullAddress
 import java.time.LocalDateTime
 
@@ -28,11 +28,11 @@ class TapScheduleService(
   private val scheduleOutRepository: OffenderTapScheduleOutRepository,
   private val scheduleInRepository: OffenderTapScheduleInRepository,
   private val tapAddressService: TapAddressService,
-  private val tapHelpers: TapHelpers,
+  private val movementHelpers: MovementHelpers,
 ) {
 
   fun getTapScheduleOut(offenderNo: String, eventId: Long): TapScheduleOut {
-    tapHelpers.offenderOrThrow(offenderNo)
+    movementHelpers.offenderOrThrow(offenderNo)
 
     val tapScheduleOut = scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offenderNo)
       ?: throw NotFoundException("Tap scheduleout with eventId=$eventId not found for offender with nomsId=$offenderNo")
@@ -42,14 +42,14 @@ class TapScheduleService(
 
   @Transactional
   fun upsertTapScheduleOut(offenderNo: String, request: UpsertTapScheduleOut): UpsertTapScheduleOutResponse {
-    val offenderBooking = tapHelpers.offenderBookingOrThrow(offenderNo)
-    val application = tapHelpers.movementApplicationOrThrow(request.tapApplicationId)
-    val eventSubType = tapHelpers.movementReasonOrThrow(request.eventSubType)
-    val eventStatus = tapHelpers.eventStatusOrThrow(request.eventStatus)
-    val escort = request.escort?.let { tapHelpers.escortOrThrow(request.escort) }
-    val fromPrison = tapHelpers.agencyLocationOrThrow(request.fromPrison)
-    val toAgency = request.toAgency?.let { tapHelpers.agencyLocationOrThrow(request.toAgency) }
-    val transportType = request.transportType?.let { tapHelpers.transportTypeOrThrow(request.transportType) }
+    val offenderBooking = movementHelpers.offenderBookingOrThrow(offenderNo)
+    val application = movementHelpers.movementApplicationOrThrow(request.tapApplicationId)
+    val eventSubType = movementHelpers.movementReasonOrThrow(request.eventSubType)
+    val eventStatus = movementHelpers.eventStatusOrThrow(request.eventStatus)
+    val escort = request.escort?.let { movementHelpers.escortOrThrow(request.escort) }
+    val fromPrison = movementHelpers.agencyLocationOrThrow(request.fromPrison)
+    val toAgency = request.toAgency?.let { movementHelpers.agencyLocationOrThrow(request.toAgency) }
+    val transportType = request.transportType?.let { movementHelpers.transportTypeOrThrow(request.transportType) }
     val toAddress = tapAddressService.findAddressOrThrow(request.toAddress, offenderBooking.offender)
 
     if (request.eventId == null) {
@@ -100,7 +100,7 @@ class TapScheduleService(
 
     val scheduledReturn = schedule.tapScheduleIns.firstOrNull()
       ?.apply {
-        this.eventStatus = tapHelpers.eventStatusOrThrow(request.returnEventStatus ?: "SCH")
+        this.eventStatus = movementHelpers.eventStatusOrThrow(request.returnEventStatus ?: "SCH")
         this.eventDate = request.returnDate
         this.startTime = request.returnTime
         this.eventSubType = eventSubType
@@ -114,7 +114,7 @@ class TapScheduleService(
             offenderBooking = offenderBooking,
             tapApplication = application,
             tapScheduleOut = schedule,
-            eventStatus = tapHelpers.eventStatusOrThrow(request.returnEventStatus ?: "SCH"),
+            eventStatus = movementHelpers.eventStatusOrThrow(request.returnEventStatus ?: "SCH"),
             eventDate = request.returnDate,
             startTime = request.returnTime,
             eventSubType = eventSubType,

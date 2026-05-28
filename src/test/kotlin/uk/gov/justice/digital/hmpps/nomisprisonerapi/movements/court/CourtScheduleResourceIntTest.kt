@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
@@ -15,17 +17,22 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.CourtScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.UpsertCourtScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.UpsertCourtScheduleOutResponse
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
 
-class CourtScheduleResourceIntTest : IntegrationTestBase() {
+class CourtScheduleResourceIntTest(
+  @Autowired private val courtEventRepository: CourtEventRepository,
+) : IntegrationTestBase() {
 
   private val offenderNo = "B7463BB"
   private lateinit var offender: Offender
   private lateinit var booking: OffenderBooking
   private lateinit var scheduleOut: CourtEvent
+  private lateinit var scheduleIn: CourtEvent
   private lateinit var staff: Staff
   private lateinit var courtCase: CourtCase
 
@@ -211,9 +218,224 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("PUT /movements/{offenderNo}/court/schedule/out/{eventId}")
+  @DisplayName("PUT /movements/{offenderNo}/court/schedule/out")
   inner class PutCourtScheduleOut {
     private val today = LocalDateTime.now()
+
+    @Nested
+    inner class Create {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking()
+          }
+        }
+      }
+
+      @Test
+      fun `should create court schedule out`() {
+        webTestClient.upsertCourtScheduleOutOk()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(startTime).isCloseTo(today, within(1, SECONDS))
+                assertThat(eventStatus.code).isEqualTo("SCH")
+                assertThat(courtEventType.code).isEqualTo("CRT")
+                assertThat(commentText).isEqualTo("court schedule out comment")
+                assertThat(court.id).isEqualTo("LEEDYC")
+                assertThat(directionCode?.code).isEqualTo("OUT")
+              }
+              assertThat(courtEventRepository.findByParentEventId(eventId)).isNull()
+            }
+          }
+      }
+
+      @Test
+      fun `should create court schedule out and in`() {
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(
+            eventId = null,
+            eventStatus = "COMP",
+            returnStatus = "SCH",
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("COMP")
+                assertThat(directionCode?.code).isEqualTo("OUT")
+              }
+              with(courtEventRepository.findByParentEventId(eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("SCH")
+                assertThat(directionCode?.code).isEqualTo("IN")
+                assertThat(startTime).isCloseTo(today.withHour(17).withMinute(0).withSecond(0), within(1, SECONDS))
+                assertThat(courtEventType.code).isEqualTo("CRT")
+                assertThat(commentText).isEqualTo("court schedule out comment")
+                assertThat(court.id).isEqualTo("BXI")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Update {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should update court schedule out`() {
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(eventId = scheduleOut.id),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(courtEventType.code).isEqualTo("CRT")
+                assertThat(directionCode?.code).isEqualTo("OUT")
+              }
+              assertThat(courtEventRepository.findByParentEventId(eventId)).isNull()
+            }
+          }
+      }
+
+      @Test
+      fun `should create court schedule in`() {
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(eventId = scheduleOut.id, eventStatus = "COMP", returnStatus = "SCH"),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("COMP")
+                assertThat(directionCode?.code).isEqualTo("OUT")
+              }
+              with(courtEventRepository.findByParentEventId(eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("SCH")
+                assertThat(directionCode?.code).isEqualTo("IN")
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class UpdateWithExistingScheduleIn {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEvent()
+              scheduleIn = courtEvent(directionCode = "IN")
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should update court schedule out and in`() {
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(eventId = scheduleOut.id, eventStatus = "COMP", returnStatus = "COMP"),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("COMP")
+                assertThat(directionCode?.code).isEqualTo("OUT")
+              }
+              with(courtEventRepository.findByParentEventId(eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("COMP")
+                assertThat(directionCode?.code).isEqualTo("IN")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should delete court schedule in`() {
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(eventId = scheduleOut.id, returnStatus = null),
+        )
+          .apply {
+            repository.runInTransaction {
+              assertThat(courtEventRepository.findByParentEventId(eventId)).isNull()
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking()
+          }
+        }
+      }
+
+      @Test
+      fun `should return not found if offender unknown`() {
+        webTestClient.upsertCourtScheduleOut(offenderNo = "UNKNOWN")
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return not found if offender has no bookings`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "C1234DE")
+        }
+
+        webTestClient.upsertCourtScheduleOut()
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("C1234DE").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return bad request if event type invalid`() {
+        webTestClient.upsertCourtScheduleOut(request = aRequest(eventType = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if prison invalid`() {
+        webTestClient.upsertCourtScheduleOut(request = aRequest(prison = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if court invalid`() {
+        webTestClient.upsertCourtScheduleOut(request = aRequest(court = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+    }
 
     @Nested
     inner class Security {
@@ -254,17 +476,40 @@ class CourtScheduleResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isForbidden
       }
-
-      private fun aRequest() = UpsertCourtScheduleOut(
-        eventId = 123,
-        startTime = today,
-        eventType = "CRT",
-        eventStatus = "SCH",
-        returnStatus = null,
-        comment = "court schedule out comment",
-        prison = "BXI",
-        court = "LEEDYC",
-      )
     }
+
+    private fun WebTestClient.upsertCourtScheduleOutOk(
+      request: UpsertCourtScheduleOut = aRequest(),
+    ) = upsertCourtScheduleOut(request)
+      .isOk
+      .expectBodyResponse<UpsertCourtScheduleOutResponse>()
+
+    private fun WebTestClient.upsertCourtScheduleOut(
+      request: UpsertCourtScheduleOut = aRequest(),
+      offenderNo: String = offender.nomsId,
+    ) = put()
+      .uri("/movements/$offenderNo/court/schedule/out")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .bodyValue(request)
+      .exchange()
+      .expectStatus()
+
+    private fun aRequest(
+      eventId: Long? = null,
+      eventStatus: String = "SCH",
+      returnStatus: String? = null,
+      eventType: String = "CRT",
+      prison: String = "BXI",
+      court: String = "LEEDYC",
+    ) = UpsertCourtScheduleOut(
+      eventId = eventId,
+      startTime = today,
+      eventType = eventType,
+      eventStatus = eventStatus,
+      returnStatus = returnStatus,
+      comment = "court schedule out comment",
+      prison = prison,
+      court = court,
+    )
   }
 }

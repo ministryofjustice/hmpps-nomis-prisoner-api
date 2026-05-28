@@ -35,13 +35,16 @@ class CourtEvent(
   @Column(name = "EVENT_ID")
   val id: Long = 0,
 
+  @Column(name = "PARENT_EVENT_ID")
+  var parentEventId: Long? = null,
+
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
   val offenderBooking: OffenderBooking,
 
   @ManyToOne(optional = true, fetch = FetchType.LAZY)
   @JoinColumn(name = "CASE_ID")
-  val courtCase: CourtCase?,
+  val courtCase: CourtCase? = null,
 
   var eventDate: LocalDate,
 
@@ -88,7 +91,7 @@ class CourtEvent(
   @JoinColumn(name = "outcome_reason_code")
   var outcomeReasonCode: OffenceResultCode? = null,
 
-  val commentText: String? = null,
+  var commentText: String? = null,
 
   // 1 null in production
   @Convert(converter = YesNoConverter::class)
