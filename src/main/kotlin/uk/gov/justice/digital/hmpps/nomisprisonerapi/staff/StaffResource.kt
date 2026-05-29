@@ -5,6 +5,11 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springdoc.core.annotations.ParameterObject
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.web.PageableDefault
+import org.springframework.data.web.PagedModel
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -64,12 +69,50 @@ class StaffResource(private val staffService: StaffService) {
       ),
     ],
   )
-  fun getUser(
+  fun getStaff(
     @Schema(description = "staff Id") @PathVariable staffId: Long,
     @RequestParam(name = "dpsRolesOnly")
-    @Schema(description = "Only return dps roles for the user", example = "true")
+    @Schema(description = "Only return dps roles for the staff", example = "true")
     dpsRolesOnly: Boolean = false,
   ) = staffService.getStaffDetails(staffId, dpsRolesOnly)
+
+  @GetMapping("/ids")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get all staff Ids",
+    description = "Typically for a migration. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Page of staff Ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getStaffIds(
+    @PageableDefault(size = 20, sort = ["id"], direction = Sort.Direction.ASC)
+    @ParameterObject
+    pageRequest: Pageable,
+  ): PagedModel<StaffIdResponse> = PagedModel(staffService.getStaffIds(pageRequest = pageRequest))
 
   @GetMapping("/ids/all-from-id")
   @ResponseStatus(HttpStatus.OK)
@@ -81,7 +124,7 @@ class StaffResource(private val staffService: StaffService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Page of staff user Ids",
+        description = "Page of staff Ids",
       ),
       ApiResponse(
         responseCode = "401",
@@ -112,7 +155,7 @@ class StaffResource(private val staffService: StaffService) {
     @Schema(description = "Number of ids to get", required = false, defaultValue = "20")
     @RequestParam(value = "size", defaultValue = "20")
     size: Int,
-  ): StaffIdsPage = staffService.getStaffIds(
+  ): StaffIdsPage = staffService.getStaffIdsFromId(
     staffId = staffId,
     pageSize = size,
   )
@@ -166,7 +209,7 @@ data class StaffIdsPage(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CaseloadResponse(
   @Schema(description = "Caseload id", example = "MDI")
-  val caseload: String,
+  val caseloadId: String,
   @Schema(description = "Roles associated with the user caseload")
   val roles: List<RoleResponse>,
   @Schema(description = "Audit data associated with the user caseload")
