@@ -346,7 +346,7 @@ class CourtSentencingService(
     request: CourtAppearanceRequest,
   ): CreateCourtAppearanceResponse {
     checkOffenderExists(offenderNo)
-    findCourtCase(caseId, offenderNo).let {
+    findCourtCaseWithLock(caseId, offenderNo).let {
       val (courtCase, courtAppearanceRequest, clonedCourtCases) = cloneCasesIfRequired(it, request)
 
       val courtEvent = CourtEvent(
@@ -612,8 +612,8 @@ class CourtSentencingService(
     request: CourtAppearanceRequest,
   ): UpdateCourtAppearanceResponse {
     checkOffenderExists(offenderNo)
-    findCourtCase(caseId, offenderNo).let { courtCase ->
-      findCourtAppearance(eventId, offenderNo).let { courtAppearance ->
+    findCourtCaseWithLock(caseId, offenderNo).let { courtCase ->
+      findCourtAppearanceWithLock(eventId, offenderNo).let { courtAppearance ->
         courtAppearance.eventDate = request.eventDateTime.toLocalDate()
         courtAppearance.startTime = request.eventDateTime
         courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
@@ -1611,6 +1611,9 @@ class CourtSentencingService(
     ?: throw NotFoundException("Court case $caseId for $offenderNo not found")
 
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
+
+  private fun findCourtAppearanceWithLock(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNullForUpdate(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
   private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNull(
