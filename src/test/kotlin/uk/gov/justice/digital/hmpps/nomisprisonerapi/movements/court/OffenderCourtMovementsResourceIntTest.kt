@@ -39,6 +39,7 @@ class OffenderCourtMovementsResourceIntTest(
   private lateinit var courtCase: CourtCase
   private lateinit var mergeBooking: OffenderBooking
   private lateinit var mergeMovementIn: OffenderCourtMovementIn
+  private lateinit var unscheduledMergeMovementIn: OffenderCourtMovementIn
   private lateinit var scheduleIn: CourtEvent
 
   @AfterEach
@@ -290,26 +291,36 @@ class OffenderCourtMovementsResourceIntTest(
       fun `should not return any movements IN created during merges`() {
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
+            mergeBooking = booking {
+              courtEvent()
+              mergeMovementIn = courtMovementIn()
+              unscheduledMergeMovementIn = courtMovementIn()
+            }
             booking = booking {
               scheduleOut = courtEvent {
                 movementOut = courtMovementOut()
                 movementIn = courtMovementIn()
               }
             }
-            mergeBooking = booking {
-              scheduleOut = courtEvent()
-              mergeMovementIn = courtMovementIn()
-            }
           }
         }
 
         // Set the audit columns on the movement IN created by a merge to indicate a merge was responsible
         repository.runInTransaction {
+          // An extra movement IN that is linked to the wrong schedule
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set CREATE_USER_ID = 'SYS', AUDIT_MODULE_NAME = 'MERGE', PARENT_EVENT_ID = ${scheduleOut.id}
+              where OFFENDER_BOOK_ID = ${mergeBooking.bookingId} and MOVEMENT_SEQ = ${mergeMovementIn.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+          // An extra movement IN that is unscheduled
           entityManager.createNativeQuery(
             """
               update OFFENDER_EXTERNAL_MOVEMENTS
               set CREATE_USER_ID = 'SYS', AUDIT_MODULE_NAME = 'MERGE'
-              where OFFENDER_BOOK_ID = ${mergeBooking.bookingId} and MOVEMENT_SEQ = ${mergeMovementIn.id.sequence}
+              where OFFENDER_BOOK_ID = ${mergeBooking.bookingId} and MOVEMENT_SEQ = ${unscheduledMergeMovementIn.id.sequence}
             """.trimIndent(),
           ).executeUpdate()
         }
@@ -317,9 +328,10 @@ class OffenderCourtMovementsResourceIntTest(
         // The movement IN created by a merge should not be returned
         webTestClient.getOffenderCourtMovementsOk(offenderNo)
           .apply {
-            with(bookings.first { it.bookingId == mergeBooking.bookingId }) {
-              assertThat(unscheduledCourtMovementIns).isEmpty()
-            }
+            // Check that the movement in created by the merge isn't returned at all
+            val allMovementsIn = bookings.flatMap { it.courtSchedules }.mapNotNull { it.courtMovementIn } +
+              bookings.flatMap { it.unscheduledCourtMovementIns }
+            assertThat(allMovementsIn.filter { it.audit.createUsername == "SYS" && it.audit.auditModuleName == "MERGE" }.size).isEqualTo(0)
           }
       }
 
