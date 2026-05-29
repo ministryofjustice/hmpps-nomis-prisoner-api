@@ -778,8 +778,8 @@ class CourtSentencingService(
     request: OffenderChargeRequest,
   ) {
     checkOffenderExists(offenderNo)
-    findCourtCase(caseId, offenderNo).let { courtCase ->
-      findCourtAppearance(courtEventId, offenderNo).let { courtAppearance ->
+    findCourtCaseWithLock(caseId, offenderNo).let { courtCase ->
+      findCourtAppearanceWithLock(courtEventId, offenderNo).let { courtAppearance ->
         val offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId)
         findCourtEventCharge(
           offenderNo = offenderNo,
