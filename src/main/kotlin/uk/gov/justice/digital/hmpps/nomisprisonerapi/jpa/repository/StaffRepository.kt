@@ -29,6 +29,7 @@ interface StaffRepository : JpaRepository<Staff, Long> {
       select 
         s.id as id
       from Staff s
+      order by s.id
     """,
   )
   fun findAllStaffIds(pageable: Pageable): Page<StaffIdProjection>
