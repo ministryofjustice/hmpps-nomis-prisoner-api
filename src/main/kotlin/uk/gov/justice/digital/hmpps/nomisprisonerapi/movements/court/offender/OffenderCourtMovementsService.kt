@@ -29,6 +29,7 @@ class OffenderCourtMovementsService(
     }
 
     val allMovementsOut = courtMovementOutRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
+      .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
     val allMovementsIn = courtMovementInRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
     val allSchedulesOut = courtEventRepository.findAllByOffenderBooking_Offender_NomsIdAndDirectionCode_CodeIs(offenderNo, "OUT")
