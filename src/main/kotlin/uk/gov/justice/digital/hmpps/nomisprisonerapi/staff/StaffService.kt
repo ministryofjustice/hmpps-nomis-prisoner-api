@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.staff
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,14 +23,20 @@ class StaffService(
     ?.toStaffDetails(dpsRolesOnly)
     ?: throw NotFoundException("Staff with id=$userId does not exist")
 
-  fun getStaffIds(
+  fun getStaffIdsFromId(
     staffId: Long,
     pageSize: Int,
-  ): StaffIdsPage = staffRepository.findAllStaffIds(
+  ): StaffIdsPage = staffRepository.getStaffIdsFromId(
     staffId = staffId,
     pageSize = pageSize,
   )
     .map { StaffIdResponse(staffId = it.id) }.let { StaffIdsPage(it) }
+
+  fun getStaffIds(
+    pageRequest: Pageable,
+  ): Page<StaffIdResponse> = staffRepository.findAllStaffIds(pageRequest).map {
+    StaffIdResponse(staffId = it.id)
+  }
 
   fun Staff.toStaffDetails(dpsRolesOnly: Boolean) = StaffDetails(
     id = id,
@@ -52,7 +60,7 @@ class StaffService(
   )
 
   fun UserCaseload.toResponse(dpsRolesOnly: Boolean): CaseloadResponse = CaseloadResponse(
-    caseload = id.caseloadId,
+    caseloadId = id.caseloadId,
     roles = if (!dpsRolesOnly || id.caseloadId == Caseload.DPS_CASELOAD) {
       userCaseloadRoles.map { it.toResponse() }
     } else {
