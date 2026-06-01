@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.staff
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.expectBody
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.StaffDsl.Companion.ADMIN
@@ -26,6 +28,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var rolesRepository: RoleRepository
 
+  @TestInstance(PER_CLASS)
   @Nested
   @DisplayName("GET /staff/{staffId}")
   inner class GetStaffDetails {
@@ -36,7 +39,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
     private lateinit var role2: Role
     private lateinit var role3: Role
 
-    @BeforeEach
+    @BeforeAll
     fun setup() {
       nomisDataBuilder.build {
         role1 = role(
@@ -83,7 +86,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    @AfterEach
+    @AfterAll
     fun tearDown() {
       repository.delete(staff1)
       repository.delete(staff2)
@@ -249,19 +252,23 @@ class StaffResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /staff/ids")
+  @TestInstance(PER_CLASS)
   @Nested
+  @DisplayName("GET /staff/ids")
   inner class GetStaffIds {
     lateinit var staffIds: MutableList<Long>
 
-    @BeforeEach
-    fun setUp() {
+    @BeforeAll
+    fun deleteExistingStaffApartFromPrisonUser() {
+      val staff = repository.staffRepository.findAll().filter { it.id != -1L }
+      staffRepository.deleteAll(staff)
+
       nomisDataBuilder.build {
         staffIds = (1..32).map { staff(firstName = "John", lastName = "Smith").id }.toMutableList()
       }
     }
 
-    @AfterEach
+    @AfterAll
     fun tearDown() {
       staffRepository.deleteAllById(staffIds)
     }
@@ -304,7 +311,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .jsonPath("page.totalElements").isEqualTo(33) // as need to allow for default -1 staffId
+          .jsonPath("page.totalElements").isEqualTo(33)
           .jsonPath("content.size()").isEqualTo(20)
           .jsonPath("page.number").isEqualTo(0)
           .jsonPath("page.totalPages").isEqualTo(2)
@@ -348,10 +355,23 @@ class StaffResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @TestInstance(PER_CLASS)
   @Nested
   @DisplayName("GET /staff/ids/all-from-id")
   inner class GetStaffIdsFromId {
     lateinit var staffIds: MutableList<Long>
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        staffIds = (1..30).map { staff(firstName = "John", lastName = "Smith").id }.toMutableList()
+      }
+    }
+
+    @AfterAll
+    fun tearDown() {
+      staffRepository.deleteAllById(staffIds)
+    }
 
     @Nested
     inner class Security {
@@ -381,18 +401,6 @@ class StaffResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-
-      @BeforeEach
-      fun setUp() {
-        nomisDataBuilder.build {
-          staffIds = (1..30).map { staff(firstName = "John", lastName = "Smith").id }.toMutableList()
-        }
-      }
-
-      @AfterEach
-      fun tearDown() {
-        staffRepository.deleteAllById(staffIds)
-      }
 
       @Test
       fun `by default will return first 20 staff ids`() {
