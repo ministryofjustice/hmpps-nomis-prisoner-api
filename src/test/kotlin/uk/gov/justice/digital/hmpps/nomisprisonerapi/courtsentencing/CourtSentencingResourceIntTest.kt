@@ -108,6 +108,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   internal fun tearDown() {
+    repository.deleteAllOffenderLinkedTransactions()
     repository.deleteOffenders()
   }
 
@@ -5269,15 +5270,20 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   inner class UpdateCourtAppearance {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
+    private lateinit var sourceLinkedCourtCase: CourtCase
+    private lateinit var targetLinkedCourtCase: CourtCase
     private lateinit var courtCaseBeingUpdatedWithChargeUpdate: CourtCase
     private lateinit var courtEvent: CourtEvent
     private lateinit var courtEvent2: CourtEvent
+    private lateinit var targetCaseEvent: CourtEvent
     private var latestBookingId: Long = 0
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
     private lateinit var offenderCharge4: OffenderCharge
     private lateinit var offenderChargeAdjourned: OffenderCharge
+    private lateinit var offenderChargeInLinkedCase: OffenderCharge
+    private lateinit var linkedOffenderCharge: OffenderCharge
     private lateinit var order: CourtOrder
     private lateinit var courtEventAdjourned: CourtEvent
 
@@ -5348,6 +5354,38 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
+
+            sourceLinkedCourtCase =
+              courtCase(
+                reportingStaff = staff,
+                caseSequence = 3,
+                caseStatus = "I",
+                statusUpdateReason = "LINKED",
+                caseInfoNumber = "LINKED-SOURCE",
+              ) {
+                linkedOffenderCharge = offenderCharge(offenceCode = "RT88074", resultCode1 = "4001")
+                courtEvent {
+                  courtEventCharge(
+                    offenderCharge = linkedOffenderCharge,
+                    plea = "NG",
+                  )
+                }
+              }
+
+            targetLinkedCourtCase = courtCase(
+              reportingStaff = staff,
+              caseSequence = 2,
+              caseInfoNumber = "LINKED-TARGET",
+            ) {
+              offenderChargeInLinkedCase = offenderCharge(offenceCode = "RR84700")
+              targetCaseEvent = courtEvent {
+                courtEventCharge(
+                  offenderCharge = offenderChargeInLinkedCase,
+                  plea = "NG",
+                )
+              }
+            }
+            linkCases(sourceCourtCase = sourceLinkedCourtCase, targetCourtCase = targetLinkedCourtCase, targetCourtEvent = targetCaseEvent)
           }
         }
       }
@@ -5739,10 +5777,49 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           isNull(),
         )
       }
+
+      @Test
+      fun `can remove charge that was source from linked case`() {
+        with(
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyResponse<CourtEventResponse>(),
+        ) {
+          assertThat(this.courtEventCharges).hasSize(2)
+        }
+
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${targetLinkedCourtCase.id}/court-appearances/${targetCaseEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            createCourtAppearanceRequest(
+              outcomeReasonCode = "1004",
+              courtEventCharges = mutableListOf(
+                CourtEventChargeRequest(offenderChargeInLinkedCase.id, resultCode1 = "1004"),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        with(
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyResponse<CourtEventResponse>(),
+        ) {
+          assertThat(this.courtEventCharges).hasSize(1)
+        }
+      }
     }
 
     @AfterEach
     internal fun deletePrisoner() {
+      repository.deleteAllOffenderLinkedTransactions()
       repository.delete(prisonerAtMoorland)
       repository.deleteOffenderChargeByBooking(latestBookingId)
     }
