@@ -37,14 +37,14 @@ data class LinkCaseTxn(
   @Column(name = "EVENT_ID")
   var courtEventId: Long,
 
-  @OneToOne(fetch = FetchType.LAZY, optional = false)
+  @OneToOne(fetch = FetchType.LAZY, optional = true)
   @JoinColumns(
     value = [
       JoinColumn(name = "OFFENDER_CHARGE_ID", referencedColumnName = "OFFENDER_CHARGE_ID", nullable = true, insertable = false, updatable = false),
       JoinColumn(name = "EVENT_ID", referencedColumnName = "EVENT_ID", nullable = true, insertable = false, updatable = false),
     ],
   )
-  var courtEventCharge: CourtEventCharge,
+  var courtEventCharge: CourtEventCharge?,
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "CASE_ID", nullable = false, insertable = false, updatable = false)

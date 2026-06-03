@@ -572,37 +572,37 @@ class CourtSentencingService(
     courtEventChargesToUpdate: List<CourtEventChargeRequest>,
     courtEvent: CourtEvent,
   ) {
-    val originalList = courtEvent.courtEventCharges
-    val newChargeList = mutableListOf<CourtEventCharge>()
-    courtEventChargesToUpdate.map { cecRequest ->
-      val resultCode = cecRequest.resultCode1?.let { lookupOffenceResultCode(it) }
-      courtEvent.courtEventCharges.firstOrNull { it.id.offenderCharge.id == cecRequest.offenderChargeId }
-        ?.let { existingCourtEventCharge ->
-          existingCourtEventCharge.resultCode1 = resultCode
-          existingCourtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
-          newChargeList.add(existingCourtEventCharge)
-        } ?: let {
-        getOffenderCharge(cecRequest.offenderChargeId).let { offenderCharge ->
-          log.info("Adding charge ${offenderCharge.id} to appearance ${courtEvent.id} with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n offenderCharge result code: ${offenderCharge.resultCode1?.code}")
-          newChargeList.add(
-            CourtEventCharge(
-              CourtEventChargeId(
-                courtEvent = courtEvent,
-                offenderCharge = offenderCharge,
-              ),
-              offenceDate = offenderCharge.offenceDate,
-              offenceEndDate = offenderCharge.offenceEndDate,
-              mostSeriousFlag = offenderCharge.mostSeriousFlag,
-              resultCode1 = resultCode,
-              resultCode1Indicator = resultCode?.dispositionCode,
+    val chargesToRemove = courtEvent.courtEventCharges.filter { charge ->
+      charge.id.offenderCharge.id !in courtEventChargesToUpdate.map { it.offenderChargeId }
+    }
+    // the linked transaction remains but no longer points at the court event charge, just the court event and offender charge
+    chargesToRemove.forEach { it.linkedCaseTransaction?.courtEventCharge = null }
+    courtEvent.courtEventCharges.removeAll(chargesToRemove)
+
+    courtEventChargesToUpdate.forEach { chargeRequest ->
+      val resultCode = chargeRequest.resultCode1?.let { lookupOffenceResultCode(it) }
+      val existingCourtEventCharge = courtEvent.courtEventCharges.firstOrNull { it.id.offenderCharge.id == chargeRequest.offenderChargeId }
+      if (existingCourtEventCharge != null) {
+        existingCourtEventCharge.resultCode1 = resultCode
+        existingCourtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
+      } else {
+        val offenderCharge = getOffenderCharge(chargeRequest.offenderChargeId)
+        log.info("Adding charge ${offenderCharge.id} to appearance ${courtEvent.id} with result code ${resultCode?.code}\n  appearance outcome: ${courtEvent.outcomeReasonCode?.code}\n offenderCharge result code: ${offenderCharge.resultCode1?.code}")
+        courtEvent.courtEventCharges.add(
+          CourtEventCharge(
+            CourtEventChargeId(
+              courtEvent = courtEvent,
+              offenderCharge = offenderCharge,
             ),
-          )
-        }
+            offenceDate = offenderCharge.offenceDate,
+            offenceEndDate = offenderCharge.offenceEndDate,
+            mostSeriousFlag = offenderCharge.mostSeriousFlag,
+            resultCode1 = resultCode,
+            resultCode1Indicator = resultCode?.dispositionCode,
+          ),
+        )
       }
     }
-    log.info("Court event charges for appearance ${courtEvent.id}\noriginalList: $originalList\nnewList: $newChargeList")
-    courtEvent.courtEventCharges.clear()
-    courtEvent.courtEventCharges.addAll(newChargeList)
   }
 
   fun updateCourtAppearance(
@@ -725,21 +725,24 @@ class CourtSentencingService(
     offenderNo: String,
     eventId: Long,
   ): List<OffenderCharge> = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
-    orphanedOffenderCharges.forEach {
-      courtCase.offenderCharges.remove(it)
-      log.debug("Offender charge deleted: ${it.id}")
-      telemetryClient.trackEvent(
-        "offender-charge-deleted",
-        mapOf(
-          "courtCaseId" to courtCase.id.toString(),
-          "bookingId" to courtCase.offenderBooking.bookingId.toString(),
-          "offenderNo" to offenderNo,
-          "offenderChargeId" to it.id.toString(),
-          "courtEventId" to eventId.toString(),
-        ),
-        null,
-      )
-    }
+    orphanedOffenderCharges
+      // exclude where a linked case source still points to this charge
+      .filter { offenderChargeToRemove -> courtCase.sourceCombinedCases.none { sourceCase -> sourceCase.courtEvents.flatMap { it.courtEventCharges }.any { offenderChargeToRemove.id == it.id.offenderCharge.id } } }
+      .forEach {
+        courtCase.offenderCharges.remove(it)
+        log.debug("Offender charge deleted: ${it.id}")
+        telemetryClient.trackEvent(
+          "offender-charge-deleted",
+          mapOf(
+            "courtCaseId" to courtCase.id.toString(),
+            "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+            "offenderChargeId" to it.id.toString(),
+            "courtEventId" to eventId.toString(),
+          ),
+          null,
+        )
+      }
   }
 
   fun deleteCourtCase(
