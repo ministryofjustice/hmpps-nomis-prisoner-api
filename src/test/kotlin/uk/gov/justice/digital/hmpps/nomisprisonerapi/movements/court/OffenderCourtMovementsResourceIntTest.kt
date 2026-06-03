@@ -526,6 +526,48 @@ class OffenderCourtMovementsResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should not include duplicate movements created by merge on wrong booking`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            mergeBooking = booking {
+              courtEvent()
+              courtMovementOut()
+              mergeMovementIn = courtMovementIn()
+            }
+            booking = booking {
+              scheduleOut = courtEvent {
+                movementOut = courtMovementOut()
+                movementIn = courtMovementIn()
+              }
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          // Emulate a movement IN created by merge on the wrong booking but with audit module name changed
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set CREATE_USER_ID = 'SYS', AUDIT_MODULE_NAME = 'CHANGED_FROM_MERGE', PARENT_EVENT_ID = ${scheduleOut.id}
+              where OFFENDER_BOOK_ID = ${mergeBooking.bookingId} and MOVEMENT_SEQ = ${mergeMovementIn.id.sequence}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            // The movement IN on the wrong booking is not returned
+            with(bookings.find { it.bookingId == booking.bookingId }!!.courtSchedules[0]) {
+              assertThat(courtMovementIn?.audit?.createUsername).isNotEqualTo("SYS")
+            }
+            // The duplicate movement IN is not included as unscheduled either
+            with(bookings.flatMap { it.unscheduledCourtMovementIns }.map { it.audit.createUsername }) {
+              assertThat(this).doesNotContain("SYS")
+            }
+          }
+      }
     }
 
     @Nested
