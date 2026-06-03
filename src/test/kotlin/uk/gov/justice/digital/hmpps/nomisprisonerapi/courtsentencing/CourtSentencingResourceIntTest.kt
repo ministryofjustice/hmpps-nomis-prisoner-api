@@ -5790,7 +5790,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           assertThat(this.courtEventCharges).hasSize(2)
         }
 
-        webTestClient.put()
+        val courtAppearanceUpdateResponse: UpdateCourtAppearanceResponse = webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${targetLinkedCourtCase.id}/court-appearances/${targetCaseEvent.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
@@ -5803,7 +5803,50 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             ),
           )
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isOk.expectBodyResponse()
+
+        // no offender charges deleted since they will still be linked by other cases
+        assertThat(courtAppearanceUpdateResponse.deletedOffenderChargesIds).isEmpty()
+
+        with(
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyResponse<CourtEventResponse>(),
+        ) {
+          assertThat(this.courtEventCharges).hasSize(1)
+        }
+      }
+
+      @Test
+      fun `can remove charge that was not source from linked case`() {
+        with(
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyResponse<CourtEventResponse>(),
+        ) {
+          assertThat(this.courtEventCharges).hasSize(2)
+        }
+
+        val courtAppearanceUpdateResponse: UpdateCourtAppearanceResponse = webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${targetLinkedCourtCase.id}/court-appearances/${targetCaseEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            createCourtAppearanceRequest(
+              outcomeReasonCode = "1004",
+              courtEventCharges = mutableListOf(
+                CourtEventChargeRequest(linkedOffenderCharge.id, resultCode1 = "1004"),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        assertThat(courtAppearanceUpdateResponse.deletedOffenderChargesIds).hasSize(1)
 
         with(
           webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")

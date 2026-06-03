@@ -724,10 +724,8 @@ class CourtSentencingService(
     courtCase: CourtCase,
     offenderNo: String,
     eventId: Long,
-  ): List<OffenderCharge> = courtCase.getOffenderChargesNotAssociatedWithCourtAppearances().also { orphanedOffenderCharges ->
+  ): List<OffenderCharge> = courtCase.getOffenderChargesNotAssociatedWithCaseOrLinkedCasesCourtAppearances().also { orphanedOffenderCharges ->
     orphanedOffenderCharges
-      // exclude where a linked case source still points to this charge
-      .filter { offenderChargeToRemove -> courtCase.sourceCombinedCases.none { sourceCase -> sourceCase.courtEvents.flatMap { it.courtEventCharges }.any { offenderChargeToRemove.id == it.id.offenderCharge.id } } }
       .forEach {
         courtCase.offenderCharges.remove(it)
         log.debug("Offender charge deleted: ${it.id}")
@@ -2108,10 +2106,12 @@ private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long
   offenderChargeId = chargeId,
 )
 
-private fun CourtCase.getOffenderChargesNotAssociatedWithCourtAppearances(): List<OffenderCharge> {
+private fun CourtCase.getOffenderChargesNotAssociatedWithCaseOrLinkedCasesCourtAppearances(): List<OffenderCharge> {
   val referencedOffenderCharges =
     this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
   return this.offenderCharges.filterNot { oc -> referencedOffenderCharges.contains(oc) }
+    // exclude where a linked case source still points to this charge
+    .filter { offenderChargeToRemove -> sourceCombinedCases.none { sourceCase -> sourceCase.courtEvents.flatMap { it.courtEventCharges }.any { offenderChargeToRemove.id == it.id.offenderCharge.id } } }
 }
 
 private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseResponse(
