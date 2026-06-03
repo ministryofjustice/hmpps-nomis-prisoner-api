@@ -56,8 +56,8 @@ class OffenderCourtMovementsService(
             .filter { it.offenderBooking.bookingId == bk.id }
             .map { schedule ->
               schedule.toResponse(
-                moveOut = allMovementsOut.find { it.courtScheduleOutId == schedule.id },
-                moveIn = allMovementsIn.find { it.courtScheduleOutId == schedule.id },
+                moveOut = allMovementsOut.find { it.courtScheduleOutId == schedule.id && it.offenderBooking.bookingId == bk.id },
+                moveIn = allMovementsIn.find { it.courtScheduleOutId == schedule.id && it.offenderBooking.bookingId == bk.id },
               )
             },
           unscheduledCourtMovementOuts = unscheduledMovementsOut
