@@ -91,7 +91,7 @@ class CourtScheduleResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent()
+              scheduleOut = courtEventOut()
             }
           }
         }
@@ -119,7 +119,7 @@ class CourtScheduleResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             booking = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.now().minusDays(1)) {
               // The court schedule was created while in MDI
-              scheduleOut = courtEvent(whenCreated = LocalDateTime.now().minusHours(6))
+              scheduleOut = courtEventOut(whenCreated = LocalDateTime.now().minusHours(6))
               prisonTransfer(from = "MDI", to = "BXI", date = LocalDateTime.now().minusHours(1))
             }
           }
@@ -145,26 +145,12 @@ class CourtScheduleResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent()
+              scheduleOut = courtEventOut()
             }
           }
         }
 
         webTestClient.getCourtScheduleOut(offenderNo = offenderNo, eventId = 9999)
-          .expectStatus().isNotFound
-      }
-
-      @Test
-      fun `should return not found if court schedule not OUT`() {
-        nomisDataBuilder.build {
-          offender = offender(nomsId = offenderNo) {
-            booking = booking {
-              scheduleOut = courtEvent(directionCode = "IN")
-            }
-          }
-        }
-
-        webTestClient.getCourtScheduleOut(offenderNo, scheduleOut.id)
           .expectStatus().isNotFound
       }
     }
@@ -288,7 +274,7 @@ class CourtScheduleResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent()
+              scheduleOut = courtEventOut()
             }
           }
         }
@@ -337,8 +323,8 @@ class CourtScheduleResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent()
-              scheduleIn = courtEvent(directionCode = "IN")
+              scheduleOut = courtEventOut()
+              scheduleIn = courtEventOut()
             }
           }
         }
@@ -511,5 +497,143 @@ class CourtScheduleResourceIntTest(
       prison = prison,
       court = court,
     )
+  }
+
+  @Nested
+  @DisplayName("DELETE /movements/{offenderNo}/taps/schedule/out/{eventId}")
+  inner class DeleteTapScheduleOut {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            scheduleOut = courtEventOut(eventStatusCode = "SCH")
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `should delete schedule`() {
+        webTestClient.deleteCourtScheduleOut()
+          .expectStatus().isNoContent
+
+        repository.runInTransaction {
+          assertThat(courtEventRepository.findByIdOrNull(scheduleOut.id)).isNull()
+        }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return 204 if unknown application id sent`() {
+        webTestClient.deleteCourtScheduleOut(eventId = 9999)
+          .expectStatus().isNoContent
+      }
+
+      @Test
+      fun `should return conflict for unknown offender`() {
+        webTestClient.deleteCourtScheduleOut(offenderNo = "UNKNOWN")
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 for wrong offender`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A7897WW")
+        }
+
+        webTestClient.deleteCourtScheduleOut(offenderNo = "A7897WW")
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if scheduled has a movement`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEventOut(eventStatusCode = "SCH") {
+                courtMovementOut()
+              }
+            }
+          }
+        }
+
+        webTestClient.deleteCourtScheduleOut()
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if status is completed`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEventOut(eventStatusCode = "COMP")
+            }
+          }
+        }
+
+        webTestClient.deleteCourtScheduleOut()
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if there is an inbound schedule`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEventOut {
+                courtEventIn()
+              }
+            }
+          }
+        }
+
+        webTestClient.deleteCourtScheduleOut()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorized for missing token`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/court/schedule/out/${scheduleOut.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/court/schedule/out/${scheduleOut.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/court/schedule/out/${scheduleOut.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    private fun WebTestClient.deleteCourtScheduleOut(
+      offenderNo: String = offender.nomsId,
+      eventId: Long = scheduleOut.id,
+    ): WebTestClient.ResponseSpec = delete()
+      .uri("/movements/$offenderNo/court/schedule/out/$eventId")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
   }
 }

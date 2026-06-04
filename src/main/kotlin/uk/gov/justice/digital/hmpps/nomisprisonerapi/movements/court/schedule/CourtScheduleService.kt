@@ -3,11 +3,15 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.COMPLETED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
@@ -22,6 +26,8 @@ class CourtScheduleService(
   private val courtEventRepository: CourtEventRepository,
   private val externalMovementRepository: OffenderExternalMovementRepository,
   private val offenderRepository: OffenderRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
+  private val movementOutRepository: OffenderCourtMovementOutRepository,
   private val movementHelpers: MovementHelpers,
 ) {
   fun getCourtScheduleOut(offenderNo: String, eventId: Long): CourtScheduleOut {
@@ -94,6 +100,30 @@ class CourtScheduleService(
     }
 
     return UpsertCourtScheduleOutResponse(offenderBooking.bookingId, scheduleOut.id)
+  }
+
+  @Transactional
+  fun deleteCourtScheduleOut(offenderNo: String, eventId: Long) {
+    courtEventRepository.findByIdOrNull(eventId)
+      ?.also { schedule ->
+        movementOutRepository.findByCourtScheduleOutId(eventId)
+          .takeIf { it != null }
+          ?.run { throw ConflictException("Cannot delete court schedule out eventId $eventId because it has a movement ${this.id.offenderBooking.bookingId} / ${this.id.sequence}") }
+
+        if (schedule.eventStatus.code == COMPLETED) {
+          throw ConflictException("Cannot delete court schedule out eventId $eventId because it has status $COMPLETED")
+        }
+
+        courtEventRepository.findByParentEventId(eventId)
+          .takeIf { it != null }
+          ?.run { throw ConflictException("Cannot delete court schedule out eventId $eventId because it has an inbound schedule ${this.id}") }
+
+        offenderBookingRepository.findByIdOrNull(schedule.offenderBooking.bookingId)
+          ?.takeIf { it.offender.nomsId != offenderNo }
+          ?.run { throw ConflictException("EventId $eventId exists on a different offender") }
+
+        courtEventRepository.delete(schedule)
+      }
   }
 
   private fun CourtEvent.toResponse() = CourtScheduleOut(

@@ -82,6 +82,10 @@ interface CourtEventDsl {
     movementReason: String = "CRT",
     comment: String? = null,
   ): OffenderCourtMovementIn
+
+  fun courtEventIn(
+    eventStatusCode: String = "SCH",
+  ): CourtEvent
 }
 
 @Component
@@ -280,4 +284,19 @@ class CourtEventBuilder(
     .also {
       courtEvent.offenderBooking.externalMovements += it
     }
+
+  override fun courtEventIn(
+    eventStatusCode: String,
+  ): CourtEvent = CourtEvent(
+    offenderBooking = courtEvent.offenderBooking,
+    eventDate = courtEvent.eventDate,
+    startTime = courtEvent.startTime,
+    courtEventType = courtEvent.courtEventType,
+    eventStatus = repository.lookupEventStatus(eventStatusCode),
+    court = courtEvent.court,
+    commentText = courtEvent.commentText,
+    directionCode = repository.lookupDirectionType(DirectionType.IN),
+    parentEventId = courtEvent.id,
+  )
+    .let { repository.save(it) }
 }

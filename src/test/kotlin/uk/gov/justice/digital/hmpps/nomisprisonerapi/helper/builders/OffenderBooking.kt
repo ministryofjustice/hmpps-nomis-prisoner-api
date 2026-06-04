@@ -236,13 +236,12 @@ interface BookingDsl {
   ): List<LinkCaseTxn>
 
   @CourtEventDslMarker
-  fun courtEvent(
+  fun courtEventOut(
     commentText: String? = "Court event comment",
     agencyId: String = "LEEDYC",
     courtEventType: String = "TRIAL",
     eventStatusCode: String = "SCH",
     eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
-    directionCode: String = DirectionType.OUT,
     whenCreated: LocalDateTime? = null,
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
@@ -891,13 +890,12 @@ class BookingBuilder(
         }
     }
 
-  override fun courtEvent(
+  override fun courtEventOut(
     commentText: String?,
     agencyId: String,
     courtEventType: String,
     eventStatusCode: String,
     eventDateTime: LocalDateTime,
-    directionCode: String,
     whenCreated: LocalDateTime?,
     dsl: CourtEventDsl.() -> Unit,
   ) = courtEventBuilderFactory.builder().let { builder ->
@@ -913,7 +911,7 @@ class BookingBuilder(
       offenderBooking = offenderBooking,
       courtCase = null,
       orderRequestedFlag = null,
-      directionCode = directionCode,
+      directionCode = DirectionType.OUT,
       whenCreated = whenCreated,
     )
       .also { builder.apply(dsl) }
