@@ -24,6 +24,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 private const val OFFENDER_BOOKING_ID = 98765L
+private const val PRISON_NUMBER = "A1234TT"
 
 private val createIncentive: () -> CreateIncentiveRequest = {
   CreateIncentiveRequest(
@@ -153,6 +154,141 @@ class IncentivesResourceIntTest : IntegrationTestBase() {
 
     private fun callCreateEndpoint(bookingId: Long?) {
       val response = webTestClient.post().uri("/prisoners/booking-id/$bookingId/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+            "iepLevel"    : "STD",
+            "iepDateTime" : "2021-11-04T13:04",
+            "prisonId"    : "WAI",
+            "comments"    : "a comment",
+            "userId"      : "steve"
+          }""",
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody<CreateIncentiveResponse>()
+        .returnResult().responseBody
+      assertThat(response?.bookingId).isEqualTo(bookingId)
+      assertThat(response?.sequence).isGreaterThan(0)
+    }
+  }
+
+  @DisplayName("Create incentive")
+  @Nested
+  inner class CreateIncentiveForPrisoner {
+    private lateinit var offenderAtMoorlands: Offender
+
+    @BeforeEach
+    internal fun createPrisoner() {
+      nomisDataBuilder.build {
+        offenderAtMoorlands =
+          offender(nomsId = "A1234TT") {
+            booking(agencyLocationId = "WAI")
+          }
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(offenderAtMoorlands)
+    }
+
+    @Test
+    fun `access forbidden when no authority`() {
+      webTestClient.post().uri("/prisoners/$PRISON_NUMBER/incentives")
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.post().uri("/prisoners/$PRISON_NUMBER/incentives")
+        .headers(setAuthorisation(roles = listOf()))
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.post().uri("/prisoners/$PRISON_NUMBER/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `create with prisoner not found`() {
+      webTestClient.post().uri("/prisoners/Z1234ZZ/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .body(BodyInserters.fromValue(createIncentive()))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `will create incentive with correct details`() {
+      var offender = repository.getOffender("A1234TT")
+      var booking = offender?.latestBooking()
+      var bookingId = booking?.bookingId
+
+      callCreateEndpoint(bookingId)
+
+      // Spot check that the database has been populated.
+      nomisDataBuilder.runInTransaction {
+        offender = repository.getOffender("A1234TT")
+        booking = offender?.latestBooking()
+        bookingId = booking?.bookingId
+
+        assertThat(booking?.incentives).hasSize(1)
+        val incentive = booking?.incentives?.get(0)
+        assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+        assertThat(incentive?.id?.sequence).isEqualTo(1)
+        assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+      }
+
+      // Add another to cover the case of existing incentive
+      callCreateEndpoint(bookingId)
+
+      nomisDataBuilder.runInTransaction {
+        offender = repository.getOffender("A1234TT")
+        booking = offender?.latestBooking()
+        bookingId = booking?.bookingId
+
+        assertThat(booking?.incentives).hasSize(2)
+        val incentive = booking?.incentives?.get(1)
+        assertThat(incentive?.id?.offenderBooking?.bookingId).isEqualTo(bookingId)
+        assertThat(incentive?.id?.sequence).isEqualTo(2)
+        assertThat(incentive?.iepLevel).isEqualTo(IEPLevel("STD", "TODO"))
+      }
+    }
+
+    @Test
+    fun `will allow create incentive with minimal fields`() {
+      webTestClient.post().uri("/prisoners/$PRISON_NUMBER/incentives")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            CreateIncentiveRequest(
+              iepLevel = "STD",
+              iepDateTime = LocalDateTime.parse("2021-11-04T15:04"),
+              prisonId = "WAI",
+            ),
+
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+    }
+
+    private fun callCreateEndpoint(bookingId: Long?) {
+      val response = webTestClient.post().uri("/prisoners/$PRISON_NUMBER/incentives")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
         .body(
