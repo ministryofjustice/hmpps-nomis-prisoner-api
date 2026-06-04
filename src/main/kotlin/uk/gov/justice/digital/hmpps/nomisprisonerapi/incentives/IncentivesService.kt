@@ -49,7 +49,15 @@ class IncentivesService(
   fun createIncentive(bookingId: Long, dto: CreateIncentiveRequest): CreateIncentiveResponse {
     val offenderBooking = offenderBookingRepository.findById(bookingId)
       .orElseThrow(NotFoundException(bookingId.toString()))
+    return createIncentive(offenderBooking, dto)
+  }
 
+  fun createIncentive(prisonNumber: String, dto: CreateIncentiveRequest): CreateIncentiveResponse {
+    val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber) ?: throw NotFoundException(prisonNumber)
+    return createIncentive(offenderBooking, dto)
+  }
+
+  fun createIncentive(offenderBooking: OffenderBooking, dto: CreateIncentiveRequest): CreateIncentiveResponse {
     val incentive = mapIncentiveModel(dto, offenderBooking)
     offenderBooking.incentives.add(incentive)
 
@@ -62,7 +70,7 @@ class IncentivesService(
       ),
       null,
     )
-    log.debug("Incentive created with Nomis id = ($bookingId, ${incentive.id.sequence})")
+    log.debug("Incentive created with Nomis id = (${offenderBooking.bookingId}, ${incentive.id.sequence})")
 
     return CreateIncentiveResponse(incentive.id.offenderBooking.bookingId, incentive.id.sequence)
   }

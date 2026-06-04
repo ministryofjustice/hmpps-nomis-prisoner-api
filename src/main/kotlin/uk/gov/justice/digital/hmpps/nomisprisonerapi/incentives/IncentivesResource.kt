@@ -87,6 +87,57 @@ class IncentivesResource(private val incentivesService: IncentivesService) {
   ): CreateIncentiveResponse = incentivesService.createIncentive(bookingId, createIncentiveRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PostMapping("/prisoners/{prisonNumber}/incentives")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new incentive",
+    description = "Creates a new incentive using next sequence no.",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Incentive information with created sequence",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Prison or iep value do not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "prisoner does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createIncentiveForPrisoner(
+    @Schema(description = "Prison number", example = "A1234BC", required = true)
+    @PathVariable
+    prisonNumber: String,
+    @RequestBody @Valid
+    createIncentiveRequest: CreateIncentiveRequest,
+  ): CreateIncentiveResponse = incentivesService.createIncentive(prisonNumber, createIncentiveRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/incentives/ids")
   @Operation(
     summary = "get incentives (a.k.a IEP) by filter",
