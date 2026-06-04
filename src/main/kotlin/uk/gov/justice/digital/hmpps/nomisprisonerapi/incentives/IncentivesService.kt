@@ -46,18 +46,8 @@ class IncentivesService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun createIncentive(bookingId: Long, dto: CreateIncentiveRequest): CreateIncentiveResponse {
-    val offenderBooking = offenderBookingRepository.findById(bookingId)
-      .orElseThrow(NotFoundException(bookingId.toString()))
-    return createIncentive(offenderBooking, dto)
-  }
-
   fun createIncentive(prisonNumber: String, dto: CreateIncentiveRequest): CreateIncentiveResponse {
     val offenderBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber) ?: throw NotFoundException(prisonNumber)
-    return createIncentive(offenderBooking, dto)
-  }
-
-  fun createIncentive(offenderBooking: OffenderBooking, dto: CreateIncentiveRequest): CreateIncentiveResponse {
     val incentive = mapIncentiveModel(dto, offenderBooking)
     offenderBooking.incentives.add(incentive)
 

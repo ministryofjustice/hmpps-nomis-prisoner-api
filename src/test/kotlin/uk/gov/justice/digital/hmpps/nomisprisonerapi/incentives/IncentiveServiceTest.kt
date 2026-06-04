@@ -76,9 +76,7 @@ internal class IncentiveServiceTest {
 
   @BeforeEach
   fun setup() {
-    whenever(offenderBookingRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(
-      Optional.of(defaultOffenderBooking),
-    )
+    whenever(offenderBookingRepository.findLatestByOffenderNomsId(OFFENDER_NO)).thenReturn(defaultOffenderBooking)
     whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenAnswer {
       val prison = (it.arguments[0] as AgencyLocation)
       val code = (it.arguments[1] as String)
@@ -105,7 +103,7 @@ internal class IncentiveServiceTest {
 
     @Test
     fun `incentive data is mapped correctly`() {
-      assertThat(incentivesService.createIncentive(OFFENDER_BOOKING_ID, createRequest))
+      assertThat(incentivesService.createIncentive(OFFENDER_NO, createRequest))
         .isEqualTo(CreateIncentiveResponse(OFFENDER_BOOKING_ID, 1))
 
       val incentive = defaultOffenderBooking.incentives[0]
@@ -121,14 +119,12 @@ internal class IncentiveServiceTest {
 
     @Test
     fun offenderNotFound() {
-      whenever(offenderBookingRepository.findById(OFFENDER_BOOKING_ID)).thenReturn(
-        Optional.empty(),
-      )
+      whenever(offenderBookingRepository.findLatestByOffenderNomsId(OFFENDER_NO)).thenReturn(null)
 
       val thrown = assertThrows<NotFoundException> {
-        incentivesService.createIncentive(OFFENDER_BOOKING_ID, createRequest)
+        incentivesService.createIncentive(OFFENDER_NO, createRequest)
       }
-      assertThat(thrown.message).isEqualTo(OFFENDER_BOOKING_ID.toString())
+      assertThat(thrown.message).isEqualTo(OFFENDER_NO)
     }
 
     @Test
@@ -136,7 +132,7 @@ internal class IncentiveServiceTest {
       whenever(agencyLocationRepository.findById(PRISON_ID)).thenReturn(Optional.empty())
 
       val thrown = assertThrows<BadDataException> {
-        incentivesService.createIncentive(OFFENDER_BOOKING_ID, createRequest)
+        incentivesService.createIncentive(OFFENDER_NO, createRequest)
       }
       assertThat(thrown.message).isEqualTo("Prison with id=$PRISON_ID does not exist")
     }
@@ -146,7 +142,7 @@ internal class IncentiveServiceTest {
       whenever(prisonIncentiveLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenReturn(null)
 
       val thrown = assertThrows<BadDataException> {
-        incentivesService.createIncentive(OFFENDER_BOOKING_ID, createRequest)
+        incentivesService.createIncentive(OFFENDER_NO, createRequest)
       }
       assertThat(thrown.message).isEqualTo("IEP type STD does not exist for prison SWI")
     }
