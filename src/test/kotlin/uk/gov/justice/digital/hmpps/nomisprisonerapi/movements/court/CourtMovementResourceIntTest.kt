@@ -52,7 +52,7 @@ class CourtMovementResourceIntTest(
         }
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            scheduleOut = courtEvent {
+            scheduleOut = courtEventOut {
               movementOut = courtMovementOut()
               movementIn = courtMovementIn()
             }
@@ -252,7 +252,7 @@ class CourtMovementResourceIntTest(
         }
         offender = offender(nomsId = offenderNo) {
           booking = booking {
-            scheduleOut = courtEvent {
+            scheduleOut = courtEventOut {
               movementOut = courtMovementOut()
               movementIn = courtMovementIn()
             }

@@ -13,8 +13,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType.Companion.IN
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType.Companion.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
@@ -95,7 +93,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent()
+              scheduleOut = courtEventOut()
             }
           }
         }
@@ -116,7 +114,7 @@ class OffenderCourtMovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             booking = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.now().minusDays(1)) {
               // The court schedule was created while in MDI
-              scheduleOut = courtEvent(whenCreated = LocalDateTime.now().minusHours(6))
+              scheduleOut = courtEventOut(whenCreated = LocalDateTime.now().minusHours(6))
               prisonTransfer(from = "MDI", to = "BXI", date = LocalDateTime.now().minusHours(1))
             }
           }
@@ -168,7 +166,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent {
+              scheduleOut = courtEventOut {
                 movementOut = courtMovementOut()
               }
             }
@@ -240,7 +238,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent {
+              scheduleOut = courtEventOut {
                 movementOut = courtMovementOut()
                 movementIn = courtMovementIn()
               }
@@ -293,14 +291,14 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             mergeBooking = booking {
-              courtEvent()
+              courtEventOut()
               mergeMovementIn = courtMovementIn()
               // Note there are no schedule movements OUT created by merge as this would break a NOMIS constraint
               unscheduledMergeMovementOut = courtMovementOut()
               unscheduledMergeMovementIn = courtMovementIn()
             }
             booking = booking {
-              scheduleOut = courtEvent {
+              scheduleOut = courtEventOut {
                 movementOut = courtMovementOut()
                 movementIn = courtMovementIn()
               }
@@ -358,8 +356,9 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent(directionCode = OUT)
-              scheduleIn = courtEvent(directionCode = IN)
+              scheduleOut = courtEventOut {
+                scheduleIn = courtEventIn()
+              }
               movementOut = courtMovementOut()
               movementIn = courtMovementIn()
             }
@@ -399,7 +398,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent {
+              scheduleOut = courtEventOut {
                 movementOut = courtMovementOut()
                 movementIn = courtMovementIn()
               }
@@ -432,7 +431,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent {
+              scheduleOut = courtEventOut {
                 movementOut = courtMovementOut()
               }
             }
@@ -465,7 +464,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent(agencyId = "LEI") {
+              scheduleOut = courtEventOut(agencyId = "LEI") {
                 movementOut = courtMovementOut(fromPrison = "LEEDYC", toCourt = "LEI")
                 movementIn = courtMovementIn(fromCourt = "LEI", toPrison = "LEEDYC")
               }
@@ -491,7 +490,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEvent {
+              scheduleOut = courtEventOut {
                 movementOut = courtMovementOut()
                 movementIn = courtMovementIn()
               }
@@ -532,12 +531,12 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             mergeBooking = booking {
-              courtEvent()
+              courtEventOut()
               courtMovementOut()
               mergeMovementIn = courtMovementIn()
             }
             booking = booking {
-              scheduleOut = courtEvent {
+              scheduleOut = courtEventOut {
                 movementOut = courtMovementOut()
                 movementIn = courtMovementIn()
               }
