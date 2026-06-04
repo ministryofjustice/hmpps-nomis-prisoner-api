@@ -71,7 +71,7 @@ class CourtScheduleService(
       )
     val savedScheduleOut = courtEventRepository.saveAndFlush(scheduleOut)
 
-    val existingScheduleIn = request.eventId?.let { courtEventRepository.findByParentEventId(request.eventId) }
+    val existingScheduleIn = request.eventId?.let { courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(offenderBooking.bookingId, request.eventId) }
     if (returnEventStatus != null) {
       val scheduleIn = existingScheduleIn?.apply {
         this.parentEventId = savedScheduleOut.id
@@ -114,7 +114,7 @@ class CourtScheduleService(
           throw ConflictException("Cannot delete court schedule out eventId $eventId because it has status $COMPLETED")
         }
 
-        courtEventRepository.findByParentEventId(eventId)
+        courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(schedule.offenderBooking.bookingId, eventId)
           .takeIf { it != null }
           ?.run { throw ConflictException("Cannot delete court schedule out eventId $eventId because it has an inbound schedule ${this.id}") }
 

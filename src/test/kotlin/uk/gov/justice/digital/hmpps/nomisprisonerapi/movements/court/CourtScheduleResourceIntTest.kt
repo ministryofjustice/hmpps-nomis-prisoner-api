@@ -233,7 +233,7 @@ class CourtScheduleResourceIntTest(
                 assertThat(court.id).isEqualTo("LEEDYC")
                 assertThat(directionCode?.code).isEqualTo("OUT")
               }
-              assertThat(courtEventRepository.findByParentEventId(eventId)).isNull()
+              assertThat(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)).isNull()
             }
           }
       }
@@ -254,7 +254,7 @@ class CourtScheduleResourceIntTest(
                 assertThat(eventStatus.code).isEqualTo("COMP")
                 assertThat(directionCode?.code).isEqualTo("OUT")
               }
-              with(courtEventRepository.findByParentEventId(eventId)!!) {
+              with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(directionCode?.code).isEqualTo("IN")
                 assertThat(startTime).isCloseTo(today.withHour(17).withMinute(0).withSecond(0), within(1, SECONDS))
@@ -291,7 +291,7 @@ class CourtScheduleResourceIntTest(
                 assertThat(courtEventType.code).isEqualTo("CRT")
                 assertThat(directionCode?.code).isEqualTo("OUT")
               }
-              assertThat(courtEventRepository.findByParentEventId(eventId)).isNull()
+              assertThat(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)).isNull()
             }
           }
       }
@@ -307,7 +307,7 @@ class CourtScheduleResourceIntTest(
                 assertThat(eventStatus.code).isEqualTo("COMP")
                 assertThat(directionCode?.code).isEqualTo("OUT")
               }
-              with(courtEventRepository.findByParentEventId(eventId)!!) {
+              with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(directionCode?.code).isEqualTo("IN")
               }
@@ -341,7 +341,7 @@ class CourtScheduleResourceIntTest(
                 assertThat(eventStatus.code).isEqualTo("COMP")
                 assertThat(directionCode?.code).isEqualTo("OUT")
               }
-              with(courtEventRepository.findByParentEventId(eventId)!!) {
+              with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("COMP")
                 assertThat(directionCode?.code).isEqualTo("IN")
               }
@@ -356,7 +356,7 @@ class CourtScheduleResourceIntTest(
         )
           .apply {
             repository.runInTransaction {
-              assertThat(courtEventRepository.findByParentEventId(eventId)).isNull()
+              assertThat(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)).isNull()
             }
           }
       }
