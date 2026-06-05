@@ -724,7 +724,7 @@ class CourtSentencingService(
     courtCase: CourtCase,
     offenderNo: String,
     eventId: Long,
-  ): List<OffenderCharge> = courtCase.getOffenderChargesNotAssociatedWithCaseOrLinkedCasesCourtAppearances().also { orphanedOffenderCharges ->
+  ): List<OffenderCharge> = courtCase.getOffenderChargesNotAssociatedWithThisCaseOrAnyOtherCases().also { orphanedOffenderCharges ->
     orphanedOffenderCharges
       .forEach {
         courtCase.offenderCharges.remove(it)
@@ -2096,6 +2096,19 @@ class CourtSentencingService(
       },
     )
   }
+
+  private fun CourtCase.getOffenderChargesNotAssociatedWithThisCaseOrAnyOtherCases(): List<OffenderCharge> {
+    val referencedOffenderCharges =
+      this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
+    return this.offenderCharges
+      .filterNot { oc -> referencedOffenderCharges.contains(oc) }
+      .filterNot { oc ->
+        courtEventChargeRepository.existsByIdOffenderChargeIdAndIdCourtEventCourtCaseNot(
+          offenderChargeId = oc.id,
+          courtCase = this,
+        )
+      }
+  }
 }
 
 private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest = ExistingOffenderChargeRequest(
@@ -2105,14 +2118,6 @@ private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long
   resultCode1 = this.resultCode1,
   offenderChargeId = chargeId,
 )
-
-private fun CourtCase.getOffenderChargesNotAssociatedWithCaseOrLinkedCasesCourtAppearances(): List<OffenderCharge> {
-  val referencedOffenderCharges =
-    this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
-  return this.offenderCharges.filterNot { oc -> referencedOffenderCharges.contains(oc) }
-    // exclude where a linked case source still points to this charge
-    .filter { offenderChargeToRemove -> sourceCombinedCases.none { sourceCase -> sourceCase.courtEvents.flatMap { it.courtEventCharges }.any { offenderChargeToRemove.id == it.id.offenderCharge.id } } }
-}
 
 private fun CourtCase.toCourtCaseResponse(): CourtCaseResponse = CourtCaseResponse(
   id = this.id,
