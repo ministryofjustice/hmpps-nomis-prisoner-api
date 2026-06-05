@@ -2,10 +2,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventChargeId
 
 @Repository
 interface CourtEventChargeRepository : JpaRepository<CourtEventCharge, CourtEventChargeId> {
   fun findFirstByIdOffenderChargeIdOrderByLastModifiedDateTimeDesc(offenderChargeId: Long): CourtEventCharge?
+
+  fun existsByIdOffenderChargeIdAndIdCourtEventCourtCaseNot(offenderChargeId: Long, courtCase: CourtCase): Boolean
 }

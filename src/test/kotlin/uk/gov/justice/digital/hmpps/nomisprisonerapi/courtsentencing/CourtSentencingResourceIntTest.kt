@@ -5779,7 +5779,55 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `can remove charge that was source from linked case`() {
+      fun `can remove charge that was sourced from linked case`() {
+        with(
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyResponse<CourtEventResponse>(),
+        ) {
+          assertThat(this.courtEventCharges).hasSize(2)
+        }
+
+        val courtAppearanceUpdateResponse: UpdateCourtAppearanceResponse = webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${targetLinkedCourtCase.id}/court-appearances/${targetCaseEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            createCourtAppearanceRequest(
+              outcomeReasonCode = "1004",
+              courtEventCharges = mutableListOf(
+                CourtEventChargeRequest(offenderChargeInLinkedCase.id, resultCode1 = "1004"),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk.expectBodyResponse()
+
+        // no offender charges deleted since they will still be linked by other cases
+        assertThat(courtAppearanceUpdateResponse.deletedOffenderChargesIds).isEmpty()
+
+        with(
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectStatus().isOk
+            .expectBodyResponse<CourtEventResponse>(),
+        ) {
+          assertThat(this.courtEventCharges).hasSize(1)
+        }
+      }
+
+      @Test
+      fun `can remove charge that was sourced from linked case that is no longer linked`() {
+        // unlink case - but charge is still on both cases
+        nomisDataBuilder.runInTransaction {
+          courtCaseRepository.findByIdOrNull(sourceLinkedCourtCase.id)!!.run {
+            targetCombinedCase = null
+          }
+        }
+
         with(
           webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-appearances/${targetCaseEvent.id}")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
