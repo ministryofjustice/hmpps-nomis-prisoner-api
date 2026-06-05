@@ -42,7 +42,7 @@ class CourtScheduleService(
   }
 
   @Transactional
-  @Audit(auditModule = "DPS_SYNCHRONISATION_COURT_SCHEDULER")
+  @Audit(auditModule = "DPS_COURT_SCHEDULER_SYNCHRONISATION")
   fun upsertCourtScheduleOut(offenderNo: String, request: UpsertCourtScheduleOut): UpsertCourtScheduleOutResponse {
     val offenderBooking = movementHelpers.offenderBookingOrThrow(offenderNo)
     val courtEventType = movementHelpers.movementReasonOrThrow(request.eventType)
@@ -105,7 +105,7 @@ class CourtScheduleService(
   }
 
   @Transactional
-  @Audit(auditModule = "DPS_SYNCHRONISATION_COURT_SCHEDULER")
+  @Audit(auditModule = "DPS_COURT_SCHEDULER_SYNCHRONISATION")
   fun deleteCourtScheduleOut(offenderNo: String, eventId: Long) {
     courtEventRepository.findByIdOrNull(eventId)
       ?.also { schedule ->
