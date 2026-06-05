@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
@@ -41,6 +42,7 @@ class CourtScheduleService(
   }
 
   @Transactional
+  @Audit(auditModule = "DPS_SYNCHRONISATION_COURT_SCHEDULER")
   fun upsertCourtScheduleOut(offenderNo: String, request: UpsertCourtScheduleOut): UpsertCourtScheduleOutResponse {
     val offenderBooking = movementHelpers.offenderBookingOrThrow(offenderNo)
     val courtEventType = movementHelpers.movementReasonOrThrow(request.eventType)
@@ -103,6 +105,7 @@ class CourtScheduleService(
   }
 
   @Transactional
+  @Audit(auditModule = "DPS_SYNCHRONISATION_COURT_SCHEDULER")
   fun deleteCourtScheduleOut(offenderNo: String, eventId: Long) {
     courtEventRepository.findByIdOrNull(eventId)
       ?.also { schedule ->
