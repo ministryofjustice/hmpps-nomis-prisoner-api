@@ -135,7 +135,7 @@ class CourtScheduleService(
     bookingId = offenderBooking.bookingId,
     eventId = id,
     eventDate = eventDate,
-    startTime = startTime,
+    startTime = eventDate.atTime(startTime.toLocalTime()),
     eventType = courtEventType.code,
     eventStatus = eventStatus.code,
     comment = commentText,

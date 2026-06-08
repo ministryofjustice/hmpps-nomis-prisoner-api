@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court
 
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
@@ -22,11 +23,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.C
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.CourtScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.UpsertCourtScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.UpsertCourtScheduleOutResponse
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit.SECONDS
 
 class CourtScheduleResourceIntTest(
   @Autowired private val courtEventRepository: CourtEventRepository,
+  @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
   private val offenderNo = "B7463BB"
@@ -129,6 +133,37 @@ class CourtScheduleResourceIntTest(
         webTestClient.getCourtScheduleOutOk(offenderNo, scheduleOut.id)
           .apply {
             assertThat(prison).isEqualTo("MDI")
+          }
+      }
+    }
+
+    @Nested
+    inner class BadData {
+      @Test
+      fun `should ignore incorrect date in start_time column`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now())
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          // In NOMIS, if they change the time only it also corrupts the date part of the datetime column
+          entityManager.createNativeQuery(
+            """
+              update COURT_EVENTS SET START_TIME = '2022-01-01 12:00:00' where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getCourtScheduleOutOk(offenderNo, scheduleOut.id)
+          .apply {
+            // We should take date from event_date
+            assertThat(this.startTime.toLocalDate()).isEqualTo(LocalDate.now())
+            // And the time from start_time
+            assertThat(this.startTime.toLocalTime()).isEqualTo(LocalTime.of(12, 0))
           }
       }
     }
