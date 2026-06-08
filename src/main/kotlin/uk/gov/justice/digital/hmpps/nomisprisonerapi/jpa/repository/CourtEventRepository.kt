@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 @Repository
 interface CourtEventRepository : JpaRepository<CourtEvent, Long> {
   fun findAllByOffenderBooking_Offender_NomsIdAndDirectionCode_CodeIs(offenderNo: String, directionCode: String): List<CourtEvent>
+  fun findAllByOffenderBooking_BookingIdAndDirectionCode_CodeIs(bookingId: Long, directionCode: String): List<CourtEvent>
   fun findByOffenderBooking_BookingIdAndParentEventId(offenderBookingBookingId: Long, parentEventId: Long): CourtEvent?
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)

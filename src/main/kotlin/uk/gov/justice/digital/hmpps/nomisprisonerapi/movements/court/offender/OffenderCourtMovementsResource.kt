@@ -55,4 +55,40 @@ class OffenderCourtMovementsResource(
   fun getOffenderCourtMovements(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
   ): OffenderCourtMovementsResponse? = service.getOffenderCourtMovements(offenderNo)
+
+  @GetMapping("/movements/booking/{bookingId}/court")
+  @Operation(
+    summary = "Get court schedules and movements for a booking",
+    description = "Get court schedules and movements for a booking. This is used to migrate court schedules to DPS and for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Booking court schedules returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getAllBookingCourtMovements(
+    @Schema(description = "Booking ID", example = "123456") @PathVariable bookingId: Long,
+  ): BookingCourtMovements = service.getBookingCourtMovements(bookingId)
 }
