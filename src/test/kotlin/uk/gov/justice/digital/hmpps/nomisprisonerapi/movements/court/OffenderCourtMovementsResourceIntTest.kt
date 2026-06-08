@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.BookingCourtMovements
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.OffenderCourtMovementsResponse
 import java.time.Duration
 import java.time.LocalDateTime
@@ -40,6 +41,8 @@ class OffenderCourtMovementsResourceIntTest(
   private lateinit var mergeMovementIn: OffenderCourtMovementIn
   private lateinit var unscheduledMergeMovementIn: OffenderCourtMovementIn
   private lateinit var scheduleIn: CourtEvent
+  private lateinit var unscheduledMovementOut: OffenderCourtMovementOut
+  private lateinit var unscheduledMovementIn: OffenderCourtMovementIn
 
   @AfterEach
   fun tearDown() {
@@ -600,6 +603,89 @@ class OffenderCourtMovementsResourceIntTest(
     }
   }
 
+  @Nested
+  @DisplayName("GET /movements/booking/{bookingId}/court")
+  inner class GetBookingCourtMovements {
+    @Test
+    fun `should return unauthorized for missing token`() {
+      webTestClient.get()
+        .uri("/movements/booking/12345/court")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `should return forbidden for missing role`() {
+      webTestClient.get()
+        .uri("/movements/booking/12345/court")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return forbidden for wrong role`() {
+      webTestClient.get()
+        .uri("/movements/booking/12345/court")
+        .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should return not found for unknown booking id`() {
+      webTestClient.getBookingCourtMovements(12345)
+        .expectStatus().isNotFound
+        .expectBody().jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Offender booking 12345 not found")
+        }
+    }
+
+    @Test
+    fun `should return only the requested booking`() {
+      lateinit var secondBooking: OffenderBooking
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            scheduleOut = courtEventOut {
+              scheduleIn = courtEventIn(eventStatusCode = "EXP")
+              movementOut = courtMovementOut()
+              movementIn = courtMovementIn()
+            }
+            unscheduledMovementOut = courtMovementOut()
+            unscheduledMovementIn = courtMovementIn()
+          }
+          secondBooking = booking {
+            courtEventOut()
+          }
+        }
+      }
+
+      webTestClient.getBookingCourtMovementsOk()
+        .apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(activeBooking).isTrue()
+          assertThat(latestBooking).isTrue()
+          assertThat(courtSchedules).hasSize(1)
+          assertThat(courtSchedules[0].eventId).isEqualTo(scheduleOut.id)
+          assertThat(courtSchedules[0].courtMovementOut!!.sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(courtSchedules[0].courtMovementIn!!.sequence).isEqualTo(movementIn.id.sequence)
+          assertThat(unscheduledCourtMovementOuts).extracting<Int> { it.sequence }.containsExactly(unscheduledMovementOut.id.sequence)
+          assertThat(unscheduledCourtMovementIns).extracting<Int> { it.sequence }.containsExactly(unscheduledMovementIn.id.sequence)
+        }
+
+      webTestClient.getBookingCourtMovementsOk(secondBooking.bookingId)
+        .apply {
+          assertThat(bookingId).isEqualTo(secondBooking.bookingId)
+          assertThat(courtSchedules).hasSize(1)
+          assertThat(courtSchedules[0].courtMovementOut).isNull()
+          assertThat(courtSchedules[0].courtMovementIn).isNull()
+          assertThat(unscheduledCourtMovementOuts).isEmpty()
+          assertThat(unscheduledCourtMovementIns).isEmpty()
+        }
+    }
+  }
+
   private fun WebTestClient.getOffenderCourtMovements(offenderNo: String = offender.nomsId) = get()
     .uri("/movements/$offenderNo/court")
     .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -608,4 +694,13 @@ class OffenderCourtMovementsResourceIntTest(
   private fun WebTestClient.getOffenderCourtMovementsOk(offenderNo: String = offender.nomsId) = getOffenderCourtMovements(offenderNo)
     .expectStatus().isOk
     .expectBodyResponse<OffenderCourtMovementsResponse>()
+
+  private fun WebTestClient.getBookingCourtMovements(bookingId: Long) = get()
+    .uri("/movements/booking/$bookingId/court")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .exchange()
+
+  private fun WebTestClient.getBookingCourtMovementsOk(bookingId: Long = booking.bookingId) = getBookingCourtMovements(bookingId)
+    .expectStatus().isOk
+    .expectBodyResponse<BookingCourtMovements>()
 }

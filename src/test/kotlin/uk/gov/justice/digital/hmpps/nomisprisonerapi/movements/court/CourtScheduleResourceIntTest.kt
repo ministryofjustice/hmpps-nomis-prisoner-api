@@ -564,8 +564,8 @@ class CourtScheduleResourceIntTest(
   }
 
   @Nested
-  @DisplayName("DELETE /movements/{offenderNo}/taps/schedule/out/{eventId}")
-  inner class DeleteTapScheduleOut {
+  @DisplayName("DELETE /movements/{offenderNo}/court/schedule/out/{eventId}")
+  inner class DeleteCourtMovementScheduleOut {
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
