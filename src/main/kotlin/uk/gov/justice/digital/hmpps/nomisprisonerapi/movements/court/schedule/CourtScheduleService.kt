@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.DirectionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.COMPLETED
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCour
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_COURT_SCHEDULER_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.findActiveCaseloadId
 import java.time.LocalTime
 
@@ -58,7 +60,7 @@ class CourtScheduleService(
         this.startTime = request.startTime
         this.courtEventType = courtEventType
         this.eventStatus = eventStatus
-        this.commentText = request.comment
+        this.commentText = request.comment?.truncateToUtf8Length(MAX_COURT_SCHEDULER_COMMENT_LENGTH, includeSeeDpsSuffix = true)
         this.court = court
       }
       ?: CourtEvent(
@@ -67,7 +69,7 @@ class CourtScheduleService(
         startTime = request.startTime,
         courtEventType = courtEventType,
         eventStatus = eventStatus,
-        commentText = request.comment,
+        commentText = request.comment?.truncateToUtf8Length(MAX_COURT_SCHEDULER_COMMENT_LENGTH, includeSeeDpsSuffix = true),
         court = court,
         directionCode = movementHelpers.directionTypeOrThrow(DirectionType.OUT),
       )
