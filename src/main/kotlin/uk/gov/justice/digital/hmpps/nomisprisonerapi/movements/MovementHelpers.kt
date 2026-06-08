@@ -51,6 +51,7 @@ class MovementHelpers(
 
   companion object {
     val MAX_TAP_COMMENT_LENGTH = 225
+    val MAX_COURT_SCHEDULER_COMMENT_LENGTH = 225
   }
 
   fun offenderOrThrow(offenderNo: String) = offenderRepository.findRootByNomsId(offenderNo)

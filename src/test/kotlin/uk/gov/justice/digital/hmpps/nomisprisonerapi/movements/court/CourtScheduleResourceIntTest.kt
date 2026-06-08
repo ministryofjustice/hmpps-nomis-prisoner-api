@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_COURT_SCHEDULER_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.CourtScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.UpsertCourtScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.schedule.UpsertCourtScheduleOutResponse
@@ -265,6 +266,19 @@ class CourtScheduleResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should create a comment that fits into NOMIS`() {
+        webTestClient.upsertCourtScheduleOutOk(request = aRequest(comment = "1234567890".repeat(30)))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(commentText!!.length).isEqualTo(MAX_COURT_SCHEDULER_COMMENT_LENGTH)
+              }
+            }
+          }
+      }
     }
 
     @Nested
@@ -310,6 +324,20 @@ class CourtScheduleResourceIntTest(
               with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(directionCode?.code).isEqualTo("IN")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should update comment that fits into NOMIS`() {
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(eventId = scheduleOut.id, comment = "1234567890".repeat(30)),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(commentText!!.length).isEqualTo(MAX_COURT_SCHEDULER_COMMENT_LENGTH)
               }
             }
           }
@@ -487,13 +515,14 @@ class CourtScheduleResourceIntTest(
       eventType: String = "CRT",
       prison: String = "BXI",
       court: String = "LEEDYC",
+      comment: String = "court schedule out comment",
     ) = UpsertCourtScheduleOut(
       eventId = eventId,
       startTime = today,
       eventType = eventType,
       eventStatus = eventStatus,
       returnStatus = returnStatus,
-      comment = "court schedule out comment",
+      comment = comment,
       prison = prison,
       court = court,
     )
