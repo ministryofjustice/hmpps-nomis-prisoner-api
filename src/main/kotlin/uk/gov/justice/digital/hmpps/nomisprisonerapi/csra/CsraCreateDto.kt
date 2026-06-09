@@ -25,22 +25,23 @@ data class CsraCreateDto(
     CSRREV	CSR Review
   """,
     allowableValues = ["CSRF", "CSRH", "CSRDO", "CSR", "CSR1", "CSRREV"],
+    enumAsRef = true,
   )
   val type: AssessmentType,
 
-  @Schema(description = "The calculated CSRA level", example = "STANDARD")
+  @Schema(description = "The calculated CSRA level", example = "STANDARD", enumAsRef = true)
   val calculatedLevel: AssessmentLevel,
 
   @Schema(description = "Score", example = "1000")
   val score: BigDecimal,
 
-  @Schema(description = "Status, active, inactive or provisional", allowableValues = ["I", "A", "P"])
+  @Schema(description = "Status, active, inactive or provisional", allowableValues = ["I", "A", "P"], enumAsRef = true)
   val status: AssessmentStatusType,
 
   @Schema(description = "Staff id of user that created the CSRA", example = "123456")
   val assessmentStaffId: Long,
 
-  @Schema(description = "The assessment committee code (reference code in domain 'ASSESS_COMM')")
+  @Schema(description = "The assessment committee code (reference code in domain 'ASSESS_COMM')", enumAsRef = true)
   val committeeCode: AssessmentCommittee? = null,
 
   @Schema(description = "Next review date, defaults to current date + 6 months, if not provided")
@@ -59,19 +60,19 @@ data class CsraCreateDto(
   val createdBy: String,
 
   // Review fields:
-  @Schema(description = "The review CSRA level")
+  @Schema(description = "The review CSRA level", enumAsRef = true)
   val reviewLevel: AssessmentLevel? = null,
 
-  @Schema(description = "The approval CSRA level")
+  @Schema(description = "The approval CSRA level", enumAsRef = true)
   val approvedLevel: AssessmentLevel? = null,
 
   @Schema(description = "Evaluation or approval date")
   val evaluationDate: LocalDate? = null,
 
-  @Schema(description = "Approved or rejected indicator")
+  @Schema(description = "Approved or rejected indicator", enumAsRef = true)
   val evaluationResultCode: EvaluationResultCode? = null,
 
-  @Schema(description = "The review/approval committee code (reference code in domain 'ASSESS_COMM')")
+  @Schema(description = "The review/approval committee code (reference code in domain 'ASSESS_COMM')", enumAsRef = true)
   val reviewCommitteeCode: AssessmentCommittee? = null,
 
   @Schema(description = "Approval Committee Comment text")
