@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.BookingCourtMovements
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.OffenderCourtMovementsResponse
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
 
@@ -153,7 +152,8 @@ class OffenderCourtMovementsResourceIntTest(
             with(bookings[0].courtSchedules[0].courtMovementOut!!) {
               assertThat(sequence).isEqualTo(movementOut.id.sequence)
               assertThat(movementDate).isEqualTo(movementOut.movementDate)
-              assertThat(movementTime).isCloseTo(movementOut.movementTime, within(Duration.ofSeconds(1)))
+              assertThat(movementTime.toLocalDate()).isEqualTo(movementOut.movementDate)
+              assertThat(movementTime.toLocalTime()).isEqualTo(movementOut.movementTime.toLocalTime())
               assertThat(movementReason).isEqualTo(movementOut.movementReason.id.reasonCode)
               assertThat(fromPrison).isEqualTo("BXI")
               assertThat(toCourt).isEqualTo(movementOut.toAgency!!.id)
@@ -225,7 +225,8 @@ class OffenderCourtMovementsResourceIntTest(
             with(bookings[0].courtSchedules[0].courtMovementIn!!) {
               assertThat(sequence).isEqualTo(movementIn.id.sequence)
               assertThat(movementDate).isEqualTo(movementIn.movementDate)
-              assertThat(movementTime).isCloseTo(movementIn.movementTime, within(Duration.ofSeconds(1)))
+              assertThat(movementTime.toLocalDate()).isEqualTo(movementIn.movementDate)
+              assertThat(movementTime.toLocalTime()).isEqualTo(movementIn.movementTime.toLocalTime())
               assertThat(movementReason).isEqualTo(movementIn.movementReason.id.reasonCode)
               assertThat(toPrison).isEqualTo(movementIn.toAgency!!.id)
               assertThat(fromCourt).isEqualTo(movementIn.fromAgency!!.id)
