@@ -110,6 +110,7 @@ class CsraService(
       sequence = id.sequence,
       agencyId = id.offenderBooking.location.id,
       assessmentDate = assessmentDate,
+      assessmentCreationLocation = assessmentCreationLocation,
       calculatedLevel = calculatedLevel,
       score = score,
       status = assessmentStatus,

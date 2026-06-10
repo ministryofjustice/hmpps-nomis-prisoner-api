@@ -431,6 +431,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
 
         with(data) {
           assertThat(assessmentDate).isEqualTo("2025-12-29")
+          assertThat(assessmentCreationLocation).isEqualTo("BMI")
           assertThat(type).isEqualTo(AssessmentType.CSR1)
           assertThat(calculatedLevel).isEqualTo(AssessmentLevel.STANDARD)
           assertThat(score.toString()).isEqualTo("1000")

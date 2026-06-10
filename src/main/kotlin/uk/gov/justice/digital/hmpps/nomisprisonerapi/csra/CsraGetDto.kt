@@ -24,6 +24,9 @@ data class CsraGetDto(
   @Schema(description = "Date the CSRA was created", example = "2025-11-22")
   val assessmentDate: LocalDate,
 
+  @Schema(description = "The location (normally a prison) where the assessment was carried out", example = "SWI")
+  val assessmentCreationLocation: String? = null,
+
   @Schema(
     description = """CSRA type as configured in the ASSESSMENTS table:
     CSRF	  CSR Full
