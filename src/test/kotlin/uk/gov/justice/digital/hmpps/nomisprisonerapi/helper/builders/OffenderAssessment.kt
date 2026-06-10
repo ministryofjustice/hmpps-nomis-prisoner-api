@@ -88,7 +88,7 @@ class OffenderAssessmentBuilder(
     assessorStaff = repository.lookupStaff(username).staff,
     assessmentComment = "a-comment",
     placementAgency = placementAgency?.let { repository.lookupAgency(placementAgency) },
-    assessmentCreationLocation = null,
+    assessmentCreationLocation = "BMI",
     overrideLevel = AssessmentLevel.STANDARD,
     overrideComment = "overrideComment",
     overrideStaff = repository.lookupStaff(username).staff,
