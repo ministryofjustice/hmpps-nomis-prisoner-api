@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class TapRepositoryIntTest(
   @Autowired private val tapApplicationRepository: OffenderTapApplicationRepository,
@@ -85,27 +86,27 @@ class TapRepositoryIntTest(
       }
 
       with(tapApplicationRepository.findByIdOrNull(application.tapApplicationId)!!) {
-        Assertions.assertThat(tapApplicationId).isGreaterThan(0L)
-        Assertions.assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
-        Assertions.assertThat(eventClass).isEqualTo("EXT_MOV")
-        Assertions.assertThat(eventType).isEqualTo(EventType.TAP)
-        Assertions.assertThat(eventSubType.code).isEqualTo("C5")
-        Assertions.assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(applicationTime.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(fromDate).isEqualTo(LocalDate.now())
-        Assertions.assertThat(releaseTime.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(toDate).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(returnTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(applicationType.code).isEqualTo("SINGLE")
-        Assertions.assertThat(applicationStatus.code).isEqualTo("APP-SCH")
-        Assertions.assertThat(escort?.code).isEqualTo("L")
-        Assertions.assertThat(transportType?.code).isEqualTo("VAN")
-        Assertions.assertThat(comment).isEqualTo("Some comment application")
-        Assertions.assertThat(prison.id).isEqualTo("LEI")
-        Assertions.assertThat(toAgency?.id).isEqualTo("HAZLWD")
-        Assertions.assertThat(contactPersonName).isEqualTo("Derek")
-        Assertions.assertThat(tapType?.code).isEqualTo("RR")
-        Assertions.assertThat(tapSubType?.code).isEqualTo("RDR")
+        assertThat(tapApplicationId).isGreaterThan(0L)
+        assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+        assertThat(eventClass).isEqualTo("EXT_MOV")
+        assertThat(eventType).isEqualTo(EventType.TAP)
+        assertThat(eventSubType.code).isEqualTo("C5")
+        assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(applicationTime.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(fromDate).isEqualTo(LocalDate.now())
+        assertThat(releaseTime.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(toDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(returnTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(applicationType.code).isEqualTo("SINGLE")
+        assertThat(applicationStatus.code).isEqualTo("APP-SCH")
+        assertThat(escort?.code).isEqualTo("L")
+        assertThat(transportType?.code).isEqualTo("VAN")
+        assertThat(comment).isEqualTo("Some comment application")
+        assertThat(prison.id).isEqualTo("LEI")
+        assertThat(toAgency?.id).isEqualTo("HAZLWD")
+        assertThat(contactPersonName).isEqualTo("Derek")
+        assertThat(tapType?.code).isEqualTo("RR")
+        assertThat(tapSubType?.code).isEqualTo("RDR")
       }
     }
 
@@ -137,22 +138,22 @@ class TapRepositoryIntTest(
       }
 
       with(tapScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-        Assertions.assertThat(eventId).isGreaterThan(0L)
-        Assertions.assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
-        Assertions.assertThat(tapApplication.tapApplicationId).isEqualTo(scheduleOut.tapApplication.tapApplicationId)
-        Assertions.assertThat(eventDate).isEqualTo(LocalDate.now())
-        Assertions.assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(eventSubType.code).isEqualTo("C5")
-        Assertions.assertThat(eventStatus.code).isEqualTo("SCH")
-        Assertions.assertThat(fromAgency?.id).isEqualTo("LEI")
-        Assertions.assertThat(toAgency?.id).isEqualTo("HAZLWD")
-        Assertions.assertThat(comment).isEqualTo("Some comment")
-        Assertions.assertThat(escort?.code).isEqualTo("U")
-        Assertions.assertThat(transportType?.code).isEqualTo("VAN")
-        Assertions.assertThat(returnDate).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(returnTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(applicationTime?.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(eventId).isGreaterThan(0L)
+        assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+        assertThat(tapApplication.tapApplicationId).isEqualTo(scheduleOut.tapApplication.tapApplicationId)
+        assertThat(eventDate).isEqualTo(LocalDate.now())
+        assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(eventSubType.code).isEqualTo("C5")
+        assertThat(eventStatus.code).isEqualTo("SCH")
+        assertThat(fromAgency?.id).isEqualTo("LEI")
+        assertThat(toAgency?.id).isEqualTo("HAZLWD")
+        assertThat(comment).isEqualTo("Some comment")
+        assertThat(escort?.code).isEqualTo("U")
+        assertThat(transportType?.code).isEqualTo("VAN")
+        assertThat(returnDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(returnTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(applicationTime?.toLocalDate()).isEqualTo(LocalDate.now())
       }
     }
 
@@ -180,17 +181,17 @@ class TapRepositoryIntTest(
       }
 
       with(tapScheduleInRepository.findByIdOrNull(scheduleIn.eventId)!!) {
-        Assertions.assertThat(eventId).isGreaterThan(0L)
-        Assertions.assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
-        Assertions.assertThat(tapScheduleOut.eventId).isEqualTo(scheduleOut.eventId)
-        Assertions.assertThat(eventDate).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(eventSubType.code).isEqualTo("R25")
-        Assertions.assertThat(eventStatus.code).isEqualTo("SCH")
-        Assertions.assertThat(toAgency?.id).isEqualTo("LEI")
-        Assertions.assertThat(fromAgency?.id).isEqualTo("HAZLWD")
-        Assertions.assertThat(comment).isEqualTo("Some comment IN")
-        Assertions.assertThat(escort?.code).isEqualTo("U")
+        assertThat(eventId).isGreaterThan(0L)
+        assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+        assertThat(tapScheduleOut.eventId).isEqualTo(scheduleOut.eventId)
+        assertThat(eventDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(eventSubType.code).isEqualTo("R25")
+        assertThat(eventStatus.code).isEqualTo("SCH")
+        assertThat(toAgency?.id).isEqualTo("LEI")
+        assertThat(fromAgency?.id).isEqualTo("HAZLWD")
+        assertThat(comment).isEqualTo("Some comment IN")
+        assertThat(escort?.code).isEqualTo("U")
       }
     }
 
@@ -221,18 +222,18 @@ class TapRepositoryIntTest(
       }
 
       with(tapApplicationRepository.findByIdOrNull(application1.tapApplicationId)!!) {
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
-        Assertions.assertThat(toAddressOwnerClass).isEqualTo("CORP")
+        assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("CORP")
       }
 
       with(tapApplicationRepository.findByIdOrNull(application2.tapApplicationId)!!) {
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-        Assertions.assertThat(toAddressOwnerClass).isEqualTo("OFF")
+        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("OFF")
       }
 
       with(tapApplicationRepository.findByIdOrNull(application3.tapApplicationId)!!) {
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
-        Assertions.assertThat(toAddressOwnerClass).isEqualTo("AGY")
+        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("AGY")
       }
     }
 
@@ -268,18 +269,18 @@ class TapRepositoryIntTest(
       }
 
       with(tapScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
-        Assertions.assertThat(toAddressOwnerClass).isEqualTo("CORP")
+        assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("CORP")
       }
 
       with(tapScheduleOutRepository.findByIdOrNull(scheduledAbsence2.eventId)!!) {
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
-        Assertions.assertThat(toAddressOwnerClass).isEqualTo("OFF")
+        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("OFF")
       }
 
       with(tapScheduleOutRepository.findByIdOrNull(scheduledAbsence3.eventId)!!) {
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
-        Assertions.assertThat(toAddressOwnerClass).isEqualTo("AGY")
+        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo("AGY")
       }
     }
 
@@ -305,8 +306,8 @@ class TapRepositoryIntTest(
       jdbcTemplate.update("update offender_ind_schedules set TO_ADDRESS_OWNER_CLASS='${agencyAddress.agencyLocation.id}'")
 
       with(tapScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
-        Assertions.assertThat(toAddressOwnerClass).isEqualTo(agencyAddress.agencyLocation.id)
+        assertThat(toAddress?.addressId).isEqualTo(agencyAddress.addressId)
+        assertThat(toAddressOwnerClass).isEqualTo(agencyAddress.agencyLocation.id)
       }
     }
 
@@ -339,19 +340,19 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
-        Assertions.assertThat(movementDate).isEqualTo(LocalDate.now())
-        Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
-        Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
-        Assertions.assertThat(arrestAgency?.code).isEqualTo("POL")
-        Assertions.assertThat(escort?.code).isEqualTo("U")
-        Assertions.assertThat(escortText).isEqualTo("SE")
-        Assertions.assertThat(fromAgency?.id).isEqualTo("BXI")
-        Assertions.assertThat(toAgency?.id).isEqualTo("HAZLWD")
-        Assertions.assertThat(commentText).isEqualTo("TAP OUT comment")
-        Assertions.assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
-        Assertions.assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(movementDate).isEqualTo(LocalDate.now())
+        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+        assertThat(movementReason.id.type).isEqualTo("TAP")
+        assertThat(movementReason.id.reasonCode).isEqualTo("C5")
+        assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
+        assertThat(arrestAgency?.code).isEqualTo("POL")
+        assertThat(escort?.code).isEqualTo("U")
+        assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("BXI")
+        assertThat(toAgency?.id).isEqualTo("HAZLWD")
+        assertThat(commentText).isEqualTo("TAP OUT comment")
+        assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
+        assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
       }
     }
 
@@ -380,18 +381,18 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
-        Assertions.assertThat(movementDate).isEqualTo(LocalDate.now())
-        Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now())
-        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
-        Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
-        Assertions.assertThat(arrestAgency?.code).isEqualTo("POL")
-        Assertions.assertThat(escort?.code).isEqualTo("U")
-        Assertions.assertThat(escortText).isEqualTo("SE")
-        Assertions.assertThat(fromAgency?.id).isEqualTo("BXI")
-        Assertions.assertThat(toAgency?.id).isEqualTo("HAZLWD")
-        Assertions.assertThat(commentText).isEqualTo("Tap OUT comment")
-        Assertions.assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
+        assertThat(movementDate).isEqualTo(LocalDate.now())
+        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+        assertThat(movementReason.id.type).isEqualTo("TAP")
+        assertThat(movementReason.id.reasonCode).isEqualTo("C5")
+        assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
+        assertThat(arrestAgency?.code).isEqualTo("POL")
+        assertThat(escort?.code).isEqualTo("U")
+        assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("BXI")
+        assertThat(toAgency?.id).isEqualTo("HAZLWD")
+        assertThat(commentText).isEqualTo("Tap OUT comment")
+        assertThat(toCity?.id?.code).isEqualTo(SHEFFIELD)
       }
     }
 
@@ -430,22 +431,22 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
-        Assertions.assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
-        Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.IN)
-        Assertions.assertThat(escort?.code).isEqualTo("U")
-        Assertions.assertThat(escortText).isEqualTo("SE")
-        Assertions.assertThat(fromAgency?.id).isEqualTo("HAZLWD")
-        Assertions.assertThat(toAgency?.id).isEqualTo("BXI")
-        Assertions.assertThat(commentText).isEqualTo("TAP IN comment")
-        Assertions.assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
-        Assertions.assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
-        Assertions.assertThat(tapScheduleIn?.eventId).isEqualTo(scheduleIn.eventId)
-        Assertions.assertThat(tapScheduleIn?.tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
-        Assertions.assertThat(tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
-        Assertions.assertThat(tapScheduleOut?.tapMovementOut?.id).isEqualTo(movementOut.id)
+        assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+        assertThat(movementReason.id.type).isEqualTo("TAP")
+        assertThat(movementReason.id.reasonCode).isEqualTo("C5")
+        assertThat(movementDirection).isEqualTo(MovementDirection.IN)
+        assertThat(escort?.code).isEqualTo("U")
+        assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("HAZLWD")
+        assertThat(toAgency?.id).isEqualTo("BXI")
+        assertThat(commentText).isEqualTo("TAP IN comment")
+        assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
+        assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(tapScheduleIn?.eventId).isEqualTo(scheduleIn.eventId)
+        assertThat(tapScheduleIn?.tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
+        assertThat(tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
+        assertThat(tapScheduleOut?.tapMovementOut?.id).isEqualTo(movementOut.id)
       }
     }
 
@@ -474,20 +475,20 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
-        Assertions.assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
-        Assertions.assertThat(movementReason.id.type).isEqualTo("TAP")
-        Assertions.assertThat(movementReason.id.reasonCode).isEqualTo("C5")
-        Assertions.assertThat(movementDirection).isEqualTo(MovementDirection.IN)
-        Assertions.assertThat(escort?.code).isEqualTo("U")
-        Assertions.assertThat(escortText).isEqualTo("SE")
-        Assertions.assertThat(fromAgency?.id).isEqualTo("HAZLWD")
-        Assertions.assertThat(toAgency?.id).isEqualTo("BXI")
-        Assertions.assertThat(commentText).isEqualTo("TAP IN comment")
-        Assertions.assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
-        Assertions.assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
-        Assertions.assertThat(tapScheduleIn).isNull()
-        Assertions.assertThat(tapScheduleOut?.eventId).isNull()
+        assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+        assertThat(movementReason.id.type).isEqualTo("TAP")
+        assertThat(movementReason.id.reasonCode).isEqualTo("C5")
+        assertThat(movementDirection).isEqualTo(MovementDirection.IN)
+        assertThat(escort?.code).isEqualTo("U")
+        assertThat(escortText).isEqualTo("SE")
+        assertThat(fromAgency?.id).isEqualTo("HAZLWD")
+        assertThat(toAgency?.id).isEqualTo("BXI")
+        assertThat(commentText).isEqualTo("TAP IN comment")
+        assertThat(fromCity?.id?.code).isEqualTo(SHEFFIELD)
+        assertThat(fromAddress?.addressId).isEqualTo(offenderAddress.addressId)
+        assertThat(tapScheduleIn).isNull()
+        assertThat(tapScheduleOut?.eventId).isNull()
       }
     }
 
@@ -512,14 +513,14 @@ class TapRepositoryIntTest(
 
       repository.runInTransaction {
         with(offenderBookingRepository.findByIdOrNull(booking.bookingId)!!) {
-          Assertions.assertThat(externalMovements.find { it.id.sequence == 2 })
+          assertThat(externalMovements.find { it.id.sequence == 2 })
             .isExactlyInstanceOf(OffenderTapMovementOut::class.java)
-          Assertions.assertThat(externalMovements.find { it.id.sequence == 3 })
+          assertThat(externalMovements.find { it.id.sequence == 3 })
             .isExactlyInstanceOf(OffenderTapMovementIn::class.java)
           // The TAP missing a direction still comes out as an external movement
-          Assertions.assertThat(externalMovements.find { it.id.sequence == 4 })
+          assertThat(externalMovements.find { it.id.sequence == 4 })
             .isExactlyInstanceOf(OffenderExternalMovement::class.java)
-          Assertions.assertThat(externalMovements.find { it.id.sequence == 5 })
+          assertThat(externalMovements.find { it.id.sequence == 5 })
             .isExactlyInstanceOf(OffenderExternalMovement::class.java)
         }
       }
@@ -550,7 +551,7 @@ class TapRepositoryIntTest(
 
       repository.runInTransaction {
         with(tapMovementInRepository.findAllByOffenderBooking_Offender_NomsIdAndTapScheduleInIsNull(offender.nomsId)) {
-          Assertions.assertThat(this).isEmpty()
+          assertThat(this).isEmpty()
         }
       }
     }

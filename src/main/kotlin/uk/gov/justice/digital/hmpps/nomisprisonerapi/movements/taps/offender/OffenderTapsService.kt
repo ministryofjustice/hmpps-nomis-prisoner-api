@@ -324,7 +324,7 @@ class OffenderTapsService(
     return BookingTapMovementOut(
       sequence = id.sequence,
       movementDate = movementDate,
-      movementTime = movementTime,
+      movementTime = movementDate.atTime(movementTime.toLocalTime()),
       movementReason = movementReason.id.reasonCode,
       arrestAgency = arrestAgency?.code,
       escort = escort?.code,
@@ -346,7 +346,7 @@ class OffenderTapsService(
     return BookingTapMovementIn(
       sequence = id.sequence,
       movementDate = movementDate,
-      movementTime = movementTime,
+      movementTime = movementDate.atTime(movementTime.toLocalTime()),
       movementReason = movementReason.id.reasonCode,
       escort = escort?.code,
       escortText = escortText,
@@ -368,7 +368,7 @@ class OffenderTapsService(
     return BookingTapMovementOut(
       sequence = id.sequence,
       movementDate = movementDate,
-      movementTime = movementTime,
+      movementTime = movementDate.atTime(movementTime.toLocalTime()),
       movementReason = movementReason.id.reasonCode,
       arrestAgency = arrestAgency?.code,
       escort = escort?.code,
@@ -393,7 +393,7 @@ class OffenderTapsService(
     return BookingTapMovementIn(
       sequence = id.sequence,
       movementDate = movementDate,
-      movementTime = movementTime,
+      movementTime = movementDate.atTime(movementTime.toLocalTime()),
       movementReason = movementReason.id.reasonCode,
       escort = escort?.code,
       escortText = escortText,

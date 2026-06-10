@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps
 
 import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -44,19 +43,18 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.offender.Off
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.offender.TapSummary
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.schedule.TapScheduleOut
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
+import java.time.LocalTime
 
 class TapMovementResourceIntTest(
-  @Autowired val scheduleOutRepository: OffenderTapScheduleOutRepository,
-  @Autowired val scheduleInRepository: OffenderTapScheduleInRepository,
-  @Autowired val movementOutRepository: OffenderTapMovementOutRepository,
-  @Autowired val movementInRepository: OffenderTapMovementInRepository,
-  @Autowired val offenderExternalMovementRepository: OffenderExternalMovementRepository,
-  @Autowired val corporateRepository: CorporateRepository,
-  @Autowired val agencyLocationRepository: AgencyLocationRepository,
-  @Autowired val offenderRepository: OffenderRepository,
+  @Autowired private val scheduleOutRepository: OffenderTapScheduleOutRepository,
+  @Autowired private val scheduleInRepository: OffenderTapScheduleInRepository,
+  @Autowired private val movementOutRepository: OffenderTapMovementOutRepository,
+  @Autowired private val movementInRepository: OffenderTapMovementInRepository,
+  @Autowired private val offenderExternalMovementRepository: OffenderExternalMovementRepository,
+  @Autowired private val corporateRepository: CorporateRepository,
+  @Autowired private val agencyLocationRepository: AgencyLocationRepository,
+  @Autowired private val offenderRepository: OffenderRepository,
   @Autowired private val entityManager: EntityManager,
-
 ) : IntegrationTestBase() {
   private lateinit var offender: Offender
   private lateinit var offenderAddress: OffenderAddress
@@ -206,7 +204,8 @@ class TapMovementResourceIntTest(
             assertThat(tapScheduleOutId).isNull()
             assertThat(tapApplicationId).isNull()
             assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
-            assertThat(movementTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
+            assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
+            assertThat(movementTime.toLocalTime()).isEqualTo(cityTapMovementOut.movementTime.toLocalTime())
             assertThat(movementReason).isEqualTo("C5")
             assertThat(arrestAgency).isEqualTo("POL")
             assertThat(escort).isEqualTo("L")
@@ -282,7 +281,8 @@ class TapMovementResourceIntTest(
               assertThat(tapScheduleOutId).isEqualTo(scheduleOut.eventId)
               assertThat(tapApplicationId).isEqualTo(application.tapApplicationId)
               assertThat(movementDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
-              assertThat(movementTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
+              assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
+              assertThat(movementTime.toLocalTime()).isEqualTo(movementOut.movementTime.toLocalTime())
               assertThat(movementReason).isEqualTo("C5")
               assertThat(arrestAgency).isEqualTo("POL")
               assertThat(escort).isEqualTo("L")
@@ -969,7 +969,8 @@ class TapMovementResourceIntTest(
             assertThat(tapScheduleInId).isNull()
             assertThat(tapApplicationId).isNull()
             assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
-            assertThat(movementTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
+            assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
+            assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
             assertThat(movementReason).isEqualTo("C5")
             assertThat(escort).isEqualTo("L")
             assertThat(escortText).isEqualTo("SE")
@@ -1045,8 +1046,9 @@ class TapMovementResourceIntTest(
               assertThat(tapScheduleOutId).isEqualTo(scheduleOut.eventId)
               assertThat(tapScheduleInId).isEqualTo(scheduleIn.eventId)
               assertThat(tapApplicationId).isEqualTo(application.tapApplicationId)
-              assertThat(movementDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
-              assertThat(movementTime).isCloseTo(twoDaysAgo, within(1, ChronoUnit.MINUTES))
+              assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
+              assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
+              assertThat(movementTime.toLocalTime()).isEqualTo(movementIn.movementTime.toLocalTime())
               assertThat(movementReason).isEqualTo("C5")
               assertThat(escort).isEqualTo("L")
               assertThat(escortText).isEqualTo("SE")
