@@ -94,7 +94,7 @@ class OffenderCourtMovementsService(
   private fun OffenderCourtMovementOut.toResponse() = BookingCourtMovementOut(
     sequence = id.sequence,
     movementDate = movementDate,
-    movementTime = movementDate.atTime(movementTime.toLocalTime()),
+    movementTime = getMovementDateAndTime(),
     movementReason = movementReason.id.reasonCode,
     fromPrison = fromAgency!!.id,
     toCourt = toAgency?.id,
@@ -105,7 +105,7 @@ class OffenderCourtMovementsService(
   private fun OffenderCourtMovementIn.toResponse() = BookingCourtMovementIn(
     sequence = id.sequence,
     movementDate = movementDate,
-    movementTime = movementDate.atTime(movementTime.toLocalTime()),
+    movementTime = getMovementDateAndTime(),
     movementReason = movementReason.id.reasonCode,
     fromCourt = fromAgency?.id,
     toPrison = toAgency!!.id,

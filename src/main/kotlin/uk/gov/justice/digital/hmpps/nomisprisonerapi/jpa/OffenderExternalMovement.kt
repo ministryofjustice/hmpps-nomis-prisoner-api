@@ -151,6 +151,15 @@ class OffenderExternalMovement(
   val toAddress: Address? = null,
 ) : NomisAuditableEntityWithStaff() {
 
+  /**
+   * Return the movement date with the time portion set to the movement time. Under some circumstances (and until
+   * corrected by TAG_DATETIME_CORRECTIONS) the date portion of the movement time may be different, so need to combine
+   * the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the movement date and time.
+   */
+  fun getMovementDateAndTime(): LocalDateTime = movementDate.atTime(movementTime.toLocalTime())
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

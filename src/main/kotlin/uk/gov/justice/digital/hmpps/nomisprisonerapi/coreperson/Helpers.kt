@@ -8,7 +8,7 @@ internal fun OffenderBooking.getReleaseTime(): LocalDateTime? = takeIf { !active
   ?.let {
     externalMovements
       .filter { it.movementReason.id.type == "REL" }
-      .maxByOrNull { it.movementTime }
-      ?.movementTime
+      .map { it.getMovementDateAndTime() }
+      .maxByOrNull { it }
       ?: bookingEndDate
   }
