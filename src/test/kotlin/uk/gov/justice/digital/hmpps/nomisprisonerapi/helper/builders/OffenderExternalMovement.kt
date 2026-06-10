@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -110,7 +111,7 @@ class OffenderExternalMovementBuilder(
         offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
-      movementTime = date,
+      movementTime = LocalDate.parse("2023-01-02").atTime(date.toLocalTime()),
       movementDirection = OUT,
       movementReason = repository.lookupMovementTypeAndReason("REL", "CR"),
       fromAgency = offenderBooking.location,
@@ -136,7 +137,7 @@ class OffenderExternalMovementBuilder(
         offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
-      movementTime = date,
+      movementTime = LocalDate.parse("2023-01-02").atTime(date.toLocalTime()),
       movementDirection = IN,
       movementReason = repository.lookupMovementTypeAndReason("ADM", "N"),
       toAgency = offenderBooking.location,
@@ -287,7 +288,7 @@ class OffenderExternalMovementBuilder(
         offenderBooking.externalMovements.size + 1,
       ),
       movementDate = date.toLocalDate(),
-      movementTime = date,
+      movementTime = LocalDate.parse("2023-01-02").atTime(date.toLocalTime()),
       movementDirection = IN,
       movementReason = repository.lookupMovementTypeAndReason(movementType, movementReason),
       fromAgency = repository.lookupAgency(fromPrisonId),

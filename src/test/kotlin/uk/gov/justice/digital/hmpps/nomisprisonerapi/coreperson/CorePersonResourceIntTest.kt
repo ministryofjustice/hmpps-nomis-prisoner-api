@@ -965,6 +965,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               bookingEndDate = LocalDate.parse("2023-01-23"),
             ) {
               profileDetail(profileType = "IMM", profileCode = "N")
+              release(date = LocalDateTime.parse("2019-12-31T10:00"))
             }
             alias {
               aliasBooking = booking(bookingBeginDate = LocalDateTime.parse("2020-02-03T12:20:30")) {
@@ -994,7 +995,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("interestsToImmigration[1].bookingId").isEqualTo(booking2.bookingId)
           .jsonPath("interestsToImmigration[1].interestToImmigration").isEqualTo(false)
           .jsonPath("interestsToImmigration[1].startDateTime").isEqualTo("2022-02-03T12:20:30")
-          .jsonPath("interestsToImmigration[1].endDateTime").isEqualTo("2023-01-23T00:00:00")
+          .jsonPath("interestsToImmigration[1].endDateTime").isEqualTo("2019-12-31T10:00:00")
           .jsonPath("interestsToImmigration[1].latestBooking").isEqualTo(false)
           .jsonPath("interestsToImmigration.length()").isEqualTo(2)
       }

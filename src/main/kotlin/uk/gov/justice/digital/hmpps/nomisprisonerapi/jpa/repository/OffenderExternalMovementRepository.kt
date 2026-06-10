@@ -103,8 +103,8 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
   fun findPrisonAt(time: LocalDateTime, bookingId: Long): AgencyLocation? {
     val admissions = findAllById_OffenderBooking_BookingId(bookingId)
       .filter { it.movementReason.id.type == "ADM" }
-    val admission = admissions.filter { it.movementTime < time }.maxByOrNull { it.movementTime }
-      ?: admissions.minByOrNull { it.movementTime }
+    val admission = admissions.filter { it.getMovementDateAndTime() < time }.maxByOrNull { it.getMovementDateAndTime() }
+      ?: admissions.minByOrNull { it.getMovementDateAndTime() }
     return admission?.toAgency
   }
 }
