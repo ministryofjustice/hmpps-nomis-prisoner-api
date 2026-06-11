@@ -279,6 +279,38 @@ class OffenderCourtMovementsResourceIntTest(
     }
 
     @Nested
+    inner class MultipleBookings {
+      @Test
+      fun `should assign court schedules to the correct bookings`() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account()
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              courtCase = courtCase(reportingStaff = staff) {
+                scheduleOut = courtEvent()
+              }
+            }
+            booking {
+              courtEventOut()
+            }
+          }
+        }
+
+        webTestClient.getOffenderCourtMovementsOk(offenderNo)
+          .apply {
+            assertThat(bookings).hasSize(2)
+            // We had a bug where court schedules were ending up on every booking
+            // Check only 1 booking has the scheduleOut
+            assertThat(bookings.filter { it.courtSchedules.filter { it.eventId == scheduleOut.id }.size == 1 }).hasSize(1)
+            // Check the correct booking has the scheduleOut
+            assertThat(bookings.filter { it.courtSchedules.filter { it.eventId == scheduleOut.id }.size == 1 }.first().bookingId).isEqualTo(booking.bookingId)
+          }
+      }
+    }
+
+    @Nested
     inner class Validation {
       @Test
       fun `should return not found if offender unknown`() {
