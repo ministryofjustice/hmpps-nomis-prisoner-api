@@ -142,6 +142,7 @@ class OffenderCourtMovementsService(
     activeBooking = active,
     latestBooking = latest,
     courtSchedules = courtSchedules
+      .filter { it.offenderBooking.bookingId == bookingId }
       .map { schedule ->
         schedule.toResponse(
           moveOut = allMovementsOut.find { it.courtScheduleOutId == schedule.id && it.offenderBooking.bookingId == bookingId },
