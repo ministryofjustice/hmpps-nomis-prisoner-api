@@ -1578,7 +1578,7 @@ class CourtSentencingService(
 
   private fun List<RecallRelatedSentenceDetails>.updateSentences(): List<OffenderSentence> = this.map { sentence ->
     val offenderBooking = findOffenderBooking(sentence.sentenceId.offenderBookingId)
-    with(findSentence(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
+    with(findSentenceWithLock(booking = offenderBooking, sentenceSequence = sentence.sentenceId.sentenceSequence)) {
       category = lookupSentenceCategory(sentence.sentenceCategory)
       calculationType = lookupSentenceCalculationType(
         categoryCode = sentence.sentenceCategory,
@@ -1618,6 +1618,14 @@ class CourtSentencingService(
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
   private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNull(
+    SentenceId(
+      sequence = sentenceSequence,
+      offenderBooking = booking,
+    ),
+  )
+    ?: throw NotFoundException("Sentence for booking ${booking.bookingId} and sentence sequence $sentenceSequence not found")
+
+  private fun findSentenceWithLock(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNullForUpdate(
     SentenceId(
       sequence = sentenceSequence,
       offenderBooking = booking,
