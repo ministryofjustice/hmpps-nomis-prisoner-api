@@ -947,7 +947,7 @@ class CourtSentencingService(
   fun deleteSentence(offenderNo: String, caseId: Long, sentenceSequence: Long) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = case.offenderBooking
-      offenderSentenceRepository.findByIdOrNull(
+      offenderSentenceRepository.findByIdOrNullForUpdate(
         SentenceId(
           offenderBooking = offenderBooking,
           sequence = sentenceSequence,
@@ -978,7 +978,7 @@ class CourtSentencingService(
   fun deleteSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termSequence: Long) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = case.offenderBooking
-      offenderSentenceTermRepository.findByIdOrNull(
+      offenderSentenceTermRepository.findByIdOrNullForUpdate(
         OffenderSentenceTermId(
           offenderBooking = offenderBooking,
           sentenceSequence = sentenceSequence,
