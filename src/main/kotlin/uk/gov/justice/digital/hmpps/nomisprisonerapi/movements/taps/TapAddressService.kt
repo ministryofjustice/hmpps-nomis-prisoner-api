@@ -75,7 +75,7 @@ class TapAddressService(
 
   // Note that this assumes the address was created in DPS... a fair assumption because if the address was created in NOMIS we have the ID so never need to find it
   private fun findOrCreateCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress {
-    val (premise, street) = formatAddressText(addressText)
+    val (premise, street) = dpsAddressToNomisFormat(addressText)
     val corporateName = name.toCorporateName()
     return findCorporateAddress(corporateName, addressText, postalCode)
       ?: let {
@@ -89,7 +89,7 @@ class TapAddressService(
       }
   }
 
-  private fun formatAddressText(addressText: String): Pair<String, String?> {
+  private fun dpsAddressToNomisFormat(addressText: String): Pair<String, String?> {
     val maxPremiseLength = 135
 
     if (addressText.length <= maxPremiseLength) {
@@ -104,9 +104,11 @@ class TapAddressService(
     return addressText.substring(0, split).trim() to addressText.substring(split, addressText.length).trim()
   }
 
+  private fun Pair<String, String?>.toFullAddress() = arrayOf(first.withoutTrailingCommas(), second.withoutTrailingCommas()).filterNotNull().joinToString(", ").trimAndRemoveTrailingComma()
+
   private fun findOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress? = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
     .firstOrNull {
-      it.toFullAddress(null) == addressText.trimAndRemoveTrailingComma() && it.postalCode == postalCode?.trim()
+      it.toFullAddress(null) == dpsAddressToNomisFormat(addressText).toFullAddress() && it.postalCode == postalCode?.trim()
     }
 
   private fun findCorporateAddress(name: String, addressText: String, postalCode: String?): CorporateAddress? {
@@ -114,14 +116,14 @@ class TapAddressService(
     return corporateAddressRepository.findAllByCorporate_CorporateName(corporateName)
       .firstOrNull {
         // Need to check address with and without corporate name - it might be included on a DPS address
-        (it.toFullAddress(corporateName) == addressText.trimAndRemoveTrailingComma() || it.toFullAddress() == addressText.trimAndRemoveTrailingComma()) &&
+        (it.toFullAddress(corporateName) == dpsAddressToNomisFormat(addressText).toFullAddress() || it.toFullAddress() == dpsAddressToNomisFormat(addressText).toFullAddress()) &&
           it.postalCode == postalCode?.trim()
       }
   }
 
   // Note that this assumes the address was created in DPS... a fair assumption because if the address was created in NOMIS we have the ID so never need to find it
   private fun findOrCreateOffenderAddress(addressText: String, postalCode: String?, offender: Offender): OffenderAddress {
-    val (premise, street) = formatAddressText(addressText)
+    val (premise, street) = dpsAddressToNomisFormat(addressText)
     tapAddressInsertRepository.insertAddressIfNotExists("OFF", offender.rootOffenderId!!, premise, street, postalCode)
 
     val address = offenderAddressRepository.findByOffender_RootOffenderId(offender.rootOffenderId!!)
@@ -140,6 +142,9 @@ class TapAddressService(
   private fun String.trimAndRemoveTrailingComma() = this.trim().trimEnd(',')
 }
 
+// remove trailing commas because they will be added back when the components are joined together
+fun String?.withoutTrailingCommas() = this?.trim()?.trimEnd(',')
+
 internal fun Address.toFullAddress(description: String? = null): String {
   val address = mutableListOf<String>()
 
@@ -152,9 +157,6 @@ internal fun Address.toFullAddress(description: String? = null): String {
   fun String?.cleanAddressComponent(): String? {
     // remove corporate/agency description from any address elements that might contain it
     fun String?.withoutDescription() = description?.let { this?.replace(description, "") } ?: this
-
-    // remove trailing commas because they will be added back when the components are joined together
-    fun String?.withoutTrailingCommas() = this?.trim()?.trimEnd(',')
 
     return this.withoutDescription().withoutTrailingCommas()
   }
