@@ -532,7 +532,10 @@ class TapScheduleResourceIntTest(
 
         webTestClient.upsertTapScheduleOutOk(
           // comment is 300 long
-          anUpsertTapScheduleOut(application.tapApplicationId, comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"),
+          anUpsertTapScheduleOut(
+            application.tapApplicationId,
+            comment = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890",
+          ),
         )
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -680,6 +683,106 @@ class TapScheduleResourceIntTest(
                 assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
                 assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
                 assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class CreateTapScheduleOutWhereDpsOffenderAddressOverflowsToStreet {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            offenderAddress = address(
+              premise = "A Block Wards 70 71 72 And 73 Trust Hq, Royal Stoke University Hospital, Newcastle Road, Trent Vale, Stoke-On-Trent, City Of",
+              street = "Stoke-On-Trent",
+              locality = null,
+              city = null,
+              postcode = "ST4 6QG",
+              county = null,
+              country = null,
+            )
+            booking = booking {
+              application = tapApplication(
+                toAddress = offenderAddress,
+              )
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create tap schedule out with existing address`() {
+        webTestClient.upsertTapScheduleOutOk(
+          request = anUpsertTapScheduleOut(
+            toAddress = UpsertTapAddress(
+              name = null,
+              addressText = "A Block Wards 70 71 72 And 73 Trust Hq, Royal Stoke University Hospital, Newcastle Road, Trent Vale, Stoke-On-Trent, City Of Stoke-On-Trent",
+              postalCode = "ST4 6QG",
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
+                assertThat(toAddress?.addressId).isEqualTo(offenderAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(offenderAddress.addressOwnerClass)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class CreateTapScheduleOutWhereDpsCorporateAddressOverflowsToStreet {
+      private lateinit var corporateAddress: CorporateAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          corporate(corporateName = "Stoke Hospital") {
+            corporateAddress = address(
+              premise = "A Block Wards 70 71 72 And 73 Trust Hq, Royal Stoke University Hospital, Newcastle Road, Trent Vale, Stoke-On-Trent, City Of",
+              street = "Stoke-On-Trent",
+              locality = null,
+              city = null,
+              postcode = "ST4 6QG",
+              county = null,
+              country = null,
+            )
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              application = tapApplication(
+                toAddress = corporateAddress,
+              )
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should create tap schedule out with existing address`() {
+        webTestClient.upsertTapScheduleOutOk(
+          request = anUpsertTapScheduleOut(
+            toAddress = UpsertTapAddress(
+              name = "Stoke Hospital",
+              addressText = "A Block Wards 70 71 72 And 73 Trust Hq, Royal Stoke University Hospital, Newcastle Road, Trent Vale, Stoke-On-Trent, City Of Stoke-On-Trent",
+              postalCode = "ST4 6QG",
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offender.nomsId)!!) {
+                assertThat(tapApplication.tapApplicationId).isEqualTo(application.tapApplicationId)
+                assertThat(toAddress?.addressId).isEqualTo(corporateAddress.addressId)
+                assertThat(toAddress?.addressOwnerClass).isEqualTo(corporateAddress.addressOwnerClass)
               }
             }
           }
