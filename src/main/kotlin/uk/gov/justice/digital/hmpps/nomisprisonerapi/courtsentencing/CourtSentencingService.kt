@@ -953,6 +953,8 @@ class CourtSentencingService(
           sequence = sentenceSequence,
         ),
       )?.also {
+        // try to get a lock on each term to ensure we can safely cascade the delete without hanging
+        it.offenderSentenceTerms.forEach { term -> offenderSentenceTermRepository.findByIdOrNullForUpdate(term.id) }
         offenderSentenceRepository.delete(it)
         telemetryClient.trackEvent(
           "sentence-deleted",
