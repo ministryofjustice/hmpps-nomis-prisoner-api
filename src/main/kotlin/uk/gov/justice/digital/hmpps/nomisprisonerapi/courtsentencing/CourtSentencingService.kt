@@ -692,7 +692,7 @@ class CourtSentencingService(
         "caseId" to caseId.toString(),
       )
 
-      courtEventRepository.findByIdOrNull(eventId)?.also {
+      courtEventRepository.findByIdOrNullForUpdate(eventId)?.also {
         case.courtEvents.remove(it)
         courtCaseRepository.saveAndFlush(case)
         // Offender charges are deleted if no longer associated with an appearance
