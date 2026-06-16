@@ -671,7 +671,7 @@ class CourtSentencingService(
   }
 
   private fun updateCourtIfNecessary(courtCase: CourtCase) {
-    courtCase.courtEvents.maxWithOrNull(compareBy<CourtEvent> { it.eventDate }.thenBy { it.startTime })
+    courtCase.courtEvents.maxWithOrNull(compareBy { it.getEventDateAndTime() })
       ?.let { latestEvent ->
         if (courtCase.court != latestEvent.court) {
           courtCase.court = latestEvent.court
@@ -2256,7 +2256,7 @@ private fun CourtEvent.toCourtEvent(): CourtEventResponse = CourtEventResponse(
   id = this.id,
   caseId = this.courtCase?.id,
   offenderNo = this.offenderBooking.offender.nomsId,
-  eventDateTime = LocalDateTime.of(this.eventDate, this.startTime.toLocalTime()),
+  eventDateTime = this.getEventDateAndTime(),
   courtEventType = this.courtEventType.toCodeDescription(),
   eventStatus = this.eventStatus.toCodeDescription(),
   directionCode = this.directionCode?.toCodeDescription(),
