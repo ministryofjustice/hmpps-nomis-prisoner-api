@@ -1501,7 +1501,12 @@ class CourtSentencingService(
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
     }
-    courtEventRepository.deleteAllById(request.beachCourtEventIds)
+    request.beachCourtEventIds.forEach {
+      courtEventRepository.findByIdOrNullForUpdate(it)?.run {
+        courtEventRepository.delete(this)
+      }
+    }
+
     telemetryClient.trackEvent(
       "recall-sentences-replaced",
       mapOf(
