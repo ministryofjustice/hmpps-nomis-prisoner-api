@@ -1414,7 +1414,7 @@ class CourtSentencingService(
       )
     }
     val casesUpdated = request.beachCourtEventIds.mapNotNull {
-      courtEventRepository.findByIdOrNull(it)?.let { courtEvent ->
+      courtEventRepository.findByIdOrNullForUpdate(it)?.let { courtEvent ->
         if (courtEvent.courtCase in courtCasesInRecall) {
           courtEvent.eventDate = request.recallRevocationDate
           courtEvent.startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT)
@@ -1470,7 +1470,11 @@ class CourtSentencingService(
       )
     }
 
-    courtEventRepository.deleteAllById(request.beachCourtEventIds)
+    request.beachCourtEventIds.forEach {
+      courtEventRepository.findByIdOrNullForUpdate(it)?.run {
+        courtEventRepository.delete(this)
+      }
+    }
 
     telemetryClient.trackEvent(
       "recall-sentences-reverted",
