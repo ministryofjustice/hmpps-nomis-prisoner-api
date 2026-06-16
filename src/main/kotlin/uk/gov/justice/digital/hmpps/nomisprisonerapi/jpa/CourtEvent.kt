@@ -138,6 +138,15 @@ class CourtEvent(
    */
 ) : NomisAuditableEntityWithStaff() {
 
+  /**
+   * Return the event date with the time portion set to the start time. Under some circumstances (and until
+   * corrected by TAG_DATETIME_CORRECTIONS) the date portion of the start time may be different, so need to combine
+   * the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the event date and start time.
+   */
+  fun getEventDateAndTime(): LocalDateTime = eventDate.atTime(startTime.toLocalTime())
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
@@ -146,12 +155,7 @@ class CourtEvent(
   }
 
   fun isLatestAppearance(): Boolean = courtCase?.let {
-    this == courtCase!!.courtEvents.sortedBy { event ->
-      LocalDateTime.of(
-        event.eventDate,
-        event.startTime.toLocalTime(),
-      )
-    }.last()
+    this == courtCase!!.courtEvents.maxByOrNull { it.getEventDateAndTime() }
   } ?: false
 
   override fun hashCode(): Int = javaClass.hashCode()
