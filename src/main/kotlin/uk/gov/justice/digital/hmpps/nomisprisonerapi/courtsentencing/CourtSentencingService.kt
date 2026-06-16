@@ -781,8 +781,8 @@ class CourtSentencingService(
     checkOffenderExists(offenderNo)
     findCourtCaseWithLock(caseId, offenderNo).let { courtCase ->
       findCourtAppearanceWithLock(courtEventId, offenderNo).let { courtAppearance ->
-        val offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId)
-        findCourtEventCharge(
+        val offenderCharge = findOffenderChargeWithLock(offenderNo = offenderNo, id = chargeId)
+        findCourtEventChargeWithLock(
           offenderNo = offenderNo,
           id = CourtEventChargeId(offenderCharge, courtAppearance),
         ).let { courtEventCharge ->
@@ -1664,7 +1664,13 @@ class CourtSentencingService(
   private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
 
+  private fun findOffenderChargeWithLock(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNullForUpdate(id)
+    ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
+
   private fun findCourtEventCharge(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
+
+  private fun findCourtEventChargeWithLock(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNullForUpdate(id)
     ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
 
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(
