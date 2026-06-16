@@ -1016,7 +1016,7 @@ class CourtSentencingService(
     offenderNo: String,
   ) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
-      findSentence(booking = case.offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
+      findSentenceWithLock(booking = case.offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
         val offenderBooking = case.offenderBooking
         checkConsecutiveSentenceExists(request, offenderBooking)
         sentence.category = lookupSentenceCategory(request.sentenceCategory)
@@ -1107,7 +1107,7 @@ class CourtSentencingService(
     offenderNo: String,
   ) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
-      findSentenceTerm(
+      findSentenceTermWithLock(
         booking = case.offenderBooking,
         sentenceSequence = sentenceSequence,
         termSequence = termSequence,
@@ -1639,6 +1639,20 @@ class CourtSentencingService(
     booking: OffenderBooking,
     offenderNo: String,
   ): OffenderSentenceTerm = offenderSentenceTermRepository.findByIdOrNull(
+    OffenderSentenceTermId(
+      termSequence = termSequence,
+      sentenceSequence = sentenceSequence,
+      offenderBooking = booking,
+    ),
+  )
+    ?: throw NotFoundException("Sentence term for offender $offenderNo, booking ${booking.bookingId}, term sequence $termSequence and sentence sequence $sentenceSequence not found")
+
+  private fun findSentenceTermWithLock(
+    termSequence: Long,
+    sentenceSequence: Long,
+    booking: OffenderBooking,
+    offenderNo: String,
+  ): OffenderSentenceTerm = offenderSentenceTermRepository.findByIdOrNullForUpdate(
     OffenderSentenceTermId(
       termSequence = termSequence,
       sentenceSequence = sentenceSequence,
