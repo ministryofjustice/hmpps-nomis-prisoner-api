@@ -70,7 +70,7 @@ class GeneralLedgerTransactionBuilder(
     offenderId = offender?.id,
     transactionReferenceNumber = transactionReferenceNumber,
     entryDate = entryDateTime.toLocalDate(),
-    entryTime = entryDateTime.toLocalTime(),
+    entryTime = entryDateTime,
     entryDescription = "entry description",
     entryAmount = entryAmount,
     accountCode = repository.lookupAccountCode(accountCode),

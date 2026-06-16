@@ -170,7 +170,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].postingType").isEqualTo(glTransaction1.postUsage.name)
         .jsonPath("$[0].accountCode").isEqualTo(glTransaction1.accountCode.accountCode)
         .jsonPath("$[0].description").isEqualTo(glTransaction1.entryDescription!!)
-        .jsonPath("$[0].transactionTimestamp").isEqualTo(glTransaction1.entryDate.atTime(glTransaction2.entryTime))
+        .jsonPath("$[0].transactionTimestamp").isEqualTo(glTransaction1.entryDate.atTime(glTransaction2.entryTime.toLocalTime()))
         .jsonPath("$[0].reference").isEqualTo(glTransaction1.transactionReferenceNumber!!)
         .jsonPath("$[1].transactionId").isEqualTo(glTransaction2.transactionId)
         .jsonPath("$[1].transactionEntrySequence").isEqualTo(glTransaction2.transactionEntrySequence)
@@ -183,7 +183,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[1].postingType").isEqualTo(glTransaction2.postUsage.name)
         .jsonPath("$[1].accountCode").isEqualTo(glTransaction2.accountCode.accountCode)
         .jsonPath("$[1].description").isEqualTo(glTransaction2.entryDescription!!)
-        .jsonPath("$[1].transactionTimestamp").isEqualTo(glTransaction2.entryDate.atTime(glTransaction2.entryTime))
+        .jsonPath("$[1].transactionTimestamp").isEqualTo(glTransaction2.entryDate.atTime(glTransaction2.entryTime.toLocalTime()))
         .jsonPath("$[1].reference").isEqualTo(glTransaction2.transactionReferenceNumber!!)
     }
 

@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 
 @Entity
 @EntityOpen
@@ -65,7 +65,7 @@ data class GeneralLedgerTransaction(
   val entryDate: LocalDate,
 
   @Column(name = "TXN_ENTRY_TIME", nullable = false)
-  val entryTime: LocalTime,
+  val entryTime: LocalDateTime,
 
   @Column(name = "TXN_ENTRY_DESC")
   val entryDescription: String? = null,
@@ -77,6 +77,15 @@ data class GeneralLedgerTransaction(
   @Column(nullable = false)
   val createDate: LocalDate,
 ) : NomisAuditableEntityWithStaff() {
+  /**
+   * Return the transaction entry date with the time portion set to the transaction entry time. Under some circumstances
+   * (and until corrected by TAG_DATETIME_CORRECTIONS) the date portion of the transaction entry time may be different,
+   * so need to combine the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the transaction entry date and time.
+   */
+  fun getTransactionEntryDateAndTime(): LocalDateTime = entryDate.atTime(entryTime.toLocalTime())
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
