@@ -65,7 +65,7 @@ data class GeneralLedgerTransaction(
   val entryDate: LocalDate,
 
   @Column(name = "TXN_ENTRY_TIME", nullable = false)
-  val entryTime: LocalDateTime,
+  private val entryTime: LocalDateTime,
 
   @Column(name = "TXN_ENTRY_DESC")
   val entryDescription: String? = null,

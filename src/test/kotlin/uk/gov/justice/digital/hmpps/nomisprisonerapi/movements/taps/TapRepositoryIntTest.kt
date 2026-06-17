@@ -341,7 +341,7 @@ class TapRepositoryIntTest(
 
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now())
-        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
@@ -382,7 +382,7 @@ class TapRepositoryIntTest(
 
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now())
-        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
@@ -432,7 +432,7 @@ class TapRepositoryIntTest(
 
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.IN)
@@ -476,7 +476,7 @@ class TapRepositoryIntTest(
 
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
         assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.IN)

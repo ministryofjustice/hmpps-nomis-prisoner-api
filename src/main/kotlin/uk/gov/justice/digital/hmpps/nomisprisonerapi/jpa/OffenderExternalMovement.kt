@@ -59,7 +59,7 @@ class OffenderExternalMovement(
   val movementDate: LocalDate,
 
   @Column(name = "MOVEMENT_TIME")
-  val movementTime: LocalDateTime,
+  private val movementTime: LocalDateTime,
 
   @ManyToOne(fetch = LAZY) @JoinColumns(
     JoinColumn(name = "MOVEMENT_REASON_CODE", referencedColumnName = "MOVEMENT_REASON_CODE"),
