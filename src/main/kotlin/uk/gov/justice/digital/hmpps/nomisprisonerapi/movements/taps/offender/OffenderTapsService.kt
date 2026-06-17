@@ -251,7 +251,7 @@ class OffenderTapsService(
     fromDate = fromDate,
     releaseTime = releaseTime,
     toDate = toDate,
-    returnTime = returnTime,
+    returnTime = getToReturnDateAndTime(),
     applicationStatus = applicationStatus.code,
     escortCode = escort?.code,
     transportType = transportType?.code,
@@ -273,7 +273,7 @@ class OffenderTapsService(
         ?: it.tapScheduleIns.firstOrNull()
       val tapMovementIn = tapScheduleIn?.tapMovementIn
       BookingTap(
-        tapScheduleOut = it.toResponse(returnTime),
+        tapScheduleOut = it.toResponse(getToReturnDateAndTime()),
         tapScheduleIn = tapScheduleIn?.toResponse(),
         tapMovementOut = it.tapMovementOut?.toResponse(),
         tapMovementIn = tapMovementIn?.toResponse(),

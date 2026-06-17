@@ -113,7 +113,7 @@ class OffenderTapApplication(
   val applicationDate: LocalDateTime,
 
   @Column(name = "APPLICATION_TIME")
-  val applicationTime: LocalDateTime,
+  private val applicationTime: LocalDateTime,
 
   @Column(name = "FROM_DATE")
   var fromDate: LocalDate,
@@ -125,7 +125,7 @@ class OffenderTapApplication(
   var toDate: LocalDate,
 
   @Column(name = "RETURN_TIME")
-  var returnTime: LocalDateTime,
+  private var returnTime: LocalDateTime,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -230,6 +230,29 @@ class OffenderTapApplication(
   @OneToMany(mappedBy = "tapApplication", cascade = [CascadeType.ALL], orphanRemoval = true)
   var tapScheduleOuts: MutableList<OffenderTapScheduleOut> = mutableListOf(),
 ) : NomisAuditableEntityBasic() {
+
+  /**
+   * Return the application date with the time portion set to the application time. Under some circumstances (and until
+   * corrected by TAG_DATETIME_CORRECTIONS) the date portion of the application time may be different, so need to combine
+   * the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the application date and time.
+   */
+  fun getApplicationDateAndTime(): LocalDateTime = applicationDate.with(applicationTime.toLocalTime())
+
+  /**
+   * Return the return date with the time portion set to the return time. Under some circumstances (and until
+   * corrected by TAG_DATETIME_CORRECTIONS) the date portion of the return time may be different, so need to combine
+   * the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the return date and time.
+   */
+  fun getToReturnDateAndTime(): LocalDateTime = toDate.atTime(returnTime.toLocalTime())
+
+  fun setToReturnDateAndTime(returnDateAndTime: LocalDateTime) {
+    toDate = returnDateAndTime.toLocalDate()
+    returnTime = returnDateAndTime
+  }
 
   fun isApproved(): Boolean = applicationStatus.code in listOf("APP-SCH", "APP-UNSCH")
   fun isUnapproved(): Boolean = !isApproved()

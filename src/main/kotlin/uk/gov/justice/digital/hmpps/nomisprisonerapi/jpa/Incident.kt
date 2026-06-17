@@ -17,6 +17,7 @@ import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.SortedSet
 
 @Entity
@@ -79,7 +80,7 @@ class Incident(
   @Column(name = "INCIDENT_DATE", nullable = false)
   var incidentDate: LocalDateTime,
   @Column(name = "INCIDENT_TIME", nullable = false)
-  var incidentTime: LocalDateTime,
+  private var incidentTime: LocalDateTime,
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INCIDENT_STATUS", nullable = false)
@@ -104,6 +105,20 @@ class Incident(
   @Column(name = "MODIFY_DATETIME", insertable = false, updatable = false)
   @Generated
   var lastModifiedDateTime: LocalDateTime? = null
+
+  /**
+   * Return the incident date with the time portion set to the incident time. Under some circumstances (and until
+   * corrected by TAG_DATETIME_CORRECTIONS) the date portion of the incident time may be different, so need to combine
+   * the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the incident date and time.
+   */
+  fun getIncidentDateAndTime(): LocalDateTime = incidentDate.with(incidentTime.toLocalTime())
+
+  fun setIncidentDateAndTime(incidentDateTime: LocalDateTime) {
+    incidentDate = incidentDateTime.truncatedTo(ChronoUnit.DAYS)
+    incidentTime = incidentDateTime
+  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
