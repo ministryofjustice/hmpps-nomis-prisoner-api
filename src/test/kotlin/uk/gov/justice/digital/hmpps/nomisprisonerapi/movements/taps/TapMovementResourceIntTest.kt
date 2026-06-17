@@ -205,7 +205,7 @@ class TapMovementResourceIntTest(
             assertThat(tapApplicationId).isNull()
             assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
             assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
-            assertThat(movementTime.toLocalTime()).isEqualTo(cityTapMovementOut.movementTime.toLocalTime())
+            assertThat(movementTime.toLocalTime()).isEqualTo(cityTapMovementOut.getMovementDateAndTime().toLocalTime())
             assertThat(movementReason).isEqualTo("C5")
             assertThat(arrestAgency).isEqualTo("POL")
             assertThat(escort).isEqualTo("L")
@@ -282,7 +282,7 @@ class TapMovementResourceIntTest(
               assertThat(tapApplicationId).isEqualTo(application.tapApplicationId)
               assertThat(movementDate).isEqualTo("${twoDaysAgo.toLocalDate()}")
               assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
-              assertThat(movementTime.toLocalTime()).isEqualTo(movementOut.movementTime.toLocalTime())
+              assertThat(movementTime.toLocalTime()).isEqualTo(movementOut.getMovementDateAndTime().toLocalTime())
               assertThat(movementReason).isEqualTo("C5")
               assertThat(arrestAgency).isEqualTo("POL")
               assertThat(escort).isEqualTo("L")
@@ -699,7 +699,7 @@ class TapMovementResourceIntTest(
                 assertThat(active).isTrue
                 assertThat(tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(movementTime).isEqualTo(twoDaysAgo)
+                assertThat(getMovementDateAndTime()).isEqualTo(twoDaysAgo)
                 assertThat(movementReason.id.reasonCode).isEqualTo("C5")
                 assertThat(arrestAgency?.code).isEqualTo("POL")
                 assertThat(escort?.code).isEqualTo("L")
@@ -843,7 +843,7 @@ class TapMovementResourceIntTest(
                 assertThat(active).isTrue
                 assertThat(tapScheduleOut).isNull()
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(movementTime).isEqualTo(twoDaysAgo)
+                assertThat(getMovementDateAndTime()).isEqualTo(twoDaysAgo)
               }
               with(offenderExternalMovementRepository.findByIdOrNull(OffenderExternalMovementId(booking, 1))!!) {
                 assertThat(active).isFalse
@@ -1048,7 +1048,7 @@ class TapMovementResourceIntTest(
               assertThat(tapApplicationId).isEqualTo(application.tapApplicationId)
               assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
               assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
-              assertThat(movementTime.toLocalTime()).isEqualTo(movementIn.movementTime.toLocalTime())
+              assertThat(movementTime.toLocalTime()).isEqualTo(movementIn.getMovementDateAndTime().toLocalTime())
               assertThat(movementReason).isEqualTo("C5")
               assertThat(escort).isEqualTo("L")
               assertThat(escortText).isEqualTo("SE")
@@ -1578,7 +1578,7 @@ class TapMovementResourceIntTest(
                 assertThat(tapScheduleOut?.eventId).isEqualTo(scheduleOut.eventId)
                 assertThat(tapScheduleIn?.eventId).isEqualTo(scheduleIn.eventId)
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(movementTime).isEqualTo(twoDaysAgo)
+                assertThat(getMovementDateAndTime()).isEqualTo(twoDaysAgo)
                 assertThat(movementReason.id.reasonCode).isEqualTo("C5")
                 assertThat(arrestAgency?.code).isEqualTo("POL")
                 assertThat(escort?.code).isEqualTo("L")
@@ -1726,7 +1726,7 @@ class TapMovementResourceIntTest(
                 assertThat(tapScheduleOut).isNull()
                 assertThat(tapScheduleIn).isNull()
                 assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(movementTime).isEqualTo(twoDaysAgo)
+                assertThat(getMovementDateAndTime()).isEqualTo(twoDaysAgo)
               }
               with(offenderExternalMovementRepository.findByIdOrNull(OffenderExternalMovementId(booking, 1))!!) {
                 assertThat(active).isFalse
