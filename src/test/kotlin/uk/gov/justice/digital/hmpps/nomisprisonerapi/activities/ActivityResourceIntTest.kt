@@ -1408,13 +1408,13 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val saved = repository.getActivity(courseActivity.courseActivityId)
         assertThat(saved.courseSchedules.size).isEqualTo(2)
         with(saved.courseSchedules.first { it.scheduleDate == today }) {
-          assertThat(startTime).isEqualTo("${today}T08:00:00")
-          assertThat(endTime).isEqualTo("${today}T11:30:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T11:30:00")
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
         with(saved.courseSchedules.first { it.scheduleDate == tomorrow }) {
-          assertThat(startTime).isEqualTo("${tomorrow}T13:00")
-          assertThat(endTime).isEqualTo("${tomorrow}T15:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${tomorrow}T13:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${tomorrow}T15:00")
           assertThat(slotCategory).isEqualTo(SlotCategory.PM)
         }
       }
@@ -1453,8 +1453,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         assertThat(saved.courseSchedules.size).isEqualTo(2)
         // The course from yesterday was omitted from the request but is not deleted
         with(saved.courseSchedules.first { it.scheduleDate == yesterday }) {
-          assertThat(startTime).isEqualTo("${yesterday}T08:00:00")
-          assertThat(endTime).isEqualTo("${yesterday}T11:00:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${yesterday}T08:00:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${yesterday}T11:00:00")
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
       }
@@ -1499,8 +1499,8 @@ class ActivityResourceIntTest : IntegrationTestBase() {
         val saved = repository.getActivity(courseActivity.courseActivityId)
         assertThat(saved.courseSchedules.size).isEqualTo(2)
         with(saved.courseSchedules.first { it.scheduleDate == today }) {
-          assertThat(startTime).isEqualTo("${today}T08:00:00")
-          assertThat(endTime).isEqualTo("${today}T11:00:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T11:00:00")
           assertThat(slotCategory).isEqualTo(SlotCategory.AM)
         }
         with(saved.courseSchedules.first { it.scheduleDate == tomorrow }) {

@@ -95,8 +95,8 @@ class ScheduleServiceTest {
         assertThat(newSchedules.size).isEqualTo(1)
         with(newSchedules[0]) {
           assertThat(scheduleDate).isEqualTo("2022-11-01")
-          assertThat(startTime).isEqualTo("2022-11-01T09:00")
-          assertThat(endTime).isEqualTo("2022-11-01T12:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("2022-11-01T09:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("2022-11-01T12:00")
         }
       }
 
@@ -116,13 +116,13 @@ class ScheduleServiceTest {
         assertThat(newSchedules.size).isEqualTo(2)
         with(newSchedules[0]) {
           assertThat(scheduleDate).isEqualTo("2022-11-01")
-          assertThat(startTime).isEqualTo("2022-11-01T09:00")
-          assertThat(endTime).isEqualTo("2022-11-01T12:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("2022-11-01T09:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("2022-11-01T12:00")
         }
         with(newSchedules[1]) {
           assertThat(scheduleDate).isEqualTo("2022-11-02")
-          assertThat(startTime).isEqualTo("2022-11-02T10:00")
-          assertThat(endTime).isEqualTo("2022-11-02T13:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("2022-11-02T10:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("2022-11-02T13:00")
         }
       }
 
@@ -185,7 +185,7 @@ class ScheduleServiceTest {
 
       with(newSchedules[0]) {
         assertThat(courseScheduleId).isEqualTo(1)
-        assertThat(startTime).isEqualTo("${yesterday}T08:00:00") // change of time ignored
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${yesterday}T08:00:00") // change of time ignored
       }
     }
 
@@ -198,11 +198,11 @@ class ScheduleServiceTest {
       assertThat(newSchedules.size).isEqualTo(2)
       with(newSchedules[0]) {
         assertThat(courseScheduleId).isEqualTo(1)
-        assertThat(startTime).isEqualTo("${yesterday}T08:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${yesterday}T08:00:00")
       }
       with(newSchedules[1]) {
         assertThat(courseScheduleId).isEqualTo(2)
-        assertThat(startTime).isEqualTo("${today}T08:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00:00")
       }
     }
 
@@ -219,15 +219,15 @@ class ScheduleServiceTest {
       assertThat(newSchedules.size).isEqualTo(3)
       with(newSchedules[0]) {
         assertThat(courseScheduleId).isEqualTo(1)
-        assertThat(startTime).isEqualTo("${yesterday}T08:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${yesterday}T08:00:00")
       }
       with(newSchedules[1]) {
         assertThat(courseScheduleId).isEqualTo(2)
-        assertThat(startTime).isEqualTo("${today}T08:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00:00")
       }
       with(newSchedules[2]) {
         assertThat(courseScheduleId).isEqualTo(0)
-        assertThat(startTime).isEqualTo("${yesterday}T13:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${yesterday}T13:00:00")
       }
     }
 
@@ -268,8 +268,8 @@ class ScheduleServiceTest {
       with(updatedSchedules[1]) {
         assertThat(courseScheduleId).isEqualTo(2)
         assertThat(scheduleDate).isEqualTo(today.toString())
-        assertThat(startTime).isEqualTo("${today}T09:00:00")
-        assertThat(endTime).isEqualTo("${today}T11:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T09:00:00")
+        assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T11:00:00")
         assertThat(slotCategory).isEqualTo(AM)
       }
     }
@@ -287,8 +287,8 @@ class ScheduleServiceTest {
       with(updatedSchedules[1]) {
         assertThat(courseScheduleId).isEqualTo(2)
         assertThat(scheduleDate).isEqualTo(twoDaysTime.toString())
-        assertThat(startTime).isEqualTo("${twoDaysTime}T08:00:00")
-        assertThat(endTime).isEqualTo("${twoDaysTime}T11:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${twoDaysTime}T08:00:00")
+        assertThat(getScheduleDateAndEndTime()).isEqualTo("${twoDaysTime}T11:00:00")
         assertThat(slotCategory).isEqualTo(AM)
       }
     }
@@ -307,15 +307,15 @@ class ScheduleServiceTest {
       with(updatedSchedules[1]) {
         assertThat(courseScheduleId).isEqualTo(2)
         assertThat(scheduleDate).isEqualTo(today.toString())
-        assertThat(startTime).isEqualTo("${today}T08:00:00")
-        assertThat(endTime).isEqualTo("${today}T11:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00:00")
+        assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T11:00:00")
         assertThat(slotCategory).isEqualTo(AM)
       }
       with(updatedSchedules[2]) {
         assertThat(courseScheduleId).isEqualTo(0)
         assertThat(scheduleDate).isEqualTo(twoDaysTime.toString())
-        assertThat(startTime).isEqualTo("${twoDaysTime}T08:00:00")
-        assertThat(endTime).isEqualTo("${twoDaysTime}T11:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${twoDaysTime}T08:00:00")
+        assertThat(getScheduleDateAndEndTime()).isEqualTo("${twoDaysTime}T11:00:00")
         assertThat(slotCategory).isEqualTo(AM)
       }
     }
@@ -359,8 +359,8 @@ class ScheduleServiceTest {
       }
       with(updatedSchedules[1]) {
         assertThat(scheduleDate).isEqualTo(today)
-        assertThat(startTime).isEqualTo("${today}T08:00:00")
-        assertThat(endTime).isEqualTo("${today}T09:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00:00")
+        assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T09:00:00")
       }
     }
 
@@ -407,8 +407,8 @@ class ScheduleServiceTest {
       with(updatedSchedules[2]) {
         assertThat(courseScheduleId).isEqualTo(4)
         assertThat(scheduleDate).isEqualTo(twoDaysTime.toString())
-        assertThat(startTime).isEqualTo("${twoDaysTime}T13:00:00")
-        assertThat(endTime).isEqualTo("${twoDaysTime}T15:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${twoDaysTime}T13:00:00")
+        assertThat(getScheduleDateAndEndTime()).isEqualTo("${twoDaysTime}T15:00:00")
         assertThat(slotCategory).isEqualTo(PM)
       }
       // unchanged
@@ -421,8 +421,8 @@ class ScheduleServiceTest {
       with(updatedSchedules[4]) {
         assertThat(courseScheduleId).isEqualTo(0)
         assertThat(scheduleDate).isEqualTo(fourDaysTime.toString())
-        assertThat(startTime).isEqualTo("${fourDaysTime}T08:00:00")
-        assertThat(endTime).isEqualTo("${fourDaysTime}T11:00:00")
+        assertThat(getScheduleDateAndStartTime()).isEqualTo("${fourDaysTime}T08:00:00")
+        assertThat(getScheduleDateAndEndTime()).isEqualTo("${fourDaysTime}T11:00:00")
         assertThat(slotCategory).isEqualTo(AM)
         courseActivity.courseSchedules.forEach {
           assertThat(this).isNotSameAs(it)

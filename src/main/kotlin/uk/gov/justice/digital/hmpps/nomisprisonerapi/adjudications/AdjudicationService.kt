@@ -106,32 +106,30 @@ class AdjudicationService(
 
   fun getAdjudication(adjudicationNumber: Long): AdjudicationResponse = adjudicationIncidentPartyRepository.findByAdjudicationNumber(adjudicationNumber)?.let {
     val hearings = adjudicationHearingRepository.findByAdjudicationNumber(adjudicationNumber)
-    return mapAdjudication(it, hearings)
+    mapAdjudication(it, hearings)
   }
     ?: throw NotFoundException("Adjudication not found")
 
-  fun getAdjudicationByCharge(adjudicationNumber: Long, chargeSequence: Int): AdjudicationChargeResponse {
-    getAdjudication(adjudicationNumber).let { adjudication ->
-      adjudication.charges.find { it.chargeSequence == chargeSequence }?.let {
-        return AdjudicationChargeResponse(
-          adjudicationSequence = adjudication.adjudicationSequence,
-          offenderNo = adjudication.offenderNo,
-          bookingId = adjudication.bookingId,
-          gender = adjudication.gender,
-          currentPrison = adjudication.currentPrison,
-          adjudicationNumber = adjudicationNumber,
-          partyAddedDate = adjudication.partyAddedDate,
-          comment = adjudication.comment,
-          incident = adjudication.incident,
-          charge = it,
-          investigations = adjudication.investigations,
-          // only use results for this charge
-          hearings = adjudication.hearings.map { hearing -> hearing.copy(hearingResults = hearing.hearingResults.filter { results -> results.charge.chargeSequence == chargeSequence }) },
-          hasMultipleCharges = adjudication.charges.size > 1,
-        )
-      }
-        ?: throw NotFoundException("Adjudication charge not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence")
+  fun getAdjudicationByCharge(adjudicationNumber: Long, chargeSequence: Int): AdjudicationChargeResponse = getAdjudication(adjudicationNumber).let { adjudication ->
+    adjudication.charges.find { it.chargeSequence == chargeSequence }?.let {
+      AdjudicationChargeResponse(
+        adjudicationSequence = adjudication.adjudicationSequence,
+        offenderNo = adjudication.offenderNo,
+        bookingId = adjudication.bookingId,
+        gender = adjudication.gender,
+        currentPrison = adjudication.currentPrison,
+        adjudicationNumber = adjudicationNumber,
+        partyAddedDate = adjudication.partyAddedDate,
+        comment = adjudication.comment,
+        incident = adjudication.incident,
+        charge = it,
+        investigations = adjudication.investigations,
+        // only use results for this charge
+        hearings = adjudication.hearings.map { hearing -> hearing.copy(hearingResults = hearing.hearingResults.filter { results -> results.charge.chargeSequence == chargeSequence }) },
+        hasMultipleCharges = adjudication.charges.size > 1,
+      )
     }
+      ?: throw NotFoundException("Adjudication charge not found. Adjudication number: $adjudicationNumber, charge sequence: $chargeSequence")
   }
 
   private fun mapAdjudication(
@@ -154,7 +152,7 @@ class AdjudicationService(
         adjudication.incident.reportedDate,
       ),
       incidentDate = adjudication.incident.incidentDate,
-      incidentTime = adjudication.incident.incidentDateTime.toLocalTime(),
+      incidentTime = adjudication.incident.getIncidentDateAndTime().toLocalTime(),
       reportedDate = adjudication.incident.reportedDate,
       reportedTime = adjudication.incident.reportedDateTime.toLocalTime(),
       createdByUsername = adjudication.incident.createUsername,
