@@ -3390,7 +3390,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             val sourceEvent = sourceCase.courtEvents.find { it.eventDate == LocalDate.parse("2022-01-01") }!!
 
             assertThat(eventDate).isEqualTo(LocalDate.parse("2022-01-01"))
-            assertThat(startTime).isEqualTo(LocalDateTime.parse("2022-01-01T10:00"))
+            assertThat(getEventDateAndTime()).isEqualTo(LocalDateTime.parse("2022-01-01T10:00"))
             assertThat(courtEventType.code).isEqualTo("CRT")
             assertThat(eventStatus.code).isEqualTo("EXP")
             assertThat(court.id).isEqualTo("LEEDYC")
@@ -9511,8 +9511,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(this.courtEvents).hasSize(3)
               with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
                 assertThat(eventDate).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(getEventDateAndTime().toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(getEventDateAndTime().toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
                 assertThat(courtEventType.code).isEqualTo("BREACH")
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEEDYC")
@@ -9527,8 +9527,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(this.courtEvents).hasSize(2)
               with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
                 assertThat(eventDate).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(getEventDateAndTime().toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(getEventDateAndTime().toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
                 assertThat(courtEventType.code).isEqualTo("BREACH")
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEICYC")
@@ -10015,8 +10015,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(this.courtEvents).hasSize(2)
               with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
                 assertThat(eventDate).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(getEventDateAndTime().toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(getEventDateAndTime().toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
                 assertThat(courtEventType.code).isEqualTo("BREACH")
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEICYC")
@@ -10359,8 +10359,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(this.courtEvents).hasSize(3)
               with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
                 assertThat(eventDate).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(getEventDateAndTime().toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(getEventDateAndTime().toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
                 assertThat(courtEventType.code).isEqualTo("BREACH")
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEEDYC")
@@ -10382,8 +10382,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(this.courtEvents).hasSize(2)
               with(this.courtEvents.first { it.eventDate == recallRevocationDate }) {
                 assertThat(eventDate).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalDate()).isEqualTo(recallRevocationDate)
-                assertThat(startTime.toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
+                assertThat(getEventDateAndTime().toLocalDate()).isEqualTo(recallRevocationDate)
+                assertThat(getEventDateAndTime().toLocalTime()).isEqualTo(LocalTime.MIDNIGHT)
                 assertThat(courtEventType.code).isEqualTo("BREACH")
                 assertThat(outcomeReasonCode?.code).isEqualTo("1501")
                 assertThat(court.id).isEqualTo("LEICYC")

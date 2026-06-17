@@ -118,7 +118,7 @@ class OffenderCourtMovementsService(
     courtMovementOut = moveOut?.toResponse(),
     courtMovementIn = moveIn?.toResponse(),
     eventDate = eventDate,
-    startTime = startTime,
+    startTime = getEventDateAndTime(),
     eventType = courtEventType.code,
     eventStatus = eventStatus.code,
     comment = commentText,
