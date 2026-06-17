@@ -48,7 +48,7 @@ class CourtEvent(
 
   var eventDate: LocalDate,
 
-  var startTime: LocalDateTime,
+  private var startTime: LocalDateTime,
 
   // db comments state this should be part of EVENT_SUBTYP reference domain - not correct
   @ManyToOne
@@ -146,6 +146,11 @@ class CourtEvent(
    * @return The combined LocalDateTime representing the event date and start time.
    */
   fun getEventDateAndTime(): LocalDateTime = eventDate.atTime(startTime.toLocalTime())
+
+  fun setEventDateAndTime(eventDateTime: LocalDateTime) {
+    eventDate = eventDateTime.toLocalDate()
+    startTime = eventDateTime
+  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

@@ -78,7 +78,7 @@ class CourtScheduleResourceIntTest(
             assertThat(bookingId).isEqualTo(booking.bookingId)
             assertThat(eventId).isEqualTo(scheduleOut.id)
             assertThat(eventDate).isEqualTo(scheduleOut.eventDate)
-            assertThat(startTime).isEqualTo(scheduleOut.startTime)
+            assertThat(startTime).isEqualTo(scheduleOut.getEventDateAndTime())
             assertThat(eventType).isEqualTo(scheduleOut.courtEventType.code)
             assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
             assertThat(comment).isEqualTo(scheduleOut.commentText)
@@ -107,7 +107,7 @@ class CourtScheduleResourceIntTest(
             assertThat(bookingId).isEqualTo(booking.bookingId)
             assertThat(eventId).isEqualTo(scheduleOut.id)
             assertThat(eventDate).isEqualTo(scheduleOut.eventDate)
-            assertThat(startTime).isEqualTo(scheduleOut.startTime)
+            assertThat(startTime).isEqualTo(scheduleOut.getEventDateAndTime())
             assertThat(eventType).isEqualTo(scheduleOut.courtEventType.code)
             assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
             assertThat(comment).isEqualTo(scheduleOut.commentText)
@@ -262,7 +262,7 @@ class CourtScheduleResourceIntTest(
             assertThat(bookingId).isEqualTo(booking.bookingId)
             repository.runInTransaction {
               with(courtEventRepository.findByIdOrNull(eventId)!!) {
-                assertThat(startTime).isCloseTo(today, within(1, SECONDS))
+                assertThat(getEventDateAndTime()).isCloseTo(today, within(1, SECONDS))
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(courtEventType.code).isEqualTo("CRT")
                 assertThat(commentText).isEqualTo("court schedule out comment")
@@ -293,7 +293,7 @@ class CourtScheduleResourceIntTest(
               with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(directionCode?.code).isEqualTo("IN")
-                assertThat(startTime).isCloseTo(today.withHour(17).withMinute(0).withSecond(0), within(1, SECONDS))
+                assertThat(getEventDateAndTime()).isCloseTo(today.withHour(17).withMinute(0).withSecond(0), within(1, SECONDS))
                 assertThat(courtEventType.code).isEqualTo("CRT")
                 assertThat(commentText).isEqualTo("court schedule out comment")
                 assertThat(court.id).isEqualTo("BXI")

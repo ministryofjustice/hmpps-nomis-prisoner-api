@@ -56,8 +56,7 @@ class CourtScheduleService(
     val scheduleOut = request.eventId
       ?.let { courtEventRepository.findById(it).get() }
       ?. apply {
-        this.eventDate = request.startTime.toLocalDate()
-        this.startTime = request.startTime
+        this.setEventDateAndTime(request.startTime)
         this.courtEventType = courtEventType
         this.eventStatus = eventStatus
         this.commentText = request.comment?.truncateToUtf8Length(MAX_COURT_SCHEDULER_COMMENT_LENGTH, includeSeeDpsSuffix = true)
@@ -79,8 +78,7 @@ class CourtScheduleService(
     if (returnEventStatus != null) {
       val scheduleIn = existingScheduleIn?.apply {
         this.parentEventId = savedScheduleOut.id
-        this.eventDate = request.startTime.toLocalDate()
-        this.startTime = request.startTime.with(DEFAULT_IN_TIME)
+        this.setEventDateAndTime(request.startTime.with(DEFAULT_IN_TIME))
         this.courtEventType = courtEventType
         this.eventStatus = eventStatus
         this.commentText = request.comment

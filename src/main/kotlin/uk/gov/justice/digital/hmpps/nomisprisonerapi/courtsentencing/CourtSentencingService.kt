@@ -614,8 +614,7 @@ class CourtSentencingService(
     checkOffenderExists(offenderNo)
     findCourtCaseWithLock(caseId, offenderNo).let { courtCase ->
       findCourtAppearanceWithLock(eventId, offenderNo).let { courtAppearance ->
-        courtAppearance.eventDate = request.eventDateTime.toLocalDate()
-        courtAppearance.startTime = request.eventDateTime
+        courtAppearance.setEventDateAndTime(request.eventDateTime)
         courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
         courtAppearance.eventStatus = determineEventStatus(
           request.eventDateTime.toLocalDate(),
@@ -1416,8 +1415,7 @@ class CourtSentencingService(
     val casesUpdated = request.beachCourtEventIds.mapNotNull {
       courtEventRepository.findByIdOrNullForUpdate(it)?.let { courtEvent ->
         if (courtEvent.courtCase in courtCasesInRecall) {
-          courtEvent.eventDate = request.recallRevocationDate
-          courtEvent.startTime = LocalDateTime.of(request.recallRevocationDate, LocalTime.MIDNIGHT)
+          courtEvent.setEventDateAndTime(request.recallRevocationDate.atTime(LocalTime.MIDNIGHT))
           updatedBreachCourtEventIds.add(it)
           courtEvent.courtCase
         } else {
@@ -1857,7 +1855,7 @@ class CourtSentencingService(
               offenderBooking = latestBooking,
               courtCase = clonedCase,
               eventDate = courtEvent.eventDate,
-              startTime = courtEvent.startTime,
+              startTime = courtEvent.getEventDateAndTime(),
               courtEventType = courtEvent.courtEventType,
               judgeName = courtEvent.judgeName,
               eventStatus = courtEvent.eventStatus,

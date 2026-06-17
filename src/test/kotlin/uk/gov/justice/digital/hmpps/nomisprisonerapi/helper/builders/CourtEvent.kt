@@ -290,7 +290,7 @@ class CourtEventBuilder(
   ): CourtEvent = CourtEvent(
     offenderBooking = courtEvent.offenderBooking,
     eventDate = courtEvent.eventDate,
-    startTime = courtEvent.startTime,
+    startTime = courtEvent.getEventDateAndTime(),
     courtEventType = courtEvent.courtEventType,
     eventStatus = repository.lookupEventStatus(eventStatusCode),
     court = courtEvent.court,

@@ -77,7 +77,7 @@ class OffenderCourtMovementsResourceIntTest(
             with(bookings[0].courtSchedules[0]) {
               assertThat(eventId).isEqualTo(scheduleOut.id)
               assertThat(eventDate).isEqualTo(scheduleOut.eventDate)
-              assertThat(startTime).isEqualTo(scheduleOut.startTime)
+              assertThat(startTime).isEqualTo(scheduleOut.getEventDateAndTime())
               assertThat(eventType).isEqualTo(scheduleOut.courtEventType.code)
               assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
               assertThat(comment).isEqualTo(scheduleOut.commentText)
