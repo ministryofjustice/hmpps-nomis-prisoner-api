@@ -42,7 +42,7 @@ class AdjudicationIncident(
   val incidentDate: LocalDate = LocalDate.now(),
 
   @Column(name = "INCIDENT_TIME")
-  val incidentDateTime: LocalDateTime = LocalDateTime.now(),
+  private val incidentDateTime: LocalDateTime = LocalDateTime.now(),
 
   @Column(name = "REPORT_DATE")
   val reportedDate: LocalDate = LocalDate.now(),
@@ -83,6 +83,15 @@ class AdjudicationIncident(
   @Column(name = "CREATE_DATETIME")
   val createDatetime: LocalDateTime = LocalDateTime.now(),
 ) {
+  /**
+   * Return the incident date with the time portion set to the incident time. Under some circumstances (and until
+   * corrected by TAG_DATETIME_CORRECTIONS) the date portion of the incident time may be different, so need to combine
+   * the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the incident date and time.
+   */
+  fun getIncidentDateAndTime(): LocalDateTime = incidentDate.atTime(incidentDateTime.toLocalTime())
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

@@ -213,8 +213,8 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
         val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$today")
-          assertThat(startTime).isEqualTo("${today}T08:00")
-          assertThat(endTime).isEqualTo("${today}T11:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T11:00")
           assertThat(scheduleStatus).isEqualTo("CANC")
         }
       }
@@ -311,8 +311,8 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
         val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$yesterday")
-          assertThat(startTime).isEqualTo("${yesterday}T08:00")
-          assertThat(endTime).isEqualTo("${yesterday}T11:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${yesterday}T08:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${yesterday}T11:00")
         }
       }
 
@@ -336,8 +336,8 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
         val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$today")
-          assertThat(startTime).isEqualTo("${today}T08:00")
-          assertThat(endTime).isEqualTo("${today}T11:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T08:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T11:00")
         }
       }
 
@@ -359,8 +359,8 @@ class ScheduleResourceIntTest : IntegrationTestBase() {
         val saved = repository.getSchedule(courseSchedule.courseScheduleId)
         with(saved) {
           assertThat(scheduleDate).isEqualTo("$today")
-          assertThat(startTime).isEqualTo("${today}T13:00")
-          assertThat(endTime).isEqualTo("${today}T15:00")
+          assertThat(getScheduleDateAndStartTime()).isEqualTo("${today}T13:00")
+          assertThat(getScheduleDateAndEndTime()).isEqualTo("${today}T15:00")
         }
       }
 

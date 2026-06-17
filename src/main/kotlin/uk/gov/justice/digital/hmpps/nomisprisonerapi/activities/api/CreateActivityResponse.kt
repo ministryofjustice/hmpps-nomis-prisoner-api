@@ -46,7 +46,7 @@ data class CreateScheduledInstanceResponse(
   constructor(courseSchedule: CourseSchedule) : this(
     courseSchedule.courseScheduleId,
     courseSchedule.scheduleDate,
-    courseSchedule.startTime.toLocalTime(),
-    courseSchedule.endTime.toLocalTime(),
+    courseSchedule.getScheduleDateAndStartTime().toLocalTime(),
+    courseSchedule.getScheduleDateAndEndTime().toLocalTime(),
   )
 }

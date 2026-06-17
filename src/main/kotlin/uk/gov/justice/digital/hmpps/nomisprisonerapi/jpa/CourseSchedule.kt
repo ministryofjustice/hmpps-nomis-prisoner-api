@@ -34,10 +34,10 @@ data class CourseSchedule(
   var scheduleDate: LocalDate,
 
   @Column
-  var startTime: LocalDateTime,
+  private var startTime: LocalDateTime,
 
   @Column
-  var endTime: LocalDateTime,
+  private var endTime: LocalDateTime,
 
   @Column
   var scheduleStatus: String = "SCH",
@@ -49,6 +49,30 @@ data class CourseSchedule(
   @OneToMany(mappedBy = "courseSchedule", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderCourseAttendances: MutableList<OffenderCourseAttendance> = mutableListOf(),
 ) {
+  /**
+   * Return the course schedule date with the time portion set to the course schedule start time. Under some
+   * circumstances (and until corrected by TAG_DATETIME_CORRECTIONS) the date portion of the course schedule start time
+   * may be different, so need to combine the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the course schedule date and start time.
+   */
+  fun getScheduleDateAndStartTime(): LocalDateTime = scheduleDate.atTime(startTime.toLocalTime())
+
+  /**
+   * Return the course schedule date with the time portion set to the course schedule end time. Under some
+   * circumstances (and until corrected by TAG_DATETIME_CORRECTIONS) the date portion of the course schedule end time
+   * may be different, so need to combine the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the course schedule date and end time.
+   */
+  fun getScheduleDateAndEndTime(): LocalDateTime = scheduleDate.atTime(endTime.toLocalTime())
+
+  fun setScheduleDateAndTime(startDateTime: LocalDateTime, endDateTime: LocalDateTime) {
+    scheduleDate = startDateTime.toLocalDate()
+    startTime = startDateTime
+    endTime = scheduleDate.atTime(endDateTime.toLocalTime())
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

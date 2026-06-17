@@ -66,8 +66,7 @@ class ScheduleService(
 
   private fun CourseSchedule.update(requested: CourseSchedule): CourseSchedule = this.apply {
     scheduleDate = requested.scheduleDate
-    startTime = requested.startTime
-    endTime = requested.endTime
+    setScheduleDateAndTime(requested.getScheduleDateAndStartTime(), requested.getScheduleDateAndEndTime())
     slotCategory = requested.slotCategory
     scheduleStatus = requested.scheduleStatus
   }
@@ -121,8 +120,7 @@ class ScheduleService(
 
   private fun CourseSchedule.update(requested: CourseScheduleRequest): CourseSchedule = this.apply {
     scheduleDate = requested.date
-    startTime = requested.date.atTime(requested.startTime)
-    endTime = requested.date.atTime(requested.endTime)
+    setScheduleDateAndTime(requested.date.atTime(requested.startTime), requested.date.atTime(requested.endTime))
     slotCategory = SlotCategory.of(requested.startTime)
     scheduleStatus = requested.getScheduleStatus()
   }
@@ -151,9 +149,8 @@ class ScheduleService(
   }
     .map { it.courseScheduleId }
 
-  private fun CourseSchedule.isChanged(other: CourseSchedule) = scheduleDate != other.scheduleDate ||
-    startTime != other.startTime ||
-    endTime != other.endTime ||
+  private fun CourseSchedule.isChanged(other: CourseSchedule) = getScheduleDateAndStartTime() != other.getScheduleDateAndStartTime() ||
+    getScheduleDateAndEndTime() != other.getScheduleDateAndEndTime() ||
     scheduleStatus != other.scheduleStatus
 
   fun getMaxCourseScheduleId() = scheduleRepository.findTopByOrderByCourseScheduleIdDesc()?.courseScheduleId ?: 0

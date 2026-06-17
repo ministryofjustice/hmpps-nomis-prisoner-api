@@ -57,8 +57,8 @@ class CourseAttendanceBuilder(
     eventId = eventId,
     offenderBooking = courseAllocation.offenderBooking,
     eventDate = courseSchedule.scheduleDate,
-    startTime = courseSchedule.startTime,
-    endTime = courseSchedule.endTime,
+    startTime = courseSchedule.getScheduleDateAndStartTime(),
+    endTime = courseSchedule.getScheduleDateAndEndTime(),
     eventStatus = eventStatus(eventStatusCode),
     toInternalLocation = toInternalLocationId?.let {
       agencyInternalLocation(
@@ -70,8 +70,8 @@ class CourseAttendanceBuilder(
     courseSchedule = courseSchedule,
     attendanceOutcome = outcomeReasonCode?.let { attendanceOutcome(outcomeReasonCode) },
     offenderProgramProfile = courseAllocation,
-    inTime = courseSchedule.startTime,
-    outTime = courseSchedule.endTime,
+    inTime = courseSchedule.getScheduleDateAndStartTime(),
+    outTime = courseSchedule.getScheduleDateAndEndTime(),
     courseActivity = courseSchedule.courseActivity,
     prison = courseSchedule.courseActivity.prison,
     program = courseSchedule.courseActivity.program,
