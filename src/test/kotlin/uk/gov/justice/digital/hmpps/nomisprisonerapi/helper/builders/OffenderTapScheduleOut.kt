@@ -114,7 +114,7 @@ class OffenderTapScheduleOutBuilder(
     toAddress = toAddress,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
     applicationDate = tapApplication.applicationDate,
-    applicationTime = tapApplication.applicationTime,
+    applicationTime = tapApplication.getApplicationDateAndTime(),
     contactPersonName = contactPersonName,
   )
     .also { tapScheduleOut = it }

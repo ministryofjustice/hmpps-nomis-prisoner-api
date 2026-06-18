@@ -88,8 +88,7 @@ class IncidentService(
         this.reportingStaff = reportedStaff.staff
         this.reportedDate = request.reportedDateTime.truncatedTo(ChronoUnit.DAYS)
         this.reportedTime = request.reportedDateTime
-        this.incidentDate = request.incidentDateTime.truncatedTo(ChronoUnit.DAYS)
-        this.incidentTime = request.incidentDateTime
+        this.setIncidentDateAndTime(request.incidentDateTime)
         this.status = status
       } ?: Incident(
         id = incidentId,
@@ -371,7 +370,7 @@ private fun Incident.toIncidentResponse(): IncidentResponse = IncidentResponse(
   type = questionnaire.code,
   agency = agency.toCodeDescription(),
   lockedResponse = lockedResponse,
-  incidentDateTime = LocalDateTime.of(incidentDate.toLocalDate(), incidentTime.toLocalTime()),
+  incidentDateTime = getIncidentDateAndTime(),
   followUpDate = followUpDate,
   reportingStaff = reportingStaff.toStaff(),
   reportedDateTime = LocalDateTime.of(reportedDate.toLocalDate(), reportedTime.toLocalTime()),

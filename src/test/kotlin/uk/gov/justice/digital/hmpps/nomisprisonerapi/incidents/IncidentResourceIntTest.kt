@@ -1619,7 +1619,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         repository.runInTransaction {
           with(repository.getIncident(currentId)) {
             assertThat(incidentDate).isEqualTo(LocalDateTime.parse("2024-12-30T00:00"))
-            assertThat(incidentTime).isEqualTo(LocalDateTime.parse("2024-12-30T13:45"))
+            assertThat(getIncidentDateAndTime()).isEqualTo(LocalDateTime.parse("2024-12-30T13:45"))
             assertThat(reportedDate).isEqualTo(LocalDateTime.parse("2025-01-02T00:00"))
             assertThat(reportedTime).isEqualTo(LocalDateTime.parse("2025-01-02T09:30"))
           }
@@ -2240,7 +2240,7 @@ class IncidentResourceIntTest : IntegrationTestBase() {
         repository.runInTransaction {
           with(repository.getIncident(incident2.id)) {
             assertThat(incidentDate).isEqualTo(LocalDateTime.parse("2024-12-30T00:00"))
-            assertThat(incidentTime).isEqualTo(LocalDateTime.parse("2024-12-30T13:46"))
+            assertThat(getIncidentDateAndTime()).isEqualTo(LocalDateTime.parse("2024-12-30T13:46"))
             assertThat(reportedDate).isEqualTo(LocalDateTime.parse("2025-01-02T00:00"))
             assertThat(reportedTime).isEqualTo(LocalDateTime.parse("2025-01-02T09:31"))
           }

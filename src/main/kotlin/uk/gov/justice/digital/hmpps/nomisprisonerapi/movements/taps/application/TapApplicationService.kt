@@ -84,8 +84,7 @@ class TapApplicationService(
     with(application) {
       this.fromDate = request.fromDate
       this.releaseTime = request.releaseTime
-      this.toDate = request.toDate
-      this.returnTime = request.returnTime
+      this.setToReturnDateAndTime(request.toDate.atTime(request.returnTime.toLocalTime()))
       this.applicationStatus = applicationStatus
       this.transportType = transportType
       this.escort = escort
@@ -141,7 +140,7 @@ class TapApplicationService(
     fromDate = fromDate,
     releaseTime = releaseTime,
     toDate = toDate,
-    returnTime = returnTime,
+    returnTime = getToReturnDateAndTime(),
     applicationStatus = applicationStatus.code,
     escortCode = escort?.code,
     transportType = transportType?.code,

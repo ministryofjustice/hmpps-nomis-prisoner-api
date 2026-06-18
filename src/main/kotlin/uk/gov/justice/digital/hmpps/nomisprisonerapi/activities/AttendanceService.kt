@@ -92,8 +92,7 @@ class AttendanceService(
 
     return attendance.apply {
       eventDate = request.scheduleDate
-      startTime = eventDate.atTime(request.startTime)
-      endTime = eventDate.atTime(request.endTime)
+      setAttendanceDateAndTime(eventDate.atTime(request.startTime), eventDate.atTime(request.endTime))
       eventStatus = getEventStatus(requestStatus, this.eventStatus)
       attendanceOutcome = request.eventOutcomeCode?.let { findAttendanceOutcomeOrThrow(it) }
       unexcusedAbsence = request.unexcusedAbsence

@@ -40,10 +40,10 @@ class OffenderCourseAttendance(
   var eventDate: LocalDate,
 
   @Column
-  var startTime: LocalDateTime? = null,
+  private var startTime: LocalDateTime? = null,
 
   @Column
-  var endTime: LocalDateTime? = null,
+  private var endTime: LocalDateTime? = null,
 
   @Column(nullable = false)
   val eventSubType: String = "PA",
@@ -145,6 +145,30 @@ class OffenderCourseAttendance(
     }
 
   fun isPaid() = paidTransactionId != null
+
+  /**
+   * Return the course attendance date with the time portion set to the course attendance start time. Under some
+   * circumstances (and until corrected by TAG_DATETIME_CORRECTIONS) the date portion of the course attendance start time
+   * may be different, so need to combine the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the course attendance date and start time.
+   */
+  fun getAttendanceDateAndStartTime(): LocalDateTime? = startTime?.let { eventDate.atTime(it.toLocalTime()) }
+
+  /**
+   * Return the course attendance date with the time portion set to the course attendance end time. Under some
+   * circumstances (and until corrected by TAG_DATETIME_CORRECTIONS) the date portion of the course attendance end time
+   * may be different, so need to combine the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the course attendance date and end time.
+   */
+  fun getAttendanceDateAndEndTime(): LocalDateTime? = endTime?.let { eventDate.atTime(it.toLocalTime()) }
+
+  fun setAttendanceDateAndTime(startDateTime: LocalDateTime, endDateTime: LocalDateTime) {
+    eventDate = startDateTime.toLocalDate()
+    startTime = startDateTime
+    endTime = eventDate.atTime(endDateTime.toLocalTime())
+  }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

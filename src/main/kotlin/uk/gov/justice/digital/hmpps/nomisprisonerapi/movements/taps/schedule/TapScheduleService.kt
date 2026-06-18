@@ -37,7 +37,7 @@ class TapScheduleService(
     val tapScheduleOut = scheduleOutRepository.findByEventIdAndOffenderBooking_Offender_NomsId(eventId, offenderNo)
       ?: throw NotFoundException("Tap scheduleout with eventId=$eventId not found for offender with nomsId=$offenderNo")
 
-    return tapScheduleOut.toResponse(tapScheduleOut.tapApplication.returnTime)
+    return tapScheduleOut.toResponse(tapScheduleOut.tapApplication.getToReturnDateAndTime())
   }
 
   @Transactional

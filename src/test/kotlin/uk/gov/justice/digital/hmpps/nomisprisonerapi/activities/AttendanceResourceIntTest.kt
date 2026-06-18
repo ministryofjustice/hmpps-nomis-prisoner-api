@@ -11,6 +11,7 @@ import org.mockito.kotlin.isNull
 import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.activities.api.UpsertAttendanceResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadRequestError
@@ -426,7 +427,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should return OK if created new attendance`() {
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
-          .expectBody(UpsertAttendanceResponse::class.java)
+          .expectBody<UpsertAttendanceResponse>()
           .returnResult().responseBody!!
 
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
@@ -437,8 +438,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         with(saved) {
           assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
           assertThat(eventDate).isEqualTo("2022-11-01")
-          assertThat(startTime).isEqualTo("2022-11-01T08:00")
-          assertThat(endTime).isEqualTo("2022-11-01T11:00")
+          assertThat(getAttendanceDateAndStartTime()).isEqualTo("2022-11-01T08:00")
+          assertThat(getAttendanceDateAndEndTime()).isEqualTo("2022-11-01T11:00")
           assertThat(inTime).isEqualTo("2022-11-01T08:00")
           assertThat(outTime).isEqualTo("2022-11-01T11:00")
           assertThat(eventStatus.code).isEqualTo("SCH")
@@ -464,7 +465,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
 
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
-          .expectBody(UpsertAttendanceResponse::class.java)
+          .expectBody<UpsertAttendanceResponse>()
           .returnResult().responseBody!!
 
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
@@ -474,8 +475,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         with(saved) {
           assertThat(offenderBooking.bookingId).isEqualTo(this@UpsertAttendance.offenderBooking.bookingId)
           assertThat(eventDate).isEqualTo("2022-11-01")
-          assertThat(startTime).isEqualTo("2022-11-01T08:00")
-          assertThat(endTime).isEqualTo("2022-11-01T11:00")
+          assertThat(getAttendanceDateAndStartTime()).isEqualTo("2022-11-01T08:00")
+          assertThat(getAttendanceDateAndEndTime()).isEqualTo("2022-11-01T11:00")
         }
       }
 
@@ -503,7 +504,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           validJsonRequest.withScheduleDate("$today"),
         )
           .expectStatus().isOk
-          .expectBody(UpsertAttendanceResponse::class.java)
+          .expectBody<UpsertAttendanceResponse>()
           .returnResult().responseBody!!
 
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
@@ -520,7 +521,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
       fun `should publish telemetry when creating`() {
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
-          .expectBody(UpsertAttendanceResponse::class.java)
+          .expectBody<UpsertAttendanceResponse>()
           .returnResult().responseBody!!
 
         verify(telemetryClient).trackEvent(
@@ -586,8 +587,8 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         val saved = repository.getAttendance(attendance.eventId)
         assertThat(saved.eventStatus.code).isEqualTo("SCH")
         assertThat(saved.eventDate).isEqualTo("2022-11-02")
-        assertThat(saved.startTime).isEqualTo("2022-11-02T13:00")
-        assertThat(saved.endTime).isEqualTo("2022-11-02T14:00")
+        assertThat(saved.getAttendanceDateAndStartTime()).isEqualTo("2022-11-02T13:00")
+        assertThat(saved.getAttendanceDateAndEndTime()).isEqualTo("2022-11-02T14:00")
       }
 
       @Test
@@ -663,7 +664,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         val response =
           webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
             .expectStatus().isOk
-            .expectBody(UpsertAttendanceResponse::class.java)
+            .expectBody<UpsertAttendanceResponse>()
             .returnResult().responseBody!!
 
         val saved = repository.getAttendance(response.eventId)
@@ -699,7 +700,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         val response =
           webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId, jsonRequest)
             .expectStatus().isOk
-            .expectBody(UpsertAttendanceResponse::class.java)
+            .expectBody<UpsertAttendanceResponse>()
             .returnResult().responseBody!!
 
         val saved = repository.getAttendance(response.eventId)
@@ -732,7 +733,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
         // Try to update the status back to SCH
         val response = webTestClient.upsertAttendance(courseSchedule.courseScheduleId, offenderBooking.bookingId)
           .expectStatus().isOk
-          .expectBody(UpsertAttendanceResponse::class.java)
+          .expectBody<UpsertAttendanceResponse>()
           .returnResult().responseBody!!
 
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
@@ -765,7 +766,7 @@ class AttendanceResourceIntTest : IntegrationTestBase() {
           validJsonRequest.withEventStatusCode("CANC"),
         )
           .expectStatus().isOk
-          .expectBody(UpsertAttendanceResponse::class.java)
+          .expectBody<UpsertAttendanceResponse>()
           .returnResult().responseBody!!
 
         assertThat(response.courseScheduleId).isEqualTo(courseSchedule.courseScheduleId)
