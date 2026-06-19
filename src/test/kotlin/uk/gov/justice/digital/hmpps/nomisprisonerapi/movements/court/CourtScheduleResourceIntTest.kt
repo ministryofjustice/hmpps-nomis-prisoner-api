@@ -105,7 +105,7 @@ class CourtScheduleResourceIntTest(
           .apply {
             assertThat(courtCaseId).isNull()
             assertThat(bookingId).isEqualTo(booking.bookingId)
-            assertThat(latetstBooking).isEqualTo(true)
+            assertThat(latestBooking).isEqualTo(true)
             assertThat(eventId).isEqualTo(scheduleOut.id)
             assertThat(eventDate).isEqualTo(scheduleOut.eventDate)
             assertThat(startTime).isEqualTo(scheduleOut.getEventDateAndTime())

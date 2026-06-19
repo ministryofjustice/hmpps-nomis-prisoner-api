@@ -131,7 +131,7 @@ class CourtScheduleService(
 
   private fun CourtEvent.toResponse() = CourtScheduleOut(
     bookingId = offenderBooking.bookingId,
-    latetstBooking = offenderBooking.bookingSequence == 1,
+    latestBooking = offenderBooking.bookingSequence == 1,
     eventId = id,
     eventDate = eventDate,
     startTime = getEventDateAndTime(),

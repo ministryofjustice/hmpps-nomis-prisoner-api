@@ -11,7 +11,7 @@ data class CourtScheduleOut(
   val bookingId: Long,
 
   @Schema(description = "Is this the latest booking for the offender?")
-  val latetstBooking: Boolean,
+  val latestBooking: Boolean,
 
   @Schema(description = "Event ID")
   val eventId: Long,
