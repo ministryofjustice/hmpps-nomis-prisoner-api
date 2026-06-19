@@ -20,6 +20,7 @@ import org.hibernate.annotations.JoinFormula
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 enum class EventClass {
   EXT_MOV,
@@ -62,7 +63,7 @@ abstract class OffenderIndividualSchedule(
   var eventDate: LocalDate? = null,
 
   @Column
-  var startTime: LocalDateTime? = null,
+  private var startTime: LocalDateTime? = null,
 
   @Enumerated(EnumType.STRING)
   @Column(name = "EVENT_CLASS")
@@ -88,6 +89,26 @@ abstract class OffenderIndividualSchedule(
   @Column(name = "COMMENT_TEXT")
   var comment: String? = null,
 ) : NomisAuditableEntityBasic() {
+  /**
+   * Return the appointment start date with the time portion set to the appointment start time. Under some circumstances
+   * (and until corrected by TAG_DATETIME_CORRECTIONS) the date portion of the appointment start time may be different,
+   * so need to combine the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the appointment start date and time.
+   */
+  fun getAppointmentStartDateAndTime(): LocalDateTime? = startTime?.let {
+    eventDate!!.atTime(it.toLocalTime())
+  }
+
+  fun setAppointmentStartDateAndTime(eventDate: LocalDate, startTime: LocalTime) {
+    this.eventDate = eventDate
+    this.startTime = eventDate.atTime(startTime)
+  }
+
+  fun setAppointmentStartDateAndTime(eventDate: LocalDate, startTime: LocalDateTime) {
+    setAppointmentStartDateAndTime(eventDate, startTime.toLocalTime())
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
