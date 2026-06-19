@@ -64,8 +64,7 @@ class TapScheduleService(
     val schedule = request.eventId
       ?.let { scheduleOutRepository.findById(request.eventId).get() }
       ?.apply {
-        this.eventDate = request.eventDate
-        this.startTime = request.startTime
+        this.setAppointmentStartDateAndTime(request.eventDate, request.startTime)
         this.eventSubType = eventSubType
         this.eventStatus = eventStatus
         this.comment = request.comment?.truncateToUtf8Length(MAX_TAP_COMMENT_LENGTH, includeSeeDpsSuffix = true)
@@ -101,8 +100,7 @@ class TapScheduleService(
     val scheduledReturn = schedule.tapScheduleIns.firstOrNull()
       ?.apply {
         this.eventStatus = movementHelpers.eventStatusOrThrow(request.returnEventStatus ?: "SCH")
-        this.eventDate = request.returnDate
-        this.startTime = request.returnTime
+        this.setAppointmentStartDateAndTime(request.returnDate, request.returnTime)
         this.eventSubType = eventSubType
         this.escort = escort
         this.fromAgency = toAgency
@@ -178,7 +176,7 @@ class TapScheduleService(
     tapApplicationId = tapApplication.tapApplicationId,
     eventId = eventId,
     eventDate = eventDate ?: tapApplication.fromDate,
-    startTime = startTime ?: tapApplication.releaseTime,
+    startTime = getAppointmentStartDateAndTime() ?: tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     inboundEventStatus = tapScheduleIns.firstOrNull()?.eventStatus?.code,
@@ -195,7 +193,7 @@ class TapScheduleService(
     toFullAddress = toAddress?.toFullAddress(tapAddressService.getAddressDescription(toAddress)),
     toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
-    applicationTime = applicationTime,
+    applicationTime = getApplicationDateAndTime(),
     contactPersonName = contactPersonName,
     tapAbsenceType = tapApplication.tapType?.code,
     tapSubType = tapApplication.tapSubType?.code,
@@ -211,7 +209,7 @@ class TapScheduleService(
     eventId = eventId,
     parentEventId = tapScheduleOut.eventId,
     eventDate = eventDate ?: tapScheduleOut.tapApplication.fromDate,
-    startTime = startTime ?: tapScheduleOut.tapApplication.releaseTime,
+    startTime = getAppointmentStartDateAndTime() ?: tapScheduleOut.tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,

@@ -63,9 +63,8 @@ class AppointmentService(
         }
 
         internalLocation = location
-        startTime = LocalDateTime.of(dto.eventDate, dto.startTime)
-        endTime = dto.endTime?.let { LocalDateTime.of(dto.eventDate, it) }
-        eventDate = dto.eventDate
+        setAppointmentStartDateAndTime(dto.eventDate, dto.startTime)
+        setAppointmentEndTime(dto.endTime)
         eventSubType = subType
         comment = dto.comment
 
@@ -223,8 +222,8 @@ private fun mapModel(entity: OffenderAppointment): AppointmentResponse = Appoint
   eventId = entity.eventId,
   bookingId = entity.offenderBooking.bookingId,
   offenderNo = entity.offenderBooking.offender.nomsId,
-  startDateTime = entity.startTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
-  endDateTime = entity.endTime?.let { LocalDateTime.of(entity.eventDate, it.toLocalTime()) },
+  startDateTime = entity.getAppointmentStartDateAndTime(),
+  endDateTime = entity.getAppointmentEndDateAndTime(),
   status = entity.eventStatus.code,
   subtype = entity.eventSubType.code,
   internalLocation = entity.internalLocation?.locationId,

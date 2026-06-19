@@ -285,7 +285,7 @@ class OffenderTapsService(
   private fun OffenderTapScheduleOut.toResponse(applicationReturnTime: LocalDateTime) = BookingTapScheduleOut(
     eventId = eventId,
     eventDate = eventDate ?: tapApplication.fromDate,
-    startTime = startTime ?: tapApplication.releaseTime,
+    startTime = getAppointmentStartDateAndTime() ?: tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,
@@ -301,7 +301,7 @@ class OffenderTapsService(
     toFullAddress = toAddress?.toFullAddress(tapAddressService.getAddressDescription(toAddress)),
     toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
-    applicationTime = applicationTime,
+    applicationTime = getApplicationDateAndTime(),
     contactPersonName = contactPersonName,
     audit = toAudit(),
   )
@@ -309,7 +309,7 @@ class OffenderTapsService(
   private fun OffenderTapScheduleIn.toResponse() = BookingTapScheduleIn(
     eventId = eventId,
     eventDate = eventDate ?: tapScheduleOut.tapApplication.fromDate,
-    startTime = startTime ?: tapScheduleOut.tapApplication.releaseTime,
+    startTime = getAppointmentStartDateAndTime() ?: tapScheduleOut.tapApplication.releaseTime,
     eventSubType = eventSubType.code,
     eventStatus = eventStatus.code,
     comment = comment,

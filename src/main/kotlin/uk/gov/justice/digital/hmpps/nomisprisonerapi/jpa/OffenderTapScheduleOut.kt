@@ -64,7 +64,7 @@ class OffenderTapScheduleOut(
   val applicationDate: LocalDateTime,
 
   @Column(name = "APPLICATION_TIME")
-  val applicationTime: LocalDateTime? = null,
+  private val applicationTime: LocalDateTime? = null,
 
   @Column(name = "CONTACT_PERSON_NAME")
   val contactPersonName: String? = null,
@@ -91,4 +91,15 @@ class OffenderTapScheduleOut(
   direction = MovementDirection.OUT,
   fromAgency = fromPrison,
   toAgency = toAgency,
-)
+) {
+  /**
+   * Return the application date with the time portion set to the application time. Under some circumstances
+   * (and until corrected by TAG_DATETIME_CORRECTIONS) the date portion of the application time may be different,
+   * so need to combine the two to ensure we get the correct date and time.
+   *
+   * @return The combined LocalDateTime representing the application date and time.
+   */
+  fun getApplicationDateAndTime(): LocalDateTime? = applicationTime?.let {
+    applicationDate.with(it.toLocalTime())
+  }
+}

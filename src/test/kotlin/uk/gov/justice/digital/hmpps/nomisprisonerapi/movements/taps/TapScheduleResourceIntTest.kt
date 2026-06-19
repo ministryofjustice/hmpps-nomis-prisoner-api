@@ -502,7 +502,7 @@ class TapScheduleResourceIntTest(
                 assertThat(eventSubType.code).isEqualTo("C5")
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(startTime).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
+                assertThat(getAppointmentStartDateAndTime()).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
                 assertThat(returnDate).isEqualTo(yesterday.toLocalDate())
                 assertThat(returnTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
                 assertThat(comment).isEqualTo("Some comment tap schedule out")
@@ -513,7 +513,7 @@ class TapScheduleResourceIntTest(
                 assertThat(fromAgency?.id).isEqualTo("LEI")
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(applicationDate).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
-                assertThat(applicationTime).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
+                assertThat(getApplicationDateAndTime()).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
                 assertThat(tapScheduleIns).isEmpty()
               }
             }
@@ -1184,7 +1184,7 @@ class TapScheduleResourceIntTest(
                 with(tapScheduleIns.first()) {
                   assertThat(eventStatus.code).isEqualTo("SCH")
                   assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
-                  assertThat(startTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
+                  assertThat(getAppointmentStartDateAndTime()).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
                   assertThat(eventSubType.code).isEqualTo("C5")
                   assertThat(escort?.code).isEqualTo("L")
                   assertThat(fromAgency?.id).isEqualTo("HAZLWD")
@@ -1282,7 +1282,7 @@ class TapScheduleResourceIntTest(
                 assertThat(eventSubType.code).isEqualTo("C5")
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(startTime).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
+                assertThat(getAppointmentStartDateAndTime()).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
                 assertThat(returnDate).isEqualTo(yesterday.toLocalDate())
                 assertThat(returnTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
                 assertThat(comment).isEqualTo("Some comment tap schedule out")
@@ -1293,7 +1293,7 @@ class TapScheduleResourceIntTest(
                 assertThat(fromAgency?.id).isEqualTo("LEI")
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(applicationDate).isCloseTo(today, within(5, ChronoUnit.MINUTES))
-                assertThat(applicationTime).isCloseTo(today, within(5, ChronoUnit.MINUTES))
+                assertThat(getApplicationDateAndTime()).isCloseTo(today, within(5, ChronoUnit.MINUTES))
                 assertThat(tapScheduleIns).isEmpty()
               }
             }
@@ -1360,7 +1360,7 @@ class TapScheduleResourceIntTest(
                 with(tapScheduleIns.first()) {
                   assertThat(eventStatus.code).isEqualTo("SCH")
                   assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
-                  assertThat(startTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
+                  assertThat(getAppointmentStartDateAndTime()).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
                   assertThat(eventSubType.code).isEqualTo("C5")
                   assertThat(escort?.code).isEqualTo("L")
                   assertThat(fromAgency?.id).isEqualTo("HAZLWD")
@@ -1402,7 +1402,7 @@ class TapScheduleResourceIntTest(
                 assertThat(eventSubType.code).isEqualTo("C5")
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(eventDate).isEqualTo(twoDaysAgo.toLocalDate())
-                assertThat(startTime).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
+                assertThat(getAppointmentStartDateAndTime()).isCloseTo(twoDaysAgo, within(5, ChronoUnit.MINUTES))
                 assertThat(returnDate).isEqualTo(yesterday.toLocalDate())
                 assertThat(returnTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
                 assertThat(comment).isEqualTo("Some comment tap schedule out")
@@ -1413,11 +1413,11 @@ class TapScheduleResourceIntTest(
                 assertThat(fromAgency?.id).isEqualTo("LEI")
                 assertThat(transportType?.code).isEqualTo("VAN")
                 assertThat(applicationDate).isCloseTo(today, within(5, ChronoUnit.MINUTES))
-                assertThat(applicationTime).isCloseTo(today, within(5, ChronoUnit.MINUTES))
+                assertThat(getApplicationDateAndTime()).isCloseTo(today, within(5, ChronoUnit.MINUTES))
                 with(tapScheduleIns.first()) {
                   assertThat(eventStatus.code).isEqualTo("SCH")
                   assertThat(eventDate).isEqualTo(yesterday.toLocalDate())
-                  assertThat(startTime).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
+                  assertThat(getAppointmentStartDateAndTime()).isCloseTo(yesterday, within(5, ChronoUnit.MINUTES))
                   assertThat(eventSubType.code).isEqualTo("C5")
                   assertThat(escort?.code).isEqualTo("L")
                   assertThat(fromAgency?.id).isEqualTo("HAZLWD")

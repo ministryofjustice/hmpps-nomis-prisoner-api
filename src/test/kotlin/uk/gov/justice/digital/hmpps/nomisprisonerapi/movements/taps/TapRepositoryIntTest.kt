@@ -142,7 +142,7 @@ class TapRepositoryIntTest(
         assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
         assertThat(tapApplication.tapApplicationId).isEqualTo(scheduleOut.tapApplication.tapApplicationId)
         assertThat(eventDate).isEqualTo(LocalDate.now())
-        assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(getAppointmentStartDateAndTime()?.toLocalDate()).isEqualTo(LocalDate.now())
         assertThat(eventSubType.code).isEqualTo("C5")
         assertThat(eventStatus.code).isEqualTo("SCH")
         assertThat(fromAgency?.id).isEqualTo("LEI")
@@ -153,7 +153,7 @@ class TapRepositoryIntTest(
         assertThat(returnDate).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(returnTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(applicationDate.toLocalDate()).isEqualTo(LocalDate.now())
-        assertThat(applicationTime?.toLocalDate()).isEqualTo(LocalDate.now())
+        assertThat(getApplicationDateAndTime()?.toLocalDate()).isEqualTo(LocalDate.now())
       }
     }
 
@@ -185,7 +185,7 @@ class TapRepositoryIntTest(
         assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
         assertThat(tapScheduleOut.eventId).isEqualTo(scheduleOut.eventId)
         assertThat(eventDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(startTime?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(getAppointmentStartDateAndTime()?.toLocalDate()).isEqualTo(LocalDate.now().plusDays(1))
         assertThat(eventSubType.code).isEqualTo("R25")
         assertThat(eventStatus.code).isEqualTo("SCH")
         assertThat(toAgency?.id).isEqualTo("LEI")

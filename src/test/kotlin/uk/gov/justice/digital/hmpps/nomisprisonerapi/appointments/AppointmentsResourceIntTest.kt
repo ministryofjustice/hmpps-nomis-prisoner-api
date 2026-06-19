@@ -249,8 +249,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
           assertThat(eventId).isEqualTo(id)
           assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
           assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-27"))
-          assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
-          assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-27T12:10"))
+          assertThat(getAppointmentStartDateAndTime()).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
+          assertThat(getAppointmentEndDateAndTime()).isEqualTo(LocalDateTime.parse("2023-02-27T12:10"))
           assertThat(eventClass).isEqualTo(EventClass.INT_MOV)
           assertThat(eventType).isEqualTo(EventType.APP)
           assertThat(eventSubType.code).isEqualTo("ACTI")
@@ -267,8 +267,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
       with(repository.getAppointment(id)!!) {
         assertThat(eventId).isEqualTo(id)
-        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
-        assertThat(endTime).isNull()
+        assertThat(getAppointmentStartDateAndTime()).isEqualTo(LocalDateTime.parse("2023-02-27T10:40"))
+        assertThat(getAppointmentEndDateAndTime()).isNull()
       }
     }
 
@@ -430,8 +430,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
           assertThat(eventId).isEqualTo(eventId)
           assertThat(offenderBooking.bookingId).isEqualTo(offenderAtMoorlands.latestBooking().bookingId)
           assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
-          assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
-          assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
+          assertThat(getAppointmentStartDateAndTime()).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
+          assertThat(getAppointmentEndDateAndTime()).isEqualTo(LocalDateTime.parse("2023-02-28T12:20"))
           assertThat(eventSubType.code).isEqualTo("CABA")
           assertThat(prison.id).isEqualTo("MDI")
           assertThat(comment).isEqualTo("Some comment")
@@ -451,8 +451,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
       with(repository.getAppointment(eventId)!!) {
         assertThat(eventId).isEqualTo(eventId)
         assertThat(eventDate).isEqualTo(LocalDate.parse("2023-02-28"))
-        assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
-        assertThat(endTime).isNull()
+        assertThat(getAppointmentStartDateAndTime()).isEqualTo(LocalDateTime.parse("2023-02-28T10:50"))
+        assertThat(getAppointmentEndDateAndTime()).isNull()
       }
     }
 
