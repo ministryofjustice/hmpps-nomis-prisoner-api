@@ -1,0 +1,11 @@
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.property
+
+import com.fasterxml.jackson.annotation.JsonInclude
+import io.swagger.v3.oas.annotations.media.Schema
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Prisoner property creation response")
+data class CreatePropertyResponse(
+  @Schema(description = "The created PROPERTY_CONTAINER_ID", required = true)
+  val propertyContainerId: Long,
+)
