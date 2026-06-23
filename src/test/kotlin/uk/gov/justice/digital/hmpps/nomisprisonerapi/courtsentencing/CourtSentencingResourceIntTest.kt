@@ -4991,6 +4991,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var courtCase: CourtCase
     private lateinit var courtEvent: CourtEvent
     private lateinit var earlierCourtEvent: CourtEvent
+    private lateinit var futureCourtEvent: CourtEvent
     private var latestBookingId: Long = 0
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
@@ -5032,6 +5033,12 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
+                )
+              }
+              futureCourtEvent = courtEvent(eventDateTime = LocalDateTime.now().plusDays(7)) {
+                courtEventCharge(
+                  offenderCharge = offenderCharge1,
+                  resultCode1 = null,
                 )
               }
             }
@@ -5129,7 +5136,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     inner class UpdateCourtChargeSuccess {
 
       @Test
-      fun `can update the court event charge and offender charge on the latest appearance`() {
+      fun `can update the court event charge and offender charge outcome for the latest court event charge with an outcome`() {
 // confirming that an initial court order does not exist
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtEvent.id}")
@@ -5174,14 +5181,14 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEventCharges[0].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
-// confirm other CEC is not updated
+          // confirm other CEC is not updated
           .jsonPath("courtEventCharges[1].resultCode1.code").isEqualTo("1067")
           .jsonPath("courtEventCharges[0].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
           .jsonPath("courtOrders[0].id").doesNotExist()
 
-// imprisonment status stored procedure is called
+        // imprisonment status stored procedure is called
         verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
@@ -5189,7 +5196,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `can update the court event charge and offender charge on an earlier appearance`() {
+      fun `can update the court event charge and offender charge, excluding an outcome update on an earlier appearance`() {
         webTestClient.put()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${earlierCourtEvent.id}/charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -5198,8 +5205,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createOffenderChargeRequest(
                 resultCode1 = "1101",
-                offenceDate = LocalDate.parse("2024-01-01"),
-                offenceEndDate = LocalDate.parse("2024-01-02"),
+                offenceDate = LocalDate.parse("2024-03-01"),
+                offenceEndDate = LocalDate.parse("2024-03-02"),
               ),
             ),
           )
@@ -5213,10 +5220,12 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offence.offenceCode").isEqualTo("RR84005B")
+          // shouldn't be updated as not the latest court event charge
+          .jsonPath("resultCode1.code").isEqualTo("1004")
           .jsonPath("resultCode1.description").isEqualTo("Restriction Order")
-// dates are updated
-          .jsonPath("offenceDate").isEqualTo("2024-01-01")
-          .jsonPath("offenceEndDate").isEqualTo("2024-01-02")
+          // dates on the offender charge are updated
+          .jsonPath("offenceDate").isEqualTo("2024-03-01")
+          .jsonPath("offenceEndDate").isEqualTo("2024-03-02")
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${earlierCourtEvent.id}")
@@ -5226,9 +5235,54 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("courtEventCharges[0].resultCode1.code").isEqualTo("1101")
           .jsonPath("courtEventCharges[0].resultCode1.dispositionCode").isEqualTo("F")
-          .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2024-01-01")
-          .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2024-01-02")
+          .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2024-03-01")
+          .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2024-03-02")
           .jsonPath("courtOrders[0].id").exists()
+      }
+
+      @Test
+      fun `can update the court event charge and offender charge for a court event charge on a future appearance, a null outcome is not updated on the offender charge`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${futureCourtEvent.id}/charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createOffenderChargeRequest(
+                resultCode1 = null,
+                offenceDate = LocalDate.parse("2024-03-01"),
+                offenceEndDate = LocalDate.parse("2024-03-05"),
+                futureAppearance = true,
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+// the result code for a future appearance should not be updated on the offender charge. Only the latest CEC result code (or future appearance with a charge outcome) is updated on the underlying charge
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offence.offenceCode").isEqualTo("RR84005B")
+          // not updated
+          .jsonPath("resultCode1.code").isEqualTo("1004")
+          .jsonPath("resultCode1.description").isEqualTo("Restriction Order")
+          // updated
+          .jsonPath("offenceDate").isEqualTo("2024-03-01")
+          .jsonPath("offenceEndDate").isEqualTo("2024-03-05")
+
+        webTestClient.get()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${futureCourtEvent.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("courtEventCharges[0].resultCode1.code").doesNotExist()
+          .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2024-03-01")
+          .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2024-03-05")
+          .jsonPath("courtOrders[0].id").doesNotExist()
       }
 
       @Test
@@ -5251,6 +5305,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("futureAppearance", "false")
             assertThat(it).containsEntry("offenderChargeId", offenderCharge1.id.toString())
           },
           isNull(),
@@ -8901,11 +8956,13 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     offenceDate: LocalDate? = LocalDate.of(2023, 1, 1),
     offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
     resultCode1: String? = "1067",
+    futureAppearance: Boolean? = false,
   ) = OffenderChargeRequest(
     offenceCode = offenceCode,
     offenceDate = offenceDate,
     offenceEndDate = offenceEndDate,
     resultCode1 = resultCode1,
+    futureAppearance = futureAppearance,
   )
 
   private fun createCourtAppearanceRequest(
