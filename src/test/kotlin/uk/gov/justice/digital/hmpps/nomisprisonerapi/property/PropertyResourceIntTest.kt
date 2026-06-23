@@ -30,28 +30,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
   private lateinit var booking: OffenderBooking
   private lateinit var container1: OffenderPropertyContainer
   private lateinit var container2: OffenderPropertyContainer
-
-  @BeforeEach
-  fun init() {
-    nomisDataBuilder.build {
-      location1 = agencyInternalLocation(
-        locationCode = "SYI-001",
-        locationType = "BOX",
-        prisonId = "SYI",
-      )
-      offender(nomsId = "A1111AA") {
-        booking = booking {
-          container1 = property()
-          container2 = property(
-            prisonId = "SYI",
-            internalLocationId = location1.locationId,
-            expiryDate = LocalDate.parse("2026-06-01"),
-            proposedDisposalDate = LocalDate.parse("2026-10-01"),
-          )
-        }
-      }
-    }
-  }
+  private lateinit var container3: OffenderPropertyContainer
 
   @AfterEach
   internal fun deleteData() {
@@ -63,6 +42,18 @@ class PropertyResourceIntTest : IntegrationTestBase() {
   @DisplayName("POST /property-containers")
   @Nested
   inner class CreatePropertyContainer {
+    @BeforeEach
+    fun init() {
+      nomisDataBuilder.build {
+        location1 = agencyInternalLocation(
+          locationCode = "SYI-001",
+          locationType = "BOX",
+          prisonId = "SYI",
+        )
+        offender(nomsId = "A1111AA") { booking = booking() }
+      }
+    }
+
     @Nested
     inner class Security {
       @Test
@@ -231,6 +222,35 @@ class PropertyResourceIntTest : IntegrationTestBase() {
   @DisplayName("GET /property-containers/{id}")
   @Nested
   inner class GetPropertyContainer {
+
+    @BeforeEach
+    fun init() {
+      nomisDataBuilder.build {
+        location1 = agencyInternalLocation(
+          locationCode = "SYI-001",
+          locationType = "BOX",
+          prisonId = "SYI",
+        )
+        offender(nomsId = "A1111AA") {
+          booking = booking {
+            container1 = property()
+            container2 = property(
+              prisonId = "SYI",
+              internalLocationId = location1.locationId,
+              expiryDate = LocalDate.parse("2026-06-01"),
+              proposedDisposalDate = LocalDate.parse("2026-10-01"),
+            )
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    internal fun deleteData() {
+      repository.deleteAllPrisonerProperty()
+      repository.deleteAgencyInternalLocationById(location1.locationId)
+    }
+
     @Nested
     inner class Security {
       @Test
@@ -298,6 +318,137 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           assertThat(createdDateTime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(createdBy).isEqualTo("SA")
         }
+      }
+    }
+  }
+
+  @Nested
+  inner class GetPropertyContainerIdsByFilterRequest {
+
+    @BeforeEach
+    fun init() {
+      nomisDataBuilder.build {
+        location1 = agencyInternalLocation(
+          locationCode = "SYI-001",
+          locationType = "BOX",
+          prisonId = "SYI",
+        )
+        offender(nomsId = "A1111AA") {
+          booking = booking(agencyLocationId = "BXI") {
+            container1 = property()
+            container2 = property(
+              prisonId = "SYI",
+              internalLocationId = location1.locationId,
+              expiryDate = LocalDate.parse("2026-06-01"),
+              proposedDisposalDate = LocalDate.parse("2026-10-01"),
+            )
+            container3 = property()
+          }
+        }
+        offender(nomsId = "A1111AA") {
+          booking = booking(agencyLocationId = "LEI") {
+            property()
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `get property-containers prevents access without appropriate role`() {
+        assertThat(
+          webTestClient.get().uri {
+            it.path("/property-containers/ids")
+              .queryParam("prisonIds", "MDI")
+              .build()
+          }
+            .headers(setAuthorisation(roles = listOf("ROLE_BLA")))
+            .exchange()
+            .expectStatus().isForbidden,
+        )
+      }
+
+      @Test
+      fun `get property-containers prevents access without authorization`() {
+        assertThat(
+          webTestClient.get().uri("/property-containers/ids")
+            .exchange()
+            .expectStatus().isUnauthorized,
+        )
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `get all ids - prisons not specified`() {
+        webTestClient.get()
+          .uri("/property-containers/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.numberOfElements").isEqualTo(4)
+      }
+
+      @Test
+      fun `get property-containers issued within given prisons`() {
+        webTestClient.get().uri {
+          it.path("/property-containers/ids")
+            .queryParam("prisonIds", "MDI", "SYI", "BXI")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.content[0].containerId").isEqualTo(container1.propertyContainerId)
+          .jsonPath("$.content[1].containerId").isEqualTo(container2.propertyContainerId)
+          .jsonPath("$.content[2].containerId").isEqualTo(container3.propertyContainerId)
+          .jsonPath("$.numberOfElements").isEqualTo(3)
+      }
+
+      @Test
+      fun `can request a different page size`() {
+        webTestClient.get().uri {
+          it.path("/property-containers/ids")
+            .queryParam("prisonIds", "MDI", "SYI", "BXI")
+            .queryParam("size", "2")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(3)
+          .jsonPath("numberOfElements").isEqualTo(2)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(2)
+          .jsonPath("size").isEqualTo(2)
+          .jsonPath("$.content[0].containerId").isEqualTo(container1.propertyContainerId)
+          .jsonPath("$.content[1].containerId").isEqualTo(container2.propertyContainerId)
+      }
+
+      @Test
+      fun `can request a different page`() {
+        webTestClient.get().uri {
+          it.path("/property-containers/ids")
+            .queryParam("prisonIds", "MDI", "SYI", "BXI")
+            .queryParam("size", "2")
+            .queryParam("page", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(3)
+          .jsonPath("numberOfElements").isEqualTo(1)
+          .jsonPath("number").isEqualTo(1)
+          .jsonPath("totalPages").isEqualTo(2)
+          .jsonPath("size").isEqualTo(2)
+          .jsonPath("$.content[0].containerId").isEqualTo(container3.propertyContainerId)
       }
     }
   }

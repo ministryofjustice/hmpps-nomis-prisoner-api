@@ -36,11 +36,13 @@ class PropertyService(
     .findByIdOrNull(propertyContainerId)?.toDto()
     ?: throw NotFoundException("No property container with id $propertyContainerId")
 
-  fun findIdsByFilter(pageRequest: Pageable, propertyFilter: PropertyFilter): Page<ContainerIdResponse> {
-    log.info("Property request with page request $pageRequest")
-    return offenderPropertyContainerRepository.findAll(pageRequest)
-      .map { ContainerIdResponse(it.propertyContainerId) }
-  }
+  fun findIdsByFilter(pageRequest: Pageable, propertyFilter: PropertyFilter): Page<ContainerIdResponse> = if (
+    propertyFilter.prisonIds.isNullOrEmpty()
+  ) {
+    offenderPropertyContainerRepository.findIds(pageRequest)
+  } else {
+    offenderPropertyContainerRepository.findIdsByAgencyLocation_IdIn(pageRequest, propertyFilter.prisonIds)
+  }.map { ContainerIdResponse(it.propertyContainerId) }
 
   private fun PropertyContainerCreateDto.toModel() = OffenderPropertyContainer(
     offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
