@@ -159,9 +159,5 @@ class CourtEvent(
     return id == other.id
   }
 
-  fun isLatestAppearance(): Boolean = courtCase?.let {
-    this == courtCase!!.courtEvents.maxByOrNull { it.getEventDateAndTime() }
-  } ?: false
-
   override fun hashCode(): Int = javaClass.hashCode()
 }

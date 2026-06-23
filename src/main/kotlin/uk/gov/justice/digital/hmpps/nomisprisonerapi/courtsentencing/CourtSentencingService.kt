@@ -793,11 +793,13 @@ class CourtSentencingService(
           courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
           log.info("updateCourtCharge: court_event_charge updated for charge ${offenderCharge.id} on appearance ${courtAppearance.id} with result code ${resultCode?.code}")
 
+          var shouldUpdateOutcome = isLatestCourtEventChargeWithAResultCode(courtEventCharge)
+
           refreshOffenderCharge(
             courtEventCharge = courtEventCharge,
             offenderChargeRequest = request.toExistingOffenderChargeRequest(chargeId),
             resultCode = resultCode,
-            latestAppearance = courtEventCharge.id.courtEvent.isLatestAppearance(),
+            shouldUpdateOutcome = shouldUpdateOutcome,
           ).also {
             courtCase.courtEvents.forEach { courtAppearance ->
               courtEventRepository.saveAndFlush(courtAppearance).also {
@@ -812,6 +814,7 @@ class CourtSentencingService(
               "court-charge-updated",
               mapOf(
                 "courtCaseId" to caseId.toString(),
+                "futureAppearance" to request.futureAppearance.toString(),
                 "bookingId" to courtCase.offenderBooking.bookingId.toString(),
                 "offenderNo" to offenderNo,
                 "offenderChargeId" to chargeId.toString(),
@@ -823,6 +826,19 @@ class CourtSentencingService(
         }
       }
     }
+  }
+
+  fun isLatestCourtEventChargeWithAResultCode(
+    courtEventCharge: CourtEventCharge,
+  ): Boolean {
+    val latestWithResultCode = courtEventCharge.id.courtEvent.courtCase?.courtEvents
+      ?.flatMap { it.courtEventCharges }
+      ?.filter { cec ->
+        cec.resultCode1 != null
+      }
+      ?.maxByOrNull { it.id.courtEvent.getEventDateAndTime() }
+
+    return latestWithResultCode == courtEventCharge
   }
 
   fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCaseWithOffenderBookingLock(caseId = caseId, offenderNo = offenderNo).let { case ->
@@ -1143,23 +1159,23 @@ class CourtSentencingService(
     }
   }
 
-  // nomis only updates the outcome/result on the Offence Charge if a change is made to the latest Court Event Charge
+  // nomis only updates the outcome/result on the Offender Charge if a change is made to the latest Court Event Charge with an outcome
   private fun CourtSentencingService.refreshOffenderCharge(
     courtEventCharge: CourtEventCharge,
     offenderChargeRequest: ExistingOffenderChargeRequest,
     resultCode: OffenceResultCode?,
-    latestAppearance: Boolean = true,
+    shouldUpdateOutcome: Boolean = true,
   ) {
     with(courtEventCharge.id.offenderCharge) {
       offenceDate = offenderChargeRequest.offenceDate
       offenceEndDate = offenderChargeRequest.offenceEndDate
-      if (latestAppearance) {
+      if (shouldUpdateOutcome) {
         resultCode1 = resultCode
         resultCode1Indicator = resultCode?.dispositionCode
         chargeStatus = resultCode?.chargeStatus?.let { lookupChargeStatusType(it) }
-        log.info("refreshOffenderCharge: offender charge $id updated with result code ${resultCode?.code} because this is the latest appearance ${courtEventCharge.id.courtEvent.id} date ${courtEventCharge.id.courtEvent.eventDate}")
+        log.info("refreshOffenderCharge: offender charge $id updated with result code ${resultCode?.code} because this is the latest court event charge with an outcome. Court event: ${courtEventCharge.id.courtEvent.id} date ${courtEventCharge.id.courtEvent.eventDate}")
       } else {
-        log.info("refreshOffenderCharge: offender charge $id NOT updated because this is NOT the latest appearance ${courtEventCharge.id.courtEvent.id} date ${courtEventCharge.id.courtEvent.eventDate}")
+        log.info("refreshOffenderCharge: offender charge $id result code NOT updated because this court event charge is not the latest CEC with an outcome. Court event: ${courtEventCharge.id.courtEvent.id} date ${courtEventCharge.id.courtEvent.eventDate}")
       }
     }
   }

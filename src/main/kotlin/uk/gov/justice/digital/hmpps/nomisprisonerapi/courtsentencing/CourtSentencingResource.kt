@@ -2816,6 +2816,7 @@ data class OffenderChargeRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
+  val futureAppearance: Boolean? = false,
 
     /*
     val plea: String?,
