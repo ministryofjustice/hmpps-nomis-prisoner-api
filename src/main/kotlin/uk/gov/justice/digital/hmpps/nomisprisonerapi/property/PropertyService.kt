@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPropertyContainer
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -28,8 +31,8 @@ class PropertyService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun createProperty(propertyContainerCreateDto: PropertyContainerCreateDto) = CreatePropertyResponse(
-    offenderPropertyContainerRepository.save(propertyContainerCreateDto.toModel()).propertyContainerId,
+  fun createProperty(propertyContainerCreateRequest: PropertyContainerCreateRequest) = CreatePropertyResponse(
+    offenderPropertyContainerRepository.save(propertyContainerCreateRequest.toModel()).propertyContainerId,
   )
 
   fun getProperty(propertyContainerId: Long) = offenderPropertyContainerRepository
@@ -44,15 +47,10 @@ class PropertyService(
     offenderPropertyContainerRepository.findIdsByAgencyLocation_IdIn(pageRequest, propertyFilter.prisonIds)
   }.map { ContainerIdResponse(it.propertyContainerId) }
 
-  private fun PropertyContainerCreateDto.toModel() = OffenderPropertyContainer(
-    offenderBooking = offenderBookingRepository.findByIdOrNull(bookingId)
-      ?: throw BadDataException("Booking id $bookingId not found"),
-    agencyInternalLocation = internalLocationId?.let {
-      agencyInternalLocationRepository.findByIdOrNull(it)
-        ?: throw BadDataException("Creating property for booking id $bookingId: No location with id $it found")
-    },
-    agencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)
-      ?: throw BadDataException("Creating property for booking id $bookingId: Prison $prisonId not found"),
+  private fun PropertyContainerCreateRequest.toModel() = OffenderPropertyContainer(
+    offenderBooking = findBooking(),
+    agencyInternalLocation = findLocation(),
+    agencyLocation = findAgency(),
     active = active,
     sealMark = sealMark,
     containerCode = containerCode,
@@ -60,7 +58,7 @@ class PropertyService(
     expiryDate = expiryDate,
   )
 
-  private fun OffenderPropertyContainer.toDto() = PropertyContainerGetDto(
+  private fun OffenderPropertyContainer.toDto() = PropertyContainerGetResponse(
     containerId = propertyContainerId,
     offenderNo = offenderBooking.offender.nomsId,
     bookingId = offenderBooking.bookingId,
@@ -74,4 +72,17 @@ class PropertyService(
     createdDateTime = createDatetime,
     createdBy = createUsername,
   )
+
+  private fun PropertyContainerCreateRequest.findBooking(): OffenderBooking = offenderBookingRepository
+    .findByIdOrNull(bookingId)
+    ?: throw BadDataException("Booking id $bookingId not found")
+
+  private fun PropertyContainerCreateRequest.findLocation(): AgencyInternalLocation? = internalLocationId?.let {
+    agencyInternalLocationRepository.findByIdOrNull(it)
+      ?: throw BadDataException("Creating property for booking id $bookingId: No location with id $it found")
+  }
+
+  private fun PropertyContainerCreateRequest.findAgency(): AgencyLocation = agencyLocationRepository
+    .findByIdOrNull(prisonId)
+    ?: throw BadDataException("Creating property for booking id $bookingId: Prison $prisonId not found")
 }

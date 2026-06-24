@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 
@@ -28,12 +30,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @RestController
 class PropertyResource(private val propertyService: PropertyService) {
   @PostMapping("/property-containers")
+  @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates a prisoner property container record",
     description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
-        responseCode = "200",
+        responseCode = "201",
         content = [
           Content(mediaType = "application/json", schema = Schema(implementation = CreatePropertyResponse::class)),
         ],
@@ -51,7 +54,7 @@ class PropertyResource(private val propertyService: PropertyService) {
     ],
   )
   fun create(
-    @RequestBody createRequest: PropertyContainerCreateDto,
+    @RequestBody createRequest: PropertyContainerCreateRequest,
   ): CreatePropertyResponse = propertyService.createProperty(createRequest)
 
   @GetMapping("/property-containers/{id}")
@@ -62,7 +65,7 @@ class PropertyResource(private val propertyService: PropertyService) {
       ApiResponse(
         responseCode = "200",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = PropertyContainerGetDto::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = PropertyContainerGetResponse::class)),
         ],
       ),
       ApiResponse(
@@ -74,7 +77,7 @@ class PropertyResource(private val propertyService: PropertyService) {
   )
   fun get(
     @Schema(description = "property container Id", example = "2345678") @PathVariable id: Long,
-  ): PropertyContainerGetDto = propertyService.getProperty(id)
+  ): PropertyContainerGetResponse = propertyService.getProperty(id)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/property-containers/ids")

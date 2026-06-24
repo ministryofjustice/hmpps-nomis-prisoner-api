@@ -13,6 +13,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters.fromValue
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPropertyContainer
@@ -169,10 +170,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validFullCreateJsonRequest(booking.bookingId, location1.locationId)))
           .exchange()
-          .expectStatus().isOk
-          .expectBody<CreatePropertyResponse>()
-          .returnResult()
-          .responseBody!!
+          .expectBodyResponse<CreatePropertyResponse>()
 
         nomisDataBuilder.runInTransaction {
           val data = offenderPropertyContainerRepository.findByIdOrNull(created.propertyContainerId)
@@ -197,10 +195,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(fromValue(validMinimalCreateJsonRequest(booking.bookingId)))
           .exchange()
-          .expectStatus().isOk
-          .expectBody<CreatePropertyResponse>()
-          .returnResult()
-          .responseBody!!
+          .expectBodyResponse<CreatePropertyResponse>()
 
         nomisDataBuilder.runInTransaction {
           val data = offenderPropertyContainerRepository.findByIdOrNull(
@@ -296,16 +291,13 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `can get a property container with full data`() {
-        val data = webTestClient.get().uri("/property-containers/${container2.id}")
+        val data = webTestClient.get().uri("/property-containers/${container2.propertyContainerId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
-          .expectStatus().isOk
-          .expectBody<PropertyContainerGetDto>()
-          .returnResult()
-          .responseBody!!
+          .expectBodyResponse<PropertyContainerGetResponse>()
 
         with(data) {
-          assertThat(containerId).isEqualTo(container2.id)
+          assertThat(containerId).isEqualTo(container2.propertyContainerId)
           assertThat(offenderNo).isEqualTo("A1111AA")
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(internalLocationId).isEqualTo(location1.locationId)

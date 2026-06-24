@@ -13,16 +13,11 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
-import jakarta.persistence.Transient
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.domain.Persistable
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 
 @Entity
-@EntityOpen
 @Table(name = "OFFENDER_PPTY_CONTAINERS")
 data class OffenderPropertyContainer(
   @Id
@@ -61,15 +56,7 @@ data class OffenderPropertyContainer(
 
   val proposedDisposalDate: LocalDate? = null,
   val expiryDate: LocalDate? = null,
-
-  @Transient
-  @Value("false")
-  val new: Boolean = true,
-) : NomisAuditableEntityBasic(),
-  Persistable<Long> {
-  override fun getId() = propertyContainerId
-  override fun isNew() = new
-
+) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
