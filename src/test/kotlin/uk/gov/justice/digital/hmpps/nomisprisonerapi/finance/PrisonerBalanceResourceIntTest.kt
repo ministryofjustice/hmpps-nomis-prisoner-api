@@ -134,6 +134,17 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("page.totalElements").isEqualTo(0)
     }
+
+    @Test
+    fun getPrisonerIdsEmptyList() {
+      webTestClient.get().uri("/finance/prisoners/ids?prisonId=")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("page.totalElements").isEqualTo(3)
+    }
   }
 
   @Nested

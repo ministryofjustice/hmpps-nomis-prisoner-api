@@ -64,7 +64,10 @@ class PrisonerBalanceResource(
     @ParameterObject
     pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam(name = "prisonId") prisonIds: List<String>?,
-  ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(prisonIds, pageRequest)
+  ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(
+    prisonIds?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() },
+    pageRequest,
+  )
 
   @GetMapping("/ids/all-from-id")
   @Operation(
