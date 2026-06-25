@@ -5,12 +5,10 @@ import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.JoinColumnOrFormula
@@ -25,14 +23,9 @@ import java.time.LocalDateTime
 @Table(name = "COURT_EVENTS")
 @EntityOpen
 class CourtEvent(
-  @SequenceGenerator(
-    name = "EVENT_ID",
-    sequenceName = "EVENT_ID",
-    allocationSize = 1,
-  )
-  @GeneratedValue(generator = "EVENT_ID")
   @Id
   @Column(name = "EVENT_ID")
+  @SequenceOrUseId(name = "EVENT_ID")
   val id: Long = 0,
 
   @Column(name = "PARENT_EVENT_ID")

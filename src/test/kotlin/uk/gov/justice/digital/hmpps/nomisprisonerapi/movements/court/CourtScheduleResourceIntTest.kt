@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_COURT_SCHEDULER_COMMENT_LENGTH
@@ -37,6 +38,7 @@ class CourtScheduleResourceIntTest(
   private lateinit var offender: Offender
   private lateinit var booking: OffenderBooking
   private lateinit var scheduleOut: CourtEvent
+  private lateinit var movementOut: OffenderCourtMovementOut
   private lateinit var scheduleIn: CourtEvent
   private lateinit var staff: Staff
   private lateinit var courtCase: CourtCase
@@ -318,6 +320,57 @@ class CourtScheduleResourceIntTest(
     }
 
     @Nested
+    inner class Recreate {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEventOut {
+                movementOut = courtMovementOut()
+              }
+              scheduleIn = courtEventOut(eventDateTime = LocalDateTime.now().minusHours(1))
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              delete from COURT_EVENTS where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+      }
+
+      @Test
+      fun `should create court schedule out with the same event ID as deleted`() {
+        webTestClient.upsertCourtScheduleOutOk(request = aRequest(eventId = scheduleOut.id), recreate = true)
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(eventId).isEqualTo(scheduleOut.id)
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(directionCode?.code).isEqualTo("OUT")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should handle further requests to recreate with the same event ID (maintains idempotency)`() {
+        webTestClient.upsertCourtScheduleOutOk(request = aRequest(eventId = scheduleOut.id), recreate = true)
+        webTestClient.upsertCourtScheduleOutOk(request = aRequest(eventId = scheduleOut.id), recreate = true)
+      }
+
+      @Test
+      fun `should error if we try to recreate without an event ID`() {
+        webTestClient.upsertCourtScheduleOut(request = aRequest(eventId = null), recreate = true)
+          .isBadRequest
+      }
+    }
+
+    @Nested
     inner class Update {
       @BeforeEach
       fun setUp() {
@@ -530,15 +583,21 @@ class CourtScheduleResourceIntTest(
 
     private fun WebTestClient.upsertCourtScheduleOutOk(
       request: UpsertCourtScheduleOut = aRequest(),
-    ) = upsertCourtScheduleOut(request)
+      recreate: Boolean = false,
+    ) = upsertCourtScheduleOut(request, recreate = recreate)
       .isOk
       .expectBodyResponse<UpsertCourtScheduleOutResponse>()
 
     private fun WebTestClient.upsertCourtScheduleOut(
       request: UpsertCourtScheduleOut = aRequest(),
       offenderNo: String = offender.nomsId,
+      recreate: Boolean = false,
     ) = put()
-      .uri("/movements/$offenderNo/court/schedule/out")
+      .uri {
+        it.path("/movements/$offenderNo/court/schedule/out")
+          .queryParam("recreate", recreate)
+          .build()
+      }
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
       .bodyValue(request)
       .exchange()
