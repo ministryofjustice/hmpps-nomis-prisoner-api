@@ -199,6 +199,23 @@ class CourtMovementResourceIntTest(
           assertThat(toCourt).isNull()
         }
       }
+
+      @Test
+      fun `should handle deleted court schedule`() {
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              delete from COURT_EVENTS where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getCourtMovementOutOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(courtScheduleOutId).isNull()
+        }
+      }
     }
 
     @Nested
@@ -395,6 +412,23 @@ class CourtMovementResourceIntTest(
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
           assertThat(fromCourt).isNull()
+        }
+      }
+
+      @Test
+      fun `should handle missing court schedule`() {
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              delete from COURT_EVENTS where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getCourtMovementInOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementIn.id.sequence)
+          assertThat(courtScheduleOutId).isNull()
         }
       }
     }

@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementOutRepository
@@ -24,6 +25,7 @@ class CourtMovementService(
   private val courtMovementInRepository: OffenderCourtMovementInRepository,
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
+  private val courtEventRepository: CourtEventRepository,
 ) {
 
   fun getCourtMovementOut(offenderNo: String, bookingId: Long, sequence: Int): CourtMovementOut {
@@ -58,7 +60,7 @@ class CourtMovementService(
     bookingId = id.offenderBooking.bookingId,
     sequence = id.sequence,
     eventId = courtScheduleOutId,
-    courtScheduleOutId = courtScheduleOutId,
+    courtScheduleOutId = courtScheduleOutId?.takeIf { courtEventRepository.existsById(it) },
     movementDate = movementDate,
     movementTime = getMovementDateAndTime(),
     movementReason = movementReason.id.reasonCode,
@@ -72,7 +74,7 @@ class CourtMovementService(
   private fun OffenderCourtMovementIn.toResponse() = CourtMovementIn(
     bookingId = id.offenderBooking.bookingId,
     sequence = id.sequence,
-    courtScheduleOutId = courtScheduleOutId,
+    courtScheduleOutId = courtScheduleOutId?.takeIf { courtEventRepository.existsById(it) },
     movementDate = movementDate,
     movementTime = getMovementDateAndTime(),
     movementReason = movementReason.id.reasonCode,
