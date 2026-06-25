@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Role
@@ -489,6 +491,7 @@ class NomisData(
     description: String,
     type: String,
     active: Boolean,
+    districtCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
@@ -496,6 +499,39 @@ class NomisData(
       description = description,
       type = type,
       active = active,
+    )
+      .also { builder.apply(dsl) }
+  }
+  override fun agency(
+    agencyLocationId: String,
+    description: String,
+    type: String,
+    active: Boolean,
+    districtCode: String?,
+    dsl: AgencyLocationDsl.() -> Unit,
+  ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
+    builder.buildAgency(
+      id = agencyLocationId,
+      description = description,
+      type = type,
+      active = active,
+      districtCode = districtCode,
+    )
+      .also { builder.apply(dsl) }
+  }
+  override fun prison(
+    agencyLocationId: String,
+    description: String,
+    active: Boolean,
+    districtCode: String?,
+    dsl: AgencyLocationDsl.() -> Unit,
+  ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
+    builder.buildPrison(
+      id = agencyLocationId,
+      description = description,
+      type = "INST",
+      active = active,
+      districtCode = districtCode,
     )
       .also { builder.apply(dsl) }
   }
@@ -743,14 +779,31 @@ interface NomisDataDsl {
     dsl: LinkCaseTxnDsl.() -> Unit = {},
   ): LinkCaseTxn
 
-  @AgencyLocationDslMarker
   fun agencyLocation(
     agencyLocationId: String = "LEI",
     description: String = "HMP Leeds",
     type: String = "INST",
     active: Boolean = true,
+    districtCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
+
+  fun prison(
+    agencyLocationId: String = "LEI",
+    description: String = "HMP Leeds",
+    active: Boolean = true,
+    districtCode: String? = null,
+    dsl: AgencyLocationDsl.() -> Unit = {},
+  ): Prison
+
+  fun agency(
+    agencyLocationId: String = "THA029",
+    description: String = "St Leonard's Hostel",
+    type: String = "APPR",
+    active: Boolean = true,
+    districtCode: String? = null,
+    dsl: AgencyLocationDsl.() -> Unit = {},
+  ): Agency
 
   @GeneralLedgerTransactionDslMarker
   fun generalLedgerTransaction(

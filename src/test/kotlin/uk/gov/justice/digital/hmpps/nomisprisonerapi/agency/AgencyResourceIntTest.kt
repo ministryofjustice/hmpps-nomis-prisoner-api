@@ -9,28 +9,44 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonRepository
 
 class AgencyResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var agencyLocationRepository: AgencyLocationRepository
 
+  @Autowired
+  private lateinit var agencyRepository: AgencyRepository
+
+  @Autowired
+  private lateinit var prisonRepository: PrisonRepository
+
   @DisplayName("GET /prison/{prisonId}")
   @Nested
   inner class GetPrison {
-    lateinit var agency: AgencyLocation
+    lateinit var legacyGenericAgency: AgencyLocation
+    lateinit var approvedPremise: Agency
+    lateinit var prison: Prison
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        agency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST")
+        legacyGenericAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST")
+        prison = prison(agencyLocationId = "AAI", description = "HMP AAI", districtCode = "LONDON")
+        approvedPremise = agency(agencyLocationId = "THA029", description = "Approved Premises", districtCode = "40")
       }
     }
 
     @AfterEach
     fun tearDown() {
-      agencyLocationRepository.deleteById(agency.id)
+      agencyLocationRepository.deleteById(legacyGenericAgency.id)
+      agencyRepository.delete(approvedPremise)
+      prisonRepository.delete(prison)
     }
 
     @Nested
@@ -75,29 +91,61 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return prison details`() {
-        val prison: PrisonResponse = webTestClient.get().uri("/prison/XXI")
+        val prison: PrisonResponse = webTestClient.get().uri("/prison/AAI")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
-        assertThat(prison.prisonId).isEqualTo("XXI")
-        assertThat(prison.description).isEqualTo("HMP XXI")
+        assertThat(prison.prisonId).isEqualTo("AAI")
+        assertThat(prison.description).isEqualTo("HMP AAI")
+        assertThat(prison.district?.description).isEqualTo("London")
       }
 
       @Test
-      fun `will return generic agency location details`() {
-        val agency: AgencyResponse = webTestClient.get().uri("/agency-location/XXI")
+      fun `will return generic agency location details for a prison`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency-location/AAI")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse()
 
-        assertThat(agency.agencyId).isEqualTo("XXI")
-        assertThat(agency.description).isEqualTo("HMP XXI")
+        assertThat(agency.agencyId).isEqualTo("AAI")
+        assertThat(agency.description).isEqualTo("HMP AAI")
       }
 
       @Test
-      fun `will not find as non-prison agency`() {
-        webTestClient.get().uri("/agency/XXI")
+      fun `will return generic agency details for an approved premises`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency-location/THA029")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("THA029")
+        assertThat(agency.description).isEqualTo("Approved Premises")
+      }
+
+      @Test
+      fun `will return details for an approved premises`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/THA029")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("THA029")
+        assertThat(agency.description).isEqualTo("Approved Premises")
+        assertThat(agency.district?.description).isEqualTo("Thames Valley")
+      }
+
+      @Test
+      fun `will not find as agency when is prison`() {
+        webTestClient.get().uri("/agency/AAI")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will not find as prison when is agency`() {
+        webTestClient.get().uri("/prison/THA029")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound

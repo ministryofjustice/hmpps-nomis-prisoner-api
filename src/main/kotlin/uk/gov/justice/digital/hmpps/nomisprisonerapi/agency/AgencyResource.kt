@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 
 @RestController
 @Validated
@@ -166,9 +167,20 @@ data class PrisonResponse(
   val prisonId: String,
   @Schema(description = "Name of prison", example = "WANDSWORTH (HMP)")
   val description: String,
+  @Schema(description = "Area district")
+  val district: CodeDescription?,
 )
 
 data class AgencyResponse(
+  @Schema(description = "The agency id", example = "LCSY02")
+  val agencyId: String,
+  @Schema(description = "Name of agency", example = "Blackburn YOT")
+  val description: String,
+  @Schema(description = "Geographic district")
+  val district: CodeDescription?,
+)
+
+data class AgencyLocationResponse(
   @Schema(description = "The agency id", example = "LCSY02")
   val agencyId: String,
   @Schema(description = "Name of agency", example = "Blackburn YOT")
