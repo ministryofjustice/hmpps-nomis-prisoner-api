@@ -5,8 +5,6 @@ import jakarta.persistence.Entity
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import org.hibernate.annotations.NotFound
-import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -22,7 +20,6 @@ class OffenderCourtMovementIn(
   commentText: String? = null,
 
   @Column(name = "PARENT_EVENT_ID")
-  @NotFound(action = NotFoundAction.IGNORE)
   var courtScheduleOutId: Long? = null,
 ) : OffenderExternalMovement(
   id = id,
