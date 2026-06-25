@@ -84,7 +84,7 @@ class TapMovementResourceIntTest(
     }
     offenderRepository.deleteAll()
     if (this::agencyLocation.isInitialized) {
-      agencyLocationRepository.delete(agencyLocation)
+      agencyLocationRepository.deleteById(agencyLocation.id)
     }
     corporateRepository.deleteAll()
   }

@@ -6,11 +6,13 @@ import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.Id
+import jakarta.persistence.Inheritance
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -23,7 +25,16 @@ import java.util.Objects
 @Entity
 @Table(name = "AGENCY_LOCATIONS")
 @EntityOpen
-data class AgencyLocation(
+@DiscriminatorFormula(
+  """
+    case
+        when AGENCY_LOCATION_TYPE = 'INST' then 'Prison'
+        else 'Agency'
+    end
+""",
+)
+@Inheritance
+class AgencyLocation(
   @Id
   @Column(name = "AGY_LOC_ID")
   val id: String,
@@ -60,6 +71,7 @@ data class AgencyLocation(
   @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${AgencyLocationAddress.ADDR_TYPE}'")
   val addresses: MutableList<AgencyLocationAddress> = mutableListOf(),
+
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -77,3 +89,36 @@ data class AgencyLocation(
     const val TRN = "TRN"
   }
 }
+
+@Entity
+class Prison(
+  id: String,
+  description: String,
+
+) : AgencyLocation(id, description)
+
+@Entity
+class Agency(
+  id: String,
+  description: String,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + GeographicType.GEOGRAPHIC + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "DISTRICT_CODE",
+          referencedColumnName = "code",
+          nullable = true,
+        ),
+      ),
+    ],
+  )
+  var district: GeographicType? = null,
+
+) : AgencyLocation(id, description)

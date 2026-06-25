@@ -9,6 +9,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CorporateAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
@@ -31,6 +33,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapS
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.isInitialized
 
 class TapRepositoryIntTest(
   @Autowired private val tapApplicationRepository: OffenderTapApplicationRepository,
@@ -39,6 +42,7 @@ class TapRepositoryIntTest(
   @Autowired private val tapMovementOutRepository: OffenderTapMovementOutRepository,
   @Autowired private val tapMovementInRepository: OffenderTapMovementInRepository,
   @Autowired private val offenderBookingRepository: OffenderBookingRepository,
+  @Autowired val agencyLocationRepository: AgencyLocationRepository,
   @Autowired private val jdbcTemplate: JdbcTemplate,
 ) : IntegrationTestBase() {
 
@@ -51,10 +55,14 @@ class TapRepositoryIntTest(
     lateinit var scheduleIn: OffenderTapScheduleIn
     lateinit var movementOut: OffenderTapMovementOut
     lateinit var movementIn: OffenderTapMovementIn
+    lateinit var agencyLocation: AgencyLocation
 
     @AfterEach
     fun `reset data`() {
       repository.delete(offender)
+      if (this::agencyLocation.isInitialized) {
+        agencyLocationRepository.deleteById(agencyLocation.id)
+      }
     }
 
     @Test
@@ -208,7 +216,7 @@ class TapRepositoryIntTest(
         corporate("Kwikfit") {
           corporateAddress = address()
         }
-        agencyLocation("LEI", "HMP Leeds") {
+        agencyLocation = agencyLocation("XXI", "HMP Leeds") {
           agencyAddress = address()
         }
         offender = offender {
@@ -249,7 +257,7 @@ class TapRepositoryIntTest(
         corporate("Kwikfit") {
           corporateAddress = address()
         }
-        agencyLocation("LEI", "HMP Leeds") {
+        agencyLocation = agencyLocation("XXI", "HMP Leeds") {
           agencyAddress = address()
         }
         offender = offender {
@@ -291,7 +299,7 @@ class TapRepositoryIntTest(
       lateinit var agencyAddress: AgencyLocationAddress
 
       nomisDataBuilder.build {
-        agencyLocation("LEI", "HMP Leeds") {
+        agencyLocation = agencyLocation("XXI", "HMP Leeds") {
           agencyAddress = address()
         }
         offender = offender {
