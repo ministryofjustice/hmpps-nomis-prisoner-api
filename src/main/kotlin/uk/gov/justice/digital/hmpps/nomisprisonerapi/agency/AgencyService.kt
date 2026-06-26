@@ -32,15 +32,23 @@ fun Prison.toPrisonResponse() = PrisonResponse(
   prisonId = this.id,
   description = this.description,
   district = this.district?.toCodeDescription(),
+  active = this.active,
+  deactivationDate = this.deactivationDate,
 )
 
 fun Agency.toAgencyResponse() = AgencyResponse(
   agencyId = this.id,
   description = this.description,
   district = this.district?.toCodeDescription(),
+  active = this.active,
+  deactivationDate = this.deactivationDate,
+  type = this.type.toCodeDescription(),
 )
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
   agencyId = this.id,
   description = this.description,
+  active = this.active,
+  deactivationDate = this.deactivationDate,
+  type = this.type.toCodeDescription(),
 )
