@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.agency
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -163,6 +164,8 @@ class AgencyResource(private val agencyService: AgencyService) {
   ) = agencyService.getAgencyLocation(agencyId)
 }
 
+@Schema(description = "A response to get an agency of type INST which is a prison")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class PrisonResponse(
   @Schema(description = "The prison id", example = "WWI")
   val prisonId: String,
@@ -180,6 +183,8 @@ data class PrisonResponse(
   val contactName: String?,
 )
 
+@Schema(description = "A response to get an agency that is not a prison")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AgencyResponse(
   @Schema(description = "The agency id", example = "LCSY02")
   val agencyId: String,
@@ -202,6 +207,8 @@ data class AgencyResponse(
   val courtType: CodeDescription?,
 )
 
+@Schema(description = "A response to get any agency but only return data common to all agency types")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class AgencyLocationResponse(
   @Schema(description = "The agency id", example = "LCSY02")
   val agencyId: String,
