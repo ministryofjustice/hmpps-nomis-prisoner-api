@@ -174,6 +174,10 @@ data class PrisonResponse(
   val active: Boolean,
   @Schema(description = "Date no longer active", example = "2020-01-01")
   val deactivationDate: LocalDate?,
+  @Schema(description = "Indicates if data is allowed to be updated", example = "true")
+  val updateAllowed: Boolean,
+  @Schema(description = "Name of contact at agency", example = "John Smith")
+  val contactName: String?,
 )
 
 data class AgencyResponse(
@@ -189,6 +193,13 @@ data class AgencyResponse(
   val active: Boolean,
   @Schema(description = "Date no longer active", example = "2020-01-01")
   val deactivationDate: LocalDate?,
+  @Schema(description = "Indicates if data is allowed to be updated", example = "true")
+  val updateAllowed: Boolean,
+  @Schema(description = "Name of contact at agency", example = "John Smith")
+  val contactName: String?,
+  // maybe move this to court sub entity in future
+  @Schema(description = "Court type")
+  val courtType: CodeDescription?,
 )
 
 data class AgencyLocationResponse(
@@ -202,4 +213,8 @@ data class AgencyLocationResponse(
   val active: Boolean,
   @Schema(description = "Date no longer active", example = "2020-01-01")
   val deactivationDate: LocalDate?,
+  @Schema(description = "Indicates if data is allowed to be updated", example = "true")
+  val updateAllowed: Boolean,
+  @Schema(description = "Name of contact at agency", example = "John Smith")
+  val contactName: String?,
 )

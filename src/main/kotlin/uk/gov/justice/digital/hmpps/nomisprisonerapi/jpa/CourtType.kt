@@ -5,10 +5,10 @@ import jakarta.persistence.Entity
 
 @Entity
 @DiscriminatorValue(CourtType.JURISDICTION)
-class CourtType : ReferenceCode {
-  constructor(code: String, description: String) : super(JURISDICTION, code, description)
+class CourtType(code: String, description: String) : ReferenceCode(JURISDICTION, code, description) {
 
   companion object {
     const val JURISDICTION = "JURISDICTION"
+    fun pk(code: String): Pk = Pk(JURISDICTION, code)
   }
 }

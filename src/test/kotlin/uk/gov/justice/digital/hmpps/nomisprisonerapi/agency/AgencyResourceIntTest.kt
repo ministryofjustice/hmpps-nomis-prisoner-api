@@ -32,14 +32,38 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   inner class GetPrison {
     lateinit var legacyGenericAgency: AgencyLocation
     lateinit var approvedPremise: Agency
+    lateinit var court: Agency
     lateinit var prison: Prison
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
-        legacyGenericAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST")
-        prison = prison(agencyLocationId = "AAI", description = "HMP AAI", districtCode = "LONDON")
-        approvedPremise = agency(agencyLocationId = "THA029", description = "Approved Premises", districtCode = "40", active = false, type = "APPR", deactivationDate = LocalDate.parse("2022-01-01"))
+        legacyGenericAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        )
+        prison = prison(
+          agencyLocationId = "AAI",
+          description = "HMP AAI",
+          districtCode = "LONDON",
+        )
+        approvedPremise = agency(
+          agencyLocationId = "THA029",
+          description = "Approved Premises",
+          districtCode = "40",
+          active = false,
+          type = "APPR",
+          deactivationDate = LocalDate.parse("2022-01-01"),
+          updateAllowed = false,
+          contactName = "Gerald Simpson",
+        )
+        court = agency(
+          agencyLocationId = "SHEFCC",
+          description = "Sheffield Crown Court",
+          type = "CRT",
+          courtTypeCode = "CC",
+        )
       }
     }
 
@@ -47,6 +71,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     fun tearDown() {
       agencyLocationRepository.deleteById(legacyGenericAgency.id)
       agencyRepository.delete(approvedPremise)
+      agencyRepository.delete(court)
       prisonRepository.delete(prison)
     }
 
@@ -102,6 +127,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(prison.district?.description).isEqualTo("London")
         assertThat(prison.active).isTrue
         assertThat(prison.deactivationDate).isNull()
+        assertThat(prison.updateAllowed).isTrue
+        assertThat(prison.contactName).isNull()
       }
 
       @Test
@@ -115,6 +142,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.description).isEqualTo("HMP AAI")
         assertThat(agency.active).isTrue
         assertThat(agency.deactivationDate).isNull()
+        assertThat(agency.updateAllowed).isTrue
+        assertThat(agency.contactName).isNull()
       }
 
       @Test
@@ -129,6 +158,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.type.description).isEqualTo("Approved Premises")
         assertThat(agency.active).isFalse
         assertThat(agency.deactivationDate).isEqualTo(LocalDate.parse("2022-01-01"))
+        assertThat(agency.updateAllowed).isFalse
+        assertThat(agency.contactName).isEqualTo("Gerald Simpson")
       }
 
       @Test
@@ -144,6 +175,20 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.type.description).isEqualTo("Approved Premises")
         assertThat(agency.active).isFalse
         assertThat(agency.deactivationDate).isEqualTo(LocalDate.parse("2022-01-01"))
+        assertThat(agency.updateAllowed).isFalse
+        assertThat(agency.contactName).isEqualTo("Gerald Simpson")
+      }
+
+      @Test
+      fun `will return details for a court`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/SHEFCC")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("SHEFCC")
+        assertThat(agency.description).isEqualTo("Sheffield Crown Court")
+        assertThat(agency.courtType?.description).isEqualTo("Crown Court")
       }
 
       @Test
