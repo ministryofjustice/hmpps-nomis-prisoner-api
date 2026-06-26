@@ -44,8 +44,6 @@ class AgencyLocation(
   @Column(name = "DESCRIPTION")
   val description: String,
 
-  // FD not in reference data, so ignore if not found
-  @NotFound(action = NotFoundAction.IGNORE)
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
@@ -101,6 +99,8 @@ class Prison(
   type: AgencyLocationType,
   active: Boolean,
 
+  // FD (for OUT and TRN) not in reference data, so ignore if not found
+  @NotFound(action = NotFoundAction.IGNORE)
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
