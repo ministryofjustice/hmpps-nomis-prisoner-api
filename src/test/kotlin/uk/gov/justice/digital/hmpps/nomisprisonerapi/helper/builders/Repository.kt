@@ -69,6 +69,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChar
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPropertyContainerRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceAdjustmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
@@ -131,6 +132,7 @@ class Repository(
   val caseloadCurrentAccountsBaseRepository: CaseloadCurrentAccountsBaseRepository,
   val caseloadCurrentAccountsTxnRepository: CaseloadCurrentAccountsTxnRepository,
   val offenderAssessmentRepository: OffenderAssessmentRepository,
+  val offenderPropertyContainerRepository: OffenderPropertyContainerRepository,
   val offenderBeliefRepository: OffenderBeliefRepository,
 ) {
   @Autowired
@@ -327,16 +329,8 @@ class Repository(
     caseloadCurrentAccountsTxnRepository.deleteAll()
   }
 
-//  fun getAssessment(bookingId: Long, sequence: Int) = offenderAssessmentRepository
-//    .findByIdOrNull(
-//      OffenderAssessmentId(
-//        offenderBookingRepository.findByIdOrNull(bookingId)
-//          ?: throw NotFoundException("cant find booking"),
-//        sequence,
-//      ),
-//    )
-
   fun deleteAssessments() = offenderAssessmentRepository.deleteAll()
+  fun deleteAllPrisonerProperty() = offenderPropertyContainerRepository.deleteAll()
 
   fun deleteAllBeliefs() = offenderBeliefRepository.deleteAll()
 }

@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttribu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPropertyContainer
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderRestrictions
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
@@ -49,6 +50,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PropertyContainerCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
@@ -492,6 +494,18 @@ interface BookingDsl {
     dsl: OffenderAssessmentDsl.() -> Unit = {},
   ): OffenderAssessment
 
+  @OffenderPropertyContainerDslMarker
+  fun property(
+    prisonId: String? = null,
+    internalLocationId: Long? = null,
+    active: Boolean = true,
+    sealMark: String = "SEAL1234",
+    containerCode: PropertyContainerCode = PropertyContainerCode.BRA,
+    expiryDate: LocalDate? = null,
+    proposedDisposalDate: LocalDate? = null,
+    dsl: OffenderPropertyContainerDsl.() -> Unit = {},
+  ): OffenderPropertyContainer
+
   @OffenderTapApplicationDslMarker
   fun tapApplication(
     eventSubType: String = "C5",
@@ -554,6 +568,7 @@ class BookingBuilderFactory(
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderAssessmentBuilderFactory: OffenderAssessmentBuilderFactory,
+  private val offenderPropertyContainerBuilderFactory: OffenderPropertyContainerBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
@@ -586,6 +601,7 @@ class BookingBuilderFactory(
     offenderBeliefBuilderFactory,
     offenderTransactionBuilderFactory,
     offenderAssessmentBuilderFactory,
+    offenderPropertyContainerBuilderFactory,
     offenderRestrictionsBuilderFactory,
     offenderTapApplicationBuilderFactory,
     linkCaseTxnBuilderFactory,
@@ -619,6 +635,7 @@ class BookingBuilder(
   private val offenderBeliefBuilderFactory: OffenderBeliefBuilderFactory,
   private val offenderTransactionBuilderFactory: OffenderTransactionBuilderFactory,
   private val offenderAssessmentBuilderFactory: OffenderAssessmentBuilderFactory,
+  private val offenderPropertyContainerBuilderFactory: OffenderPropertyContainerBuilderFactory,
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
@@ -1550,6 +1567,29 @@ class BookingBuilder(
       assessmentDate,
       assessmentType,
       placementAgency,
+    )
+      .also { builder.apply(dsl) }
+  }
+
+  override fun property(
+    prisonId: String?,
+    internalLocationId: Long?,
+    active: Boolean,
+    sealMark: String,
+    containerCode: PropertyContainerCode,
+    expiryDate: LocalDate?,
+    proposedDisposalDate: LocalDate?,
+    dsl: OffenderPropertyContainerDsl.() -> Unit,
+  ): OffenderPropertyContainer = offenderPropertyContainerBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking,
+      prisonId ?: offenderBooking.location.id,
+      internalLocationId,
+      active,
+      sealMark,
+      containerCode,
+      expiryDate,
+      proposedDisposalDate,
     )
       .also { builder.apply(dsl) }
   }
