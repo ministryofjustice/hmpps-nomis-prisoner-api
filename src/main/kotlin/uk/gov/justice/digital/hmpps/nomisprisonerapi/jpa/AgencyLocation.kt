@@ -75,6 +75,10 @@ class AgencyLocation(
   @SQLRestriction("OWNER_CLASS = '${AgencyLocationAddress.ADDR_TYPE}'")
   val addresses: MutableList<AgencyLocationAddress> = mutableListOf(),
 
+  @Column(name = "UPDATED_ALLOWED_FLAG")
+  @Convert(converter = YesNoConverter::class)
+  val updateAllowed: Boolean = true,
+
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -100,6 +104,7 @@ class Prison(
   type: AgencyLocationType,
   active: Boolean,
   deactivationDate: LocalDate?,
+  updateAllowed: Boolean,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -129,6 +134,7 @@ class Prison(
   type = type,
   active = active,
   deactivationDate = deactivationDate,
+  updateAllowed = updateAllowed,
 )
 
 @Entity
@@ -138,6 +144,7 @@ class Agency(
   type: AgencyLocationType,
   active: Boolean,
   deactivationDate: LocalDate?,
+  updateAllowed: Boolean,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -165,4 +172,5 @@ class Agency(
   type = type,
   active = active,
   deactivationDate = deactivationDate,
+  updateAllowed = updateAllowed,
 )

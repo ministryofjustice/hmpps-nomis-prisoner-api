@@ -493,6 +493,7 @@ class NomisData(
     active: Boolean,
     districtCode: String?,
     deactivationDate: LocalDate?,
+    updateAllowed: Boolean,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
@@ -501,6 +502,7 @@ class NomisData(
       type = type,
       active = active,
       deactivationDate = deactivationDate,
+      updateAllowed = updateAllowed,
     )
       .also { builder.apply(dsl) }
   }
@@ -511,6 +513,7 @@ class NomisData(
     active: Boolean,
     districtCode: String?,
     deactivationDate: LocalDate?,
+    updateAllowed: Boolean,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildAgency(
@@ -520,6 +523,7 @@ class NomisData(
       active = active,
       districtCode = districtCode,
       deactivationDate = deactivationDate,
+      updateAllowed = updateAllowed,
     )
       .also { builder.apply(dsl) }
   }
@@ -529,6 +533,7 @@ class NomisData(
     active: Boolean,
     districtCode: String?,
     deactivationDate: LocalDate?,
+    updateAllowed: Boolean,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildPrison(
@@ -538,6 +543,7 @@ class NomisData(
       active = active,
       districtCode = districtCode,
       deactivationDate = deactivationDate,
+      updateAllowed = updateAllowed,
     )
       .also { builder.apply(dsl) }
   }
@@ -592,7 +598,6 @@ class NomisData(
 
 @NomisDataDslMarker
 interface NomisDataDsl {
-  @OffenderDslMarker
   fun offender(
     nomsId: String = "A5194DY",
     titleCode: String? = null,
@@ -612,7 +617,6 @@ interface NomisDataDsl {
     dsl: OffenderDsl.() -> Unit = {},
   ): Offender
 
-  @ProgramServiceDslMarker
   fun programService(
     programCode: String = "INTTEST",
     programId: Long = 0,
@@ -621,10 +625,8 @@ interface NomisDataDsl {
     dsl: ProgramServiceDsl.() -> Unit = {},
   ): ProgramService
 
-  @StaffDslMarker
   fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: StaffDsl.() -> Unit = {}): Staff
 
-  @AdjudicationIncidentDslMarker
   fun adjudicationIncident(
     whenCreated: LocalDateTime = LocalDateTime.now(),
     incidentDetails: String = "Big fight",
@@ -638,7 +640,6 @@ interface NomisDataDsl {
     dsl: AdjudicationIncidentDsl.() -> Unit = {},
   ): AdjudicationIncident
 
-  @NonAssociationDslMarker
   fun nonAssociation(
     offender1: Offender,
     offender2: Offender,
@@ -647,7 +648,6 @@ interface NomisDataDsl {
     dsl: NonAssociationDsl.() -> Unit = {},
   ): OffenderNonAssociation
 
-  @QuestionnaireDslMarker
   fun questionnaire(
     code: String,
     description: String = "This is a questionnaire",
@@ -656,7 +656,6 @@ interface NomisDataDsl {
     dsl: QuestionnaireDsl.() -> Unit = {},
   ): Questionnaire
 
-  @IncidentDslMarker
   fun incident(
     id: Long,
     title: String = "An incident occurred",
@@ -671,7 +670,6 @@ interface NomisDataDsl {
     dsl: IncidentDsl.() -> Unit = {},
   ): Incident
 
-  @RoleDslMarker
   fun role(
     code: String,
     name: String,
@@ -680,14 +678,12 @@ interface NomisDataDsl {
     dsl: RoleDsl.() -> Unit = {},
   ): Role
 
-  @ExternalServiceDslMarker
   fun externalService(
     serviceName: String,
     description: String = serviceName,
     dsl: ExternalServiceDsl.() -> Unit = {},
   ): ExternalService
 
-  @SplashScreenDslMarker
   fun splashScreen(
     moduleName: String,
     warningText: String? = null,
@@ -696,7 +692,6 @@ interface NomisDataDsl {
     dsl: SplashScreenDsl.() -> Unit = {},
   ): SplashScreen
 
-  @AgencyInternalLocationDslMarker
   fun agencyInternalLocation(
     locationCode: String,
     locationType: String,
@@ -714,14 +709,12 @@ interface NomisDataDsl {
     dsl: AgencyInternalLocationDsl.() -> Unit = {},
   ): AgencyInternalLocation
 
-  @IWPTemplateDslMarker
   fun template(
     name: String = "template1",
     description: String?,
     dsl: IWPTemplateDsl.() -> Unit = {},
   ): IWPTemplate
 
-  @MergeTransactionDslMarker
   fun mergeTransaction(
     requestDate: LocalDateTime = LocalDateTime.now(),
     requestStatusCode: String = "COMPLETED",
@@ -741,7 +734,6 @@ interface NomisDataDsl {
     dsl: MergeTransactionDsl.() -> Unit = {},
   ): MergeTransaction
 
-  @PersonDslMarker
   fun person(
     firstName: String = "AAYAN",
     lastName: String = "AHMAD",
@@ -760,7 +752,6 @@ interface NomisDataDsl {
     dsl: PersonDsl.() -> Unit = {},
   ): Person
 
-  @CorporateDslMarker
   fun corporate(
     corporateName: String,
     caseloadId: String? = null,
@@ -775,7 +766,6 @@ interface NomisDataDsl {
     dsl: CorporateDsl.() -> Unit = {},
   ): Corporate
 
-  @LinkCaseTxnDslMarker
   fun linkedCaseTransaction(
     sourceCase: CourtCase,
     targetCase: CourtCase,
@@ -792,6 +782,7 @@ interface NomisDataDsl {
     active: Boolean = true,
     districtCode: String? = null,
     deactivationDate: LocalDate? = null,
+    updateAllowed: Boolean = true,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
 
@@ -801,6 +792,7 @@ interface NomisDataDsl {
     active: Boolean = true,
     districtCode: String? = null,
     deactivationDate: LocalDate? = null,
+    updateAllowed: Boolean = true,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Prison
 
@@ -811,10 +803,10 @@ interface NomisDataDsl {
     active: Boolean = true,
     districtCode: String? = null,
     deactivationDate: LocalDate? = null,
+    updateAllowed: Boolean = true,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Agency
 
-  @GeneralLedgerTransactionDslMarker
   fun generalLedgerTransaction(
     transactionId: Long,
     transactionEntrySequence: Int,
@@ -827,7 +819,6 @@ interface NomisDataDsl {
     dsl: GeneralLedgerTransactionDsl.() -> Unit = {},
   ): GeneralLedgerTransaction
 
-  @CaseloadCurrentAccountsBaseDslMarker
   fun caseloadCurrentAccountBase(
     caseloadId: String = "MDI",
     accountCode: Int = 2101,
@@ -836,7 +827,6 @@ interface NomisDataDsl {
     dsl: CaseloadCurrentAccountsBaseDsl.() -> Unit = {},
   ): CaseloadCurrentAccountsBase
 
-  @AgencyVisitDayDslMarker
   fun agencyVisitDay(prisonerId: String, weekDay: WeekDay, dsl: AgencyVisitDayDsl.() -> Unit = {}): AgencyVisitDay
 }
 
