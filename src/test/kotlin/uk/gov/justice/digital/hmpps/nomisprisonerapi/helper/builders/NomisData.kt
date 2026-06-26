@@ -492,6 +492,7 @@ class NomisData(
     type: String,
     active: Boolean,
     districtCode: String?,
+    deactivationDate: LocalDate?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
@@ -499,6 +500,7 @@ class NomisData(
       description = description,
       type = type,
       active = active,
+      deactivationDate = deactivationDate,
     )
       .also { builder.apply(dsl) }
   }
@@ -508,6 +510,7 @@ class NomisData(
     type: String,
     active: Boolean,
     districtCode: String?,
+    deactivationDate: LocalDate?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildAgency(
@@ -516,6 +519,7 @@ class NomisData(
       type = type,
       active = active,
       districtCode = districtCode,
+      deactivationDate = deactivationDate,
     )
       .also { builder.apply(dsl) }
   }
@@ -524,6 +528,7 @@ class NomisData(
     description: String,
     active: Boolean,
     districtCode: String?,
+    deactivationDate: LocalDate?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildPrison(
@@ -532,6 +537,7 @@ class NomisData(
       type = "INST",
       active = active,
       districtCode = districtCode,
+      deactivationDate = deactivationDate,
     )
       .also { builder.apply(dsl) }
   }
@@ -785,6 +791,7 @@ interface NomisDataDsl {
     type: String = "INST",
     active: Boolean = true,
     districtCode: String? = null,
+    deactivationDate: LocalDate? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
 
@@ -793,6 +800,7 @@ interface NomisDataDsl {
     description: String = "HMP Leeds",
     active: Boolean = true,
     districtCode: String? = null,
+    deactivationDate: LocalDate? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Prison
 
@@ -802,6 +810,7 @@ interface NomisDataDsl {
     type: String = "APPR",
     active: Boolean = true,
     districtCode: String? = null,
+    deactivationDate: LocalDate? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Agency
 

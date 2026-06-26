@@ -20,6 +20,7 @@ import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import org.hibernate.annotations.SQLRestriction
 import org.hibernate.type.YesNoConverter
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType.Companion.PRISON_TYPE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
 import java.util.Objects
@@ -61,7 +62,7 @@ class AgencyLocation(
       ),
     ],
   )
-  val type: AgencyLocationType? = null,
+  val type: AgencyLocationType = PRISON_TYPE,
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
@@ -98,6 +99,7 @@ class Prison(
   description: String,
   type: AgencyLocationType,
   active: Boolean,
+  deactivationDate: LocalDate?,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -126,6 +128,7 @@ class Prison(
   description = description,
   type = type,
   active = active,
+  deactivationDate = deactivationDate,
 )
 
 @Entity
@@ -134,6 +137,7 @@ class Agency(
   description: String,
   type: AgencyLocationType,
   active: Boolean,
+  deactivationDate: LocalDate?,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -160,4 +164,5 @@ class Agency(
   description = description,
   type = type,
   active = active,
+  deactivationDate = deactivationDate,
 )

@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonRepository
+import java.time.LocalDate
 
 class AgencyResourceIntTest : IntegrationTestBase() {
   @Autowired
@@ -38,7 +39,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       nomisDataBuilder.build {
         legacyGenericAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST")
         prison = prison(agencyLocationId = "AAI", description = "HMP AAI", districtCode = "LONDON")
-        approvedPremise = agency(agencyLocationId = "THA029", description = "Approved Premises", districtCode = "40")
+        approvedPremise = agency(agencyLocationId = "THA029", description = "Approved Premises", districtCode = "40", active = false, type = "APPR", deactivationDate = LocalDate.parse("2022-01-01"))
       }
     }
 
@@ -99,6 +100,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(prison.prisonId).isEqualTo("AAI")
         assertThat(prison.description).isEqualTo("HMP AAI")
         assertThat(prison.district?.description).isEqualTo("London")
+        assertThat(prison.active).isTrue
+        assertThat(prison.deactivationDate).isNull()
       }
 
       @Test
@@ -110,6 +113,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(agency.agencyId).isEqualTo("AAI")
         assertThat(agency.description).isEqualTo("HMP AAI")
+        assertThat(agency.active).isTrue
+        assertThat(agency.deactivationDate).isNull()
       }
 
       @Test
@@ -121,6 +126,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(agency.agencyId).isEqualTo("THA029")
         assertThat(agency.description).isEqualTo("Approved Premises")
+        assertThat(agency.type.description).isEqualTo("Approved Premises")
+        assertThat(agency.active).isFalse
+        assertThat(agency.deactivationDate).isEqualTo(LocalDate.parse("2022-01-01"))
       }
 
       @Test
@@ -133,6 +141,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.agencyId).isEqualTo("THA029")
         assertThat(agency.description).isEqualTo("Approved Premises")
         assertThat(agency.district?.description).isEqualTo("Thames Valley")
+        assertThat(agency.type.description).isEqualTo("Approved Premises")
+        assertThat(agency.active).isFalse
+        assertThat(agency.deactivationDate).isEqualTo(LocalDate.parse("2022-01-01"))
       }
 
       @Test

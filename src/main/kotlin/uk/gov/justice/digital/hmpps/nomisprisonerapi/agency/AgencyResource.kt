@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import java.time.LocalDate
 
 @RestController
 @Validated
@@ -169,6 +170,10 @@ data class PrisonResponse(
   val description: String,
   @Schema(description = "Area district")
   val district: CodeDescription?,
+  @Schema(description = "Indicates if still used", example = "true")
+  val active: Boolean,
+  @Schema(description = "Date no longer active", example = "2020-01-01")
+  val deactivationDate: LocalDate?,
 )
 
 data class AgencyResponse(
@@ -178,6 +183,12 @@ data class AgencyResponse(
   val description: String,
   @Schema(description = "Geographic district")
   val district: CodeDescription?,
+  @Schema(description = "Agency type")
+  val type: CodeDescription,
+  @Schema(description = "Indicates if still used", example = "true")
+  val active: Boolean,
+  @Schema(description = "Date no longer active", example = "2020-01-01")
+  val deactivationDate: LocalDate?,
 )
 
 data class AgencyLocationResponse(
@@ -185,4 +196,10 @@ data class AgencyLocationResponse(
   val agencyId: String,
   @Schema(description = "Name of agency", example = "Blackburn YOT")
   val description: String,
+  @Schema(description = "Agency type")
+  val type: CodeDescription,
+  @Schema(description = "Indicates if still used", example = "true")
+  val active: Boolean,
+  @Schema(description = "Date no longer active", example = "2020-01-01")
+  val deactivationDate: LocalDate?,
 )

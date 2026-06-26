@@ -83,11 +83,13 @@ class AgencyLocationBuilder(
     description: String,
     type: String,
     active: Boolean,
+    deactivationDate: LocalDate?,
   ): AgencyLocation = AgencyLocation(
     id = id,
     description = description,
     type = repository.agencyTypeOf(type),
     active = active,
+    deactivationDate = deactivationDate,
   )
     .let { repository.save(it) }
     .also { agencyLocation = it }
@@ -98,12 +100,14 @@ class AgencyLocationBuilder(
     type: String,
     active: Boolean,
     districtCode: String?,
+    deactivationDate: LocalDate?,
   ): Agency = Agency(
     id = id,
     description = description,
     type = repository.agencyTypeOf(type),
     active = active,
     district = repository.areaOf(districtCode),
+    deactivationDate = deactivationDate,
   )
     .let { repository.saveAgency(it) }
     .also { agencyLocation = it }
@@ -114,12 +118,14 @@ class AgencyLocationBuilder(
     type: String,
     active: Boolean,
     districtCode: String?,
+    deactivationDate: LocalDate?,
   ): Prison = Prison(
     id = id,
     description = description,
     type = repository.agencyTypeOf(type),
     active = active,
     district = repository.geographicOf(districtCode),
+    deactivationDate = deactivationDate,
   )
     .let { repository.savePrison(it) }
     .also { agencyLocation = it }
