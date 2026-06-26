@@ -2,10 +2,16 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeographicType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -13,9 +19,8 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class AgencyLocationDslMarker
 
-@NomisDataDslMarker
+@AgencyLocationDslMarker
 interface AgencyLocationDsl {
-  @AgencyLocationAddressDslMarker
   fun address(
     type: String? = "BUS",
     premise: String? = "2",
@@ -45,10 +50,18 @@ interface AgencyLocationDsl {
 @Component
 class AgencyLocationBuilderRepository(
   private val agencyLocationRepository: AgencyLocationRepository,
+  private val agencyRepository: AgencyRepository,
+  private val prisonRepository: PrisonRepository,
   private val agencyTypeRepository: ReferenceCodeRepository<AgencyLocationType>,
+  private val areaTypeRepository: ReferenceCodeRepository<AreaType>,
+  private val geographicTypeRepository: ReferenceCodeRepository<GeographicType>,
 ) {
   fun save(agencyLocation: AgencyLocation): AgencyLocation = agencyLocationRepository.saveAndFlush(agencyLocation)
+  fun saveAgency(agency: Agency): Agency = agencyRepository.saveAndFlush(agency)
+  fun savePrison(prison: Prison): Prison = prisonRepository.saveAndFlush(prison)
   fun agencyTypeOf(code: String): AgencyLocationType = agencyTypeRepository.findByIdOrNull(AgencyLocationType.pk(code))!!
+  fun areaOf(code: String?): AreaType? = code?.let { areaTypeRepository.findByIdOrNull(AreaType.pk(code)) }
+  fun geographicOf(code: String?): GeographicType? = code?.let { geographicTypeRepository.findByIdOrNull(GeographicType.pk(code)) }
 }
 
 @Component
@@ -77,6 +90,38 @@ class AgencyLocationBuilder(
     active = active,
   )
     .let { repository.save(it) }
+    .also { agencyLocation = it }
+
+  fun buildAgency(
+    id: String,
+    description: String,
+    type: String,
+    active: Boolean,
+    districtCode: String?,
+  ): Agency = Agency(
+    id = id,
+    description = description,
+    type = repository.agencyTypeOf(type),
+    active = active,
+    district = repository.areaOf(districtCode),
+  )
+    .let { repository.saveAgency(it) }
+    .also { agencyLocation = it }
+
+  fun buildPrison(
+    id: String,
+    description: String,
+    type: String,
+    active: Boolean,
+    districtCode: String?,
+  ): Prison = Prison(
+    id = id,
+    description = description,
+    type = repository.agencyTypeOf(type),
+    active = active,
+    district = repository.geographicOf(districtCode),
+  )
+    .let { repository.savePrison(it) }
     .also { agencyLocation = it }
 
   override fun address(

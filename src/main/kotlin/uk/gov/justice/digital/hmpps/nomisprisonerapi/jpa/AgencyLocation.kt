@@ -16,6 +16,8 @@ import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
+import org.hibernate.annotations.NotFound
+import org.hibernate.annotations.NotFoundAction
 import org.hibernate.annotations.SQLRestriction
 import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
@@ -42,6 +44,8 @@ class AgencyLocation(
   @Column(name = "DESCRIPTION")
   val description: String,
 
+  // FD not in reference data, so ignore if not found
+  @NotFound(action = NotFoundAction.IGNORE)
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
@@ -94,13 +98,8 @@ class AgencyLocation(
 class Prison(
   id: String,
   description: String,
-
-) : AgencyLocation(id, description)
-
-@Entity
-class Agency(
-  id: String,
-  description: String,
+  type: AgencyLocationType,
+  active: Boolean,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -110,7 +109,8 @@ class Agency(
           value = "'" + GeographicType.GEOGRAPHIC + "'",
           referencedColumnName = "domain",
         ),
-      ), JoinColumnOrFormula(
+      ),
+      JoinColumnOrFormula(
         column = JoinColumn(
           name = "DISTRICT_CODE",
           referencedColumnName = "code",
@@ -121,4 +121,43 @@ class Agency(
   )
   var district: GeographicType? = null,
 
-) : AgencyLocation(id, description)
+) : AgencyLocation(
+  id = id,
+  description = description,
+  type = type,
+  active = active,
+)
+
+@Entity
+class Agency(
+  id: String,
+  description: String,
+  type: AgencyLocationType,
+  active: Boolean,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + AreaType.AREA + "'",
+          referencedColumnName = "domain",
+        ),
+      ),
+      JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "DISTRICT_CODE",
+          referencedColumnName = "code",
+          nullable = true,
+        ),
+      ),
+    ],
+  )
+  var district: AreaType? = null,
+
+) : AgencyLocation(
+  id = id,
+  description = description,
+  type = type,
+  active = active,
+)
