@@ -43,7 +43,7 @@ class AgencyLocation(
   val id: String,
 
   @Column(name = "DESCRIPTION")
-  val description: String,
+  var description: String,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -66,10 +66,10 @@ class AgencyLocation(
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val active: Boolean = false,
+  var active: Boolean = false,
 
   @Column(name = "DEACTIVATION_DATE")
-  val deactivationDate: LocalDate? = null,
+  var deactivationDate: LocalDate? = null,
 
   @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${AgencyLocationAddress.ADDR_TYPE}'")
@@ -77,11 +77,33 @@ class AgencyLocation(
 
   @Column(name = "UPDATED_ALLOWED_FLAG")
   @Convert(converter = YesNoConverter::class)
-  val updateAllowed: Boolean = true,
+  var updateAllowed: Boolean = true,
 
-  // ABBREVIATION = all null
+  // ABBREVIATION: all null
   @Column(name = "CONTACT_NAME")
-  val contactName: String? = null,
+  var contactName: String? = null,
+
+  // PRINT_QUEUE: all null
+
+  // `OUT` also has a court type, but maybe move to a Court entity later
+  @ManyToOne(fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + CourtType.JURISDICTION + "'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "JURISDICTION_CODE",
+          referencedColumnName = "code",
+          nullable = true,
+        ),
+      ),
+    ],
+  )
+  var courtType: CourtType? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -109,6 +131,7 @@ class Prison(
   deactivationDate: LocalDate?,
   updateAllowed: Boolean,
   contactName: String?,
+  courtType: CourtType?,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -140,6 +163,7 @@ class Prison(
   deactivationDate = deactivationDate,
   updateAllowed = updateAllowed,
   contactName = contactName,
+  courtType = courtType,
 )
 
 @Entity
@@ -151,6 +175,7 @@ class Agency(
   deactivationDate: LocalDate?,
   updateAllowed: Boolean,
   contactName: String?,
+  courtType: CourtType?,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -180,4 +205,5 @@ class Agency(
   deactivationDate = deactivationDate,
   updateAllowed = updateAllowed,
   contactName = contactName,
+  courtType = courtType,
 )

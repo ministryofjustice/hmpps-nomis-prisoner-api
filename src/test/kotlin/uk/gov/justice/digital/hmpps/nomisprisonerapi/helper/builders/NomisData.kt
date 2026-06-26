@@ -495,6 +495,7 @@ class NomisData(
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
+    courtTypeCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
@@ -505,6 +506,7 @@ class NomisData(
       deactivationDate = deactivationDate,
       updateAllowed = updateAllowed,
       contactName = contactName,
+      courtTypeCode = courtTypeCode,
     )
       .also { builder.apply(dsl) }
   }
@@ -517,6 +519,7 @@ class NomisData(
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
+    courtTypeCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildAgency(
@@ -528,6 +531,7 @@ class NomisData(
       deactivationDate = deactivationDate,
       updateAllowed = updateAllowed,
       contactName = contactName,
+      courtTypeCode = courtTypeCode,
     )
       .also { builder.apply(dsl) }
   }
@@ -539,6 +543,7 @@ class NomisData(
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
+    courtTypeCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildPrison(
@@ -550,6 +555,7 @@ class NomisData(
       deactivationDate = deactivationDate,
       updateAllowed = updateAllowed,
       contactName = contactName,
+      courtTypeCode = courtTypeCode,
     )
       .also { builder.apply(dsl) }
   }
@@ -790,6 +796,7 @@ interface NomisDataDsl {
     deactivationDate: LocalDate? = null,
     updateAllowed: Boolean = true,
     contactName: String? = null,
+    courtTypeCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
 
@@ -801,6 +808,7 @@ interface NomisDataDsl {
     deactivationDate: LocalDate? = null,
     updateAllowed: Boolean = true,
     contactName: String? = null,
+    courtTypeCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Prison
 
@@ -813,6 +821,7 @@ interface NomisDataDsl {
     deactivationDate: LocalDate? = null,
     updateAllowed: Boolean = true,
     contactName: String? = null,
+    courtTypeCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Agency
 

@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeographicType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -55,6 +56,7 @@ class AgencyLocationBuilderRepository(
   private val agencyTypeRepository: ReferenceCodeRepository<AgencyLocationType>,
   private val areaTypeRepository: ReferenceCodeRepository<AreaType>,
   private val geographicTypeRepository: ReferenceCodeRepository<GeographicType>,
+  private val courtTypeRepository: ReferenceCodeRepository<CourtType>,
 ) {
   fun save(agencyLocation: AgencyLocation): AgencyLocation = agencyLocationRepository.saveAndFlush(agencyLocation)
   fun saveAgency(agency: Agency): Agency = agencyRepository.saveAndFlush(agency)
@@ -62,6 +64,7 @@ class AgencyLocationBuilderRepository(
   fun agencyTypeOf(code: String): AgencyLocationType = agencyTypeRepository.findByIdOrNull(AgencyLocationType.pk(code))!!
   fun areaOf(code: String?): AreaType? = code?.let { areaTypeRepository.findByIdOrNull(AreaType.pk(code)) }
   fun geographicOf(code: String?): GeographicType? = code?.let { geographicTypeRepository.findByIdOrNull(GeographicType.pk(code)) }
+  fun courtTypeOf(code: String?): CourtType? = code?.let { courtTypeRepository.findByIdOrNull(CourtType.pk(code)) }
 }
 
 @Component
@@ -86,6 +89,7 @@ class AgencyLocationBuilder(
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
+    courtTypeCode: String?,
   ): AgencyLocation = AgencyLocation(
     id = id,
     description = description,
@@ -94,6 +98,7 @@ class AgencyLocationBuilder(
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
     contactName = contactName,
+    courtType = repository.courtTypeOf(courtTypeCode),
   )
     .let { repository.save(it) }
     .also { agencyLocation = it }
@@ -107,6 +112,7 @@ class AgencyLocationBuilder(
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
+    courtTypeCode: String?,
   ): Agency = Agency(
     id = id,
     description = description,
@@ -116,6 +122,7 @@ class AgencyLocationBuilder(
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
     contactName = contactName,
+    courtType = repository.courtTypeOf(courtTypeCode),
   )
     .let { repository.saveAgency(it) }
     .also { agencyLocation = it }
@@ -129,6 +136,7 @@ class AgencyLocationBuilder(
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
+    courtTypeCode: String?,
   ): Prison = Prison(
     id = id,
     description = description,
@@ -138,6 +146,7 @@ class AgencyLocationBuilder(
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
     contactName = contactName,
+    courtType = repository.courtTypeOf(courtTypeCode),
   )
     .let { repository.savePrison(it) }
     .also { agencyLocation = it }

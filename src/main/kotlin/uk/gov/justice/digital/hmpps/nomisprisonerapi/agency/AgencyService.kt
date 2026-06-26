@@ -47,6 +47,7 @@ fun Agency.toAgencyResponse() = AgencyResponse(
   type = this.type.toCodeDescription(),
   updateAllowed = this.updateAllowed,
   contactName = this.contactName,
+  courtType = this.courtType?.toCodeDescription(),
 )
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(

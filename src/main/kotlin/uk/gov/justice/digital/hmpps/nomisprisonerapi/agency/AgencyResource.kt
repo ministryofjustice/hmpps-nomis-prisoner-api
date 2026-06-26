@@ -197,6 +197,9 @@ data class AgencyResponse(
   val updateAllowed: Boolean,
   @Schema(description = "Name of contact at agency", example = "John Smith")
   val contactName: String?,
+  // maybe move this to court sub entity in future
+  @Schema(description = "Court type")
+  val courtType: CodeDescription?,
 )
 
 data class AgencyLocationResponse(
