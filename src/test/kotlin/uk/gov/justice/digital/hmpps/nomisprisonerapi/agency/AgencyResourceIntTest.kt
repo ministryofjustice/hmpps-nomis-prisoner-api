@@ -55,6 +55,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           type = "APPR",
           deactivationDate = LocalDate.parse("2022-01-01"),
           updateAllowed = false,
+          contactName = "Gerald Simpson",
         )
       }
     }
@@ -119,6 +120,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(prison.active).isTrue
         assertThat(prison.deactivationDate).isNull()
         assertThat(prison.updateAllowed).isTrue
+        assertThat(prison.contactName).isNull()
       }
 
       @Test
@@ -133,6 +135,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.active).isTrue
         assertThat(agency.deactivationDate).isNull()
         assertThat(agency.updateAllowed).isTrue
+        assertThat(agency.contactName).isNull()
       }
 
       @Test
@@ -148,6 +151,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.active).isFalse
         assertThat(agency.deactivationDate).isEqualTo(LocalDate.parse("2022-01-01"))
         assertThat(agency.updateAllowed).isFalse
+        assertThat(agency.contactName).isEqualTo("Gerald Simpson")
       }
 
       @Test
@@ -164,6 +168,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.active).isFalse
         assertThat(agency.deactivationDate).isEqualTo(LocalDate.parse("2022-01-01"))
         assertThat(agency.updateAllowed).isFalse
+        assertThat(agency.contactName).isEqualTo("Gerald Simpson")
       }
 
       @Test

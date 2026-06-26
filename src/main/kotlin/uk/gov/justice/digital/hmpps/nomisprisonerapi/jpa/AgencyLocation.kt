@@ -79,6 +79,9 @@ class AgencyLocation(
   @Convert(converter = YesNoConverter::class)
   val updateAllowed: Boolean = true,
 
+  // ABBREVIATION = all null
+  @Column(name = "CONTACT_NAME")
+  val contactName: String? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -105,6 +108,7 @@ class Prison(
   active: Boolean,
   deactivationDate: LocalDate?,
   updateAllowed: Boolean,
+  contactName: String?,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -135,6 +139,7 @@ class Prison(
   active = active,
   deactivationDate = deactivationDate,
   updateAllowed = updateAllowed,
+  contactName = contactName,
 )
 
 @Entity
@@ -145,6 +150,7 @@ class Agency(
   active: Boolean,
   deactivationDate: LocalDate?,
   updateAllowed: Boolean,
+  contactName: String?,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -173,4 +179,5 @@ class Agency(
   active = active,
   deactivationDate = deactivationDate,
   updateAllowed = updateAllowed,
+  contactName = contactName,
 )

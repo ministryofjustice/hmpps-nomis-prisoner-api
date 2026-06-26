@@ -85,6 +85,7 @@ class AgencyLocationBuilder(
     active: Boolean,
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
+    contactName: String?,
   ): AgencyLocation = AgencyLocation(
     id = id,
     description = description,
@@ -92,6 +93,7 @@ class AgencyLocationBuilder(
     active = active,
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
+    contactName = contactName,
   )
     .let { repository.save(it) }
     .also { agencyLocation = it }
@@ -104,6 +106,7 @@ class AgencyLocationBuilder(
     districtCode: String?,
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
+    contactName: String?,
   ): Agency = Agency(
     id = id,
     description = description,
@@ -112,6 +115,7 @@ class AgencyLocationBuilder(
     district = repository.areaOf(districtCode),
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
+    contactName = contactName,
   )
     .let { repository.saveAgency(it) }
     .also { agencyLocation = it }
@@ -124,6 +128,7 @@ class AgencyLocationBuilder(
     districtCode: String?,
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
+    contactName: String?,
   ): Prison = Prison(
     id = id,
     description = description,
@@ -132,6 +137,7 @@ class AgencyLocationBuilder(
     district = repository.geographicOf(districtCode),
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
+    contactName = contactName,
   )
     .let { repository.savePrison(it) }
     .also { agencyLocation = it }
