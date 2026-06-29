@@ -119,6 +119,7 @@ class AgencyLocation(
 
   // INTAKE_FLAG only a few records have this set to Y, in NOMIS UI but never read - so do not map
 
+  // data is from AREAS with class SUB_AREA
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "SUB_AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
   var subArea: Area? = null,
@@ -127,10 +128,15 @@ class AgencyLocation(
   @JoinColumn(name = "AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
   var area: Area? = null,
 
-  // NOMIS form maps this to REFERENCE_CODES <GEOGRAPHIC> - but data is from AREAS
+  // NOMIS form maps this to REFERENCE_CODES <GEOGRAPHIC> - but data is from AREAS with class AREA
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "GEOGRAPHIC_REGION_CODE", referencedColumnName = "AREA_CODE", nullable = true)
   var region: Area? = null,
+
+  // data is from AREAS with class REGION
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "NOMS_REGION_CODE", referencedColumnName = "AREA_CODE", nullable = true)
+  var nomsRegion: Area? = null,
 
 ) {
 
@@ -164,6 +170,7 @@ class Prison(
   subArea: Area?,
   area: Area?,
   region: Area?,
+  nomsRegion: Area?,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -200,6 +207,7 @@ class Prison(
   subArea = subArea,
   area = area,
   region = region,
+  nomsRegion = nomsRegion,
 )
 
 @Entity
@@ -216,6 +224,7 @@ class Agency(
   subArea: Area?,
   area: Area?,
   region: Area?,
+  nomsRegion: Area?,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -250,4 +259,5 @@ class Agency(
   subArea = subArea,
   area = area,
   region = region,
+  nomsRegion = nomsRegion,
 )
