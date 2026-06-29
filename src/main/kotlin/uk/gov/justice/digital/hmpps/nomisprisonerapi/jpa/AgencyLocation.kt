@@ -104,6 +104,22 @@ class AgencyLocation(
     ],
   )
   var courtType: CourtType? = null,
+
+  // BAIL_OFFICE_FLAG default true so a mixture of Y and N - but can't see anywhere it used or can be set - so for now do not map
+  // LIST_SEQ only set for OUT so do not map for now
+  // HOUSING_LEV_*_CODE and PROPERTY_LEV_*_CODE not used outside NOMIS - will not map so will never be changed other than via a NOMIS script
+  // LAST_BOOKING_NO always null
+  // COMMISSARY_PRIVILEGE always null
+  // BUSINESS_HOURS always null
+  // ADDRESS_TYPE on set via script new prisons - assume not used
+
+  // reference domain DISABILITY  (BA, N, WC, Y) does not match many of these codes so map as string
+  @Column(name = "DISABILITY_ACCESS_CODE")
+  var disabilityAccessCode: String? = null,
+
+  // INTAKE_FLAG only a few records have this set to Y, in NOMIS UI but never read - so do not map
+  var subArea: String? = null,
+
 ) {
 
   override fun equals(other: Any?): Boolean {
