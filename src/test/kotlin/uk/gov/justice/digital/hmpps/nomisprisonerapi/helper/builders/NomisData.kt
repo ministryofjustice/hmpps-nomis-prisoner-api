@@ -504,6 +504,7 @@ class NomisData(
     subArea: Area?,
     area: Area?,
     region: Area?,
+    nomsRegion: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
@@ -519,6 +520,7 @@ class NomisData(
       subArea = subArea,
       area = area,
       region = region,
+      nomsRegion = nomsRegion,
     )
       .also { builder.apply(dsl) }
   }
@@ -537,6 +539,7 @@ class NomisData(
     subArea: Area?,
     area: Area?,
     region: Area?,
+    nomsRegion: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildAgency(
@@ -553,6 +556,7 @@ class NomisData(
       subArea = subArea,
       area = area,
       region = region,
+      nomsRegion = nomsRegion,
     )
       .also { builder.apply(dsl) }
   }
@@ -569,6 +573,7 @@ class NomisData(
     subArea: Area?,
     area: Area?,
     region: Area?,
+    nomsRegion: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildPrison(
@@ -585,6 +590,7 @@ class NomisData(
       subArea = subArea,
       area = area,
       region = region,
+      nomsRegion = nomsRegion,
     )
       .also { builder.apply(dsl) }
   }
@@ -867,6 +873,7 @@ interface NomisDataDsl {
     subArea: Area? = null,
     area: Area? = null,
     region: Area? = null,
+    nomsRegion: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
 
@@ -883,6 +890,7 @@ interface NomisDataDsl {
     subArea: Area? = null,
     area: Area? = null,
     region: Area? = null,
+    nomsRegion: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Prison
 
@@ -900,6 +908,7 @@ interface NomisDataDsl {
     subArea: Area? = null,
     area: Area? = null,
     region: Area? = null,
+    nomsRegion: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Agency
 

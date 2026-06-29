@@ -42,11 +42,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     lateinit var prison: Prison
     lateinit var londonRegion: Area
     lateinit var londonArea: Area
+    lateinit var southEastArea: Area
     lateinit var eastLondon: Area
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        southEastArea = region(code = "SE", "South East")
         londonRegion = region(code = "LON", "London Region") {
           londonArea = area(code = "62", "London Area", areaTypeCode = "COMM") {
             eastLondon = subArea("LON_E", description = "East London", areaTypeCode = "COMM")
@@ -70,6 +72,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           region = londonRegion,
           area = londonArea,
           subArea = eastLondon,
+          nomsRegion = southEastArea,
         )
         approvedPremise = agency(
           agencyLocationId = "THA029",
@@ -101,6 +104,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       areaRepository.delete(eastLondon)
       areaRepository.delete(londonArea)
       areaRepository.delete(londonRegion)
+      areaRepository.delete(southEastArea)
     }
 
     @Nested
@@ -228,6 +232,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           .expectBodyResponse()
 
         assertThat(agency.agencyId).isEqualTo("BOW001")
+        assertThat(agency.nomsRegion?.description).isEqualTo("South East")
         assertThat(agency.region?.description).isEqualTo("London Region")
         assertThat(agency.area?.description).isEqualTo("London Area")
         assertThat(agency.subArea?.description).isEqualTo("East London")
