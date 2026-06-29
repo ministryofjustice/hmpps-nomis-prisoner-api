@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeographicType
@@ -62,7 +63,7 @@ class AgencyLocationBuilderRepository(
   fun saveAgency(agency: Agency): Agency = agencyRepository.saveAndFlush(agency)
   fun savePrison(prison: Prison): Prison = prisonRepository.saveAndFlush(prison)
   fun agencyTypeOf(code: String): AgencyLocationType = agencyTypeRepository.findByIdOrNull(AgencyLocationType.pk(code))!!
-  fun areaOf(code: String?): AreaType? = code?.let { areaTypeRepository.findByIdOrNull(AreaType.pk(code)) }
+  fun areaTypeOf(code: String?): AreaType? = code?.let { areaTypeRepository.findByIdOrNull(AreaType.pk(code)) }
   fun geographicOf(code: String?): GeographicType? = code?.let { geographicTypeRepository.findByIdOrNull(GeographicType.pk(code)) }
   fun courtTypeOf(code: String?): CourtType? = code?.let { courtTypeRepository.findByIdOrNull(CourtType.pk(code)) }
 }
@@ -90,6 +91,9 @@ class AgencyLocationBuilder(
     updateAllowed: Boolean,
     contactName: String?,
     courtTypeCode: String?,
+    disabilityAccessCode: String?,
+    subArea: Area?,
+    area: Area?,
   ): AgencyLocation = AgencyLocation(
     id = id,
     description = description,
@@ -99,6 +103,9 @@ class AgencyLocationBuilder(
     updateAllowed = updateAllowed,
     contactName = contactName,
     courtType = repository.courtTypeOf(courtTypeCode),
+    disabilityAccessCode = disabilityAccessCode,
+    subArea = subArea,
+    area = area,
   )
     .let { repository.save(it) }
     .also { agencyLocation = it }
@@ -113,16 +120,22 @@ class AgencyLocationBuilder(
     updateAllowed: Boolean,
     contactName: String?,
     courtTypeCode: String?,
+    disabilityAccessCode: String?,
+    subArea: Area?,
+    area: Area?,
   ): Agency = Agency(
     id = id,
     description = description,
     type = repository.agencyTypeOf(type),
     active = active,
-    district = repository.areaOf(districtCode),
+    district = repository.areaTypeOf(districtCode),
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
     contactName = contactName,
     courtType = repository.courtTypeOf(courtTypeCode),
+    disabilityAccessCode = disabilityAccessCode,
+    subArea = subArea,
+    area = area,
   )
     .let { repository.saveAgency(it) }
     .also { agencyLocation = it }
@@ -137,6 +150,9 @@ class AgencyLocationBuilder(
     updateAllowed: Boolean,
     contactName: String?,
     courtTypeCode: String?,
+    disabilityAccessCode: String?,
+    subArea: Area?,
+    area: Area?,
   ): Prison = Prison(
     id = id,
     description = description,
@@ -147,6 +163,9 @@ class AgencyLocationBuilder(
     updateAllowed = updateAllowed,
     contactName = contactName,
     courtType = repository.courtTypeOf(courtTypeCode),
+    disabilityAccessCode = disabilityAccessCode,
+    subArea = subArea,
+    area = area,
   )
     .let { repository.savePrison(it) }
     .also { agencyLocation = it }

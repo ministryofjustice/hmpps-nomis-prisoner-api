@@ -77,7 +77,7 @@ class Area(
       ),
     ],
   )
-  val type: AgencyLocationType? = null,
+  val type: TypeOfArea? = null,
 
 ) : NomisAuditableEntityBasic() {
 

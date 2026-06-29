@@ -118,7 +118,14 @@ class AgencyLocation(
   var disabilityAccessCode: String? = null,
 
   // INTAKE_FLAG only a few records have this set to Y, in NOMIS UI but never read - so do not map
-  var subArea: String? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "SUB_AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
+  var subArea: Area? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
+  var area: Area? = null,
 
 ) {
 
@@ -148,6 +155,9 @@ class Prison(
   updateAllowed: Boolean,
   contactName: String?,
   courtType: CourtType?,
+  disabilityAccessCode: String?,
+  subArea: Area?,
+  area: Area?,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -180,6 +190,9 @@ class Prison(
   updateAllowed = updateAllowed,
   contactName = contactName,
   courtType = courtType,
+  disabilityAccessCode = disabilityAccessCode,
+  subArea = subArea,
+  area = area,
 )
 
 @Entity
@@ -192,6 +205,9 @@ class Agency(
   updateAllowed: Boolean,
   contactName: String?,
   courtType: CourtType?,
+  disabilityAccessCode: String?,
+  subArea: Area?,
+  area: Area?,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -222,4 +238,7 @@ class Agency(
   updateAllowed = updateAllowed,
   contactName = contactName,
   courtType = courtType,
+  disabilityAccessCode = disabilityAccessCode,
+  subArea = subArea,
+  area = area,
 )

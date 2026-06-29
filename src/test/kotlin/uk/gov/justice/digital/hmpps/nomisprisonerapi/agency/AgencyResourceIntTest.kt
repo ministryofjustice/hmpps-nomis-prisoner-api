@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
@@ -33,11 +34,17 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     lateinit var legacyGenericAgency: AgencyLocation
     lateinit var approvedPremise: Agency
     lateinit var court: Agency
+    lateinit var probationOffice: Agency
     lateinit var prison: Prison
+    lateinit var londonArea: Area
+    lateinit var eastLondon: Area
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        londonArea = area(code = "62", "London", areaTypeCode = "COMM") {
+          eastLondon = subArea("LON_E", description = "East", areaTypeCode = "COMM")
+        }
         legacyGenericAgency = agencyLocation(
           agencyLocationId = "XXI",
           description = "HMP XXI",
@@ -47,6 +54,14 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           agencyLocationId = "AAI",
           description = "HMP AAI",
           districtCode = "LONDON",
+
+        )
+        probationOffice = agency(
+          agencyLocationId = "BOW001",
+          description = "Tower Hamlets Probation  Bow",
+          type = "COMM",
+          area = londonArea,
+          subArea = eastLondon,
         )
         approvedPremise = agency(
           agencyLocationId = "THA029",
@@ -57,6 +72,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           deactivationDate = LocalDate.parse("2022-01-01"),
           updateAllowed = false,
           contactName = "Gerald Simpson",
+          disabilityAccessCode = "Y",
         )
         court = agency(
           agencyLocationId = "SHEFCC",
@@ -72,6 +88,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       agencyLocationRepository.deleteById(legacyGenericAgency.id)
       agencyRepository.delete(approvedPremise)
       agencyRepository.delete(court)
+      agencyRepository.delete(probationOffice)
       prisonRepository.delete(prison)
     }
 
@@ -160,6 +177,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.deactivationDate).isEqualTo(LocalDate.parse("2022-01-01"))
         assertThat(agency.updateAllowed).isFalse
         assertThat(agency.contactName).isEqualTo("Gerald Simpson")
+        assertThat(agency.disabilityAccessCode).isEqualTo("Y")
       }
 
       @Test
@@ -189,6 +207,18 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.agencyId).isEqualTo("SHEFCC")
         assertThat(agency.description).isEqualTo("Sheffield Crown Court")
         assertThat(agency.courtType?.description).isEqualTo("Crown Court")
+      }
+
+      @Test
+      fun `will return details for a probation office`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/BOW001")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("BOW001")
+        assertThat(agency.area?.description).isEqualTo("London")
+        assertThat(agency.subArea?.description).isEqualTo("East")
       }
 
       @Test
