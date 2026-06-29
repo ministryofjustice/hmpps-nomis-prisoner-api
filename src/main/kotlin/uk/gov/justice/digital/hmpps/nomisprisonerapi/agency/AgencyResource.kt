@@ -187,6 +187,8 @@ data class PrisonResponse(
   val area: CodeDescription?,
   @Schema(description = "Sub-Area")
   val subArea: CodeDescription?,
+  @Schema(description = "Region")
+  val region: CodeDescription?,
 )
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -217,6 +219,8 @@ data class AgencyResponse(
   val area: CodeDescription?,
   @Schema(description = "Sub-Area")
   val subArea: CodeDescription?,
+  @Schema(description = "Region")
+  val region: CodeDescription?,
 )
 
 @Schema(description = "A response to get any agency but only return data common to all agency types")
@@ -242,4 +246,6 @@ data class AgencyLocationResponse(
   val area: CodeDescription?,
   @Schema(description = "Sub-Area")
   val subArea: CodeDescription?,
+  @Schema(description = "Region")
+  val region: CodeDescription?,
 )

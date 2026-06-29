@@ -94,6 +94,7 @@ class AgencyLocationBuilder(
     disabilityAccessCode: String?,
     subArea: Area?,
     area: Area?,
+    region: Area?,
   ): AgencyLocation = AgencyLocation(
     id = id,
     description = description,
@@ -106,6 +107,7 @@ class AgencyLocationBuilder(
     disabilityAccessCode = disabilityAccessCode,
     subArea = subArea,
     area = area,
+    region = region,
   )
     .let { repository.save(it) }
     .also { agencyLocation = it }
@@ -123,6 +125,7 @@ class AgencyLocationBuilder(
     disabilityAccessCode: String?,
     subArea: Area?,
     area: Area?,
+    region: Area?,
   ): Agency = Agency(
     id = id,
     description = description,
@@ -136,6 +139,7 @@ class AgencyLocationBuilder(
     disabilityAccessCode = disabilityAccessCode,
     subArea = subArea,
     area = area,
+    region = region,
   )
     .let { repository.saveAgency(it) }
     .also { agencyLocation = it }
@@ -153,6 +157,7 @@ class AgencyLocationBuilder(
     disabilityAccessCode: String?,
     subArea: Area?,
     area: Area?,
+    region: Area?,
   ): Prison = Prison(
     id = id,
     description = description,
@@ -166,6 +171,7 @@ class AgencyLocationBuilder(
     disabilityAccessCode = disabilityAccessCode,
     subArea = subArea,
     area = area,
+    region = region,
   )
     .let { repository.savePrison(it) }
     .also { agencyLocation = it }

@@ -127,6 +127,11 @@ class AgencyLocation(
   @JoinColumn(name = "AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
   var area: Area? = null,
 
+  // NOMIS form maps this to REFERENCE_CODES <GEOGRAPHIC> - but data is from AREAS
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "GEOGRAPHIC_REGION_CODE", referencedColumnName = "AREA_CODE", nullable = true)
+  var region: Area? = null,
+
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -158,6 +163,7 @@ class Prison(
   disabilityAccessCode: String?,
   subArea: Area?,
   area: Area?,
+  region: Area?,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -193,6 +199,7 @@ class Prison(
   disabilityAccessCode = disabilityAccessCode,
   subArea = subArea,
   area = area,
+  region = region,
 )
 
 @Entity
@@ -208,6 +215,7 @@ class Agency(
   disabilityAccessCode: String?,
   subArea: Area?,
   area: Area?,
+  region: Area?,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -241,4 +249,5 @@ class Agency(
   disabilityAccessCode = disabilityAccessCode,
   subArea = subArea,
   area = area,
+  region = region,
 )
