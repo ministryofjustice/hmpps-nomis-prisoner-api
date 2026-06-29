@@ -503,6 +503,7 @@ class NomisData(
     disabilityAccessCode: String?,
     subArea: Area?,
     area: Area?,
+    region: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
@@ -517,6 +518,7 @@ class NomisData(
       disabilityAccessCode = disabilityAccessCode,
       subArea = subArea,
       area = area,
+      region = region,
     )
       .also { builder.apply(dsl) }
   }
@@ -534,6 +536,7 @@ class NomisData(
     disabilityAccessCode: String?,
     subArea: Area?,
     area: Area?,
+    region: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildAgency(
@@ -549,6 +552,7 @@ class NomisData(
       disabilityAccessCode = disabilityAccessCode,
       subArea = subArea,
       area = area,
+      region = region,
     )
       .also { builder.apply(dsl) }
   }
@@ -564,6 +568,7 @@ class NomisData(
     disabilityAccessCode: String?,
     subArea: Area?,
     area: Area?,
+    region: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildPrison(
@@ -579,6 +584,7 @@ class NomisData(
       disabilityAccessCode = disabilityAccessCode,
       subArea = subArea,
       area = area,
+      region = region,
     )
       .also { builder.apply(dsl) }
   }
@@ -586,7 +592,6 @@ class NomisData(
   override fun area(
     code: String,
     description: String,
-    areaClassCode: String,
     active: Boolean,
     expiryDate: LocalDate?,
     areaTypeCode: String?,
@@ -595,7 +600,25 @@ class NomisData(
     builder.build(
       code = code,
       description = description,
-      areaClassCode = areaClassCode,
+      areaClassCode = "AREA",
+      active = active,
+      expiryDate = expiryDate,
+      areaTypeCode = areaTypeCode,
+    )
+      .also { builder.apply(dsl) }
+  }
+  override fun region(
+    code: String,
+    description: String,
+    active: Boolean,
+    expiryDate: LocalDate?,
+    areaTypeCode: String?,
+    dsl: RegionDsl.() -> Unit,
+  ): Area = areaBuilderFactory!!.builder().let { builder ->
+    builder.buildRegion(
+      code = code,
+      description = description,
+      areaClassCode = "REGION",
       active = active,
       expiryDate = expiryDate,
       areaTypeCode = areaTypeCode,
@@ -843,6 +866,7 @@ interface NomisDataDsl {
     disabilityAccessCode: String? = null,
     subArea: Area? = null,
     area: Area? = null,
+    region: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
 
@@ -858,6 +882,7 @@ interface NomisDataDsl {
     disabilityAccessCode: String? = null,
     subArea: Area? = null,
     area: Area? = null,
+    region: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Prison
 
@@ -874,17 +899,26 @@ interface NomisDataDsl {
     disabilityAccessCode: String? = null,
     subArea: Area? = null,
     area: Area? = null,
+    region: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Agency
 
   fun area(
     code: String,
     description: String,
-    areaClassCode: String = "AREA",
     active: Boolean = true,
     expiryDate: LocalDate? = null,
     areaTypeCode: String? = "INST",
     dsl: AreaDsl.() -> Unit = {},
+  ): Area
+
+  fun region(
+    code: String,
+    description: String,
+    active: Boolean = true,
+    expiryDate: LocalDate? = null,
+    areaTypeCode: String? = "INST",
+    dsl: RegionDsl.() -> Unit = {},
   ): Area
 
   fun generalLedgerTransaction(

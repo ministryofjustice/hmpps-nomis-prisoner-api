@@ -39,6 +39,7 @@ fun Prison.toPrisonResponse() = PrisonResponse(
   disabilityAccessCode = this.disabilityAccessCode,
   area = this.area?.toCodeDescription(),
   subArea = this.subArea?.toCodeDescription(),
+  region = this.region?.toCodeDescription(),
 )
 
 fun Agency.toAgencyResponse() = AgencyResponse(
@@ -54,6 +55,7 @@ fun Agency.toAgencyResponse() = AgencyResponse(
   disabilityAccessCode = this.disabilityAccessCode,
   area = this.area?.toCodeDescription(),
   subArea = this.subArea?.toCodeDescription(),
+  region = this.region?.toCodeDescription(),
 )
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
@@ -67,4 +69,5 @@ fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
   disabilityAccessCode = this.disabilityAccessCode,
   area = this.area?.toCodeDescription(),
   subArea = this.subArea?.toCodeDescription(),
+  region = this.region?.toCodeDescription(),
 )
