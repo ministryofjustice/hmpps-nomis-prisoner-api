@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseloadCurrentAccountsBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Corporate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -56,6 +57,7 @@ class NomisDataBuilder(
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
   private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
   private val agencyVisitDayBuilderFactory: AgencyVisitDayBuilderFactory? = null,
+  private val areaBuilderFactory: AreaBuilderFactory? = null,
 ) {
   fun <T> runInTransaction(block: () -> T) = block()
 
@@ -80,6 +82,7 @@ class NomisDataBuilder(
     generalLedgerTransactionBuilderFactory,
     caseloadCurrentAccountsBaseBuilderFactory,
     agencyVisitDayBuilderFactory,
+    areaBuilderFactory,
   ).apply(dsl)
 }
 
@@ -104,6 +107,7 @@ class NomisData(
   private val generalLedgerTransactionBuilderFactory: GeneralLedgerTransactionBuilderFactory? = null,
   private val caseloadCurrentAccountsBaseBuilderFactory: CaseloadCurrentAccountsBaseBuilderFactory? = null,
   private val agencyVisitDayBuilderFactory: AgencyVisitDayBuilderFactory? = null,
+  private val areaBuilderFactory: AreaBuilderFactory? = null,
 ) : NomisDataDsl {
   override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
@@ -496,6 +500,9 @@ class NomisData(
     updateAllowed: Boolean,
     contactName: String?,
     courtTypeCode: String?,
+    disabilityAccessCode: String?,
+    subArea: Area?,
+    area: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
@@ -507,9 +514,13 @@ class NomisData(
       updateAllowed = updateAllowed,
       contactName = contactName,
       courtTypeCode = courtTypeCode,
+      disabilityAccessCode = disabilityAccessCode,
+      subArea = subArea,
+      area = area,
     )
       .also { builder.apply(dsl) }
   }
+
   override fun agency(
     agencyLocationId: String,
     description: String,
@@ -520,6 +531,9 @@ class NomisData(
     updateAllowed: Boolean,
     contactName: String?,
     courtTypeCode: String?,
+    disabilityAccessCode: String?,
+    subArea: Area?,
+    area: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildAgency(
@@ -532,6 +546,9 @@ class NomisData(
       updateAllowed = updateAllowed,
       contactName = contactName,
       courtTypeCode = courtTypeCode,
+      disabilityAccessCode = disabilityAccessCode,
+      subArea = subArea,
+      area = area,
     )
       .also { builder.apply(dsl) }
   }
@@ -544,6 +561,9 @@ class NomisData(
     updateAllowed: Boolean,
     contactName: String?,
     courtTypeCode: String?,
+    disabilityAccessCode: String?,
+    subArea: Area?,
+    area: Area?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildPrison(
@@ -556,6 +576,29 @@ class NomisData(
       updateAllowed = updateAllowed,
       contactName = contactName,
       courtTypeCode = courtTypeCode,
+      disabilityAccessCode = disabilityAccessCode,
+      subArea = subArea,
+      area = area,
+    )
+      .also { builder.apply(dsl) }
+  }
+
+  override fun area(
+    code: String,
+    description: String,
+    areaClassCode: String,
+    active: Boolean,
+    expiryDate: LocalDate?,
+    areaTypeCode: String?,
+    dsl: AreaDsl.() -> Unit,
+  ): Area = areaBuilderFactory!!.builder().let { builder ->
+    builder.build(
+      code = code,
+      description = description,
+      areaClassCode = areaClassCode,
+      active = active,
+      expiryDate = expiryDate,
+      areaTypeCode = areaTypeCode,
     )
       .also { builder.apply(dsl) }
   }
@@ -797,6 +840,9 @@ interface NomisDataDsl {
     updateAllowed: Boolean = true,
     contactName: String? = null,
     courtTypeCode: String? = null,
+    disabilityAccessCode: String? = null,
+    subArea: Area? = null,
+    area: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
 
@@ -809,6 +855,9 @@ interface NomisDataDsl {
     updateAllowed: Boolean = true,
     contactName: String? = null,
     courtTypeCode: String? = null,
+    disabilityAccessCode: String? = null,
+    subArea: Area? = null,
+    area: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Prison
 
@@ -822,8 +871,21 @@ interface NomisDataDsl {
     updateAllowed: Boolean = true,
     contactName: String? = null,
     courtTypeCode: String? = null,
+    disabilityAccessCode: String? = null,
+    subArea: Area? = null,
+    area: Area? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Agency
+
+  fun area(
+    code: String,
+    description: String,
+    areaClassCode: String = "AREA",
+    active: Boolean = true,
+    expiryDate: LocalDate? = null,
+    areaTypeCode: String? = "INST",
+    dsl: AreaDsl.() -> Unit = {},
+  ): Area
 
   fun generalLedgerTransaction(
     transactionId: Long,

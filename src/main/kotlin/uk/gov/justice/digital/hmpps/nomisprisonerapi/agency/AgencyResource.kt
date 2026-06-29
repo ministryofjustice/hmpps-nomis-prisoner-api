@@ -181,6 +181,12 @@ data class PrisonResponse(
   val updateAllowed: Boolean,
   @Schema(description = "Name of contact at agency", example = "John Smith")
   val contactName: String?,
+  @Schema(description = "Disability access code", example = "Y")
+  val disabilityAccessCode: String?,
+  @Schema(description = "Area")
+  val area: CodeDescription?,
+  @Schema(description = "Sub-Area")
+  val subArea: CodeDescription?,
 )
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -205,6 +211,12 @@ data class AgencyResponse(
   // maybe move this to court sub entity in future
   @Schema(description = "Court type")
   val courtType: CodeDescription?,
+  @Schema(description = "Disability access code", example = "Y")
+  val disabilityAccessCode: String?,
+  @Schema(description = "Area")
+  val area: CodeDescription?,
+  @Schema(description = "Sub-Area")
+  val subArea: CodeDescription?,
 )
 
 @Schema(description = "A response to get any agency but only return data common to all agency types")
@@ -224,4 +236,10 @@ data class AgencyLocationResponse(
   val updateAllowed: Boolean,
   @Schema(description = "Name of contact at agency", example = "John Smith")
   val contactName: String?,
+  @Schema(description = "Disability access code", example = "Y")
+  val disabilityAccessCode: String?,
+  @Schema(description = "Area")
+  val area: CodeDescription?,
+  @Schema(description = "Sub-Area")
+  val subArea: CodeDescription?,
 )
