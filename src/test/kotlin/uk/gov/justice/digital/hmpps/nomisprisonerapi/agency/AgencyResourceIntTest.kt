@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonRepository
 import java.time.LocalDate
 
@@ -27,6 +28,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var prisonRepository: PrisonRepository
+
+  @Autowired
+  private lateinit var areaRepository: AreaRepository
 
   @DisplayName("GET /prison/{prisonId}")
   @Nested
@@ -90,6 +94,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       agencyRepository.delete(court)
       agencyRepository.delete(probationOffice)
       prisonRepository.delete(prison)
+      areaRepository.delete(eastLondon)
+      areaRepository.delete(londonArea)
     }
 
     @Nested
