@@ -115,8 +115,8 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.now().minusDays(1)) {
-              // The court schedule was created while in MDI
-              scheduleOut = courtEventOut(whenCreated = LocalDateTime.now().minusHours(6))
+              // The court schedule was scheduled to take place while in MDI
+              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now().minusHours(6))
               prisonTransfer(from = "MDI", to = "BXI", date = LocalDateTime.now().minusHours(1))
             }
           }

@@ -147,7 +147,7 @@ class CourtScheduleService(
     eventType = courtEventType.code,
     eventStatus = eventStatus.code,
     comment = commentText,
-    prison = externalMovementRepository.findPrisonAt(createDatetime, offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
+    prison = externalMovementRepository.findPrisonAt(getEventDateAndTime(), offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
     court = court.id,
     courtCaseId = courtCase?.id,
     userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
