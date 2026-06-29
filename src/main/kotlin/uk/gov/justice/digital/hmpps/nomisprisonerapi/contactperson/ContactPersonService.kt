@@ -408,7 +408,7 @@ class ContactPersonService(
     val contact = getContactAndLock(personId = personId, contactId = contactId)
     // check if another contact with the same person already has the relationship type
     // e.g. you can't be the BROTHER to teh same prisoner twice
-    if (contact.offenderBooking.contacts.filter { it.id != contactId }.any { it.contactType.code == request.contactTypeCode && it.relationshipType.code == request.relationshipTypeCode && personId == it.person!!.id }) {
+    if (contact.offenderBooking.contacts.filter { it.id != contactId }.any { it.contactType.code == request.contactTypeCode && it.relationshipType.code == request.relationshipTypeCode && personId == it.person?.id }) {
       throw ConflictException("Prisoner with booking  ${contact.offenderBooking.offender.nomsId} with booking ${contact.offenderBooking.bookingId} already is a contact with person $personId for contactType ${request.contactTypeCode} and relationshipType ${request.relationshipTypeCode} ")
     }
 
