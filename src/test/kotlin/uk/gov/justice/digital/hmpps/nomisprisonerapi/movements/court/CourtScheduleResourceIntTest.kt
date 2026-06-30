@@ -326,10 +326,10 @@ class CourtScheduleResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEventOut {
+              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now().minusHours(1)) {
                 movementOut = courtMovementOut()
+                scheduleIn = courtEventIn()
               }
-              scheduleIn = courtEventOut(eventDateTime = LocalDateTime.now().minusHours(1))
             }
           }
         }
@@ -440,8 +440,9 @@ class CourtScheduleResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEventOut()
-              scheduleIn = courtEventOut()
+              scheduleOut = courtEventOut {
+                scheduleIn = courtEventIn()
+              }
             }
           }
         }
@@ -450,7 +451,7 @@ class CourtScheduleResourceIntTest(
       @Test
       fun `should update court schedule out and in`() {
         webTestClient.upsertCourtScheduleOutOk(
-          request = aRequest(eventId = scheduleOut.id, eventStatus = "COMP", returnStatus = "COMP"),
+          request = aRequest(eventId = scheduleOut.id, eventStatus = "COMP", returnStatus = "SCH"),
         )
           .apply {
             repository.runInTransaction {
@@ -459,7 +460,7 @@ class CourtScheduleResourceIntTest(
                 assertThat(directionCode?.code).isEqualTo("OUT")
               }
               with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
-                assertThat(eventStatus.code).isEqualTo("COMP")
+                assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(directionCode?.code).isEqualTo("IN")
               }
             }

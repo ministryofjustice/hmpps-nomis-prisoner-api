@@ -89,7 +89,7 @@ class CourtScheduleService(
         this.parentEventId = savedScheduleOut.id
         this.setEventDateAndTime(request.startTime.with(DEFAULT_IN_TIME))
         this.courtEventType = courtEventType
-        this.eventStatus = eventStatus
+        this.eventStatus = returnEventStatus
         this.commentText = request.comment
         this.court = prison
       } ?: CourtEvent(
