@@ -5568,8 +5568,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(1)
+          .jsonPath("courtEvents[1].courtEventCharges.size()").isEqualTo(2)
 
-        assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(2)
+        assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(1)
 // no longer referenced by any court appearance in this case
         assertThat(courtAppearanceResponse.deletedOffenderChargesIds[0].offenderChargeId).isEqualTo(offenderCharge3.id)
       }
