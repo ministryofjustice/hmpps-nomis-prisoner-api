@@ -13,6 +13,15 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
 
   @Query(
     """
+    from OffenderSubAccount
+    where id.offender.id = :offenderId
+      and (balance != 0 or holdBalance != 0)
+    """,
+  )
+  fun findNonZeroBalances(offenderId: Long): List<OffenderSubAccount>
+
+  @Query(
+    """
         select new uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.AccountSummaryDto(
         o.id.accountCode,
         sum(o.balance),
