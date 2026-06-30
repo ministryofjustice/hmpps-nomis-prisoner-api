@@ -22,7 +22,7 @@ class PrisonerBalanceService(
       PrisonerBalanceDto(
         rootOffenderId,
         prisonNumber = offender.nomsId,
-        offenderSubAccountRepository.findByIdOffenderId(rootOffenderId).map { it.toPrisonerAccountDto() },
+        offenderSubAccountRepository.findNonZeroBalances(rootOffenderId).map { it.toPrisonerAccountDto() },
       )
     }
     ?: throw NotFoundException("Offender with id $rootOffenderId not found")
