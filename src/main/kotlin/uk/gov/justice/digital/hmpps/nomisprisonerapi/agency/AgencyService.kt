@@ -31,6 +31,7 @@ class AgencyService(
 fun Prison.toPrisonResponse() = PrisonResponse(
   prisonId = this.id,
   description = this.description,
+  longDescription = this.longDescription,
   district = this.district?.toCodeDescription(),
   active = this.active,
   deactivationDate = this.deactivationDate,
@@ -41,11 +42,14 @@ fun Prison.toPrisonResponse() = PrisonResponse(
   subArea = this.subArea?.toCodeDescription(),
   region = this.region?.toCodeDescription(),
   nomsRegion = this.nomsRegion?.toCodeDescription(),
+  payrollRegion = this.payrollRegion?.toCodeDescription(),
+  cjitCode = this.cjitCode,
 )
 
 fun Agency.toAgencyResponse() = AgencyResponse(
   agencyId = this.id,
   description = this.description,
+  longDescription = this.longDescription,
   district = this.district?.toCodeDescription(),
   active = this.active,
   deactivationDate = this.deactivationDate,
@@ -58,11 +62,14 @@ fun Agency.toAgencyResponse() = AgencyResponse(
   subArea = this.subArea?.toCodeDescription(),
   region = this.region?.toCodeDescription(),
   nomsRegion = this.nomsRegion?.toCodeDescription(),
+  payrollRegion = this.payrollRegion?.toCodeDescription(),
+  cjitCode = this.cjitCode,
 )
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
   agencyId = this.id,
   description = this.description,
+  longDescription = this.longDescription,
   active = this.active,
   deactivationDate = this.deactivationDate,
   type = this.type.toCodeDescription(),
@@ -73,4 +80,6 @@ fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
   subArea = this.subArea?.toCodeDescription(),
   region = this.region?.toCodeDescription(),
   nomsRegion = this.nomsRegion?.toCodeDescription(),
+  payrollRegion = this.payrollRegion?.toCodeDescription(),
+  cjitCode = this.cjitCode,
 )

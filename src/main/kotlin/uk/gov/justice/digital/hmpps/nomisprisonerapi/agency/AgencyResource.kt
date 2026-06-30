@@ -171,6 +171,8 @@ data class PrisonResponse(
   val prisonId: String,
   @Schema(description = "Name of prison", example = "WANDSWORTH (HMP)")
   val description: String,
+  @Schema(description = "Description of agency", example = "Blackburn YOT")
+  val longDescription: String?,
   @Schema(description = "Area district")
   val district: CodeDescription?,
   @Schema(description = "Indicates if still used", example = "true")
@@ -191,6 +193,10 @@ data class PrisonResponse(
   val region: CodeDescription?,
   @Schema(description = "NOMS Region")
   val nomsRegion: CodeDescription?,
+  @Schema(description = "Payroll Region")
+  val payrollRegion: CodeDescription?,
+  @Schema(description = "CJIT code", example = "D62L087")
+  val cjitCode: String?,
 )
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -200,6 +206,8 @@ data class AgencyResponse(
   val agencyId: String,
   @Schema(description = "Name of agency", example = "Blackburn YOT")
   val description: String,
+  @Schema(description = "Description of agency", example = "Blackburn YOT")
+  val longDescription: String?,
   @Schema(description = "Geographic district")
   val district: CodeDescription?,
   @Schema(description = "Agency type")
@@ -225,6 +233,10 @@ data class AgencyResponse(
   val region: CodeDescription?,
   @Schema(description = "NOMS Region")
   val nomsRegion: CodeDescription?,
+  @Schema(description = "Payroll Region")
+  val payrollRegion: CodeDescription?,
+  @Schema(description = "CJIT code", example = "D62L087")
+  val cjitCode: String?,
 )
 
 @Schema(description = "A response to get any agency but only return data common to all agency types")
@@ -234,6 +246,8 @@ data class AgencyLocationResponse(
   val agencyId: String,
   @Schema(description = "Name of agency", example = "Blackburn YOT")
   val description: String,
+  @Schema(description = "Description of agency", example = "Blackburn YOT")
+  val longDescription: String?,
   @Schema(description = "Agency type")
   val type: CodeDescription,
   @Schema(description = "Indicates if still used", example = "true")
@@ -254,4 +268,8 @@ data class AgencyLocationResponse(
   val region: CodeDescription?,
   @Schema(description = "NOMS Region")
   val nomsRegion: CodeDescription?,
+  @Schema(description = "Payroll Region")
+  val payrollRegion: CodeDescription?,
+  @Schema(description = "CJIT code", example = "D62L087")
+  val cjitCode: String?,
 )

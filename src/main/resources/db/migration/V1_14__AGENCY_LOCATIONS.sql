@@ -45,6 +45,8 @@ CREATE TABLE "AGENCY_LOCATIONS"
   "AUDIT_CLIENT_IP_ADDRESS"       VARCHAR2(39 CHAR),
   "AUDIT_CLIENT_WORKSTATION_NAME" VARCHAR2(64 CHAR),
   "AUDIT_ADDITIONAL_INFO"         VARCHAR2(256 CHAR),
+  "PAYROLL_REGION"                VARCHAR2(12 char),
+
   CONSTRAINT "AGENCY_LOCATIONS_PK" PRIMARY KEY ("AGY_LOC_ID"),
   CONSTRAINT "AGENCY_LOCATIONS_FK1" FOREIGN KEY ("AREA_CODE")
   REFERENCES "AREAS" ("AREA_CODE")
@@ -115,6 +117,8 @@ COMMENT ON COLUMN "AGENCY_LOCATIONS"."MODIFY_DATETIME" IS 'The timestamp when th
 COMMENT ON COLUMN "AGENCY_LOCATIONS"."MODIFY_USER_ID" IS 'The user who modifies the record';
 
 COMMENT ON TABLE "AGENCY_LOCATIONS" IS 'A physical location of an agency involved in the management or administration of offenders on a day to day basis, e.g. a prison, a probation office, a court. NOTE: The following special Agency Location cases exist: - Agy Loc Id = TRN - Represents a Pending Transfer status typically used following an Offender Transfer Out operation and awaiting a Transfer In at the destination establishment; Agy Loc Id = OUT - Represents an Outside status typically associated with offenders that are the subject of an out of jurisdiction transfer or personal property that has been disposed to relatives, for example.';
+
+comment on column "AGENCY_LOCATIONS"."PAYROLL_REGION" is 'Reference Code (PAYROLL_REG)';
 
 
 CREATE INDEX "AGENCY_LOCATIONS_FK1"

@@ -68,11 +68,14 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         probationOffice = agency(
           agencyLocationId = "BOW001",
           description = "Tower Hamlets Probation  Bow",
+          longDescription = "Tower Hamlets Probation Bow East London",
           type = "COMM",
           region = londonRegion,
           area = londonArea,
           subArea = eastLondon,
           nomsRegion = southEastArea,
+          payrollRegionCode = "LTV",
+          cjitCode = "D62L087",
         )
         approvedPremise = agency(
           agencyLocationId = "THA029",
@@ -236,6 +239,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.region?.description).isEqualTo("London Region")
         assertThat(agency.area?.description).isEqualTo("London Area")
         assertThat(agency.subArea?.description).isEqualTo("East London")
+        assertThat(agency.longDescription).isEqualTo("Tower Hamlets Probation Bow East London")
+        assertThat(agency.payrollRegion?.description).isEqualTo("London & Thames Valley")
+        assertThat(agency.cjitCode).isEqualTo("D62L087")
       }
 
       @Test
