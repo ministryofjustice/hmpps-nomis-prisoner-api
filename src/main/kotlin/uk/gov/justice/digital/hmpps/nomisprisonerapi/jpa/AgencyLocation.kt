@@ -45,6 +45,9 @@ class AgencyLocation(
   @Column(name = "DESCRIPTION")
   var description: String,
 
+  @Column(name = "LONG_DESCRIPTION")
+  var longDescription: String? = null,
+
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
     value = [
@@ -138,6 +141,30 @@ class AgencyLocation(
   @JoinColumn(name = "NOMS_REGION_CODE", referencedColumnName = "AREA_CODE", nullable = true)
   var nomsRegion: Area? = null,
 
+  // JUSTICE_AREA_CODE all null - not mapped
+
+  @Column(name = "CJIT_CODE")
+  var cjitCode: String? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'" + PayrollRegionType.PAYROLL_REG + "'",
+          referencedColumnName = "domain",
+        ),
+      ),
+      JoinColumnOrFormula(
+        column = JoinColumn(
+          name = "PAYROLL_REGION",
+          referencedColumnName = "code",
+          nullable = true,
+        ),
+      ),
+    ],
+  )
+  var payrollRegion: PayrollRegionType? = null,
 ) {
 
   override fun equals(other: Any?): Boolean {
@@ -171,6 +198,9 @@ class Prison(
   area: Area?,
   region: Area?,
   nomsRegion: Area?,
+  cjitCode: String?,
+  longDescription: String?,
+  payrollRegion: PayrollRegionType?,
 
   // FD (for OUT and TRN) not in reference data, so ignore if not found
   @NotFound(action = NotFoundAction.IGNORE)
@@ -208,6 +238,9 @@ class Prison(
   area = area,
   region = region,
   nomsRegion = nomsRegion,
+  cjitCode = cjitCode,
+  longDescription = longDescription,
+  payrollRegion = payrollRegion,
 )
 
 @Entity
@@ -225,6 +258,9 @@ class Agency(
   area: Area?,
   region: Area?,
   nomsRegion: Area?,
+  cjitCode: String?,
+  longDescription: String?,
+  payrollRegion: PayrollRegionType?,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(
@@ -260,4 +296,7 @@ class Agency(
   area = area,
   region = region,
   nomsRegion = nomsRegion,
+  cjitCode = cjitCode,
+  longDescription = longDescription,
+  payrollRegion = payrollRegion,
 )

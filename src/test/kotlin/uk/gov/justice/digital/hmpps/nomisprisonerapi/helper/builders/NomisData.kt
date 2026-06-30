@@ -493,6 +493,7 @@ class NomisData(
   override fun agencyLocation(
     agencyLocationId: String,
     description: String,
+    longDescription: String?,
     type: String,
     active: Boolean,
     districtCode: String?,
@@ -505,11 +506,14 @@ class NomisData(
     area: Area?,
     region: Area?,
     nomsRegion: Area?,
+    cjitCode: String?,
+    payrollRegionCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.build(
       id = agencyLocationId,
       description = description,
+      longDescription = longDescription,
       type = type,
       active = active,
       deactivationDate = deactivationDate,
@@ -521,6 +525,8 @@ class NomisData(
       area = area,
       region = region,
       nomsRegion = nomsRegion,
+      cjitCode = cjitCode,
+      payrollRegionCode = payrollRegionCode,
     )
       .also { builder.apply(dsl) }
   }
@@ -528,6 +534,7 @@ class NomisData(
   override fun agency(
     agencyLocationId: String,
     description: String,
+    longDescription: String?,
     type: String,
     active: Boolean,
     districtCode: String?,
@@ -540,11 +547,14 @@ class NomisData(
     area: Area?,
     region: Area?,
     nomsRegion: Area?,
+    cjitCode: String?,
+    payrollRegionCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildAgency(
       id = agencyLocationId,
       description = description,
+      longDescription = longDescription,
       type = type,
       active = active,
       districtCode = districtCode,
@@ -557,12 +567,15 @@ class NomisData(
       area = area,
       region = region,
       nomsRegion = nomsRegion,
+      cjitCode = cjitCode,
+      payrollRegionCode = payrollRegionCode,
     )
       .also { builder.apply(dsl) }
   }
   override fun prison(
     agencyLocationId: String,
     description: String,
+    longDescription: String?,
     active: Boolean,
     districtCode: String?,
     deactivationDate: LocalDate?,
@@ -574,11 +587,14 @@ class NomisData(
     area: Area?,
     region: Area?,
     nomsRegion: Area?,
+    cjitCode: String?,
+    payrollRegionCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
   ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
     builder.buildPrison(
       id = agencyLocationId,
       description = description,
+      longDescription = longDescription,
       type = "INST",
       active = active,
       districtCode = districtCode,
@@ -591,6 +607,8 @@ class NomisData(
       area = area,
       region = region,
       nomsRegion = nomsRegion,
+      cjitCode = cjitCode,
+      payrollRegionCode = payrollRegionCode,
     )
       .also { builder.apply(dsl) }
   }
@@ -862,6 +880,7 @@ interface NomisDataDsl {
   fun agencyLocation(
     agencyLocationId: String = "LEI",
     description: String = "HMP Leeds",
+    longDescription: String? = null,
     type: String = "INST",
     active: Boolean = true,
     districtCode: String? = null,
@@ -874,12 +893,15 @@ interface NomisDataDsl {
     area: Area? = null,
     region: Area? = null,
     nomsRegion: Area? = null,
+    cjitCode: String? = null,
+    payrollRegionCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): AgencyLocation
 
   fun prison(
     agencyLocationId: String = "LEI",
     description: String = "HMP Leeds",
+    longDescription: String? = null,
     active: Boolean = true,
     districtCode: String? = null,
     deactivationDate: LocalDate? = null,
@@ -891,12 +913,15 @@ interface NomisDataDsl {
     area: Area? = null,
     region: Area? = null,
     nomsRegion: Area? = null,
+    cjitCode: String? = null,
+    payrollRegionCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Prison
 
   fun agency(
     agencyLocationId: String = "THA029",
     description: String = "St Leonard's Hostel",
+    longDescription: String? = null,
     type: String = "APPR",
     active: Boolean = true,
     districtCode: String? = null,
@@ -909,6 +934,8 @@ interface NomisDataDsl {
     area: Area? = null,
     region: Area? = null,
     nomsRegion: Area? = null,
+    cjitCode: String? = null,
+    payrollRegionCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
   ): Agency
 

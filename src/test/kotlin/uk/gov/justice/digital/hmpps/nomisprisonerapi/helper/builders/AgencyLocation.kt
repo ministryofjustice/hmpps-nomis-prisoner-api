@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeographicType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayrollRegionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
@@ -58,6 +59,7 @@ class AgencyLocationBuilderRepository(
   private val areaTypeRepository: ReferenceCodeRepository<AreaType>,
   private val geographicTypeRepository: ReferenceCodeRepository<GeographicType>,
   private val courtTypeRepository: ReferenceCodeRepository<CourtType>,
+  private val payrollRegionTypeRepository: ReferenceCodeRepository<PayrollRegionType>,
 ) {
   fun save(agencyLocation: AgencyLocation): AgencyLocation = agencyLocationRepository.saveAndFlush(agencyLocation)
   fun saveAgency(agency: Agency): Agency = agencyRepository.saveAndFlush(agency)
@@ -66,6 +68,7 @@ class AgencyLocationBuilderRepository(
   fun areaTypeOf(code: String?): AreaType? = code?.let { areaTypeRepository.findByIdOrNull(AreaType.pk(code)) }
   fun geographicOf(code: String?): GeographicType? = code?.let { geographicTypeRepository.findByIdOrNull(GeographicType.pk(code)) }
   fun courtTypeOf(code: String?): CourtType? = code?.let { courtTypeRepository.findByIdOrNull(CourtType.pk(code)) }
+  fun payrollRegionOf(code: String?): PayrollRegionType? = code?.let { payrollRegionTypeRepository.findByIdOrNull(PayrollRegionType.pk(code)) }
 }
 
 @Component
@@ -85,6 +88,7 @@ class AgencyLocationBuilder(
   fun build(
     id: String,
     description: String,
+    longDescription: String?,
     type: String,
     active: Boolean,
     deactivationDate: LocalDate?,
@@ -96,9 +100,12 @@ class AgencyLocationBuilder(
     area: Area?,
     region: Area?,
     nomsRegion: Area?,
+    cjitCode: String?,
+    payrollRegionCode: String?,
   ): AgencyLocation = AgencyLocation(
     id = id,
     description = description,
+    longDescription = longDescription,
     type = repository.agencyTypeOf(type),
     active = active,
     deactivationDate = deactivationDate,
@@ -110,6 +117,8 @@ class AgencyLocationBuilder(
     area = area,
     region = region,
     nomsRegion = nomsRegion,
+    cjitCode = cjitCode,
+    payrollRegion = repository.payrollRegionOf(payrollRegionCode),
   )
     .let { repository.save(it) }
     .also { agencyLocation = it }
@@ -117,6 +126,7 @@ class AgencyLocationBuilder(
   fun buildAgency(
     id: String,
     description: String,
+    longDescription: String?,
     type: String,
     active: Boolean,
     districtCode: String?,
@@ -129,9 +139,12 @@ class AgencyLocationBuilder(
     area: Area?,
     region: Area?,
     nomsRegion: Area?,
+    cjitCode: String?,
+    payrollRegionCode: String?,
   ): Agency = Agency(
     id = id,
     description = description,
+    longDescription = longDescription,
     type = repository.agencyTypeOf(type),
     active = active,
     district = repository.areaTypeOf(districtCode),
@@ -144,6 +157,8 @@ class AgencyLocationBuilder(
     area = area,
     region = region,
     nomsRegion = nomsRegion,
+    cjitCode = cjitCode,
+    payrollRegion = repository.payrollRegionOf(payrollRegionCode),
   )
     .let { repository.saveAgency(it) }
     .also { agencyLocation = it }
@@ -151,6 +166,7 @@ class AgencyLocationBuilder(
   fun buildPrison(
     id: String,
     description: String,
+    longDescription: String?,
     type: String,
     active: Boolean,
     districtCode: String?,
@@ -163,9 +179,12 @@ class AgencyLocationBuilder(
     area: Area?,
     region: Area?,
     nomsRegion: Area?,
+    cjitCode: String?,
+    payrollRegionCode: String?,
   ): Prison = Prison(
     id = id,
     description = description,
+    longDescription = longDescription,
     type = repository.agencyTypeOf(type),
     active = active,
     district = repository.geographicOf(districtCode),
@@ -178,6 +197,8 @@ class AgencyLocationBuilder(
     area = area,
     region = region,
     nomsRegion = nomsRegion,
+    cjitCode = cjitCode,
+    payrollRegion = repository.payrollRegionOf(payrollRegionCode),
   )
     .let { repository.savePrison(it) }
     .also { agencyLocation = it }
