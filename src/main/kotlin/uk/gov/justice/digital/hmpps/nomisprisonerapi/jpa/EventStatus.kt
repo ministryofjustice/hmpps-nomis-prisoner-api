@@ -12,6 +12,7 @@ class EventStatus(code: String, description: String) : ReferenceCode(EVENT_STS, 
   companion object {
     const val EVENT_STS = "EVENT_STS"
     const val SCHEDULED = "SCH"
+    const val EXPIRED = "EXP"
     const val COMPLETED = "COMP"
     val CANCELLED = Pk(EVENT_STS, "CANC")
     val SCHEDULED_APPROVED = Pk(EVENT_STS, SCHEDULED)

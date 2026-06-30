@@ -7,14 +7,13 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventChargeId
 
 @Repository
 interface CourtEventChargeRepository : JpaRepository<CourtEventCharge, CourtEventChargeId> {
 
-  fun existsByIdOffenderChargeIdAndIdCourtEventCourtCaseNot(offenderChargeId: Long, courtCase: CourtCase): Boolean
+  fun existsByIdOffenderChargeId(offenderChargeId: Long): Boolean
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])

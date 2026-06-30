@@ -571,7 +571,7 @@ class CourtSentencingService(
   private fun associateChargesWithAppearance(
     courtEventChargesToUpdate: List<CourtEventChargeRequest>,
     courtEvent: CourtEvent,
-  ) {
+  ): List<OffenderCharge> {
     val chargesToRemove = courtEvent.courtEventCharges.filter { charge ->
       charge.id.offenderCharge.id !in courtEventChargesToUpdate.map { it.offenderChargeId }
     }
@@ -603,6 +603,7 @@ class CourtSentencingService(
         )
       }
     }
+    return chargesToRemove.map { it.id.offenderCharge }
   }
 
   fun updateCourtAppearance(
@@ -626,22 +627,24 @@ class CourtSentencingService(
         courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
         courtAppearance.nextEventStartTime = request.nextEventDateTime
 
-        associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
+        var offenderChargesRemoved =
+          associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
+
+        courtEventRepository.saveAndFlush(courtAppearance)
 
         // Offender charges are deleted if no longer associated with an appearance
         val deletedOffenderCharges = deleteOrphanedCharges(
           courtCase = courtCase,
           offenderNo = offenderNo,
           eventId = eventId,
+          offenderChargesRemovedFromAppearance = offenderChargesRemoved,
         )
 
-        courtEventRepository.saveAndFlush(courtAppearance).also {
-          refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
-          storedProcedureRepository.imprisonmentStatusUpdate(
-            bookingId = courtCase.offenderBooking.bookingId,
-            changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
-          )
-        }
+        refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          bookingId = courtCase.offenderBooking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+        )
 
         updateCourtIfNecessary(courtCase)
 
@@ -692,6 +695,7 @@ class CourtSentencingService(
       )
 
       courtEventRepository.findByIdOrNullForUpdate(eventId)?.also {
+        var offenderCharges = it.courtEventCharges.map { cec -> cec.id.offenderCharge }
         case.courtEvents.remove(it)
         courtCaseRepository.saveAndFlush(case)
         // Offender charges are deleted if no longer associated with an appearance
@@ -699,6 +703,7 @@ class CourtSentencingService(
           courtCase = case,
           offenderNo = offenderNo,
           eventId = eventId,
+          offenderChargesRemovedFromAppearance = offenderCharges,
         )
         telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
         storedProcedureRepository.imprisonmentStatusUpdate(
@@ -723,7 +728,8 @@ class CourtSentencingService(
     courtCase: CourtCase,
     offenderNo: String,
     eventId: Long,
-  ): List<OffenderCharge> = courtCase.getOffenderChargesNotAssociatedWithThisCaseOrAnyOtherCases().also { orphanedOffenderCharges ->
+    offenderChargesRemovedFromAppearance: List<OffenderCharge>,
+  ): List<OffenderCharge> = getOffenderChargesWithoutAssociations(offenderChargesRemovedFromAppearance).also { orphanedOffenderCharges ->
     orphanedOffenderCharges
       .forEach {
         courtCase.offenderCharges.remove(it)
@@ -1256,7 +1262,7 @@ class CourtSentencingService(
 
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findFirstByOffenderBookingAndCourtEventAndOrderTypeOrderByIdAsc(offenderBooking, courtEvent)
 
-  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
+  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking, isVideoLink: Boolean = false): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
       .plusDays(1)
   ) {
     lookupEventStatusType(EventStatus.COMPLETED)
@@ -1266,11 +1272,11 @@ class CourtSentencingService(
         lookupEventStatusType(EventStatus.COMPLETED)
       } else {
         lookupEventStatusType(
-          EventStatus.SCHEDULED,
+          if (isVideoLink) EventStatus.EXPIRED else EventStatus.SCHEDULED,
         )
       }
     } ?: lookupEventStatusType(
-      EventStatus.SCHEDULED,
+      if (isVideoLink) EventStatus.EXPIRED else EventStatus.SCHEDULED,
     )
   }
 
@@ -2148,18 +2154,12 @@ class CourtSentencingService(
     )
   }
 
-  private fun CourtCase.getOffenderChargesNotAssociatedWithThisCaseOrAnyOtherCases(): List<OffenderCharge> {
-    val referencedOffenderCharges =
-      this.courtEvents.flatMap { courtEvent -> courtEvent.courtEventCharges.map { it.id.offenderCharge } }.toSet()
-    return this.offenderCharges
-      .filterNot { oc -> referencedOffenderCharges.contains(oc) }
-      .filterNot { oc ->
-        courtEventChargeRepository.existsByIdOffenderChargeIdAndIdCourtEventCourtCaseNot(
-          offenderChargeId = oc.id,
-          courtCase = this,
-        )
-      }
-  }
+  private fun getOffenderChargesWithoutAssociations(offenderChargeList: List<OffenderCharge>): List<OffenderCharge> = offenderChargeList
+    .filterNot { oc ->
+      courtEventChargeRepository.existsByIdOffenderChargeId(
+        offenderChargeId = oc.id,
+      )
+    }
 }
 
 private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long): ExistingOffenderChargeRequest = ExistingOffenderChargeRequest(
