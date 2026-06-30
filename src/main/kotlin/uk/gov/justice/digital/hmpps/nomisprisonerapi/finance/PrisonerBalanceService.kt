@@ -17,7 +17,23 @@ class PrisonerBalanceService(
   val offenderSubAccountRepository: OffenderSubAccountRepository,
 ) {
 
-  fun getPrisonerAccounts(rootOffenderId: Long): PrisonerBalanceDto = offenderRepository.findByIdOrNull(rootOffenderId)
+  fun getPrisonerAccounts(rootOffenderId: Long, excludeZeroBalances: Boolean) = if (excludeZeroBalances) {
+    getNonZeroPrisonerAccounts(rootOffenderId)
+  } else {
+    getAllPrisonerAccounts(rootOffenderId)
+  }
+
+  private fun getAllPrisonerAccounts(rootOffenderId: Long): PrisonerBalanceDto = offenderRepository.findByIdOrNull(rootOffenderId)
+    ?.let { offender ->
+      PrisonerBalanceDto(
+        rootOffenderId,
+        prisonNumber = offender.nomsId,
+        offenderSubAccountRepository.findByIdOffenderId(rootOffenderId).map { it.toPrisonerAccountDto() },
+      )
+    }
+    ?: throw NotFoundException("Offender with id $rootOffenderId not found")
+
+  fun getNonZeroPrisonerAccounts(rootOffenderId: Long): PrisonerBalanceDto = offenderRepository.findByIdOrNull(rootOffenderId)
     ?.let { offender ->
       PrisonerBalanceDto(
         rootOffenderId,

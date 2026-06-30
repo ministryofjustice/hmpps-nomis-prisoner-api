@@ -142,7 +142,9 @@ class PrisonerBalanceResource(
     @Schema(description = "rootOffenderId", example = "123456")
     @PathVariable
     rootOffenderId: Long,
-  ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId)
+    @RequestParam
+    excludeZeroBalances: Boolean = false,
+  ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId, excludeZeroBalances)
 
   @GetMapping("/{rootOffenderId}/balance/summary")
   @ResponseStatus(HttpStatus.OK)

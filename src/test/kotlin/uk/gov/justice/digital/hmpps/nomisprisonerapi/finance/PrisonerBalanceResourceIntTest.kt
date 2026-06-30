@@ -316,6 +316,39 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
+        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts[0].prisonId).isEqualTo("LEI")
+        assertThat(accounts[0].accountCode).isEqualTo(2101)
+        assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[0].holdBalance).isNull()
+        assertThat(accounts[0].lastTransactionId).isEqualTo(12345)
+        assertThat(accounts[0].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        assertThat(accounts[1].prisonId).isEqualTo("LEI")
+        assertThat(accounts[1].accountCode).isEqualTo(2102)
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[1].lastTransactionId).isEqualTo(34567)
+        assertThat(accounts[1].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        assertThat(accounts[2].prisonId).isEqualTo("LEI")
+        assertThat(accounts[2].accountCode).isEqualTo(2103)
+        assertThat(accounts[2].balance).isEqualTo("21.25")
+        assertThat(accounts[2].holdBalance).isEqualTo("2.5")
+        assertThat(accounts[2].lastTransactionId).isEqualTo(56789)
+        assertThat(accounts[2].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+      }
+    }
+
+    @Test
+    fun getPrisonerBalanceExcludingZeroBalances() {
+      val balance = webTestClient.get().uri("/finance/prisoners/$id2/balance?excludeZeroBalances=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyResponse<PrisonerBalanceDto>()
+
+      with(balance) {
+        assertThat(rootOffenderId).isEqualTo(id2)
+        assertThat(prisonNumber).isEqualTo("B2345CD")
         assertThat(accounts.size).isEqualTo(2)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2102)
