@@ -15,6 +15,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LocalAuthorityType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayrollRegionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonRepository
@@ -124,10 +126,10 @@ class AgencyLocationBuilder(
     contactName: String?,
     courtTypeCode: String?,
     disabilityAccessCode: String?,
-    subArea: Area?,
+    subArea: SubArea?,
     area: Area?,
     region: Area?,
-    nomsRegion: Area?,
+    nomsRegion: Region?,
     cjitCode: String?,
     payrollRegionCode: String?,
   ): AgencyLocation = AgencyLocation(
@@ -164,10 +166,10 @@ class AgencyLocationBuilder(
     contactName: String?,
     courtTypeCode: String?,
     disabilityAccessCode: String?,
-    subArea: Area?,
+    subArea: SubArea?,
     area: Area?,
     region: Area?,
-    nomsRegion: Area?,
+    nomsRegion: Region?,
     cjitCode: String?,
     payrollRegionCode: String?,
   ): Agency = Agency(
@@ -204,10 +206,10 @@ class AgencyLocationBuilder(
     contactName: String?,
     courtTypeCode: String?,
     disabilityAccessCode: String?,
-    subArea: Area?,
+    subArea: SubArea?,
     area: Area?,
     region: Area?,
-    nomsRegion: Area?,
+    nomsRegion: Region?,
     cjitCode: String?,
     payrollRegionCode: String?,
   ): Prison = Prison(

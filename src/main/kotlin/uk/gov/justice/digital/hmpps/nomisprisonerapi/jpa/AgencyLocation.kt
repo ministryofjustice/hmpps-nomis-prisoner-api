@@ -133,7 +133,7 @@ class AgencyLocation(
   // data is from AREAS with class SUB_AREA
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "SUB_AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
-  var subArea: Area? = null,
+  var subArea: SubArea? = null,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
@@ -150,10 +150,11 @@ class AgencyLocation(
   @JoinColumn(name = "GEOGRAPHIC_REGION_CODE", referencedColumnName = "AREA_CODE", nullable = true)
   var region: Area? = null,
 
-  // data is from AREAS with class REGION
+  // Wales is missing so NotFound
+  @NotFound(action = NotFoundAction.IGNORE)
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "NOMS_REGION_CODE", referencedColumnName = "AREA_CODE", nullable = true)
-  var nomsRegion: Area? = null,
+  var nomsRegion: Region? = null,
 
   // JUSTICE_AREA_CODE all null - not mapped
 
@@ -213,10 +214,10 @@ class Prison(
   contactName: String?,
   courtType: CourtType?,
   disabilityAccessCode: String?,
-  subArea: Area?,
+  subArea: SubArea?,
   area: Area?,
   region: Area?,
-  nomsRegion: Area?,
+  nomsRegion: Region?,
   cjitCode: String?,
   longDescription: String?,
   payrollRegion: PayrollRegionType?,
@@ -253,10 +254,10 @@ class Agency(
   contactName: String?,
   courtType: CourtType?,
   disabilityAccessCode: String?,
-  subArea: Area?,
+  subArea: SubArea?,
   area: Area?,
   region: Area?,
-  nomsRegion: Area?,
+  nomsRegion: Region?,
   cjitCode: String?,
   longDescription: String?,
   payrollRegion: PayrollRegionType?,
