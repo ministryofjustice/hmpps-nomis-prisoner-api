@@ -169,6 +169,31 @@ class CourtScheduleResourceIntTest(
             assertThat(this.startTime.toLocalTime()).isEqualTo(LocalTime.of(12, 0))
           }
       }
+
+      @Test
+      fun `should treat null direction code as OUT`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now())
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          // Set the schedule direction code to null
+          entityManager.createNativeQuery(
+            """
+              update COURT_EVENTS SET DIRECTION_CODE = null where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getCourtScheduleOutOk(offenderNo, scheduleOut.id)
+          .apply {
+            assertThat(eventId).isEqualTo(scheduleOut.id)
+          }
+      }
     }
 
     @Nested
@@ -431,6 +456,31 @@ class CourtScheduleResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should update court schedule out where direction code is null`() {
+        repository.runInTransaction {
+          // Set the schedule direction code to null
+          entityManager.createNativeQuery(
+            """
+              update COURT_EVENTS SET DIRECTION_CODE = null where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(eventId = scheduleOut.id),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(courtEventType.code).isEqualTo("CRT")
+                assertThat(directionCode?.code).isEqualTo(null)
+              }
+              assertThat(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)).isNull()
+            }
+          }
+      }
     }
 
     @Nested
@@ -458,6 +508,34 @@ class CourtScheduleResourceIntTest(
               with(courtEventRepository.findByIdOrNull(eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("COMP")
                 assertThat(directionCode?.code).isEqualTo("OUT")
+              }
+              with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("SCH")
+                assertThat(directionCode?.code).isEqualTo("IN")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should update court schedule out and in where out direction is null`() {
+        repository.runInTransaction {
+          // Set the schedule direction code to null
+          entityManager.createNativeQuery(
+            """
+              update COURT_EVENTS SET DIRECTION_CODE = null where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.upsertCourtScheduleOutOk(
+          request = aRequest(eventId = scheduleOut.id, eventStatus = "COMP", returnStatus = "SCH"),
+        )
+          .apply {
+            repository.runInTransaction {
+              with(courtEventRepository.findByIdOrNull(eventId)!!) {
+                assertThat(eventStatus.code).isEqualTo("COMP")
+                assertThat(directionCode?.code).isEqualTo(null)
               }
               with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("SCH")
@@ -643,6 +721,25 @@ class CourtScheduleResourceIntTest(
 
       @Test
       fun `should delete schedule`() {
+        webTestClient.deleteCourtScheduleOut()
+          .expectStatus().isNoContent
+
+        repository.runInTransaction {
+          assertThat(courtEventRepository.findByIdOrNull(scheduleOut.id)).isNull()
+        }
+      }
+
+      @Test
+      fun `should delete schedule if direction code is null`() {
+        repository.runInTransaction {
+          // Set the schedule direction code to null
+          entityManager.createNativeQuery(
+            """
+              update COURT_EVENTS SET DIRECTION_CODE = null where EVENT_ID = ${scheduleOut.id}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
         webTestClient.deleteCourtScheduleOut()
           .expectStatus().isNoContent
 

@@ -463,7 +463,7 @@ class OffenderCourtMovementsResourceIntTest(
       }
 
       @Test
-      fun `should not return any schedules with null direction code`() {
+      fun `should treat null direction code as as OUT`() {
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
@@ -488,9 +488,8 @@ class OffenderCourtMovementsResourceIntTest(
         // The court schedule without direction code should not be returned
         webTestClient.getOffenderCourtMovementsOk(offenderNo)
           .apply {
-            with(bookings[0]) {
-              assertThat(courtSchedules).isEmpty()
-              assertThat(unscheduledCourtMovementOuts).hasSize(1)
+            with(bookings[0].courtSchedules[0]) {
+              assertThat(eventId).isEqualTo(scheduleOut.id)
             }
           }
       }
@@ -715,6 +714,38 @@ class OffenderCourtMovementsResourceIntTest(
           assertThat(courtSchedules[0].courtMovementIn).isNull()
           assertThat(unscheduledCourtMovementOuts).isEmpty()
           assertThat(unscheduledCourtMovementIns).isEmpty()
+        }
+    }
+
+    @Test
+    fun `should treat null direction code as as OUT`() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            scheduleOut = courtEventOut {
+              movementOut = courtMovementOut()
+            }
+          }
+        }
+      }
+
+      // Set the schedule direction code to null
+      repository.runInTransaction {
+        entityManager.createNativeQuery(
+          """
+              update COURT_EVENTS
+              set DIRECTION_CODE = null
+              where EVENT_ID = ${scheduleOut.id}
+          """.trimIndent(),
+        ).executeUpdate()
+      }
+
+      // The court schedule without direction code should not be returned
+      webTestClient.getBookingCourtMovementsOk(booking.bookingId)
+        .apply {
+          with(courtSchedules[0]) {
+            assertThat(eventId).isEqualTo(scheduleOut.id)
+          }
         }
     }
   }
