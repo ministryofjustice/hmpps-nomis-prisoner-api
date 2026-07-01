@@ -3,10 +3,13 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaClass
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TypeOfArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RegionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SubAreaRepository
 import java.time.LocalDate
 
 @DslMarker
@@ -23,7 +26,7 @@ interface AreaDsl {
     active: Boolean = true,
     expiryDate: LocalDate? = null,
     areaTypeCode: String? = "INST",
-  ): Area
+  ): SubArea
 }
 
 @RegionDslMarker
@@ -40,11 +43,13 @@ interface RegionDsl {
 @Component
 class AreaBuilderRepository(
   private val areaRepository: AreaRepository,
-  private val areaClassRepository: ReferenceCodeRepository<AreaClass>,
+  private val subAreaRepository: SubAreaRepository,
+  private val regionRepository: RegionRepository,
   private val typeOfAreaRepository: ReferenceCodeRepository<TypeOfArea>,
 ) {
   fun save(area: Area): Area = areaRepository.saveAndFlush(area)
-  fun areaClassOf(code: String): AreaClass = areaClassRepository.findByIdOrNull(AreaClass.pk(code))!!
+  fun save(area: SubArea): SubArea = subAreaRepository.saveAndFlush(area)
+  fun save(area: Region): Region = regionRepository.saveAndFlush(area)
   fun typeOfAreaOf(code: String?): TypeOfArea? = code?.let { typeOfAreaRepository.findByIdOrNull(TypeOfArea.pk(code)) }
 }
 
@@ -60,23 +65,22 @@ class AreaBuilder(
 ) : AreaDsl,
   RegionDsl {
   private lateinit var area: Area
-  private lateinit var region: Area
+  private lateinit var region: Region
 
   fun build(
     code: String,
     description: String,
-    areaClassCode: String,
     active: Boolean,
     expiryDate: LocalDate?,
     areaTypeCode: String?,
   ): Area = Area(
     areaCode = code,
     description = description,
-    areaClass = repository.areaClassOf(areaClassCode),
     listSequence = 99,
     active = active,
     expiryDate = expiryDate,
     type = areaTypeCode?.let { repository.typeOfAreaOf(it) },
+    parentAreaCode = null,
   )
     .let { repository.save(it) }
     .also { area = it }
@@ -84,14 +88,12 @@ class AreaBuilder(
   fun buildRegion(
     code: String,
     description: String,
-    areaClassCode: String,
     active: Boolean,
     expiryDate: LocalDate?,
     areaTypeCode: String?,
-  ): Area = Area(
+  ): Region = Region(
     areaCode = code,
     description = description,
-    areaClass = repository.areaClassOf(areaClassCode),
     listSequence = 99,
     active = active,
     expiryDate = expiryDate,
@@ -106,12 +108,14 @@ class AreaBuilder(
     active: Boolean,
     expiryDate: LocalDate?,
     areaTypeCode: String?,
-  ): Area = Area(
+  ): SubArea = SubArea(
     areaCode = code,
     description = description,
-    areaClass = repository.areaClassOf("SUB_AREA"),
     listSequence = 99,
     parentAreaCode = area.areaCode,
+    active = active,
+    expiryDate = expiryDate,
+    type = null,
   )
     .let { repository.save(it) }
 
@@ -124,9 +128,11 @@ class AreaBuilder(
   ): Area = Area(
     areaCode = code,
     description = description,
-    areaClass = repository.areaClassOf("AREA"),
     listSequence = 99,
     parentAreaCode = region.areaCode,
+    active = active,
+    expiryDate = expiryDate,
+    type = null,
   )
     .let { repository.save(it) }
 }

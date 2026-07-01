@@ -26,9 +26,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Role
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SplashScreen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -502,10 +504,10 @@ class NomisData(
     contactName: String?,
     courtTypeCode: String?,
     disabilityAccessCode: String?,
-    subArea: Area?,
+    subArea: SubArea?,
     area: Area?,
     region: Area?,
-    nomsRegion: Area?,
+    nomsRegion: Region?,
     cjitCode: String?,
     payrollRegionCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
@@ -544,10 +546,10 @@ class NomisData(
     contactName: String?,
     courtTypeCode: String?,
     disabilityAccessCode: String?,
-    subArea: Area?,
+    subArea: SubArea?,
     area: Area?,
     region: Area?,
-    nomsRegion: Area?,
+    nomsRegion: Region?,
     cjitCode: String?,
     payrollRegionCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
@@ -584,10 +586,10 @@ class NomisData(
     contactName: String?,
     courtTypeCode: String?,
     disabilityAccessCode: String?,
-    subArea: Area?,
+    subArea: SubArea?,
     area: Area?,
     region: Area?,
-    nomsRegion: Area?,
+    nomsRegion: Region?,
     cjitCode: String?,
     payrollRegionCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
@@ -625,7 +627,6 @@ class NomisData(
     builder.build(
       code = code,
       description = description,
-      areaClassCode = "AREA",
       active = active,
       expiryDate = expiryDate,
       areaTypeCode = areaTypeCode,
@@ -639,11 +640,10 @@ class NomisData(
     expiryDate: LocalDate?,
     areaTypeCode: String?,
     dsl: RegionDsl.() -> Unit,
-  ): Area = areaBuilderFactory!!.builder().let { builder ->
+  ): Region = areaBuilderFactory!!.builder().let { builder ->
     builder.buildRegion(
       code = code,
       description = description,
-      areaClassCode = "REGION",
       active = active,
       expiryDate = expiryDate,
       areaTypeCode = areaTypeCode,
@@ -890,10 +890,10 @@ interface NomisDataDsl {
     contactName: String? = null,
     courtTypeCode: String? = null,
     disabilityAccessCode: String? = null,
-    subArea: Area? = null,
+    subArea: SubArea? = null,
     area: Area? = null,
     region: Area? = null,
-    nomsRegion: Area? = null,
+    nomsRegion: Region? = null,
     cjitCode: String? = null,
     payrollRegionCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
@@ -910,10 +910,10 @@ interface NomisDataDsl {
     contactName: String? = null,
     courtTypeCode: String? = null,
     disabilityAccessCode: String? = null,
-    subArea: Area? = null,
+    subArea: SubArea? = null,
     area: Area? = null,
     region: Area? = null,
-    nomsRegion: Area? = null,
+    nomsRegion: Region? = null,
     cjitCode: String? = null,
     payrollRegionCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
@@ -931,10 +931,10 @@ interface NomisDataDsl {
     contactName: String? = null,
     courtTypeCode: String? = null,
     disabilityAccessCode: String? = null,
-    subArea: Area? = null,
+    subArea: SubArea? = null,
     area: Area? = null,
     region: Area? = null,
-    nomsRegion: Area? = null,
+    nomsRegion: Region? = null,
     cjitCode: String? = null,
     payrollRegionCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
@@ -956,7 +956,7 @@ interface NomisDataDsl {
     expiryDate: LocalDate? = null,
     areaTypeCode: String? = "INST",
     dsl: RegionDsl.() -> Unit = {},
-  ): Area
+  ): Region
 
   fun generalLedgerTransaction(
     transactionId: Long,

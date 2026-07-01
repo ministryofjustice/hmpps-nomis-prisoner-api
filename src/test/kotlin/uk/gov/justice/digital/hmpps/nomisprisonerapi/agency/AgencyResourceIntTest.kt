@@ -16,10 +16,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RegionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SubAreaRepository
 import java.time.LocalDate
 
 class AgencyResourceIntTest : IntegrationTestBase() {
@@ -35,6 +39,12 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var areaRepository: AreaRepository
 
+  @Autowired
+  private lateinit var subAreaRepository: SubAreaRepository
+
+  @Autowired
+  private lateinit var regionRepository: RegionRepository
+
   @DisplayName("GET /prison/{prisonId}")
   @Nested
   inner class GetPrison {
@@ -43,17 +53,17 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     lateinit var court: Agency
     lateinit var probationOffice: Agency
     lateinit var prison: Prison
-    lateinit var londonRegion: Area
+    lateinit var londonRegion: Region
     lateinit var londonArea: Area
     lateinit var southEastArea: Area
-    lateinit var eastLondon: Area
+    lateinit var eastLondon: SubArea
     lateinit var londonDistrict: Area
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
         londonDistrict = area(code = "10", "Thames Valley", areaTypeCode = "COMM")
-        southEastArea = region(code = "SE", "South East")
+        southEastArea = area(code = "LONDON", "London")
         londonRegion = region(code = "LON", "London Region") {
           londonArea = area(code = "62", "London Area", areaTypeCode = "COMM") {
             eastLondon = subArea("LON_E", description = "East London", areaTypeCode = "COMM")
@@ -74,10 +84,10 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           description = "Tower Hamlets Probation  Bow",
           longDescription = "Tower Hamlets Probation Bow East London",
           type = "COMM",
-          region = londonRegion,
+          region = southEastArea,
           area = londonArea,
           subArea = eastLondon,
-          nomsRegion = southEastArea,
+          nomsRegion = londonRegion,
           payrollRegionCode = "LTV",
           cjitCode = "D62L087",
         ) {
@@ -166,9 +176,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       agencyRepository.delete(court)
       agencyRepository.delete(probationOffice)
       prisonRepository.delete(prison)
-      areaRepository.delete(eastLondon)
+      subAreaRepository.delete(eastLondon)
       areaRepository.delete(londonArea)
-      areaRepository.delete(londonRegion)
+      regionRepository.delete(londonRegion)
       areaRepository.delete(southEastArea)
       areaRepository.delete(londonDistrict)
     }
@@ -298,8 +308,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           .expectBodyResponse()
 
         assertThat(agency.agencyId).isEqualTo("BOW001")
-        assertThat(agency.nomsRegion?.description).isEqualTo("South East")
-        assertThat(agency.region?.description).isEqualTo("London Region")
+        assertThat(agency.nomsRegion?.description).isEqualTo("London Region")
+        assertThat(agency.region?.description).isEqualTo("London")
         assertThat(agency.area?.description).isEqualTo("London Area")
         assertThat(agency.subArea?.description).isEqualTo("East London")
         assertThat(agency.longDescription).isEqualTo("Tower Hamlets Probation Bow East London")
