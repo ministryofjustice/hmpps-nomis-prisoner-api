@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.brent
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.bromley
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
@@ -76,7 +78,10 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           nomsRegion = southEastArea,
           payrollRegionCode = "LTV",
           cjitCode = "D62L087",
-        )
+        ) {
+          localAuthority(brent)
+          localAuthority(bromley)
+        }
         approvedPremise = agency(
           agencyLocationId = "THA029",
           description = "Approved Premises",
@@ -242,6 +247,10 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.longDescription).isEqualTo("Tower Hamlets Probation Bow East London")
         assertThat(agency.payrollRegion?.description).isEqualTo("London & Thames Valley")
         assertThat(agency.cjitCode).isEqualTo("D62L087")
+        assertThat(agency.localAuthorities).extracting<String> { it.description }.containsExactlyInAnyOrder(
+          "Brent",
+          "Bromley",
+        )
       }
 
       @Test
