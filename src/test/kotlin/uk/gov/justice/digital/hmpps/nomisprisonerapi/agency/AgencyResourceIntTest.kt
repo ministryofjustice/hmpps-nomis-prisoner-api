@@ -121,6 +121,22 @@ class AgencyResourceIntTest : IntegrationTestBase() {
               phoneNo = "01142561919",
             )
           }
+
+          phone(
+            phoneType = "BUS",
+            phoneNo = "0114 55 5555",
+            extNo = "123",
+          )
+          phone(
+            phoneType = "FAX",
+            phoneNo = "0114 44 5555",
+          )
+          email(
+            address = "probation@gov.uk",
+          )
+          email(
+            address = "justice@gov.uk",
+          )
         }
         approvedPremise = agency(
           agencyLocationId = "THA029",
@@ -355,6 +371,37 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.addresses[1].phoneNumbers[1].id).isEqualTo(probationOffice.addresses[1].phones[1].phoneId)
         assertThat(agency.addresses[1].phoneNumbers[1].type.description).isEqualTo("Fax")
         assertThat(agency.addresses[1].phoneNumbers[1].number).isEqualTo("01142561919")
+      }
+
+      @Test
+      fun `will return global phone details for an agency`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/BOW001")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("BOW001")
+        assertThat(agency.phones[0].id).isEqualTo(probationOffice.phones[0].phoneId)
+        assertThat(agency.phones[0].type.description).isEqualTo("Business")
+        assertThat(agency.phones[0].number).isEqualTo("0114 55 5555")
+        assertThat(agency.phones[0].extension).isEqualTo("123")
+        assertThat(agency.phones[1].id).isEqualTo(probationOffice.phones[1].phoneId)
+        assertThat(agency.phones[1].type.description).isEqualTo("Fax")
+        assertThat(agency.phones[1].number).isEqualTo("0114 44 5555")
+      }
+
+      @Test
+      fun `will return email details for an agency`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/BOW001")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("BOW001")
+        assertThat(agency.emailAddresses[0].id).isEqualTo(probationOffice.emailAddresses[0].internetAddressId)
+        assertThat(agency.emailAddresses[0].emailAddress).isEqualTo("probation@gov.uk")
+        assertThat(agency.emailAddresses[1].id).isEqualTo(probationOffice.emailAddresses[1].internetAddressId)
+        assertThat(agency.emailAddresses[1].emailAddress).isEqualTo("justice@gov.uk")
       }
 
       @Test

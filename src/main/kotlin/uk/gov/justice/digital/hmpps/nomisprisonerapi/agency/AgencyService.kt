@@ -46,6 +46,8 @@ fun Prison.toPrisonResponse() = PrisonResponse(
   cjitCode = this.cjitCode,
   localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
   addresses = this.toAgencyAddresses(),
+  phones = this.toPhoneNumbers(),
+  emailAddresses = this.toEmailAddresses(),
 )
 
 fun Agency.toAgencyResponse() = AgencyResponse(
@@ -68,6 +70,8 @@ fun Agency.toAgencyResponse() = AgencyResponse(
   cjitCode = this.cjitCode,
   localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
   addresses = this.toAgencyAddresses(),
+  phones = this.toPhoneNumbers(),
+  emailAddresses = this.toEmailAddresses(),
 )
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
@@ -88,8 +92,24 @@ fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
   cjitCode = this.cjitCode,
   localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
   addresses = this.toAgencyAddresses(),
+  phones = this.toPhoneNumbers(),
+  emailAddresses = this.toEmailAddresses(),
 )
 
+fun AgencyLocation.toEmailAddresses(): List<AgencyEmailAddress> = emailAddresses.map { email ->
+  AgencyEmailAddress(
+    id = email.internetAddressId,
+    emailAddress = email.internetAddress,
+  )
+}
+fun AgencyLocation.toPhoneNumbers(): List<AgencyPhoneNumber> = phones.map { phone ->
+  AgencyPhoneNumber(
+    id = phone.phoneId,
+    number = phone.phoneNo,
+    extension = phone.extNo,
+    type = phone.phoneType.toCodeDescription(),
+  )
+}
 fun AgencyLocation.toAgencyAddresses(): List<AgencyAddress> = addresses.map { address ->
   AgencyAddress(
     id = address.addressId,
