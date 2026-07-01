@@ -35,7 +35,7 @@ class OffenderCourtMovementsService(
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
     val allMovementsIn = courtMovementInRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
-    val allSchedulesOut = courtEventRepository.findAllByOffenderBooking_Offender_NomsIdAndDirectionCode_CodeIs(offenderNo, "OUT")
+    val allSchedulesOut = courtEventRepository.findAllByOffenderAndDirectionCodeOrNull(offenderNo, "OUT")
 
     // When finding unscheduled movements we also have to cross reference with the schedules we loaded - just in case any are linked to a schedule without a direction (bad old NOMIS data that we are ignoring)
     val unscheduledMovementsOut = allMovementsOut.filter { it.courtScheduleOutId == null || it.courtScheduleOutId !in(allSchedulesOut.map { it.id }) }
@@ -73,7 +73,7 @@ class OffenderCourtMovementsService(
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
     val allMovementsIn = courtMovementInRepository.findAllByOffenderBooking_BookingId(bookingId)
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
-    val allSchedulesOut = courtEventRepository.findAllByOffenderBooking_BookingIdAndDirectionCode_CodeIs(bookingId, "OUT")
+    val allSchedulesOut = courtEventRepository.findAllByOffenderBookingAndDirectionCodeOrNull(bookingId, "OUT")
 
     // When finding unscheduled movements we also have to cross reference with the schedules we loaded - just in case any are linked to a schedule without a direction (bad old NOMIS data that we are ignoring)
     val unscheduledMovementsOut = allMovementsOut.filter { it.courtScheduleOutId == null || it.courtScheduleOutId !in(allSchedulesOut.map { it.id }) }

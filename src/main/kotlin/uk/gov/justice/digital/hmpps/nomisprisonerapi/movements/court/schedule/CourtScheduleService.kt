@@ -39,7 +39,7 @@ class CourtScheduleService(
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
     }
     return courtEventRepository.findByIdOrNull(eventId)
-      ?.takeIf { it.directionCode?.code == DirectionType.OUT }
+      ?.takeIf { it.directionCode == null || it.directionCode?.code == DirectionType.OUT }
       ?.toResponse()
       ?: throw NotFoundException("Court event OUT with id=$eventId not found for prisoner with nomsId=$offenderNo")
   }
