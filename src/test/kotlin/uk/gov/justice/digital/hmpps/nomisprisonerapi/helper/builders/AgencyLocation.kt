@@ -11,9 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeographicType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LocalAuthorityType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayrollRegionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
@@ -78,8 +76,6 @@ class AgencyLocationBuilderRepository(
   private val agencyRepository: AgencyRepository,
   private val prisonRepository: PrisonRepository,
   private val agencyTypeRepository: ReferenceCodeRepository<AgencyLocationType>,
-  private val areaTypeRepository: ReferenceCodeRepository<AreaType>,
-  private val geographicTypeRepository: ReferenceCodeRepository<GeographicType>,
   private val courtTypeRepository: ReferenceCodeRepository<CourtType>,
   private val payrollRegionTypeRepository: ReferenceCodeRepository<PayrollRegionType>,
   private val localAuthorityTypeRepository: ReferenceCodeRepository<LocalAuthorityType>,
@@ -88,8 +84,6 @@ class AgencyLocationBuilderRepository(
   fun saveAgency(agency: Agency): Agency = agencyRepository.saveAndFlush(agency)
   fun savePrison(prison: Prison): Prison = prisonRepository.saveAndFlush(prison)
   fun agencyTypeOf(code: String): AgencyLocationType = agencyTypeRepository.findByIdOrNull(AgencyLocationType.pk(code))!!
-  fun areaTypeOf(code: String?): AreaType? = code?.let { areaTypeRepository.findByIdOrNull(AreaType.pk(code)) }
-  fun geographicOf(code: String?): GeographicType? = code?.let { geographicTypeRepository.findByIdOrNull(GeographicType.pk(code)) }
   fun courtTypeOf(code: String?): CourtType? = code?.let { courtTypeRepository.findByIdOrNull(CourtType.pk(code)) }
   fun payrollRegionOf(code: String?): PayrollRegionType? = code?.let { payrollRegionTypeRepository.findByIdOrNull(PayrollRegionType.pk(code)) }
   fun localAuthorityTypeOf(code: String): LocalAuthorityType = localAuthorityTypeRepository.findByIdOrNull(LocalAuthorityType.pk(code))!!
@@ -124,6 +118,7 @@ class AgencyLocationBuilder(
     longDescription: String?,
     type: String,
     active: Boolean,
+    district: Area?,
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
@@ -141,6 +136,7 @@ class AgencyLocationBuilder(
     longDescription = longDescription,
     type = repository.agencyTypeOf(type),
     active = active,
+    district = district,
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
     contactName = contactName,
@@ -162,7 +158,7 @@ class AgencyLocationBuilder(
     longDescription: String?,
     type: String,
     active: Boolean,
-    districtCode: String?,
+    district: Area?,
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
@@ -180,7 +176,7 @@ class AgencyLocationBuilder(
     longDescription = longDescription,
     type = repository.agencyTypeOf(type),
     active = active,
-    district = repository.areaTypeOf(districtCode),
+    district = district,
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
     contactName = contactName,
@@ -202,7 +198,7 @@ class AgencyLocationBuilder(
     longDescription: String?,
     type: String,
     active: Boolean,
-    districtCode: String?,
+    district: Area?,
     deactivationDate: LocalDate?,
     updateAllowed: Boolean,
     contactName: String?,
@@ -220,7 +216,7 @@ class AgencyLocationBuilder(
     longDescription = longDescription,
     type = repository.agencyTypeOf(type),
     active = active,
-    district = repository.geographicOf(districtCode),
+    district = district,
     deactivationDate = deactivationDate,
     updateAllowed = updateAllowed,
     contactName = contactName,

@@ -47,10 +47,12 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     lateinit var londonArea: Area
     lateinit var southEastArea: Area
     lateinit var eastLondon: Area
+    lateinit var londonDistrict: Area
 
     @BeforeEach
     fun setUp() {
       nomisDataBuilder.build {
+        londonDistrict = area(code = "10", "Thames Valley", areaTypeCode = "COMM")
         southEastArea = region(code = "SE", "South East")
         londonRegion = region(code = "LON", "London Region") {
           londonArea = area(code = "62", "London Area", areaTypeCode = "COMM") {
@@ -65,8 +67,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         prison = prison(
           agencyLocationId = "AAI",
           description = "HMP AAI",
-          districtCode = "LONDON",
-
+          district = londonDistrict,
         )
         probationOffice = agency(
           agencyLocationId = "BOW001",
@@ -141,7 +142,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         approvedPremise = agency(
           agencyLocationId = "THA029",
           description = "Approved Premises",
-          districtCode = "40",
+          district = londonDistrict,
           active = false,
           type = "APPR",
           deactivationDate = LocalDate.parse("2022-01-01"),
@@ -169,6 +170,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       areaRepository.delete(londonArea)
       areaRepository.delete(londonRegion)
       areaRepository.delete(southEastArea)
+      areaRepository.delete(londonDistrict)
     }
 
     @Nested
@@ -220,7 +222,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(prison.prisonId).isEqualTo("AAI")
         assertThat(prison.description).isEqualTo("HMP AAI")
-        assertThat(prison.district?.description).isEqualTo("London")
+        assertThat(prison.district?.description).isEqualTo("Thames Valley")
         assertThat(prison.active).isTrue
         assertThat(prison.deactivationDate).isNull()
         assertThat(prison.updateAllowed).isTrue
