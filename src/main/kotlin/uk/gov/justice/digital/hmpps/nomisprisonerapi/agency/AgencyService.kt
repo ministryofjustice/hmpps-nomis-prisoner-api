@@ -45,6 +45,7 @@ fun Prison.toPrisonResponse() = PrisonResponse(
   payrollRegion = this.payrollRegion?.toCodeDescription(),
   cjitCode = this.cjitCode,
   localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
+  addresses = this.toAgencyAddresses(),
 )
 
 fun Agency.toAgencyResponse() = AgencyResponse(
@@ -66,6 +67,7 @@ fun Agency.toAgencyResponse() = AgencyResponse(
   payrollRegion = this.payrollRegion?.toCodeDescription(),
   cjitCode = this.cjitCode,
   localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
+  addresses = this.toAgencyAddresses(),
 )
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
@@ -85,4 +87,35 @@ fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
   payrollRegion = this.payrollRegion?.toCodeDescription(),
   cjitCode = this.cjitCode,
   localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
+  addresses = this.toAgencyAddresses(),
 )
+
+fun AgencyLocation.toAgencyAddresses(): List<AgencyAddress> = addresses.map { address ->
+  AgencyAddress(
+    id = address.addressId,
+    type = address.addressType?.toCodeDescription(),
+    flat = address.flat,
+    premise = address.premise,
+    street = address.street,
+    locality = address.locality,
+    postcode = address.postalCode,
+    city = address.city?.toCodeDescription(),
+    county = address.county?.toCodeDescription(),
+    country = address.country?.toCodeDescription(),
+    validatedPAF = address.validatedPAF,
+    primaryAddress = address.primaryAddress,
+    noFixedAddress = address.noFixedAddress,
+    mailAddress = address.mailAddress,
+    comment = address.comment,
+    startDate = address.startDate,
+    endDate = address.endDate,
+    phoneNumbers = address.phones.map { number ->
+      AgencyPhoneNumber(
+        id = number.phoneId,
+        number = number.phoneNo,
+        type = number.phoneType.toCodeDescription(),
+        extension = number.extNo,
+      )
+    },
+  )
+}

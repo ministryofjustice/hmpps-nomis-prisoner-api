@@ -25,11 +25,14 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class AgencyLocationDslMarker
 
-val brent = "00AE"
-val bromley = "00AF"
-
 @AgencyLocationDslMarker
 interface AgencyLocationDsl {
+  companion object {
+    const val SHEFFIELD = "25343"
+    const val BRENT = "00AE"
+    const val BROMLEY = "00AF"
+  }
+
   fun address(
     type: String? = "BUS",
     premise: String? = "2",
@@ -47,9 +50,6 @@ interface AgencyLocationDsl {
     comment: String? = null,
     startDate: String? = null,
     endDate: String? = null,
-    isServices: Boolean = false,
-    businessHours: String? = null,
-    contactPersonName: String? = null,
     whenCreated: LocalDateTime? = null,
     whoCreated: String? = null,
     dsl: AgencyLocationAddressDsl.() -> Unit = {},
@@ -230,9 +230,6 @@ class AgencyLocationBuilder(
     comment: String?,
     startDate: String?,
     endDate: String?,
-    isServices: Boolean,
-    businessHours: String?,
-    contactPersonName: String?,
     whenCreated: LocalDateTime?,
     whoCreated: String?,
     dsl: AgencyLocationAddressDsl.() -> Unit,
@@ -255,9 +252,6 @@ class AgencyLocationBuilder(
       comment = comment,
       startDate = startDate?.let { LocalDate.parse(it) },
       endDate = endDate?.let { LocalDate.parse(it) },
-      isServices = isServices,
-      businessHours = businessHours,
-      contactPersonName = contactPersonName,
     )
       .also { agencyLocation.addresses += it }
       .also { builder.apply(dsl) }

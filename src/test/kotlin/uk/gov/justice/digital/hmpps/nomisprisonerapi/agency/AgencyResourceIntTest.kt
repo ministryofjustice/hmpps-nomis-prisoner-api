@@ -7,8 +7,9 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.brent
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.bromley
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.BRENT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.BROMLEY
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
@@ -79,8 +80,47 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           payrollRegionCode = "LTV",
           cjitCode = "D62L087",
         ) {
-          localAuthority(brent)
-          localAuthority(bromley)
+          localAuthority(BRENT)
+          localAuthority(BROMLEY)
+          address(
+            type = "BUS",
+            noFixedAddress = null,
+            primaryAddress = false,
+            premise = null,
+            street = null,
+            locality = null,
+            city = null,
+            county = null,
+            country = null,
+          )
+          address(
+            type = "BUS",
+            flat = "3B",
+            premise = "Brown Court",
+            street = "Scotland Street",
+            locality = "Hunters Bar",
+            postcode = "S1 3GG",
+            city = SHEFFIELD,
+            county = "S.YORKSHIRE",
+            country = "ENG",
+            validatedPAF = true,
+            noFixedAddress = false,
+            primaryAddress = true,
+            mailAddress = true,
+            comment = "Not to be used",
+            startDate = "2024-10-01",
+            endDate = "2024-11-01",
+          ) {
+            phone(
+              phoneType = "BUS",
+              phoneNo = "07399999999",
+              extNo = "123",
+            )
+            phone(
+              phoneType = "FAX",
+              phoneNo = "01142561919",
+            )
+          }
         }
         approvedPremise = agency(
           agencyLocationId = "THA029",
@@ -251,6 +291,70 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           "Brent",
           "Bromley",
         )
+      }
+
+      @Test
+      fun `will return address details for an agency`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/BOW001")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("BOW001")
+        assertThat(agency.addresses[0].id).isEqualTo(probationOffice.addresses[0].addressId)
+        assertThat(agency.addresses[0].type?.code).isEqualTo("BUS")
+        assertThat(agency.addresses[0].flat).isNull()
+        assertThat(agency.addresses[0].premise).isNull()
+        assertThat(agency.addresses[0].street).isNull()
+        assertThat(agency.addresses[0].locality).isNull()
+        assertThat(agency.addresses[0].city).isNull()
+        assertThat(agency.addresses[0].county).isNull()
+        assertThat(agency.addresses[0].country).isNull()
+        assertThat(agency.addresses[0].validatedPAF).isEqualTo(false)
+        assertThat(agency.addresses[0].noFixedAddress).isNull()
+        assertThat(agency.addresses[0].primaryAddress).isEqualTo(false)
+        assertThat(agency.addresses[0].mailAddress).isEqualTo(false)
+        assertThat(agency.addresses[0].comment).isNull()
+        assertThat(agency.addresses[0].startDate).isNull()
+        assertThat(agency.addresses[0].endDate).isNull()
+        assertThat(agency.addresses[1].id).isEqualTo(probationOffice.addresses[1].addressId)
+        assertThat(agency.addresses[1].type?.code).isEqualTo("BUS")
+        assertThat(agency.addresses[1].type?.description).isEqualTo("Business Address")
+        assertThat(agency.addresses[1].flat).isEqualTo("3B")
+        assertThat(agency.addresses[1].premise).isEqualTo("Brown Court")
+        assertThat(agency.addresses[1].street).isEqualTo("Scotland Street")
+        assertThat(agency.addresses[1].locality).isEqualTo("Hunters Bar")
+        assertThat(agency.addresses[1].postcode).isEqualTo("S1 3GG")
+        assertThat(agency.addresses[1].city?.code).isEqualTo("25343")
+        assertThat(agency.addresses[1].city?.description).isEqualTo("Sheffield")
+        assertThat(agency.addresses[1].county?.code).isEqualTo("S.YORKSHIRE")
+        assertThat(agency.addresses[1].county?.description).isEqualTo("South Yorkshire")
+        assertThat(agency.addresses[1].country?.code).isEqualTo("ENG")
+        assertThat(agency.addresses[1].country?.description).isEqualTo("England")
+        assertThat(agency.addresses[1].validatedPAF).isEqualTo(true)
+        assertThat(agency.addresses[1].noFixedAddress).isEqualTo(false)
+        assertThat(agency.addresses[1].primaryAddress).isEqualTo(true)
+        assertThat(agency.addresses[1].mailAddress).isEqualTo(true)
+        assertThat(agency.addresses[1].comment).isEqualTo("Not to be used")
+        assertThat(agency.addresses[1].startDate).isEqualTo("2024-10-01")
+        assertThat(agency.addresses[1].endDate).isEqualTo("2024-11-01")
+      }
+
+      @Test
+      fun `will return address phone details for an agency`() {
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/BOW001")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(agency.agencyId).isEqualTo("BOW001")
+        assertThat(agency.addresses[1].id).isEqualTo(probationOffice.addresses[1].addressId)
+        assertThat(agency.addresses[1].phoneNumbers[0].id).isEqualTo(probationOffice.addresses[1].phones[0].phoneId)
+        assertThat(agency.addresses[1].phoneNumbers[0].type.description).isEqualTo("Business")
+        assertThat(agency.addresses[1].phoneNumbers[0].number).isEqualTo("07399999999")
+        assertThat(agency.addresses[1].phoneNumbers[1].id).isEqualTo(probationOffice.addresses[1].phones[1].phoneId)
+        assertThat(agency.addresses[1].phoneNumbers[1].type.description).isEqualTo("Fax")
+        assertThat(agency.addresses[1].phoneNumbers[1].number).isEqualTo("01142561919")
       }
 
       @Test

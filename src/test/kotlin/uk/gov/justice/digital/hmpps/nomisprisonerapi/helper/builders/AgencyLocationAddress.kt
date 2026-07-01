@@ -17,10 +17,9 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class AgencyLocationAddressDslMarker
 
-@NomisDataDslMarker
+@AgencyLocationAddressDslMarker
 interface AgencyLocationAddressDsl {
 
-  @AddressPhoneDslMarker
   fun phone(
     phoneType: String,
     phoneNo: String,
@@ -83,9 +82,6 @@ class AgencyLocationAddressBuilder(
     comment: String?,
     startDate: LocalDate?,
     endDate: LocalDate?,
-    isServices: Boolean,
-    businessHours: String?,
-    contactPersonName: String?,
   ): AgencyLocationAddress = AgencyLocationAddress(
     agencyLocation = agencyLocation,
     addressType = agencyAddressBuilderRepository.addressTypeOf(type),
@@ -104,10 +100,9 @@ class AgencyLocationAddressBuilder(
     comment = comment,
     startDate = startDate,
     endDate = endDate,
-    isServices = isServices,
-    businessHours = businessHours,
-    contactPersonName = contactPersonName,
-  ).also { address = it }
+  )
+    .let { agencyAddressBuilderRepository.save(it) }
+    .also { address = it }
 
   override fun phone(
     phoneType: String,

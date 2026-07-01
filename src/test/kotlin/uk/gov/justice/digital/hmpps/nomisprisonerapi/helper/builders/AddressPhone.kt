@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class AddressPhoneDslMarker
 
-@NomisDataDslMarker
+@AddressPhoneDslMarker
 interface AddressPhoneDsl
 
 @Component
