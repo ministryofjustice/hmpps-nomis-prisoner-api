@@ -5,11 +5,14 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAuthority
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAuthorityId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeographicType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LocalAuthorityType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayrollRegionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -21,6 +24,9 @@ import java.time.LocalDateTime
 
 @DslMarker
 annotation class AgencyLocationDslMarker
+
+val brent = "00AE"
+val bromley = "00AF"
 
 @AgencyLocationDslMarker
 interface AgencyLocationDsl {
@@ -48,6 +54,8 @@ interface AgencyLocationDsl {
     whoCreated: String? = null,
     dsl: AgencyLocationAddressDsl.() -> Unit = {},
   ): AgencyLocationAddress
+
+  fun localAuthority(code: String): AgencyLocationAuthority
 }
 
 @Component
@@ -60,6 +68,7 @@ class AgencyLocationBuilderRepository(
   private val geographicTypeRepository: ReferenceCodeRepository<GeographicType>,
   private val courtTypeRepository: ReferenceCodeRepository<CourtType>,
   private val payrollRegionTypeRepository: ReferenceCodeRepository<PayrollRegionType>,
+  private val localAuthorityTypeRepository: ReferenceCodeRepository<LocalAuthorityType>,
 ) {
   fun save(agencyLocation: AgencyLocation): AgencyLocation = agencyLocationRepository.saveAndFlush(agencyLocation)
   fun saveAgency(agency: Agency): Agency = agencyRepository.saveAndFlush(agency)
@@ -69,6 +78,7 @@ class AgencyLocationBuilderRepository(
   fun geographicOf(code: String?): GeographicType? = code?.let { geographicTypeRepository.findByIdOrNull(GeographicType.pk(code)) }
   fun courtTypeOf(code: String?): CourtType? = code?.let { courtTypeRepository.findByIdOrNull(CourtType.pk(code)) }
   fun payrollRegionOf(code: String?): PayrollRegionType? = code?.let { payrollRegionTypeRepository.findByIdOrNull(PayrollRegionType.pk(code)) }
+  fun localAuthorityTypeOf(code: String): LocalAuthorityType = localAuthorityTypeRepository.findByIdOrNull(LocalAuthorityType.pk(code))!!
 }
 
 @Component
@@ -251,5 +261,11 @@ class AgencyLocationBuilder(
     )
       .also { agencyLocation.addresses += it }
       .also { builder.apply(dsl) }
+  }
+
+  override fun localAuthority(code: String): AgencyLocationAuthority = repository.localAuthorityTypeOf(code).let {
+    AgencyLocationAuthority(id = AgencyLocationAuthorityId(agencyLocation, it.code)).also {
+      agencyLocation.localAuthorities += it
+    }
   }
 }

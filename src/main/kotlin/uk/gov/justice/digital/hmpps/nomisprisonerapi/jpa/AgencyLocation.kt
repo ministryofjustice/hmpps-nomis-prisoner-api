@@ -165,6 +165,10 @@ class AgencyLocation(
     ],
   )
   var payrollRegion: PayrollRegionType? = null,
+
+  @OneToMany(mappedBy = "id.agencyLocation", cascade = [CascadeType.ALL], orphanRemoval = true)
+  val localAuthorities: MutableSet<AgencyLocationAuthority> = mutableSetOf(),
+
 ) {
 
   override fun equals(other: Any?): Boolean {

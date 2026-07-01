@@ -44,6 +44,7 @@ fun Prison.toPrisonResponse() = PrisonResponse(
   nomsRegion = this.nomsRegion?.toCodeDescription(),
   payrollRegion = this.payrollRegion?.toCodeDescription(),
   cjitCode = this.cjitCode,
+  localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
 )
 
 fun Agency.toAgencyResponse() = AgencyResponse(
@@ -64,6 +65,7 @@ fun Agency.toAgencyResponse() = AgencyResponse(
   nomsRegion = this.nomsRegion?.toCodeDescription(),
   payrollRegion = this.payrollRegion?.toCodeDescription(),
   cjitCode = this.cjitCode,
+  localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
 )
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
@@ -82,4 +84,5 @@ fun AgencyLocation.toAgencyLocationResponse() = AgencyLocationResponse(
   nomsRegion = this.nomsRegion?.toCodeDescription(),
   payrollRegion = this.payrollRegion?.toCodeDescription(),
   cjitCode = this.cjitCode,
+  localAuthorities = this.localAuthorities.map { it.authority.toCodeDescription() },
 )

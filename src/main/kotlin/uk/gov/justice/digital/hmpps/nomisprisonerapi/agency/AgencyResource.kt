@@ -197,6 +197,8 @@ data class PrisonResponse(
   val payrollRegion: CodeDescription?,
   @Schema(description = "CJIT code", example = "D62L087")
   val cjitCode: String?,
+  @Schema(description = "Local Authorities")
+  val localAuthorities: List<CodeDescription>,
 )
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -237,6 +239,8 @@ data class AgencyResponse(
   val payrollRegion: CodeDescription?,
   @Schema(description = "CJIT code", example = "D62L087")
   val cjitCode: String?,
+  @Schema(description = "Local Authorities")
+  val localAuthorities: List<CodeDescription>,
 )
 
 @Schema(description = "A response to get any agency but only return data common to all agency types")
@@ -272,4 +276,6 @@ data class AgencyLocationResponse(
   val payrollRegion: CodeDescription?,
   @Schema(description = "CJIT code", example = "D62L087")
   val cjitCode: String?,
+  @Schema(description = "Local Authorities")
+  val localAuthorities: List<CodeDescription>,
 )
