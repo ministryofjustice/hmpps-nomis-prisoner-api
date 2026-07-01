@@ -199,6 +199,8 @@ data class PrisonResponse(
   val cjitCode: String?,
   @Schema(description = "Local Authorities")
   val localAuthorities: List<CodeDescription>,
+  @Schema(description = "Addresses")
+  val addresses: List<AgencyAddress>,
 )
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -241,6 +243,8 @@ data class AgencyResponse(
   val cjitCode: String?,
   @Schema(description = "Local Authorities")
   val localAuthorities: List<CodeDescription>,
+  @Schema(description = "Addresses")
+  val addresses: List<AgencyAddress>,
 )
 
 @Schema(description = "A response to get any agency but only return data common to all agency types")
@@ -278,4 +282,60 @@ data class AgencyLocationResponse(
   val cjitCode: String?,
   @Schema(description = "Local Authorities")
   val localAuthorities: List<CodeDescription>,
+  @Schema(description = "Addresses")
+  val addresses: List<AgencyAddress>,
+)
+
+@Schema(description = "The data held in NOMIS about a phone number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AgencyPhoneNumber(
+  @Schema(description = "Unique NOMIS Id of number")
+  val id: Long,
+  @Schema(description = "The number")
+  val number: String,
+  @Schema(description = "Extension")
+  val extension: String?,
+  @Schema(description = "Phone type")
+  val type: CodeDescription,
+)
+
+@Schema(description = "The data held in NOMIS about an address")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AgencyAddress(
+  @Schema(description = "Unique NOMIS Id of number")
+  val id: Long,
+  @Schema(description = "Address type")
+  val type: CodeDescription?,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String?,
+  @Schema(description = "Premise", example = "22")
+  val premise: String?,
+  @Schema(description = "Street", example = "West Street")
+  val street: String?,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String?,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String?,
+  @Schema(description = "City")
+  val city: CodeDescription?,
+  @Schema(description = "County")
+  val county: CodeDescription?,
+  @Schema(description = "Country")
+  val country: CodeDescription?,
+  @Schema(description = "List of phone numbers for the address")
+  val phoneNumbers: List<AgencyPhoneNumber>,
+  @Schema(description = "true if address validated by Post Office Address file??")
+  val validatedPAF: Boolean,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean?,
+  @Schema(description = "true if this is the agency's primary address")
+  val primaryAddress: Boolean,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean,
+  @Schema(description = "Free format comment about the address")
+  val comment: String?,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate?,
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate?,
 )
