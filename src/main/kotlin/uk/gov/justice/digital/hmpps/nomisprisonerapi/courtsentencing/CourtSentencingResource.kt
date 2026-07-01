@@ -2706,6 +2706,7 @@ data class CourtAppearanceRepairRequest(
   val nextEventDateTime: LocalDateTime?,
   val courtEventCharges: List<CourtEventChargeRepairRequest>,
   val nextCourtId: String?,
+  val videoLink: Boolean? = false,
 )
 
 @Schema(description = "Court Charge")

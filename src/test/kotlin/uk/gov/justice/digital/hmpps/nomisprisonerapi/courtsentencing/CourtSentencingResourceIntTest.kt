@@ -4534,10 +4534,18 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("caseSequence").isEqualTo(1)
           .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2025-01-01T10:30:00")
           .jsonPath("courtId").isEqualTo("LEI")
+
+        verify(telemetryClient).trackEvent(
+          eq("court-appearance-created"),
+          check {
+            assertThat(it).containsEntry("eventStatus", "SCH")
+          },
+          isNull(),
+        )
       }
 
       @Test
-      fun `will track telemetry for the create`() {
+      fun `will track telemetry for the create for a standard appearance`() {
         val createResponse =
           webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -4555,12 +4563,42 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           eq("court-appearance-created"),
           check {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
+            assertThat(it).containsEntry("bookingId", latestBookingId.toString())
+            assertThat(it).containsEntry("offenderNo", offenderNo)
+            assertThat(it).containsEntry("court", "ABDRCT")
+            assertThat(it).containsEntry("courtEventId", createResponse.id.toString())
+            assertThat(it).containsEntry("eventStatus", "COMP")
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will track telemetry for the create for a video link appearance`() {
+        val createResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(
+              BodyInserters.fromValue(
+                createCourtAppearanceRequest().copy(courtEventType = "VLAP", eventDateTime = LocalDateTime.now().plusDays(2)),
+              ),
+            )
+            .exchange()
+            .expectStatus().isCreated.expectBody(CreateCourtAppearanceResponse::class.java)
+            .returnResult().responseBody!!
+
+        verify(telemetryClient).trackEvent(
+          eq("court-appearance-created"),
+          check {
+            assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("clonedCourtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("courtCaseCloned", "false")
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("court", "ABDRCT")
             assertThat(it).containsEntry("courtEventId", createResponse.id.toString())
+            assertThat(it).containsEntry("eventStatus", "EXP")
           },
           isNull(),
         )
