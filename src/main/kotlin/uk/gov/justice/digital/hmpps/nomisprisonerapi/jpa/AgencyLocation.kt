@@ -139,6 +139,12 @@ class AgencyLocation(
   @JoinColumn(name = "AREA_CODE", referencedColumnName = "AREA_CODE", nullable = true)
   var area: Area? = null,
 
+  // FD (for OUT and TRN) not in reference data, so ignore if not found
+  @NotFound(action = NotFoundAction.IGNORE)
+  @ManyToOne
+  @JoinColumn(name = "DISTRICT_CODE", referencedColumnName = "AREA_CODE", nullable = true)
+  var district: Area? = null,
+
   // NOMIS form maps this to REFERENCE_CODES <GEOGRAPHIC> - but data is from AREAS with class AREA
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "GEOGRAPHIC_REGION_CODE", referencedColumnName = "AREA_CODE", nullable = true)
@@ -201,6 +207,7 @@ class Prison(
   description: String,
   type: AgencyLocationType,
   active: Boolean,
+  district: Area?,
   deactivationDate: LocalDate?,
   updateAllowed: Boolean,
   contactName: String?,
@@ -214,33 +221,12 @@ class Prison(
   longDescription: String?,
   payrollRegion: PayrollRegionType?,
 
-  // FD (for OUT and TRN) not in reference data, so ignore if not found
-  @NotFound(action = NotFoundAction.IGNORE)
-  @ManyToOne(fetch = LAZY)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + GeographicType.GEOGRAPHIC + "'",
-          referencedColumnName = "domain",
-        ),
-      ),
-      JoinColumnOrFormula(
-        column = JoinColumn(
-          name = "DISTRICT_CODE",
-          referencedColumnName = "code",
-          nullable = true,
-        ),
-      ),
-    ],
-  )
-  var district: GeographicType? = null,
-
 ) : AgencyLocation(
   id = id,
   description = description,
   type = type,
   active = active,
+  district = district,
   deactivationDate = deactivationDate,
   updateAllowed = updateAllowed,
   contactName = contactName,
@@ -261,6 +247,7 @@ class Agency(
   description: String,
   type: AgencyLocationType,
   active: Boolean,
+  district: Area?,
   deactivationDate: LocalDate?,
   updateAllowed: Boolean,
   contactName: String?,
@@ -274,31 +261,12 @@ class Agency(
   longDescription: String?,
   payrollRegion: PayrollRegionType?,
 
-  @ManyToOne(fetch = LAZY)
-  @JoinColumnsOrFormulas(
-    value = [
-      JoinColumnOrFormula(
-        formula = JoinFormula(
-          value = "'" + AreaType.AREA + "'",
-          referencedColumnName = "domain",
-        ),
-      ),
-      JoinColumnOrFormula(
-        column = JoinColumn(
-          name = "DISTRICT_CODE",
-          referencedColumnName = "code",
-          nullable = true,
-        ),
-      ),
-    ],
-  )
-  var district: AreaType? = null,
-
 ) : AgencyLocation(
   id = id,
   description = description,
   type = type,
   active = active,
+  district = district,
   deactivationDate = deactivationDate,
   updateAllowed = updateAllowed,
   contactName = contactName,
