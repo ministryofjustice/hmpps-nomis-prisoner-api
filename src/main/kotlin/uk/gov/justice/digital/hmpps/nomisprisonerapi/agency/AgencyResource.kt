@@ -201,6 +201,10 @@ data class PrisonResponse(
   val localAuthorities: List<CodeDescription>,
   @Schema(description = "Addresses")
   val addresses: List<AgencyAddress>,
+  @Schema(description = "Phone numbers")
+  val phones: List<AgencyPhoneNumber>,
+  @Schema(description = "Email addresses")
+  val emailAddresses: List<AgencyEmailAddress>,
 )
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -245,6 +249,10 @@ data class AgencyResponse(
   val localAuthorities: List<CodeDescription>,
   @Schema(description = "Addresses")
   val addresses: List<AgencyAddress>,
+  @Schema(description = "Phone numbers")
+  val phones: List<AgencyPhoneNumber>,
+  @Schema(description = "Email addresses")
+  val emailAddresses: List<AgencyEmailAddress>,
 )
 
 @Schema(description = "A response to get any agency but only return data common to all agency types")
@@ -284,6 +292,10 @@ data class AgencyLocationResponse(
   val localAuthorities: List<CodeDescription>,
   @Schema(description = "Addresses")
   val addresses: List<AgencyAddress>,
+  @Schema(description = "Phone numbers")
+  val phones: List<AgencyPhoneNumber>,
+  @Schema(description = "Email addresses")
+  val emailAddresses: List<AgencyEmailAddress>,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -297,6 +309,15 @@ data class AgencyPhoneNumber(
   val extension: String?,
   @Schema(description = "Phone type")
   val type: CodeDescription,
+)
+
+@Schema(description = "The data held in NOMIS about an email address")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AgencyEmailAddress(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val id: Long,
+  @Schema(description = "The email address", example = "john.smith@internet.co.uk")
+  val emailAddress: String,
 )
 
 @Schema(description = "The data held in NOMIS about an address")

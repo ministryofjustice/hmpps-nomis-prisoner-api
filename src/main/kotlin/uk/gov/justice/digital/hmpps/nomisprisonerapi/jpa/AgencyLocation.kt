@@ -78,6 +78,14 @@ class AgencyLocation(
   @SQLRestriction("OWNER_CLASS = '${AgencyLocationAddress.ADDR_TYPE}'")
   val addresses: MutableList<AgencyLocationAddress> = mutableListOf(),
 
+  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
+  @SQLRestriction("OWNER_CLASS = '${AgencyLocationPhone.PHONE_TYPE}'")
+  val phones: MutableList<AgencyLocationPhone> = mutableListOf(),
+
+  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
+  @SQLRestriction("OWNER_CLASS = '${AgencyLocationInternetAddress.TYPE}'")
+  val emailAddresses: MutableList<AgencyLocationInternetAddress> = mutableListOf(),
+
   @Column(name = "UPDATED_ALLOWED_FLAG")
   @Convert(converter = YesNoConverter::class)
   var updateAllowed: Boolean = true,

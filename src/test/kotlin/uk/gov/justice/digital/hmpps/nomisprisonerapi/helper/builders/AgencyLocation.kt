@@ -7,6 +7,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAuthority
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAuthorityId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AreaType
@@ -55,6 +57,18 @@ interface AgencyLocationDsl {
     dsl: AgencyLocationAddressDsl.() -> Unit = {},
   ): AgencyLocationAddress
 
+  fun phone(
+    phoneType: String = "BUS",
+    phoneNo: String,
+    extNo: String? = null,
+    dsl: AgencyLocationPhoneDsl.() -> Unit = {},
+  ): AgencyLocationPhone
+
+  fun email(
+    address: String,
+    dsl: AgencyLocationInternetAddressDsl.() -> Unit = {},
+  ): AgencyLocationInternetAddress
+
   fun localAuthority(code: String): AgencyLocationAuthority
 }
 
@@ -85,13 +99,22 @@ class AgencyLocationBuilderRepository(
 class AgencyLocationBuilderFactory(
   private val repository: AgencyLocationBuilderRepository,
   private val agencyAddressBuilderFactory: AgencyLocationAddressBuilderFactory,
+  private val agencyPhoneBuilderFactory: AgencyLocationPhoneBuilderFactory,
+  private val agencyLocationInternetAddressBuilderFactory: AgencyLocationInternetAddressBuilderFactory,
 ) {
-  fun builder(): AgencyLocationBuilder = AgencyLocationBuilder(repository, agencyAddressBuilderFactory)
+  fun builder(): AgencyLocationBuilder = AgencyLocationBuilder(
+    repository,
+    agencyAddressBuilderFactory,
+    agencyPhoneBuilderFactory,
+    agencyLocationInternetAddressBuilderFactory,
+  )
 }
 
 class AgencyLocationBuilder(
   private val repository: AgencyLocationBuilderRepository,
   private val agencyAddressBuilderFactory: AgencyLocationAddressBuilderFactory,
+  private val agencyPhoneBuilderFactory: AgencyLocationPhoneBuilderFactory,
+  private val agencyLocationInternetAddressBuilderFactory: AgencyLocationInternetAddressBuilderFactory,
 ) : AgencyLocationDsl {
   private lateinit var agencyLocation: AgencyLocation
 
@@ -257,9 +280,37 @@ class AgencyLocationBuilder(
       .also { builder.apply(dsl) }
   }
 
+  override fun phone(
+    phoneType: String,
+    phoneNo: String,
+    extNo: String?,
+    dsl: AgencyLocationPhoneDsl.() -> Unit,
+  ): AgencyLocationPhone = agencyPhoneBuilderFactory.builder().let { builder ->
+    builder.build(
+      agencyLocation = agencyLocation,
+      phoneType = phoneType,
+      phoneNo = phoneNo,
+      extNo = extNo,
+    )
+      .also { agencyLocation.phones += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun email(
+    address: String,
+    dsl: AgencyLocationInternetAddressDsl.() -> Unit,
+  ): AgencyLocationInternetAddress = agencyLocationInternetAddressBuilderFactory.builder().let { builder ->
+    builder.build(
+      agencyLocation = agencyLocation,
+      internetAddress = address,
+    )
+      .also { agencyLocation.emailAddresses += it }
+      .also { builder.apply(dsl) }
+  }
+
   override fun localAuthority(code: String): AgencyLocationAuthority = repository.localAuthorityTypeOf(code).let {
-    AgencyLocationAuthority(id = AgencyLocationAuthorityId(agencyLocation, it.code)).also {
-      agencyLocation.localAuthorities += it
+    AgencyLocationAuthority(id = AgencyLocationAuthorityId(agencyLocation, it.code)).also { authority ->
+      agencyLocation.localAuthorities += authority
     }
   }
 }
