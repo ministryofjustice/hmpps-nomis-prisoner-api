@@ -248,15 +248,17 @@ class CourtSentencingService(
     courtCaseRepository.save(courtCase)
     courtCase.courtEvents.addAll(
       request.courtAppearances.map { appearanceRequest ->
+        val courtEventType = lookupMovementReasonType(appearanceRequest.courtEventType)
         CourtEvent(
           offenderBooking = booking,
           courtCase = courtCase,
           eventDate = appearanceRequest.eventDateTime.toLocalDate(),
           startTime = appearanceRequest.eventDateTime,
-          courtEventType = lookupMovementReasonType(appearanceRequest.courtEventType),
+          courtEventType = courtEventType,
           eventStatus = determineEventStatus(
             appearanceRequest.eventDateTime.toLocalDate(),
             booking,
+            isInPersonAppearance = courtEventType.isInPersonAppearance(),
           ),
           court = lookupEstablishment(appearanceRequest.courtId),
           outcomeReasonCode = appearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
@@ -348,16 +350,17 @@ class CourtSentencingService(
     checkOffenderExists(offenderNo)
     findCourtCaseWithLock(caseId, offenderNo).let {
       val (courtCase, courtAppearanceRequest, clonedCourtCases) = cloneCasesIfRequired(it, request)
-
+      val courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType)
       val courtEvent = CourtEvent(
         offenderBooking = courtCase.offenderBooking,
         courtCase = courtCase,
         eventDate = courtAppearanceRequest.eventDateTime.toLocalDate(),
         startTime = courtAppearanceRequest.eventDateTime,
-        courtEventType = lookupMovementReasonType(courtAppearanceRequest.courtEventType),
+        courtEventType = courtEventType,
         eventStatus = determineEventStatus(
           courtAppearanceRequest.eventDateTime.toLocalDate(),
           courtCase.offenderBooking,
+          isInPersonAppearance = courtEventType.isInPersonAppearance(),
         ),
         court = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
@@ -394,6 +397,7 @@ class CourtSentencingService(
               "offenderNo" to offenderNo,
               "court" to courtAppearanceRequest.courtId,
               "courtEventId" to response.id.toString(),
+              "eventStatus" to courtEvent.eventStatus.code,
             ),
             null,
           )
@@ -615,11 +619,13 @@ class CourtSentencingService(
     checkOffenderExists(offenderNo)
     findCourtCaseWithLock(caseId, offenderNo).let { courtCase ->
       findCourtAppearanceWithLock(eventId, offenderNo).let { courtAppearance ->
+        val courtEventType = lookupMovementReasonType(request.courtEventType)
         courtAppearance.setEventDateAndTime(request.eventDateTime)
-        courtAppearance.courtEventType = lookupMovementReasonType(request.courtEventType)
+        courtAppearance.courtEventType = courtEventType
         courtAppearance.eventStatus = determineEventStatus(
           request.eventDateTime.toLocalDate(),
           courtCase.offenderBooking,
+          isInPersonAppearance = courtEventType.isInPersonAppearance(),
         )
         courtAppearance.court = lookupEstablishment(request.courtId)
         courtAppearance.outcomeReasonCode =
@@ -627,7 +633,7 @@ class CourtSentencingService(
         courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
         courtAppearance.nextEventStartTime = request.nextEventDateTime
 
-        var offenderChargesRemoved =
+        val offenderChargesRemoved =
           associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
 
         courtEventRepository.saveAndFlush(courtAppearance)
@@ -695,7 +701,7 @@ class CourtSentencingService(
       )
 
       courtEventRepository.findByIdOrNullForUpdate(eventId)?.also {
-        var offenderCharges = it.courtEventCharges.map { cec -> cec.id.offenderCharge }
+        val offenderCharges = it.courtEventCharges.map { cec -> cec.id.offenderCharge }
         case.courtEvents.remove(it)
         courtCaseRepository.saveAndFlush(case)
         // Offender charges are deleted if no longer associated with an appearance
@@ -799,7 +805,7 @@ class CourtSentencingService(
           courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
           log.info("updateCourtCharge: court_event_charge updated for charge ${offenderCharge.id} on appearance ${courtAppearance.id} with result code ${resultCode?.code}")
 
-          var shouldUpdateOutcome = isLatestCourtEventChargeWithAResultCode(courtEventCharge)
+          val shouldUpdateOutcome = isLatestCourtEventChargeWithAResultCode(courtEventCharge)
 
           refreshOffenderCharge(
             courtEventCharge = courtEventCharge,
@@ -1262,7 +1268,7 @@ class CourtSentencingService(
 
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findFirstByOffenderBookingAndCourtEventAndOrderTypeOrderByIdAsc(offenderBooking, courtEvent)
 
-  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking, isVideoLink: Boolean = false): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
+  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking, isInPersonAppearance: Boolean = false): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
       .plusDays(1)
   ) {
     lookupEventStatusType(EventStatus.COMPLETED)
@@ -1270,13 +1276,10 @@ class CourtSentencingService(
     booking.externalMovements.maxByOrNull { it.id.sequence }?.let { lastMovement ->
       if (eventDate < lastMovement.movementDate) {
         lookupEventStatusType(EventStatus.COMPLETED)
-      } else {
-        lookupEventStatusType(
-          if (isVideoLink) EventStatus.EXPIRED else EventStatus.SCHEDULED,
-        )
       }
-    } ?: lookupEventStatusType(
-      if (isVideoLink) EventStatus.EXPIRED else EventStatus.SCHEDULED,
+    }
+    lookupEventStatusType(
+      if (isInPersonAppearance) EventStatus.EXPIRED else EventStatus.SCHEDULED,
     )
   }
 
