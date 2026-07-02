@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
@@ -23,7 +22,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCharge
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderNonAssociation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PostingType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProgramService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Questionnaire
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
@@ -534,47 +532,6 @@ class NomisData(
       .also { builder.apply(dsl) }
   }
 
-  override fun agency(
-    agencyLocationId: String,
-    description: String,
-    longDescription: String?,
-    type: String,
-    active: Boolean,
-    district: Area?,
-    deactivationDate: LocalDate?,
-    updateAllowed: Boolean,
-    contactName: String?,
-    courtTypeCode: String?,
-    disabilityAccessCode: String?,
-    subArea: SubArea?,
-    area: Area?,
-    region: Area?,
-    nomsRegion: Region?,
-    cjitCode: String?,
-    payrollRegionCode: String?,
-    dsl: AgencyLocationDsl.() -> Unit,
-  ): Agency = agencyLocationBuilderFactory!!.builder().let { builder ->
-    builder.buildAgency(
-      id = agencyLocationId,
-      description = description,
-      longDescription = longDescription,
-      type = type,
-      active = active,
-      district = district,
-      deactivationDate = deactivationDate,
-      updateAllowed = updateAllowed,
-      contactName = contactName,
-      courtTypeCode = courtTypeCode,
-      disabilityAccessCode = disabilityAccessCode,
-      subArea = subArea,
-      area = area,
-      region = region,
-      nomsRegion = nomsRegion,
-      cjitCode = cjitCode,
-      payrollRegionCode = payrollRegionCode,
-    )
-      .also { builder.apply(dsl) }
-  }
   override fun prison(
     agencyLocationId: String,
     description: String,
@@ -593,8 +550,8 @@ class NomisData(
     cjitCode: String?,
     payrollRegionCode: String?,
     dsl: AgencyLocationDsl.() -> Unit,
-  ): Prison = agencyLocationBuilderFactory!!.builder().let { builder ->
-    builder.buildPrison(
+  ): AgencyLocation = agencyLocationBuilderFactory!!.builder().let { builder ->
+    builder.build(
       id = agencyLocationId,
       description = description,
       longDescription = longDescription,
@@ -917,28 +874,7 @@ interface NomisDataDsl {
     cjitCode: String? = null,
     payrollRegionCode: String? = null,
     dsl: AgencyLocationDsl.() -> Unit = {},
-  ): Prison
-
-  fun agency(
-    agencyLocationId: String = "THA029",
-    description: String = "St Leonard's Hostel",
-    longDescription: String? = null,
-    type: String = "APPR",
-    active: Boolean = true,
-    district: Area? = null,
-    deactivationDate: LocalDate? = null,
-    updateAllowed: Boolean = true,
-    contactName: String? = null,
-    courtTypeCode: String? = null,
-    disabilityAccessCode: String? = null,
-    subArea: SubArea? = null,
-    area: Area? = null,
-    region: Area? = null,
-    nomsRegion: Region? = null,
-    cjitCode: String? = null,
-    payrollRegionCode: String? = null,
-    dsl: AgencyLocationDsl.() -> Unit = {},
-  ): Agency
+  ): AgencyLocation
 
   fun area(
     code: String,

@@ -22,53 +22,6 @@ import java.time.LocalDate
 @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class AgencyResource(private val agencyService: AgencyService) {
 
-  @GetMapping("/prison/{prisonId}")
-  @Operation(
-    summary = "Gets details of a prison",
-    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Prison details",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prison not found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getPrison(
-    @PathVariable
-    @Schema(description = "Prison id (aka agencyId)", example = "WWI")
-    prisonId: String,
-  ) = agencyService.getPrison(prisonId)
-
   @GetMapping("/agency/{agencyId}")
   @Operation(
     summary = "Gets details of a agency",
@@ -114,98 +67,8 @@ class AgencyResource(private val agencyService: AgencyService) {
     @PathVariable
     @Schema(description = "Agency id (aka agencyId)", example = "WWI")
     agencyId: String,
-  ) = agencyService.getAgency(agencyId)
-
-  @GetMapping("/agency-location/{agencyId}")
-  @Operation(
-    summary = "Gets details of a agency",
-    description = "Requires ROLE_NOMIS_AGENCYER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Agency details",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Agency not found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getAgencyLocation(
-    @PathVariable
-    @Schema(description = "Agency id (aka agencyId)", example = "WWI")
-    agencyId: String,
   ) = agencyService.getAgencyLocation(agencyId)
 }
-
-@Schema(description = "A response to get an agency of type INST which is a prison")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class PrisonResponse(
-  @Schema(description = "The prison id", example = "WWI")
-  val prisonId: String,
-  @Schema(description = "Name of prison", example = "WANDSWORTH (HMP)")
-  val description: String,
-  @Schema(description = "Description of agency", example = "Blackburn YOT")
-  val longDescription: String?,
-  @Schema(description = "Area district")
-  val district: CodeDescription?,
-  @Schema(description = "Indicates if still used", example = "true")
-  val active: Boolean,
-  @Schema(description = "Date no longer active", example = "2020-01-01")
-  val deactivationDate: LocalDate?,
-  @Schema(description = "Indicates if data is allowed to be updated", example = "true")
-  val updateAllowed: Boolean,
-  @Schema(description = "Name of contact at agency", example = "John Smith")
-  val contactName: String?,
-  @Schema(description = "Disability access code", example = "Y")
-  val disabilityAccessCode: String?,
-  @Schema(description = "Area")
-  val area: CodeDescription?,
-  @Schema(description = "Sub-Area")
-  val subArea: CodeDescription?,
-  @Schema(description = "Region")
-  val region: CodeDescription?,
-  @Schema(description = "NOMS Region")
-  val nomsRegion: CodeDescription?,
-  @Schema(description = "Payroll Region")
-  val payrollRegion: CodeDescription?,
-  @Schema(description = "CJIT code", example = "D62L087")
-  val cjitCode: String?,
-  @Schema(description = "Local Authorities")
-  val localAuthorities: List<CodeDescription>,
-  @Schema(description = "Addresses")
-  val addresses: List<AgencyAddress>,
-  @Schema(description = "Phone numbers")
-  val phones: List<AgencyPhoneNumber>,
-  @Schema(description = "Email addresses")
-  val emailAddresses: List<AgencyEmailAddress>,
-)
 
 @Schema(description = "A response to get an agency that is not a prison")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -231,49 +94,6 @@ data class AgencyResponse(
   // maybe move this to court sub entity in future
   @Schema(description = "Court type")
   val courtType: CodeDescription?,
-  @Schema(description = "Disability access code", example = "Y")
-  val disabilityAccessCode: String?,
-  @Schema(description = "Area")
-  val area: CodeDescription?,
-  @Schema(description = "Sub-Area")
-  val subArea: CodeDescription?,
-  @Schema(description = "Region")
-  val region: CodeDescription?,
-  @Schema(description = "NOMS Region")
-  val nomsRegion: CodeDescription?,
-  @Schema(description = "Payroll Region")
-  val payrollRegion: CodeDescription?,
-  @Schema(description = "CJIT code", example = "D62L087")
-  val cjitCode: String?,
-  @Schema(description = "Local Authorities")
-  val localAuthorities: List<CodeDescription>,
-  @Schema(description = "Addresses")
-  val addresses: List<AgencyAddress>,
-  @Schema(description = "Phone numbers")
-  val phones: List<AgencyPhoneNumber>,
-  @Schema(description = "Email addresses")
-  val emailAddresses: List<AgencyEmailAddress>,
-)
-
-@Schema(description = "A response to get any agency but only return data common to all agency types")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class AgencyLocationResponse(
-  @Schema(description = "The agency id", example = "LCSY02")
-  val agencyId: String,
-  @Schema(description = "Name of agency", example = "Blackburn YOT")
-  val description: String,
-  @Schema(description = "Description of agency", example = "Blackburn YOT")
-  val longDescription: String?,
-  @Schema(description = "Agency type")
-  val type: CodeDescription,
-  @Schema(description = "Indicates if still used", example = "true")
-  val active: Boolean,
-  @Schema(description = "Date no longer active", example = "2020-01-01")
-  val deactivationDate: LocalDate?,
-  @Schema(description = "Indicates if data is allowed to be updated", example = "true")
-  val updateAllowed: Boolean,
-  @Schema(description = "Name of contact at agency", example = "John Smith")
-  val contactName: String?,
   @Schema(description = "Disability access code", example = "Y")
   val disabilityAccessCode: String?,
   @Schema(description = "Area")
