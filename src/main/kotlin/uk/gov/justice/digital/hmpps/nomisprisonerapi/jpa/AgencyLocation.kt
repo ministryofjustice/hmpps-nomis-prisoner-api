@@ -6,13 +6,11 @@ import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.Id
-import jakarta.persistence.Inheritance
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
-import org.hibernate.annotations.DiscriminatorFormula
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -23,20 +21,11 @@ import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType.Companion.PRISON_TYPE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
-import java.util.Objects
+import java.util.*
 
 @Entity
 @Table(name = "AGENCY_LOCATIONS")
 @EntityOpen
-@DiscriminatorFormula(
-  """
-    case
-        when AGENCY_LOCATION_TYPE = 'INST' then 'Prison'
-        else 'Agency'
-    end
-""",
-)
-@Inheritance
 class AgencyLocation(
   @Id
   @Column(name = "AGY_LOC_ID")
@@ -201,83 +190,3 @@ class AgencyLocation(
     const val TRN = "TRN"
   }
 }
-
-@Entity
-class Prison(
-  id: String,
-  description: String,
-  type: AgencyLocationType,
-  active: Boolean,
-  district: Area?,
-  deactivationDate: LocalDate?,
-  updateAllowed: Boolean,
-  contactName: String?,
-  courtType: CourtType?,
-  disabilityAccessCode: String?,
-  subArea: SubArea?,
-  area: Area?,
-  region: Area?,
-  nomsRegion: Region?,
-  cjitCode: String?,
-  longDescription: String?,
-  payrollRegion: PayrollRegionType?,
-
-) : AgencyLocation(
-  id = id,
-  description = description,
-  type = type,
-  active = active,
-  district = district,
-  deactivationDate = deactivationDate,
-  updateAllowed = updateAllowed,
-  contactName = contactName,
-  courtType = courtType,
-  disabilityAccessCode = disabilityAccessCode,
-  subArea = subArea,
-  area = area,
-  region = region,
-  nomsRegion = nomsRegion,
-  cjitCode = cjitCode,
-  longDescription = longDescription,
-  payrollRegion = payrollRegion,
-)
-
-@Entity
-class Agency(
-  id: String,
-  description: String,
-  type: AgencyLocationType,
-  active: Boolean,
-  district: Area?,
-  deactivationDate: LocalDate?,
-  updateAllowed: Boolean,
-  contactName: String?,
-  courtType: CourtType?,
-  disabilityAccessCode: String?,
-  subArea: SubArea?,
-  area: Area?,
-  region: Area?,
-  nomsRegion: Region?,
-  cjitCode: String?,
-  longDescription: String?,
-  payrollRegion: PayrollRegionType?,
-
-) : AgencyLocation(
-  id = id,
-  description = description,
-  type = type,
-  active = active,
-  district = district,
-  deactivationDate = deactivationDate,
-  updateAllowed = updateAllowed,
-  contactName = contactName,
-  courtType = courtType,
-  disabilityAccessCode = disabilityAccessCode,
-  subArea = subArea,
-  area = area,
-  region = region,
-  nomsRegion = nomsRegion,
-  cjitCode = cjitCode,
-  longDescription = longDescription,
-  payrollRegion = payrollRegion,
-)

@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Agency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAuthority
@@ -14,12 +13,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LocalAuthorityType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayrollRegionType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Prison
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -75,16 +71,12 @@ interface AgencyLocationDsl {
 @Component
 class AgencyLocationBuilderRepository(
   private val agencyLocationRepository: AgencyLocationRepository,
-  private val agencyRepository: AgencyRepository,
-  private val prisonRepository: PrisonRepository,
   private val agencyTypeRepository: ReferenceCodeRepository<AgencyLocationType>,
   private val courtTypeRepository: ReferenceCodeRepository<CourtType>,
   private val payrollRegionTypeRepository: ReferenceCodeRepository<PayrollRegionType>,
   private val localAuthorityTypeRepository: ReferenceCodeRepository<LocalAuthorityType>,
 ) {
   fun save(agencyLocation: AgencyLocation): AgencyLocation = agencyLocationRepository.saveAndFlush(agencyLocation)
-  fun saveAgency(agency: Agency): Agency = agencyRepository.saveAndFlush(agency)
-  fun savePrison(prison: Prison): Prison = prisonRepository.saveAndFlush(prison)
   fun agencyTypeOf(code: String): AgencyLocationType = agencyTypeRepository.findByIdOrNull(AgencyLocationType.pk(code))!!
   fun courtTypeOf(code: String?): CourtType? = code?.let { courtTypeRepository.findByIdOrNull(CourtType.pk(code)) }
   fun payrollRegionOf(code: String?): PayrollRegionType? = code?.let { payrollRegionTypeRepository.findByIdOrNull(PayrollRegionType.pk(code)) }
@@ -152,86 +144,6 @@ class AgencyLocationBuilder(
     payrollRegion = repository.payrollRegionOf(payrollRegionCode),
   )
     .let { repository.save(it) }
-    .also { agencyLocation = it }
-
-  fun buildAgency(
-    id: String,
-    description: String,
-    longDescription: String?,
-    type: String,
-    active: Boolean,
-    district: Area?,
-    deactivationDate: LocalDate?,
-    updateAllowed: Boolean,
-    contactName: String?,
-    courtTypeCode: String?,
-    disabilityAccessCode: String?,
-    subArea: SubArea?,
-    area: Area?,
-    region: Area?,
-    nomsRegion: Region?,
-    cjitCode: String?,
-    payrollRegionCode: String?,
-  ): Agency = Agency(
-    id = id,
-    description = description,
-    longDescription = longDescription,
-    type = repository.agencyTypeOf(type),
-    active = active,
-    district = district,
-    deactivationDate = deactivationDate,
-    updateAllowed = updateAllowed,
-    contactName = contactName,
-    courtType = repository.courtTypeOf(courtTypeCode),
-    disabilityAccessCode = disabilityAccessCode,
-    subArea = subArea,
-    area = area,
-    region = region,
-    nomsRegion = nomsRegion,
-    cjitCode = cjitCode,
-    payrollRegion = repository.payrollRegionOf(payrollRegionCode),
-  )
-    .let { repository.saveAgency(it) }
-    .also { agencyLocation = it }
-
-  fun buildPrison(
-    id: String,
-    description: String,
-    longDescription: String?,
-    type: String,
-    active: Boolean,
-    district: Area?,
-    deactivationDate: LocalDate?,
-    updateAllowed: Boolean,
-    contactName: String?,
-    courtTypeCode: String?,
-    disabilityAccessCode: String?,
-    subArea: SubArea?,
-    area: Area?,
-    region: Area?,
-    nomsRegion: Region?,
-    cjitCode: String?,
-    payrollRegionCode: String?,
-  ): Prison = Prison(
-    id = id,
-    description = description,
-    longDescription = longDescription,
-    type = repository.agencyTypeOf(type),
-    active = active,
-    district = district,
-    deactivationDate = deactivationDate,
-    updateAllowed = updateAllowed,
-    contactName = contactName,
-    courtType = repository.courtTypeOf(courtTypeCode),
-    disabilityAccessCode = disabilityAccessCode,
-    subArea = subArea,
-    area = area,
-    region = region,
-    nomsRegion = nomsRegion,
-    cjitCode = cjitCode,
-    payrollRegion = repository.payrollRegionOf(payrollRegionCode),
-  )
-    .let { repository.savePrison(it) }
     .also { agencyLocation = it }
 
   override fun address(
