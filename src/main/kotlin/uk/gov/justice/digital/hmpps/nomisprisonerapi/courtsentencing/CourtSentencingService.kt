@@ -1271,14 +1271,14 @@ class CourtSentencingService(
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking, isInPersonAppearance: Boolean = false): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
       .plusDays(1)
   ) {
-    lookupEventStatusType(EventStatus.COMPLETED)
+    return lookupEventStatusType(EventStatus.COMPLETED)
   } else {
     booking.externalMovements.maxByOrNull { it.id.sequence }?.let { lastMovement ->
       if (eventDate < lastMovement.movementDate) {
-        lookupEventStatusType(EventStatus.COMPLETED)
+        return lookupEventStatusType(EventStatus.COMPLETED)
       }
     }
-    lookupEventStatusType(
+    return lookupEventStatusType(
       if (isInPersonAppearance) EventStatus.EXPIRED else EventStatus.SCHEDULED,
     )
   }
