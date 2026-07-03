@@ -12,8 +12,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRe
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementOutRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.service.ExternalMovementService
 
 @Service
 @Transactional
@@ -21,7 +21,7 @@ class OffenderCourtMovementsService(
   private val courtEventRepository: CourtEventRepository,
   private val courtMovementOutRepository: OffenderCourtMovementOutRepository,
   private val courtMovementInRepository: OffenderCourtMovementInRepository,
-  private val externalMovementRepository: OffenderExternalMovementRepository,
+  private val externalMovementService: ExternalMovementService,
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
 ) {
@@ -122,7 +122,7 @@ class OffenderCourtMovementsService(
     eventType = courtEventType.code,
     eventStatus = eventStatus.code,
     comment = commentText,
-    prison = externalMovementRepository.findPrisonAt(getEventDateAndTime(), offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
+    prison = externalMovementService.findPrisonAt(getEventDateAndTime(), offenderBooking.offender.nomsId)?.id ?: offenderBooking.location.id,
     court = court.id,
     courtCaseId = courtCase?.id,
     audit = toAudit(),

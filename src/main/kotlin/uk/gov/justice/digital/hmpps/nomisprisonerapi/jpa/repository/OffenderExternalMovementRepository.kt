@@ -3,10 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
-import java.time.LocalDateTime
 
 @Repository
 interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMovement, OffenderExternalMovementId> {
@@ -98,13 +96,5 @@ interface OffenderExternalMovementRepository : CrudRepository<OffenderExternalMo
   fun countOffenderScheduledIn(offender: String): Long
 
   @Suppress("ktlint:standard:function-naming")
-  fun findAllById_OffenderBooking_BookingId(bookingId: Long): List<OffenderExternalMovement>
-
-  fun findPrisonAt(time: LocalDateTime, bookingId: Long): AgencyLocation? {
-    val admissions = findAllById_OffenderBooking_BookingId(bookingId)
-      .filter { it.movementReason.id.type == "ADM" }
-    val admission = admissions.filter { it.getMovementDateAndTime() < time }.maxByOrNull { it.getMovementDateAndTime() }
-      ?: admissions.minByOrNull { it.getMovementDateAndTime() }
-    return admission?.toAgency
-  }
+  fun findAllById_OffenderBooking_Offender_NomsId(nomisId: String): List<OffenderExternalMovement>
 }
