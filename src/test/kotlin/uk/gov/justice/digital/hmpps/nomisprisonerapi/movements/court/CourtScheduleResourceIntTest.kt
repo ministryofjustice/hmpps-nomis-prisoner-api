@@ -84,7 +84,6 @@ class CourtScheduleResourceIntTest(
             assertThat(eventType).isEqualTo(scheduleOut.courtEventType.code)
             assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
             assertThat(comment).isEqualTo(scheduleOut.commentText)
-            assertThat(prison).isEqualTo(booking.location.id)
             assertThat(court).isEqualTo(scheduleOut.court.id)
             assertThat(courtCaseId).isEqualTo(courtCase.id)
             assertThat(audit.createUsername).isEqualTo("SA")
@@ -114,7 +113,6 @@ class CourtScheduleResourceIntTest(
             assertThat(eventType).isEqualTo(scheduleOut.courtEventType.code)
             assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
             assertThat(comment).isEqualTo(scheduleOut.commentText)
-            assertThat(prison).isEqualTo(booking.location.id)
             assertThat(audit.createUsername).isEqualTo("SA")
             assertThat(audit.createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
             assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
@@ -122,12 +120,13 @@ class CourtScheduleResourceIntTest(
       }
 
       @Test
-      fun `should get prison from offender's prison at time of schedule creation`() {
+      fun `should return prison from offender's prison at time of schedule creation`() {
+        val offenderNo = "Z1111ZZ"
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.now().minusDays(1)) {
-              // The court schedule was created while in MDI
-              scheduleOut = courtEventOut(whenCreated = LocalDateTime.now().minusHours(6))
+              // The court schedule occurred while in MDI
+              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now().minusHours(6))
               prisonTransfer(from = "MDI", to = "BXI", date = LocalDateTime.now().minusHours(1))
             }
           }
@@ -136,6 +135,60 @@ class CourtScheduleResourceIntTest(
         webTestClient.getCourtScheduleOutOk(offenderNo, scheduleOut.id)
           .apply {
             assertThat(prison).isEqualTo("MDI")
+          }
+      }
+
+      @Test
+      fun `should return previous prison if court event takes place before previous release`() {
+        val offenderNo = "Y1111YY"
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking(
+              agencyLocationId = "BXI",
+              bookingBeginDate = LocalDateTime.now().minusDays(4),
+            ) {
+              release(date = LocalDateTime.now().minusDays(2))
+            }
+            booking = booking(
+              agencyLocationId = "MDI",
+              bookingBeginDate = LocalDateTime.now().minusDays(1),
+            ) {
+              // The court schedule occurred while in BXI
+              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now().minusDays(3))
+            }
+          }
+        }
+
+        webTestClient.getCourtScheduleOutOk(offenderNo, scheduleOut.id)
+          .apply {
+            assertThat(prison).isEqualTo("BXI")
+          }
+      }
+
+      @Test
+      fun `should return prison OUT if court event takes place between bookings`() {
+        val offenderNo = "X1111XX"
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking(
+              agencyLocationId = "BXI",
+              bookingBeginDate = LocalDateTime.now().minusDays(4),
+            ) {
+              release(date = LocalDateTime.now().minusDays(3))
+            }
+            booking = booking(
+              agencyLocationId = "MDI",
+              bookingBeginDate = LocalDateTime.now().minusDays(1),
+            ) {
+              // The court schedule was created while OUT
+              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now().minusDays(2))
+            }
+          }
+        }
+
+        webTestClient.getCourtScheduleOutOk(offenderNo, scheduleOut.id)
+          .apply {
+            assertThat(prison).isEqualTo("OUT")
           }
       }
     }

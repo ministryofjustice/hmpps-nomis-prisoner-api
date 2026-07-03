@@ -15,8 +15,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.C
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourtMovementOutRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.service.ExternalMovementService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_COURT_SCHEDULER_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.findActiveCaseloadId
@@ -28,7 +28,7 @@ private val DEFAULT_IN_TIME = LocalTime.of(17, 0)
 @Service
 class CourtScheduleService(
   private val courtEventRepository: CourtEventRepository,
-  private val externalMovementRepository: OffenderExternalMovementRepository,
+  private val externalMovementService: ExternalMovementService,
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val movementOutRepository: OffenderCourtMovementOutRepository,
@@ -147,7 +147,7 @@ class CourtScheduleService(
     eventType = courtEventType.code,
     eventStatus = eventStatus.code,
     comment = commentText,
-    prison = externalMovementRepository.findPrisonAt(getEventDateAndTime(), offenderBooking.bookingId)?.id ?: offenderBooking.location.id,
+    prison = externalMovementService.findPrisonAt(getEventDateAndTime(), offenderBooking.offender.nomsId)?.id ?: offenderBooking.location.id,
     court = court.id,
     courtCaseId = courtCase?.id,
     userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),

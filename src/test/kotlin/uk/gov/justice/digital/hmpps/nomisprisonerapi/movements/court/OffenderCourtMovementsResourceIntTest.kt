@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.BookingCourtMovements
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.OffenderCourtMovementsResponse
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.SECONDS
 
 class OffenderCourtMovementsResourceIntTest(
@@ -63,7 +64,7 @@ class OffenderCourtMovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             booking = booking {
               courtCase = courtCase(reportingStaff = staff) {
-                scheduleOut = courtEvent()
+                scheduleOut = courtEvent(eventDateTime = LocalDateTime.now().plusMinutes(1).truncatedTo(ChronoUnit.SECONDS))
               }
             }
           }
