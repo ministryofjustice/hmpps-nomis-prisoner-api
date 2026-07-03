@@ -150,7 +150,7 @@ class PrisonerBalanceResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's finance account summary by their root offender id",
-    description = """Retrieves a prisoner's trust account summary, for each sub-account, aggregated for all caseloads. 
+    description = """Retrieves a prisoner's trust account summary, for each sub-account with a balance. 
       Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(responseCode = "200", description = "Offender Trust Account Summary Returned"),
@@ -225,12 +225,12 @@ data class PrisonerBalanceSummaryDto(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class AccountSummaryDto(
+  @Schema(description = "The prison", example = "ASI")
+  val prisonId: String,
+
   @Schema(description = "The account code for the balance entry", example = "2101")
   val accountCode: Long,
 
   @Schema(description = "The account balance", example = "12.50")
   val balance: BigDecimal,
-
-  @Schema(description = "The amount on hold", example = "12.50")
-  val holdBalance: BigDecimal? = null,
 )

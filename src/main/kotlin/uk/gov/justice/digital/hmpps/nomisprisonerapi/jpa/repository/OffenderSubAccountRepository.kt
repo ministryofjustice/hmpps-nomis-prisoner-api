@@ -23,13 +23,15 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
   @Query(
     """
         select new uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.AccountSummaryDto(
+        o.id.caseloadId,
         o.id.accountCode,
-        sum(o.balance),
-        sum(o.holdBalance)
+        sum(o.balance)
     )
     from OffenderSubAccount o
     where o.id.offender.id = :offenderId
-    group by o.id.accountCode
+      and o.balance != 0
+    group by o.id.caseloadId, o.id.accountCode
+    order by o.id.caseloadId, o.id.accountCode
     """,
   )
   fun findOffenderSubAccountSummary(offenderId: Long): List<AccountSummaryDto>

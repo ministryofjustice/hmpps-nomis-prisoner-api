@@ -415,14 +415,18 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id1)
         assertThat(prisonNumber).isEqualTo("A1234BC")
-        assertThat(accounts.size).isEqualTo(2)
+        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2102)
-        assertThat(accounts[0].balance).isEqualTo(BigDecimal(9.75))
-        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal.ZERO)
+        assertThat(accounts[0].balance).isEqualTo(BigDecimal(11.25))
 
+        assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].accountCode).isEqualTo(2103)
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(1.25))
-        assertThat(accounts[1].holdBalance).isNull()
+
+        assertThat(accounts[2].prisonId).isEqualTo("WWI")
+        assertThat(accounts[2].accountCode).isEqualTo(2102)
+        assertThat(accounts[2].balance).isEqualTo(BigDecimal(-1.5))
       }
     }
 
@@ -438,18 +442,15 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
-        assertThat(accounts.size).isEqualTo(3)
-        assertThat(accounts[0].accountCode).isEqualTo(2101)
-        assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
-        assertThat(accounts[0].holdBalance).isNull()
+        assertThat(accounts.size).isEqualTo(2)
 
-        assertThat(accounts[1].accountCode).isEqualTo(2102)
-        assertThat(accounts[1].balance).isEqualTo(BigDecimal(12.25))
-        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[0].prisonId).isEqualTo("LEI")
+        assertThat(accounts[0].accountCode).isEqualTo(2102)
+        assertThat(accounts[0].balance).isEqualTo(BigDecimal(12.25))
 
-        assertThat(accounts[2].accountCode).isEqualTo(2103)
-        assertThat(accounts[2].balance).isEqualTo("21.25")
-        assertThat(accounts[2].holdBalance).isEqualTo("2.5")
+        assertThat(accounts[1].prisonId).isEqualTo("LEI")
+        assertThat(accounts[1].accountCode).isEqualTo(2103)
+        assertThat(accounts[1].balance).isEqualTo("21.25")
       }
     }
 
