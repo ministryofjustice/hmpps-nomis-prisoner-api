@@ -49,4 +49,10 @@ data class PropertyContainerGetResponse(
 
   @Schema(description = "Username of the staff creating the container", example = "AJONES")
   val createdBy: String,
+
+  @Schema(description = "Timestamp for when the container was modified", example = "2025-12-06T12:34:56")
+  val updatedDateTime: LocalDateTime? = null,
+
+  @Schema(description = "Username of the staff modifying the container", example = "AJONES")
+  val updatedBy: String? = null,
 )

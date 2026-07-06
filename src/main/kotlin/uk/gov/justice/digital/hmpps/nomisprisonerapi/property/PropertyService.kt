@@ -71,6 +71,8 @@ class PropertyService(
     proposedDisposalDate = proposedDisposalDate,
     createdDateTime = createDatetime,
     createdBy = createUsername,
+    updatedDateTime = modifyDatetime,
+    updatedBy = modifyUserId,
   )
 
   private fun PropertyContainerCreateRequest.findBooking(): OffenderBooking = offenderBookingRepository
