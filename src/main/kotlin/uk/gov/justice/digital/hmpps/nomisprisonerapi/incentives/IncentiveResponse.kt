@@ -29,7 +29,6 @@ data class IncentiveResponse(
   @Schema(
     description = "The NOMIS module that created this IEP",
     required = true,
-    allowableValues = ["OCUWARNG", "PRISON_API", "OIDADMIS", "MERGE", "OIDOIEPS", "OIDITRAN", "OSIOSEAR"],
   )
   val auditModule: String? = null,
   @Schema(description = "date and time of creation")
