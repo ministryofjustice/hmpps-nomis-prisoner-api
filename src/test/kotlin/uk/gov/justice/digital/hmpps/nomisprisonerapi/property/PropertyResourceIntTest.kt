@@ -309,6 +309,8 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           assertThat(expiryDate).isEqualTo("2026-06-01")
           assertThat(createdDateTime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
           assertThat(createdBy).isEqualTo("SA")
+          assertThat(updatedDateTime).isNull()
+          assertThat(updatedBy).isNull()
         }
       }
     }
