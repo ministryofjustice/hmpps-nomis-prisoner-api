@@ -4012,7 +4012,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{caseId}/repair")
   @Nested
-  inner class RepairCourtCase {
+  inner class RepairNullOffenderChargesAndCall {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
     private lateinit var courtOrder: CourtOrder
@@ -4177,6 +4177,266 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       internal fun deletePrisoner() {
         repository.delete(prisonerAtMoorland)
         repository.delete(staff)
+      }
+    }
+  }
+
+  @DisplayName("POST /prisoners/{offenderNo}/sentencing/imprisonment-status/repair")
+  @Nested
+  inner class RepairOffenderNullCharge {
+    private val offenderNo: String = "A1234AB"
+    private lateinit var courtCase: CourtCase
+    private lateinit var courtCaseWithoutFutureApppearance: CourtCase
+    private lateinit var courtCaseWithMultipleFutureEvents: CourtCase
+    private lateinit var latestNonFutureAppearance: CourtEvent
+    private lateinit var futureAppearance: CourtEvent
+    private lateinit var earlierAppearance: CourtEvent
+    private lateinit var appearance4: CourtEvent
+    private lateinit var appearance5: CourtEvent
+    private lateinit var appearance6: CourtEvent
+    private lateinit var appearance7: CourtEvent
+    private lateinit var courtOrder: CourtOrder
+    private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+    private lateinit var offenderCharge3: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aDateString),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                offenderCaseIdentifier(reference = "AA4444444", type = "CASE/INFO#")
+                // charge has incorrectly ended up without a result code. This could be achieved in nomis or by a DPS bug which used a future appearance null outcome
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", resultCode1 = null)
+                latestNonFutureAppearance = courtEvent(eventDateTime = LocalDateTime.now().minusDays(1)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                    resultCode1 = "4020",
+                  )
+                }
+                futureAppearance = courtEvent(eventDateTime = LocalDateTime.now().plusDays(7)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                    resultCode1 = null,
+                  )
+                }
+                earlierAppearance = courtEvent(eventDateTime = LocalDateTime.now().minusDays(5)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                    resultCode1 = "4506",
+                  )
+                }
+              }
+              courtCaseWithoutFutureApppearance = courtCase(
+                reportingStaff = staff,
+                caseSequence = 2,
+                beginDate = LocalDate.now().minusYears(2),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                // charge has incorrectly ended up without a result code. This could be achieved in nomis or by a DPS bug which used a future appearance null outcome
+                offenderCharge2 = offenderCharge(offenceCode = "RR84700", resultCode1 = null)
+                appearance4 = courtEvent(eventDateTime = LocalDateTime.now().minusDays(1)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge2,
+                    plea = "NG",
+                    resultCode1 = "4020",
+                  )
+                }
+              }
+              courtCaseWithMultipleFutureEvents = courtCase(
+                reportingStaff = staff,
+                caseSequence = 3,
+                beginDate = LocalDate.now().minusYears(1),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                offenderCharge3 = offenderCharge(offenceCode = "RT88600", resultCode1 = null)
+                appearance5 = courtEvent(eventDateTime = LocalDateTime.now().plusDays(10)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge3,
+                    plea = "NG",
+                    resultCode1 = "4020",
+                  )
+                }
+                appearance6 = courtEvent(eventDateTime = LocalDateTime.now().plusDays(20)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge3,
+                    plea = "NG",
+                    resultCode1 = "1005",
+                  )
+                }
+                // the only appearance in the past
+                appearance7 = courtEvent(eventDateTime = LocalDateTime.now().minusDays(20)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge3,
+                    plea = "NG",
+                    resultCode1 = "1004",
+                  )
+                }
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/imprisonment-status/repair")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRepairRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/imprisonment-status/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRepairRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/imprisonment-status/repair")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRepairRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      internal fun `404 when offender does not exist`() {
+        webTestClient.post().uri("/prisoners/5656/sentencing/imprisonment-status/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtCaseRequest(),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Prisoner 5656 not found or has no bookings")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will use the latest non future appearance to set the outcome on the offender charge`() {
+        // check outcome on offender charge
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offence.offenceCode").isEqualTo("RT88074")
+          .jsonPath("resultCode1").doesNotExist()
+
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/imprisonment-status/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isOk
+
+        // check outcome on offender charge
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offence.offenceCode").isEqualTo("RT88074")
+          .jsonPath("resultCode1.code").isEqualTo("4020")
+      }
+
+      @Test
+      fun `will ignore any cases without a future appearance`() {
+        // check outcome on offender charge
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offence.offenceCode").isEqualTo("RR84700")
+          .jsonPath("resultCode1").doesNotExist()
+
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/imprisonment-status/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isOk
+
+        // check outcome on offender charge
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offence.offenceCode").isEqualTo("RR84700")
+          .jsonPath("resultCode1").doesNotExist()
+      }
+
+      @Test
+      fun `will handle multiple future appearances`() {
+        // check outcome on offender charge
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge3.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offence.offenceCode").isEqualTo("RT88600")
+          .jsonPath("resultCode1").doesNotExist()
+
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/imprisonment-status/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isOk
+
+        // there is 1 historical appearance with a result code of 1004
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge3.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("offence.offenceCode").isEqualTo("RT88600")
+          .jsonPath("resultCode1.code").isEqualTo("1004")
       }
     }
   }
@@ -9020,6 +9280,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     outcomeReasonCode = outcomeReasonCode,
     nextCourtId = nextCourtId,
     courtEventChargesWithOutcomes = courtEventCharges,
+    comment = "a comment",
   )
 
   private fun createSentence(

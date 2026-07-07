@@ -2408,6 +2408,73 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
     @org.springframework.web.bind.annotation.RequestBody @Valid
     request: CaseIdentifierRequest,
   ) = courtSentencingService.refreshCaseIdentifiers(offenderNo, caseId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/imprisonment-status/repair")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Repairs null offender charge outcomes and refreshes imprisonment status",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Looks for null offender charge outcomes possibly caused by future appearances and resets them using outcomes from an earlier appearance.",
+    requestBody = RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CourtCaseRepairRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Any null offender charge outcomes meeting the criteria repaired",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun repairCourtCaseNullOffenderChargeOutcomesToCorrectImprisonmentStatus(
+    @Schema(description = "Offender No", example = "AK1234B", required = true)
+    @PathVariable
+    offenderNo: String,
+  ) = courtSentencingService.repairNullOffenderChargeOutcomes(offenderNo)
 }
 
 @Schema(description = "Court Case")
@@ -2664,18 +2731,18 @@ data class CreateCourtCaseRequest(
   // optional case reference (dps holds case ref at the appearance level - max of one when creating a case)
   val caseReference: String? = null,
 
-    /* not currently provided by sentencing service:
-    caseSequence: Int,
-    caseStatus: String,
-    combinedCase: CourtCase?,
-    statusUpdateReason: String?,
-    statusUpdateComment: String?,
-    statusUpdateDate: LocalDate?,
-    statusUpdateStaff: Staff?,
-    lidsCaseId: Int?,
-    lidsCaseNumber: Int,
-    lidsCombinedCaseId: Int?
-     */
+  /* not currently provided by sentencing service:
+  caseSequence: Int,
+  caseStatus: String,
+  combinedCase: CourtCase?,
+  statusUpdateReason: String?,
+  statusUpdateComment: String?,
+  statusUpdateDate: LocalDate?,
+  statusUpdateStaff: Staff?,
+  lidsCaseId: Int?,
+  lidsCaseNumber: Int,
+  lidsCombinedCaseId: Int?
+   */
 )
 
 @Schema(description = "Court case update request")
@@ -2799,14 +2866,14 @@ data class CourtAppearanceRequest(
   val courtEventChargesWithOutcomes: List<CourtEventChargeRequest> = emptyList(),
   // nomis UI doesn't allow this during a create but DPS does
   val nextCourtId: String?,
+  val comment: String?,
 
-    /* not currently provided by sentencing service:
-    val commentText: String?, no sign in new service
-    val orderRequestedFlag: Boolean?,
-    val holdFlag: Boolean?,
-    val directionCode: CodeDescription?,
-    val judgeName: String?,
-     */
+  /* not currently provided by sentencing service:
+  val orderRequestedFlag: Boolean?,
+  val holdFlag: Boolean?,
+  val directionCode: CodeDescription?,
+  val judgeName: String?,
+   */
 )
 
 @Schema(description = "Court Charge")
@@ -2818,20 +2885,20 @@ data class OffenderChargeRequest(
   val resultCode1: String?,
   val futureAppearance: Boolean? = false,
 
-    /*
-    val plea: String?,
-    val propertyValue: BigDecimal?,
-    val offencesCount: Long?,
-    val totalPropertyValue: BigDecimal?,
-    val cjitCode1: String?,
-    val cjitCode2: String?,
-    val cjitCode3: String?,
-    val chargeStatus: String?,
-    val resultCode2: String?,  // DPS data model has 1 outcome
-    val resultCode1Indicator: String?,
-    val resultCode2Indicator: String?,
-    val lidsOffenceNumber: Int?,
-     */
+  /*
+  val plea: String?,
+  val propertyValue: BigDecimal?,
+  val offencesCount: Long?,
+  val totalPropertyValue: BigDecimal?,
+  val cjitCode1: String?,
+  val cjitCode2: String?,
+  val cjitCode3: String?,
+  val chargeStatus: String?,
+  val resultCode2: String?,  // DPS data model has 1 outcome
+  val resultCode1Indicator: String?,
+  val resultCode2Indicator: String?,
+  val lidsOffenceNumber: Int?,
+   */
 
   /* mostSeriousFlag has been removed - DPS not providing */
 )
