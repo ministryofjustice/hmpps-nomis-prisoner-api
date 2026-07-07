@@ -129,6 +129,16 @@ class CourtCase(
 
   fun getDpsCaseInfoNumbers(): List<OffenderCaseIdentifier> = caseInfoNumbers.filter { it.isDpsCaseInfoNumber() }
 
+  // excluding a future date for today, if future-dated appearance(s) exist use earliest to determine the next court appearance. Then return one before.
+  fun getLatestNonFutureEventWhenFutureEventExists(): CourtEvent? {
+    val nextFutureEvent = courtEvents.filter { it.eventDate.isAfter(LocalDate.now()) }.minByOrNull { it.eventDate }
+    return if (nextFutureEvent != null) {
+      courtEvents.filter { it.eventDate.isBefore(nextFutureEvent.eventDate) }.maxByOrNull { it.eventDate }
+    } else {
+      null
+    }
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

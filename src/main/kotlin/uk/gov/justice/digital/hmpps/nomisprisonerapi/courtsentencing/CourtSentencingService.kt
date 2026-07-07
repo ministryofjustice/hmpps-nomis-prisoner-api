@@ -117,6 +117,7 @@ class CourtSentencingService(
     private const val ACTIVE_CHARGE_STATUS = "A"
     private const val PARTIAL_RESULT_CODE_INDICATOR = "P"
     private const val FINAL_RESULT_CODE_INDICATOR = "F"
+    private const val MAX_COURT_EVENT_COMMENT_LENGTH = 225
   }
 
   fun getCourtCase(id: Long, offenderNo: String): CourtCaseResponse {
@@ -367,6 +368,7 @@ class CourtSentencingService(
         nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
         nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
         directionCode = lookupDirectionType(DirectionType.OUT),
+        // TODO commentText = request.comment?.truncateToUtf8Length(MAX_COURT_EVENT_COMMENT_LENGTH, includeSeeDpsSuffix = true),
       )
 
       associateChargesWithAppearance(courtAppearanceRequest.courtEventChargesWithOutcomes, courtEvent)
@@ -632,6 +634,7 @@ class CourtSentencingService(
           request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
         courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
         courtAppearance.nextEventStartTime = request.nextEventDateTime
+        // TODO courtAppearance.commentText = request.comment?.truncateToUtf8Length(MAX_COURT_EVENT_COMMENT_LENGTH, includeSeeDpsSuffix = true)
 
         val offenderChargesRemoved =
           associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
@@ -837,6 +840,62 @@ class CourtSentencingService(
           }
         }
       }
+    }
+  }
+
+  fun repairNullOffenderChargeOutcomes(
+    offenderNo: String,
+  ) {
+    val latestBooking = findLatestBooking(offenderNo)
+    var updated = false
+    latestBooking.courtCases.forEach { courtCase ->
+      // find any future appearances and get case
+      // for case, find latest non future appearance and refresh offender charge
+
+      courtCase.getLatestNonFutureEventWhenFutureEventExists()?.let { latestNonFutureEvent ->
+        latestNonFutureEvent.courtEventCharges.filter { it.resultCode1 != null }
+          .filter { it.id.offenderCharge.resultCode1 == null }
+          .forEach { courtEventCharge ->
+            updated = true
+            with(courtEventCharge.id.offenderCharge) {
+              resultCode1 = courtEventCharge.resultCode1
+              resultCode1Indicator = courtEventCharge.resultCode1?.dispositionCode
+              chargeStatus = courtEventCharge.resultCode1?.chargeStatus?.let { lookupChargeStatusType(it) }
+              offenderChargeRepository.saveAndFlush(this)
+
+              log.info("\nOffender charge null outcome repair: The court_event_charge has result code ${courtEventCharge.resultCode1?.code} \nbut offender_charge ${this.id} has null result code. \nUpdated offender_charge with result code ${this.resultCode1?.code}\nCourt event: $courtEventCharge.id.courtEvent.id\nOffender no: $offenderNo\nCase: ${courtCase.id}")
+
+              telemetryClient.trackEvent(
+                "court-charge-updated-repair",
+                mapOf(
+                  "courtCaseId" to courtCase.id.toString(),
+                  "bookingId" to courtCase.offenderBooking.bookingId.toString(),
+                  "offenderNo" to offenderNo,
+                  "offenderChargeId" to this.id.toString(),
+                  "resultCode" to (courtEventCharge.resultCode1?.code ?: "null"),
+                  "courtEventId" to courtEventCharge.id.courtEvent.id.toString(),
+                ),
+                null,
+              )
+            }
+          }
+        refreshCourtOrder(latestNonFutureEvent, offenderNo)
+      }
+    }
+    if (updated) {
+      storedProcedureRepository.imprisonmentStatusUpdate(
+        bookingId = latestBooking.bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+      )
+    } else {
+      telemetryClient.trackEvent(
+        "court-charge-updated-repair-ignored",
+        mapOf(
+          "offenderNo" to offenderNo,
+        ),
+        null,
+      )
+      log.info("\nOffender charge null outcome repair: No offender charges were found that met the criteria for offender no: $offenderNo")
     }
   }
 
