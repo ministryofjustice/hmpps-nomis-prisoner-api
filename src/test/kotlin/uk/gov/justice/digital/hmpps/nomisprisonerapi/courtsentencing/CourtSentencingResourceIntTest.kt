@@ -4012,7 +4012,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
   @DisplayName("POST /prisoners/{offenderNo}/sentencing/court-cases/{caseId}/repair")
   @Nested
-  inner class RepairNullOffenderChargesAndCall {
+  inner class RepairCourtCase {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
     private lateinit var courtOrder: CourtOrder
