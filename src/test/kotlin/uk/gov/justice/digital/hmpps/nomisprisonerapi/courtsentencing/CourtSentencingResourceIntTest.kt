@@ -4730,7 +4730,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].judgeName").doesNotExist()
           .jsonPath("courtEvents[1].courtId").isEqualTo("ABDRCT")
           .jsonPath("courtEvents[1].outcomeReasonCode.code").isEqualTo("1004")
-          .jsonPath("courtEvents[1].commentText").doesNotExist()
+          .jsonPath("courtEvents[1].commentText").isEqualTo("a comment")
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
@@ -5862,6 +5862,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 outcomeReasonCode = "4506",
                 nextEventDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
                 nextCourtId = "LEICYC",
+                comment = "A".repeat(230),
               ),
             ),
           )
@@ -5881,6 +5882,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].courtId").isEqualTo("LEEDYC")
+          .jsonPath("courtEvents[0].commentText").isEqualTo("${"A".repeat(200)}... see DPS for full text")
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("4506")
 
 // no new offender charges created
@@ -9221,6 +9223,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         outcomeReasonCode = "1004",
         nextEventDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
         nextCourtId = "COURT1",
+        comment = "a comment",
         courtEventCharges = listOf(
           CourtEventChargeRepairRequest(
             id = "dps1",
@@ -9272,6 +9275,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     nextEventDateTime: LocalDateTime = LocalDateTime.of(2023, 2, 20, 9, 0),
     nextCourtId: String = "COURT1",
     courtEventCharges: MutableList<CourtEventChargeRequest> = mutableListOf(),
+    comment: String? = "a comment",
   ) = CourtAppearanceRequest(
     eventDateTime = eventDateTime,
     courtId = courtId,
@@ -9280,7 +9284,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     outcomeReasonCode = outcomeReasonCode,
     nextCourtId = nextCourtId,
     courtEventChargesWithOutcomes = courtEventCharges,
-    comment = "a comment",
+    comment = comment,
   )
 
   private fun createSentence(

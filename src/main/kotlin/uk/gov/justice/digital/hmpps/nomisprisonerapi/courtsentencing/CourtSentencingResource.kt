@@ -2773,6 +2773,7 @@ data class CourtAppearanceRepairRequest(
   val nextEventDateTime: LocalDateTime?,
   val courtEventCharges: List<CourtEventChargeRepairRequest>,
   val nextCourtId: String?,
+  val comment: String?,
 )
 
 @Schema(description = "Court Charge")

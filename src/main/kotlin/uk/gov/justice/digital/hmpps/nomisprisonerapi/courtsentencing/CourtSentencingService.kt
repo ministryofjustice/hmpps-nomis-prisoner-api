@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseIdentifierType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
@@ -266,6 +267,7 @@ class CourtSentencingService(
           nextEventDate = appearanceRequest.nextEventDateTime?.toLocalDate(),
           nextEventStartTime = appearanceRequest.nextEventDateTime,
           directionCode = lookupDirectionType(DirectionType.OUT),
+          commentText = appearanceRequest.comment?.truncateToUtf8Length(MAX_COURT_EVENT_COMMENT_LENGTH, includeSeeDpsSuffix = true),
         ).also { courtEvent ->
           courtEventRepository.saveAndFlush(courtEvent)
           // create map of request.offenderCharges ids to the ones created on the case
@@ -368,7 +370,7 @@ class CourtSentencingService(
         nextEventDate = courtAppearanceRequest.nextEventDateTime?.toLocalDate(),
         nextEventStartTime = courtAppearanceRequest.nextEventDateTime,
         directionCode = lookupDirectionType(DirectionType.OUT),
-        // TODO commentText = request.comment?.truncateToUtf8Length(MAX_COURT_EVENT_COMMENT_LENGTH, includeSeeDpsSuffix = true),
+        commentText = courtAppearanceRequest.comment?.truncateToUtf8Length(MAX_COURT_EVENT_COMMENT_LENGTH, includeSeeDpsSuffix = true),
       )
 
       associateChargesWithAppearance(courtAppearanceRequest.courtEventChargesWithOutcomes, courtEvent)
@@ -634,7 +636,7 @@ class CourtSentencingService(
           request.outcomeReasonCode?.let { lookupOffenceResultCode(it) }
         courtAppearance.nextEventDate = request.nextEventDateTime?.toLocalDate()
         courtAppearance.nextEventStartTime = request.nextEventDateTime
-        // TODO courtAppearance.commentText = request.comment?.truncateToUtf8Length(MAX_COURT_EVENT_COMMENT_LENGTH, includeSeeDpsSuffix = true)
+        courtAppearance.commentText = request.comment?.truncateToUtf8Length(MAX_COURT_EVENT_COMMENT_LENGTH, includeSeeDpsSuffix = true)
 
         val offenderChargesRemoved =
           associateChargesWithAppearance(request.courtEventChargesWithOutcomes, courtAppearance)
