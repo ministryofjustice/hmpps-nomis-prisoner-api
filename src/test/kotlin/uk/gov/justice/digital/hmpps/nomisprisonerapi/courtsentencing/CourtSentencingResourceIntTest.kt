@@ -4730,7 +4730,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[1].judgeName").doesNotExist()
           .jsonPath("courtEvents[1].courtId").isEqualTo("ABDRCT")
           .jsonPath("courtEvents[1].outcomeReasonCode.code").isEqualTo("1004")
-          .jsonPath("courtEvents[1].commentText").doesNotExist()
+          .jsonPath("courtEvents[1].commentText").isEqualTo("a comment")
           .jsonPath("courtEvents[1].orderRequestedFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].holdFlag").isEqualTo(false)
           .jsonPath("courtEvents[1].nextEventRequestFlag").isEqualTo(false)
