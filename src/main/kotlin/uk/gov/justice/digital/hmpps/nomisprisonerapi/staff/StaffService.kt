@@ -19,9 +19,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffReposit
 class StaffService(
   private val staffRepository: StaffRepository,
 ) {
-  fun getStaffDetails(userId: Long, dpsRolesOnly: Boolean): StaffDetails = staffRepository.findByIdOrNull(userId)
+  fun getStaffDetails(staffId: Long, dpsRolesOnly: Boolean): StaffDetails = staffRepository.findByIdOrNull(staffId)
     ?.toStaffDetails(dpsRolesOnly)
-    ?: throw NotFoundException("Staff with id=$userId does not exist")
+    ?: throw NotFoundException("Staff with id=$staffId does not exist")
+
+  fun getStaffDetails(username: String, dpsRolesOnly: Boolean): StaffDetails = staffRepository.findByAccountsUsername(username)
+    ?.toStaffDetails(dpsRolesOnly)
+    ?: throw NotFoundException("Staff with username=$username does not exist")
 
   fun getStaffIdsFromId(
     staffId: Long,
