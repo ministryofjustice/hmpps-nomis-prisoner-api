@@ -17,6 +17,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -57,6 +58,32 @@ class PropertyResource(private val propertyService: PropertyService) {
     @RequestBody createRequest: PropertyContainerCreateRequest,
   ): CreatePropertyResponse = propertyService.createProperty(createRequest)
 
+  @PutMapping("/property-containers/{propertyContainerId}")
+  @Operation(
+    summary = "Updates a prisoner property container record",
+    description = """Replaces the container's mutable details (type, seal, location, proposed disposal date).
+      Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
+    responses = [
+      ApiResponse(responseCode = "200", content = [Content(mediaType = "application/json")]),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid location",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Property container does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun update(
+    @PathVariable propertyContainerId: Long,
+    @RequestBody updateRequest: PropertyContainerUpdateRequest,
+  ) {
+    propertyService.updateProperty(propertyContainerId, updateRequest)
+  }
+
   @GetMapping("/property-containers/{id}")
   @Operation(
     summary = "Get a prisoner property container record",
@@ -65,7 +92,10 @@ class PropertyResource(private val propertyService: PropertyService) {
       ApiResponse(
         responseCode = "200",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = PropertyContainerGetResponse::class)),
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PropertyContainerGetResponse::class),
+          ),
         ],
       ),
       ApiResponse(

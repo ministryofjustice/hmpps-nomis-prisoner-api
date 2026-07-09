@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
-import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters.fromValue
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
@@ -28,13 +27,14 @@ class PropertyResourceIntTest : IntegrationTestBase() {
   private lateinit var offenderPropertyContainerRepository: OffenderPropertyContainerRepository
 
   private lateinit var location1: AgencyInternalLocation
+  private lateinit var location2: AgencyInternalLocation
   private lateinit var booking: OffenderBooking
   private lateinit var container1: OffenderPropertyContainer
   private lateinit var container2: OffenderPropertyContainer
   private lateinit var container3: OffenderPropertyContainer
 
   @AfterEach
-  internal fun deleteData() {
+  fun deleteData() {
     repository.deleteAllPrisonerProperty()
     repository.deleteOffenders()
     repository.deleteAgencyInternalLocationById(location1.locationId)
@@ -208,6 +208,125 @@ class PropertyResourceIntTest : IntegrationTestBase() {
             assertThat(active).isTrue()
             assertThat(sealMark).isEqualTo("S12345")
             assertThat(containerCode).isEqualTo(PropertyContainerCode.CO)
+          }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /property-containers/{id}")
+  @Nested
+  inner class UpdatePropertyContainer {
+    @BeforeEach
+    fun init() {
+      nomisDataBuilder.build {
+        location1 = agencyInternalLocation(
+          locationCode = "SYI-001",
+          locationType = "BOX",
+          prisonId = "SYI",
+        )
+        location2 = agencyInternalLocation(
+          locationCode = "SYI-002",
+          locationType = "BOX",
+          prisonId = "SYI",
+        )
+        offender(nomsId = "A1111AA") {
+          booking = booking {
+            container1 = property()
+          }
+        }
+      }
+    }
+
+    @AfterEach
+    fun deleteData() {
+      repository.deleteAgencyInternalLocationById(location2.locationId)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/property-containers/99")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(1234)))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/property-containers/99")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(1234)))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/property-containers/99")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(1234)))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `location not found`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(99)))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("No location with id 99 found")
+          }
+      }
+
+      @Test
+      fun `invalid container code`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue("""{ "containerCode": "INVALID" }"""))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains(
+              "Cannot deserialize value of type `uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PropertyContainerCode` from String \"INVALID\": not one of the values accepted for Enum class",
+            )
+          }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `can update a property container`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(location2.locationId)))
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          val data = offenderPropertyContainerRepository.findByIdOrNull(container1.propertyContainerId)
+
+          with(data!!) {
+            assertThat(agencyInternalLocation?.locationId).isEqualTo(location2.locationId)
+            assertThat(sealMark).isEqualTo("SEAL4567")
+            assertThat(containerCode).isEqualTo(PropertyContainerCode.BRA)
+            assertThat(proposedDisposalDate).isEqualTo("2027-11-02")
           }
         }
       }
@@ -461,9 +580,19 @@ fun validMinimalCreateJsonRequest(bookingId: Long): String = "{ ${requiredFields
 
 fun validFullCreateJsonRequest(bookingId: Long, internalLocationId: Long): String =
   """
-   { ${requiredFields(bookingId) },
+   { ${requiredFields(bookingId)},
     "internalLocationId": $internalLocationId,
     "proposedDisposalDate": "2026-10-01",
     "expiryDate": "2026-06-01"
+   }
+  """.trimIndent()
+
+fun validUpdateJsonRequest(internalLocationId: Long): String =
+  """
+   {
+     "internalLocationId": $internalLocationId,
+     "proposedDisposalDate": "2027-11-02",
+     "sealMark": "SEAL4567",
+     "containerCode": "BRA"
    }
   """.trimIndent()

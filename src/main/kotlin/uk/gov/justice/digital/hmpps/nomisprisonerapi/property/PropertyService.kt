@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.property
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -22,7 +21,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProp
 @Transactional
 class PropertyService(
   private val offenderPropertyContainerRepository: OffenderPropertyContainerRepository,
-  private val telemetryClient: TelemetryClient,
   private val agencyInternalLocationRepository: AgencyInternalLocationRepository,
   private val agencyLocationRepository: AgencyLocationRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
@@ -34,6 +32,16 @@ class PropertyService(
   fun createProperty(propertyContainerCreateRequest: PropertyContainerCreateRequest) = CreatePropertyResponse(
     offenderPropertyContainerRepository.save(propertyContainerCreateRequest.toModel()).propertyContainerId,
   )
+
+  fun updateProperty(id: Long, propertyContainerUpdateRequest: PropertyContainerUpdateRequest) {
+    val container = offenderPropertyContainerRepository.findById(id).get()
+    container.apply {
+      containerCode = propertyContainerUpdateRequest.containerCode
+      sealMark = propertyContainerUpdateRequest.sealMark
+      agencyInternalLocation = findLocation(propertyContainerUpdateRequest.internalLocationId)
+      proposedDisposalDate = propertyContainerUpdateRequest.proposedDisposalDate
+    }
+  }
 
   fun getProperty(propertyContainerId: Long) = offenderPropertyContainerRepository
     .findByIdOrNull(propertyContainerId)?.toDto()
@@ -49,7 +57,7 @@ class PropertyService(
 
   private fun PropertyContainerCreateRequest.toModel() = OffenderPropertyContainer(
     offenderBooking = findBooking(),
-    agencyInternalLocation = findLocation(),
+    agencyInternalLocation = findLocation(this.internalLocationId),
     agencyLocation = findAgency(),
     active = active,
     sealMark = sealMark,
@@ -79,9 +87,9 @@ class PropertyService(
     .findByIdOrNull(bookingId)
     ?: throw BadDataException("Booking id $bookingId not found")
 
-  private fun PropertyContainerCreateRequest.findLocation(): AgencyInternalLocation? = internalLocationId?.let {
+  private fun findLocation(internalLocationId: Long?): AgencyInternalLocation? = internalLocationId?.let {
     agencyInternalLocationRepository.findByIdOrNull(it)
-      ?: throw BadDataException("Creating property for booking id $bookingId: No location with id $it found")
+      ?: throw BadDataException("No location with id $it found")
   }
 
   private fun PropertyContainerCreateRequest.findAgency(): AgencyLocation = agencyLocationRepository
