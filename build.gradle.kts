@@ -1,12 +1,12 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.5.6"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.0-beta"
   kotlin("plugin.spring") version "2.4.0"
   kotlin("plugin.jpa") version "2.4.0"
   idea
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:2.5.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.0-beta")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-flyway")
@@ -28,7 +28,7 @@ dependencies {
   val oracleVersion = ":23.26.1.0.0"
   runtimeOnly("com.oracle.database.jdbc:ojdbc11$oracleVersion")
 
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:2.5.0")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.0-beta")
   testImplementation("org.springframework.boot:spring-boot-test-autoconfigure")
   testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
