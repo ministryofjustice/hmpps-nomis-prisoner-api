@@ -69,7 +69,7 @@ class StaffResource(private val staffService: StaffService) {
       ),
     ],
   )
-  fun getStaff(
+  fun getStaffById(
     @Schema(description = "staff Id") @PathVariable staffId: Long,
     @RequestParam(name = "dpsRolesOnly")
     @Schema(description = "Only return dps roles for the staff", example = "true")
@@ -115,7 +115,7 @@ class StaffResource(private val staffService: StaffService) {
       ),
     ],
   )
-  fun getStaff(
+  fun getStaffByUsername(
     @Schema(description = "staff Id") @PathVariable username: String,
     @RequestParam(name = "dpsRolesOnly")
     @Schema(description = "Only return dps roles for the staff", example = "true")
