@@ -17,31 +17,26 @@ class PrisonerBalanceService(
   val offenderSubAccountRepository: OffenderSubAccountRepository,
 ) {
 
-  fun getPrisonerAccounts(rootOffenderId: Long, excludeZeroBalances: Boolean) = if (excludeZeroBalances) {
-    getNonZeroPrisonerAccounts(rootOffenderId)
-  } else {
-    getAllPrisonerAccounts(rootOffenderId)
+  fun getPrisonerAccounts(prisonNumber: String, excludeZeroBalances: Boolean): PrisonerBalanceDto = offenderRepository.findRootByNomsId(prisonNumber)
+    ?.let { getPrisonerAccounts(it.rootOffenderId!!, excludeZeroBalances) }
+    ?: throw NotFoundException("Offender $prisonNumber not found")
+
+  fun getPrisonerAccounts(rootOffenderId: Long, excludeZeroBalances: Boolean): PrisonerBalanceDto {
+    val offender = offenderRepository.findByIdOrNull(rootOffenderId)
+      ?: throw NotFoundException("Offender with id $rootOffenderId not found")
+
+    val accounts = if (excludeZeroBalances) {
+      offenderSubAccountRepository.findNonZeroBalances(rootOffenderId)
+    } else {
+      offenderSubAccountRepository.findByIdOffenderId(rootOffenderId)
+    }
+
+    return PrisonerBalanceDto(
+      rootOffenderId = rootOffenderId,
+      prisonNumber = offender.nomsId,
+      accounts = accounts.map { it.toPrisonerAccountDto() },
+    )
   }
-
-  private fun getAllPrisonerAccounts(rootOffenderId: Long): PrisonerBalanceDto = offenderRepository.findByIdOrNull(rootOffenderId)
-    ?.let { offender ->
-      PrisonerBalanceDto(
-        rootOffenderId,
-        prisonNumber = offender.nomsId,
-        offenderSubAccountRepository.findByIdOffenderId(rootOffenderId).map { it.toPrisonerAccountDto() },
-      )
-    }
-    ?: throw NotFoundException("Offender with id $rootOffenderId not found")
-
-  fun getNonZeroPrisonerAccounts(rootOffenderId: Long): PrisonerBalanceDto = offenderRepository.findByIdOrNull(rootOffenderId)
-    ?.let { offender ->
-      PrisonerBalanceDto(
-        rootOffenderId,
-        prisonNumber = offender.nomsId,
-        offenderSubAccountRepository.findNonZeroBalances(rootOffenderId).map { it.toPrisonerAccountDto() },
-      )
-    }
-    ?: throw NotFoundException("Offender with id $rootOffenderId not found")
 
   fun getPrisonerAccountSummary(rootOffenderId: Long): PrisonerBalanceSummaryDto = offenderRepository.findByIdOrNull(rootOffenderId)
     ?.let { offender ->
