@@ -3204,7 +3204,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -4187,18 +4187,18 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
     private lateinit var courtCaseWithoutFutureApppearance: CourtCase
-    private lateinit var courtCaseWithMultipleFutureEvents: CourtCase
-    private lateinit var latestNonFutureAppearance: CourtEvent
-    private lateinit var futureAppearance: CourtEvent
+    private lateinit var courtCaseWithNoNonNullCourtEventOutcomes: CourtCase
+    private lateinit var latestAppearanceWithOutcome: CourtEvent
+    private lateinit var lastAppearance: CourtEvent
     private lateinit var earlierAppearance: CourtEvent
     private lateinit var appearance4: CourtEvent
     private lateinit var appearance5: CourtEvent
     private lateinit var appearance6: CourtEvent
     private lateinit var appearance7: CourtEvent
-    private lateinit var courtOrder: CourtOrder
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
+    private var latestBookingId: Long = 0
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -4208,7 +4208,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         }
         prisonerAtMoorland =
           offender(nomsId = "A1234AB") {
-            booking(agencyLocationId = "MDI") {
+            latestBookingId = booking(agencyLocationId = "MDI") {
               courtCase = courtCase(
                 reportingStaff = staff,
                 beginDate = LocalDate.parse(aDateString),
@@ -4218,18 +4218,18 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 offenderCaseIdentifier(reference = "AA4444444", type = "CASE/INFO#")
                 // charge has incorrectly ended up without a result code. This could be achieved in nomis or by a DPS bug which used a future appearance null outcome
                 offenderCharge1 = offenderCharge(offenceCode = "RT88074", resultCode1 = null)
-                latestNonFutureAppearance = courtEvent(eventDateTime = LocalDateTime.now().minusDays(1)) {
-                  courtEventCharge(
-                    offenderCharge = offenderCharge1,
-                    plea = "NG",
-                    resultCode1 = "4020",
-                  )
-                }
-                futureAppearance = courtEvent(eventDateTime = LocalDateTime.now().plusDays(7)) {
+                lastAppearance = courtEvent(eventDateTime = LocalDateTime.now().minusDays(2)) {
                   courtEventCharge(
                     offenderCharge = offenderCharge1,
                     plea = "NG",
                     resultCode1 = null,
+                  )
+                }
+                latestAppearanceWithOutcome = courtEvent(eventDateTime = LocalDateTime.now().minusDays(4)) {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                    resultCode1 = "4020",
                   )
                 }
                 earlierAppearance = courtEvent(eventDateTime = LocalDateTime.now().minusDays(5)) {
@@ -4257,7 +4257,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   )
                 }
               }
-              courtCaseWithMultipleFutureEvents = courtCase(
+              courtCaseWithNoNonNullCourtEventOutcomes = courtCase(
                 reportingStaff = staff,
                 caseSequence = 3,
                 beginDate = LocalDate.now().minusYears(1),
@@ -4265,14 +4265,14 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateStaff = staff,
               ) {
                 offenderCharge3 = offenderCharge(offenceCode = "RT88600", resultCode1 = null)
-                appearance5 = courtEvent(eventDateTime = LocalDateTime.now().plusDays(10)) {
+                appearance5 = courtEvent(eventDateTime = LocalDateTime.now().minusDays(10)) {
                   courtEventCharge(
                     offenderCharge = offenderCharge3,
                     plea = "NG",
                     resultCode1 = "4020",
                   )
                 }
-                appearance6 = courtEvent(eventDateTime = LocalDateTime.now().plusDays(20)) {
+                appearance6 = courtEvent(eventDateTime = LocalDateTime.now().minusDays(20)) {
                   courtEventCharge(
                     offenderCharge = offenderCharge3,
                     plea = "NG",
@@ -4288,7 +4288,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   )
                 }
               }
-            }
+            }.bookingId
           }
       }
     }
@@ -4359,7 +4359,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `will use the latest non future appearance to set the outcome on the offender charge`() {
+      fun `will use the latest appearance court event charge that has outcome for the offender charge`() {
         // check outcome on offender charge
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -4386,7 +4386,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will ignore any cases without a future appearance`() {
+      fun `will repair any cases even without a future appearance`() {
         // check outcome on offender charge
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge2.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -4409,11 +4409,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offence.offenceCode").isEqualTo("RR84700")
-          .jsonPath("resultCode1").doesNotExist()
+          .jsonPath("resultCode1.code").isEqualTo("4020")
       }
 
       @Test
-      fun `will handle multiple future appearances`() {
+      fun `will handle repair even when court event had previously been deleted`() {
         // check outcome on offender charge
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge3.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -4436,7 +4436,21 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offence.offenceCode").isEqualTo("RT88600")
-          .jsonPath("resultCode1.code").isEqualTo("1004")
+          .jsonPath("resultCode1.code").isEqualTo("4020")
+      }
+
+      @Test
+      fun `will recalculate imprisonment status`() {
+        webTestClient.post().uri("/prisoners/$offenderNo/sentencing/imprisonment-status/repair")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .exchange()
+          .expectStatus().isOk
+
+        verify(spRepository).imprisonmentStatusUpdateSynchronous(
+          bookingId = eq(latestBookingId),
+          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
+        )
       }
     }
   }
@@ -4712,7 +4726,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.clonedCourtCases).isNull()
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -4781,7 +4795,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
 
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -4891,7 +4905,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.clonedCourtCases).isNotNull()
 
         // imprisonment statu, s stored procedure is called - but on latest booking where the appearance was added
-        verify(spRepository, times(2)).imprisonmentStatusUpdate(
+        verify(spRepository, times(2)).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5077,7 +5091,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
 
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5241,7 +5255,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5487,7 +5501,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtOrders[0].id").doesNotExist()
 
         // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5889,7 +5903,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.createdCourtEventChargesIds.size).isEqualTo(0)
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -6402,7 +6416,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].id").isEqualTo(courtEvent2.id)
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -6570,7 +6584,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -7203,7 +7217,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -7715,7 +7729,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
             .returnResult().responseBody!!.sentenceSeq
 
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -8118,7 +8132,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -8509,7 +8523,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isCreated.expectBody(CreateSentenceTermResponse::class.java)
             .returnResult().responseBody!!
 
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -8730,7 +8744,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdate(
+        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -9728,7 +9742,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
+          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -10054,7 +10068,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
+          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -10254,7 +10268,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
+          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -10597,7 +10611,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
+          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -11327,7 +11341,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
+          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -11767,7 +11781,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
+          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -12187,7 +12201,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
+          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
