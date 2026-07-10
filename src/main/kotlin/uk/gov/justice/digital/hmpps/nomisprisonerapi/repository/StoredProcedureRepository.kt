@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusUpdate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentDelete
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentUpsert
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.UpdateStatusAndMainOffence
 
 interface StoredProcedureRepository {
   fun postKeyDateAdjustmentUpsert(
@@ -19,7 +20,12 @@ interface StoredProcedureRepository {
     bookingId: Long,
   )
 
-  fun imprisonmentStatusUpdate(
+  fun imprisonmentStatusUpdateAsynchronous(
+    bookingId: Long,
+    changeType: String,
+  )
+
+  fun imprisonmentStatusUpdateSynchronous(
     bookingId: Long,
     changeType: String,
   )
@@ -31,6 +37,7 @@ class StoredProcedureRepositoryOracle(
   private val keyDateAdjustmentUpsertProcedure: KeyDateAdjustmentUpsert,
   private val keyDateAdjustmentDeleteProcedure: KeyDateAdjustmentDelete,
   private val imprisonmentStatusUpdate: ImprisonmentStatusUpdate,
+  private val updateStatusAndMainOffence: UpdateStatusAndMainOffence,
 ) : StoredProcedureRepository {
 
   override fun postKeyDateAdjustmentUpsert(
@@ -53,7 +60,7 @@ class StoredProcedureRepositoryOracle(
     keyDateAdjustmentDeleteProcedure.execute(params)
   }
 
-  override fun imprisonmentStatusUpdate(
+  override fun imprisonmentStatusUpdateAsynchronous(
     bookingId: Long,
     changeType: String,
   ) {
@@ -61,6 +68,15 @@ class StoredProcedureRepositoryOracle(
       .addValue("p_offender_book_id", bookingId)
       .addValue("p_change_type", changeType)
     imprisonmentStatusUpdate.execute(params)
+  }
+  override fun imprisonmentStatusUpdateSynchronous(
+    bookingId: Long,
+    changeType: String,
+  ) {
+    val params = MapSqlParameterSource()
+      .addValue("p_offender_book_id", bookingId)
+      .addValue("p_change_type", changeType)
+    updateStatusAndMainOffence.execute(params)
   }
 }
 
@@ -86,10 +102,14 @@ class StoredProcedureRepositoryH2 : StoredProcedureRepository {
     log.info("calling H2 version of StoreProcedure preKeyDateAdjustmentDeletion")
   }
 
-  override fun imprisonmentStatusUpdate(
+  override fun imprisonmentStatusUpdateAsynchronous(
     bookingId: Long,
     changeType: String,
   ) {
     log.info("calling H2 version of StoreProcedure imprisonmentStatusUpdate with bookingId: $bookingId and change type: $changeType")
+  }
+
+  override fun imprisonmentStatusUpdateSynchronous(bookingId: Long, changeType: String) {
+    log.info("calling H2 version of StoreProcedure updateStatusAndMainOffence with bookingId: $bookingId and change type: $changeType")
   }
 }

@@ -22,6 +22,22 @@ class ImprisonmentStatusUpdate(dataSource: DataSource) : SimpleJdbcCall(dataSour
   }
 }
 
+@Component
+class UpdateStatusAndMainOffence(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
+  init {
+    withSchemaName("OMS_OWNER")
+      .withCatalogName("TAG_IMPRISONMENT_STATUS")
+      .withProcedureName("update_status_and_main_offence")
+      .withoutProcedureColumnMetaDataAccess()
+      .withNamedBinding()
+      .declareParameters(
+        SqlParameter("p_offender_book_id", Types.NUMERIC),
+        SqlParameter("p_change_type", Types.VARCHAR),
+      )
+    compile()
+  }
+}
+
 // TODO could these be new values or are these required for reports?
 enum class ImprisonmentStatusChangeType {
   UPDATE_SENTENCE,
