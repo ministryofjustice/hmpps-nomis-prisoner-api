@@ -46,7 +46,7 @@ class StaffService(
     id = id,
     firstName = firstName,
     lastName = lastName,
-    emails = emails.map { it.internetAddress },
+    emails = emails.sortedBy { it.internetAddressId }.map { it.internetAddress },
     status = status.code,
     accounts = accounts.map { it.toUserAccount(dpsRolesOnly) },
     audit = toAudit(),
