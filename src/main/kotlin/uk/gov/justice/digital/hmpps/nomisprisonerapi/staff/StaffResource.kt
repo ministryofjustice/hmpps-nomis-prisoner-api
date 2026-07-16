@@ -212,8 +212,8 @@ class StaffResource(private val staffService: StaffService) {
 data class StaffDetails(
   @Schema(description = "The unique staff id", example = "12345")
   val id: Long,
-  @Schema(description = "Primary email address of the staff user", example = "john.smith@internet.co.uk")
-  val email: String? = null,
+  @Schema(description = "List of email addresses for the staff user", example = "['fred@example.com','fred2.example.com']")
+  val emails: List<String>,
   @Schema(description = "Staff user's first name", example = "John")
   val firstName: String,
   @Schema(description = "Staff user's last name", example = "Smith")

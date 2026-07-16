@@ -64,7 +64,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
         )
         staff1 = staff(firstName = "JIM", lastName = "STAFFA") {
           email(emailAddress = "jim.staffa@justice.gov.uk")
-          // TODO add web address so that it goes into INTERNET ADDRESSES
+          email(emailAddress = "jim.staffa2@justice.gov.uk")
           account(username = "JIIMSTAFFA_GEN", activeCaseloadId = "MDI", lastLoggedIn = LocalDateTime.parse("2026-03-17T12:30"))
           account(username = "JIIMSTAFFA_ADM", type = ADMIN) {
             userCaseload(caseloadId = "MDI") {
@@ -141,7 +141,8 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff1.id)
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
-        .jsonPath("email").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[0]").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[1]").isEqualTo("jim.staffa2@justice.gov.uk")
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
@@ -157,7 +158,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff2.id)
         .jsonPath("firstName").isEqualTo("JOE")
         .jsonPath("lastName").isEqualTo("STAFFB")
-        .jsonPath("email").doesNotExist()
+        .jsonPath("emails").isEmpty
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
@@ -287,7 +288,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
         )
         staff1 = staff(firstName = "JIM", lastName = "STAFFA") {
           email(emailAddress = "jim.staffa@justice.gov.uk")
-          // TODO add web address so that it goes into INTERNET ADDRESSES
+          email(emailAddress = "jim.staffa2@justice.gov.uk")
           account(username = "JIIMSTAFFA_GEN", activeCaseloadId = "MDI", lastLoggedIn = LocalDateTime.parse("2026-03-17T12:30"))
           account(username = "JIIMSTAFFA_ADM", type = ADMIN) {
             userCaseload(caseloadId = "MDI") {
@@ -364,7 +365,8 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff1.id)
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
-        .jsonPath("email").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[0]").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[1]").isEqualTo("jim.staffa2@justice.gov.uk")
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
@@ -380,7 +382,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff2.id)
         .jsonPath("firstName").isEqualTo("JOE")
         .jsonPath("lastName").isEqualTo("STAFFB")
-        .jsonPath("email").doesNotExist()
+        .jsonPath("emails").isEmpty()
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
