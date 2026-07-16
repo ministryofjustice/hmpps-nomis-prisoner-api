@@ -141,8 +141,8 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff1.id)
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
-        .jsonPath("emails[0]").isEqualTo("jim.staffa2@justice.gov.uk")
-        .jsonPath("emails[1]").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[0]").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[1]").isEqualTo("jim.staffa2@justice.gov.uk")
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
@@ -365,8 +365,8 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff1.id)
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
-        .jsonPath("emails[0]").isEqualTo("jim.staffa2@justice.gov.uk")
-        .jsonPath("emails[1]").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[0]").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emails[1]").isEqualTo("jim.staffa2@justice.gov.uk")
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
