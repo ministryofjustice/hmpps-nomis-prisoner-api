@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
@@ -46,9 +47,15 @@ class StaffService(
     id = id,
     firstName = firstName,
     lastName = lastName,
-    emails = emails.sortedBy { it.internetAddressId }.map { it.internetAddress },
+    emailAddresses = emails.sortedBy { it.internetAddressId }.map { it.toStaffEmail() },
     status = status.code,
     accounts = accounts.map { it.toUserAccount(dpsRolesOnly) },
+    audit = toAudit(),
+  )
+
+  fun InternetAddress.toStaffEmail() = StaffEmail(
+    emailAddressId = internetAddressId,
+    email = internetAddress,
     audit = toAudit(),
   )
 

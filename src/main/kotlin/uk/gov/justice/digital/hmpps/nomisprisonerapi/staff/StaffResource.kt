@@ -213,7 +213,7 @@ data class StaffDetails(
   @Schema(description = "The unique staff id", example = "12345")
   val id: Long,
   @Schema(description = "List of email addresses for the staff user", example = "['fred@example.com','fred2.example.com']")
-  val emails: List<String>,
+  val emailAddresses: List<StaffEmail>,
   @Schema(description = "Staff user's first name", example = "John")
   val firstName: String,
   @Schema(description = "Staff user's last name", example = "Smith")
@@ -223,6 +223,17 @@ data class StaffDetails(
   @Schema(description = "Accounts for the staff user")
   val accounts: List<StaffAccount>,
   @Schema(description = "Audit data associated with the staff user")
+  val audit: NomisAudit,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Staff email")
+data class StaffEmail(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val emailAddressId: Long,
+  @Schema(description = "The email address", example = "john.smith@internet.co.uk")
+  val email: String,
+  @Schema(description = "Audit data associated with the staff email")
   val audit: NomisAudit,
 )
 

@@ -141,11 +141,27 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff1.id)
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
-        .jsonPath("emails[0]").isEqualTo("jim.staffa@justice.gov.uk")
-        .jsonPath("emails[1]").isEqualTo("jim.staffa2@justice.gov.uk")
+        .jsonPath("emailAddresses.size()").isEqualTo(2)
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
+    }
+
+    @Test
+    fun `will return staff emails`() {
+      webTestClient.get().uri("/staff/id/${staff1.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(staff1.emails.first().internetAddressId)
+        .jsonPath("emailAddresses[0].email").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emailAddresses[0]audit.createDatetime").isNotEmpty
+        .jsonPath("emailAddresses[0]audit.createUsername").isEqualTo("SA")
+        .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(staff1.emails.elementAt(1).internetAddressId)
+        .jsonPath("emailAddresses[1].email").isEqualTo("jim.staffa2@justice.gov.uk")
+        .jsonPath("emailAddresses[1]audit.createDatetime").isNotEmpty
+        .jsonPath("emailAddresses[1]audit.createUsername").isEqualTo("SA")
     }
 
     @Test
@@ -158,7 +174,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff2.id)
         .jsonPath("firstName").isEqualTo("JOE")
         .jsonPath("lastName").isEqualTo("STAFFB")
-        .jsonPath("emails").isEmpty
+        .jsonPath("emailAddresses").isEmpty
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
@@ -365,11 +381,27 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff1.id)
         .jsonPath("firstName").isEqualTo("JIM")
         .jsonPath("lastName").isEqualTo("STAFFA")
-        .jsonPath("emails[0]").isEqualTo("jim.staffa@justice.gov.uk")
-        .jsonPath("emails[1]").isEqualTo("jim.staffa2@justice.gov.uk")
+        .jsonPath("emailAddresses.size()").isEqualTo(2)
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
+    }
+
+    @Test
+    fun `will return staff emails`() {
+      webTestClient.get().uri("/staff/username/${staff1.accounts[0].username}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(staff1.emails.first().internetAddressId)
+        .jsonPath("emailAddresses[0].email").isEqualTo("jim.staffa@justice.gov.uk")
+        .jsonPath("emailAddresses[0]audit.createDatetime").isNotEmpty
+        .jsonPath("emailAddresses[0]audit.createUsername").isEqualTo("SA")
+        .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(staff1.emails.elementAt(1).internetAddressId)
+        .jsonPath("emailAddresses[1].email").isEqualTo("jim.staffa2@justice.gov.uk")
+        .jsonPath("emailAddresses[1]audit.createDatetime").isNotEmpty
+        .jsonPath("emailAddresses[1]audit.createUsername").isEqualTo("SA")
     }
 
     @Test
@@ -382,7 +414,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(staff2.id)
         .jsonPath("firstName").isEqualTo("JOE")
         .jsonPath("lastName").isEqualTo("STAFFB")
-        .jsonPath("emails").isEmpty()
+        .jsonPath("emailAddresses").isEmpty()
         .jsonPath("status").isEqualTo("ACTIVE")
         .jsonPath("audit.createDatetime").isNotEmpty
         .jsonPath("audit.createUsername").isEqualTo("SA")
