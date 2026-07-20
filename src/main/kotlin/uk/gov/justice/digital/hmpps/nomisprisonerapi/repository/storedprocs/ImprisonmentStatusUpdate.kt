@@ -7,22 +7,6 @@ import java.sql.Types
 import javax.sql.DataSource
 
 @Component
-class ImprisonmentStatusUpdate(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
-  init {
-    withSchemaName("OMS_OWNER")
-      .withCatalogName("TAG_IMPRISONMENT_STATUS")
-      .withProcedureName("post_message")
-      .withoutProcedureColumnMetaDataAccess()
-      .withNamedBinding()
-      .declareParameters(
-        SqlParameter("p_offender_book_id", Types.NUMERIC),
-        SqlParameter("p_change_type", Types.VARCHAR),
-      )
-    compile()
-  }
-}
-
-@Component
 class UpdateStatusAndMainOffence(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
   init {
     withSchemaName("OMS_OWNER")

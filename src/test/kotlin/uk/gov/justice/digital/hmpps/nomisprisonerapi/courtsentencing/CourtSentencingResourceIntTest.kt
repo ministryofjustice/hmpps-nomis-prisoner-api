@@ -3204,7 +3204,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -4447,7 +4447,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdateSynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -4726,7 +4726,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.clonedCourtCases).isNull()
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -4795,7 +4795,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
 
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -4905,7 +4905,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.clonedCourtCases).isNotNull()
 
         // imprisonment statu, s stored procedure is called - but on latest booking where the appearance was added
-        verify(spRepository, times(2)).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository, times(2)).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5091,7 +5091,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
 
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5255,7 +5255,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5501,7 +5501,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtOrders[0].id").doesNotExist()
 
         // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -5903,7 +5903,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.createdCourtEventChargesIds.size).isEqualTo(0)
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -6416,7 +6416,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].id").isEqualTo(courtEvent2.id)
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -6584,7 +6584,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isNotFound
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -7217,7 +7217,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
 // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
         )
@@ -7729,7 +7729,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
             .returnResult().responseBody!!.sentenceSeq
 
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -8132,7 +8132,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -8523,7 +8523,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isCreated.expectBody(CreateSentenceTermResponse::class.java)
             .returnResult().responseBody!!
 
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -8744,7 +8744,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+        verify(spRepository).imprisonmentStatusUpdate(
           bookingId = eq(latestBookingId),
           changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
         )
@@ -9742,7 +9742,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+          verify(spRepository).imprisonmentStatusUpdate(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -10068,7 +10068,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+          verify(spRepository).imprisonmentStatusUpdate(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -10268,7 +10268,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+          verify(spRepository).imprisonmentStatusUpdate(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -10611,7 +10611,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+          verify(spRepository).imprisonmentStatusUpdate(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -11341,7 +11341,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+          verify(spRepository).imprisonmentStatusUpdate(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -11781,7 +11781,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+          verify(spRepository).imprisonmentStatusUpdate(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )
@@ -12201,7 +12201,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdateAsynchronous(
+          verify(spRepository).imprisonmentStatusUpdate(
             bookingId = eq(booking.bookingId),
             changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
           )

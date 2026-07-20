@@ -298,7 +298,7 @@ class CourtSentencingService(
     )
 
     refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
-    storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+    storedProcedureRepository.imprisonmentStatusUpdate(
       bookingId = booking.bookingId,
       changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
     )
@@ -383,7 +383,7 @@ class CourtSentencingService(
 
       courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
         refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
-        storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+        storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = courtCase.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
@@ -511,7 +511,7 @@ class CourtSentencingService(
           offenderChargeId = createdOffenderCharge.id,
         ).also { response ->
           // calculates main offence
-          storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+          storedProcedureRepository.imprisonmentStatusUpdate(
             bookingId = courtCase.offenderBooking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
           )
@@ -652,7 +652,7 @@ class CourtSentencingService(
         )
 
         refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
-        storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+        storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = courtCase.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
@@ -717,7 +717,7 @@ class CourtSentencingService(
           offenderChargesRemovedFromAppearance = offenderCharges,
         )
         telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
-        storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+        storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = case.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
@@ -770,7 +770,7 @@ class CourtSentencingService(
     courtCaseRepository.findByIdOrNull(caseId)?.also {
       telemetry = telemetry + ("bookingId" to it.offenderBooking.bookingId.toString())
       courtCaseRepository.delete(it)
-      storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = it.offenderBooking.bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
       )
@@ -823,7 +823,7 @@ class CourtSentencingService(
                 refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
               }
             }
-            storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+            storedProcedureRepository.imprisonmentStatusUpdate(
               bookingId = courtCase.offenderBooking.bookingId,
               changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
             )
@@ -883,7 +883,7 @@ class CourtSentencingService(
           }
         }
     }
-    storedProcedureRepository.imprisonmentStatusUpdateSynchronous(
+    storedProcedureRepository.imprisonmentStatusUpdate(
       bookingId = latestBooking.bookingId,
       changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
     )
@@ -947,7 +947,7 @@ class CourtSentencingService(
     )
 
     offenderSentenceRepository.saveAndFlush(sentence).also {
-      storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = offenderBooking.bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -996,7 +996,7 @@ class CourtSentencingService(
       sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
     )
     offenderSentenceTermRepository.saveAndFlush(term).also {
-      storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = offenderBooking.bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1139,7 +1139,7 @@ class CourtSentencingService(
         }
 
         offenderSentenceRepository.saveAndFlush(sentence).also {
-          storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+          storedProcedureRepository.imprisonmentStatusUpdate(
             bookingId = case.offenderBooking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
           )
@@ -1199,7 +1199,7 @@ class CourtSentencingService(
         term.sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType)
 
         offenderSentenceTermRepository.saveAndFlush(term).also {
-          storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+          storedProcedureRepository.imprisonmentStatusUpdate(
             bookingId = case.offenderBooking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
           )
@@ -1440,7 +1440,7 @@ class CourtSentencingService(
     }
 
     bookingIds.forEach { bookingId ->
-      storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1481,7 +1481,7 @@ class CourtSentencingService(
     request.sentencesRemoved.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
-      storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1536,7 +1536,7 @@ class CourtSentencingService(
     request.sentences.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
-      storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1568,7 +1568,7 @@ class CourtSentencingService(
     bookingIds.forEach { bookingId ->
       findOffenderBooking(bookingId).fixedTermRecall = null
       offenderFixedTermRecallRepository.deleteById(bookingId)
-      storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+      storedProcedureRepository.imprisonmentStatusUpdate(
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -2174,7 +2174,7 @@ class CourtSentencingService(
       }
 
       courtCaseRepository.saveAllAndFlush(clonedCases).also {
-        storedProcedureRepository.imprisonmentStatusUpdateAsynchronous(
+        storedProcedureRepository.imprisonmentStatusUpdate(
           bookingId = latestBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
