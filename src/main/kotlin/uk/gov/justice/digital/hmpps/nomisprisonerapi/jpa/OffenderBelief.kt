@@ -26,9 +26,8 @@ data class OffenderBelief(
   @Column(name = "BELIEF_ID", nullable = false)
   var beliefId: Long = 0,
 
-  @ManyToOne
-  @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
-  val booking: OffenderBooking,
+  @Column(name = "OFFENDER_BOOK_ID", nullable = false)
+  val booking: Long,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "ROOT_OFFENDER_ID", nullable = false)
