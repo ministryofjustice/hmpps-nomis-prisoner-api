@@ -31,7 +31,7 @@ data class OffenderPropertyContainer(
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "INTERNAL_LOCATION_ID")
-  val agencyInternalLocation: AgencyInternalLocation? = null,
+  var agencyInternalLocation: AgencyInternalLocation? = null,
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
@@ -52,9 +52,9 @@ data class OffenderPropertyContainer(
 241	    CO   Confiscated
    */
   @Enumerated(EnumType.STRING)
-  val containerCode: PropertyContainerCode,
+  var containerCode: PropertyContainerCode,
 
-  val proposedDisposalDate: LocalDate? = null,
+  var proposedDisposalDate: LocalDate? = null,
   val expiryDate: LocalDate? = null,
 ) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
