@@ -114,6 +114,66 @@ class PrisonerBalanceResource(
     val lastOffenderId: Long,
   )
 
+  @GetMapping("/{prisonNumber}/balance/reconcile")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner's finance details by their prison number",
+    description = "Retrieves a prisoner's trust account details for aggregated caseloads. Zero account balances are not returned. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAggregatedAccountsForPrisonNumber(
+    @Schema(description = "prisonNumber", example = "A1234BC")
+    @PathVariable
+    prisonNumber: String,
+  ): PrisonerAggregatedAccountsDto = prisonerBalanceService.getAggregatedAccounts(prisonNumber)
+
+  @GetMapping("/rootOffenderId/{rootOffenderId}/balance/reconcile")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner's finance details by their root offender id",
+    description = "Retrieves a prisoner's trust account details for aggregated caseloads. Zero account balances are not returned. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAggregatedAccountsForId(
+    @Schema(description = "rootOffenderId", example = "123456")
+    @PathVariable
+    rootOffenderId: Long,
+  ): PrisonerAggregatedAccountsDto = prisonerBalanceService.getAggregatedAccounts(rootOffenderId)
+
   @GetMapping("/rootOffenderId/{rootOffenderId}/balance")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -260,6 +320,27 @@ data class AccountSummaryDto(
   @Schema(description = "The prison", example = "ASI")
   val prisonId: String,
 
+  @Schema(description = "The account code for the balance entry", example = "2101")
+  val accountCode: Long,
+
+  @Schema(description = "The account balance", example = "12.50")
+  val balance: BigDecimal,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class PrisonerAggregatedAccountsDto(
+  @Schema(description = "The root offender Id", example = "12345")
+  val rootOffenderId: Long,
+
+  @Schema(description = "The prison Number", example = "A1234BC")
+  val prisonNumber: String,
+
+  @Schema(description = "The aggregated prisoner accounts")
+  val accounts: List<AggregatedAccountDto>,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AggregatedAccountDto(
   @Schema(description = "The account code for the balance entry", example = "2101")
   val accountCode: Long,
 
