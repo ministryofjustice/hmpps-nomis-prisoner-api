@@ -30,7 +30,7 @@ import java.time.LocalDateTime
 @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class StaffResource(private val staffService: StaffService) {
 
-  @GetMapping("/{staffId}")
+  @GetMapping("/id/{staffId}")
   @Operation(
     summary = "Get staff details",
     description = "Gets staff details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -69,12 +69,58 @@ class StaffResource(private val staffService: StaffService) {
       ),
     ],
   )
-  fun getStaff(
+  fun getStaffById(
     @Schema(description = "staff Id") @PathVariable staffId: Long,
     @RequestParam(name = "dpsRolesOnly")
     @Schema(description = "Only return dps roles for the staff", example = "true")
-    dpsRolesOnly: Boolean = false,
+    dpsRolesOnly: Boolean = true,
   ) = staffService.getStaffDetails(staffId, dpsRolesOnly)
+
+  @GetMapping("/username/{username}")
+  @Operation(
+    summary = "Get staff details by any of the staff's usernames",
+    description = "Gets staff details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "OK",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getStaffByUsername(
+    @Schema(description = "staff Id") @PathVariable username: String,
+    @RequestParam(name = "dpsRolesOnly")
+    @Schema(description = "Only return dps roles for the staff", example = "true")
+    dpsRolesOnly: Boolean = true,
+  ) = staffService.getStaffDetails(username, dpsRolesOnly)
 
   @GetMapping("/ids")
   @ResponseStatus(HttpStatus.OK)
@@ -166,8 +212,8 @@ class StaffResource(private val staffService: StaffService) {
 data class StaffDetails(
   @Schema(description = "The unique staff id", example = "12345")
   val id: Long,
-  @Schema(description = "Primary email address of the staff user", example = "john.smith@internet.co.uk")
-  val email: String? = null,
+  @Schema(description = "List of email addresses for the staff user", example = "['fred@example.com','fred2.example.com']")
+  val emailAddresses: List<StaffEmail>,
   @Schema(description = "Staff user's first name", example = "John")
   val firstName: String,
   @Schema(description = "Staff user's last name", example = "Smith")
@@ -177,6 +223,17 @@ data class StaffDetails(
   @Schema(description = "Accounts for the staff user")
   val accounts: List<StaffAccount>,
   @Schema(description = "Audit data associated with the staff user")
+  val audit: NomisAudit,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Staff email")
+data class StaffEmail(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val emailAddressId: Long,
+  @Schema(description = "The email address", example = "john.smith@internet.co.uk")
+  val email: String,
+  @Schema(description = "Audit data associated with the staff email")
   val audit: NomisAudit,
 )
 
@@ -194,7 +251,7 @@ data class StaffAccount(
   val lastLoggedIn: LocalDateTime? = null,
   @Schema(description = "The current active caseload on the account", example = "MDI")
   val activeCaseloadId: String? = null,
-  @Schema(description = "Caseloads associated with the user", example = "['MDI','LEI']")
+  @Schema(description = "Caseloads and roles associated with the user")
   val caseloads: List<CaseloadResponse>,
   @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,

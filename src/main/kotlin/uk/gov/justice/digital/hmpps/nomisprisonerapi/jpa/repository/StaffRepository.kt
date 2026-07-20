@@ -10,6 +10,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 @Repository
 interface StaffRepository : JpaRepository<Staff, Long> {
 
+  fun findByAccountsUsername(username: String): Staff?
+
   @Query(
     """
       select *

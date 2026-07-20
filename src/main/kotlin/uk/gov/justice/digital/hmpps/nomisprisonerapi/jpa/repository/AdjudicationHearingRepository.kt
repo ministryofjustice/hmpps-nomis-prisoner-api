@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.EntityGraph.EntityGraphType.FETCH
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationHearing
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 
 @Repository
 interface AdjudicationHearingRepository : JpaRepository<AdjudicationHearing, Long> {
@@ -12,4 +13,7 @@ interface AdjudicationHearingRepository : JpaRepository<AdjudicationHearing, Lon
   fun findByAdjudicationNumber(adjudicationNumber: Long): List<AdjudicationHearing>
   fun deleteByAdjudicationNumber(adjudicationNumber: Long)
   fun findByAdjudicationNumberAndComment(adjudicationNumber: Long, comment: String): AdjudicationHearing?
+
+  @Suppress("FunctionName")
+  fun findFirstOrNullByAgencyInternalLocation_Agency_AndCommentStartsWith(agency: AgencyLocation, comment: String): AdjudicationHearing?
 }

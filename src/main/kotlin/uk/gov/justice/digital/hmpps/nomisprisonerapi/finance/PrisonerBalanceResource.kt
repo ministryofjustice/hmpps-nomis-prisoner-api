@@ -114,11 +114,11 @@ class PrisonerBalanceResource(
     val lastOffenderId: Long,
   )
 
-  @GetMapping("/{rootOffenderId}/balance")
+  @GetMapping("/rootOffenderId/{rootOffenderId}/balance")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's finance details by their root offender id",
-    description = "Retrieves a prisoner's trust account details for all caseloads with a balance. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Retrieves a prisoner's trust account details for all caseloads with option to ignore zero balances. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(
@@ -145,6 +145,38 @@ class PrisonerBalanceResource(
     @RequestParam
     excludeZeroBalances: Boolean = false,
   ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId, excludeZeroBalances)
+
+  @GetMapping("/{prisonNumber}/balance")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner's finance details by their prison number",
+    description = "Retrieves a prisoner's trust account details for all caseloads with option to ignore zero balances. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getPrisonerAccountDetailsForPrisonNumber(
+    @Schema(description = "rootOffenderId", example = "123456")
+    @PathVariable
+    prisonNumber: String,
+    @RequestParam
+    excludeZeroBalances: Boolean = false,
+  ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccounts(prisonNumber, excludeZeroBalances)
 
   @GetMapping("/{rootOffenderId}/balance/summary")
   @ResponseStatus(HttpStatus.OK)

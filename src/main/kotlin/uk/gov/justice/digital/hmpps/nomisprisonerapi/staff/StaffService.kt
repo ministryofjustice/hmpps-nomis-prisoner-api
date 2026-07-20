@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Caseload
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
@@ -19,9 +20,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffReposit
 class StaffService(
   private val staffRepository: StaffRepository,
 ) {
-  fun getStaffDetails(userId: Long, dpsRolesOnly: Boolean): StaffDetails = staffRepository.findByIdOrNull(userId)
+  fun getStaffDetails(staffId: Long, dpsRolesOnly: Boolean): StaffDetails = staffRepository.findByIdOrNull(staffId)
     ?.toStaffDetails(dpsRolesOnly)
-    ?: throw NotFoundException("Staff with id=$userId does not exist")
+    ?: throw NotFoundException("Staff with id=$staffId does not exist")
+
+  fun getStaffDetails(username: String, dpsRolesOnly: Boolean): StaffDetails = staffRepository.findByAccountsUsername(username)
+    ?.toStaffDetails(dpsRolesOnly)
+    ?: throw NotFoundException("Staff with username=$username does not exist")
 
   fun getStaffIdsFromId(
     staffId: Long,
@@ -42,9 +47,15 @@ class StaffService(
     id = id,
     firstName = firstName,
     lastName = lastName,
-    email = emails.firstOrNull()?.internetAddress,
+    emailAddresses = emails.sortedBy { it.internetAddressId }.map { it.toStaffEmail() },
     status = status.code,
     accounts = accounts.map { it.toUserAccount(dpsRolesOnly) },
+    audit = toAudit(),
+  )
+
+  fun InternetAddress.toStaffEmail() = StaffEmail(
+    emailAddressId = internetAddressId,
+    email = internetAddress,
     audit = toAudit(),
   )
 

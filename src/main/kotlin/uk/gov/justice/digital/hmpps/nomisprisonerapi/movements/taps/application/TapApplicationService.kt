@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapApplicationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TAP_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.TapAddressService
@@ -25,6 +26,7 @@ class TapApplicationService(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
   private val applicationRepository: OffenderTapApplicationRepository,
+  private val scheduleOutRepository: OffenderTapScheduleOutRepository,
   private val tapAddressService: TapAddressService,
   private val movementHelpers: MovementHelpers,
 ) {
@@ -107,7 +109,11 @@ class TapApplicationService(
     if (!application.isApproved() && application.isSingle()) {
       val schedule = application.tapScheduleOuts.firstOrNull()
       if (schedule?.tapMovementOut != null) throw BadDataException("Attempt to remove a schedule from an unapproved application failed - the schedule (${schedule.eventId}) is attached to a movement (${schedule.tapMovementOut!!.id.offenderBooking.bookingId}/${schedule.tapMovementOut!!.id.sequence}).")
-      application.tapScheduleOuts.remove(schedule)
+      schedule?.run {
+        scheduleOutRepository.findByEventIdOrNullForUpdate(schedule.eventId)
+          ?.also { scheduleOutRepository.delete(it) }
+        application.tapScheduleOuts.remove(schedule)
+      }
     }
 
     return applicationRepository.save(application)

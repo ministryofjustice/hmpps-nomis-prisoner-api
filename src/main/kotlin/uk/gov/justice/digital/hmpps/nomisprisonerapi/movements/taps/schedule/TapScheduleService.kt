@@ -140,7 +140,7 @@ class TapScheduleService(
 
   @Transactional
   fun deleteTapScheduleOut(offenderNo: String, eventId: Long) {
-    scheduleOutRepository.findByIdOrNull(eventId)
+    scheduleOutRepository.findByEventIdOrNullForUpdate(eventId)
       ?.also { schedule ->
         if (schedule.tapMovementOut != null) {
           throw ConflictException("Cannot delete tap schedule out eventId $eventId because it has a movement ${schedule.tapMovementOut!!.id.offenderBooking.bookingId} / ${schedule.tapMovementOut!!.id.sequence}}")
