@@ -58,7 +58,7 @@ class OffenderBeliefBuilder(
     whenCreated: LocalDateTime?,
     whoCreated: String?,
   ): OffenderBelief = OffenderBelief(
-    booking = booking,
+    booking = booking.bookingId,
     rootOffender = offender,
     beliefCode = repository.profileCodeOf(beliefCode),
     startDate = startDate,
