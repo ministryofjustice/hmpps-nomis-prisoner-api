@@ -16,6 +16,22 @@ class PrisonerBalanceService(
   val offenderRepository: OffenderRepository,
   val offenderSubAccountRepository: OffenderSubAccountRepository,
 ) {
+  fun getAggregatedAccounts(prisonNumber: String): PrisonerAggregatedAccountsDto = offenderRepository.findRootByNomsId(prisonNumber)?.let {
+    getAggregatedAccounts(it.rootOffenderId!!)
+  }
+    ?: throw NotFoundException("Offender $prisonNumber not found")
+
+  fun getAggregatedAccounts(rootOffenderId: Long): PrisonerAggregatedAccountsDto {
+    val offender = offenderRepository.findByIdOrNull(rootOffenderId)
+      ?: throw NotFoundException("Offender with id $rootOffenderId not found")
+    val agregatedAccounts = offenderSubAccountRepository.getAggregatedAccounts(rootOffenderId)
+
+    return PrisonerAggregatedAccountsDto(
+      rootOffenderId = offender.rootOffenderId!!,
+      prisonNumber = offender.nomsId,
+      accounts = agregatedAccounts,
+    )
+  }
 
   fun getPrisonerAccounts(prisonNumber: String, excludeZeroBalances: Boolean): PrisonerBalanceDto = offenderRepository.findRootByNomsId(prisonNumber)
     ?.let { getPrisonerAccounts(it.rootOffenderId!!, excludeZeroBalances) }
