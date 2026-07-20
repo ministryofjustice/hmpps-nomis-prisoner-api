@@ -997,7 +997,10 @@ class AdjudicationService(
           locationType = "ADJU",
           active = false,
         ).firstOrNull()
-          .also { log.warn("An active adjudication room (location type ADJU) not found at prison ${incidentCharge.incident.prison.id} so checking for any inactive rooms, assuming this prison is now closed") }
+          ?.also { log.warn("An active adjudication room (location type ADJU) not found at prison ${incidentCharge.incident.prison.id} so checking for any inactive rooms, assuming this prison is now closed") }
+        // else find any room that has previously been used in case location type has been changed by prison
+        ?: adjudicationHearingRepository.findFirstOrNullByAgencyInternalLocation_Agency_AndCommentStartsWith(incidentCharge.incident.prison, DPS_REFERRAL_PLACEHOLDER_HEARING)?.agencyInternalLocation
+          ?.also { log.warn("No adjudication room (location type ADJU) found at prison ${incidentCharge.incident.prison.id} so using any previous room instead. Location found is ${it.locationId}") }
         ?: throw NotFoundException("Adjudication room (location type ADJU) not found at prison ${incidentCharge.incident.prison.id}")
 
     val dummyHearingIdentifier = "$DPS_REFERRAL_PLACEHOLDER_HEARING-$chargeSequence"

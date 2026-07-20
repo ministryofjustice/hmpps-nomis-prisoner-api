@@ -409,6 +409,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
     private val existingAdjudicationNumber = 123456L
     private lateinit var existingCharge: AdjudicationIncidentCharge
     private lateinit var existingSecondCharge: AdjudicationIncidentCharge
+    private lateinit var existingThirdCharge: AdjudicationIncidentCharge
 
     @BeforeEach
     fun createPrisonerWithAdjudication() {
@@ -425,6 +426,7 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
             adjudicationParty(incident = existingIncident, adjudicationNumber = existingAdjudicationNumber) {
               existingCharge = charge(offenceCode = "51:1B", generateOfficeId = false)
               existingSecondCharge = charge(offenceCode = "51:1C", generateOfficeId = false)
+              existingThirdCharge = charge(offenceCode = "51:1C", generateOfficeId = false)
             }
           }
         }
@@ -558,6 +560,31 @@ class AdjudicationsHearingResultsResourceIntTest : IntegrationTestBase() {
           assertThat(adjudicationHearing.comment).isEqualTo("DPS_REFERRAL_PLACEHOLDER-${existingCharge.id.chargeSequence}")
           assertThat(adjudicationHearing.hearingDateTime).isEqualTo(LocalDateTime.now().with(LocalTime.MIDNIGHT))
           assertThat(adjudicationHearing.hearingResults[0].findingType.code).isEqualTo("REF_POLICE")
+
+          // now switch location type so it is no longer a Adjudication Usage type for below test
+          adjudicationHearing.agencyInternalLocation?.locationType = "LOCA"
+        }
+
+        webTestClient.post()
+          .uri("/adjudications/adjudication-number/$existingAdjudicationNumber/charge/${existingThirdCharge.id.chargeSequence}/result")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              aHearingResultRequest(pleaFindingCode = "NOT_ASKED", findingCode = "REF_POLICE"),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        repository.runInTransaction {
+          val adjudicationHearing = hearingRepository.findByAdjudicationNumber(existingAdjudicationNumber)[1]
+          assertThat(adjudicationHearing.comment).isEqualTo("DPS_REFERRAL_PLACEHOLDER-${existingThirdCharge.id.chargeSequence}")
+          assertThat(adjudicationHearing.hearingDateTime).isEqualTo(LocalDateTime.now().with(LocalTime.MIDNIGHT))
+          assertThat(adjudicationHearing.hearingResults[0].findingType.code).isEqualTo("REF_POLICE")
+
+          // now switch back to Adjudication type
+          adjudicationHearing.agencyInternalLocation?.locationType = "ADJU"
         }
       }
 
