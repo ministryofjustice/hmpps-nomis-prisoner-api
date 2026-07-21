@@ -94,8 +94,8 @@ interface OffenderBookingRepository :
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
-  @Query("from OffenderBooking ob join CourtCase cc on cc.offenderBooking.bookingId = ob.bookingId where cc.id = :caseId")
-  fun findByCaseIdOrNullForUpdate(caseId: Long): OffenderBooking?
+  @Query("from OffenderBooking ob where ob.bookingId = :bookingId")
+  fun findByIdOrNullForUpdate(bookingId: Long): OffenderBooking?
 }
 
 interface BookingWithIds {

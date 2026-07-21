@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.AuditRepository
@@ -111,6 +112,7 @@ class CourtSentencingService(
   private val sentencingAdjustmentService: SentencingAdjustmentService,
   private val linkCaseTxnRepository: LinkCaseTxnRepository,
   private val auditRepository: AuditRepository,
+  private val jdbcTemplate: JdbcTemplate,
   @Value("\${spring.datasource.username}") val datasourceUsername: String,
 ) {
   private companion object {
@@ -177,6 +179,7 @@ class CourtSentencingService(
   }
 
   private fun CourtCase.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = caseStatus.code == CaseStatus.INACTIVE && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime && mergeRequestDate > createDatetime
+
   private fun OffenderSentence.wasDeactivatedByMerge(mergeRequestDate: LocalDateTime) = status == "I" && auditModuleName == "MERGE" && modifyDatetime != null && mergeRequestDate < modifyDatetime && mergeRequestDate > createDatetime
 
   private fun CourtCase.wasCreatedByMerge(mergeRequestDate: LocalDateTime) = mergeRequestDate < createDatetime && createUsername == "SYS"
@@ -299,6 +302,7 @@ class CourtSentencingService(
 
     refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
     storedProcedureRepository.imprisonmentStatusUpdate(
+      jdbcTemplate = jdbcTemplate,
       bookingId = booking.bookingId,
       changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
     )
@@ -384,6 +388,7 @@ class CourtSentencingService(
       courtEventRepository.saveAndFlush(courtEvent).let { createdCourtEvent ->
         refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
         storedProcedureRepository.imprisonmentStatusUpdate(
+          jdbcTemplate = jdbcTemplate,
           bookingId = courtCase.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
@@ -512,6 +517,7 @@ class CourtSentencingService(
         ).also { response ->
           // calculates main offence
           storedProcedureRepository.imprisonmentStatusUpdate(
+            jdbcTemplate = jdbcTemplate,
             bookingId = courtCase.offenderBooking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
           )
@@ -653,6 +659,7 @@ class CourtSentencingService(
 
         refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
         storedProcedureRepository.imprisonmentStatusUpdate(
+          jdbcTemplate = jdbcTemplate,
           bookingId = courtCase.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
@@ -718,6 +725,7 @@ class CourtSentencingService(
         )
         telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
         storedProcedureRepository.imprisonmentStatusUpdate(
+          jdbcTemplate = jdbcTemplate,
           bookingId = case.offenderBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
@@ -771,6 +779,7 @@ class CourtSentencingService(
       telemetry = telemetry + ("bookingId" to it.offenderBooking.bookingId.toString())
       courtCaseRepository.delete(it)
       storedProcedureRepository.imprisonmentStatusUpdate(
+        jdbcTemplate = jdbcTemplate,
         bookingId = it.offenderBooking.bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
       )
@@ -824,6 +833,7 @@ class CourtSentencingService(
               }
             }
             storedProcedureRepository.imprisonmentStatusUpdate(
+              jdbcTemplate = jdbcTemplate,
               bookingId = courtCase.offenderBooking.bookingId,
               changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
             )
@@ -884,6 +894,7 @@ class CourtSentencingService(
         }
     }
     storedProcedureRepository.imprisonmentStatusUpdate(
+      jdbcTemplate = jdbcTemplate,
       bookingId = latestBooking.bookingId,
       changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
     )
@@ -902,70 +913,72 @@ class CourtSentencingService(
     return latestWithResultCode == courtEventCharge
   }
 
-  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest) = findCourtCaseWithOffenderBookingLock(caseId = caseId, offenderNo = offenderNo).let { case ->
-
-    val offenderBooking = case.offenderBooking
-    checkConsecutiveSentenceExists(request, offenderBooking)
-    val newSequence = offenderSentenceRepository.getNextSequence(offenderBooking)
-    val sentence = OffenderSentence(
-      id = SentenceId(offenderBooking, sequence = newSequence),
-      category = lookupSentenceCategory(request.sentenceCategory),
-      calculationType = lookupSentenceCalculationType(
-        categoryCode = request.sentenceCategory,
-        calcType = request.sentenceCalcType,
-      ),
-      courtCase = case,
-      startDate = request.startDate,
-      endDate = request.endDate,
-      status = request.status,
-      fineAmount = request.fine,
-      sentenceLevel = request.sentenceLevel,
-      // will always have to be a court order (via the court event) - throw exception if not
-      courtOrder = existingCourtOrder(
-        offenderBooking = offenderBooking,
-        courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId),
-      )
-        ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}"),
-      // this is the sentence sequence this sentence is consecutive to
-      consecSequence = request.consecutiveToSentenceSeq?.toInt(),
-      lineSequence = offenderSentenceRepository.getNextLineSequence(offenderBooking).toInt(),
-      statusUpdateReason = "A",
-    )
-
-    sentence.offenderSentenceCharges.addAll(
-      request.offenderChargeIds.map { chargeId ->
-        OffenderSentenceCharge(
-          id = OffenderSentenceChargeId(
-            offenderBooking = offenderBooking,
-            sequence = sentence.id.sequence,
-            offenderChargeId = chargeId,
-          ),
-          offenderSentence = sentence,
-          offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId),
-        )
-      },
-    )
-
-    offenderSentenceRepository.saveAndFlush(sentence).also {
-      storedProcedureRepository.imprisonmentStatusUpdate(
-        bookingId = offenderBooking.bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
-      )
-    }
-
-    CreateSentenceResponse(
-      sentenceSeq = sentence.id.sequence,
-      bookingId = offenderBooking.bookingId,
-    ).also { response ->
-      telemetryClient.trackEvent(
-        "sentence-created",
-        mapOf(
-          "sentenceSeq" to response.sentenceSeq.toString(),
-          "bookingId" to offenderBooking.bookingId.toString(),
-          "offenderNo" to offenderNo,
+  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest): CreateSentenceResponse {
+    findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
+      val offenderBooking = findOffenderBookingWithLock(case.offenderBooking.bookingId)
+      checkConsecutiveSentenceExists(request, offenderBooking)
+      val newSequence = offenderSentenceRepository.getNextSequence(offenderBooking)
+      val sentence = OffenderSentence(
+        id = SentenceId(offenderBooking, sequence = newSequence),
+        category = lookupSentenceCategory(request.sentenceCategory),
+        calculationType = lookupSentenceCalculationType(
+          categoryCode = request.sentenceCategory,
+          calcType = request.sentenceCalcType,
         ),
-        null,
+        courtCase = case,
+        startDate = request.startDate,
+        endDate = request.endDate,
+        status = request.status,
+        fineAmount = request.fine,
+        sentenceLevel = request.sentenceLevel,
+        // will always have to be a court order (via the court event) - throw exception if not
+        courtOrder = existingCourtOrder(
+          offenderBooking = offenderBooking,
+          courtEvent = findCourtAppearance(offenderNo = offenderNo, id = request.eventId),
+        )
+          ?: throw BadDataException("Court order not found for booking ${offenderBooking.bookingId} and court event ${request.eventId}"),
+        // this is the sentence sequence this sentence is consecutive to
+        consecSequence = request.consecutiveToSentenceSeq?.toInt(),
+        lineSequence = offenderSentenceRepository.getNextLineSequence(offenderBooking).toInt(),
+        statusUpdateReason = "A",
       )
+
+      sentence.offenderSentenceCharges.addAll(
+        request.offenderChargeIds.map { chargeId ->
+          OffenderSentenceCharge(
+            id = OffenderSentenceChargeId(
+              offenderBooking = offenderBooking,
+              sequence = sentence.id.sequence,
+              offenderChargeId = chargeId,
+            ),
+            offenderSentence = sentence,
+            offenderCharge = findOffenderCharge(offenderNo = offenderNo, id = chargeId),
+          )
+        },
+      )
+
+      offenderSentenceRepository.saveAndFlush(sentence).also {
+        storedProcedureRepository.imprisonmentStatusUpdate(
+          jdbcTemplate = jdbcTemplate,
+          bookingId = offenderBooking.bookingId,
+          changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+        )
+      }
+
+      return CreateSentenceResponse(
+        sentenceSeq = sentence.id.sequence,
+        bookingId = offenderBooking.bookingId,
+      ).also { response ->
+        telemetryClient.trackEvent(
+          "sentence-created",
+          mapOf(
+            "sentenceSeq" to response.sentenceSeq.toString(),
+            "bookingId" to offenderBooking.bookingId.toString(),
+            "offenderNo" to offenderNo,
+          ),
+          null,
+        )
+      }
     }
   }
 
@@ -997,6 +1010,7 @@ class CourtSentencingService(
     )
     offenderSentenceTermRepository.saveAndFlush(term).also {
       storedProcedureRepository.imprisonmentStatusUpdate(
+        jdbcTemplate = jdbcTemplate,
         bookingId = offenderBooking.bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1140,6 +1154,7 @@ class CourtSentencingService(
 
         offenderSentenceRepository.saveAndFlush(sentence).also {
           storedProcedureRepository.imprisonmentStatusUpdate(
+            jdbcTemplate = jdbcTemplate,
             bookingId = case.offenderBooking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
           )
@@ -1200,6 +1215,7 @@ class CourtSentencingService(
 
         offenderSentenceTermRepository.saveAndFlush(term).also {
           storedProcedureRepository.imprisonmentStatusUpdate(
+            jdbcTemplate = jdbcTemplate,
             bookingId = case.offenderBooking.bookingId,
             changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
           )
@@ -1441,6 +1457,7 @@ class CourtSentencingService(
 
     bookingIds.forEach { bookingId ->
       storedProcedureRepository.imprisonmentStatusUpdate(
+        jdbcTemplate = jdbcTemplate,
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1482,6 +1499,7 @@ class CourtSentencingService(
     request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
       storedProcedureRepository.imprisonmentStatusUpdate(
+        jdbcTemplate = jdbcTemplate,
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1537,6 +1555,7 @@ class CourtSentencingService(
     request.returnToCustody.createOrUpdateBooking(bookingIds)
     bookingIds.forEach { bookingId ->
       storedProcedureRepository.imprisonmentStatusUpdate(
+        jdbcTemplate = jdbcTemplate,
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1569,6 +1588,7 @@ class CourtSentencingService(
       findOffenderBooking(bookingId).fixedTermRecall = null
       offenderFixedTermRecallRepository.deleteById(bookingId)
       storedProcedureRepository.imprisonmentStatusUpdate(
+        jdbcTemplate = jdbcTemplate,
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
@@ -1683,14 +1703,14 @@ class CourtSentencingService(
   private fun findOffenderBooking(id: Long): OffenderBooking = offenderBookingRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender booking $id not found")
 
+  private fun findOffenderBookingWithLock(id: Long): OffenderBooking = offenderBookingRepository.findByIdOrNullForUpdate(id)
+    ?: throw NotFoundException("Offender booking $id not found")
+
   private fun findCourtCase(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court case $id for $offenderNo not found")
 
   private fun findCourtCaseWithLock(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNullForUpdate(id)
     ?: throw NotFoundException("Court case $id for $offenderNo not found")
-
-  private fun findCourtCaseWithOffenderBookingLock(caseId: Long, offenderNo: String): CourtCase = offenderBookingRepository.findByCaseIdOrNullForUpdate(caseId)?.courtCases?.find { it.id == caseId }
-    ?: throw NotFoundException("Court case $caseId for $offenderNo not found")
 
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
@@ -2175,6 +2195,7 @@ class CourtSentencingService(
 
       courtCaseRepository.saveAllAndFlush(clonedCases).also {
         storedProcedureRepository.imprisonmentStatusUpdate(
+          jdbcTemplate = jdbcTemplate,
           bookingId = latestBooking.bookingId,
           changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
         )
