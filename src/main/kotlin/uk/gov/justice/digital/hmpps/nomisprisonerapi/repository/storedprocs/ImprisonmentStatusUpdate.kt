@@ -1,13 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs
 
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.SqlParameter
 import org.springframework.jdbc.core.simple.SimpleJdbcCall
 import org.springframework.stereotype.Component
 import java.sql.Types
-import javax.sql.DataSource
 
 @Component
-class UpdateStatusAndMainOffence(dataSource: DataSource) : SimpleJdbcCall(dataSource) {
+class UpdateStatusAndMainOffence(jdbcTemplate: JdbcTemplate) : SimpleJdbcCall(jdbcTemplate) {
   init {
     withSchemaName("OMS_OWNER")
       .withCatalogName("TAG_IMPRISONMENT_STATUS")

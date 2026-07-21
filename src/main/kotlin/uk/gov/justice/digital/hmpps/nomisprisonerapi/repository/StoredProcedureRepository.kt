@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.repository
 
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentDelete
@@ -20,6 +21,7 @@ interface StoredProcedureRepository {
   )
 
   fun imprisonmentStatusUpdate(
+    jdbcTemplate: JdbcTemplate,
     bookingId: Long,
     changeType: String,
   )
@@ -30,7 +32,6 @@ interface StoredProcedureRepository {
 class StoredProcedureRepositoryOracle(
   private val keyDateAdjustmentUpsertProcedure: KeyDateAdjustmentUpsert,
   private val keyDateAdjustmentDeleteProcedure: KeyDateAdjustmentDelete,
-  private val updateStatusAndMainOffence: UpdateStatusAndMainOffence,
 ) : StoredProcedureRepository {
 
   override fun postKeyDateAdjustmentUpsert(
@@ -54,13 +55,14 @@ class StoredProcedureRepositoryOracle(
   }
 
   override fun imprisonmentStatusUpdate(
+    jdbcTemplate: JdbcTemplate,
     bookingId: Long,
     changeType: String,
   ) {
     val params = MapSqlParameterSource()
       .addValue("p_offender_book_id", bookingId)
       .addValue("p_change_type", changeType)
-    updateStatusAndMainOffence.execute(params)
+    UpdateStatusAndMainOffence(jdbcTemplate).execute(params)
   }
 }
 
@@ -86,7 +88,11 @@ class StoredProcedureRepositoryH2 : StoredProcedureRepository {
     log.info("calling H2 version of StoreProcedure preKeyDateAdjustmentDeletion")
   }
 
-  override fun imprisonmentStatusUpdate(bookingId: Long, changeType: String) {
+  override fun imprisonmentStatusUpdate(
+    jdbcTemplate: JdbcTemplate,
+    bookingId: Long,
+    changeType: String,
+  ) {
     log.info("calling H2 version of StoreProcedure updateStatusAndMainOffence with bookingId: $bookingId and change type: $changeType")
   }
 }
