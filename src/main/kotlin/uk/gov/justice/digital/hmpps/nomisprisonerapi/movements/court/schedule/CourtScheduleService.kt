@@ -62,7 +62,7 @@ class CourtScheduleService(
 
     val scheduleOut = request.eventId
       ?.takeIf { !recreate }
-      ?.let { courtEventRepository.findById(it).get() }
+      ?.let { courtEventRepository.findByIdOrNullForUpdate(it)!! }
       ?. apply {
         this.setEventDateAndTime(request.startTime)
         this.courtEventType = courtEventType
@@ -116,7 +116,7 @@ class CourtScheduleService(
   @Transactional
   @Audit(auditModule = "DPS_COURT_SCHEDULER_SYNCHRONISATION")
   fun deleteCourtScheduleOut(offenderNo: String, eventId: Long) {
-    courtEventRepository.findByIdOrNull(eventId)
+    courtEventRepository.findByIdOrNullForUpdate(eventId)
       ?.also { schedule ->
         movementOutRepository.findByCourtScheduleOutId(eventId)
           .takeIf { it != null }
