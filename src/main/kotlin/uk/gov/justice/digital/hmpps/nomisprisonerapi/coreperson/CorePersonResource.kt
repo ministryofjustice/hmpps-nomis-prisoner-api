@@ -21,9 +21,9 @@ import java.time.LocalDateTime
 @RestController
 @Validated
 @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-@RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping("/core-person", produces = [MediaType.APPLICATION_JSON_VALUE])
 class CorePersonResource(private val corePersonService: CorePersonService) {
-  @GetMapping("/core-person/{prisonNumber}")
+  @GetMapping("/{prisonNumber}")
   @Operation(
     summary = "Get an offender by prison number",
     description = "Retrieves an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -71,7 +71,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): CorePerson = corePersonService.getOffender(prisonNumber)
 
-  @GetMapping("/core-person/{prisonNumber}/religions")
+  @GetMapping("/{prisonNumber}/religions")
   @Operation(
     summary = "Get all the religion information for an offender by prison number",
     description = "Retrieves the religion information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -119,9 +119,9 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
 
-  @GetMapping("/core-person/root-offender-id/{rootOffenderId}/religions")
+  @GetMapping("/{prisonNumber}/religion")
   @Operation(
-    summary = "Get all the religion information for an offender by root offender id",
+    summary = "Get the current religion for an offender as well as all the religion history",
     description = "Retrieves the religion information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
@@ -160,12 +160,12 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ),
     ],
   )
-  fun getOffenderReligionsByRootOffenderId(
+  fun getOffenderReligion(
     @Schema(
-      description = "Root offender id",
-      example = "12345",
-    ) @PathVariable rootOffenderId: Long,
-  ): List<OffenderBelief> = corePersonService.getOffenderReligions(rootOffenderId)
+      description = "Prison number aka noms id / offender id display",
+      example = "A1234BC",
+    ) @PathVariable prisonNumber: String,
+  ): CorePersonReligion = corePersonService.getOffenderReligion(prisonNumber)
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
@@ -408,6 +408,17 @@ data class OffenderBelief(
   val comments: String? = null,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
+)
+
+@Schema(description = "The religion held in NOMIS for an offender")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorePersonReligion(
+  @Schema(description = "The prison number")
+  val prisonNumber: String,
+  @Schema(description = "Belief", example = "SCIE")
+  val religion: CodeDescription?,
+  @Schema(description = "History of all beliefs for the person")
+  val beliefs: List<OffenderBelief>,
 )
 
 @Schema(description = "Offender address usage")

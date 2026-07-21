@@ -18,7 +18,8 @@ class CorePersonService(
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val latestBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
-    val rootOffender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
+    val rootOffender =
+      offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
 
     // current active alias defined as the one linked to the latest booking or the root if there are no bookings
     val currentAlias = latestBooking?.offender ?: rootOffender
@@ -57,7 +58,8 @@ class CorePersonService(
           },
         )
       },
-      sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList() ?: emptyList(),
+      sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList()
+        ?: emptyList(),
       nationalities = allBookings?.flatMap { b ->
         b.profileDetails.filter { it.id.profileType.type == "NAT" }
           .filter { it.profileCodeId != null }
@@ -172,17 +174,28 @@ class CorePersonService(
           email = address.internetAddress,
         )
       },
-      beliefs = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { it.toBelief() },
+      beliefs = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id)
+        .map { it.toBelief() },
     )
   }
 
   fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> {
     val rootOffender =
       offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-    return offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id).map { it.toBelief() }
+    return offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id)
+      .map { it.toBelief() }
   }
 
-  fun getOffenderReligions(rootOffenderId: Long): List<OffenderBelief> = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffenderId).map { it.toBelief() }
+  fun getOffenderReligion(prisonNumber: String): CorePersonReligion = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)?.let { latestBooking ->
+    CorePersonReligion(
+      prisonNumber = prisonNumber,
+      religion = latestBooking.profileDetails.firstOrNull { it.id.profileType.type == "RELF" }?.profileCode?.toCodeDescription(),
+      beliefs = latestBooking.rootOffender?.let { rootOffender ->
+        offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id)
+          .map { it.toBelief() }
+      } ?: emptyList(),
+    )
+  } ?: CorePersonReligion(prisonNumber, null, emptyList())
 }
 
 private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.test.web.reactive.server.returnResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
@@ -151,7 +152,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus()
           .isOk
-          .returnResult(CorePerson::class.java).responseBody.blockFirst()!!
+          .returnResult<CorePerson>().responseBody.blockFirst()!!
 
         assertThat(person.prisonNumber).isEqualTo(offenderMinimal.nomsId)
         assertThat(person.addresses).isNull()
@@ -556,7 +557,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus()
           .isOk
-          .returnResult(CorePerson::class.java).responseBody.blockFirst()!!
+          .returnResult<CorePerson>().responseBody.blockFirst()!!
 
         assertThat(person.prisonNumber).isEqualTo(offender.nomsId)
         assertThat(person.addresses?.get(0)?.usages).isNull()
@@ -1413,15 +1414,36 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /core-person/root-offender-id/{rootOffenderId}/religions")
+  @DisplayName("GET /core-person/{prisonNumber}/religion")
   @Nested
   @TestInstance(PER_CLASS)
-  inner class GetOffenderReligionsByRootOffenderId {
+  inner class GetOffenderReligion {
+    private lateinit var offenderMinimal: Offender
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY", type = "GENERAL")
+        }
+        offenderMinimal = offender(
+          nomsId = "A1234BC",
+          firstName = "JOHN",
+          lastName = "BOG",
+          birthDate = null,
+        ) {
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/core-person/root-offender-id/1/religions")
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religion")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -1429,7 +1451,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/core-person/root-offender-id/2/religions")
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religion")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -1437,7 +1459,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/core-person/root-offender-id/3/religions")
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religion")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -1446,7 +1468,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     @Nested
     @TestInstance(PER_CLASS)
     inner class HappyPath {
-      private lateinit var offenderMinimal: Offender
       private lateinit var offenderFull: Offender
       private lateinit var belief: OffenderBelief
 
@@ -1456,24 +1477,18 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           staff(firstName = "KOFE", lastName = "ADDY") {
             account(username = "KOFEADDY", type = "GENERAL")
           }
-          offenderMinimal = offender(
-            nomsId = "A1234BC",
-            firstName = "JOHN",
-            lastName = "BOG",
-            birthDate = null,
-          ) {
-          }
           offenderFull = offender(
             firstName = "JOHN",
             lastName = "BOG",
           ) {
-            booking {
+            booking(bookingSequence = 1) {
               belief = belief(
                 beliefCode = "JAIN",
                 changeReason = true,
                 comments = "No longer believes in Zoroastrianism",
                 verified = true,
               )
+              profileDetail(profileType = "RELF", profileCode = "JEHV")
             }
           }
         }
@@ -1483,28 +1498,33 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       fun tearDown(): Unit = deleteAll()
 
       @Test
-      fun `will return empty list if no data`() {
-        webTestClient.get().uri("/core-person/root-offender-id/${offenderMinimal.id}/religions")
+      fun `will return just prison number if no data`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religion")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(0)
+          .jsonPath("prisonNumber").isEqualTo(offenderMinimal.nomsId)
+          .jsonPath("religion").doesNotExist()
+          .jsonPath("beliefs.length()").isEqualTo(0)
       }
 
       @Test
       fun `is able to re-hydrate the beliefs`() {
-        val beliefs = webTestClient.get().uri("/core-person/root-offender-id/${offenderFull.id}/religions")
+        val personReligion = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/religion")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .returnResult(ParameterizedTypeReference.forType<OffenderBeliefCorePerson>(OffenderBeliefCorePerson::class.java)).responseBody.blockFirst()!!
+          .returnResult<CorePersonReligion>().responseBody.blockFirst()!!
 
-        assertThat(beliefs.beliefId).isEqualTo(belief.beliefId)
-        assertThat(beliefs.belief).isEqualTo(CodeDescription(code = "JAIN", description = "Jain"))
-        assertThat(beliefs.comments).isEqualTo("No longer believes in Zoroastrianism")
+        assertThat(personReligion.religion).isEqualTo(CodeDescription(code = "JEHV", description = "Jehovah's Witness"))
+        assertThat(personReligion.beliefs).hasSize(1)
+        val firstBelief = personReligion.beliefs.first()
+        assertThat(firstBelief.beliefId).isEqualTo(belief.beliefId)
+        assertThat(firstBelief.belief).isEqualTo(CodeDescription(code = "JAIN", description = "Jain"))
+        assertThat(firstBelief.comments).isEqualTo("No longer believes in Zoroastrianism")
       }
     }
 
@@ -1549,6 +1569,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
                 whoCreated = "KOFEADDY",
                 whenCreated = LocalDateTime.parse("2021-01-01T10:00"),
               )
+              profileDetail(profileType = "RELF", profileCode = "JEHV")
             }
             booking(active = false) {
               belief3 = belief(
@@ -1557,6 +1578,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
                 changeReason = false,
                 verified = false,
               )
+              profileDetail(profileType = "RELF", profileCode = "SATN")
             }
           }
           offender2 = offender(
@@ -1576,7 +1598,11 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               firstName = "AJOHN",
               lastName = "ABARK",
               birthDate = LocalDate.parse("1965-07-19"),
-            ) { booking(bookingSequence = 1) { } }
+            ) {
+              booking(bookingSequence = 1) {
+                profileDetail(profileType = "RELF", profileCode = "DRU")
+              }
+            }
           }
         }
       }
@@ -1586,59 +1612,65 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return beliefs`() {
-        webTestClient.get().uri("/core-person/root-offender-id/${offender.id}/religions")
+        webTestClient.get().uri("/core-person/${offender.nomsId}/religion")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(4)
-          .jsonPath("[0].beliefId").isEqualTo(belief3.beliefId)
-          .jsonPath("[0].belief.code").isEqualTo("DRU")
-          .jsonPath("[0].belief.description").isEqualTo("Druid")
-          .jsonPath("[0].startDate").isEqualTo("2023-01-01")
-          .jsonPath("[0].changeReason").isEqualTo(false)
-          .jsonPath("[0].comments").doesNotExist()
-          .jsonPath("[1].beliefId").isEqualTo(belief2.beliefId)
-          .jsonPath("[1].belief.code").isEqualTo("JAIN")
-          .jsonPath("[1].belief.description").isEqualTo("Jain")
-          .jsonPath("[1].startDate").isEqualTo("2018-01-01")
-          .jsonPath("[1].endDate").doesNotExist()
-          .jsonPath("[1].changeReason").isEqualTo(true)
-          .jsonPath("[1].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("[1].audit.createDatetime").isEqualTo("2022-01-01T10:00:00")
-          .jsonPath("[2].beliefId").isEqualTo(belief4.beliefId)
-          .jsonPath("[2].belief.code").isEqualTo("SATN")
-          .jsonPath("[2].belief.description").isEqualTo("Satanism")
-          .jsonPath("[2].startDate").isEqualTo("2018-01-01")
-          .jsonPath("[2].endDate").isEqualTo("2018-01-01")
-          .jsonPath("[2].audit.createDatetime").isEqualTo("2021-01-01T10:00:00")
-          .jsonPath("[3].beliefId").isEqualTo(belief1.beliefId)
-          .jsonPath("[3].belief.code").isEqualTo("ZORO")
-          .jsonPath("[3].belief.description").isEqualTo("Zoroastrian")
-          .jsonPath("[3].startDate").isEqualTo("2018-01-01")
-          .jsonPath("[3].endDate").isEqualTo("2019-02-03")
-          .jsonPath("[3].changeReason").doesNotExist()
-          .jsonPath("[3].comments").doesNotExist()
-          .jsonPath("[3].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("prisonNumber").isEqualTo(offender.nomsId)
+          .jsonPath("religion.code").isEqualTo("JEHV")
+          .jsonPath("religion.description").isEqualTo("Jehovah's Witness")
+          .jsonPath("beliefs.length()").isEqualTo(4)
+          .jsonPath("beliefs[0].beliefId").isEqualTo(belief3.beliefId)
+          .jsonPath("beliefs[0].belief.code").isEqualTo("DRU")
+          .jsonPath("beliefs[0].belief.description").isEqualTo("Druid")
+          .jsonPath("beliefs[0].startDate").isEqualTo("2023-01-01")
+          .jsonPath("beliefs[0].changeReason").isEqualTo(false)
+          .jsonPath("beliefs[0].comments").doesNotExist()
+          .jsonPath("beliefs[1].beliefId").isEqualTo(belief2.beliefId)
+          .jsonPath("beliefs[1].belief.code").isEqualTo("JAIN")
+          .jsonPath("beliefs[1].belief.description").isEqualTo("Jain")
+          .jsonPath("beliefs[1].startDate").isEqualTo("2018-01-01")
+          .jsonPath("beliefs[1].endDate").doesNotExist()
+          .jsonPath("beliefs[1].changeReason").isEqualTo(true)
+          .jsonPath("beliefs[1].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .jsonPath("beliefs[1].audit.createDatetime").isEqualTo("2022-01-01T10:00:00")
+          .jsonPath("beliefs[2].beliefId").isEqualTo(belief4.beliefId)
+          .jsonPath("beliefs[2].belief.code").isEqualTo("SATN")
+          .jsonPath("beliefs[2].belief.description").isEqualTo("Satanism")
+          .jsonPath("beliefs[2].startDate").isEqualTo("2018-01-01")
+          .jsonPath("beliefs[2].endDate").isEqualTo("2018-01-01")
+          .jsonPath("beliefs[2].audit.createDatetime").isEqualTo("2021-01-01T10:00:00")
+          .jsonPath("beliefs[3].beliefId").isEqualTo(belief1.beliefId)
+          .jsonPath("beliefs[3].belief.code").isEqualTo("ZORO")
+          .jsonPath("beliefs[3].belief.description").isEqualTo("Zoroastrian")
+          .jsonPath("beliefs[3].startDate").isEqualTo("2018-01-01")
+          .jsonPath("beliefs[3].endDate").isEqualTo("2019-02-03")
+          .jsonPath("beliefs[3].changeReason").doesNotExist()
+          .jsonPath("beliefs[3].comments").doesNotExist()
+          .jsonPath("beliefs[3].audit.createUsername").isEqualTo("KOFEADDY")
+          .jsonPath("beliefs[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
       }
 
       @Test
       fun `will return beliefs when current alias is different from root offender`() {
-        webTestClient.get().uri("/core-person/root-offender-id/${offender2.id}/religions")
+        webTestClient.get().uri("/core-person/${offender2.nomsId}/religion")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(1)
-          .jsonPath("[0].belief.code").isEqualTo("JAIN")
-          .jsonPath("[0].belief.description").isEqualTo("Jain")
-          .jsonPath("[0].startDate").isEqualTo("2021-01-01")
-          .jsonPath("[0].endDate").doesNotExist()
-          .jsonPath("[0].changeReason").isEqualTo(true)
-          .jsonPath("[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .jsonPath("prisonNumber").isEqualTo(offender2.nomsId)
+          .jsonPath("religion.code").isEqualTo("DRU")
+          .jsonPath("religion.description").isEqualTo("Druid")
+          .jsonPath("beliefs.length()").isEqualTo(1)
+          .jsonPath("beliefs[0].belief.code").isEqualTo("JAIN")
+          .jsonPath("beliefs[0].belief.description").isEqualTo("Jain")
+          .jsonPath("beliefs[0].startDate").isEqualTo("2021-01-01")
+          .jsonPath("beliefs[0].endDate").doesNotExist()
+          .jsonPath("beliefs[0].changeReason").isEqualTo(true)
+          .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
       }
     }
   }
