@@ -56,7 +56,7 @@ class PropertyService(
   }.map { ContainerIdResponse(it.propertyContainerId) }
 
   private fun PropertyContainerCreateRequest.toModel() = OffenderPropertyContainer(
-    offenderBooking = findBooking(),
+    offenderBooking = findLatestBooking(),
     agencyInternalLocation = findLocation(this.internalLocationId),
     agencyLocation = findAgency(),
     active = active,
@@ -83,9 +83,9 @@ class PropertyService(
     updatedBy = modifyUserId,
   )
 
-  private fun PropertyContainerCreateRequest.findBooking(): OffenderBooking = offenderBookingRepository
-    .findByIdOrNull(bookingId)
-    ?: throw BadDataException("Booking id $bookingId not found")
+  private fun PropertyContainerCreateRequest.findLatestBooking(): OffenderBooking = offenderBookingRepository
+    .findLatestByOffenderNomsId(offenderNo)
+    ?: throw BadDataException("Latest booking id for $offenderNo not found")
 
   private fun findLocation(internalLocationId: Long?): AgencyInternalLocation? = internalLocationId?.let {
     agencyInternalLocationRepository.findByIdOrNull(it)
@@ -94,5 +94,5 @@ class PropertyService(
 
   private fun PropertyContainerCreateRequest.findAgency(): AgencyLocation = agencyLocationRepository
     .findByIdOrNull(prisonId)
-    ?: throw BadDataException("Creating property for booking id $bookingId: Prison $prisonId not found")
+    ?: throw BadDataException("Creating property for $offenderNo: Prison $prisonId not found")
 }
