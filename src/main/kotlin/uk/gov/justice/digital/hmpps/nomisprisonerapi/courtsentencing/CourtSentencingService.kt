@@ -498,7 +498,7 @@ class CourtSentencingService(
     offenderChargeRequest: OffenderChargeRequest,
   ): OffenderChargeIdResponse {
     checkOffenderExists(offenderNo)
-    findCourtCase(caseId, offenderNo).let { courtCase ->
+    findCourtCaseWithLock(caseId, offenderNo).let { courtCase ->
       val resultCode =
         offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) }
       val offenderCharge = OffenderCharge(
