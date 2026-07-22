@@ -57,7 +57,6 @@ class CourtScheduleService(
     val courtEventType = movementHelpers.movementReasonOrThrow(request.eventType)
     val eventStatus = movementHelpers.eventStatusOrThrow(request.eventStatus)
     val returnEventStatus = request.returnStatus?.let { movementHelpers.eventStatusOrThrow(request.returnStatus) }
-    val prison = movementHelpers.agencyLocationOrThrow(request.prison)
     val court = movementHelpers.agencyLocationOrThrow(request.court)
 
     val scheduleOut = request.eventId
@@ -91,7 +90,7 @@ class CourtScheduleService(
         this.courtEventType = courtEventType
         this.eventStatus = returnEventStatus
         this.commentText = request.comment
-        this.court = prison
+        this.court = offenderBooking.location
       } ?: CourtEvent(
         offenderBooking = offenderBooking,
         parentEventId = savedScheduleOut.id,
@@ -100,7 +99,7 @@ class CourtScheduleService(
         courtEventType = courtEventType,
         eventStatus = returnEventStatus,
         commentText = request.comment,
-        court = prison,
+        court = offenderBooking.location,
         directionCode = movementHelpers.directionTypeOrThrow(DirectionType.IN),
       )
       courtEventRepository.save(scheduleIn)

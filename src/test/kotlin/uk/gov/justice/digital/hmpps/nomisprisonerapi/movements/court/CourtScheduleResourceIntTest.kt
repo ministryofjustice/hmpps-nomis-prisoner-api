@@ -487,10 +487,12 @@ class CourtScheduleResourceIntTest(
               with(courtEventRepository.findByIdOrNull(eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("COMP")
                 assertThat(directionCode?.code).isEqualTo("OUT")
+                assertThat(this.court.id).isEqualTo(scheduleOut.court.id)
               }
               with(courtEventRepository.findByOffenderBooking_BookingIdAndParentEventId(bookingId, eventId)!!) {
                 assertThat(eventStatus.code).isEqualTo("SCH")
                 assertThat(directionCode?.code).isEqualTo("IN")
+                assertThat(this.court.id).isEqualTo(booking.location.id)
               }
             }
           }
@@ -654,15 +656,6 @@ class CourtScheduleResourceIntTest(
       }
 
       @Test
-      fun `should return bad request if prison invalid`() {
-        webTestClient.upsertCourtScheduleOut(request = aRequest(prison = "UNKNOWN"))
-          .isBadRequest
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("UNKNOWN")
-          }
-      }
-
-      @Test
       fun `should return bad request if court invalid`() {
         webTestClient.upsertCourtScheduleOut(request = aRequest(court = "UNKNOWN"))
           .isBadRequest
@@ -740,7 +733,6 @@ class CourtScheduleResourceIntTest(
       eventStatus: String = "SCH",
       returnStatus: String? = null,
       eventType: String = "CRT",
-      prison: String = "BXI",
       court: String = "LEEDYC",
       comment: String = "court schedule out comment",
     ) = UpsertCourtScheduleOut(
@@ -750,7 +742,6 @@ class CourtScheduleResourceIntTest(
       eventStatus = eventStatus,
       returnStatus = returnStatus,
       comment = comment,
-      prison = prison,
       court = court,
     )
   }
