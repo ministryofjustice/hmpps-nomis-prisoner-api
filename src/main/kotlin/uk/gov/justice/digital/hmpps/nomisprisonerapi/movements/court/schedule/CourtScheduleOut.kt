@@ -67,9 +67,6 @@ data class UpsertCourtScheduleOut(
   @Schema(description = "Comment")
   val comment: String? = null,
 
-  @Schema(description = "Prison code")
-  val prison: String,
-
   @Schema(description = "Court code")
   val court: String,
 )
