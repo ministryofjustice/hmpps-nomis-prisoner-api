@@ -27,9 +27,8 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class CourtEventDslMarker
 
-@NomisDataDslMarker
+@CourtEventDslMarker
 interface CourtEventDsl {
-  @CourtEventChargeDslMarker
   fun courtEventCharge(
     offenderCharge: OffenderCharge,
     offencesCount: Int? = null,
@@ -50,7 +49,6 @@ interface CourtEventDsl {
     dsl: CourtEventChargeDsl.() -> Unit = {},
   ): CourtEventCharge
 
-  @CourtOrderDslMarker
   fun courtOrder(
     courtDate: LocalDate = LocalDate.of(2023, 1, 1),
     issuingCourt: String = "MDI",
@@ -62,10 +60,10 @@ interface CourtEventDsl {
     seriousnessLevel: String? = "HIGH",
     commentText: String? = "a court order comment",
     nonReportFlag: Boolean = false,
+    whenCreated: LocalDateTime? = null,
     dsl: CourtOrderDsl.() -> Unit = {},
   ): CourtOrder
 
-  @OffenderExternalMovementDslMarker
   fun courtMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
     fromPrison: String = "BXI",
@@ -74,7 +72,6 @@ interface CourtEventDsl {
     comment: String? = null,
   ): OffenderCourtMovementOut
 
-  @OffenderExternalMovementDslMarker
   fun courtMovementIn(
     date: LocalDateTime = LocalDateTime.now(),
     toPrison: String = "BXI",
@@ -226,6 +223,7 @@ class CourtEventBuilder(
     seriousnessLevel: String?,
     commentText: String?,
     nonReportFlag: Boolean,
+    whenCreated: LocalDateTime?,
     dsl: CourtOrderDsl.() -> Unit,
   ) = courtOrderBuilderFactory.builder().let { builder ->
     builder.build(
@@ -240,6 +238,7 @@ class CourtEventBuilder(
       seriousnessLevel = seriousnessLevel,
       commentText = commentText,
       nonReportFlag = nonReportFlag,
+      whenCreated = whenCreated,
     )
       .also { courtEvent.courtOrders += it }
       .also { builder.apply(dsl) }

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
@@ -11,13 +12,13 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @DslMarker
 annotation class CourtOrderDslMarker
 
-@NomisDataDslMarker
+@CourtOrderDslMarker
 interface CourtOrderDsl {
-  @SentencePurposeDslMarker
   fun sentencePurpose(
     purposeCode: String = "REPAIR",
     orderPartyCode: String = "CRT",
@@ -41,14 +42,19 @@ class CourtOrderBuilderRepository(
   val repository: CourtOrderRepository,
   val agencyLocationRepository: AgencyLocationRepository,
   val seriousnessLevelTypeRepository: ReferenceCodeRepository<SeriousnessLevelType>,
+  private val jdbcTemplate: JdbcTemplate,
 ) {
-  fun save(courtOrder: CourtOrder): CourtOrder = repository.save(courtOrder)
+  fun save(courtOrder: CourtOrder): CourtOrder = repository.saveAndFlush(courtOrder)
 
   fun lookupAgency(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id)!!
 
   fun lookupSeriousnessType(code: String): SeriousnessLevelType = seriousnessLevelTypeRepository.findByIdOrNull(
     SeriousnessLevelType.pk(code),
   )!!
+
+  fun updateCreateDatetime(courtOrder: CourtOrder, whenCreated: LocalDateTime) {
+    jdbcTemplate.update("update ORDERS set CREATE_DATETIME = ? where ORDER_ID = ?", whenCreated, courtOrder.id)
+  }
 }
 
 class CourtOrderBuilder(
@@ -69,6 +75,7 @@ class CourtOrderBuilder(
     seriousnessLevel: String?,
     commentText: String?,
     nonReportFlag: Boolean,
+    whenCreated: LocalDateTime?,
   ): CourtOrder = CourtOrder(
     courtDate = courtDate,
     issuingCourt = repository.lookupAgency(issuingCourt),
@@ -86,6 +93,7 @@ class CourtOrderBuilder(
     courtEvent = courtEvent,
   )
     .let { repository.save(it) }
+    .also { whenCreated?.run { repository.updateCreateDatetime(it, whenCreated) } }
     .also { courtOrder = it }
 
   override fun sentencePurpose(
