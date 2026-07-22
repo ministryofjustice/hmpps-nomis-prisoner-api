@@ -31,9 +31,6 @@ data class CourtScheduleOut(
   @Schema(description = "Comment")
   val comment: String? = null,
 
-  @Schema(description = "Prison code at time of scheduling")
-  val prison: String,
-
   @Schema(description = "Court code")
   val court: String,
 

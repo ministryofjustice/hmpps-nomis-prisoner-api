@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.BookingCourtMovements
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.OffenderCourtMovementsResponse
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit.SECONDS
 
 class OffenderCourtMovementsResourceIntTest(
@@ -64,7 +63,7 @@ class OffenderCourtMovementsResourceIntTest(
           offender = offender(nomsId = offenderNo) {
             booking = booking {
               courtCase = courtCase(reportingStaff = staff) {
-                scheduleOut = courtEvent(eventDateTime = LocalDateTime.now().plusMinutes(1).truncatedTo(ChronoUnit.SECONDS))
+                scheduleOut = courtEvent(eventDateTime = LocalDateTime.now().plusMinutes(1).truncatedTo(SECONDS))
               }
             }
           }
@@ -82,7 +81,6 @@ class OffenderCourtMovementsResourceIntTest(
               assertThat(eventType).isEqualTo(scheduleOut.courtEventType.code)
               assertThat(eventStatus).isEqualTo(scheduleOut.eventStatus.code)
               assertThat(comment).isEqualTo(scheduleOut.commentText)
-              assertThat(prison).isEqualTo(booking.location.id)
               assertThat(court).isEqualTo(scheduleOut.court.id)
               assertThat(courtCaseId).isEqualTo(courtCase.id)
               assertThat(audit.createUsername).isEqualTo("SA")
@@ -107,26 +105,6 @@ class OffenderCourtMovementsResourceIntTest(
             with(bookings[0].courtSchedules[0]) {
               assertThat(eventId).isEqualTo(scheduleOut.id)
               assertThat(courtCaseId).isNull()
-            }
-          }
-      }
-
-      @Test
-      fun `should get prison from offender's prison at time of schedule creation`() {
-        nomisDataBuilder.build {
-          offender = offender(nomsId = offenderNo) {
-            booking = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.now().minusDays(1)) {
-              // The court schedule was scheduled to take place while in MDI
-              scheduleOut = courtEventOut(eventDateTime = LocalDateTime.now().minusHours(6))
-              prisonTransfer(from = "MDI", to = "BXI", date = LocalDateTime.now().minusHours(1))
-            }
-          }
-        }
-
-        webTestClient.getOffenderCourtMovementsOk(offenderNo)
-          .apply {
-            with(bookings[0].courtSchedules[0]) {
-              assertThat(prison).isEqualTo("MDI")
             }
           }
       }
