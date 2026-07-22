@@ -5,9 +5,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusUpdate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentDelete
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.KeyDateAdjustmentUpsert
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.UpdateStatusAndMainOffence
 
 interface StoredProcedureRepository {
   fun postKeyDateAdjustmentUpsert(
@@ -32,6 +32,7 @@ interface StoredProcedureRepository {
 class StoredProcedureRepositoryOracle(
   private val keyDateAdjustmentUpsertProcedure: KeyDateAdjustmentUpsert,
   private val keyDateAdjustmentDeleteProcedure: KeyDateAdjustmentDelete,
+  private val imprisonmentStatusUpdate: ImprisonmentStatusUpdate,
 ) : StoredProcedureRepository {
 
   override fun postKeyDateAdjustmentUpsert(
@@ -62,7 +63,7 @@ class StoredProcedureRepositoryOracle(
     val params = MapSqlParameterSource()
       .addValue("p_offender_book_id", bookingId)
       .addValue("p_change_type", changeType)
-    UpdateStatusAndMainOffence(jdbcTemplate).execute(params)
+    imprisonmentStatusUpdate.execute(params)
   }
 }
 
