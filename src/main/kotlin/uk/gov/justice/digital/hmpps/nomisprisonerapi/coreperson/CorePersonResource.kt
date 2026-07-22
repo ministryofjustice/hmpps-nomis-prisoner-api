@@ -118,54 +118,6 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       example = "A1234BC",
     ) @PathVariable prisonNumber: String,
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
-
-  @GetMapping("/{prisonNumber}/religion")
-  @Operation(
-    summary = "Get the current religion for an offender as well as all the religion history",
-    description = "Retrieves the religion information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Core religion information returned",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Offender does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getOffenderReligion(
-    @Schema(
-      description = "Prison number aka noms id / offender id display",
-      example = "A1234BC",
-    ) @PathVariable prisonNumber: String,
-  ): CorePersonReligion = corePersonService.getOffenderReligion(prisonNumber)
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
@@ -408,17 +360,6 @@ data class OffenderBelief(
   val comments: String? = null,
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
-)
-
-@Schema(description = "The religion held in NOMIS for an offender")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class CorePersonReligion(
-  @Schema(description = "The prison number")
-  val prisonNumber: String,
-  @Schema(description = "Belief", example = "SCIE")
-  val religion: CodeDescription?,
-  @Schema(description = "History of all beliefs for the person")
-  val beliefs: List<OffenderBelief>,
 )
 
 @Schema(description = "Offender address usage")

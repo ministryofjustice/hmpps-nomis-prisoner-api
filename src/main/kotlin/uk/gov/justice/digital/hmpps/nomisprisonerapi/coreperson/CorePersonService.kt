@@ -185,17 +185,6 @@ class CorePersonService(
     return offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id)
       .map { it.toBelief() }
   }
-
-  fun getOffenderReligion(prisonNumber: String): CorePersonReligion = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)?.let { latestBooking ->
-    CorePersonReligion(
-      prisonNumber = prisonNumber,
-      religion = latestBooking.profileDetails.firstOrNull { it.id.profileType.type == "RELF" }?.profileCode?.toCodeDescription(),
-      beliefs = latestBooking.rootOffender?.let { rootOffender ->
-        offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id)
-          .map { it.toBelief() }
-      } ?: emptyList(),
-    )
-  } ?: CorePersonReligion(prisonNumber, null, emptyList())
 }
 
 private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
