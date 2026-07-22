@@ -22,6 +22,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
 
+private const val OFFENDER_NO = "A1111AA"
+
 class PropertyResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var offenderPropertyContainerRepository: OffenderPropertyContainerRepository
@@ -51,7 +53,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           locationType = "BOX",
           prisonId = "SYI",
         )
-        offender(nomsId = "A1111AA") { booking = booking() }
+        offender(nomsId = OFFENDER_NO) { booking = booking() }
       }
     }
 
@@ -62,7 +64,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
         webTestClient.post().uri("/property-containers")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(fromValue(validMinimalCreateJsonRequest(1234)))
+          .body(fromValue(validMinimalCreateJsonRequest(OFFENDER_NO)))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -72,7 +74,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
         webTestClient.post().uri("/property-containers")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(fromValue(validMinimalCreateJsonRequest(1234)))
+          .body(fromValue(validMinimalCreateJsonRequest(OFFENDER_NO)))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -81,7 +83,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
       fun `access unauthorised with no auth token`() {
         webTestClient.post().uri("/property-containers")
           .contentType(MediaType.APPLICATION_JSON)
-          .body(fromValue(validMinimalCreateJsonRequest(1234)))
+          .body(fromValue(validMinimalCreateJsonRequest(OFFENDER_NO)))
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -90,15 +92,15 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Validation {
       @Test
-      fun `no booking`() {
+      fun `offender not found`() {
         webTestClient.post().uri("/property-containers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(fromValue(validMinimalCreateJsonRequest(999)))
+          .body(fromValue(validMinimalCreateJsonRequest("A9999ZZ")))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
-          .jsonPath("userMessage").isEqualTo("Bad request: Booking id 999 not found")
+          .jsonPath("userMessage").isEqualTo("Bad request: Latest booking id for A9999ZZ not found")
       }
 
       @Test
@@ -106,9 +108,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
         webTestClient.post().uri("/property-containers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            fromValue(validFullCreateJsonRequest(booking.bookingId, 9999)),
-          )
+          .body(fromValue(validFullCreateJsonRequest(OFFENDER_NO, 9999)))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -122,11 +122,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
         webTestClient.post().uri("/property-containers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            fromValue(
-              """{ ${requiredFields(bookingId = booking.bookingId, prisonId = "DUFF")}" }""",
-            ),
-          )
+          .body(fromValue("""{ ${requiredFields(OFFENDER_NO, prisonId = "DUFF")}" }"""))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -141,7 +137,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           .body(
             fromValue(
               """{
-                "bookingId": ${booking.bookingId},
+                "offenderNo": "$OFFENDER_NO",
                 "prisonId": "SYI",
                 "active": true,
                 "sealMark": "S12345",
@@ -168,23 +164,22 @@ class PropertyResourceIntTest : IntegrationTestBase() {
         val created = webTestClient.post().uri("/property-containers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(fromValue(validFullCreateJsonRequest(booking.bookingId, location1.locationId)))
+          .body(fromValue(validFullCreateJsonRequest(OFFENDER_NO, location1.locationId)))
           .exchange()
           .expectBodyResponse<CreatePropertyResponse>()
 
         nomisDataBuilder.runInTransaction {
-          val data = offenderPropertyContainerRepository.findByIdOrNull(created.propertyContainerId)
-
-          with(data!!) {
-            assertThat(this.offenderBooking.bookingId).isEqualTo(booking.bookingId)
-            assertThat(agencyInternalLocation?.locationId).isEqualTo(location1.locationId)
-            assertThat(agencyLocation.id).isEqualTo("SYI")
-            assertThat(active).isTrue()
-            assertThat(sealMark).isEqualTo("S12345")
-            assertThat(containerCode).isEqualTo(PropertyContainerCode.CO)
-            assertThat(proposedDisposalDate).isEqualTo("2026-10-01")
-            assertThat(expiryDate).isEqualTo("2026-06-01")
-          }
+          offenderPropertyContainerRepository.findByIdOrNull(created.propertyContainerId)!!
+            .apply {
+              assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+              assertThat(agencyInternalLocation?.locationId).isEqualTo(location1.locationId)
+              assertThat(agencyLocation.id).isEqualTo("SYI")
+              assertThat(active).isTrue()
+              assertThat(sealMark).isEqualTo("S12345")
+              assertThat(containerCode).isEqualTo(PropertyContainerCode.CO)
+              assertThat(proposedDisposalDate).isEqualTo("2026-10-01")
+              assertThat(expiryDate).isEqualTo("2026-06-01")
+            }
         }
       }
 
@@ -193,22 +188,19 @@ class PropertyResourceIntTest : IntegrationTestBase() {
         val created = webTestClient.post().uri("/property-containers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(fromValue(validMinimalCreateJsonRequest(booking.bookingId)))
+          .body(fromValue(validMinimalCreateJsonRequest(OFFENDER_NO)))
           .exchange()
           .expectBodyResponse<CreatePropertyResponse>()
 
         nomisDataBuilder.runInTransaction {
-          val data = offenderPropertyContainerRepository.findByIdOrNull(
-            created.propertyContainerId,
-          )
-
-          with(data!!) {
-            assertThat(this.offenderBooking.bookingId).isEqualTo(booking.bookingId)
-            assertThat(agencyLocation.id).isEqualTo("SYI")
-            assertThat(active).isTrue()
-            assertThat(sealMark).isEqualTo("S12345")
-            assertThat(containerCode).isEqualTo(PropertyContainerCode.CO)
-          }
+          offenderPropertyContainerRepository.findByIdOrNull(created.propertyContainerId)!!
+            .apply {
+              assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+              assertThat(agencyLocation.id).isEqualTo("SYI")
+              assertThat(active).isTrue()
+              assertThat(sealMark).isEqualTo("S12345")
+              assertThat(containerCode).isEqualTo(PropertyContainerCode.CO)
+            }
         }
       }
     }
@@ -230,7 +222,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           locationType = "BOX",
           prisonId = "SYI",
         )
-        offender(nomsId = "A1111AA") {
+        offender(nomsId = OFFENDER_NO) {
           booking = booking {
             container1 = property()
           }
@@ -320,14 +312,13 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
 
         nomisDataBuilder.runInTransaction {
-          val data = offenderPropertyContainerRepository.findByIdOrNull(container1.propertyContainerId)
-
-          with(data!!) {
-            assertThat(agencyInternalLocation?.locationId).isEqualTo(location2.locationId)
-            assertThat(sealMark).isEqualTo("SEAL4567")
-            assertThat(containerCode).isEqualTo(PropertyContainerCode.BRA)
-            assertThat(proposedDisposalDate).isEqualTo("2027-11-02")
-          }
+          offenderPropertyContainerRepository.findByIdOrNull(container1.propertyContainerId)!!
+            .apply {
+              assertThat(agencyInternalLocation?.locationId).isEqualTo(location2.locationId)
+              assertThat(sealMark).isEqualTo("SEAL4567")
+              assertThat(containerCode).isEqualTo(PropertyContainerCode.BRA)
+              assertThat(proposedDisposalDate).isEqualTo("2027-11-02")
+            }
         }
       }
     }
@@ -345,7 +336,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           locationType = "BOX",
           prisonId = "SYI",
         )
-        offender(nomsId = "A1111AA") {
+        offender(nomsId = OFFENDER_NO) {
           booking = booking {
             container1 = property()
             container2 = property(
@@ -410,27 +401,26 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `can get a property container with full data`() {
-        val data = webTestClient.get().uri("/property-containers/${container2.propertyContainerId}")
+        webTestClient.get().uri("/property-containers/${container2.propertyContainerId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectBodyResponse<PropertyContainerGetResponse>()
-
-        with(data) {
-          assertThat(containerId).isEqualTo(container2.propertyContainerId)
-          assertThat(offenderNo).isEqualTo("A1111AA")
-          assertThat(bookingId).isEqualTo(booking.bookingId)
-          assertThat(internalLocationId).isEqualTo(location1.locationId)
-          assertThat(prisonId).isEqualTo("SYI")
-          assertThat(active).isTrue()
-          assertThat(sealMark).isEqualTo("SEAL1234")
-          assertThat(containerCode).isEqualTo(PropertyContainerCode.BRA)
-          assertThat(proposedDisposalDate).isEqualTo("2026-10-01")
-          assertThat(expiryDate).isEqualTo("2026-06-01")
-          assertThat(createdDateTime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
-          assertThat(createdBy).isEqualTo("SA")
-          assertThat(updatedDateTime).isNull()
-          assertThat(updatedBy).isNull()
-        }
+          .apply {
+            assertThat(containerId).isEqualTo(container2.propertyContainerId)
+            assertThat(offenderNo).isEqualTo(OFFENDER_NO)
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(internalLocationId).isEqualTo(location1.locationId)
+            assertThat(prisonId).isEqualTo("SYI")
+            assertThat(active).isTrue()
+            assertThat(sealMark).isEqualTo("SEAL1234")
+            assertThat(containerCode).isEqualTo(PropertyContainerCode.BRA)
+            assertThat(proposedDisposalDate).isEqualTo("2026-10-01")
+            assertThat(expiryDate).isEqualTo("2026-06-01")
+            assertThat(createdDateTime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+            assertThat(createdBy).isEqualTo("SA")
+            assertThat(updatedDateTime).isNull()
+            assertThat(updatedBy).isNull()
+          }
       }
     }
   }
@@ -446,7 +436,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           locationType = "BOX",
           prisonId = "SYI",
         )
-        offender(nomsId = "A1111AA") {
+        offender(nomsId = OFFENDER_NO) {
           booking = booking(agencyLocationId = "BXI") {
             container1 = property()
             container2 = property(
@@ -458,7 +448,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
             container3 = property()
           }
         }
-        offender(nomsId = "A1111AA") {
+        offender(nomsId = OFFENDER_NO) {
           booking = booking(agencyLocationId = "LEI") {
             property()
           }
@@ -567,20 +557,20 @@ class PropertyResourceIntTest : IntegrationTestBase() {
   }
 }
 
-fun requiredFields(bookingId: Long, prisonId: String = "SYI") =
+fun requiredFields(offenderNo: String, prisonId: String = "SYI") =
   """
-    "bookingId": $bookingId,
+    "offenderNo": "$offenderNo",
     "prisonId": "$prisonId",
     "active": true,
     "sealMark": "S12345",
     "containerCode": "CO"
   """.trimIndent()
 
-fun validMinimalCreateJsonRequest(bookingId: Long): String = "{ ${requiredFields(bookingId)} }"
+fun validMinimalCreateJsonRequest(offenderNo: String): String = "{ ${requiredFields(offenderNo)} }"
 
-fun validFullCreateJsonRequest(bookingId: Long, internalLocationId: Long): String =
+fun validFullCreateJsonRequest(offenderNo: String, internalLocationId: Long): String =
   """
-   { ${requiredFields(bookingId)},
+   { ${requiredFields(offenderNo)},
     "internalLocationId": $internalLocationId,
     "proposedDisposalDate": "2026-10-01",
     "expiryDate": "2026-06-01"

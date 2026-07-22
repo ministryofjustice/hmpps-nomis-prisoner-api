@@ -8,8 +8,8 @@ import java.time.LocalDate
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Prisoner property container")
 data class PropertyContainerCreateRequest(
-  @Schema(description = "The offender booking id", example = "1234567")
-  val bookingId: Long,
+  @Schema(description = "The prisoner number. The container will be created under the latest booking", example = "A3456EW")
+  val offenderNo: String,
 
   @Schema(description = "The property box id for the container", example = "1234567")
   val internalLocationId: Long? = null,
