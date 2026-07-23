@@ -263,7 +263,6 @@ class CourtSentencingService(
           eventStatus = determineEventStatus(
             appearanceRequest.eventDateTime.toLocalDate(),
             booking,
-            isInPersonAppearance = courtEventType.isInPersonAppearance(),
           ),
           court = lookupEstablishment(appearanceRequest.courtId),
           outcomeReasonCode = appearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
@@ -367,7 +366,6 @@ class CourtSentencingService(
         eventStatus = determineEventStatus(
           courtAppearanceRequest.eventDateTime.toLocalDate(),
           courtCase.offenderBooking,
-          isInPersonAppearance = courtEventType.isInPersonAppearance(),
         ),
         court = lookupEstablishment(courtAppearanceRequest.courtId),
         outcomeReasonCode = courtAppearanceRequest.outcomeReasonCode?.let { lookupOffenceResultCode(it) },
@@ -635,7 +633,6 @@ class CourtSentencingService(
         courtAppearance.eventStatus = determineEventStatus(
           request.eventDateTime.toLocalDate(),
           courtCase.offenderBooking,
-          isInPersonAppearance = courtEventType.isInPersonAppearance(),
         )
         courtAppearance.court = lookupEstablishment(request.courtId)
         courtAppearance.outcomeReasonCode =
@@ -1333,7 +1330,7 @@ class CourtSentencingService(
 
   private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findFirstByOffenderBookingAndCourtEventAndOrderTypeOrderByIdAsc(offenderBooking, courtEvent)
 
-  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking, isInPersonAppearance: Boolean = false): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
+  fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
       .plusDays(1)
   ) {
     return lookupEventStatusType(EventStatus.COMPLETED)
@@ -1343,9 +1340,7 @@ class CourtSentencingService(
         return lookupEventStatusType(EventStatus.COMPLETED)
       }
     }
-    return lookupEventStatusType(
-      if (isInPersonAppearance) EventStatus.EXPIRED else EventStatus.SCHEDULED,
-    )
+    return lookupEventStatusType(EventStatus.SCHEDULED)
   }
 
   fun getOffenderSentence(offenderNo: String, caseId: Long, sentenceSequence: Long): SentenceResponse = findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
