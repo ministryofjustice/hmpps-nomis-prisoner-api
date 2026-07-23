@@ -15,10 +15,10 @@ interface OffenderTrustAccountDsl {
 
   @OffenderSubAccountDslMarker
   fun subAccount(
-    accountCode: Long = 2101,
+    accountCode: Long,
     balance: BigDecimal = BigDecimal.ZERO,
     holdBalance: BigDecimal? = null,
-    lastTransactionId: Long = 12345,
+    lastTransactionId: Long,
     dsl: OffenderSubAccountDsl.() -> Unit = {},
   ): OffenderSubAccount
 }

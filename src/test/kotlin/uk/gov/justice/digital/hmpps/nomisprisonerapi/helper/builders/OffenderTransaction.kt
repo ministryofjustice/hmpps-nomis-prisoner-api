@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.TransactionT
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import kotlin.random.Random
 
 @DslMarker
@@ -28,6 +29,7 @@ interface OffenderTransactionDsl {
   fun generalLedgerTransaction(
     generalLedgerEntrySequence: Int,
     accountCode: Int,
+    entryTime: LocalTime = LocalTime.NOON,
     dsl: GeneralLedgerTransactionDsl.() -> Unit = {},
   ): GeneralLedgerTransaction
 }
@@ -96,6 +98,7 @@ class OffenderTransactionBuilder(
   override fun generalLedgerTransaction(
     generalLedgerEntrySequence: Int,
     accountCode: Int,
+    entryTime: LocalTime,
     dsl: GeneralLedgerTransactionDsl.() -> Unit,
   ): GeneralLedgerTransaction = generalLedgerTransactionBuilderFactory.builder().build(
     transaction.transactionId,
@@ -106,7 +109,7 @@ class OffenderTransactionBuilder(
     transaction.transactionType.type,
     accountCode,
     transaction.postingType,
-    transaction.entryDate.atTime(0, 0),
+    transaction.entryDate.atTime(entryTime),
     transaction.transactionReferenceNumber,
     transaction.entryAmount,
   )

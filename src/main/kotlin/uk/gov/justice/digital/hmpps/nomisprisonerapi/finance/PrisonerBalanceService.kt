@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccounWithTransactionDateTimeProjection
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccountRepository
 
 @Service
@@ -30,6 +31,18 @@ class PrisonerBalanceService(
       rootOffenderId = offender.rootOffenderId!!,
       prisonNumber = offender.nomsId,
       accounts = agregatedAccounts,
+    )
+  }
+
+  fun getPrisonerAccountsWithTransactionTimestamp(rootOffenderId: Long): PrisonerBalanceDto {
+    val offender = offenderRepository.findByIdOrNull(rootOffenderId)
+      ?: throw NotFoundException("Offender $rootOffenderId not found")
+
+    val accounts = offenderSubAccountRepository.findByOffenderIdWithTransactionDateTime(rootOffenderId)
+    return PrisonerBalanceDto(
+      rootOffenderId = rootOffenderId,
+      prisonNumber = offender.nomsId,
+      accounts = accounts.map { it.toPrisonerAccountDto() },
     )
   }
 
@@ -84,6 +97,15 @@ class PrisonerBalanceService(
       )
     }
 }
+
+private fun OffenderSubAccounWithTransactionDateTimeProjection.toPrisonerAccountDto() = PrisonerAccountDto(
+  prisonId = prisonId,
+  lastTransactionId = lastTransactionId,
+  accountCode = accountCode,
+  balance = balance,
+  holdBalance = holdBalance,
+  transactionDate = txnEntryDate.toLocalDate().atTime(txnEntryTime.toLocalTime()),
+)
 
 private fun OffenderSubAccount.toPrisonerAccountDto() = PrisonerAccountDto(
   prisonId = id.caseloadId,
