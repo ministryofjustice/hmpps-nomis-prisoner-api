@@ -4876,7 +4876,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("offenderNo", offenderNo)
             assertThat(it).containsEntry("court", "ABDRCT")
             assertThat(it).containsEntry("courtEventId", createResponse.id.toString())
-            assertThat(it).containsEntry("eventStatus", "EXP")
+            assertThat(it).containsEntry("eventStatus", "SCH")
           },
           isNull(),
         )
