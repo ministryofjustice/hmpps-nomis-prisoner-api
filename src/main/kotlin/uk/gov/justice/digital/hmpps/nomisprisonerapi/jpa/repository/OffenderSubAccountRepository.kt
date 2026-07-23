@@ -39,7 +39,7 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
       ON gl.txn_id = osa.last_txn_id
       AND gl.account_code = osa.trust_account_code
       WHERE osa.offender_id = :offenderId
-    ORDER BY osa.caseload_id, osa.trust_account_code;
+    ORDER BY osa.caseload_id, osa.trust_account_code
     """,
     nativeQuery = true,
   )
