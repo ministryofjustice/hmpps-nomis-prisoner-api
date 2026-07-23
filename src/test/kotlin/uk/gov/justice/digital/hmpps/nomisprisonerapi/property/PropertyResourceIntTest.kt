@@ -168,6 +168,8 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectBodyResponse<CreatePropertyResponse>()
 
+        assertThat(created.bookingId).isEqualTo(booking.bookingId)
+
         nomisDataBuilder.runInTransaction {
           offenderPropertyContainerRepository.findByIdOrNull(created.propertyContainerId)!!
             .apply {
