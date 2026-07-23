@@ -178,6 +178,36 @@ class PrisonerBalanceResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's finance details by their root offender id",
+    description = "Used for migration.Retrieves a prisoner's trust account details for all caseloads with transactionDate from the transaction itself. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getPrisonerAccountDetailsForMigration(
+    @Schema(description = "rootOffenderId", example = "123456")
+    @PathVariable
+    rootOffenderId: Long,
+  ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccountsWithTransactionTimestamp(rootOffenderId)
+
+  @GetMapping("/rootOffenderId/{rootOffenderId}/balance-details")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner's finance details by their root offender id",
     description = "Retrieves a prisoner's trust account details for all caseloads with option to ignore zero balances. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
@@ -206,7 +236,7 @@ class PrisonerBalanceResource(
     excludeZeroBalances: Boolean = false,
   ): PrisonerBalanceDto = prisonerBalanceService.getPrisonerAccounts(rootOffenderId, excludeZeroBalances)
 
-  @GetMapping("/{prisonNumber}/balance")
+  @GetMapping("/{prisonNumber}/balance-details")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's finance details by their prison number",
