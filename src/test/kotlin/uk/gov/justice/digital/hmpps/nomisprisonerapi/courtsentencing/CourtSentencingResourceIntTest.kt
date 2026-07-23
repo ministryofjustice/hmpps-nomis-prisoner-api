@@ -7502,6 +7502,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   inner class CreateSentence {
     private lateinit var courtCase: CourtCase
     private lateinit var courtAppearance: CourtEvent
+    private lateinit var courtAppearanceWithOrderToday: CourtEvent
     private lateinit var courtAppearanceNoCourtOrder: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
@@ -7531,12 +7532,23 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     offenderCharge = offenderCharge1,
                     plea = "NG",
                   )
-                  courtOrder(courtDate = LocalDate.of(2023, 1, 10)) {
+                  courtOrder(courtDate = LocalDate.of(2023, 1, 10), whenCreated = LocalDateTime.now().minusDays(1)) {
                     sentencePurpose(purposeCode = "REPAIR")
                     sentencePurpose(purposeCode = "PUNISH")
                   }
                   // NOMIS allows multiple orders for an appearance - but it is rare
                   courtOrder(courtDate = LocalDate.of(2023, 1, 10))
+                }
+                courtAppearanceWithOrderToday = courtEvent {
+// overrides from the parent offender charge fields
+                  courtEventCharge(
+                    resultCode1 = offenderCharge1.resultCode1?.code,
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                  courtOrder(courtDate = LocalDate.of(2023, 1, 10), whenCreated = LocalDateTime.now()) {
+                    sentencePurpose(purposeCode = "PUNISH")
+                  }
                 }
                 courtAppearanceNoCourtOrder = courtEvent {
                   courtEventCharge(
@@ -7849,6 +7861,51 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
 // don't update if sentence exists
         verify(telemetryClient, never()).trackEvent(eq("court-order-updated"), any(), isNull())
+      }
+
+      @Test
+      fun `court order date updated when sentence exists but only just been created`() {
+        webTestClient.post().uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createSentence(
+                offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
+                eventId = courtAppearanceWithOrderToday.id,
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
+          .returnResult().responseBody!!.sentenceSeq
+
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-cases/${courtCase.id}/court-appearances/${courtAppearanceWithOrderToday.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+// a different date to the court order
+                eventDateTime = LocalDateTime.parse("2023-06-06T00:00"),
+                courtEventCharges = mutableListOf(
+                  CourtEventChargeRequest(offenderCharge1.id, "1004"),
+                  CourtEventChargeRequest(offenderCharge2.id, "1005"),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        verify(telemetryClient).trackEvent(
+          eq("court-order-updated"),
+          check {
+            assertThat(it).containsEntry("orderDate", "2023-06-06")
+          },
+          isNull(),
+        )
       }
 
       @Test

@@ -1263,9 +1263,9 @@ class CourtSentencingService(
   ) {
     if (courtEvent.courtEventCharges.any { charge -> charge.resultCode1?.resultRequiresACourtOrder() == true }) {
       existingCourtOrder(courtEvent.offenderBooking, courtEvent)?.let { order ->
-        // only amending orders without a sentence
-        if (!courtEvent.courtEventCharges.map { it.id.offenderCharge }
-            .any { it.offenderSentenceCharges.isNotEmpty() }
+        // only allow amending orders without a sentence, unless created today to allow for out of sequence appearance date updates
+        if (courtEvent.courtEventCharges.all { it.id.offenderCharge.offenderSentenceCharges.isEmpty() } ||
+          order.createDatetime.toLocalDate().isEqual(LocalDate.now())
         ) {
           if (order.courtDate != courtEvent.eventDate) {
             order.courtDate = courtEvent.eventDate
