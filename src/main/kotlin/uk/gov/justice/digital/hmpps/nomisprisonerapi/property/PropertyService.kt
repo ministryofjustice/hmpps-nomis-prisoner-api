@@ -29,9 +29,13 @@ class PropertyService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun createProperty(propertyContainerCreateRequest: PropertyContainerCreateRequest) = CreatePropertyResponse(
-    offenderPropertyContainerRepository.save(propertyContainerCreateRequest.toModel()).propertyContainerId,
-  )
+  fun createProperty(propertyContainerCreateRequest: PropertyContainerCreateRequest): CreatePropertyResponse {
+    val container = propertyContainerCreateRequest.toModel()
+    return CreatePropertyResponse(
+      offenderPropertyContainerRepository.save(container).propertyContainerId,
+      container.offenderBooking.bookingId,
+    )
+  }
 
   fun updateProperty(id: Long, propertyContainerUpdateRequest: PropertyContainerUpdateRequest) {
     val container = offenderPropertyContainerRepository.findById(id).get()
