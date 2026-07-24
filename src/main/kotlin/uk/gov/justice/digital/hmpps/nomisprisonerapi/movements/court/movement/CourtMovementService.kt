@@ -56,32 +56,40 @@ class CourtMovementService(
       ?: throw NotFoundException("Offender booking with bookingId=$bookingId not found for offender with nomsId=$offenderNo")
   }
 
-  private fun OffenderCourtMovementOut.toResponse() = CourtMovementOut(
-    bookingId = id.offenderBooking.bookingId,
-    sequence = id.sequence,
-    eventId = courtScheduleOutId,
-    courtScheduleOutId = courtScheduleOutId?.takeIf { courtEventRepository.existsById(it) },
-    movementDate = movementDate,
-    movementTime = getMovementDateAndTime(),
-    movementReason = movementReason.id.reasonCode,
-    fromPrison = fromAgency!!.id,
-    toCourt = toAgency?.id,
-    commentText = commentText,
-    userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
-    audit = toAudit(),
-  )
+  private fun OffenderCourtMovementOut.toResponse(): CourtMovementOut {
+    val courtScheduleOut = courtScheduleOutId?.let { courtEventRepository.findByIdOrNull(it) }
+    return CourtMovementOut(
+      bookingId = id.offenderBooking.bookingId,
+      sequence = id.sequence,
+      eventId = courtScheduleOutId,
+      courtScheduleOutId = courtScheduleOut?.id,
+      movementDate = movementDate,
+      movementTime = getMovementDateAndTime(),
+      movementReason = movementReason.id.reasonCode,
+      fromPrison = fromAgency!!.id,
+      toCourt = toAgency?.id,
+      commentText = commentText,
+      userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
+      caseId = courtScheduleOut?.courtCase?.id,
+      audit = toAudit(),
+    )
+  }
 
-  private fun OffenderCourtMovementIn.toResponse() = CourtMovementIn(
-    bookingId = id.offenderBooking.bookingId,
-    sequence = id.sequence,
-    courtScheduleOutId = courtScheduleOutId?.takeIf { courtEventRepository.existsById(it) },
-    movementDate = movementDate,
-    movementTime = getMovementDateAndTime(),
-    movementReason = movementReason.id.reasonCode,
-    fromCourt = fromAgency?.id,
-    toPrison = toAgency!!.id,
-    commentText = commentText,
-    userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
-    audit = toAudit(),
-  )
+  private fun OffenderCourtMovementIn.toResponse(): CourtMovementIn {
+    val courtScheduleOut = courtScheduleOutId?.let { courtEventRepository.findByIdOrNull(it) }
+    return CourtMovementIn(
+      bookingId = id.offenderBooking.bookingId,
+      sequence = id.sequence,
+      courtScheduleOutId = courtScheduleOut?.id,
+      movementDate = movementDate,
+      movementTime = getMovementDateAndTime(),
+      movementReason = movementReason.id.reasonCode,
+      fromCourt = fromAgency?.id,
+      toPrison = toAgency!!.id,
+      commentText = commentText,
+      userActiveCaseloadId = findActiveCaseloadId(modifyStaffUserAccount, createStaffUserAccount),
+      caseId = courtScheduleOut?.courtCase?.id,
+      audit = toAudit(),
+    )
+  }
 }
