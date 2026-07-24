@@ -629,7 +629,6 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].holdBalance).isNull()
         assertThat(accounts[0].lastTransactionId).isEqualTo(45678)
         assertThat(accounts[0].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-01T11:23:55"))
-
         assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].accountCode).isEqualTo(2103)
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(1.25))
@@ -648,11 +647,6 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[3].holdBalance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[3].lastTransactionId).isEqualTo(66666)
         assertThat(accounts[3].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-02T09:20:01"))
-        assertThat(accounts[3].prisonId).isEqualTo("SSI")
-        assertThat(accounts[3].accountCode).isEqualTo(2102)
-        assertThat(accounts[3].balance).isEqualTo("11.11")
-        assertThat(accounts[3].lastTransactionId).isEqualTo(8888)
-        assertThat(accounts[3].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
