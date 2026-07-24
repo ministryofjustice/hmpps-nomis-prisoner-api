@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 
@@ -28,14 +29,14 @@ class FinanceResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender = offender {
         booking {
-          transaction1 = transaction(transactionId = 2, transactionType = "DPST") {
+          transaction1 = transaction(transactionId = 2, subAccountType = SubAccountType.SAV, transactionType = "DPST") {
             glTransaction1 = generalLedgerTransaction(1, 2000)
             glTransaction2 = generalLedgerTransaction(2, 2100)
           }
-          transaction2 = transaction(transactionId = 3, transactionType = "SPEN", entryDate = LocalDate.parse("2025-08-11")) {
+          transaction2 = transaction(transactionId = 3, subAccountType = SubAccountType.REG, transactionType = "SPEN", entryDate = LocalDate.parse("2025-08-11")) {
             glTransaction3 = generalLedgerTransaction(1, 2101)
           }
-          transaction(transactionId = 3, transactionEntrySequence = 2, transactionType = "DPST")
+          transaction(transactionId = 3, subAccountType = SubAccountType.REG, transactionEntrySequence = 2, transactionType = "DPST")
         }
       }
     }
@@ -295,7 +296,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           generalLedgerTransaction(12, 1, 1)
           offender {
             booking {
-              transaction1 = transaction(transactionType = "DPST") {
+              transaction1 = transaction(subAccountType = SubAccountType.REG, transactionType = "DPST") {
                 glTransaction1 = generalLedgerTransaction(1, 2000) // should be ignored
               }
             }

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -22,20 +23,24 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
   private var id2: Long = 0
   private var id3: Long = 0
 
+  // 2101 = 'REG'; 2102 = 'SPND'; 2103 = 'SAV'
   @BeforeEach
   fun setUp() {
     nomisDataBuilder.build {
       offender()
       id1 = offender(nomsId = "A1234BC") {
         booking {
-          transaction(transactionId = 45678, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-01")) {
-            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, entryTime = LocalTime.parse("11:23:54"))
-            generalLedgerTransaction(generalLedgerEntrySequence = 2, accountCode = 2103, entryTime = LocalTime.parse("11:23:54"))
+          transaction(transactionId = 45678, subAccountType = SubAccountType.SAV, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-01")) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 3, accountCode = 2103, entryTime = LocalTime.parse("11:23:54"))
           }
-          transaction(transactionId = 55555, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-01")) {
+          transaction(transactionId = 45678, transactionEntrySequence = 2, subAccountType = SubAccountType.SPND, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-01")) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, entryTime = LocalTime.parse("11:23:55"))
+            generalLedgerTransaction(generalLedgerEntrySequence = 2, accountCode = 2000, entryTime = LocalTime.parse("11:23:55"))
+          }
+          transaction(transactionId = 55555, subAccountType = SubAccountType.REG, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-01")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2101, entryTime = LocalTime.parse("14:10:45"))
           }
-          transaction(transactionId = 66666, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
+          transaction(transactionId = 66666, subAccountType = SubAccountType.SPND, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, entryTime = LocalTime.parse("09:20:01"))
           }
         }
@@ -52,15 +57,16 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       }.id
       id2 = offender(nomsId = "B2345CD") {
         booking {
-          transaction(transactionId = 12345, transactionType = "DPST", entryDate = LocalDate.parse("2026-04-02")) {
+          transaction(transactionId = 12345, subAccountType = SubAccountType.REG, transactionType = "DPST", entryDate = LocalDate.parse("2026-04-02")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2101, entryTime = LocalTime.parse("16:11:12"))
           }
-          transaction(transactionId = 34567, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
+          transaction(transactionId = 34567, subAccountType = SubAccountType.SPND, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, entryTime = LocalTime.parse("10:00:11"))
           }
-          transaction(transactionId = 56789, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
+          transaction(transactionId = 56789, subAccountType = SubAccountType.SAV, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2103, entryTime = LocalTime.parse("04:12:12"))
           }
+          transaction(transactionId = 8888, subAccountType = SubAccountType.SPND, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-04"))
         }
 
         trustAccount()
@@ -68,6 +74,9 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
           subAccount(accountCode = 2101, lastTransactionId = 12345)
           subAccount(accountCode = 2102, balance = BigDecimal.valueOf(12.25), holdBalance = BigDecimal.ZERO, lastTransactionId = 34567)
           subAccount(accountCode = 2103, balance = BigDecimal.valueOf(21.25), holdBalance = BigDecimal.valueOf(2.50), lastTransactionId = 56789)
+        }
+        trustAccount(caseloadId = "SSI", currentBalance = BigDecimal.valueOf(11.11)) {
+          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(11.11), holdBalance = BigDecimal.valueOf(2.50), lastTransactionId = 8888)
         }
       }.id
       id3 = offender(nomsId = "C3456DE") {
@@ -352,7 +361,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
-        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts.size).isEqualTo(4)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
@@ -370,6 +379,11 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[2].holdBalance).isEqualTo("2.5")
         assertThat(accounts[2].lastTransactionId).isEqualTo(56789)
         assertThat(accounts[2].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        assertThat(accounts[3].prisonId).isEqualTo("SSI")
+        assertThat(accounts[3].accountCode).isEqualTo(2102)
+        assertThat(accounts[3].balance).isEqualTo("11.11")
+        assertThat(accounts[3].lastTransactionId).isEqualTo(8888)
+        assertThat(accounts[3].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
@@ -385,7 +399,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
-        assertThat(accounts.size).isEqualTo(2)
+        assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2102)
         assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
@@ -397,6 +411,11 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[1].holdBalance).isEqualTo("2.5")
         assertThat(accounts[1].lastTransactionId).isEqualTo(56789)
         assertThat(accounts[1].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        assertThat(accounts[2].prisonId).isEqualTo("SSI")
+        assertThat(accounts[2].accountCode).isEqualTo(2102)
+        assertThat(accounts[2].balance).isEqualTo("11.11")
+        assertThat(accounts[2].lastTransactionId).isEqualTo(8888)
+        assertThat(accounts[2].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
@@ -494,7 +513,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
-        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts.size).isEqualTo(4)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
@@ -512,6 +531,11 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[2].holdBalance).isEqualTo("2.5")
         assertThat(accounts[2].lastTransactionId).isEqualTo(56789)
         assertThat(accounts[2].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        assertThat(accounts[3].prisonId).isEqualTo("SSI")
+        assertThat(accounts[3].accountCode).isEqualTo(2102)
+        assertThat(accounts[3].balance).isEqualTo("11.11")
+        assertThat(accounts[3].lastTransactionId).isEqualTo(8888)
+        assertThat(accounts[3].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
@@ -527,7 +551,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
-        assertThat(accounts.size).isEqualTo(2)
+        assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2102)
         assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
@@ -539,6 +563,11 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[1].holdBalance).isEqualTo("2.5")
         assertThat(accounts[1].lastTransactionId).isEqualTo(56789)
         assertThat(accounts[1].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        assertThat(accounts[2].prisonId).isEqualTo("SSI")
+        assertThat(accounts[2].accountCode).isEqualTo(2102)
+        assertThat(accounts[2].balance).isEqualTo("11.11")
+        assertThat(accounts[2].lastTransactionId).isEqualTo(8888)
+        assertThat(accounts[2].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
@@ -599,28 +628,31 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(11.25))
         assertThat(accounts[0].holdBalance).isNull()
         assertThat(accounts[0].lastTransactionId).isEqualTo(45678)
-        assertThat(accounts[0].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-01T11:23:54"))
+        assertThat(accounts[0].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-01T11:23:55"))
 
         assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].accountCode).isEqualTo(2103)
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(1.25))
         assertThat(accounts[1].holdBalance).isNull()
         assertThat(accounts[1].lastTransactionId).isEqualTo(45678)
-        assertThat(accounts[1].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-01T11:23:54"))
-
+        assertThat(accounts[1].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-01T11:23:55"))
         assertThat(accounts[2].prisonId).isEqualTo("WWI")
         assertThat(accounts[2].accountCode).isEqualTo(2101)
         assertThat(accounts[2].balance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[2].holdBalance).isNull()
         assertThat(accounts[2].lastTransactionId).isEqualTo(55555)
         assertThat(accounts[2].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-01T14:10:45"))
-
         assertThat(accounts[3].prisonId).isEqualTo("WWI")
         assertThat(accounts[3].accountCode).isEqualTo(2102)
         assertThat(accounts[3].balance).isEqualTo("-1.5")
         assertThat(accounts[3].holdBalance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[3].lastTransactionId).isEqualTo(66666)
         assertThat(accounts[3].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-02T09:20:01"))
+        assertThat(accounts[3].prisonId).isEqualTo("SSI")
+        assertThat(accounts[3].accountCode).isEqualTo(2102)
+        assertThat(accounts[3].balance).isEqualTo("11.11")
+        assertThat(accounts[3].lastTransactionId).isEqualTo(8888)
+        assertThat(accounts[3].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
@@ -636,7 +668,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
-        assertThat(accounts.size).isEqualTo(3)
+        assertThat(accounts.size).isEqualTo(4)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
@@ -654,6 +686,11 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[2].holdBalance).isEqualTo("2.5")
         assertThat(accounts[2].lastTransactionId).isEqualTo(56789)
         assertThat(accounts[2].transactionDate).isEqualTo(LocalDateTime.parse("2026-02-02T04:12:12"))
+        assertThat(accounts[3].prisonId).isEqualTo("SSI")
+        assertThat(accounts[3].accountCode).isEqualTo(2102)
+        assertThat(accounts[3].balance).isEqualTo("11.11")
+        assertThat(accounts[3].lastTransactionId).isEqualTo(8888)
+        assertThat(accounts[3].transactionDate).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
       }
     }
 
@@ -902,15 +939,16 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       with(balance) {
         assertThat(rootOffenderId).isEqualTo(id2)
         assertThat(prisonNumber).isEqualTo("B2345CD")
-        assertThat(accounts.size).isEqualTo(2)
-
+        assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2102)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(12.25))
-
         assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].accountCode).isEqualTo(2103)
         assertThat(accounts[1].balance).isEqualTo("21.25")
+        assertThat(accounts[2].prisonId).isEqualTo("SSI")
+        assertThat(accounts[2].accountCode).isEqualTo(2102)
+        assertThat(accounts[2].balance).isEqualTo("11.11")
       }
     }
 
