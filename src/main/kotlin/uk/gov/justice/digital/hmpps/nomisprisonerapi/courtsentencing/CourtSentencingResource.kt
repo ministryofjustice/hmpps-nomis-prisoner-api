@@ -2868,6 +2868,7 @@ data class CourtAppearanceRequest(
   // nomis UI doesn't allow this during a create but DPS does
   val nextCourtId: String?,
   val comment: String?,
+  val futureAppearance: Boolean? = false,
 
   /* not currently provided by sentencing service:
   val orderRequestedFlag: Boolean?,

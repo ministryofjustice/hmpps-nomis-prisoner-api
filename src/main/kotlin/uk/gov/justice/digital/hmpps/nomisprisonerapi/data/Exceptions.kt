@@ -18,6 +18,7 @@ class ConflictException(message: String?, val entityId: Any? = null) :
   Supplier<ConflictException> {
   override fun get(): ConflictException = ConflictException(message, entityId)
 }
+class DependencyException(message: String?, val entityId: Any? = null) : RuntimeException(message)
 
 class NotFoundException(message: String?) :
   RuntimeException(message),
