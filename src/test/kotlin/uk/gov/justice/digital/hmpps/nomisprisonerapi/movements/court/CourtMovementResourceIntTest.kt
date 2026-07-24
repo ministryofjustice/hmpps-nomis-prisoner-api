@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -32,6 +33,7 @@ class CourtMovementResourceIntTest(
   private lateinit var movementOut: OffenderCourtMovementOut
   private lateinit var movementIn: OffenderCourtMovementIn
   private lateinit var scheduleOut: CourtEvent
+  private lateinit var case: CourtCase
   private lateinit var staff: Staff
 
   @AfterEach
@@ -106,7 +108,7 @@ class CourtMovementResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              courtCase(reportingStaff = staff) {
+              case = courtCase(reportingStaff = staff) {
                 scheduleOut = courtEvent {
                   movementOut = courtMovementOut()
                   movementIn = courtMovementIn()
@@ -122,6 +124,7 @@ class CourtMovementResourceIntTest(
           assertThat(eventId).isEqualTo(scheduleOut.id)
           assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
           assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
+          assertThat(caseId).isEqualTo(case.id)
         }
       }
     }
@@ -323,7 +326,7 @@ class CourtMovementResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              courtCase(reportingStaff = staff) {
+              case = courtCase(reportingStaff = staff) {
                 scheduleOut = courtEvent {
                   movementOut = courtMovementOut()
                   movementIn = courtMovementIn()
@@ -337,6 +340,7 @@ class CourtMovementResourceIntTest(
           assertThat(bookingId).isEqualTo(booking.bookingId)
           assertThat(sequence).isEqualTo(movementIn.id.sequence)
           assertThat(courtScheduleOutId).isEqualTo(scheduleOut.id)
+          assertThat(caseId).isEqualTo(case.id)
         }
       }
     }
