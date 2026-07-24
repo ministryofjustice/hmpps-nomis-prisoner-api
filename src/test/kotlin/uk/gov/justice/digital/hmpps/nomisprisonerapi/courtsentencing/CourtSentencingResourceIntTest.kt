@@ -158,7 +158,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 sentence(
                   courtOrder = courtOrder,
                   calculationType = "AGG_IND_ORA",
-                  category = "1991",
+                  category = "2020",
                 ) {
                   term(startDate = LocalDate.parse("2022-01-01"), years = 2)
                   offenderSentenceCharge(offenderCharge1)
@@ -339,7 +339,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].lidsOffenceNumber").isEqualTo(11)
           .jsonPath("offenderCharges[0].createdByUsername").isNotEmpty
           .jsonPath("sentences[0].calculationType.code").isEqualTo("AGG_IND_ORA")
-          .jsonPath("sentences[0].category.code").isEqualTo("1991")
+          .jsonPath("sentences[0].category.code").isEqualTo("2020")
           .jsonPath("sentences[0].createdByUsername").isNotEmpty
           .jsonPath("sentences[0].sentenceTerms[0].createdByUsername").isNotEmpty
       }
@@ -4054,7 +4054,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 sentence(
                   courtOrder = courtOrder,
                   calculationType = "AGG_IND_ORA",
-                  category = "1991",
+                  category = "2020",
                 )
               }
             }
@@ -7666,14 +7666,14 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(calcType = "ADIMP_ORA", eventId = courtAppearance.id),
+              createSentence(category = "1991", calcType = "ADIMP_ORA", eventId = courtAppearance.id),
             ),
           )
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
+          .isEqualTo("Sentence calculation with category 1991 and calculation type ADIMP_ORA not found")
       }
 
       @Test
@@ -7937,7 +7937,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 offenderChargeIds = mutableListOf(),
                 sentenceLevel = "AGG",
                 calcType = "AGG_IND_ORA",
-                category = "1991",
+                category = "2020",
                 eventId = courtAppearance.id,
               ),
             ),
@@ -8143,14 +8143,14 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(calcType = "ADIMP_ORA", eventId = courtEvent.id),
+              createSentence(calcType = "ZZZ", eventId = courtEvent.id),
             ),
           )
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
           .jsonPath("developerMessage")
-          .isEqualTo("Sentence calculation with category 2020 and calculation type ADIMP_ORA not found")
+          .isEqualTo("Sentence calculation with category 2020 and calculation type ZZZ not found")
       }
 
       @Test
@@ -8188,7 +8188,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             BodyInserters.fromValue(
               createSentence(
                 calcType = "FTR_ORA",
-                category = "1991",
+                category = "2020",
                 eventId = courtEvent2.id,
                 startDate = LocalDate.parse(aLaterDateString),
                 endDate = null,
@@ -8221,7 +8221,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("calculationType.code").isEqualTo("FTR_ORA")
           .jsonPath("sentenceLevel").isEqualTo("AGG")
           .jsonPath("consecSequence").isEqualTo(sentence.id.sequence)
-          .jsonPath("category.code").isEqualTo("1991")
+          .jsonPath("category.code").isEqualTo("2020")
           .jsonPath("startDate").isEqualTo(aLaterDateString)
           .jsonPath("endDate").doesNotExist()
           .jsonPath("fineAmount").isEqualTo("9.7")
