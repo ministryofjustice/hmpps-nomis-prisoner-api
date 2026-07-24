@@ -52,6 +52,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PropertyContainerCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -481,6 +482,7 @@ interface BookingDsl {
     transactionEntrySequence: Int = 1,
     transactionType: String,
     entryDate: LocalDate = LocalDate.parse("2025-06-01"),
+    subAccountType: SubAccountType,
     dsl: OffenderTransactionDsl.() -> Unit = {},
   ): OffenderTransaction
 
@@ -1538,6 +1540,7 @@ class BookingBuilder(
     transactionEntrySequence: Int,
     transactionType: String,
     entryDate: LocalDate,
+    subAccountType: SubAccountType,
     dsl: OffenderTransactionDsl.() -> Unit,
   ): OffenderTransaction = offenderTransactionBuilderFactory.builder().let { builder ->
     builder.build(
@@ -1548,6 +1551,7 @@ class BookingBuilder(
       offenderBooking.location.id,
       transactionType,
       entryDate,
+      subAccountType,
     )
       .also { builder.apply(dsl) }
   }

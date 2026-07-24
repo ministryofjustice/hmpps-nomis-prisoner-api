@@ -14,33 +14,61 @@ import java.time.LocalDateTime
 interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, OffenderSubAccountId> {
 
   @Query(
-    """
-    SELECT
-      osa.caseload_id         AS prisonId,
-      osa.trust_account_code  AS accountCode,
-      osa.last_txn_id         AS lastTransactionId,
-      osa.balance             AS balance,
-      osa.hold_balance        AS holdBalance,
-      osa.create_datetime     AS createDateTime,
-      osa.modify_datetime     AS modifyDateTime,
-      gl.txn_entry_date       AS txnEntryDate,
-      gl.txn_entry_time       AS txnEntryTime
-    FROM offender_sub_accounts osa
-    JOIN (
+    """ 
+     WITH osa AS (
       SELECT
-        txn_id,
-        account_code,
-        MAX(txn_entry_date) AS txn_entry_date,
-        MAX(txn_entry_time) AS txn_entry_time
-        FROM gl_transactions
-        WHERE offender_id = :offenderId
-        GROUP BY txn_id, account_code
-    ) gl
-      ON gl.txn_id = osa.last_txn_id
-      AND gl.account_code = osa.trust_account_code
-      WHERE osa.offender_id = :offenderId
-    ORDER BY osa.caseload_id, osa.trust_account_code
-    """,
+          caseload_id,
+          trust_account_code,
+          last_txn_id,
+          balance,
+          hold_balance,
+          create_datetime,
+          modify_datetime,
+          CASE trust_account_code
+              WHEN 2101 THEN 'REG'
+              WHEN 2102 THEN 'SPND'
+              WHEN 2103 THEN 'SAV'
+          END AS sub_account_type
+      FROM offender_sub_accounts
+      WHERE offender_id = :offenderId
+  ),
+  ot AS (
+      SELECT
+          txn_id,
+          sub_account_type,
+          MAX(create_datetime) AS create_datetime
+      FROM offender_transactions
+      GROUP BY txn_id, sub_account_type
+  ),
+  gl AS (
+      SELECT
+          txn_id,
+          MAX(txn_entry_date) AS txn_entry_date,
+          MAX(txn_entry_time) AS txn_entry_time
+      FROM gl_transactions
+      WHERE offender_id = :offenderId
+      GROUP BY txn_id
+  )
+  SELECT
+      osa.caseload_id        AS prisonId,
+      osa.trust_account_code AS accountCode,
+      osa.last_txn_id        AS lastTransactionId,
+      osa.balance            AS balance,
+      osa.hold_balance       AS holdBalance,
+      osa.create_datetime    AS createDateTime,
+      osa.modify_datetime    AS modifyDateTime,
+      COALESCE(gl.txn_entry_date, TRUNC(ot.create_datetime)) AS txnEntryDate,
+      COALESCE(gl.txn_entry_time, ot.create_datetime)        AS txnEntryTime
+  FROM osa
+  JOIN ot
+    ON ot.txn_id = osa.last_txn_id
+   AND ot.sub_account_type = osa.sub_account_type
+  LEFT JOIN gl
+    ON gl.txn_id = osa.last_txn_id
+  ORDER BY
+      osa.caseload_id,
+      osa.trust_account_code
+  """,
     nativeQuery = true,
   )
   fun findByOffenderIdWithTransactionDateTime(offenderId: Long): List<OffenderSubAccounWithTransactionDateTimeProjection>
