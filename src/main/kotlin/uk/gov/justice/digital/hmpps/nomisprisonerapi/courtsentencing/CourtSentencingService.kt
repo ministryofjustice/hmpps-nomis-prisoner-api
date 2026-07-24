@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.AuditRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.DependencyException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
@@ -420,6 +421,11 @@ class CourtSentencingService(
       clonedCourtCases = null,
     )
   } else {
+    // assume we are adding this future dated appearance at same time as we are adding
+    // the main warrant - so allow this to fail until cloning has finished
+    if (courtAppearanceRequest.futureAppearance == true) {
+      throw DependencyException("Cannot add future dated appearance until case has been cloned to latest booking", entityId = courtCase.id)
+    }
     cloneCourtCasesToLatestBookingFrom(courtCase).let {
       val sourceCase = it.courtCases.find { cases -> cases.sourceCourtCase.id == courtCase.id }!!
       val indexOfSourceCase = it.courtCases.indexOf(sourceCase)
