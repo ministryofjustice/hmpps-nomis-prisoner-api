@@ -10,7 +10,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class OffenderFixedTermRecallDslMarker
 
-@NomisDataDslMarker
+@OffenderFixedTermRecallDslMarker
 interface OffenderFixedTermRecallDsl
 
 @Component

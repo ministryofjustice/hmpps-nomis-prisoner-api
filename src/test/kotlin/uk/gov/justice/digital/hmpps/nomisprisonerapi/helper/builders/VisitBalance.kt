@@ -11,7 +11,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class VisitBalanceDslMarker
 
-@NomisDataDslMarker
+@VisitBalanceDslMarker
 interface VisitBalanceDsl {
   @VisitBalanceAdjustmentDslMarker
   fun visitBalanceAdjustment(

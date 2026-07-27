@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhys
 @DslMarker
 annotation class OffenderPhysicalAttributesDslMarker
 
-@NomisDataDslMarker
+@OffenderPhysicalAttributesDslMarker
 interface OffenderPhysicalAttributesDsl
 
 @Component

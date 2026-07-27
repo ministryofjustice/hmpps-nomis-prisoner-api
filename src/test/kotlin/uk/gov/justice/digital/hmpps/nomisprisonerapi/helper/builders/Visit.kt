@@ -26,7 +26,7 @@ import kotlin.jvm.optionals.getOrNull
 @DslMarker
 annotation class VisitDslMarker
 
-@NomisDataDslMarker
+@VisitDslMarker
 interface VisitDsl {
   @VisitVisitorDslMarker
   fun visitor(

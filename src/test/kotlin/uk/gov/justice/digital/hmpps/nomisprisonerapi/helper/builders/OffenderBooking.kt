@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOu
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderKeyDateAdjustment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhysicalAttributes
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
@@ -69,7 +70,7 @@ annotation class BookingDslMarker
 
 @NomisDataDslMarker
 interface BookingDsl {
-  @OffenderRestrictionsDslMarker
+
   fun restriction(
     restrictionType: String = "BAN",
     enteredStaff: Staff,
@@ -82,7 +83,6 @@ interface BookingDsl {
     dsl: OffenderRestrictionsDsl.() -> Unit = {},
   ): OffenderRestrictions
 
-  @AdjudicationPartyDslMarker
   fun adjudicationParty(
     incident: AdjudicationIncident,
     comment: String = "They witnessed everything",
@@ -94,7 +94,6 @@ interface BookingDsl {
     dsl: AdjudicationPartyDsl.() -> Unit = {},
   ): AdjudicationIncidentParty
 
-  @IncentiveDslMarker
   fun incentive(
     iepLevelCode: String = "ENT",
     userId: String? = null,
@@ -104,7 +103,6 @@ interface BookingDsl {
     iepDateTime: LocalDateTime = LocalDateTime.now(),
   ): Incentive
 
-  @CourseAllocationDslMarker
   fun courseAllocation(
     courseActivity: CourseActivity,
     startDate: String? = "2022-10-31",
@@ -117,7 +115,6 @@ interface BookingDsl {
     dsl: CourseAllocationDsl.() -> Unit = { payBand() },
   ): OffenderProgramProfile
 
-  @CSIPReportDslMarker
   fun csipReport(
     type: String = "INT",
     location: String = "LIB",
@@ -142,7 +139,6 @@ interface BookingDsl {
     dsl: CSIPReportDsl.() -> Unit = {},
   ): CSIPReport
 
-  @IWPDocumentDslMarker
   fun document(
     fileName: String = "doc1.txt",
     template: IWPTemplate,
@@ -151,7 +147,6 @@ interface BookingDsl {
     dsl: IWPDocumentDsl.() -> Unit = {},
   ): IWPDocument
 
-  @OffenderSentenceDslMarker
   fun sentence(
     calculationType: String = "ADIMP_ORA",
     category: String = "2003",
@@ -199,7 +194,6 @@ interface BookingDsl {
     dsl: OffenderSentenceDsl.() -> Unit = { },
   ): OffenderSentence
 
-  @OffenderKeyDateAdjustmentDslMarker
   fun adjustment(
     adjustmentTypeCode: String = "ADA",
     adjustmentDate: LocalDate = LocalDate.now(),
@@ -210,7 +204,6 @@ interface BookingDsl {
     dsl: OffenderKeyDateAdjustmentDsl.() -> Unit = { },
   ): OffenderKeyDateAdjustment
 
-  @CourtCaseDslMarker
   fun courtCase(
     whenCreated: LocalDateTime = LocalDateTime.now(),
     caseStatus: String = "A",
@@ -238,7 +231,6 @@ interface BookingDsl {
     whenCreated: LocalDateTime = LocalDateTime.now(),
   ): List<LinkCaseTxn>
 
-  @CourtEventDslMarker
   fun courtEventOut(
     commentText: String? = "Court event comment",
     agencyId: String = "LEEDYC",
@@ -249,7 +241,6 @@ interface BookingDsl {
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
 
-  @OffenderFixedTermRecallDslMarker
   fun fixedTermRecall(
     returnToCustodyDate: LocalDate = LocalDate.now(),
     comments: String? = null,
@@ -258,7 +249,6 @@ interface BookingDsl {
     dsl: OffenderFixedTermRecallDsl.() -> Unit = { },
   ): OffenderFixedTermRecall
 
-  @OffenderAlertDslMarker
   fun alert(
     sequence: Long? = null,
     alertCode: String = "XA",
@@ -274,7 +264,6 @@ interface BookingDsl {
     dsl: OffenderAlertDsl.() -> Unit = { },
   ): OffenderAlert
 
-  @OffenderCaseNoteDslMarker
   fun caseNote(
     caseNoteType: String,
     caseNoteSubType: String,
@@ -287,7 +276,6 @@ interface BookingDsl {
     dsl: OffenderCaseNoteDsl.() -> Unit = { },
   ): OffenderCaseNote
 
-  @OffenderPhysicalAttributesDslMarker
   fun physicalAttributes(
     heightCentimetres: Int? = 180,
     heightFeet: Int? = null,
@@ -297,14 +285,12 @@ interface BookingDsl {
     sequence: Long? = null,
   ): OffenderPhysicalAttributes
 
-  @OffenderProfileDslMarker
   fun profile(
     checkDate: LocalDateTime = LocalDateTime.now(),
     sequence: Int = 1,
     dsl: OffenderProfileDsl.() -> Unit = {},
   ): OffenderProfile
 
-  @OffenderProfileDetailDslMarker
   fun profileDetail(
     listSequence: Int = 99,
     profileType: String = "BUILD",
@@ -312,24 +298,20 @@ interface BookingDsl {
     sequence: Int = 1,
   ): OffenderProfileDetail
 
-  @OffenderExternalMovementDslMarker
   fun prisonTransfer(
     from: String = "BXI",
     to: String = "MDI",
     date: LocalDateTime = LocalDateTime.now(),
   ): Pair<OffenderExternalMovement, OffenderExternalMovement>
 
-  @OffenderExternalMovementDslMarker
   fun release(
     date: LocalDateTime = LocalDateTime.now(),
   ): OffenderExternalMovement
 
-  @OffenderExternalMovementDslMarker
   fun receive(
     date: LocalDateTime = LocalDateTime.now(),
   ): OffenderExternalMovement
 
-  @OffenderExternalMovementDslMarker
   fun tapMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
     fromPrison: String = "BXI",
@@ -343,7 +325,6 @@ interface BookingDsl {
     toAddress: Address? = null,
   ): OffenderTapMovementOut
 
-  @OffenderExternalMovementDslMarker
   fun tapMovementIn(
     date: LocalDateTime = LocalDateTime.now(),
     fromAgency: String? = null,
@@ -356,7 +337,6 @@ interface BookingDsl {
     fromAddress: Address? = null,
   ): OffenderTapMovementIn
 
-  @CourtEventDslMarker
   fun courtScheduleOut(
     commentText: String? = "Court event comment",
     fromPrison: String = "MDI",
@@ -367,7 +347,6 @@ interface BookingDsl {
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
 
-  @OffenderExternalMovementDslMarker
   fun courtMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
     fromPrison: String = "BXI",
@@ -376,7 +355,6 @@ interface BookingDsl {
     comment: String? = null,
   ): OffenderCourtMovementOut
 
-  @OffenderExternalMovementDslMarker
   fun courtMovementIn(
     date: LocalDateTime = LocalDateTime.now(),
     toPrison: String = "BXI",
@@ -385,14 +363,12 @@ interface BookingDsl {
     comment: String? = null,
   ): OffenderCourtMovementIn
 
-  @VisitBalanceDslMarker
   fun visitBalance(
     remainingVisitOrders: Int? = 7,
     remainingPrivilegedVisitOrders: Int? = 4,
     dsl: VisitBalanceDsl.() -> Unit = {},
   ): OffenderVisitBalance
 
-  @VisitDslMarker
   fun visit(
     visitTypeCode: String = "SCON",
     visitStatusCode: String = "SCH",
@@ -412,7 +388,6 @@ interface BookingDsl {
     dsl: VisitOrderDsl.() -> Unit = {},
   ): VisitOrder
 
-  @VisitDslMarker
   fun officialVisit(
     visitTypeCode: String = "OFFI",
     visitStatusCode: String = "SCH",
@@ -426,7 +401,6 @@ interface BookingDsl {
     dsl: VisitDsl.() -> Unit = {},
   ): Visit
 
-  @OffenderContactPersonDslMarker
   fun contact(
     person: Person,
     relationshipType: String = "FRI",
@@ -442,7 +416,6 @@ interface BookingDsl {
     dsl: OffenderContactPersonDsl.() -> Unit = {},
   ): OffenderContactPerson
 
-  @OffenderBookingImageDslMarker
   fun image(
     captureDateTime: LocalDateTime = LocalDateTime.now(),
     fullSizeImage: ByteArray = byteArrayOf(1, 2, 3),
@@ -452,7 +425,6 @@ interface BookingDsl {
     dsl: OffenderBookingImageDsl.() -> Unit = {},
   ): OffenderBookingImage
 
-  @OffenderIdentifyingMarkDslMarker
   fun identifyingMark(
     sequence: Long = 1,
     bodyPartCode: String = "HEAD",
@@ -463,7 +435,6 @@ interface BookingDsl {
     dsl: OffenderIdentifyingMarkDsl.() -> Unit = {},
   ): OffenderIdentifyingMark
 
-  @OffenderBeliefDslMarker
   fun belief(
     beliefCode: String,
     startDate: LocalDate = LocalDate.parse("2021-01-01"),
@@ -476,7 +447,6 @@ interface BookingDsl {
     dsl: OffenderBeliefDsl.() -> Unit = {},
   ): OffenderBelief
 
-  @OffenderTransactionDslMarker
   fun transaction(
     transactionId: Long = 1,
     transactionEntrySequence: Int = 1,
@@ -486,7 +456,6 @@ interface BookingDsl {
     dsl: OffenderTransactionDsl.() -> Unit = {},
   ): OffenderTransaction
 
-  @OffenderAssessmentDslMarker
   fun assessment(
     sequence: Int = 1,
     username: String,
@@ -496,7 +465,6 @@ interface BookingDsl {
     dsl: OffenderAssessmentDsl.() -> Unit = {},
   ): OffenderAssessment
 
-  @OffenderPropertyContainerDslMarker
   fun property(
     prisonId: String? = null,
     internalLocationId: Long? = null,
@@ -508,7 +476,6 @@ interface BookingDsl {
     dsl: OffenderPropertyContainerDsl.() -> Unit = {},
   ): OffenderPropertyContainer
 
-  @OffenderTapApplicationDslMarker
   fun tapApplication(
     eventSubType: String = "C5",
     applicationDate: LocalDateTime = LocalDateTime.now(),
@@ -530,6 +497,14 @@ interface BookingDsl {
     tapSubType: String? = "RDR",
     dsl: OffenderTapApplicationDsl.() -> Unit = {},
   ): OffenderTapApplication
+
+  fun imprisonmentStatus(
+    statusCode: String,
+    effectiveDateTime: LocalDateTime = LocalDateTime.now(),
+    expiryDate: LocalDate? = null,
+    createDate: LocalDate = LocalDate.now(),
+    latestStatus: Boolean = true,
+  ): OffenderImprisonmentStatus
 }
 
 @Component
@@ -575,6 +550,7 @@ class BookingBuilderFactory(
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
   private val courtEventBuilderFactory: CourtEventBuilderFactory,
+  private val offenderImprisonmentStatusBuilderFactory: OffenderImprisonmentStatusBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
     repository,
@@ -607,6 +583,7 @@ class BookingBuilderFactory(
     offenderRestrictionsBuilderFactory,
     offenderTapApplicationBuilderFactory,
     linkCaseTxnBuilderFactory,
+    offenderImprisonmentStatusBuilderFactory,
   )
 }
 
@@ -641,6 +618,7 @@ class BookingBuilder(
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
+  private val offenderImprisonmentStatusBuilderFactory: OffenderImprisonmentStatusBuilderFactory,
 ) : BookingDsl {
 
   private lateinit var offenderBooking: OffenderBooking
@@ -865,7 +843,6 @@ class BookingBuilder(
         }
     }
 
-  @CourtCaseDslMarker
   override fun courtCase(
     whenCreated: LocalDateTime,
     caseStatus: String,
@@ -1642,5 +1619,23 @@ class BookingBuilder(
     )
       .also { offenderBooking.tapApplications += it }
       .also { builder.apply(dsl) }
+  }
+
+  override fun imprisonmentStatus(
+    statusCode: String,
+    effectiveDateTime: LocalDateTime,
+    expiryDate: LocalDate?,
+    createDate: LocalDate,
+    latestStatus: Boolean,
+  ): OffenderImprisonmentStatus = offenderImprisonmentStatusBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderBooking,
+      statusCode = statusCode,
+      effectiveDateTime = effectiveDateTime,
+      expiryDate = expiryDate,
+      createDate = createDate,
+      latestStatus = latestStatus,
+    )
+      .also { offenderBooking.imprisonmentStatuses += it }
   }
 }

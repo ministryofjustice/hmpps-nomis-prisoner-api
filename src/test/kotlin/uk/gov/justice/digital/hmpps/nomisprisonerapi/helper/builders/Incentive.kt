@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class IncentiveDslMarker
 
-@NomisDataDslMarker
+@IncentiveDslMarker
 interface IncentiveDsl
 
 @Component

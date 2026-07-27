@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderIdentifyingMarkDslMarker
 
-@NomisDataDslMarker
+@OffenderIdentifyingMarkDslMarker
 interface OffenderIdentifyingMarkDsl {
 
   @OffenderIdentifyingMarkImageDslMarker

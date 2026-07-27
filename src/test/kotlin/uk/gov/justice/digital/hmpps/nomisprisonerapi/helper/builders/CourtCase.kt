@@ -29,7 +29,7 @@ annotation class CourtCaseDslMarker
 @DslMarker
 annotation class CourtCaseAuditDslMarker
 
-@NomisDataDslMarker
+@CourtCaseDslMarker
 interface CourtCaseDsl {
   @CourtEventDslMarker
   fun courtEvent(

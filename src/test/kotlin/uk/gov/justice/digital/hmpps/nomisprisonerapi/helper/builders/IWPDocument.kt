@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 @DslMarker
 annotation class IWPDocumentDslMarker
 
-@NomisDataDslMarker
+@IWPDocumentDslMarker
 interface IWPDocumentDsl
 
 @Component

@@ -16,7 +16,7 @@ import java.time.temporal.ChronoUnit
 @DslMarker
 annotation class OffenderCaseNoteDslMarker
 
-@NomisDataDslMarker
+@OffenderCaseNoteDslMarker
 interface OffenderCaseNoteDsl
 
 @Component

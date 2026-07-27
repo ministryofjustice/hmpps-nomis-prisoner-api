@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -41,6 +42,7 @@ class ImprisonmentStatusServiceIntTest {
         }
         prisoner = offender(nomsId = "A1234AB") {
           booking(agencyLocationId = "MDI") {
+            imprisonmentStatus(statusCode = "RECEP_UNS")
             courtCase(
               reportingStaff = staff,
               statusUpdateStaff = staff,
@@ -71,7 +73,18 @@ class ImprisonmentStatusServiceIntTest {
 
     @Test
     fun `service does nothing yet`() {
-      imprisonmentStatusService.recalculateImprisonmentStatus(offenderNo = prisoner.nomsId, ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT)
+      nomisDataBuilder.runInTransaction {
+        imprisonmentStatusService.recalculateImprisonmentStatus(
+          offenderNo = prisoner.nomsId,
+          ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
+        )
+      }
+
+      nomisDataBuilder.runInTransaction {
+        val imprisonmentStatuses = offenderRepository.findByNomsId(prisoner.nomsId).single().latestBooking().imprisonmentStatuses
+        assertThat(imprisonmentStatuses).hasSize(1)
+        assertThat(imprisonmentStatuses[0].status?.description).isEqualTo("Convicted unsentenced (reception)")
+      }
     }
   }
 }

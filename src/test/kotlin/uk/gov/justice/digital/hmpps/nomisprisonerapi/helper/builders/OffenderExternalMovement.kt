@@ -32,7 +32,7 @@ import java.time.temporal.ChronoUnit
 @DslMarker
 annotation class OffenderExternalMovementDslMarker
 
-@NomisDataDslMarker
+@OffenderExternalMovementDslMarker
 interface OffenderExternalMovementDsl
 
 @Component

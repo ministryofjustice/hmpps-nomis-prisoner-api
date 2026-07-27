@@ -32,7 +32,7 @@ annotation class CSIPSaferCustodyScreeningDslMarker
 @DslMarker
 annotation class CSIPDecisionDslMarker
 
-@NomisDataDslMarker
+@CSIPReportDslMarker
 interface CSIPReportDsl {
 
   @CSIPFactorDslMarker

@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderContactPersonDslMarker
 
-@NomisDataDslMarker
+@OffenderContactPersonDslMarker
 interface OffenderContactPersonDsl {
 
   @OffenderPersonRestrictsDslMarker

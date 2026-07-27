@@ -30,7 +30,7 @@ annotation class OffenderSentenceDslMarker
 @DslMarker
 annotation class OffenderSentenceLicenceDslMarker
 
-@NomisDataDslMarker
+@OffenderSentenceDslMarker
 interface OffenderSentenceDsl {
   @OffenderSentenceAdjustmentDslMarker
   fun adjustment(

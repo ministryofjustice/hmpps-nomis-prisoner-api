@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderBookingImageDslMarker
 
-@NomisDataDslMarker
+@OffenderBookingImageDslMarker
 interface OffenderBookingImageDsl
 
 @Component
