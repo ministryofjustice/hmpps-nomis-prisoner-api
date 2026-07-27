@@ -15,6 +15,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
@@ -4937,6 +4938,25 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(clonedCourtCaseResponse.courtEvents).hasSize(2)
         assertThat(clonedCourtCaseResponse.courtEvents[1].eventDateTime).isEqualTo(LocalDateTime.parse("2023-01-05T09:00:00"))
         assertThat(clonedCourtCaseResponse.courtEvents[1].courtEventCharges).hasSize(2)
+      }
+
+      @Test
+      fun `will reject adding future court appearance until case is cloned`() {
+        webTestClient.post()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtEventCharges = mutableListOf(
+                  CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code),
+                  CourtEventChargeRequest(previousBookingOffenderCharge2.id, previousBookingOffenderCharge2.resultCode1?.code),
+                ),
+              ).copy(futureAppearance = true),
+            ),
+          )
+          .exchange().expectStatus().isEqualTo(HttpStatus.FAILED_DEPENDENCY.value())
       }
 
       @Test

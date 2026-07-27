@@ -7,6 +7,7 @@ import org.springframework.dao.PessimisticLockingFailureException
 import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.CONFLICT
+import org.springframework.http.HttpStatus.FAILED_DEPENDENCY
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
 import org.springframework.http.HttpStatus.LOCKED
 import org.springframework.http.HttpStatus.NOT_FOUND
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.DependencyException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.DuplicateInsertException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageBadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ImageNotFoundException
@@ -119,6 +121,21 @@ class ExceptionHandler {
       .body(
         ErrorResponse(
           status = CONFLICT,
+          userMessage = e.message,
+          developerMessage = e.message,
+          moreInfo = e.entityId,
+        ),
+      )
+  }
+
+  @ExceptionHandler(DependencyException::class)
+  fun handleDependencyException(e: DependencyException): ResponseEntity<ErrorResponse>? {
+    log.info("Dependency http error: {}", e.message)
+    return ResponseEntity
+      .status(FAILED_DEPENDENCY)
+      .body(
+        ErrorResponse(
+          status = FAILED_DEPENDENCY,
           userMessage = e.message,
           developerMessage = e.message,
           moreInfo = e.entityId,
