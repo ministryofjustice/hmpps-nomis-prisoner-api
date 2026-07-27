@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class AdjudicationPartyDslMarker
 
-@NomisDataDslMarker
+@AdjudicationPartyDslMarker
 interface AdjudicationPartyDsl {
   @AdjudicationInvestigationDslMarker
   fun investigation(

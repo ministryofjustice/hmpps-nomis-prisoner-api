@@ -23,7 +23,7 @@ import kotlin.random.Random
 @DslMarker
 annotation class OffenderTransactionDslMarker
 
-@NomisDataDslMarker
+@OffenderTransactionDslMarker
 interface OffenderTransactionDsl {
   @GeneralLedgerTransactionDslMarker
   fun generalLedgerTransaction(

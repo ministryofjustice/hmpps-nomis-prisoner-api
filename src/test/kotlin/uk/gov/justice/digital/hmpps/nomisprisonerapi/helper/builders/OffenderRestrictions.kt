@@ -15,7 +15,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderRestrictionsDslMarker
 
-@NomisDataDslMarker
+@OffenderRestrictionsDslMarker
 interface OffenderRestrictionsDsl
 
 @Component

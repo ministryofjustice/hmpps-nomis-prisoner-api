@@ -22,7 +22,7 @@ import java.time.LocalDate
 @DslMarker
 annotation class CourseAllocationDslMarker
 
-@NomisDataDslMarker
+@CourseAllocationDslMarker
 interface CourseAllocationDsl {
   @CourseAttendanceDslMarker
   fun courseAttendance(

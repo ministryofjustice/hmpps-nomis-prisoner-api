@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileTypeR
 @DslMarker
 annotation class OffenderProfileDetailDslMarker
 
-@NomisDataDslMarker
+@OffenderProfileDetailDslMarker
 interface OffenderProfileDetailDsl
 
 @Component

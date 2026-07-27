@@ -26,7 +26,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderAssessmentDslMarker
 
-@NomisDataDslMarker
+@OffenderAssessmentDslMarker
 interface OffenderAssessmentDsl {
   @OffenderAssessmentItemDslMarker
   fun assessmentItem(

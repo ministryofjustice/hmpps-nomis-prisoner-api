@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderProfileDslMarker
 
-@NomisDataDslMarker
+@OffenderProfileDslMarker
 interface OffenderProfileDsl
 
 @Component

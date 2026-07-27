@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderTapApplicationDslMarker
 
-@NomisDataDslMarker
+@OffenderTapApplicationDslMarker
 interface OffenderTapApplicationDsl {
   @OffenderTapScheduleOutDslMarker
   fun tapScheduleOut(

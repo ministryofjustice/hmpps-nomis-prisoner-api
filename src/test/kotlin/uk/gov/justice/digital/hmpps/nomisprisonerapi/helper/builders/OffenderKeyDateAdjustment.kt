@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class OffenderKeyDateAdjustmentDslMarker
 
-@NomisDataDslMarker
+@OffenderKeyDateAdjustmentDslMarker
 interface OffenderKeyDateAdjustmentDsl
 
 @Component

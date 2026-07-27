@@ -24,7 +24,7 @@ annotation class OffenderAlertDslMarker
 @DslMarker
 annotation class OffenderAlertAuditDslMarker
 
-@NomisDataDslMarker
+@OffenderAlertDslMarker
 interface OffenderAlertDsl {
   @WorkFlowLogDslMarker
   fun workFlowLog(
