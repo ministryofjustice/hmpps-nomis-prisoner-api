@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
+import java.time.LocalDate
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -72,8 +73,32 @@ class ImprisonmentStatusServiceIntTest {
     }
 
     @Test
-    fun `service does nothing yet`() {
+    fun `current imprisonment status will be set to unknown`() {
+      imprisonmentStatusService.recalculateImprisonmentStatus(
+        offenderNo = prisoner.nomsId,
+        ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
+      )
+
       nomisDataBuilder.runInTransaction {
+        val imprisonmentStatuses = offenderRepository.findByNomsId(prisoner.nomsId).single()
+          .latestBooking().imprisonmentStatuses.sortedBy { it.id.sequence }
+        assertThat(imprisonmentStatuses).hasSize(2)
+        with(imprisonmentStatuses[0]) {
+          assertThat(status?.description).isEqualTo("Convicted unsentenced (reception)")
+          assertThat(latestStatus).isFalse()
+          assertThat(expiryDate).isEqualTo(LocalDate.now())
+        }
+        with(imprisonmentStatuses[1]) {
+          assertThat(status?.description).isEqualTo("Disposal Not Known")
+          assertThat(latestStatus).isTrue()
+          assertThat(expiryDate).isNull()
+        }
+      }
+    }
+
+    @Test
+    open fun `imprisonment status will be set only once`() {
+      repeat(10) {
         imprisonmentStatusService.recalculateImprisonmentStatus(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
@@ -81,9 +106,9 @@ class ImprisonmentStatusServiceIntTest {
       }
 
       nomisDataBuilder.runInTransaction {
-        val imprisonmentStatuses = offenderRepository.findByNomsId(prisoner.nomsId).single().latestBooking().imprisonmentStatuses
-        assertThat(imprisonmentStatuses).hasSize(1)
-        assertThat(imprisonmentStatuses[0].status?.description).isEqualTo("Convicted unsentenced (reception)")
+        val imprisonmentStatuses = offenderRepository.findByNomsId(prisoner.nomsId).single()
+          .latestBooking().imprisonmentStatuses.sortedBy { it.id.sequence }
+        assertThat(imprisonmentStatuses).hasSize(2)
       }
     }
   }

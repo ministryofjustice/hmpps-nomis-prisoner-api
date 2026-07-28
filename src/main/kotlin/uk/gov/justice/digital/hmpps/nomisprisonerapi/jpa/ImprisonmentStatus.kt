@@ -40,7 +40,7 @@ class ImprisonmentStatus(
   var expiryDate: LocalDate? = null,
 
   @Column(name = "IMPRISONMENT_STATUS_SEQ")
-  val sequence: Long,
+  val sequence: Long?,
 ) : NomisAuditableEntityBasic() {
 
   override fun equals(other: Any?): Boolean {
