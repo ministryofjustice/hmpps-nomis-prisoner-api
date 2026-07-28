@@ -5,7 +5,6 @@ import jakarta.persistence.Convert
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
@@ -19,7 +18,6 @@ import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-@Suppress("JpaEntityWithValAttributesInspection")
 @Embeddable
 data class OffenderImprisonmentStatusId(
   @ManyToOne(optional = false, fetch = LAZY)
@@ -55,7 +53,7 @@ class OffenderImprisonmentStatus(
   @Column(name = "EXPIRY_DATE")
   var expiryDate: LocalDate? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
   var prison: AgencyLocation,
 

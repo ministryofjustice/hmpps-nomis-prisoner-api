@@ -1,0 +1,1 @@
+CREATE ALIAS TO_NUMBER AS ' @CODE Long toNumber(String value) { return value == null ? null : Double.valueOf(value).longValue(); } ';
