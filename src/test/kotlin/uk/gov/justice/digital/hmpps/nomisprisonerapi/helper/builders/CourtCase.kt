@@ -26,12 +26,8 @@ import java.time.LocalDateTime
 @DslMarker
 annotation class CourtCaseDslMarker
 
-@DslMarker
-annotation class CourtCaseAuditDslMarker
-
 @CourtCaseDslMarker
 interface CourtCaseDsl {
-  @CourtEventDslMarker
   fun courtEvent(
     commentText: String? = "Court event comment",
     agencyId: String = "MDI",
@@ -46,7 +42,6 @@ interface CourtCaseDsl {
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
 
-  @CourtCaseAuditDslMarker
   fun audit(
     createDatetime: LocalDateTime = LocalDateTime.now(),
     createUserId: String = "ABC12A",
@@ -55,14 +50,12 @@ interface CourtCaseDsl {
     auditModule: String = "OCDCCASE",
   )
 
-  @OffenderCaseIdentifierDslMarker
   fun offenderCaseIdentifier(
     reference: String = "caseRef1",
     type: String = "CASE/INFO#",
     dsl: OffenderCaseIdentifierDsl.() -> Unit = {},
   ): OffenderCaseIdentifier
 
-  @OffenderChargeDslMarker
   fun offenderCharge(
     offenceDate: LocalDate = LocalDate.of(2023, 1, 1),
     offenceEndDate: LocalDate = LocalDate.of(2023, 1, 5),
@@ -81,7 +74,6 @@ interface CourtCaseDsl {
     dsl: OffenderChargeDsl.() -> Unit = {},
   ): OffenderCharge
 
-  @OffenderSentenceDslMarker
   fun sentence(
     calculationType: String = "ADIMP_ORA",
     category: String = "2003",
