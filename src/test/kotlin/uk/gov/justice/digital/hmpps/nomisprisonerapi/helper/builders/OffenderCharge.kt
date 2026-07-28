@@ -30,6 +30,11 @@ interface OffenderChargeDsl {
     GUILTY("4579"),
     DISMISSED("2006"),
   }
+
+  enum class Offences(val code: String) {
+    HOUSE_DRAWN_VEHICLE_NOT_STOP("RT88074"),
+    GENOCIDE("IC01001A"),
+  }
 }
 
 @Component
