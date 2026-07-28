@@ -20,8 +20,22 @@ import java.time.LocalDate
 @DslMarker
 annotation class OffenderChargeDslMarker
 
-@NomisDataDslMarker
-interface OffenderChargeDsl
+@OffenderChargeDslMarker
+interface OffenderChargeDsl {
+  enum class ResultCode(val code: String) {
+    IMPRISONMENT("1002"),
+    COMMITTED_CROWN_COURT_SENTENCING("4001"),
+    COMMITTED_CROWN_COURT("4560"),
+    ADJOURNMENT("4506"),
+    GUILTY("4579"),
+    DISMISSED("2006"),
+  }
+
+  enum class Offences(val code: String) {
+    HOUSE_DRAWN_VEHICLE_NOT_STOP("RT88074"),
+    GENOCIDE("IC01001A"),
+  }
+}
 
 @Component
 class OffenderChargeBuilderFactory(

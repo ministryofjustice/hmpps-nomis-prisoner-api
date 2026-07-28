@@ -25,8 +25,8 @@ class ImprisonmentStatusService(
     private val log = LoggerFactory.getLogger(this::class.java)
 
     enum class ChangeType(val description: String) {
-      UPDATE_SENTENCE("DPS Auto created - Updated offence outcome result."),
-      UPDATE_RESULT("DPS Auto created - Updated sentence type or term or related offence type."),
+      UPDATE_SENTENCE("DPS Auto created - Updated sentence type or term or related offence type."),
+      UPDATE_RESULT("DPS Auto created - Updated offence outcome result."),
       DELETE("DPS Auto created - Deleted Sentence/Offence/Events."),
     }
   }
