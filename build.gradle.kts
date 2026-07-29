@@ -85,6 +85,7 @@ testPackages.forEach {
     filter {
       includeTestsMatching("uk.gov.justice.digital.hmpps.nomisprisonerapi.${it.name}.*")
     }
+    maxHeapSize = "2048m"
   }
   tasks.check { dependsOn(task) }
 }
