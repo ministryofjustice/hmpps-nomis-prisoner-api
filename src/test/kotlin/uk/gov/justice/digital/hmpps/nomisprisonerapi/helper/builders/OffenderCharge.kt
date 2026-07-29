@@ -33,6 +33,7 @@ interface OffenderChargeDsl {
 
   enum class Offences(val code: String) {
     HOUSE_DRAWN_VEHICLE_NOT_STOP("RT88074"),
+    HOUSE_DRAWN_ON_MOTORWAY("RR84009B"),
     GENOCIDE("IC01001A"),
   }
 }
