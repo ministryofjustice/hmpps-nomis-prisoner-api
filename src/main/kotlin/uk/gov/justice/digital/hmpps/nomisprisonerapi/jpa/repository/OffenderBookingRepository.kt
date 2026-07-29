@@ -31,6 +31,16 @@ interface OffenderBookingRepository :
   )
   fun findLatestByOffenderNomsId(@Param("nomsId") nomsId: String): OffenderBooking?
 
+  @Query(
+    """
+    select booking.bookingId from OffenderBooking booking 
+        join Offender offender on booking.offender = offender 
+        where offender.nomsId = :nomsId 
+        and booking.bookingSequence = 1
+        """,
+  )
+  fun findLatestBookingIdByOffenderNomsId(@Param("nomsId") nomsId: String): Long?
+
   fun findAllByOffenderNomsId(@Param("nomsId") nomsId: String): List<OffenderBooking>
 
   fun findOneByOffenderNomsIdAndBookingSequence(nomsId: String, sequence: Int): OffenderBooking?
