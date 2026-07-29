@@ -1,7 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
+import jakarta.persistence.LockModeType
+import jakarta.persistence.QueryHint
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatusId
@@ -101,6 +105,11 @@ SELECT NVL(imprisonment_status,'UNKNOWN'),
     nativeQuery = true,
   )
   fun getStatusAndMainOffenceViaChargeOutcomeByBookingId(bookingId: Long): StatusAndMainOffence
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
+  @Query("from OffenderImprisonmentStatus ois where ois.id = :status")
+  fun findByIdWaitForLock(status: OffenderImprisonmentStatusId): OffenderImprisonmentStatus
 }
 
 data class StatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: BigDecimal?)

@@ -7,8 +7,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatusId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CourtEventChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ImprisonmentStatusRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderImprisonmentStatusRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -19,6 +21,8 @@ class ImprisonmentStatusService(
   private val offenderImprisonmentStatusRepository: OffenderImprisonmentStatusRepository,
   private val imprisonmentStatusRepository: ImprisonmentStatusRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
+  private val offenderChargeRepository: OffenderChargeRepository,
+  private val courtEventChargeRepository: CourtEventChargeRepository,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -31,7 +35,8 @@ class ImprisonmentStatusService(
   }
 
   fun recalculateImprisonmentStatusAndMainOffence(offenderNo: String, reason: ChangeType): ImprisonmentStatusAndMainOffence {
-    val booking = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).firstOrNull()
+    val booking = offenderBookingRepository.findLatestBookingIdByOffenderNomsId(offenderNo)
+      ?.let { offenderBookingRepository.findByIdOrNullForUpdate(it) }
       ?: throw NotFoundException("No booking found for offenderNo $offenderNo")
     val status = statusAndMainOffence(booking, offenderNo)
 
@@ -57,6 +62,8 @@ class ImprisonmentStatusService(
     reason: ChangeType,
   ) {
     currentStatuses.filter { it.latestStatus }.forEach {
+      // try to acquire lock
+      offenderImprisonmentStatusRepository.findByIdWaitForLock(it.id)
       it.latestStatus = false
       it.expiryDate = LocalDate.now()
     }
@@ -101,17 +108,26 @@ class ImprisonmentStatusService(
     resetMainOffenceForOldCharge(booking, offenderChargeId)
 
     val newMainOffenceCharge = booking.courtCases.flatMap { it.offenderCharges }.first { it.id == offenderChargeId }
+    // try to acquire lock
+    offenderChargeRepository.findByIdWaitForLock(newMainOffenceCharge.id)
     newMainOffenceCharge.mostSeriousFlag = true
     val courtEventCharges = booking.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }.filter { it.id.offenderCharge == newMainOffenceCharge }
-    courtEventCharges.forEach { it.mostSeriousFlag = true }
+    courtEventCharges.forEach {
+      courtEventChargeRepository.findByIdWaitForLock(it.id)
+      it.mostSeriousFlag = true
+    }
   }
 
   private fun resetMainOffenceForOldCharge(booking: OffenderBooking, offenderChargeId: Long) {
     val currentMainOffenceCharges = booking.courtCases.flatMap { it.offenderCharges }.filter { it.mostSeriousFlag }.filter { it.id != offenderChargeId }
     currentMainOffenceCharges.forEach { offenderCharge ->
+      offenderChargeRepository.findByIdWaitForLock(offenderCharge.id)
       offenderCharge.mostSeriousFlag = false
       val courtEventCharges = booking.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }.filter { it.id.offenderCharge == offenderCharge }
-      courtEventCharges.forEach { it.mostSeriousFlag = false }
+      courtEventCharges.forEach {
+        courtEventChargeRepository.findByIdWaitForLock(it.id)
+        it.mostSeriousFlag = false
+      }
     }
   }
 }
