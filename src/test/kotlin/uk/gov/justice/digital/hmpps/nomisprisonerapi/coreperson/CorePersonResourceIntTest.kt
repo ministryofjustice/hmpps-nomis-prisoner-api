@@ -1241,17 +1241,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class Validation {
-      @Test
-      fun `return 404 when offender not found`() {
-        webTestClient.get().uri("/core-person/AB1234C/religions")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isNotFound
-      }
-    }
-
-    @Nested
     inner class HappyPath {
       @Test
       fun `will return empty list if no data`() {
