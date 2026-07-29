@@ -14,21 +14,11 @@ interface OffenderImprisonmentStatusRepository : JpaRepository<OffenderImprisonm
     """
 SELECT 
         imprisonment_status, 
-        offender_charge_id,
-        most_serious_flag,
-        agy_loc_id
-
-           FROM (SELECT ob.offender_book_id,
-                        ob.agy_loc_id,
-                        os.sentence_seq,
-                        os.sentence_category,
-                        os.sentence_calc_type,
+        offender_charge_id
+           FROM (SELECT os.sentence_seq,
                         os.end_date - os.start_date sent_length,
                         ips.imprisonment_status,ips.rank_value,
                         oc.offender_charge_id,
-                        oc.most_serious_flag,
-                        o.statute_code,
-                        o.offence_code,
                         o.severity_ranking,
                         MIN(ips.rank_value) OVER(PARTITION BY os.offender_book_id) min_rank,
                         MAX(os.end_date - os.start_date) 
@@ -79,18 +69,10 @@ SELECT
   @Query(
     """
 SELECT NVL(imprisonment_status,'UNKNOWN'),
-                   offender_charge_id,
-                   most_serious_flag,
-                   agy_loc_id
-              FROM (SELECT ob.offender_book_id,
-                           ob.agy_loc_id,
-                           oc.offender_charge_id,
-                           oc.result_code_1,
-                           oc.most_serious_flag,
+                   offender_charge_id
+              FROM (SELECT oc.offender_charge_id,
                            ips.imprisonment_status,
                            ips.rank_value,
-                           o.statute_code,
-                           o.offence_code,
                            o.severity_ranking,
                            MIN(ips.rank_value) OVER(PARTITION BY oc.offender_book_id) min_rank,
                            MIN(TO_NUMBER(o.severity_ranking)) 
@@ -121,4 +103,4 @@ SELECT NVL(imprisonment_status,'UNKNOWN'),
   fun getStatusAndMainOffenceViaChargeOutcomeByBookingId(bookingId: Long): StatusAndMainOffence
 }
 
-data class StatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: BigDecimal?, val mostSeriousFlag: Char?, val agencyLocationId: String)
+data class StatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: BigDecimal?)
