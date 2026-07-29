@@ -31,16 +31,6 @@ interface OffenderBookingRepository :
   )
   fun findLatestByOffenderNomsId(@Param("nomsId") nomsId: String): OffenderBooking?
 
-  @Query(
-    """
-    select booking.bookingId from OffenderBooking booking 
-        join Offender offender on booking.offender = offender 
-        where offender.nomsId = :nomsId 
-        and booking.bookingSequence = 1
-        """,
-  )
-  fun findLatestBookingIdByOffenderNomsId(@Param("nomsId") nomsId: String): Long?
-
   fun findAllByOffenderNomsId(@Param("nomsId") nomsId: String): List<OffenderBooking>
 
   fun findOneByOffenderNomsIdAndBookingSequence(nomsId: String, sequence: Int): OffenderBooking?
@@ -106,6 +96,11 @@ interface OffenderBookingRepository :
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
   @Query("from OffenderBooking ob where ob.bookingId = :bookingId")
   fun findByIdOrNullForUpdate(bookingId: Long): OffenderBooking?
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
+  @Query("from OffenderBooking ob where ob.bookingId = :bookingId")
+  fun findByIdWaitForLock(bookingId: Long): OffenderBooking
 }
 
 interface BookingWithIds {

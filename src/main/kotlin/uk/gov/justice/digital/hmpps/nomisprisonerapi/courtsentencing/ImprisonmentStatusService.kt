@@ -1,9 +1,10 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing
 
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatusId
@@ -12,18 +13,20 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.Imprisonment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderImprisonmentStatusRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
 @Transactional
+@Profile("imprisonment-status-direct")
 class ImprisonmentStatusService(
   private val offenderImprisonmentStatusRepository: OffenderImprisonmentStatusRepository,
   private val imprisonmentStatusRepository: ImprisonmentStatusRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderChargeRepository: OffenderChargeRepository,
   private val courtEventChargeRepository: CourtEventChargeRepository,
-) {
+) : ImprisonmentStatusServiceProxy {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
 
@@ -34,10 +37,9 @@ class ImprisonmentStatusService(
     }
   }
 
-  fun recalculateImprisonmentStatusAndMainOffence(offenderNo: String, reason: ChangeType): ImprisonmentStatusAndMainOffence {
-    val booking = offenderBookingRepository.findLatestBookingIdByOffenderNomsId(offenderNo)
-      ?.let { offenderBookingRepository.findByIdOrNullForUpdate(it) }
-      ?: throw NotFoundException("No booking found for offenderNo $offenderNo")
+  fun recalculateImprisonmentStatusAndMainOffence(bookingId: Long, reason: ChangeType): ImprisonmentStatusAndMainOffence {
+    val booking = offenderBookingRepository.findByIdWaitForLock(bookingId)
+    val offenderNo = booking.offender.nomsId
     val status = statusAndMainOffence(booking, offenderNo)
 
     val currentStatuses = booking.imprisonmentStatuses
@@ -130,6 +132,38 @@ class ImprisonmentStatusService(
       }
     }
   }
+
+  override fun recalculateImprisonmentStatusAndMainOffence(
+    bookingId: Long,
+    changeType: String,
+  ) {
+    recalculateImprisonmentStatusAndMainOffence(bookingId, ChangeType.valueOf(changeType))
+  }
 }
 
 data class ImprisonmentStatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: Long?)
+
+interface ImprisonmentStatusServiceProxy {
+  fun recalculateImprisonmentStatusAndMainOffence(
+    bookingId: Long,
+    changeType: String,
+  )
+}
+
+@Service
+@Profile("!imprisonment-status-direct")
+class StoredProcedureImprisonmentStatusService(
+  private val storedProcedureRepository: StoredProcedureRepository,
+  private val jdbcTemplate: JdbcTemplate,
+) : ImprisonmentStatusServiceProxy {
+  override fun recalculateImprisonmentStatusAndMainOffence(
+    bookingId: Long,
+    changeType: String,
+  ) {
+    storedProcedureRepository.imprisonmentStatusUpdate(
+      jdbcTemplate = jdbcTemplate,
+      bookingId = bookingId,
+      changeType = changeType,
+    )
+  }
+}
