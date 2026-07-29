@@ -121,4 +121,4 @@ SELECT NVL(imprisonment_status,'UNKNOWN'),
   fun getStatusAndMainOffenceViaChargeOutcomeByBookingId(bookingId: Long): StatusAndMainOffence
 }
 
-data class StatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: BigDecimal, val mostSeriousFlag: Char, val agencyLocationId: String)
+data class StatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: BigDecimal?, val mostSeriousFlag: Char?, val agencyLocationId: String)
