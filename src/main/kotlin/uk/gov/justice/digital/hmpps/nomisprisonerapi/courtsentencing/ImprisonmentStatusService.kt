@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentSta
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ImprisonmentStatusRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderImprisonmentStatusRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StatusAndMainOffence
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -31,7 +30,7 @@ class ImprisonmentStatusService(
     }
   }
 
-  fun recalculateImprisonmentStatus(offenderNo: String, reason: ChangeType) {
+  fun recalculateImprisonmentStatus(offenderNo: String, reason: ChangeType): ImprisonmentStatusAndMainOffence {
     val booking = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).firstOrNull()
       ?: throw NotFoundException("No booking found for offenderNo $offenderNo")
     val status = statusAndMainOffence(booking, offenderNo)
@@ -41,38 +40,67 @@ class ImprisonmentStatusService(
     if (activeStatus?.statusCode == status.imprisonmentStatus) {
       log.info("No change to imprisonment status for offenderNo $offenderNo, current status: ${activeStatus.statusCode}, new status: ${status.imprisonmentStatus}")
     } else {
-      currentStatuses.filter { it.latestStatus }.forEach {
-        it.latestStatus = false
-        it.expiryDate = LocalDate.now()
-      }
-      offenderImprisonmentStatusRepository.saveAndFlush(
-        OffenderImprisonmentStatus(
-          id = OffenderImprisonmentStatusId(
-            offenderBooking = booking,
-            sequence = (currentStatuses.maxByOrNull { it.id.sequence }?.id?.sequence ?: 0) + 1,
-          ),
-          statusCode = status.imprisonmentStatus,
-          status = imprisonmentStatusRepository.findByCode(status.imprisonmentStatus),
-          effectiveDate = LocalDate.now(),
-          effectiveTime = LocalDateTime.now(),
-          expiryDate = null,
-          prison = booking.location,
-          createDate = LocalDate.now(),
-          commentText = reason.description,
-          latestStatus = true,
-        ),
-      ).also { booking.imprisonmentStatuses.add(it) }
+      updateImprisonmentStatus(currentStatuses, booking, status.imprisonmentStatus, reason)
     }
+
+    if (status.offenderChargeId != null) {
+      updateMainOffence(status.offenderChargeId)
+    }
+
+    return status
+  }
+
+  private fun updateImprisonmentStatus(
+    currentStatuses: MutableList<OffenderImprisonmentStatus>,
+    booking: OffenderBooking,
+    imprisonmentStatus: String,
+    reason: ChangeType,
+  ) {
+    currentStatuses.filter { it.latestStatus }.forEach {
+      it.latestStatus = false
+      it.expiryDate = LocalDate.now()
+    }
+    offenderImprisonmentStatusRepository.saveAndFlush(
+      OffenderImprisonmentStatus(
+        id = OffenderImprisonmentStatusId(
+          offenderBooking = booking,
+          sequence = (currentStatuses.maxByOrNull { it.id.sequence }?.id?.sequence ?: 0) + 1,
+        ),
+        statusCode = imprisonmentStatus,
+        status = imprisonmentStatusRepository.findByCode(imprisonmentStatus),
+        effectiveDate = LocalDate.now(),
+        effectiveTime = LocalDateTime.now(),
+        expiryDate = null,
+        prison = booking.location,
+        createDate = LocalDate.now(),
+        commentText = reason.description,
+        latestStatus = true,
+      ),
+    ).also { booking.imprisonmentStatuses.add(it) }
   }
 
   private fun statusAndMainOffence(
     booking: OffenderBooking,
     offenderNo: String,
-  ): StatusAndMainOffence = offenderImprisonmentStatusRepository.getStatusAndMainOffenceViaSentenceByBookingId(booking.bookingId)?.also {
-    log.info("Recalculated imprisonment status for offenderNo by sentence $offenderNo: $it")
-  } ?: run {
-    offenderImprisonmentStatusRepository.getStatusAndMainOffenceViaChargeOutcomeByBookingId(booking.bookingId).also {
-      log.info("Recalculated imprisonment status for offenderNo by charge outcome $offenderNo: $it")
+  ): ImprisonmentStatusAndMainOffence = (
+    offenderImprisonmentStatusRepository.getStatusAndMainOffenceViaSentenceByBookingId(booking.bookingId)?.also {
+      log.info("Recalculated imprisonment status for offenderNo by sentence $offenderNo: $it")
+    } ?: run {
+      offenderImprisonmentStatusRepository.getStatusAndMainOffenceViaChargeOutcomeByBookingId(booking.bookingId).also {
+        log.info("Recalculated imprisonment status for offenderNo by charge outcome $offenderNo: $it")
+      }
     }
+    ).let {
+    ImprisonmentStatusAndMainOffence(
+      imprisonmentStatus = it.imprisonmentStatus,
+      offenderChargeId = it.offenderChargeId?.toLong(),
+      agencyLocationId = it.agencyLocationId,
+    )
+  }
+
+  private fun updateMainOffence(offenderChargeId: Long) {
+    // TODO
   }
 }
+
+data class ImprisonmentStatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: Long?, val agencyLocationId: String)
