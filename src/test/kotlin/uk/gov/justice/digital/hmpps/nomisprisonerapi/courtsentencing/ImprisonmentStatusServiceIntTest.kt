@@ -88,7 +88,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will be set to unknown`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -120,7 +120,7 @@ class ImprisonmentStatusServiceIntTest {
       @Test
       fun `imprisonment status will be set only once`() {
         repeat(10) {
-          imprisonmentStatusService.recalculateImprisonmentStatus(
+          imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
             offenderNo = prisoner.nomsId,
             ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
           )
@@ -157,7 +157,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will be set to unknown`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -219,7 +219,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will be set to committed to crown court for trial`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -273,7 +273,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will be set to committed to crown court for trial`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -343,7 +343,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will be set to committed to crown court for trial`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -418,7 +418,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will still be set to committed to crown court for trial`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -500,7 +500,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will still be set to unknown sentence`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -583,7 +583,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will still be set to adult imprisonment`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -708,7 +708,7 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `current imprisonment status will still be set using must serve sentence`() {
-        imprisonmentStatusService.recalculateImprisonmentStatus(
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
@@ -767,12 +767,80 @@ class ImprisonmentStatusServiceIntTest {
 
       @Test
       fun `nothing is updated`() {
-        val status = imprisonmentStatusService.recalculateImprisonmentStatus(
+        val status = imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           offenderNo = prisoner.nomsId,
           ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
         )
 
         assertThat(status.offenderChargeId).isNull()
+      }
+    }
+
+    @Nested
+    inner class SingleCharge {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          prisoner = offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              imprisonmentStatus(statusCode = "RECEP_UNS")
+              courtCase(
+                reportingStaff = staff,
+                statusUpdateStaff = staff,
+              ) {
+                val offenderCharge =
+                  offenderCharge(offenceCode = "RT88074", plea = "G", resultCode1 = COMMITTED_CROWN_COURT.code, mostSeriousFlag = false)
+                courtEvent {
+                  courtEventCharge(
+                    resultCode1 = offenderCharge.resultCode1?.code,
+                    offenderCharge = offenderCharge,
+                    plea = "NG",
+                    mostSeriousFlag = false,
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `single charge and court charge set as main offence`() {
+        nomisDataBuilder.runInTransaction {
+          val booking = offenderRepository.findByNomsId(prisoner.nomsId).single()
+            .latestBooking()
+
+          val offenderCharges = booking.courtCases.flatMap { it.offenderCharges }
+          val courtEventCharges = booking.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }
+
+          assertThat(offenderCharges).hasSize(1)
+          assertThat(courtEventCharges).hasSize(1)
+
+          assertThat(courtEventCharges[0].mostSeriousFlag).isFalse
+          assertThat(offenderCharges[0].mostSeriousFlag).isFalse
+        }
+
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
+          offenderNo = prisoner.nomsId,
+          ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT,
+        )
+
+        nomisDataBuilder.runInTransaction {
+          val booking = offenderRepository.findByNomsId(prisoner.nomsId).single()
+            .latestBooking()
+
+          val offenderCharges = booking.courtCases.flatMap { it.offenderCharges }
+          val courtEventCharges = booking.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }
+
+          assertThat(offenderCharges).hasSize(1)
+          assertThat(courtEventCharges).hasSize(1)
+
+          assertThat(courtEventCharges[0].mostSeriousFlag).isTrue
+          assertThat(offenderCharges[0].mostSeriousFlag).isTrue
+        }
       }
     }
   }

@@ -30,7 +30,7 @@ class ImprisonmentStatusService(
     }
   }
 
-  fun recalculateImprisonmentStatus(offenderNo: String, reason: ChangeType): ImprisonmentStatusAndMainOffence {
+  fun recalculateImprisonmentStatusAndMainOffence(offenderNo: String, reason: ChangeType): ImprisonmentStatusAndMainOffence {
     val booking = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).firstOrNull()
       ?: throw NotFoundException("No booking found for offenderNo $offenderNo")
     val status = statusAndMainOffence(booking, offenderNo)
@@ -44,7 +44,7 @@ class ImprisonmentStatusService(
     }
 
     if (status.offenderChargeId != null) {
-      updateMainOffence(status.offenderChargeId)
+      updateMainOffence(booking, status.offenderChargeId)
     }
 
     return status
@@ -98,8 +98,22 @@ class ImprisonmentStatusService(
     )
   }
 
-  private fun updateMainOffence(offenderChargeId: Long) {
-    // TODO
+  private fun updateMainOffence(booking: OffenderBooking, offenderChargeId: Long) {
+    resetMainOffenceForOldCharge(booking, offenderChargeId)
+
+    val newMainOffenceCharge = booking.courtCases.flatMap { it.offenderCharges }.first { it.id == offenderChargeId }
+    newMainOffenceCharge.mostSeriousFlag = true
+    val courtEventCharges = booking.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }.filter { it.id.offenderCharge == newMainOffenceCharge }
+    courtEventCharges.forEach { it.mostSeriousFlag = true }
+  }
+
+  private fun resetMainOffenceForOldCharge(booking: OffenderBooking, offenderChargeId: Long) {
+    val currentMainOffenceCharges = booking.courtCases.flatMap { it.offenderCharges }.filter { it.mostSeriousFlag }.filter { it.id != offenderChargeId }
+    currentMainOffenceCharges.forEach { offenderCharge ->
+      offenderCharge.mostSeriousFlag = false
+      val courtEventCharges = booking.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }.filter { it.id.offenderCharge == offenderCharge }
+      courtEventCharges.forEach { it.mostSeriousFlag = false }
+    }
   }
 }
 
