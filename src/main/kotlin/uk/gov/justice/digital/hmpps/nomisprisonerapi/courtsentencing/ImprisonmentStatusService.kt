@@ -94,7 +94,6 @@ class ImprisonmentStatusService(
     ImprisonmentStatusAndMainOffence(
       imprisonmentStatus = it.imprisonmentStatus,
       offenderChargeId = it.offenderChargeId?.toLong(),
-      agencyLocationId = it.agencyLocationId,
     )
   }
 
@@ -117,4 +116,4 @@ class ImprisonmentStatusService(
   }
 }
 
-data class ImprisonmentStatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: Long?, val agencyLocationId: String)
+data class ImprisonmentStatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: Long?)
