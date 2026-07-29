@@ -174,17 +174,13 @@ class CorePersonService(
           email = address.internetAddress,
         )
       },
-      beliefs = offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id)
+      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(rootOffender.id)
         .map { it.toBelief() },
     )
   }
 
-  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> {
-    val rootOffender =
-      offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-    return offenderBeliefRepository.findByRootOffenderIdOrderByStartDateDescCreateDatetimeDesc(rootOffender.id)
-      .map { it.toBelief() }
-  }
+  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
+    .map { it.toBelief() }
 }
 
 private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
