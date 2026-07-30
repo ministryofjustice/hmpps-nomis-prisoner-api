@@ -16,7 +16,7 @@ interface OffenderSentenceTermRepository : JpaRepository<OffenderSentenceTerm, O
   fun getNextTermSequence(offenderBookId: Long, sentenceSeq: Long): Long
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT st FROM OffenderSentenceTerm st WHERE st.id = :id")
-  fun findByIdOrNullForUpdate(id: OffenderSentenceTermId): OffenderSentenceTerm?
+  fun findByIdOrNullWaitForLock(id: OffenderSentenceTermId): OffenderSentenceTerm?
 }

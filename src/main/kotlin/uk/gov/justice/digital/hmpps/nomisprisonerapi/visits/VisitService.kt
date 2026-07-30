@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -149,7 +148,7 @@ class VisitService(
   fun cancelVisit(offenderNo: String, visitId: Long, visitDto: CancelVisitRequest) {
     val today = LocalDate.now()
 
-    val visit = visitRepository.findByIdOrNullForUpdate(visitId)
+    val visit = visitRepository.findByIdOrNullWaitForLock(visitId)
       ?: throw NotFoundException("Nomis visit id $visitId not found")
 
     val visitOutcome = visitOutcomeRepository.findById(VisitOutcomeReason.pk(visitDto.outcome))

@@ -777,7 +777,7 @@ class ContactPersonService(
   fun identifierTypeOf(code: String): IdentifierType = identifierRepository.findByIdOrNull(IdentifierType.pk(code)) ?: throw BadDataException("IdentifierType with code $code does not exist")
   fun restrictionTypeOf(code: String): RestrictionType = restrictionTypeRepository.findByIdOrNull(RestrictionType.pk(code)) ?: throw BadDataException("RestrictionType with code $code does not exist")
   fun contactOf(personId: Long, contactId: Long): OffenderContactPerson = (contactRepository.findByIdOrNull(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Contact with id=$contactId on Person with id=$personId does not exist")
-  fun getContactAndLock(personId: Long, contactId: Long): OffenderContactPerson = (contactRepository.findByIdOrNullForUpdate(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Contact with id=$contactId on Person with id=$personId does not exist")
+  fun getContactAndLock(personId: Long, contactId: Long): OffenderContactPerson = (contactRepository.findByIdOrNullWaitForLock(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")).takeIf { it.person == personOf(personId) } ?: throw NotFoundException("Contact with id=$contactId on Person with id=$personId does not exist")
 
   fun getContact(contactId: Long): PersonContact {
     val contact = contactRepository.findByIdOrNull(contactId) ?: throw NotFoundException("Contact with id=$contactId does not exist")

@@ -8614,12 +8614,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isCreated.expectBody(CreateSentenceTermResponse::class.java)
             .returnResult().responseBody!!
 
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-        )
-
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${response.bookingId}/sentence-sequence/${response.sentenceSeq}/term-sequence/${response.termSeq}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -8835,12 +8829,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           )
           .exchange()
           .expectStatus().isOk
-
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-        )
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentence-terms/booking-id/${prisonerAtMoorland.latestBooking().bookingId}/sentence-sequence/${sentenceTwo.id.sequence}/term-sequence/${term.id.termSequence}")

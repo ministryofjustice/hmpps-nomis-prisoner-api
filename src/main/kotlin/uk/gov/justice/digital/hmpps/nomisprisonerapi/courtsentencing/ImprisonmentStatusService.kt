@@ -109,10 +109,14 @@ class ImprisonmentStatusService(
   private fun updateMainOffence(booking: OffenderBooking, offenderChargeId: Long) {
     resetMainOffenceForOldCharge(booking, offenderChargeId)
 
-    val newMainOffenceCharge = booking.courtCases.flatMap { it.offenderCharges }.first { it.id == offenderChargeId }
+    val newMainOffenceCharge = booking.courtCases.flatMap { it.offenderCharges }.firstOrNull { it.id == offenderChargeId }
     // try to acquire lock
-    offenderChargeRepository.findByIdWaitForLock(newMainOffenceCharge.id)
-    newMainOffenceCharge.mostSeriousFlag = true
+    newMainOffenceCharge?.run {
+      offenderChargeRepository.findByIdWaitForLock(id)
+      mostSeriousFlag = true
+    } ?: run {
+      log.trace("OffenderCharge with id $offenderChargeId not found for offenderBooking ${booking.bookingId}, cannot set as main offence")
+    }
     val courtEventCharges = booking.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }.filter { it.id.offenderCharge == newMainOffenceCharge }
     courtEventCharges.forEach {
       courtEventChargeRepository.findByIdWaitForLock(it.id)

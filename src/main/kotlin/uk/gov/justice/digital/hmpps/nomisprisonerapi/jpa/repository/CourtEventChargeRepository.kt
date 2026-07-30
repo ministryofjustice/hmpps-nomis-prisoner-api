@@ -16,9 +16,9 @@ interface CourtEventChargeRepository : JpaRepository<CourtEventCharge, CourtEven
   fun existsByIdOffenderChargeId(offenderChargeId: Long): Boolean
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT c FROM CourtEventCharge c WHERE c.id = :id")
-  fun findByIdOrNullForUpdate(id: CourtEventChargeId): CourtEventCharge?
+  fun findByIdOrNullWaitForLock(id: CourtEventChargeId): CourtEventCharge?
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])

@@ -29,5 +29,5 @@ interface OffenderTapApplicationRepository : JpaRepository<OffenderTapApplicatio
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT ota FROM OffenderTapApplication ota WHERE ota.tapApplicationId = :id")
-  fun findByIdOrNullForUpdate(id: Long): OffenderTapApplication?
+  fun findByIdOrNullWaitForLock(id: Long): OffenderTapApplication?
 }

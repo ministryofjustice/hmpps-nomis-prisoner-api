@@ -517,7 +517,7 @@ internal class VisitServiceTest {
 
     @Test
     fun `visit data is amended correctly`() {
-      whenever(visitRepository.findByIdOrNullForUpdate(VISIT_ID)).thenReturn(defaultVisit)
+      whenever(visitRepository.findByIdOrNullWaitForLock(VISIT_ID)).thenReturn(defaultVisit)
       whenever(visitVisitorRepository.findAllByIdIn(defaultVisit.visitors.map { it.id })).thenReturn(defaultVisit.visitors)
 
       visitService.cancelVisit(OFFENDER_NO, VISIT_ID, cancelVisitRequest)

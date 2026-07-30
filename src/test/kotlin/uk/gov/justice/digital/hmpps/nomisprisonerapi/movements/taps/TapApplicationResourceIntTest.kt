@@ -776,7 +776,7 @@ class TapApplicationResourceIntTest(
       @Test
       fun `should return 423 if application is locked for update`() {
         repository.runInTransaction {
-          applicationRepository.findByIdOrNullForUpdate(application.tapApplicationId)
+          applicationRepository.findByIdOrNullWaitForLock(application.tapApplicationId)
 
           webTestClient.upsertApplication(request = anUpsertApplicationRequest(id = application.tapApplicationId))
             .isEqualTo(423)

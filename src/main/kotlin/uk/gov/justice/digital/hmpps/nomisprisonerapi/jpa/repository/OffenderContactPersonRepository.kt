@@ -19,5 +19,5 @@ interface OffenderContactPersonRepository : JpaRepository<OffenderContactPerson,
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("select c from OffenderContactPerson c where c.id = :id")
-  fun findByIdOrNullForUpdate(id: Long): OffenderContactPerson?
+  fun findByIdOrNullWaitForLock(id: Long): OffenderContactPerson?
 }

@@ -14,9 +14,9 @@ interface OffenderChargeRepository : JpaRepository<OffenderCharge, Long> {
   fun deleteByOffenderBookingBookingId(bookingId: Long)
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT c FROM OffenderCharge c WHERE c.id = :id")
-  fun findByIdOrNullForUpdate(id: Long): OffenderCharge?
+  fun findByIdOrNullWaitForLock(id: Long): OffenderCharge?
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])

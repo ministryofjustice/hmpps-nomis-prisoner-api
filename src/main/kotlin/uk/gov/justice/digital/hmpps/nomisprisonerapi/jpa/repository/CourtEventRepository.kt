@@ -35,7 +35,7 @@ interface CourtEventRepository : JpaRepository<CourtEvent, Long> {
   fun findByOffenderBooking_BookingIdAndParentEventId(offenderBookingBookingId: Long, parentEventId: Long): CourtEvent?
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT c FROM CourtEvent c WHERE c.id = :id")
-  fun findByIdOrNullForUpdate(id: Long): CourtEvent?
+  fun findByIdOrNullWaitForLock(id: Long): CourtEvent?
 }
