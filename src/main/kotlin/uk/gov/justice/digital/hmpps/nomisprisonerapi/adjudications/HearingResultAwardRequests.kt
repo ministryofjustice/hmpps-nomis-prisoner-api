@@ -56,6 +56,8 @@ data class HearingResultAwardRequest(
       "STOP_EARN",
       "STOP_PCT",
       "PP",
+      "LOSS_VISITS",
+      "RESTR_VISITS",
     ],
   )
   val sanctionType: String,

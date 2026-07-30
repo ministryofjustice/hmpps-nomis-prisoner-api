@@ -268,7 +268,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              aHearingResultAwardRequest(),
+              aHearingResultAwardRequest(sanctionType = "LOSS_VISITS"),
             ),
           )
           .exchange()
@@ -283,7 +283,7 @@ class AdjudicationsHearingResultAwardResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("sequence").isEqualTo(4)
-          .jsonPath("sanctionType.code").isEqualTo("ASSO")
+          .jsonPath("sanctionType.code").isEqualTo("LOSS_VISITS")
           .jsonPath("sanctionStatus.code").isEqualTo("IMMEDIATE")
           .jsonPath("effectiveDate").isEqualTo("2023-01-01")
           .jsonPath("sanctionDays").isEqualTo(2)
