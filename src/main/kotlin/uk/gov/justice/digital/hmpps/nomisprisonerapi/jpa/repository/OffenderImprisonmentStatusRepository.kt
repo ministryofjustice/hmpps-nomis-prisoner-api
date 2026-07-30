@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.QueryHints
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatusId
-import java.math.BigDecimal
 
 @Repository
 interface OffenderImprisonmentStatusRepository : JpaRepository<OffenderImprisonmentStatus, OffenderImprisonmentStatusId> {
@@ -112,4 +111,4 @@ SELECT NVL(imprisonment_status,'UNKNOWN'),
   fun findByIdWaitForLock(status: OffenderImprisonmentStatusId): OffenderImprisonmentStatus
 }
 
-data class StatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: BigDecimal?)
+data class StatusAndMainOffence(val imprisonmentStatus: String, val offenderChargeId: Number?)
