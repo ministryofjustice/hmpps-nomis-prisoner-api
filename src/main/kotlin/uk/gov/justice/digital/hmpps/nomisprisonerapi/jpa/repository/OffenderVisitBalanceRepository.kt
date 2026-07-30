@@ -14,5 +14,5 @@ interface OffenderVisitBalanceRepository : CrudRepository<OffenderVisitBalance, 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "20000")])
   @Query("SELECT ovb FROM OffenderVisitBalance ovb WHERE ovb.offenderBookingId = :offenderBookingId")
-  fun findByIdForUpdate(offenderBookingId: Long): OffenderVisitBalance?
+  fun findByIdOrNullWaitForLock(offenderBookingId: Long): OffenderVisitBalance?
 }

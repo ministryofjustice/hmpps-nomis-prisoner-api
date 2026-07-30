@@ -64,7 +64,7 @@ class TapApplicationService(
 
     val application = request.tapApplicationId
       ?.let {
-        applicationRepository.findByIdOrNullForUpdate(request.tapApplicationId)
+        applicationRepository.findByIdOrNullWaitForLock(request.tapApplicationId)
           ?: throw NotFoundException("Tap application with id=$request.movementApplicationId not found for offender with nomsId=$offenderNo")
       } ?: OffenderTapApplication(
       offenderBooking = offenderBooking,
@@ -110,7 +110,7 @@ class TapApplicationService(
       val schedule = application.tapScheduleOuts.firstOrNull()
       if (schedule?.tapMovementOut != null) throw BadDataException("Attempt to remove a schedule from an unapproved application failed - the schedule (${schedule.eventId}) is attached to a movement (${schedule.tapMovementOut!!.id.offenderBooking.bookingId}/${schedule.tapMovementOut!!.id.sequence}).")
       schedule?.run {
-        scheduleOutRepository.findByEventIdOrNullForUpdate(schedule.eventId)
+        scheduleOutRepository.findByEventIdOrNullWaitForLock(schedule.eventId)
           ?.also { scheduleOutRepository.delete(it) }
         application.tapScheduleOuts.remove(schedule)
       }

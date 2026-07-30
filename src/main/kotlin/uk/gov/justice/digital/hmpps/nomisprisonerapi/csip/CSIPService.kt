@@ -173,7 +173,7 @@ class CSIPService(
     }
   }
 
-  private fun updateCSIPReport(request: UpsertCSIPRequest): CSIPReport = csipRepository.findByIdOrNullForUpdate(request.id!!)?.apply {
+  private fun updateCSIPReport(request: UpsertCSIPRequest): CSIPReport = csipRepository.findByIdOrNullWaitForLock(request.id!!)?.apply {
     incidentDate = request.incidentDate
     incidentTime = request.incidentTime?.atDate(incidentDate)
 

@@ -145,7 +145,7 @@ class VisitBalanceService(
     // Inserting an adjustment causes a trigger to fire to update the balance
     // We don't want the balance to be updated with old data if multiple adjustments are inserted
     // at the same time (due to visit cancellation), so attempt to avoid by selecting for update here
-    val visitBalance = visitBalanceRepository.findByIdForUpdate(offenderBooking.bookingId)
+    val visitBalance = visitBalanceRepository.findByIdOrNullWaitForLock(offenderBooking.bookingId)
       ?: OffenderVisitBalance(
         remainingVisitOrders = 0,
         remainingPrivilegedVisitOrders = 0,

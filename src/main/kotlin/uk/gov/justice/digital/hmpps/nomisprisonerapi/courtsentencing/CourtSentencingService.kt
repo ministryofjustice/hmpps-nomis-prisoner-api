@@ -708,7 +708,7 @@ class CourtSentencingService(
         "caseId" to caseId.toString(),
       )
 
-      courtEventRepository.findByIdOrNullForUpdate(eventId)?.also {
+      courtEventRepository.findByIdOrNullWaitForLock(eventId)?.also {
         val offenderCharges = it.courtEventCharges.map { cec -> cec.id.offenderCharge }
         case.courtEvents.remove(it)
         courtCaseRepository.saveAndFlush(case)
@@ -999,12 +999,7 @@ class CourtSentencingService(
       endDate = null,
       sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType),
     )
-    offenderSentenceTermRepository.saveAndFlush(term).also {
-      imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
-        bookingId = offenderBooking.bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
-      )
-    }
+    offenderSentenceTermRepository.saveAndFlush(term)
 
     CreateSentenceTermResponse(
       sentenceSeq = sentenceSequence,
@@ -1027,7 +1022,7 @@ class CourtSentencingService(
   fun deleteSentence(offenderNo: String, caseId: Long, sentenceSequence: Long) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = case.offenderBooking
-      offenderSentenceRepository.findByIdOrNullForUpdate(
+      offenderSentenceRepository.findByIdOrNullWaitForLock(
         SentenceId(
           offenderBooking = offenderBooking,
           sequence = sentenceSequence,
@@ -1058,7 +1053,7 @@ class CourtSentencingService(
   fun deleteSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termSequence: Long) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = case.offenderBooking
-      offenderSentenceTermRepository.findByIdOrNullForUpdate(
+      offenderSentenceTermRepository.findByIdOrNullWaitForLock(
         OffenderSentenceTermId(
           offenderBooking = offenderBooking,
           sentenceSequence = sentenceSequence,
@@ -1202,12 +1197,7 @@ class CourtSentencingService(
         term.lifeSentenceFlag = termRequest.lifeSentenceFlag
         term.sentenceTermType = lookupSentenceTermType(termRequest.sentenceTermType)
 
-        offenderSentenceTermRepository.saveAndFlush(term).also {
-          imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
-            bookingId = case.offenderBooking.bookingId,
-            changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
-          )
-        }
+        offenderSentenceTermRepository.saveAndFlush(term)
 
         telemetryClient.trackEvent(
           "sentence-term-updated",
@@ -1489,7 +1479,7 @@ class CourtSentencingService(
       )
     }
     val casesUpdated = request.beachCourtEventIds.mapNotNull {
-      courtEventRepository.findByIdOrNullForUpdate(it)?.let { courtEvent ->
+      courtEventRepository.findByIdOrNullWaitForLock(it)?.let { courtEvent ->
         if (courtEvent.courtCase in courtCasesInRecall) {
           courtEvent.setEventDateAndTime(request.recallRevocationDate.atTime(LocalTime.MIDNIGHT))
           updatedBreachCourtEventIds.add(it)
@@ -1545,7 +1535,7 @@ class CourtSentencingService(
     }
 
     request.beachCourtEventIds.forEach {
-      courtEventRepository.findByIdOrNullForUpdate(it)?.run {
+      courtEventRepository.findByIdOrNullWaitForLock(it)?.run {
         courtEventRepository.delete(this)
       }
     }
@@ -1576,7 +1566,7 @@ class CourtSentencingService(
       )
     }
     request.beachCourtEventIds.forEach {
-      courtEventRepository.findByIdOrNullForUpdate(it)?.run {
+      courtEventRepository.findByIdOrNullWaitForLock(it)?.run {
         courtEventRepository.delete(this)
       }
     }
@@ -1685,19 +1675,19 @@ class CourtSentencingService(
   private fun findOffenderBooking(id: Long): OffenderBooking = offenderBookingRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender booking $id not found")
 
-  private fun findOffenderBookingWithLock(id: Long): OffenderBooking = offenderBookingRepository.findByIdOrNullForUpdate(id)
+  private fun findOffenderBookingWithLock(id: Long): OffenderBooking = offenderBookingRepository.findByIdOrNullWaitForLock(id)
     ?: throw NotFoundException("Offender booking $id not found")
 
   private fun findCourtCase(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court case $id for $offenderNo not found")
 
-  private fun findCourtCaseWithLock(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNullForUpdate(id)
+  private fun findCourtCaseWithLock(id: Long, offenderNo: String): CourtCase = courtCaseRepository.findByIdOrNullWaitForLock(id)
     ?: throw NotFoundException("Court case $id for $offenderNo not found")
 
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
-  private fun findCourtAppearanceWithLock(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNullForUpdate(id)
+  private fun findCourtAppearanceWithLock(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNullWaitForLock(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
   private fun findSentence(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNull(
@@ -1708,7 +1698,7 @@ class CourtSentencingService(
   )
     ?: throw NotFoundException("Sentence for booking ${booking.bookingId} and sentence sequence $sentenceSequence not found")
 
-  private fun findSentenceWithLock(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNullForUpdate(
+  private fun findSentenceWithLock(sentenceSequence: Long, booking: OffenderBooking): OffenderSentence = offenderSentenceRepository.findByIdOrNullWaitForLock(
     SentenceId(
       sequence = sentenceSequence,
       offenderBooking = booking,
@@ -1735,7 +1725,7 @@ class CourtSentencingService(
     sentenceSequence: Long,
     booking: OffenderBooking,
     offenderNo: String,
-  ): OffenderSentenceTerm = offenderSentenceTermRepository.findByIdOrNullForUpdate(
+  ): OffenderSentenceTerm = offenderSentenceTermRepository.findByIdOrNullWaitForLock(
     OffenderSentenceTermId(
       termSequence = termSequence,
       sentenceSequence = sentenceSequence,
@@ -1747,13 +1737,13 @@ class CourtSentencingService(
   private fun findOffenderCharge(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
 
-  private fun findOffenderChargeWithLock(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNullForUpdate(id)
+  private fun findOffenderChargeWithLock(id: Long, offenderNo: String): OffenderCharge = offenderChargeRepository.findByIdOrNullWaitForLock(id)
     ?: throw NotFoundException("Offender Charge $id for $offenderNo not found")
 
   private fun findCourtEventCharge(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
 
-  private fun findCourtEventChargeWithLock(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNullForUpdate(id)
+  private fun findCourtEventChargeWithLock(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNullWaitForLock(id)
     ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
 
   private fun lookupLegalCaseType(code: String): LegalCaseType = legalCaseTypeRepository.findByIdOrNull(

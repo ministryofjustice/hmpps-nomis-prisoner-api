@@ -115,7 +115,7 @@ interface IncidentRepository :
   fun findAllIncidentsByBookingId(bookingId: Long): List<Incident>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT incident FROM Incident incident WHERE incident.id = :incidentId")
-  fun findByIdOrNullForUpdate(incidentId: Long): Incident?
+  fun findByIdOrNullWaitForLock(incidentId: Long): Incident?
 }

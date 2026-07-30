@@ -93,9 +93,9 @@ interface OffenderBookingRepository :
   fun findActivePrisonNumbersBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long): List<String>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("from OffenderBooking ob where ob.bookingId = :bookingId")
-  fun findByIdOrNullForUpdate(bookingId: Long): OffenderBooking?
+  fun findByIdOrNullWaitForLock(bookingId: Long): OffenderBooking?
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])

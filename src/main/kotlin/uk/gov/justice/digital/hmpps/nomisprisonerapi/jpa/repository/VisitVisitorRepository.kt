@@ -26,5 +26,5 @@ interface VisitVisitorRepository : JpaRepository<VisitVisitor, Long> {
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("select vv from VisitVisitor vv where vv.id = :id")
-  fun findByIdOrNullForUpdate(id: Long): VisitVisitor?
+  fun findByIdOrNullWaitForLock(id: Long): VisitVisitor?
 }

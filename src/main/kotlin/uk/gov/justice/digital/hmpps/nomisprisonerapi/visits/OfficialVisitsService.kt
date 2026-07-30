@@ -169,7 +169,7 @@ class OfficialVisitsService(
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun updateVisit(visitId: Long, request: UpdateOfficialVisitRequest) {
-    val visit = visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    val visit = visitRepository.findByIdOrNullWaitForLock(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
 
     with(visit) {
       commentText = request.commentText
@@ -195,7 +195,7 @@ class OfficialVisitsService(
     visitId: Long,
     request: CreateOfficialVisitorRequest,
   ): OfficialVisitResponse.OfficialVisitor {
-    val visit = visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    val visit = visitRepository.findByIdOrNullWaitForLock(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
     val person = personRepository.findByIdOrNull(request.personId) ?: throw BadDataException("Person with id ${request.personId} not found")
     visit.visitors.find { it.person?.id == request.personId }?.also {
       throw ConflictException("Person ${request.personId} is already on visit $visitId", entityId = it.id.toString())
@@ -223,8 +223,8 @@ class OfficialVisitsService(
     visitorId: Long,
     request: UpdateOfficialVisitorRequest,
   ) {
-    visitVisitorRepository.findByIdOrNullForUpdate(visitorId)?.also { visitor ->
-      val visit = visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    visitVisitorRepository.findByIdOrNullWaitForLock(visitorId)?.also { visitor ->
+      val visit = visitRepository.findByIdOrNullWaitForLock(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
       if (visitor.visit != visit) {
         throw BadDataException("Visitor with id $visitorId does not belong to visit with id $visitId")
       }
@@ -241,8 +241,8 @@ class OfficialVisitsService(
 
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun deleteVisitorForVisit(visitId: Long, visitorId: Long) {
-    visitRepository.findByIdOrNullForUpdate(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
-    visitVisitorRepository.findByIdOrNullForUpdate(visitorId)?.also { visitor ->
+    visitRepository.findByIdOrNullWaitForLock(visitId) ?: throw NotFoundException("Visit with id $visitId not found")
+    visitVisitorRepository.findByIdOrNullWaitForLock(visitorId)?.also { visitor ->
       if (visitor.visit.id != visitId) {
         throw BadDataException("Visitor with id $visitorId does not belong to visit with id $visitId")
       }

@@ -66,9 +66,9 @@ interface CourtCaseRepository : JpaRepository<CourtCase, Long> {
   fun findCourtCaseIdsForOffender(offenderNo: String): List<Long>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT c FROM CourtCase c WHERE c.id = :id")
-  fun findByIdOrNullForUpdate(id: Long): CourtCase?
+  fun findByIdOrNullWaitForLock(id: Long): CourtCase?
 
   @Modifying
   @Query(nativeQuery = true, value = "UPDATE OFFENDER_CASES cc SET cc.CASE_INFO_NUMBER = :caseInfoNumber WHERE cc.CASE_ID = :caseId")

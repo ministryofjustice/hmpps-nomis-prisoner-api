@@ -17,5 +17,5 @@ interface OffenderTapScheduleOutRepository : JpaRepository<OffenderTapScheduleOu
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query(value = "select tso from OffenderTapScheduleOut tso where (tso.eventId = :eventId)")
-  fun findByEventIdOrNullForUpdate(eventId: Long): OffenderTapScheduleOut?
+  fun findByEventIdOrNullWaitForLock(eventId: Long): OffenderTapScheduleOut?
 }

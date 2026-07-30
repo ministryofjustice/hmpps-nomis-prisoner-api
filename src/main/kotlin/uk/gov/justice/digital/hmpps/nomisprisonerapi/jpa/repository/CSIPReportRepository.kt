@@ -59,7 +59,7 @@ interface CSIPReportRepository :
   fun findIdsByOffenderBookingBookingId(bookingId: Long): List<Long>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT c FROM CSIPReport c WHERE c.id = :csipId")
-  fun findByIdOrNullForUpdate(csipId: Long): CSIPReport?
+  fun findByIdOrNullWaitForLock(csipId: Long): CSIPReport?
 }

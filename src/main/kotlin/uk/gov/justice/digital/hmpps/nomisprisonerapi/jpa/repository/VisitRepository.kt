@@ -49,7 +49,7 @@ interface VisitRepository :
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT v FROM Visit v WHERE v.id = :id")
-  fun findByIdOrNullForUpdate(id: Long): Visit?
+  fun findByIdOrNullWaitForLock(id: Long): Visit?
 
   @Query(
     """

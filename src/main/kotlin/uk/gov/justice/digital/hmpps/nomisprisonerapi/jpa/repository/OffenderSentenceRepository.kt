@@ -28,7 +28,7 @@ interface OffenderSentenceRepository :
   fun findByIdOffenderBookingBookingIdInAndAuditModuleNameAndStatusAndCourtCaseIsNotNull(offenderBookingIds: List<Long>, auditModule: String = "MERGE", status: String = "I"): List<OffenderSentence>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "2000")])
+  @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("SELECT s FROM OffenderSentence s WHERE s.id = :id")
-  fun findByIdOrNullForUpdate(id: SentenceId): OffenderSentence?
+  fun findByIdOrNullWaitForLock(id: SentenceId): OffenderSentence?
 }
