@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Limit
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,6 +18,9 @@ class TransactionsService(
   val offenderTransactionRepository: OffenderTransactionRepository,
   val generalLedgerTransactionRepository: GeneralLedgerTransactionRepository,
 ) {
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
   fun getGeneralLedgerTransactions(
     transactionId: Long,
   ): List<GeneralLedgerTransactionDto> = generalLedgerTransactionRepository
@@ -81,13 +85,26 @@ class TransactionsService(
     pageSize: Int,
     entryDate: LocalDate,
   ): PrisonerTransactionIdsPage {
-    val (minTxnId, maxTxnId) = generalLedgerTransactionRepository.findMinAndMaxTxnIdsForEntryDate(entryDate)
-    if (minTxnId == null || maxTxnId == null) return PrisonerTransactionIdsPage(emptyList())
+    // TODO Revert logging and catch exception once method working ok
+    try {
+      val (minTxnId, maxTxnId) = generalLedgerTransactionRepository.findMinAndMaxTxnIdsForEntryDate(entryDate)
+      if (minTxnId == null || maxTxnId == null) return PrisonerTransactionIdsPage(emptyList())
 
-    val transactionFrom = if (transactionId == 0L) minTxnId - 1 else transactionId
+      val transactionFrom = if (transactionId == 0L) minTxnId - 1 else transactionId
 
-    return offenderTransactionRepository.findTransactionIdsBetween(transactionFrom, maxTxnId, pageSize = pageSize)
-      .map { PrisonerTransactionIdResponse(transactionId = it.id) }.let { PrisonerTransactionIdsPage(it) }
+      log.info("Get prison transaction from $transactionFrom to with maxtxnId $maxTxnId with pageSize $pageSize")
+
+      val transactions =
+        offenderTransactionRepository.findTransactionIdsBetween(transactionFrom, maxTxnId, pageSize = pageSize)
+          .map { PrisonerTransactionIdResponse(transactionId = it.id) }.let { PrisonerTransactionIdsPage(it) }
+
+      log.info("Returning prison transactions page: $transactions")
+
+      return transactions
+    } catch (e: Exception) {
+      log.error("Error getting prisoner transaction ids for transactionId: $transactionId, pageSize: $pageSize, entryDate: $entryDate", e)
+      return PrisonerTransactionIdsPage(emptyList())
+    }
   }
 }
 
