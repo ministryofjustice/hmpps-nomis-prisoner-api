@@ -60,7 +60,7 @@ interface OffenderTransactionRepository : JpaRepository<OffenderTransaction, Pk>
   """,
     nativeQuery = true,
   )
-  fun findTransactionIdsBetween(minTxnId: Long, maxTxnId: Long, pageSize: Int): List<PrisonerTransactionIdProjection>
+  fun findTransactionIdsInRange(minTxnId: Long, maxTxnId: Long, pageSize: Int): List<PrisonerTransactionIdProjection>
 }
 
 interface PrisonerTransactionIdProjection {

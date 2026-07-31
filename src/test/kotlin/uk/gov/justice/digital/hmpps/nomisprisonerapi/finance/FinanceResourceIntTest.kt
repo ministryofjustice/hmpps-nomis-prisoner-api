@@ -20,6 +20,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   private lateinit var offender: Offender
   private lateinit var transaction1: OffenderTransaction
   private lateinit var transaction2: OffenderTransaction
+  private lateinit var transaction3: OffenderTransaction
   private lateinit var glTransaction1: GeneralLedgerTransaction
   private lateinit var glTransaction2: GeneralLedgerTransaction
   private lateinit var glTransaction3: GeneralLedgerTransaction
@@ -37,6 +38,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
             glTransaction3 = generalLedgerTransaction(1, 2101)
           }
           transaction(transactionId = 3, subAccountType = SubAccountType.REG, transactionEntrySequence = 2, transactionType = "DPST")
+          transaction3 = transaction(transactionId = 4, subAccountType = SubAccountType.REG, transactionEntrySequence = 1, transactionType = "DPST")
         }
       }
     }
@@ -413,11 +415,6 @@ class FinanceResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      @BeforeEach
-      fun setUp() {
-        nomisDataBuilder.build {
-        }
-      }
 
       @Test
       fun getAll() {
@@ -427,7 +424,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("$.length()").isEqualTo(4)
       }
 
       @Test
@@ -455,7 +452,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(2)
+          .jsonPath("$.length()").isEqualTo(3)
           .jsonPath("$[0].transactionId").isEqualTo(3)
           .jsonPath("$[0].transactionEntrySequence").isEqualTo(1)
           .jsonPath("$[0].generalLedgerTransactions.length()").isEqualTo(1)
@@ -463,6 +460,9 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .jsonPath("$[1].transactionId").isEqualTo(3)
           .jsonPath("$[1].transactionEntrySequence").isEqualTo(2)
           .jsonPath("$[1].generalLedgerTransactions.length()").isEqualTo(0)
+          .jsonPath("$[2].transactionId").isEqualTo(4)
+          .jsonPath("$[2].transactionEntrySequence").isEqualTo(1)
+          .jsonPath("$[2].generalLedgerTransactions.length()").isEqualTo(0)
       }
 
       @Test
@@ -509,11 +509,6 @@ class FinanceResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
-      @BeforeEach
-      fun setUp() {
-        nomisDataBuilder.build {
-        }
-      }
 
       @Test
       fun getAll() {
@@ -572,6 +567,171 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBody()
           .jsonPath("ids.length()").isEqualTo(0)
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /transactions/from/{transactionId}/to/{maxTransactionId}")
+  inner class OffenderTransactionIdsBetweenIds {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/transactions/from/99/to/100")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/transactions/from/99/to/100")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/transactions/from/99/to/100")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun getAll() {
+        webTestClient.get().uri("/transactions/from/0/to/10")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(3)
+          .jsonPath("ids[0].transactionId").isEqualTo(transaction1.transactionId)
+          .jsonPath("ids[1].transactionId").isEqualTo(transaction2.transactionId)
+          .jsonPath("ids[2].transactionId").isEqualTo(transaction3.transactionId)
+      }
+
+      @Test
+      fun `get transactions limited by pagesize`() {
+        webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}/to/${transaction2.transactionId}?size=1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(1)
+          .jsonPath("ids[0].transactionId").isEqualTo(transaction1.transactionId)
+      }
+
+      @Test
+      fun `get transactions when ids match`() {
+        webTestClient.get().uri("/transactions/from/${transaction1.transactionId - 1}/to/${transaction1.transactionId}?size=1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(1)
+          .jsonPath("ids[0].transactionId").isEqualTo(transaction1.transactionId)
+      }
+
+      @Test
+      fun `none found`() {
+        webTestClient.get().uri("/transactions/from/99999/to/10000")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("ids.length()").isEqualTo(0)
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /transactions/range/{entryDate}")
+  inner class OffenderTransactionIdRangeOnDate {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/transactions/range/2026-02-07")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/transactions/range/2026-02-07")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/transactions/range/2026-02-07")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun getAll() {
+        webTestClient.get().uri("/transactions/range/2025-08-11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("minTransactionId").isEqualTo(transaction2.transactionId)
+          .jsonPath("maxTransactionId").isEqualTo(transaction2.transactionId)
+      }
+
+      @Test
+      fun `get transactions when first id of the day`() {
+        webTestClient.get().uri("/transactions/range/2025-08-11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("minTransactionId").isEqualTo(transaction2.transactionId)
+          .jsonPath("maxTransactionId").isEqualTo(transaction2.transactionId)
+      }
+
+      @Test
+      fun `get transactions when first id of the day but no matching transactions`() {
+        webTestClient.get().uri("/transactions/range/2025-08-11")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("minTransactionId").isEqualTo(transaction2.transactionId)
+          .jsonPath("maxTransactionId").isEqualTo(transaction2.transactionId)
+      }
+
+      @Test
+      fun `none found`() {
+        webTestClient.get().uri("/transactions/range/2020-08-15")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("minTransactionId").isEqualTo(0)
+          .jsonPath("maxTransactionId").isEqualTo(0)
       }
     }
   }
