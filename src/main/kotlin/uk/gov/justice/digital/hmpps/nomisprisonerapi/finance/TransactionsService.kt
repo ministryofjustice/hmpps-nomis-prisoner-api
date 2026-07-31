@@ -21,6 +21,7 @@ class TransactionsService(
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
+
   fun getGeneralLedgerTransactions(
     transactionId: Long,
   ): List<GeneralLedgerTransactionDto> = generalLedgerTransactionRepository
@@ -80,6 +81,17 @@ class TransactionsService(
     return data.map(::mapOT)
   }
 
+  fun getTransactionIdRangeForDate(entryDate: LocalDate): TransactionIdRange {
+    val (minTxnId, maxTxnId) = generalLedgerTransactionRepository.findMinAndMaxTxnIdsForEntryDate(entryDate)
+    if (minTxnId == null || maxTxnId == null) {
+      return TransactionIdRange(entryDate, 0, 0)
+    }
+    return TransactionIdRange(entryDate, minTxnId, maxTxnId)
+  }
+
+  fun getPrisonerTransactionIdsInRange(lastTransactionId: Long, maxTransactionId: Long, pageSize: Int): PrisonerTransactionIdsPage = offenderTransactionRepository.findTransactionIdsInRange(lastTransactionId, maxTransactionId, pageSize = pageSize)
+    .map { PrisonerTransactionIdResponse(transactionId = it.id) }.let { PrisonerTransactionIdsPage(it) }
+
   fun getPrisonerTransactionIds(
     transactionId: Long,
     pageSize: Int,
@@ -95,7 +107,7 @@ class TransactionsService(
       log.info("Get prison transaction from $transactionFrom to with maxtxnId $maxTxnId with pageSize $pageSize")
 
       val transactions =
-        offenderTransactionRepository.findTransactionIdsBetween(transactionFrom, maxTxnId, pageSize = pageSize)
+        offenderTransactionRepository.findTransactionIdsInRange(transactionFrom, maxTxnId, pageSize = pageSize)
           .map { PrisonerTransactionIdResponse(transactionId = it.id) }.let { PrisonerTransactionIdsPage(it) }
 
       log.info("Returning prison transactions page: $transactions")

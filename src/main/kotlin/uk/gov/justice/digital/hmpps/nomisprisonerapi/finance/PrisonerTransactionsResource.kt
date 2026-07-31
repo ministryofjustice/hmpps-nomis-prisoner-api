@@ -147,6 +147,78 @@ class PrisonerTransactionsResource(
       transactionEntrySequence,
       pageSize,
     )
+
+  @GetMapping("/transactions/range/{entryDate}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Determine the minimum and maximum transaction Ids for a given entry date",
+    description = """Retrieves Ids for the minimum and maximum transaction Ids for the entry date.
+      Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Transaction does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun findPrisonerTransactionsMinMaxForDate(
+    @Schema(description = "Transactions that were created on the given date", example = "2024-11-03")
+    @PathVariable
+    entryDate: LocalDate,
+  ) = transactionsService.getTransactionIdRangeForDate(entryDate = entryDate)
+
+  @GetMapping("/transactions/from/{lastTransactionId}/to/{maxTransactionId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a page of prisoner transaction Ids starting from an id onwards but not exceeding the maximum transaction Id",
+    description = """Retrieves transactions to be iterated over using last transaction Id (excluding that transactionId) up to (and including) the maximum transaction Id.
+      Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Transaction does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun findPrisonerTransactionsIdsInRange(
+    @Schema(description = "Prisoner transactions starting after this id", example = "1555999")
+    @PathVariable
+    lastTransactionId: Long,
+    @Schema(description = "Maximum transaction id to return", example = "1557000")
+    @PathVariable
+    maxTransactionId: Long,
+    @Schema(description = "Number of prisoner transaction ids to get", required = false, defaultValue = "20")
+    @RequestParam(value = "size", defaultValue = "20")
+    size: Int,
+  ): PrisonerTransactionIdsPage = transactionsService.getPrisonerTransactionIdsInRange(
+    lastTransactionId = lastTransactionId,
+    pageSize = size,
+    maxTransactionId = maxTransactionId,
+  )
 }
 
 @Schema(description = "The data held in NOMIS about a financial transaction")
@@ -217,4 +289,15 @@ data class PrisonerTransactionIdsPage(
 data class PrisonerTransactionIdResponse(
   @Schema(description = "The prisoner transaction id", required = true)
   val transactionId: Long,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Min and Max transaction ids on a specific date")
+data class TransactionIdRange(
+  @Schema(description = "The entry date for the transactions", required = true)
+  val date: LocalDate,
+  @Schema(description = "The minimum transaction id on the entry date", required = true)
+  val minTransactionId: Long,
+  @Schema(description = "The maximum transaction id on the entry date", required = true)
+  val maxTransactionId: Long,
 )
