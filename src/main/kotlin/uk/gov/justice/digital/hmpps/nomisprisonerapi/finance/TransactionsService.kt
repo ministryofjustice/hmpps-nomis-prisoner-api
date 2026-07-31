@@ -89,7 +89,7 @@ class TransactionsService(
     return TransactionIdRange(entryDate, minTxnId, maxTxnId)
   }
 
-  fun getPrisonerTransactionIdsBetween(lastTransactionId: Long, maxTransactionId: Long, pageSize: Int): PrisonerTransactionIdsPage = offenderTransactionRepository.findTransactionIdsInRange(lastTransactionId, maxTransactionId, pageSize = pageSize)
+  fun getPrisonerTransactionIdsInRange(lastTransactionId: Long, maxTransactionId: Long, pageSize: Int): PrisonerTransactionIdsPage = offenderTransactionRepository.findTransactionIdsInRange(lastTransactionId, maxTransactionId, pageSize = pageSize)
     .map { PrisonerTransactionIdResponse(transactionId = it.id) }.let { PrisonerTransactionIdsPage(it) }
 
   fun getPrisonerTransactionIds(

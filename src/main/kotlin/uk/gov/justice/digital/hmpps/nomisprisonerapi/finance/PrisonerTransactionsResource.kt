@@ -204,7 +204,7 @@ class PrisonerTransactionsResource(
       ),
     ],
   )
-  fun findPrisonerTransactionsForIdRange(
+  fun findPrisonerTransactionsIdsInRange(
     @Schema(description = "Prisoner transactions starting after this id", example = "1555999")
     @PathVariable
     lastTransactionId: Long,
@@ -214,7 +214,7 @@ class PrisonerTransactionsResource(
     @Schema(description = "Number of prisoner transaction ids to get", required = false, defaultValue = "20")
     @RequestParam(value = "size", defaultValue = "20")
     size: Int,
-  ): PrisonerTransactionIdsPage = transactionsService.getPrisonerTransactionIdsBetween(
+  ): PrisonerTransactionIdsPage = transactionsService.getPrisonerTransactionIdsInRange(
     lastTransactionId = lastTransactionId,
     pageSize = size,
     maxTransactionId = maxTransactionId,
