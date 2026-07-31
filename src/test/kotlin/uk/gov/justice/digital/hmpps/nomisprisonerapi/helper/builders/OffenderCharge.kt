@@ -24,11 +24,13 @@ annotation class OffenderChargeDslMarker
 interface OffenderChargeDsl {
   enum class ResultCode(val code: String) {
     IMPRISONMENT("1002"),
+    BORSTAL_TRAINING("1005"),
+    BOUND_OVER_TO_LEAVE_THE_ISLAND("1067"),
     COMMITTED_CROWN_COURT_SENTENCING("4001"),
     COMMITTED_CROWN_COURT("4560"),
     ADJOURNMENT("4506"),
-    GUILTY("4579"),
     DISMISSED("2006"),
+    COMMIT_CROWN_COURT_FOR_SENTENCE_LA_ACCOMMODATION("4020"),
   }
 
   enum class Offences(val code: String) {
