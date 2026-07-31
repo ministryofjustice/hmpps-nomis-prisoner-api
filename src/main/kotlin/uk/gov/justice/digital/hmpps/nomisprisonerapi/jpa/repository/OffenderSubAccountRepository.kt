@@ -38,6 +38,7 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
           sub_account_type,
           MAX(create_datetime) AS create_datetime
       FROM offender_transactions
+      WHERE offender_id = :offenderId
       GROUP BY txn_id, sub_account_type
   ),
   gl AS (
@@ -60,7 +61,7 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
       COALESCE(gl.txn_entry_date, TRUNC(ot.create_datetime)) AS txnEntryDate,
       COALESCE(gl.txn_entry_time, ot.create_datetime)        AS txnEntryTime
   FROM osa
-  JOIN ot
+  LEFT JOIN ot
     ON ot.txn_id = osa.last_txn_id
    AND ot.sub_account_type = osa.sub_account_type
   LEFT JOIN gl
