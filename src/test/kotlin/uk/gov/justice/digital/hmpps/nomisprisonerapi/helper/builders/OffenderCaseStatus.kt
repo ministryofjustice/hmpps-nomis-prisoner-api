@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCase
 @DslMarker
 annotation class OffenderCaseStatusDslMarker
 
-@NomisDataDslMarker
+@OffenderCaseStatusDslMarker
 interface OffenderCaseStatusDsl
 
 @Component

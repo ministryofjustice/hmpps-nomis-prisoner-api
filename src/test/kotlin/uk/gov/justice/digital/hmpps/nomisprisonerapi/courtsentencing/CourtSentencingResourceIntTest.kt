@@ -11,7 +11,6 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
@@ -19,6 +18,13 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.ADJOURNMENT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.BORSTAL_TRAINING
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.BOUND_OVER_TO_LEAVE_THE_ISLAND
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.COMMITTED_CROWN_COURT_SENTENCING
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.COMMIT_CROWN_COURT_FOR_SENTENCE_LA_ACCOMMODATION
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.DISMISSED
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.IMPRISONMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -48,7 +54,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceStatusRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.StoredProcedureRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -2839,9 +2844,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "A0001",
                 caseSequence = 1,
               ) {
-                val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = "2006")
+                val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = DISMISSED.code)
                 lateinit var courtOrder: CourtOrder
-                courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "4506") {
+                courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = ADJOURNMENT.code) {
                   courtOrder = courtOrder(
                     courtDate = LocalDate.parse("2022-01-01"),
                     issuingCourt = "LEEDYC",
@@ -2856,7 +2861,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     sentencePurpose(purposeCode = "PUNISH", orderPartyCode = "CRT")
                   }
                   courtEventCharge(
-                    resultCode1 = "4506",
+                    resultCode1 = ADJOURNMENT.code,
                     offenderCharge = charge,
                   )
                 }
@@ -2891,7 +2896,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "X0001",
                 caseSequence = 2,
               ) {
-                val charge = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "2006")
+                val charge = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = DISMISSED.code)
                 courtEvent(eventDateTime = LocalDateTime.parse("2021-01-02T10:00"), outcomeReasonCode = "2006") {
                   courtEventCharge(
                     resultCode1 = "2006",
@@ -2919,7 +2924,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 val horseDrawnVehicleCharge = offenderCharge(
                   offenceCode = "RT88074",
                   plea = "G",
-                  resultCode1 = "1002",
+                  resultCode1 = IMPRISONMENT.code,
                   propertyValue = BigDecimal.valueOf(1),
                   totalPropertyValue = BigDecimal.valueOf(2),
                   resultCode2 = "1003",
@@ -2929,7 +2934,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   mostSeriousFlag = true,
 
                 )
-                val drunkCharge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "2006")
+                val drunkCharge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = DISMISSED.code)
                 courtEvent(
                   eventDateTime = LocalDateTime.parse("2022-01-01T10:00"),
                   outcomeReasonCode = "4506",
@@ -2940,7 +2945,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   nextEventDateTime = LocalDateTime.parse("2022-02-01T10:00"),
                 ) {
                   courtEventCharge(
-                    resultCode1 = "4506",
+                    resultCode1 = ADJOURNMENT.code,
                     resultCode2 = "4507",
                     offenderCharge = horseDrawnVehicleCharge,
                     offencesCount = 99,
@@ -2951,7 +2956,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     totalPropertyValue = BigDecimal.TWO,
                   )
                   courtEventCharge(
-                    resultCode1 = "4506",
+                    resultCode1 = ADJOURNMENT.code,
                     resultCode2 = null,
                     offenderCharge = drunkCharge,
                   )
@@ -2962,11 +2967,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   outcomeReasonCode = "1002",
                 ) {
                   courtEventCharge(
-                    resultCode1 = "1002",
+                    resultCode1 = IMPRISONMENT.code,
                     offenderCharge = horseDrawnVehicleCharge,
                   )
                   courtEventCharge(
-                    resultCode1 = "2006",
+                    resultCode1 = DISMISSED.code,
                     offenderCharge = drunkCharge,
                   )
                   courtOrder = courtOrder(
@@ -3060,7 +3065,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateDate = LocalDate.parse("2020-01-01"),
                 statusUpdateStaff = staff,
               ) {
-                val charge = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "2006")
+                val charge = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = DISMISSED.code)
                 courtEvent(eventDateTime = LocalDateTime.parse("2020-01-01T10:00"), outcomeReasonCode = "2006") {
                   courtEventCharge(
                     resultCode1 = "2006",
@@ -3080,7 +3085,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateDate = null,
                 statusUpdateStaff = null,
               ) {
-                val charge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
+                val charge = offenderCharge(offenceCode = "AN81016", resultCode1 = IMPRISONMENT.code)
                 lateinit var courtOrder: CourtOrder
                 courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "1002") {
                   courtOrder = courtOrder {
@@ -3109,7 +3114,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 caseInfoNumber = "CON0002",
                 caseSequence = 2,
               ) {
-                val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = "1002")
+                val charge = offenderCharge(offenceCode = "AN81016", plea = "NG", resultCode1 = IMPRISONMENT.code)
                 lateinit var courtOrder: CourtOrder
                 courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "1002") {
                   courtOrder = courtOrder {
@@ -3146,18 +3151,18 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               ) {
                 offenderCaseIdentifier(reference = "SOURCE", type = "CASE/INFO#")
                 lateinit var courtOrder: CourtOrder
-                val sentencedCharge = offenderCharge(offenceCode = "AN81016", resultCode1 = "1002")
-                val chargedThatWillBeLinked = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = "4506")
+                val sentencedCharge = offenderCharge(offenceCode = "AN81016", resultCode1 = IMPRISONMENT.code)
+                val chargedThatWillBeLinked = offenderCharge(offenceCode = "HP09006", plea = "NG", resultCode1 = ADJOURNMENT.code)
                 courtEvent(eventDateTime = LocalDateTime.parse("2021-01-02T10:00"), outcomeReasonCode = "4506") {
                   courtOrder = courtOrder {
                     sentencePurpose(purposeCode = "PUNISH")
                   }
                   courtEventCharge(
-                    resultCode1 = "4506",
+                    resultCode1 = ADJOURNMENT.code,
                     offenderCharge = chargedThatWillBeLinked,
                   )
                   courtEventCharge(
-                    resultCode1 = "1002",
+                    resultCode1 = IMPRISONMENT.code,
                     offenderCharge = sentencedCharge,
                   )
                 }
@@ -3180,11 +3185,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateReason = "D",
               ) {
                 offenderCaseIdentifier(reference = "TARGET", type = "CASE/INFO#")
-                val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = "4506")
+                val charge = offenderCharge(offenceCode = "LG72004", plea = "NG", resultCode1 = ADJOURNMENT.code)
                 targetCaseEvent =
                   courtEvent(eventDateTime = LocalDateTime.parse("2025-01-01T10:00"), outcomeReasonCode = "2006") {
                     courtEventCharge(
-                      resultCode1 = "4506",
+                      resultCode1 = ADJOURNMENT.code,
                       offenderCharge = charge,
                     )
                   }
@@ -3205,11 +3210,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Case Withdrawn Or Not Tried")
+            assertThat(latestStatus).isTrue
+          }
+        }
       }
 
       @Test
@@ -4438,7 +4448,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("offence.offenceCode").isEqualTo("RT88600")
-          .jsonPath("resultCode1.code").isEqualTo("4020")
+          .jsonPath("resultCode1.code").isEqualTo(COMMIT_CROWN_COURT_FOR_SENTENCE_LA_ACCOMMODATION.code)
       }
 
       @Test
@@ -4449,11 +4459,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Convicted_Committed to Crown Court")
+            assertThat(latestStatus).isTrue
+          }
+        }
       }
     }
   }
@@ -4489,8 +4504,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G")
-              offenderCharge2 = offenderCharge(resultCode1 = "1067")
+              offenderCharge1 = offenderCharge(resultCode1 = BORSTAL_TRAINING.code, offenceCode = "RT88074", plea = "G")
+              offenderCharge2 = offenderCharge(resultCode1 = BOUND_OVER_TO_LEAVE_THE_ISLAND.code)
               courtEvent {
 // overrides from the parent offender charge fields
                 courtEventCharge(
@@ -4728,12 +4743,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
         assertThat(courtAppearanceResponse.clonedCourtCases).isNull()
 
-// imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Non Custodial Punishment")
+            assertThat(latestStatus).isTrue
+          }
+        }
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -4799,11 +4818,6 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
 
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -4909,12 +4923,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
         assertThat(courtAppearanceResponse.clonedCourtCases).isNotNull()
 
-        // imprisonment statu, s stored procedure is called - but on latest booking where the appearance was added
-        verify(spRepository, times(2)).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Unknown Sentenced")
+            assertThat(latestStatus).isTrue
+          }
+        }
         val sourceCourtCaseResponse: CourtCaseResponse =
           webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
             .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -5105,7 +5123,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 createCourtAppearanceRequest(
                   eventDateTime = LocalDateTime.of(2025, 1, 1, 10, 30),
                   courtEventCharges = mutableListOf(
-                    CourtEventChargeRequest(offenderCharge1.id, resultCode1 = "4560"),
+                    CourtEventChargeRequest(offenderCharge1.id, resultCode1 = IMPRISONMENT.code),
                     CourtEventChargeRequest(offenderCharge2.id),
                   ),
                   courtId = "LEI",
@@ -5116,11 +5134,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 
         assertThat(courtAppearanceResponse.id).isGreaterThan(0)
 
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Non Custodial Punishment")
+            assertThat(latestStatus).isTrue
+          }
+        }
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -5129,7 +5152,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderNo").isEqualTo(offenderNo)
           .jsonPath("caseSequence").isEqualTo(1)
           .jsonPath("courtEvents[1].eventDateTime").isEqualTo("2025-01-01T10:30:00")
-          .jsonPath("courtEvents[1].courtEventCharges[0].resultCode1.code").isEqualTo("4560")
+          .jsonPath("courtEvents[1].courtEventCharges[0].resultCode1.code").isEqualTo(IMPRISONMENT.code)
           .jsonPath("courtEvents[1].courtEventCharges[1].resultCode1").doesNotExist()
           .jsonPath("courtId").isEqualTo("LEI")
       }
@@ -5280,12 +5303,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenderCharges[0].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("offenderCharges[0].chargeStatus.description").isEqualTo("Active")
 
-// imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Detention Training Order")
+            assertThat(latestStatus).isTrue
+          }
+        }
       }
 
       @Test
@@ -5527,12 +5554,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
           .jsonPath("courtOrders[0].id").doesNotExist()
 
-        // imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Non Custodial Punishment")
+            assertThat(latestStatus).isTrue
+          }
+        }
       }
 
       @Test
@@ -5737,11 +5768,11 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               caseSequence = 10,
             ) {
               // charge is still adjourned at point data is read
-              offenderChargeAdjourned = offenderCharge(resultCode1 = "4001", offenceCode = "RT88074")
-              courtEventAdjourned = courtEvent(outcomeReasonCode = "4001") {
+              offenderChargeAdjourned = offenderCharge(resultCode1 = COMMITTED_CROWN_COURT_SENTENCING.code, offenceCode = "RT88074")
+              courtEventAdjourned = courtEvent(outcomeReasonCode = COMMITTED_CROWN_COURT_SENTENCING.code) {
                 courtEventCharge(
                   offenderCharge = offenderChargeAdjourned,
-                  resultCode1 = "4001",
+                  resultCode1 = COMMITTED_CROWN_COURT_SENTENCING.code,
                 )
                 // in this scenario court order just been created by charge update on another thread
                 courtOrder {
@@ -5758,7 +5789,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 statusUpdateReason = "LINKED",
                 caseInfoNumber = "LINKED-SOURCE",
               ) {
-                linkedOffenderCharge = offenderCharge(offenceCode = "RT88074", resultCode1 = "4001")
+                linkedOffenderCharge = offenderCharge(offenceCode = "RT88074", resultCode1 = COMMITTED_CROWN_COURT_SENTENCING.code)
                 courtEvent {
                   courtEventCharge(
                     offenderCharge = linkedOffenderCharge,
@@ -5930,12 +5961,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 // no new offender charges created
         assertThat(courtAppearanceResponse.createdCourtEventChargesIds.size).isEqualTo(0)
 
-// imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Unknown Sentenced")
+            assertThat(latestStatus).isTrue
+          }
+        }
       }
 
       @Test
@@ -6444,12 +6479,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents.size()").isEqualTo(1)
           .jsonPath("courtEvents[0].id").isEqualTo(courtEvent2.id)
 
-// imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Unknown Sentenced")
+            assertThat(latestStatus).isTrue
+          }
+        }
       }
 
       @Test
@@ -6613,12 +6652,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
 
-// imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Disposal Not Known")
+            assertThat(latestStatus).isTrue
+          }
+        }
       }
 
       @Test
@@ -7200,8 +7243,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               statusUpdateStaff = staff,
             ) {
               offenderCharge1 =
-                offenderCharge(resultCode1 = "1005", offenceCode = "RT88074", plea = "G") // "Final" "Inactive"
-              offenderCharge2 = offenderCharge(resultCode1 = "1067") // "Final" "Inactive"
+                offenderCharge(resultCode1 = IMPRISONMENT.code, offenceCode = "RT88074", plea = "G") // "Final" "Inactive"
+              offenderCharge2 = offenderCharge(resultCode1 = BOUND_OVER_TO_LEAVE_THE_ISLAND.code) // "Final" "Inactive"
               courtEvent1 = courtEvent {
 // overrides from the parent offender charge fields
                 courtEventCharge(
@@ -7247,12 +7290,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-// imprisonment status stored procedure is called
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_RESULT.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Unknown Sentenced")
+            assertThat(latestStatus).isTrue
+          }
+        }
+
         webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -7773,11 +7821,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .expectStatus().isCreated.expectBody(CreateSentenceResponse::class.java)
             .returnResult().responseBody!!.sentenceSeq
 
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("Adult Imprisonment Without Option CJA03")
+            assertThat(latestStatus).isTrue
+          }
+        }
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/$sentenceSeq")
@@ -8222,11 +8275,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isOk
 
-        verify(spRepository).imprisonmentStatusUpdate(
-          jdbcTemplate = any(),
-          bookingId = eq(latestBookingId),
-          changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-        )
+        nomisDataBuilder.runInTransaction {
+          val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+            .imprisonmentStatuses.sortedBy { it.id.sequence }
+          assertThat(imprisonmentStatuses).hasSize(1)
+
+          with(imprisonmentStatuses[0]) {
+            assertThat(status?.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+            assertThat(latestStatus).isTrue
+          }
+        }
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
@@ -9823,11 +9881,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
-            jdbcTemplate = any(),
-            bookingId = eq(booking.bookingId),
-            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-          )
+          nomisDataBuilder.runInTransaction {
+            val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+              .imprisonmentStatuses.sortedBy { it.id.sequence }
+            assertThat(imprisonmentStatuses).hasSize(1)
+
+            with(imprisonmentStatuses[0]) {
+              assertThat(status?.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(latestStatus).isTrue
+            }
+          }
         }
 
         @Test
@@ -10150,11 +10213,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
-            jdbcTemplate = any(),
-            bookingId = eq(booking.bookingId),
-            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-          )
+          nomisDataBuilder.runInTransaction {
+            val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+              .imprisonmentStatuses.sortedBy { it.id.sequence }
+            assertThat(imprisonmentStatuses).hasSize(1)
+
+            with(imprisonmentStatuses[0]) {
+              assertThat(status?.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(latestStatus).isTrue
+            }
+          }
         }
 
         @Test
@@ -10351,11 +10419,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
-            jdbcTemplate = any(),
-            bookingId = eq(booking.bookingId),
-            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-          )
+          nomisDataBuilder.runInTransaction {
+            val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+              .imprisonmentStatuses.sortedBy { it.id.sequence }
+            assertThat(imprisonmentStatuses).hasSize(2)
+
+            with(imprisonmentStatuses[1]) {
+              assertThat(status?.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(latestStatus).isTrue
+            }
+          }
         }
 
         @Test
@@ -10695,11 +10768,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
-            jdbcTemplate = any(),
-            bookingId = eq(booking.bookingId),
-            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-          )
+          nomisDataBuilder.runInTransaction {
+            val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+              .imprisonmentStatuses.sortedBy { it.id.sequence }
+            assertThat(imprisonmentStatuses).hasSize(2)
+
+            with(imprisonmentStatuses[1]) {
+              assertThat(status?.description).isEqualTo("ORA 28 Day Fixed Term Recall")
+              assertThat(latestStatus).isTrue
+            }
+          }
         }
 
         @Test
@@ -11426,11 +11504,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
-            jdbcTemplate = any(),
-            bookingId = eq(booking.bookingId),
-            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-          )
+          nomisDataBuilder.runInTransaction {
+            val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+              .imprisonmentStatuses.sortedBy { it.id.sequence }
+            assertThat(imprisonmentStatuses).hasSize(1)
+
+            with(imprisonmentStatuses[0]) {
+              assertThat(status?.description).isEqualTo("Recalled to Prison from Parole (Non HDC)")
+              assertThat(latestStatus).isTrue
+            }
+          }
         }
 
         @Test
@@ -11867,11 +11950,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
-            jdbcTemplate = any(),
-            bookingId = eq(booking.bookingId),
-            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-          )
+          nomisDataBuilder.runInTransaction {
+            val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+              .imprisonmentStatuses.sortedBy { it.id.sequence }
+            assertThat(imprisonmentStatuses).hasSize(1)
+
+            with(imprisonmentStatuses[0]) {
+              assertThat(status?.description).isEqualTo("Disposal Not Known")
+              assertThat(latestStatus).isTrue
+            }
+          }
         }
 
         @Test
@@ -12288,11 +12376,16 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .exchange()
             .expectStatus().isOk
 
-          verify(spRepository).imprisonmentStatusUpdate(
-            jdbcTemplate = any(),
-            bookingId = eq(booking.bookingId),
-            changeType = eq(ImprisonmentStatusChangeType.UPDATE_SENTENCE.name),
-          )
+          nomisDataBuilder.runInTransaction {
+            val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!
+              .imprisonmentStatuses.sortedBy { it.id.sequence }
+            assertThat(imprisonmentStatuses).hasSize(1)
+
+            with(imprisonmentStatuses[0]) {
+              assertThat(status?.description).isEqualTo("ORA 14 Day Fixed Term Recall")
+              assertThat(latestStatus).isTrue
+            }
+          }
         }
 
         @Test

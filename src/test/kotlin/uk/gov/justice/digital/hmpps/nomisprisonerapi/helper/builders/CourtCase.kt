@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.BORSTAL_TRAINING
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -64,7 +65,7 @@ interface CourtCaseDsl {
     cjitCode1: String? = "cj6",
     cjitCode2: String? = "cj7",
     cjitCode3: String? = "cj8",
-    resultCode1: String? = "1005",
+    resultCode1: String? = BORSTAL_TRAINING.code,
     resultCode2: String? = "1006",
     mostSeriousFlag: Boolean = true,
     propertyValue: BigDecimal? = null,
@@ -121,7 +122,6 @@ interface CourtCaseDsl {
     dsl: OffenderSentenceDsl.() -> Unit = { },
   ): OffenderSentence
 
-  @OffenderCaseStatusDslMarker
   fun offenderCaseStatus(
     statusUpdateStaff: Staff,
     dsl: OffenderCaseStatusDsl.() -> Unit = {},

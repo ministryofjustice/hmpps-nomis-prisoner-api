@@ -1472,12 +1472,6 @@ class CourtSentencingService(
     val courtCasesInRecall = sentencesInRecall.mapNotNull { it.courtCase }.toSet()
     request.sentencesRemoved.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
-    bookingIds.forEach { bookingId ->
-      imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
-        bookingId = bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
-      )
-    }
     val casesUpdated = request.beachCourtEventIds.mapNotNull {
       courtEventRepository.findByIdOrNullWaitForLock(it)?.let { courtEvent ->
         if (courtEvent.courtCase in courtCasesInRecall) {
@@ -1490,6 +1484,12 @@ class CourtSentencingService(
           null
         }
       }
+    }
+    bookingIds.forEach { bookingId ->
+      imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
+        bookingId = bookingId,
+        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+      )
     }
 
     val newCasesAddedToRecall = courtCasesInRecall - casesUpdated.toSet()
@@ -1527,17 +1527,16 @@ class CourtSentencingService(
 
     request.sentences.updateSentences()
     request.returnToCustody.createOrUpdateBooking(bookingIds)
+    request.beachCourtEventIds.forEach {
+      courtEventRepository.findByIdOrNullWaitForLock(it)?.run {
+        courtEventRepository.delete(this)
+      }
+    }
     bookingIds.forEach { bookingId ->
       imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
-    }
-
-    request.beachCourtEventIds.forEach {
-      courtEventRepository.findByIdOrNullWaitForLock(it)?.run {
-        courtEventRepository.delete(this)
-      }
     }
 
     telemetryClient.trackEvent(
@@ -1557,6 +1556,11 @@ class CourtSentencingService(
 
     val sentencesUpdated = request.sentences.updateSentences()
     sentencingAdjustmentService.convertAdjustmentsToPreRecallEquivalents(sentencesUpdated)
+    request.beachCourtEventIds.forEach {
+      courtEventRepository.findByIdOrNullWaitForLock(it)?.run {
+        courtEventRepository.delete(this)
+      }
+    }
     bookingIds.forEach { bookingId ->
       findOffenderBooking(bookingId).fixedTermRecall = null
       offenderFixedTermRecallRepository.deleteById(bookingId)
@@ -1564,11 +1568,6 @@ class CourtSentencingService(
         bookingId = bookingId,
         changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
       )
-    }
-    request.beachCourtEventIds.forEach {
-      courtEventRepository.findByIdOrNullWaitForLock(it)?.run {
-        courtEventRepository.delete(this)
-      }
     }
 
     telemetryClient.trackEvent(

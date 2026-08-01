@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 
 @Service
 @Transactional
-@Profile("imprisonment-status-direct")
+@Profile(value = ["imprisonment-status-direct", "test"])
 class ImprisonmentStatusService(
   private val offenderImprisonmentStatusRepository: OffenderImprisonmentStatusRepository,
   private val imprisonmentStatusRepository: ImprisonmentStatusRepository,
