@@ -18,6 +18,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.web.reactive.function.BodyInserters
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.Offences.GENOCIDE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.Offences.HOUSE_DRAWN_VEHICLE_NOT_STOP
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.ADJOURNMENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.BORSTAL_TRAINING
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderChargeDsl.ResultCode.BOUND_OVER_TO_LEAVE_THE_ISLAND
@@ -4491,6 +4493,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var previousBookingSourceCourtCaseOffenderCharge: OffenderCharge
     private lateinit var previousBookingSourceConsecutiveCourtCaseOffenderCharge: OffenderCharge
     private lateinit var previousBookingNotLinkedCourtCaseOffenderCharge: OffenderCharge
+    private var anotherPreviousCaseId: Long = 0
+    private var anotherPreviousCaseChargeId: Long = 0
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -4504,8 +4508,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               reportingStaff = staff,
               statusUpdateStaff = staff,
             ) {
-              offenderCharge1 = offenderCharge(resultCode1 = BORSTAL_TRAINING.code, offenceCode = "RT88074", plea = "G")
-              offenderCharge2 = offenderCharge(resultCode1 = BOUND_OVER_TO_LEAVE_THE_ISLAND.code)
+              offenderCharge1 = offenderCharge(resultCode1 = BORSTAL_TRAINING.code, offenceCode = HOUSE_DRAWN_VEHICLE_NOT_STOP.code, plea = "G", mostSeriousFlag = true)
+              offenderCharge2 = offenderCharge(resultCode1 = BOUND_OVER_TO_LEAVE_THE_ISLAND.code, mostSeriousFlag = false)
               courtEvent {
 // overrides from the parent offender charge fields
                 courtEventCharge(
@@ -4635,6 +4639,21 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
+          }.bookingId
+          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2022, 1, 5, 9, 0)) {
+            anotherPreviousCaseId = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+            ) {
+              val offenderCharge = offenderCharge(resultCode1 = ADJOURNMENT.code, offenceCode = GENOCIDE.code, mostSeriousFlag = true)
+              anotherPreviousCaseChargeId = offenderCharge.id
+              courtEvent {
+                courtEventCharge(
+                  offenderCharge = offenderCharge,
+                  plea = "NG",
+                )
+              }
+            }.id
           }.bookingId
         }
       }
@@ -4956,6 +4975,42 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(clonedCourtCaseResponse.courtEvents).hasSize(2)
         assertThat(clonedCourtCaseResponse.courtEvents[1].eventDateTime).isEqualTo(LocalDateTime.parse("2023-01-05T09:00:00"))
         assertThat(clonedCourtCaseResponse.courtEvents[1].courtEventCharges).hasSize(2)
+      }
+
+      @Test
+      fun `will recalculate main offence`() {
+        nomisDataBuilder.runInTransaction {
+          val offenderCharges = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.flatMap { it.offenderCharges }
+
+          assertThat(offenderCharges.filter { it.mostSeriousFlag }).hasSize(1)
+          assertThat(offenderCharges.filter { it.mostSeriousFlag }.all { it.offence.id.offenceCode == HOUSE_DRAWN_VEHICLE_NOT_STOP.code }).isTrue()
+        }
+
+        webTestClient.post()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/$anotherPreviousCaseId/court-appearances")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtEventCharges = mutableListOf(
+                  CourtEventChargeRequest(anotherPreviousCaseChargeId, ADJOURNMENT.code),
+                ),
+              ),
+            ),
+          )
+          .exchange().expectStatus().isCreated
+
+        nomisDataBuilder.runInTransaction {
+          val offenderCharges = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.flatMap { it.offenderCharges }
+          val courtEventCharges = offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }
+
+          assertThat(offenderCharges.filter { it.mostSeriousFlag }).hasSize(1)
+          assertThat(offenderCharges.first { it.mostSeriousFlag }.offence.id.offenceCode).isEqualTo(GENOCIDE.code)
+
+          assertThat(courtEventCharges.filter { it.mostSeriousFlag }).hasSize(2)
+          assertThat(courtEventCharges.filter { it.mostSeriousFlag }.all { it.id.offenderCharge.offence.id.offenceCode == GENOCIDE.code }).isTrue()
+        }
       }
 
       @Test
@@ -10579,8 +10634,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 booking = booking(agencyLocationId = "MDI") {
                   courtCase1 = courtCase(reportingStaff = staff, agencyId = "ABDRCT", caseSequence = 1) {
                     lateinit var courtOrder: CourtOrder
-                    offenderCharge1 = offenderCharge(offenceCode = "RT88074")
-                    offenderCharge2 = offenderCharge(offenceCode = "RT88074")
+                    offenderCharge1 = offenderCharge(offenceCode = HOUSE_DRAWN_VEHICLE_NOT_STOP.code, mostSeriousFlag = true)
+                    offenderCharge2 = offenderCharge(offenceCode = HOUSE_DRAWN_VEHICLE_NOT_STOP.code, mostSeriousFlag = false)
                     courtEvent(eventDateTime = LocalDateTime.parse("2023-01-01T10:00"), agencyId = "ABDRCT") {
                       courtEventCharge(offenderCharge = offenderCharge1)
                     }
@@ -10616,7 +10671,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   release(date = LocalDateTime.parse("2022-06-02T10:00"))
                   courtCase2 = courtCase(reportingStaff = staff, agencyId = "LEICYC", caseSequence = 2) {
                     lateinit var courtOrder: CourtOrder
-                    offenderCharge3 = offenderCharge(offenceCode = "RT88074")
+                    offenderCharge3 = offenderCharge(offenceCode = GENOCIDE.code, mostSeriousFlag = true)
                     courtEvent(eventDateTime = LocalDateTime.parse("2022-05-02T10:00"), agencyId = "LEICYC") {
                       courtEventCharge(offenderCharge = offenderCharge3)
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2022-05-02"))
@@ -10847,6 +10902,35 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               assertThat(active).isTrue
               assertThat(sentence.id).isEqualTo(sentence3OnLatestBookingId)
             }
+          }
+        }
+
+        @Test
+        fun `will recalculate main offence`() {
+          nomisDataBuilder.runInTransaction {
+            val offenderCharges = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!.courtCases.flatMap { it.offenderCharges }
+
+            assertThat(offenderCharges.filter { it.mostSeriousFlag }).hasSize(1)
+            assertThat(offenderCharges.filter { it.mostSeriousFlag }.all { it.offence.id.offenceCode == HOUSE_DRAWN_VEHICLE_NOT_STOP.code }).isTrue()
+          }
+
+          webTestClient.post()
+            .uri("/prisoners/${prisoner.nomsId}/sentences/recall")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .exchange()
+            .expectStatus().isOk
+
+          nomisDataBuilder.runInTransaction {
+            val offenderCharges = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!.courtCases.flatMap { it.offenderCharges }
+            val courtEventCharges = offenderBookingRepository.findByIdOrNull(booking.bookingId)!!.courtCases.flatMap { it.courtEvents }.flatMap { it.courtEventCharges }
+
+            assertThat(offenderCharges.filter { it.mostSeriousFlag }).hasSize(1)
+            assertThat(offenderCharges.first { it.mostSeriousFlag }.offence.id.offenceCode).isEqualTo(GENOCIDE.code)
+
+            assertThat(courtEventCharges.filter { it.mostSeriousFlag }).hasSize(2)
+            assertThat(courtEventCharges.filter { it.mostSeriousFlag }.all { it.id.offenderCharge.offence.id.offenceCode == GENOCIDE.code }).isTrue()
           }
         }
 
