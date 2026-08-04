@@ -40,12 +40,14 @@ class TransferScheduleRepositoryIntTest(
 
   @Test
   fun `should save and load a transfer schedule out`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
     nomisDataBuilder.build {
       offender = offender {
         booking = booking {
           scheduleOut = transferScheduleOut(
-            eventDate = LocalDate.now().plusDays(1),
-            startTime = LocalDate.now().plusDays(1).atTime(10, 0),
+            eventDate = tomorrow,
+            startTime = tomorrow.atTime(10, 0),
             eventSubType = "NOTR",
             eventStatus = "SCH",
             fromPrison = "BXI",
@@ -63,7 +65,7 @@ class TransferScheduleRepositoryIntTest(
       assertThat(eventClass).isEqualTo(EventClass.EXT_MOV)
       assertThat(eventType).isEqualTo(EventType.TRN)
       assertThat(direction).isEqualTo(MovementDirection.OUT)
-      assertThat(eventDate).isEqualTo(LocalDate.now().plusDays(1))
+      assertThat(eventDate).isEqualTo(tomorrow)
       assertThat(eventSubType.code).isEqualTo("NOTR")
       assertThat(eventStatus.code).isEqualTo("SCH")
       assertThat(fromAgency?.id).isEqualTo("BXI")
