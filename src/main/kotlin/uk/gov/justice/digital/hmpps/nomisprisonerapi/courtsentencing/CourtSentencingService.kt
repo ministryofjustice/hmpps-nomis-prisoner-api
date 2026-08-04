@@ -9,6 +9,9 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.AuditRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing.ImprisonmentStatusService.Companion.ChangeType.DELETE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing.ImprisonmentStatusService.Companion.ChangeType.UPDATE_RESULT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.courtsentencing.ImprisonmentStatusService.Companion.ChangeType.UPDATE_SENTENCE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.DependencyException
@@ -72,7 +75,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SentenceCalculationTypeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.CourtOrderInsertRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.repository.storedprocs.ImprisonmentStatusChangeType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.sentencingadjustments.SentencingAdjustmentService
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -110,7 +112,7 @@ class CourtSentencingService(
   private val sentencingAdjustmentService: SentencingAdjustmentService,
   private val linkCaseTxnRepository: LinkCaseTxnRepository,
   private val auditRepository: AuditRepository,
-  private val imprisonmentStatusService: ImprisonmentStatusServiceProxy,
+  private val imprisonmentStatusService: ImprisonmentStatusService,
   @Value("\${spring.datasource.username}") val datasourceUsername: String,
 ) {
   private companion object {
@@ -300,7 +302,7 @@ class CourtSentencingService(
     refreshCourtOrder(courtEvent = courtCase.courtEvents[0], offenderNo = offenderNo)
     imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
       bookingId = booking.bookingId,
-      changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+      reason = UPDATE_RESULT,
     )
 
     if (request.caseReferences != null) {
@@ -384,7 +386,7 @@ class CourtSentencingService(
         refreshCourtOrder(courtEvent = createdCourtEvent, offenderNo = offenderNo)
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = courtCase.offenderBooking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+          reason = UPDATE_RESULT,
         )
         return CreateCourtAppearanceResponse(
           id = createdCourtEvent.id,
@@ -517,7 +519,7 @@ class CourtSentencingService(
           // calculates main offence
           imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
             bookingId = courtCase.offenderBooking.bookingId,
-            changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+            reason = UPDATE_RESULT,
           )
           telemetryClient.trackEvent(
             "offender-charge-created",
@@ -657,7 +659,7 @@ class CourtSentencingService(
         refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = courtCase.offenderBooking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+          reason = UPDATE_RESULT,
         )
 
         updateCourtIfNecessary(courtCase)
@@ -722,7 +724,7 @@ class CourtSentencingService(
         telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = case.offenderBooking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+          reason = DELETE,
         )
         telemetryClient.trackEvent(
           "court-appearance-deleted",
@@ -775,7 +777,7 @@ class CourtSentencingService(
       courtCaseRepository.delete(it)
       imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
         bookingId = it.offenderBooking.bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+        reason = DELETE,
       )
       telemetryClient.trackEvent(
         "court-case-deleted",
@@ -828,7 +830,7 @@ class CourtSentencingService(
             }
             imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
               bookingId = courtCase.offenderBooking.bookingId,
-              changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+              reason = UPDATE_RESULT,
             )
             telemetryClient.trackEvent(
               "court-charge-updated",
@@ -888,7 +890,7 @@ class CourtSentencingService(
     }
     imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
       bookingId = latestBooking.bookingId,
-      changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+      reason = UPDATE_RESULT,
     )
   }
 
@@ -952,7 +954,7 @@ class CourtSentencingService(
       offenderSentenceRepository.saveAndFlush(sentence).also {
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = offenderBooking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+          reason = UPDATE_SENTENCE,
         )
       }
 
@@ -1029,6 +1031,10 @@ class CourtSentencingService(
         ),
       )?.also {
         offenderSentenceRepository.delete(it)
+        imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
+          bookingId = offenderBooking.bookingId,
+          reason = DELETE,
+        )
         telemetryClient.trackEvent(
           "sentence-deleted",
           mapOf(
@@ -1140,7 +1146,7 @@ class CourtSentencingService(
         offenderSentenceRepository.saveAndFlush(sentence).also {
           imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
             bookingId = case.offenderBooking.bookingId,
-            changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+            reason = UPDATE_SENTENCE,
           )
         }
 
@@ -1434,7 +1440,7 @@ class CourtSentencingService(
     bookingIds.forEach { bookingId ->
       imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
         bookingId = bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+        reason = UPDATE_SENTENCE,
       )
     }
     telemetryClient.trackEvent(
@@ -1488,7 +1494,7 @@ class CourtSentencingService(
     bookingIds.forEach { bookingId ->
       imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
         bookingId = bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+        reason = UPDATE_SENTENCE,
       )
     }
 
@@ -1535,7 +1541,7 @@ class CourtSentencingService(
     bookingIds.forEach { bookingId ->
       imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
         bookingId = bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+        reason = UPDATE_SENTENCE,
       )
     }
 
@@ -1566,7 +1572,7 @@ class CourtSentencingService(
       offenderFixedTermRecallRepository.deleteById(bookingId)
       imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
         bookingId = bookingId,
-        changeType = ImprisonmentStatusChangeType.UPDATE_SENTENCE.name,
+        reason = UPDATE_SENTENCE,
       )
     }
 
@@ -2167,7 +2173,7 @@ class CourtSentencingService(
       courtCaseRepository.saveAllAndFlush(clonedCases).also {
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = latestBooking.bookingId,
-          changeType = ImprisonmentStatusChangeType.UPDATE_RESULT.name,
+          reason = UPDATE_RESULT,
         )
       }
     }.zip(sourceCourtCases)

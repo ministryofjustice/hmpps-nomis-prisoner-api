@@ -8437,8 +8437,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         prisonerAtMoorland =
           offender(nomsId = "A1234AB") {
             offenderBooking = booking(agencyLocationId = "MDI") {
+              imprisonmentStatus(statusCode = "ADIMP_ORA20")
               courtCase = courtCase(reportingStaff = staff) {
-                offenderCharge = offenderCharge(offenceCode = "RT88074")
+                offenderCharge = offenderCharge(offenceCode = "RT88074", resultCode1 = IMPRISONMENT.code)
                 offenderCharge2 = offenderCharge(offenceDate = LocalDate.parse(aLaterDateString))
                 courtEvent = courtEvent {
                   courtOrder = courtOrder { }
@@ -8540,6 +8541,27 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         assertThat(offenderSentenceRepository.existsById(uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SentenceId(offenderBooking = offenderBooking, sequence = licenceSeq))).isTrue
         // status has been deleted
         assertThat(offenderSentenceStatusRepository.existsById(sentenceStatusId)).isFalse
+      }
+    }
+
+    @Test
+    fun `will recalculate imprisonment status`() {
+      webTestClient.delete()
+        .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isNoContent
+
+      nomisDataBuilder.runInTransaction {
+        val imprisonmentStatuses = offenderBookingRepository.findByIdOrNull(latestBookingId)!!
+          .imprisonmentStatuses.sortedBy { it.id.sequence }
+        assertThat(imprisonmentStatuses).hasSize(2)
+
+        with(imprisonmentStatuses[1]) {
+          assertThat(status?.description).isEqualTo("Unknown Sentenced")
+          assertThat(commentText).isEqualTo("DPS Auto created - Deleted Sentence/Offence/Events.")
+          assertThat(latestStatus).isTrue
+        }
       }
     }
 
