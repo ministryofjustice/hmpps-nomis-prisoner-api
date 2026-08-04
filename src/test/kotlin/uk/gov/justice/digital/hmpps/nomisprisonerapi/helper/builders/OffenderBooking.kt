@@ -963,6 +963,7 @@ class BookingBuilder(
       fromPrison = fromPrison,
       toPrison = toPrison,
     )
+      .also { offenderBooking.transferScheduleOuts += it }
       .also { builder.apply(dsl) }
   }
 
