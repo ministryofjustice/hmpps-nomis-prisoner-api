@@ -12,12 +12,11 @@ data class PropertyContainerUpdateRequest(
   val internalLocationId: Long? = null,
 
   @Schema(description = "The container's seal number", example = "1234")
-  val sealMark: String,
+  val sealMark: String? = null,
 
   @Schema(
     description = "The container's code",
     example = "BULK",
-    // allowableValues = ["BRA", "BULK", "CO", "DES", "VALU"],
     enumAsRef = true,
   )
   val containerCode: PropertyContainerCode,
