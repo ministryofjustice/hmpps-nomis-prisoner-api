@@ -9,7 +9,6 @@ generic-service:
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     API_BASE_URL_HMPPS_AUTH: https://sign-in-preprod.hmpps.service.justice.gov.uk/auth
-    SPRING_PROFILES_ACTIVE: "oracle,imprisonment-status-direct"
 
 generic-prometheus-alerts:
   businessHoursOnly: true
