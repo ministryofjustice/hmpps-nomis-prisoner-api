@@ -21,7 +21,7 @@ data class PropertyContainerCreateRequest(
   val active: Boolean,
 
   @Schema(description = "The container's seal number", example = "1234")
-  val sealMark: String,
+  val sealMark: String? = null,
 
   @Schema(
     description = "The container's code",
