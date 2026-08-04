@@ -49,6 +49,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PropertyContainerCode
@@ -240,6 +241,18 @@ interface BookingDsl {
     whenCreated: LocalDateTime? = null,
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
+
+  fun transferScheduleOut(
+    eventDate: LocalDate? = LocalDate.now().plusDays(1),
+    startTime: LocalDateTime? = eventDate?.atTime(10, 0),
+    eventSubType: String = "NOTR",
+    eventStatus: String = "SCH",
+    comment: String? = null,
+    escort: String? = null,
+    fromPrison: String = "BXI",
+    toPrison: String? = "LEI",
+    dsl: OffenderTransferScheduleOutDsl.() -> Unit = {},
+  ): OffenderTransferScheduleOut
 
   fun fixedTermRecall(
     returnToCustodyDate: LocalDate = LocalDate.now(),
@@ -550,6 +563,7 @@ class BookingBuilderFactory(
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
   private val courtEventBuilderFactory: CourtEventBuilderFactory,
+  private val offenderTransferScheduleOutBuilderFactory: OffenderTransferScheduleOutBuilderFactory,
   private val offenderImprisonmentStatusBuilderFactory: OffenderImprisonmentStatusBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
@@ -583,6 +597,7 @@ class BookingBuilderFactory(
     offenderRestrictionsBuilderFactory,
     offenderTapApplicationBuilderFactory,
     linkCaseTxnBuilderFactory,
+    offenderTransferScheduleOutBuilderFactory,
     offenderImprisonmentStatusBuilderFactory,
   )
 }
@@ -618,6 +633,7 @@ class BookingBuilder(
   private val offenderRestrictionsBuilderFactory: OffenderRestrictionsBuilderFactory,
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
+  private val offenderTransferScheduleOutBuilderFactory: OffenderTransferScheduleOutBuilderFactory,
   private val offenderImprisonmentStatusBuilderFactory: OffenderImprisonmentStatusBuilderFactory,
 ) : BookingDsl {
 
@@ -924,6 +940,31 @@ class BookingBuilder(
     courtEvent = targetCourtEvent,
     whenCreated = whenCreated,
   )
+
+  override fun transferScheduleOut(
+    eventDate: LocalDate?,
+    startTime: LocalDateTime?,
+    eventSubType: String,
+    eventStatus: String,
+    comment: String?,
+    escort: String?,
+    fromPrison: String,
+    toPrison: String?,
+    dsl: OffenderTransferScheduleOutDsl.() -> Unit,
+  ): OffenderTransferScheduleOut = offenderTransferScheduleOutBuilderFactory.builder().let { builder ->
+    builder.build(
+      offenderBooking = offenderBooking,
+      eventDate = eventDate,
+      startTime = startTime,
+      eventSubType = eventSubType,
+      eventStatus = eventStatus,
+      comment = comment,
+      escort = escort,
+      fromPrison = fromPrison,
+      toPrison = toPrison,
+    )
+      .also { builder.apply(dsl) }
+  }
 
   override fun fixedTermRecall(
     returnToCustodyDate: LocalDate,
