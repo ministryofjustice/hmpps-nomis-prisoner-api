@@ -36,7 +36,7 @@ class TransferScheduleResourceIntTest : IntegrationTestBase() {
       fun `should return forbidden for wrong role`() {
         webTestClient.get()
           .uri("/movements/$offenderNo/transfers/schedule/out/1")
-          .headers(setAuthorisation("ROLE_INVALID"))
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
           .exchange()
           .expectStatus().isForbidden
       }
