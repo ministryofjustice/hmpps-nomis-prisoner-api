@@ -141,7 +141,7 @@ class TransferScheduleRepositoryIntTest(
 
     repository.runInTransaction {
       /*
-       * Corrupt the data with an invalid cancellation reason code, as found in production
+       * Corrupt the data with an invalid transfer priority code, as found in production
        */
       entityManager.createNativeQuery(
         """
