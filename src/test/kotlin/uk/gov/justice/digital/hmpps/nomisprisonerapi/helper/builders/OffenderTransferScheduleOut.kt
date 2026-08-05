@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferCancellationReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -29,7 +30,7 @@ interface OffenderTransferScheduleOutDsl {
     transferPriority: String = "1",
     approvedFlag: Boolean = false,
     approvedStaff: Staff? = null,
-    outcomeReasonCode: String? = null,
+    cancellationReasonCode: String? = null,
     commentText1: String? = null,
     commentText2: String? = null,
     dsl: OffenderTransferScheduleWaitListDsl.() -> Unit = {},
@@ -43,12 +44,14 @@ class OffenderTransferScheduleOutBuilderRepository(
   private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
   private val escortRepository: ReferenceCodeRepository<Escort>,
   private val agencyLocationRepository: AgencyLocationRepository,
+  private val cancellationReasonRepository: ReferenceCodeRepository<TransferCancellationReason>,
 ) {
   fun save(transferScheduleOut: OffenderTransferScheduleOut): OffenderTransferScheduleOut = repository.saveAndFlush(transferScheduleOut)
   fun eventStatusOf(code: String): EventStatus = eventStatusRepository.findByIdOrNull(EventStatus.pk(code))!!
   fun movementReasonOf(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
   fun escortOf(code: String): Escort = escortRepository.findByIdOrNull(Escort.pk(code))!!
   fun agencyLocationOf(id: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(id) ?: throw RuntimeException("Agency location with id=$id not found")
+  fun cancellationReasonOf(code: String): TransferCancellationReason = cancellationReasonRepository.findByIdOrNull(TransferCancellationReason.pk(code))!!
 }
 
 @Component
@@ -76,6 +79,7 @@ class OffenderTransferScheduleOutBuilder(
     escort: String?,
     fromPrison: String,
     toPrison: String?,
+    cancellationReasonCode: String?,
   ): OffenderTransferScheduleOut = repository.save(
     OffenderTransferScheduleOut(
       offenderBooking = offenderBooking,
@@ -87,6 +91,7 @@ class OffenderTransferScheduleOutBuilder(
       escort = escort?.let { repository.escortOf(it) },
       fromPrison = repository.agencyLocationOf(fromPrison),
       toPrison = toPrison?.let { repository.agencyLocationOf(it) },
+      cancellationReasonCode = cancellationReasonCode?.let { repository.cancellationReasonOf(it) },
     ),
   )
     .also { transferScheduleOut = it }
@@ -98,7 +103,7 @@ class OffenderTransferScheduleOutBuilder(
     transferPriority: String,
     approvedFlag: Boolean,
     approvedStaff: Staff?,
-    outcomeReasonCode: String?,
+    cancellationReasonCode: String?,
     commentText1: String?,
     commentText2: String?,
     dsl: OffenderTransferScheduleWaitListDsl.() -> Unit,
@@ -111,7 +116,7 @@ class OffenderTransferScheduleOutBuilder(
       transferPriority = transferPriority,
       approvedFlag = approvedFlag,
       approvedStaff = approvedStaff,
-      outcomeReasonCode = outcomeReasonCode,
+      cancellationReasonCode = cancellationReasonCode,
       commentText1 = commentText1,
       commentText2 = commentText2,
     )

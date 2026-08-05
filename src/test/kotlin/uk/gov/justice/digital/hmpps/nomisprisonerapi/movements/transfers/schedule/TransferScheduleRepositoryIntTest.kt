@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule
 
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -25,6 +26,7 @@ import java.time.LocalDate
 class TransferScheduleRepositoryIntTest(
   @Autowired private val transferScheduleOutRepository: OffenderTransferScheduleOutRepository,
   @Autowired private val waitListRepository: OffenderIndividualScheduleWaitListRepository,
+  @Autowired private val entityManager: EntityManager,
 ) : IntegrationTestBase() {
 
   private lateinit var offender: Offender
@@ -54,6 +56,7 @@ class TransferScheduleRepositoryIntTest(
             toPrison = "LEI",
             comment = "Some comment",
             escort = "U",
+            cancellationReasonCode = "TRANS",
           )
         }
       }
@@ -72,6 +75,7 @@ class TransferScheduleRepositoryIntTest(
       assertThat(toAgency?.id).isEqualTo("LEI")
       assertThat(comment).isEqualTo("Some comment")
       assertThat(escort?.code).isEqualTo("U")
+      assertThat(cancellationReasonCode?.code).isEqualTo("TRANS")
       assertThat(waitList).isNull()
     }
   }
@@ -92,7 +96,7 @@ class TransferScheduleRepositoryIntTest(
               transferPriority = "1",
               approvedFlag = true,
               approvedStaff = staff,
-              outcomeReasonCode = "NOTR",
+              cancellationReasonCode = "ADMI",
               commentText1 = "comment 1",
               commentText2 = "comment 2",
             )
@@ -107,16 +111,49 @@ class TransferScheduleRepositoryIntTest(
       assertThat(requestDate).isEqualTo(LocalDate.now())
       assertThat(waitListStatus.code).isEqualTo("PEN")
       assertThat(statusDate).isEqualTo(LocalDate.now())
-      assertThat(transferPriority.code).isEqualTo("1")
+      assertThat(transferPriority?.code).isEqualTo("1")
       assertThat(approvedFlag).isTrue()
       assertThat(approvedStaff?.id).isEqualTo(staff.id)
-      assertThat(outcomeReasonCode?.code).isEqualTo("NOTR")
+      assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
       assertThat(commentText1).isEqualTo("comment 1")
       assertThat(commentText2).isEqualTo("comment 2")
     }
 
     with(transferScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
       assertThat(waitList?.id).isEqualTo(scheduleOut.eventId)
+    }
+  }
+
+  @Test
+  fun `should handle a rogue transfer priority code`() {
+    nomisDataBuilder.build {
+      staff = staff {
+        account()
+      }
+      offender = offender {
+        booking = booking {
+          scheduleOut = transferScheduleOut(fromPrison = "BXI", toPrison = "LEI") {
+            waitList = waitList()
+          }
+        }
+      }
+    }
+
+    repository.runInTransaction {
+      /*
+       * Corrupt the data with an invalid cancellation reason code, as found in production
+       */
+      entityManager.createNativeQuery(
+        """
+            update OFFENDER_IND_SCH_WAIT_LISTS w
+            set w.TRANSFER_PRIORITY = 'PEN'
+            where w.EVENT_ID = ${waitList.id}
+        """.trimIndent(),
+      ).executeUpdate()
+    }
+
+    with(waitListRepository.findByIdOrNull(waitList.id)!!) {
+      assertThat(transferPriority).isNull()
     }
   }
 
