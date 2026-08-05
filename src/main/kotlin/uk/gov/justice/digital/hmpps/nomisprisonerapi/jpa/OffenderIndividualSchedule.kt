@@ -31,6 +31,7 @@ enum class EventClass {
 enum class EventType {
   APP,
   TAP,
+  TRN,
 }
 
 @EntityOpen
@@ -42,6 +43,7 @@ enum class EventType {
         when EVENT_CLASS = 'INT_MOV' then 'OffenderAppointment'
         when EVENT_CLASS = 'EXT_MOV' and EVENT_TYPE = 'TAP' and DIRECTION_CODE = 'OUT' then 'OffenderTapScheduleOut'
         when EVENT_CLASS = 'EXT_MOV' and EVENT_TYPE = 'TAP' and DIRECTION_CODE = 'IN' then 'OffenderTapScheduleIn'
+        when EVENT_CLASS = 'EXT_MOV' and EVENT_TYPE = 'TRN' and DIRECTION_CODE = 'OUT' then 'OffenderTransferScheduleOut'
         else 'Unknown'
     end
 """,
