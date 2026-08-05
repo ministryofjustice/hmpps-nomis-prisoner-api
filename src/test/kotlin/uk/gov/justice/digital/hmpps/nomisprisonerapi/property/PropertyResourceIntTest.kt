@@ -320,6 +320,8 @@ class PropertyResourceIntTest : IntegrationTestBase() {
               assertThat(sealMark).isEqualTo("SEAL4567")
               assertThat(containerCode).isEqualTo(PropertyContainerCode.BRA)
               assertThat(proposedDisposalDate).isEqualTo("2027-11-02")
+              assertThat(active).isFalse()
+              assertThat(expiryDate).isEqualTo("2026-07-02")
             }
         }
       }
@@ -585,6 +587,8 @@ fun validUpdateJsonRequest(internalLocationId: Long): String =
      "internalLocationId": $internalLocationId,
      "proposedDisposalDate": "2027-11-02",
      "sealMark": "SEAL4567",
-     "containerCode": "BRA"
+     "containerCode": "BRA",
+     "active": false,
+     "expiryDate": "2026-07-02"
    }
   """.trimIndent()
