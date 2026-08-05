@@ -44,6 +44,8 @@ class PropertyService(
       sealMark = propertyContainerUpdateRequest.sealMark
       agencyInternalLocation = findLocation(propertyContainerUpdateRequest.internalLocationId)
       proposedDisposalDate = propertyContainerUpdateRequest.proposedDisposalDate
+      active = propertyContainerUpdateRequest.active
+      expiryDate = propertyContainerUpdateRequest.expiryDate
     }
   }
 

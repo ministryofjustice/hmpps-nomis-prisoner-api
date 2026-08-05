@@ -31,7 +31,7 @@ data class PropertyContainerCreateRequest(
   )
   val containerCode: PropertyContainerCode,
 
-  @Schema(description = "Date the container is no longer active")
+  @Schema(description = "Date the container is no longer active", example = "2027-01-01")
   val expiryDate: LocalDate? = null,
 
   @Schema(description = "Date the container will be disposed of")

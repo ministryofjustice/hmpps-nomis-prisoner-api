@@ -55,7 +55,7 @@ data class OffenderPropertyContainer(
   var containerCode: PropertyContainerCode,
 
   var proposedDisposalDate: LocalDate? = null,
-  val expiryDate: LocalDate? = null,
+  var expiryDate: LocalDate? = null,
 ) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

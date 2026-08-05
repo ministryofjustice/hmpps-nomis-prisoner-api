@@ -23,4 +23,10 @@ data class PropertyContainerUpdateRequest(
 
   @Schema(description = "Date the container will be disposed of")
   val proposedDisposalDate: LocalDate? = null,
+
+  @Schema(description = "Whether the container is active")
+  val active: Boolean,
+
+  @Schema(description = "Date the container is no longer active", example = "2027-01-01")
+  val expiryDate: LocalDate? = null,
 )
