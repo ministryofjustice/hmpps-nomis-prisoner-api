@@ -251,6 +251,7 @@ interface BookingDsl {
     escort: String? = null,
     fromPrison: String = "BXI",
     toPrison: String? = "LEI",
+    cancellationReasonCode: String? = null,
     dsl: OffenderTransferScheduleOutDsl.() -> Unit = {},
   ): OffenderTransferScheduleOut
 
@@ -950,6 +951,7 @@ class BookingBuilder(
     escort: String?,
     fromPrison: String,
     toPrison: String?,
+    cancellationReasonCode: String?,
     dsl: OffenderTransferScheduleOutDsl.() -> Unit,
   ): OffenderTransferScheduleOut = offenderTransferScheduleOutBuilderFactory.builder().let { builder ->
     builder.build(
@@ -962,6 +964,7 @@ class BookingBuilder(
       escort = escort,
       fromPrison = fromPrison,
       toPrison = toPrison,
+      cancellationReasonCode = cancellationReasonCode,
     )
       .also { offenderBooking.transferScheduleOuts += it }
       .also { builder.apply(dsl) }

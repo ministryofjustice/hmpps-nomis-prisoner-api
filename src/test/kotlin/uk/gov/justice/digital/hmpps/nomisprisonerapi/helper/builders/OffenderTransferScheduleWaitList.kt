@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferCancellationReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferPriority
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferScheduleStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIndividualScheduleWaitListRepository
@@ -23,12 +23,12 @@ class OffenderTransferScheduleWaitListBuilderRepository(
   private val repository: OffenderIndividualScheduleWaitListRepository,
   private val waitListStatusRepository: ReferenceCodeRepository<TransferScheduleStatus>,
   private val transferPriorityRepository: ReferenceCodeRepository<TransferPriority>,
-  private val movementReasonRepository: ReferenceCodeRepository<MovementReason>,
+  private val cancellationReasonRepository: ReferenceCodeRepository<TransferCancellationReason>,
 ) {
   fun save(waitList: OffenderTransferScheduleWaitList): OffenderTransferScheduleWaitList = repository.saveAndFlush(waitList)
   fun waitListStatusOf(code: String): TransferScheduleStatus = waitListStatusRepository.findByIdOrNull(TransferScheduleStatus.pk(code))!!
   fun transferPriorityOf(code: String): TransferPriority = transferPriorityRepository.findByIdOrNull(TransferPriority.pk(code))!!
-  fun outcomeReasonOf(code: String): MovementReason = movementReasonRepository.findByIdOrNull(MovementReason.pk(code))!!
+  fun cancellationReasonOf(code: String): TransferCancellationReason = cancellationReasonRepository.findByIdOrNull(TransferCancellationReason.pk(code))!!
 }
 
 @Component
@@ -50,7 +50,7 @@ class OffenderTransferScheduleWaitListBuilder(
     transferPriority: String,
     approvedFlag: Boolean,
     approvedStaff: Staff?,
-    outcomeReasonCode: String?,
+    cancellationReasonCode: String?,
     commentText1: String?,
     commentText2: String?,
   ): OffenderTransferScheduleWaitList = OffenderTransferScheduleWaitList(
@@ -62,7 +62,7 @@ class OffenderTransferScheduleWaitListBuilder(
     transferPriority = repository.transferPriorityOf(transferPriority),
     approvedFlag = approvedFlag,
     approvedStaff = approvedStaff,
-    outcomeReasonCode = outcomeReasonCode?.let { repository.outcomeReasonOf(it) },
+    cancellationReasonCode = cancellationReasonCode?.let { repository.cancellationReasonOf(it) },
     commentText1 = commentText1,
     commentText2 = commentText2,
   )

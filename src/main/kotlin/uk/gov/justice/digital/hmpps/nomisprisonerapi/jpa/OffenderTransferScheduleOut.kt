@@ -4,7 +4,11 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
+import org.hibernate.annotations.JoinColumnOrFormula
+import org.hibernate.annotations.JoinColumnsOrFormulas
+import org.hibernate.annotations.JoinFormula
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
 import java.time.LocalDate
@@ -22,6 +26,19 @@ class OffenderTransferScheduleOut(
   escort: Escort? = null,
   fromPrison: AgencyLocation,
   toPrison: AgencyLocation? = null,
+
+  @ManyToOne
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(
+        formula = JoinFormula(
+          value = "'${TransferCancellationReason.TRANSFER_CANCELLATION_REASON}'",
+          referencedColumnName = "domain",
+        ),
+      ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code")),
+    ],
+  )
+  var cancellationReasonCode: TransferCancellationReason? = null,
 
   @OneToOne(mappedBy = "schedule", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)

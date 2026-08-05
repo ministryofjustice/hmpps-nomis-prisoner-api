@@ -63,7 +63,8 @@ class OffenderTransferScheduleWaitList(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSFER_PRIORITY", referencedColumnName = "code")),
     ],
   )
-  var transferPriority: TransferPriority,
+  @NotFound(action = NotFoundAction.IGNORE)
+  var transferPriority: TransferPriority? = null,
 
   @Column(name = "APPROVED_FLAG")
   @Convert(converter = YesNoConverter::class)
@@ -79,13 +80,13 @@ class OffenderTransferScheduleWaitList(
     value = [
       JoinColumnOrFormula(
         formula = JoinFormula(
-          value = "'${MovementReason.MOVE_RSN}'",
+          value = "'${TransferCancellationReason.TRANSFER_CANCELLATION_REASON}'",
           referencedColumnName = "domain",
         ),
       ), JoinColumnOrFormula(column = JoinColumn(name = "OUTCOME_REASON_CODE", referencedColumnName = "code")),
     ],
   )
-  var outcomeReasonCode: MovementReason? = null,
+  var cancellationReasonCode: TransferCancellationReason? = null,
 
   @Column(name = "COMMENT_TEXT_1")
   var commentText1: String? = null,
