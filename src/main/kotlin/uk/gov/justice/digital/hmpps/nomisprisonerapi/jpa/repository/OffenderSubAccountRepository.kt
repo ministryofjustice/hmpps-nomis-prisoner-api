@@ -47,7 +47,6 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
           MAX(txn_entry_date) AS txn_entry_date,
           MAX(txn_entry_time) AS txn_entry_time
       FROM gl_transactions
-      WHERE offender_id = :offenderId
       GROUP BY txn_id
   )
   SELECT
