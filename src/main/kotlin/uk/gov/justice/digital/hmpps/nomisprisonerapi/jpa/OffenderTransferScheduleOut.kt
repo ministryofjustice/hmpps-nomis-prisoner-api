@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
@@ -44,6 +45,9 @@ class OffenderTransferScheduleOut(
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
   @NotFound(action = NotFoundAction.IGNORE)
   var waitList: OffenderTransferScheduleWaitList? = null,
+
+  @Column(name = "HIDDEN_COMMENT_TEXT")
+  var hiddenComment: String? = null,
 ) : OffenderScheduledExternalMovement(
   eventId = eventId,
   offenderBooking = offenderBooking,

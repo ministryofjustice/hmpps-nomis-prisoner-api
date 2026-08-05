@@ -93,7 +93,7 @@ class OffenderTransferScheduleWaitList(
 
   @Column(name = "COMMENT_TEXT_2")
   var commentText2: String? = null,
-) : NomisAuditableEntityBasic() {
+) : NomisAuditableEntityWithStaff() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
