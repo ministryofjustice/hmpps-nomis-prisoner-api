@@ -50,9 +50,9 @@ data class TransferScheduleOut(
   val userActiveCaseloadId: String?,
 )
 
-@Schema(description = "Transfer schedule out response")
+@Schema(description = "Transfer schedule waitlist")
 data class TransferScheduleWaitlist(
-  @Schema(description = "Requested time")
+  @Schema(description = "Requested date")
   val requestDate: LocalDate,
 
   @Schema(description = "Waitlist status")
