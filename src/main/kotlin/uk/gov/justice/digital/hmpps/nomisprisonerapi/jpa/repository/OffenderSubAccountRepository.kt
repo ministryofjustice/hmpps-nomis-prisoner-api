@@ -38,7 +38,6 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
           sub_account_type,
           MAX(create_datetime) AS create_datetime
       FROM offender_transactions
-      WHERE offender_id = :offenderId
       GROUP BY txn_id, sub_account_type
   ),
   gl AS (
