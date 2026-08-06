@@ -2869,6 +2869,7 @@ data class CourtAppearanceRequest(
   val nextCourtId: String?,
   val comment: String?,
   val futureAppearance: Boolean? = false,
+  val forceClone: Boolean? = false,
 
   /* not currently provided by sentencing service:
   val orderRequestedFlag: Boolean?,

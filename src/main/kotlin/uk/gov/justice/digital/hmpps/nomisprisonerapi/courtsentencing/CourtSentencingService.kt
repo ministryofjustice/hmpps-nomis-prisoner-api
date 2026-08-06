@@ -420,7 +420,8 @@ class CourtSentencingService(
   } else {
     // assume we are adding this future dated appearance at same time as we are adding
     // the main warrant - so allow this to fail until cloning has finished
-    if (courtAppearanceRequest.futureAppearance == true) {
+    // unless we force a clone because this is not part of a new parent appearance
+    if (courtAppearanceRequest.futureAppearance == true && courtAppearanceRequest.forceClone == false) {
       throw DependencyException("Cannot add future dated appearance until case has been cloned to latest booking", entityId = courtCase.id)
     }
     cloneCourtCasesToLatestBookingFrom(courtCase).let {
