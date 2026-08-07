@@ -411,7 +411,7 @@ class CourtSentencingService(
     }
   }
 
-  private fun cloneCasesIfRequired(courtCase: CourtCase, courtAppearanceRequest: CourtAppearanceRequest): ClonedCaseCreateAppearance = if (courtCase.offenderBooking.bookingSequence == 1) {
+  private fun cloneCasesIfRequired(courtCase: CourtCase, courtAppearanceRequest: CourtAppearanceRequest): ClonedCaseCreateAppearance = if (courtCase.offenderBooking.bookingSequence == 1 || courtAppearanceRequest.forcePreventClone == true) {
     ClonedCaseCreateAppearance(
       courtCase = courtCase,
       courtAppearanceRequest = courtAppearanceRequest,
