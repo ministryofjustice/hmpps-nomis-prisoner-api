@@ -31,7 +31,7 @@ data class TransferMovementOut(
   val fromPrison: String,
 
   @Schema(description = "To prison")
-  val toPrison: String?,
+  val toPrison: String,
 
   @Schema(description = "Active flag")
   val active: Boolean,
