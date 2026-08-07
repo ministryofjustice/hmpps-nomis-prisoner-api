@@ -41,16 +41,9 @@ class TransferMovementService(
   }
 
   private fun OffenderTransferMovementOut.toResponse(): TransferMovementOut {
-    val transferScheduleOut = transferScheduleOutId?.let { transferScheduleOutRepository.findByIdOrNull(it) }
-      ?.also {
-        if (it.offenderBooking.bookingId != id.offenderBooking.bookingId) {
-          throw IllegalStateException(
-            "Transfer movement out with bookingId=${id.offenderBooking.bookingId} and sequence=${id.sequence} " +
-              "references transfer schedule out with eventId=$transferScheduleOutId which belongs to a different " +
-              "booking with bookingId=${it.offenderBooking.bookingId}",
-          )
-        }
-      }
+    val transferScheduleOut = transferScheduleOutId
+      ?.let { transferScheduleOutRepository.findByIdOrNull(it) }
+      ?.takeIf { it.offenderBooking.bookingId == id.offenderBooking.bookingId }
     return TransferMovementOut(
       bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,

@@ -170,7 +170,7 @@ class TransferMovementResourceIntTest(
       }
 
       @Test
-      fun `should return a server error when the transfer schedule belongs to a different booking`() {
+      fun `should treat a transfer schedule on a different booking as orphaned`() {
         lateinit var otherBookingScheduleOut: OffenderTransferScheduleOut
         nomisDataBuilder.build {
           offender(nomsId = "A1234BC") {
@@ -192,8 +192,12 @@ class TransferMovementResourceIntTest(
           }
         }
 
-        webTestClient.getTransferMovementOut()
-          .expectStatus().is5xxServerError
+        webTestClient.getTransferMovementOutOk().apply {
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(eventId).isEqualTo(otherBookingScheduleOut.eventId)
+          assertThat(transferScheduleOutId).isNull()
+        }
       }
     }
 
