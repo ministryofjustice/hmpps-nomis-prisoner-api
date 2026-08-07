@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
@@ -243,6 +244,34 @@ class OffenderExternalMovementBuilder(
     active = true,
     commentText = comment,
     courtScheduleOutId = courtScheduleOut?.id,
+  ).also {
+    offenderBooking.inOutStatus = "OUT"
+    offenderBooking.location = repository.lookupAgency("OUT")
+  }
+
+  fun buildTransferMovementOut(
+    date: LocalDateTime,
+    offenderBooking: OffenderBooking,
+    fromPrison: String,
+    toPrison: String?,
+    movementReason: String,
+    escort: String?,
+    comment: String?,
+    transferScheduleOutId: Long? = null,
+  ): OffenderTransferMovementOut = OffenderTransferMovementOut(
+    id = OffenderExternalMovementId(
+      offenderBooking,
+      offenderBooking.externalMovements.size + 1,
+    ),
+    movementDate = date.toLocalDate(),
+    movementTime = date,
+    movementReason = repository.lookupMovementTypeAndReason("TRN", movementReason),
+    escort = escort?.let { repository.lookupEscort(escort) },
+    fromPrison = repository.lookupAgency(fromPrison),
+    toPrison = toPrison?.let { repository.lookupAgency(toPrison) },
+    active = true,
+    commentText = comment,
+    transferScheduleOutId = transferScheduleOutId,
   ).also {
     offenderBooking.inOutStatus = "OUT"
     offenderBooking.location = repository.lookupAgency("OUT")

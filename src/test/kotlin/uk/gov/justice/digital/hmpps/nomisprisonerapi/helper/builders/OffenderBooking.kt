@@ -49,6 +49,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderVisitBalance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
@@ -377,6 +378,16 @@ interface BookingDsl {
     movementReason: String = "CRT",
     comment: String? = null,
   ): OffenderCourtMovementIn
+
+  fun transferMovementOut(
+    date: LocalDateTime = LocalDateTime.now(),
+    fromPrison: String = "BXI",
+    toPrison: String? = "MDI",
+    movementReason: String = "28",
+    escort: String? = null,
+    comment: String? = null,
+    transferScheduleOutId: Long? = null,
+  ): OffenderTransferMovementOut
 
   fun visitBalance(
     remainingVisitOrders: Int? = 7,
@@ -1256,6 +1267,27 @@ class BookingBuilder(
       fromCourt = fromCourt,
       movementReason = movementReason,
       comment = comment,
+    )
+    .also { offenderBooking.externalMovements += it }
+
+  override fun transferMovementOut(
+    date: LocalDateTime,
+    fromPrison: String,
+    toPrison: String?,
+    movementReason: String,
+    escort: String?,
+    comment: String?,
+    transferScheduleOutId: Long?,
+  ): OffenderTransferMovementOut = offenderExternalMovementBuilderFactory.builder()
+    .buildTransferMovementOut(
+      offenderBooking = offenderBooking,
+      date = date,
+      fromPrison = fromPrison,
+      toPrison = toPrison,
+      movementReason = movementReason,
+      escort = escort,
+      comment = comment,
+      transferScheduleOutId = transferScheduleOutId,
     )
     .also { offenderBooking.externalMovements += it }
 
