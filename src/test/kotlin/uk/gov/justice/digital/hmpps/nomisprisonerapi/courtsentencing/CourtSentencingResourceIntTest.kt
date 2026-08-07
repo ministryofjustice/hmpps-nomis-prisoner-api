@@ -5033,6 +5033,32 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will not reject adding future court appearance until case is cloned if forces to clone true`() {
+        webTestClient.post()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/court-appearances")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtEventCharges = mutableListOf(
+                  CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code),
+                  CourtEventChargeRequest(previousBookingOffenderCharge2.id, previousBookingOffenderCharge2.resultCode1?.code),
+                ),
+              ).copy(futureAppearance = true, forceClone = true),
+            ),
+          )
+          .exchange().expectStatus().isCreated
+
+        transaction {
+          assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(4)
+          assertThat(
+            offenderBookingRepository.findByIdOrNull(latestBookingId)!!.findByCaseInfoNumber("NOT_INVOLVED"),
+          ).isNull()
+        }
+      }
+
+      @Test
       fun `will move all related cases to the latest booking for a target combined case`() {
         transaction {
           assertThat(offenderBookingRepository.findByIdOrNull(latestBookingId)!!.courtCases).hasSize(1)
