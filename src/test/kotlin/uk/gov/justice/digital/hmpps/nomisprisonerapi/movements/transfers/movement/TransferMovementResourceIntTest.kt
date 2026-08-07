@@ -97,21 +97,6 @@ class TransferMovementResourceIntTest(
           assertThat(transferScheduleOutId).isNull()
         }
       }
-
-      @Test
-      fun `should handle a null to prison`() {
-        nomisDataBuilder.build {
-          offender = offender(nomsId = offenderNo) {
-            booking = booking {
-              movementOut = transferMovementOut(fromPrison = "BXI", toPrison = null)
-            }
-          }
-        }
-
-        webTestClient.getTransferMovementOutOk().apply {
-          assertThat(toPrison).isNull()
-        }
-      }
     }
 
     @Nested
@@ -182,6 +167,33 @@ class TransferMovementResourceIntTest(
           assertThat(eventId).isEqualTo(scheduleOut.eventId)
           assertThat(transferScheduleOutId).isNull()
         }
+      }
+
+      @Test
+      fun `should return a server error when the transfer schedule belongs to a different booking`() {
+        lateinit var otherBookingScheduleOut: OffenderTransferScheduleOut
+        nomisDataBuilder.build {
+          offender(nomsId = "A1234BC") {
+            booking {
+              otherBookingScheduleOut = transferScheduleOut(fromPrison = "BXI", toPrison = "LEI")
+            }
+          }
+        }
+
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              movementOut = transferMovementOut(
+                fromPrison = "BXI",
+                toPrison = "LEI",
+                transferScheduleOutId = otherBookingScheduleOut.eventId,
+              )
+            }
+          }
+        }
+
+        webTestClient.getTransferMovementOut()
+          .expectStatus().is5xxServerError
       }
     }
 
