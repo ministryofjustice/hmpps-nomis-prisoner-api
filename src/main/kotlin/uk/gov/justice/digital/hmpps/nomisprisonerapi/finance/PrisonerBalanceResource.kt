@@ -65,7 +65,7 @@ class PrisonerBalanceResource(
     pageRequest: Pageable,
     @Schema(description = "Prison id") @RequestParam(name = "prisonId") prisonIds: List<String>?,
   ): PagedModel<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalance(
-    prisonIds?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() },
+    prisonIds.normalisePrisonIds(),
     pageRequest,
   )
 
@@ -107,7 +107,11 @@ class PrisonerBalanceResource(
     @Schema(description = "Prison ids to filter by", required = false)
     @RequestParam(name = "prisonId")
     prisonIds: List<String>?,
-  ): RootOffenderIdsWithLast = prisonerBalanceService.findAllPrisonersWithAccountBalanceFromId(rootOffenderId, pageSize, prisonIds)
+  ): RootOffenderIdsWithLast = prisonerBalanceService.findAllPrisonersWithAccountBalanceFromId(
+    rootOffenderId,
+    pageSize,
+    prisonIds.normalisePrisonIds(),
+  )
 
   data class RootOffenderIdsWithLast(
     val rootOffenderIds: List<Long>,
@@ -377,3 +381,5 @@ data class AggregatedAccountDto(
   @Schema(description = "The account balance", example = "12.50")
   val balance: BigDecimal,
 )
+
+private fun List<String>?.normalisePrisonIds() = this?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() }
