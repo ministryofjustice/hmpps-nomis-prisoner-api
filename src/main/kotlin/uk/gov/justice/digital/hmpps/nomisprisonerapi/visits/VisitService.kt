@@ -136,12 +136,13 @@ class VisitService(
     )
 
   private fun getExistingVisit(visit: Visit): Visit? = visitRepository
-    .findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
+    .findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndVisitTypeAndAgencyInternalLocation(
       offenderBooking = visit.offenderBooking,
       startDateTime = visit.startDateTime,
       endDateTime = visit.endDateTime,
       commentText = visit.commentText,
       visitStatus = visit.visitStatus,
+      visitType = visit.visitType,
       room = visit.agencyInternalLocation,
     )
 

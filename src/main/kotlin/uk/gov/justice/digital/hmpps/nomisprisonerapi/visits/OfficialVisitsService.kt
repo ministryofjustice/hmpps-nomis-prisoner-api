@@ -328,12 +328,13 @@ class OfficialVisitsService(
   private fun lookupAttendance(code: String?) = code?.let { eventOutcomeRepository.findByIdOrNull(EventOutcome.pk(code)) ?: throw BadDataException("Event Outcome code $code does not exist") }
   private fun nextEventId(): Long = visitVisitorRepository.getEventId()
   private fun findMatchingDuplicateVisit(offenderBooking: OffenderBooking, visitStatus: VisitStatus, agencyInternalLocation: AgencyInternalLocation, request: CreateOfficialVisitRequest): Visit? = visitRepository
-    .findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
+    .findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndVisitTypeAndAgencyInternalLocation(
       offenderBooking = offenderBooking,
       startDateTime = request.startDateTime,
       endDateTime = request.endDateTime,
       commentText = request.commentText,
       visitStatus = visitStatus,
+      visitType = lookupOfficialVisitType(),
       room = agencyInternalLocation,
     )
 }

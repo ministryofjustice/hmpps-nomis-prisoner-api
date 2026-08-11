@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Visit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -37,12 +38,13 @@ interface VisitRepository :
     room: AgencyInternalLocation?,
   ): Boolean
 
-  fun findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndAgencyInternalLocation(
+  fun findByOffenderBookingAndStartDateTimeAndEndDateTimeAndCommentTextAndVisitStatusAndVisitTypeAndAgencyInternalLocation(
     offenderBooking: OffenderBooking,
     startDateTime: LocalDateTime,
     endDateTime: LocalDateTime,
     commentText: String?,
     visitStatus: VisitStatus,
+    visitType: VisitType,
     room: AgencyInternalLocation?,
   ): Visit?
 

@@ -11,6 +11,7 @@ class VisitType(code: String, description: String) : ReferenceCode(VISIT_TYPE, c
   companion object {
     const val VISIT_TYPE = "VISIT_TYPE"
     const val OFFICIAL = "OFFI"
+    const val SOCIAL = "SCON"
     fun pk(code: String): Pk = Pk(VISIT_TYPE, code)
   }
 }

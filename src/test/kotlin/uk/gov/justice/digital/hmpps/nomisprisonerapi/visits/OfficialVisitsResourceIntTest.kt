@@ -17,12 +17,14 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Person
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.VisitType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitDayRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyVisitTimeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PersonRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.VisitVisitorRepository
@@ -51,6 +53,9 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
 
   @Autowired
   private lateinit var agencyVisitTimeRepository: AgencyVisitTimeRepository
+
+  @Autowired
+  private lateinit var visitTypeRepository: ReferenceCodeRepository<VisitType>
 
   @DisplayName("GET /official-visits/ids")
   @Nested
@@ -767,6 +772,45 @@ class OfficialVisitsResourceIntTest(@Autowired private val visitVisitorRepositor
           )
           .exchange()
           .expectStatus().isCreated
+      }
+
+      @Test
+      fun `can create the same visit twice if different social or official types`() {
+        val createdVisitId: Long = webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectBodyResponse<OfficialVisitResponse>().visitId
+
+        nomisDataBuilder.runInTransaction {
+          visitRepository.findByIdOrNull(createdVisitId)!!.apply {
+            this.visitType = visitTypeRepository.findByIdOrNull(VisitType.pk(VisitType.SOCIAL))!!
+          }
+        }
+
+        webTestClient.post().uri("/prisoner/{offenderNo}/official-visits", offenderNo)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateOfficialVisitRequest(
+              visitSlotId = visitSlotId,
+              prisonId = prisonId,
+              startDateTime = LocalDateTime.parse("2024-01-01T10:00:00"),
+              endDateTime = LocalDateTime.parse("2024-01-01T11:00:00"),
+              internalLocationId = visitHall.locationId,
+              visitStatusCode = "SCH",
+            ),
+          )
+          .exchange()
+          .expectStatus().isEqualTo(201)
       }
     }
 
