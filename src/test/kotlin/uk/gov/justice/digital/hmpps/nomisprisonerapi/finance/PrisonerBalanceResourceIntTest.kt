@@ -214,6 +214,17 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
       }
     }
 
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 when page size is less than 1`() {
+        webTestClient.get().uri("/finance/prisoners/id-ranges?pageSize=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
     @Test
     fun `will return id ranges`() {
       webTestClient.get().uri("/finance/prisoners/id-ranges?pageSize=2")
@@ -225,6 +236,20 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].fromRootOffenderId").isEqualTo(0)
         .jsonPath("$[0].toRootOffenderId").isEqualTo(id2)
         .jsonPath("$[1].fromRootOffenderId").isEqualTo(id2)
+        .jsonPath("$[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+    }
+
+    @Test
+    fun `will return id ranges filtered by prison`() {
+      webTestClient.get().uri("/finance/prisoners/id-ranges?pageSize=1&prisonId=WWI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(2)
+        .jsonPath("$[0].fromRootOffenderId").isEqualTo(0)
+        .jsonPath("$[0].toRootOffenderId").isEqualTo(id1)
+        .jsonPath("$[1].fromRootOffenderId").isEqualTo(id1)
         .jsonPath("$[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
     }
 

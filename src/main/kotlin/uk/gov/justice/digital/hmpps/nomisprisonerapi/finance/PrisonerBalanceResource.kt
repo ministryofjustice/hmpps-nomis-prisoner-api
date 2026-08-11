@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.constraints.Min
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -34,7 +35,7 @@ class PrisonerBalanceResource(
 ) {
   @GetMapping("/ids")
   @Operation(
-    summary = "Gets the rootOffenderIds for all prisoners with a non-negative trust account balance",
+    summary = "Gets the rootOffenderIds for all prisoners with a non-zero trust account balance",
     description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
@@ -72,7 +73,7 @@ class PrisonerBalanceResource(
 
   @GetMapping("/id-ranges")
   @Operation(
-    summary = "Gets the rootOffenderId ranges for all prisoners with a non-negative trust account balance",
+    summary = "Gets the rootOffenderId ranges for all prisoners with a non-zero trust account balance",
     description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(responseCode = "200", description = "list of root offender id ranges"),
@@ -101,6 +102,7 @@ class PrisonerBalanceResource(
   fun getPrisonerBalanceIdentifierRanges(
     @Schema(description = "Number of offender ids per range", required = false, defaultValue = "2000")
     @RequestParam(value = "pageSize", defaultValue = "2000")
+    @Min(1)
     pageSize: Int,
     @Schema(description = "Prison ids to filter by", required = false)
     @RequestParam(name = "prisonId")
@@ -157,7 +159,7 @@ class PrisonerBalanceResource(
 
   @GetMapping("/ids/all-from-id")
   @Operation(
-    summary = "Gets the rootOffenderIds for all prisoners with a non-negative trust account balance",
+    summary = "Gets the rootOffenderIds for all prisoners with a non-zero trust account balance",
     description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),

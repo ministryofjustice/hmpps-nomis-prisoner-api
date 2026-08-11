@@ -66,6 +66,7 @@ interface OffenderTrustAccountRepository : JpaRepository<OffenderTrustAccount, O
         where (ota.currentBalance != 0 or ota.holdBalance != 0)
           and (:prisonIds is null or ota.id.caseloadId in :prisonIds)
           and ota.id.offender.id > :fromRootOffenderId and ota.id.offender.id <= :toRootOffenderId
+        order by ota.id.offender.id
   """,
   )
   fun findAllOffendersIdsWithBalancesBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long, prisonIds: List<String>?): List<Long>
@@ -83,7 +84,7 @@ interface OffenderTrustAccountRepository : JpaRepository<OffenderTrustAccount, O
   """,
     nativeQuery = true,
   )
-  fun findEveryPageSizeOffenderIdWithBalance(offenderId: Long, pageSize: Int): List<Long>
+  fun findEveryPageSizeOffenderIdWithBalance(pageSize: Int): List<Long>
 
   @Query(
     """
@@ -99,5 +100,5 @@ interface OffenderTrustAccountRepository : JpaRepository<OffenderTrustAccount, O
   """,
     nativeQuery = true,
   )
-  fun findEveryPageSizeOffenderIdWithBalance(offenderId: Long, prisonIds: List<String>, pageSize: Int): List<Long>
+  fun findEveryPageSizeOffenderIdWithBalance(prisonIds: List<String>, pageSize: Int): List<Long>
 }

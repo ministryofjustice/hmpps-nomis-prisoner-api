@@ -88,8 +88,8 @@ class PrisonerBalanceService(
   fun findAllPrisonersWithAccountBalanceIdRanges(pageSize: Int, prisonIds: List<String>?): List<RootOffenderIdRange> = (
     prisonIds
       ?.takeIf { it.isNotEmpty() }
-      ?.let { offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(0L, it, pageSize) }
-      ?: offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(0L, pageSize)
+      ?.let { offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(it, pageSize) }
+      ?: offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(pageSize)
     ).toRootOffenderIdRanges()
 
   fun findAllPrisonersWithAccountBalanceFromId(
