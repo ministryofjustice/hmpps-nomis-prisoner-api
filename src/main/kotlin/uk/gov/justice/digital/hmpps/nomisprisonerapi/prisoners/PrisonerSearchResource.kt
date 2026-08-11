@@ -122,3 +122,10 @@ data class RootOffenderIdRange(
   @Schema(description = "The highest NOMIS rootOffenderId in the range", example = "1234567")
   val toRootOffenderId: Long,
 )
+
+fun List<Long>.toRootOffenderIdRanges(): List<RootOffenderIdRange> = mutableListOf(0L).apply {
+  addAll(this@toRootOffenderIdRanges)
+  add(Long.MAX_VALUE)
+}
+  .zipWithNext()
+  .map { RootOffenderIdRange(it.first, it.second) }

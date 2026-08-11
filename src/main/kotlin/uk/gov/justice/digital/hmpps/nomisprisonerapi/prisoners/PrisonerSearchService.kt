@@ -12,17 +12,14 @@ class PrisonerSearchService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
 ) {
-  fun findRootOffenderIdRanges(active: Boolean, pageSize: Int): List<RootOffenderIdRange> = mutableListOf(0L).apply {
-    addAll(
-      if (active) {
-        bookingRepository.findEveryPageSizeActiveRootOffenderId(pageSize)
-      } else {
-        offenderRepository.findEveryPageSizeRootOffenderId(pageSize)
-      },
+  fun findRootOffenderIdRanges(active: Boolean, pageSize: Int): List<RootOffenderIdRange> = (
+    if (active) {
+      bookingRepository.findEveryPageSizeActiveRootOffenderId(pageSize)
+    } else {
+      offenderRepository.findEveryPageSizeRootOffenderId(pageSize)
+    }
     )
-    add(Long.MAX_VALUE)
-  }
-    .zipWithNext().map { RootOffenderIdRange(it.first, it.second) }
+    .toRootOffenderIdRanges()
 
   fun findPrisonNumbersInRange(active: Boolean, fromRootOffenderId: Long, toRootOffenderId: Long): List<String> = if (active) {
     bookingRepository.findActivePrisonNumbersBetweenIds(fromRootOffenderId, toRootOffenderId)

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.constraints.Min
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.RootOffenderIdRange
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -33,7 +35,7 @@ class PrisonerBalanceResource(
 ) {
   @GetMapping("/ids")
   @Operation(
-    summary = "Gets the rootOffenderIds for all prisoners with a non-negative trust account balance",
+    summary = "Gets the rootOffenderIds for all prisoners with a non-zero trust account balance",
     description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
@@ -69,9 +71,95 @@ class PrisonerBalanceResource(
     pageRequest,
   )
 
+  @GetMapping("/id-ranges")
+  @Operation(
+    summary = "Gets the rootOffenderId ranges for all prisoners with a non-zero trust account balance",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of root offender id ranges"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerBalanceIdentifierRanges(
+    @Schema(description = "Number of offender ids per range", required = false, defaultValue = "2000")
+    @RequestParam(value = "pageSize", defaultValue = "2000")
+    @Min(1)
+    pageSize: Int,
+    @Schema(description = "Prison ids to filter by", required = false)
+    @RequestParam(name = "prisonId")
+    prisonIds: List<String>?,
+  ): List<RootOffenderIdRange> = prisonerBalanceService.findAllPrisonersWithAccountBalanceIdRanges(
+    pageSize,
+    prisonIds.normalisePrisonIds(),
+  )
+
+  @GetMapping("/ids-in-range")
+  @Operation(
+    summary = "Gets every prisoner root offender id with a trust account balance in range.",
+    description = """Returns a list of root offender ids greater than the specified fromRootOffenderId and less than or equal to the
+      specified toRootOffenderId. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of root offender ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getPrisonerBalanceIdentifiersInRange(
+    @RequestParam(value = "fromRootOffenderId", required = true)
+    @Schema(description = "Return prisoners with root offender id greater than this value.")
+    fromRootOffenderId: Long,
+    @RequestParam(value = "toRootOffenderId", required = true)
+    @Schema(description = "Return prisoners with root offender id less than or equal to this value.")
+    toRootOffenderId: Long,
+    @Schema(description = "Prison ids to filter by", required = false)
+    @RequestParam(name = "prisonId")
+    prisonIds: List<String>?,
+  ): List<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalanceInRange(
+    fromRootOffenderId,
+    toRootOffenderId,
+    prisonIds.normalisePrisonIds(),
+  )
+
   @GetMapping("/ids/all-from-id")
   @Operation(
-    summary = "Gets the rootOffenderIds for all prisoners with a non-negative trust account balance",
+    summary = "Gets the rootOffenderIds for all prisoners with a non-zero trust account balance",
     description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
     responses = [
       ApiResponse(responseCode = "200", description = "paged list of prisoner ids"),
