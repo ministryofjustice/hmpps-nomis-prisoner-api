@@ -186,6 +186,129 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /finance/prisoners/id-ranges")
+  inner class PrisonerIdRangesTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/finance/prisoners/id-ranges")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/finance/prisoners/id-ranges")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/finance/prisoners/id-ranges")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `will return id ranges`() {
+      webTestClient.get().uri("/finance/prisoners/id-ranges?pageSize=2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(2)
+        .jsonPath("$[0].fromRootOffenderId").isEqualTo(0)
+        .jsonPath("$[0].toRootOffenderId").isEqualTo(id2)
+        .jsonPath("$[1].fromRootOffenderId").isEqualTo(id2)
+        .jsonPath("$[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+    }
+
+    @Test
+    fun `will ignore empty prisonId query params`() {
+      webTestClient.get().uri("/finance/prisoners/id-ranges?pageSize=2&prisonId=")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.size()").isEqualTo(2)
+        .jsonPath("$[0].fromRootOffenderId").isEqualTo(0)
+        .jsonPath("$[0].toRootOffenderId").isEqualTo(id2)
+        .jsonPath("$[1].fromRootOffenderId").isEqualTo(id2)
+        .jsonPath("$[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /finance/prisoners/ids-in-range")
+  inner class PrisonerIdsInRangeTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=10")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=10")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=10")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun `will return ids in range`() {
+      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=$id2")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("[0]").isEqualTo(id1)
+        .jsonPath("[1]").isEqualTo(id2)
+        .jsonPath("$.size()").isEqualTo(2)
+    }
+
+    @Test
+    fun `will apply prisonId filter`() {
+      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=$id3&prisonId=WWI")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("[0]").isEqualTo(id1)
+        .jsonPath("$.size()").isEqualTo(1)
+    }
+
+    @Test
+    fun `will ignore empty prisonId query params`() {
+      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=$id2&prisonId=")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("[0]").isEqualTo(id1)
+        .jsonPath("[1]").isEqualTo(id2)
+        .jsonPath("$.size()").isEqualTo(2)
+    }
+  }
+
+  @Nested
   @DisplayName("GET /finance/prisoners/ids/all-from-id")
   inner class PrisonerIdsFromLastTests {
     @Nested

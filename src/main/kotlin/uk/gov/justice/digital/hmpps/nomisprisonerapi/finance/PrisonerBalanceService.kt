@@ -10,12 +10,16 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccounWithTransactionDateTimeProjection
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTrustAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.RootOffenderIdRange
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.toRootOffenderIdRanges
 
 @Service
 @Transactional
 class PrisonerBalanceService(
-  val offenderRepository: OffenderRepository,
-  val offenderSubAccountRepository: OffenderSubAccountRepository,
+  private val offenderRepository: OffenderRepository,
+  private val offenderSubAccountRepository: OffenderSubAccountRepository,
+  private val offenderTrustAccountRepository: OffenderTrustAccountRepository,
 ) {
   fun getAggregatedAccounts(prisonNumber: String): PrisonerAggregatedAccountsDto = offenderRepository.findRootByNomsId(prisonNumber)?.let {
     getAggregatedAccounts(it.rootOffenderId!!)
@@ -78,8 +82,15 @@ class PrisonerBalanceService(
     ?: throw NotFoundException("Offender with id $rootOffenderId not found")
 
   fun findAllPrisonersWithAccountBalance(prisonIds: List<String>?, pageRequest: Pageable): PagedModel<Long> = PagedModel(
-    offenderRepository.findAllOffenderIdsWithBalances(prisonIds, pageRequest),
+    offenderTrustAccountRepository.findAllOffenderIdsWithBalances(prisonIds, pageRequest),
   )
+
+  fun findAllPrisonersWithAccountBalanceIdRanges(pageSize: Int, prisonIds: List<String>?): List<RootOffenderIdRange> = (
+    prisonIds
+      ?.takeIf { it.isNotEmpty() }
+      ?.let { offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(0L, it, pageSize) }
+      ?: offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(0L, pageSize)
+    ).toRootOffenderIdRanges()
 
   fun findAllPrisonersWithAccountBalanceFromId(
     rootOffenderId: Long,
@@ -87,8 +98,8 @@ class PrisonerBalanceService(
     prisonIds: List<String>?,
   ): PrisonerBalanceResource.RootOffenderIdsWithLast = (
     prisonIds
-      ?.let { offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, it, pageSize) }
-      ?: offenderRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, pageSize)
+      ?.let { offenderTrustAccountRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, it, pageSize) }
+      ?: offenderTrustAccountRepository.findAllOffendersIdsWithBalancesFromId(rootOffenderId, pageSize)
     )
     .let { offenderIds ->
       PrisonerBalanceResource.RootOffenderIdsWithLast(
@@ -96,6 +107,8 @@ class PrisonerBalanceService(
         rootOffenderIds = offenderIds,
       )
     }
+
+  fun findAllPrisonersWithAccountBalanceInRange(fromRootOffenderId: Long, toRootOffenderId: Long, prisonIds: List<String>?): List<Long> = offenderTrustAccountRepository.findAllOffendersIdsWithBalancesBetweenIds(fromRootOffenderId, toRootOffenderId, prisonIds)
 }
 
 private fun OffenderSubAccounWithTransactionDateTimeProjection.toPrisonerAccountDto() = PrisonerAccountDto(

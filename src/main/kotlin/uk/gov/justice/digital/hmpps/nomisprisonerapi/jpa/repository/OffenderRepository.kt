@@ -45,55 +45,6 @@ interface OffenderRepository :
 
   @Query(
     """
-        select
-            distinct(ota.id.offender.id) as offenderId
-        from 
-            OffenderTrustAccount ota
-        where 
-            (ota.currentBalance != 0 or ota.holdBalance != 0)
-            and
-            (:prisonIds is null or ota.id.caseloadId in :prisonIds)
-    """,
-  )
-  fun findAllOffenderIdsWithBalances(prisonIds: List<String>?, pageable: Pageable): Page<Long>
-
-  @Query(
-    """
-      select * from (
-        select
-            distinct OFFENDER_ID
-         from 
-            OFFENDER_TRUST_ACCOUNTS 
-         where 
-            OFFENDER_ID > :offenderId and
-            (CURRENT_BALANCE != 0 or HOLD_BALANCE != 0)
-         order by OFFENDER_ID) 
-      where rownum <= :pageSize
-  """,
-    nativeQuery = true,
-  )
-  fun findAllOffendersIdsWithBalancesFromId(offenderId: Long, pageSize: Int): List<Long>
-
-  @Query(
-    """
-      select * from (
-        select
-            distinct OFFENDER_ID
-         from 
-            OFFENDER_TRUST_ACCOUNTS 
-         where 
-            OFFENDER_ID > :offenderId and
-            (CURRENT_BALANCE != 0 or HOLD_BALANCE != 0) and
-            CASELOAD_ID in (:prisonIds)
-         order by OFFENDER_ID) 
-      where rownum <= :pageSize
-  """,
-    nativeQuery = true,
-  )
-  fun findAllOffendersIdsWithBalancesFromId(offenderId: Long, prisonIds: List<String>, pageSize: Int): List<Long>
-
-  @Query(
-    """
         select o.nomsId as nomsId from Offender o where o.rootOffenderId = o.id
     """,
   )
