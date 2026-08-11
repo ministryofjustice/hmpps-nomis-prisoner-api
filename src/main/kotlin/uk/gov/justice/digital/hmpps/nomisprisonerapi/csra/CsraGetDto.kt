@@ -45,7 +45,7 @@ data class CsraGetDto(
   val calculatedLevel: AssessmentLevel? = null,
 
   @Schema(description = "Score", example = "1000")
-  val score: BigDecimal,
+  val score: BigDecimal? = null,
 
   @Schema(description = "Status, active, inactive or provisional", allowableValues = ["I", "A", "P"], enumAsRef = true)
   val status: AssessmentStatusType,

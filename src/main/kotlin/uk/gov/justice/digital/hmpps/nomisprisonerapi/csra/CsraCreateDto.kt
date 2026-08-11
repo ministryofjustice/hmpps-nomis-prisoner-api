@@ -33,13 +33,10 @@ data class CsraCreateDto(
   val calculatedLevel: AssessmentLevel,
 
   @Schema(description = "Score", example = "1000")
-  val score: BigDecimal,
+  val score: BigDecimal? = null,
 
   @Schema(description = "Status, active, inactive or provisional", allowableValues = ["I", "A", "P"], enumAsRef = true)
   val status: AssessmentStatusType,
-
-  @Schema(description = "Staff id of user that created the CSRA", example = "123456")
-  val assessmentStaffId: Long,
 
   @Schema(description = "The assessment committee code (reference code in domain 'ASSESS_COMM')", enumAsRef = true)
   val committeeCode: AssessmentCommittee? = null,

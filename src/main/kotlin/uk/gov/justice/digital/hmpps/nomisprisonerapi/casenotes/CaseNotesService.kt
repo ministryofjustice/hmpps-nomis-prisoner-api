@@ -129,7 +129,7 @@ class CaseNotesService(
 
   internal fun parseMainText(caseNoteText: String): String = pattern
     .find(caseNoteText)
-    ?.let { caseNoteText.slice(0..it.range.first - 1) }
+    ?.let { caseNoteText.slice(0..<it.range.first) }
     ?: caseNoteText
 
   internal fun parseAmendments(caseNote: OffenderCaseNote): List<CaseNoteAmendment> {

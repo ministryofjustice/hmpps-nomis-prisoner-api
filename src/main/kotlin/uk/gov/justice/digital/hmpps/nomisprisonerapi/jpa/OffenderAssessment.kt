@@ -75,7 +75,7 @@ data class OffenderAssessment(
   @JoinColumn(name = "ASSESSMENT_TYPE_ID", insertable = false, updatable = false)
   val assessment: Assessment? = null, // not nullable but dont want to have to specify this on creation
 
-  val score: BigDecimal, // nullable but no null rows
+  val score: BigDecimal? = null, // nullable but no null rows in Nomis history. May be null for DPS-created CSRAs
 
   @Column(name = "ASSESS_STATUS")
   @Enumerated(EnumType.STRING)
