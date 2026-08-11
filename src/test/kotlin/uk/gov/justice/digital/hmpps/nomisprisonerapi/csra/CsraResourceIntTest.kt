@@ -141,9 +141,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
             fromValue(
               """{ 
                 "assessmentDate": "2025-12-14",
-                "score": "1200",
                 "status": "A",
-                "assessmentStaffId": ${staff.id},
                 "createdBy": "BILLSTAFF",
                 "type": "DUFF"
               }""",
@@ -168,9 +166,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
               """{ 
                 "assessmentDate": "2025-12-14",
                 "calculatedLevel": "HI",
-                "score": "1200",
                 "status": "A",
-                "assessmentStaffId": ${staff.id},
                 "createdBy": "BILLSTAFF",
                 "type": "CSR",
                 "createdDateTime": "2025-12-04T12:34:56",
@@ -198,9 +194,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 "assessmentDate": "2025-12-14",
                 "calculatedLevel": "HI",
                 "type": "CSRF",
-                "score": "1200",
                 "status": "A",
-                "assessmentStaffId": ${staff.id},
                 "createdDateTime": "2025-12-04T12:34:56"
               }""",
             ),
@@ -224,9 +218,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 "assessmentDate": "2025-12-14",
                 "calculatedLevel": "HI",
                 "type": "CSRF",
-                "score": "1200",
                 "status": "A",
-                "assessmentStaffId": ${staff.id},
                 "createdDateTime": "2025-12-04T12:34:56",
                 "createdBy": "DUFF"
                }""",
@@ -303,7 +295,6 @@ class CsraResourceIntTest : IntegrationTestBase() {
           with(data!!) {
             assertThat(assessmentDate).isEqualTo("2025-12-14")
             assertThat(assessmentType).isEqualTo(AssessmentType.CSRF)
-            assertThat(score.toString()).isEqualTo("1200")
             assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
             assertThat(assessmentStaff).isEqualTo(staff)
           }
@@ -321,6 +312,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
    "placementAgencyId": "LEI",
    "reviewLevel": "MED",
    "approvedLevel": "LOW",
+   "score": "1200",
    "evaluationDate": "2025-12-16",
    "evaluationResultCode": "APP",
    "reviewCommitteeCode": "SECUR",
@@ -337,9 +329,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
       "assessmentDate": "2025-12-14",
       "calculatedLevel": "HI",
       "type": "CSRF",
-      "score": "1200",
       "status": "A",
-      "assessmentStaffId": ${staff.id},
       "createdBy": "BILLSTAFF",
       "createdDateTime": "2025-12-04T12:34:56"
     """.trimIndent()
