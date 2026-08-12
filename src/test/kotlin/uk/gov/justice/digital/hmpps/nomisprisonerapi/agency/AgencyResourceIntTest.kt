@@ -35,9 +35,211 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var regionRepository: RegionRepository
 
+  @DisplayName("GET /agency/all")
+  @Nested
+  inner class GetAllAgencies {
+    lateinit var legacyGenericAgency: AgencyLocation
+    lateinit var approvedPremise: AgencyLocation
+    lateinit var court: AgencyLocation
+    lateinit var probationOffice: AgencyLocation
+    lateinit var prison: AgencyLocation
+    lateinit var londonRegion: Region
+    lateinit var londonArea: Area
+    lateinit var southEastArea: Area
+    lateinit var eastLondon: SubArea
+    lateinit var londonDistrict: Area
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        londonDistrict = area(code = "10", "Thames Valley", areaTypeCode = "COMM")
+        southEastArea = area(code = "LONDON", "London")
+        londonRegion = region(code = "LON", "London Region") {
+          londonArea = area(code = "62", "London Area", areaTypeCode = "COMM") {
+            eastLondon = subArea("LON_E", description = "East London", areaTypeCode = "COMM")
+          }
+        }
+        legacyGenericAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "CRC",
+        )
+        prison = prison(
+          agencyLocationId = "AAI",
+          description = "HMP AAI",
+          district = londonDistrict,
+        )
+        probationOffice = agencyLocation(
+          agencyLocationId = "BOW001",
+          description = "Tower Hamlets Probation  Bow",
+          longDescription = "Tower Hamlets Probation Bow East London",
+          type = "COMM",
+          region = southEastArea,
+          area = londonArea,
+          subArea = eastLondon,
+          nomsRegion = londonRegion,
+          payrollRegionCode = "LTV",
+          cjitCode = "D62L087",
+        ) {
+          localAuthority(BRENT)
+          localAuthority(BROMLEY)
+          address(
+            type = "BUS",
+            noFixedAddress = null,
+            primaryAddress = false,
+            premise = null,
+            street = null,
+            locality = null,
+            city = null,
+            county = null,
+            country = null,
+          )
+          address(
+            type = "BUS",
+            flat = "3B",
+            premise = "Brown Court",
+            street = "Scotland Street",
+            locality = "Hunters Bar",
+            postcode = "S1 3GG",
+            city = SHEFFIELD,
+            county = "S.YORKSHIRE",
+            country = "ENG",
+            validatedPAF = true,
+            noFixedAddress = false,
+            primaryAddress = true,
+            mailAddress = true,
+            comment = "Not to be used",
+            startDate = "2024-10-01",
+            endDate = "2024-11-01",
+          ) {
+            phone(
+              phoneType = "BUS",
+              phoneNo = "07399999999",
+              extNo = "123",
+            )
+            phone(
+              phoneType = "FAX",
+              phoneNo = "01142561919",
+            )
+          }
+
+          phone(
+            phoneType = "BUS",
+            phoneNo = "0114 55 5555",
+            extNo = "123",
+          )
+          phone(
+            phoneType = "FAX",
+            phoneNo = "0114 44 5555",
+          )
+          email(
+            address = "probation@gov.uk",
+          )
+          email(
+            address = "justice@gov.uk",
+          )
+        }
+        approvedPremise = agencyLocation(
+          agencyLocationId = "THA029",
+          description = "Approved Premises",
+          district = londonDistrict,
+          active = false,
+          type = "APPR",
+          deactivationDate = LocalDate.parse("2022-01-01"),
+          updateAllowed = false,
+          contactName = "Gerald Simpson",
+          disabilityAccessCode = "Y",
+        )
+        court = agencyLocation(
+          agencyLocationId = "SHEFCC",
+          description = "Sheffield Crown Court",
+          type = "CRT",
+          courtTypeCode = "CC",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById(legacyGenericAgency.id)
+      agencyLocationRepository.delete(approvedPremise)
+      agencyLocationRepository.delete(court)
+      agencyLocationRepository.delete(probationOffice)
+      agencyLocationRepository.delete(prison)
+      subAreaRepository.delete(eastLondon)
+      areaRepository.delete(londonArea)
+      regionRepository.delete(londonRegion)
+      areaRepository.delete(southEastArea)
+      areaRepository.delete(londonDistrict)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/agency/ids/all")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/agency/ids/all")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/agency/ids/all")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `can exclude prisons`() {
+        val response: AgencyIdsResponse = webTestClient.get().uri("/agency/ids/all?excludeType=INST")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(response.agencyIds.map { it.agencyId }).contains(
+          "XXI",
+          "THA029",
+          "SHEFCC",
+          "BOW001",
+        )
+        assertThat(response.agencyIds.map { it.agencyId }).doesNotContain(
+          "AAI",
+        )
+      }
+
+      @Test
+      fun `can include all agency types`() {
+        val response: AgencyIdsResponse = webTestClient.get().uri("/agency/ids/all")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+
+        assertThat(response.agencyIds.map { it.agencyId }).contains(
+          "XXI",
+          "THA029",
+          "SHEFCC",
+          "BOW001",
+          "AAI",
+        )
+      }
+    }
+  }
+
   @DisplayName("GET /agency/{agencyId}")
   @Nested
-  inner class GetPrison {
+  inner class GetAgency {
     lateinit var legacyGenericAgency: AgencyLocation
     lateinit var approvedPremise: AgencyLocation
     lateinit var court: AgencyLocation

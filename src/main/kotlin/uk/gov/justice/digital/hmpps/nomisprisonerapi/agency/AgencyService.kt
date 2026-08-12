@@ -13,6 +13,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 class AgencyService(
   val agencyLocationRepository: AgencyLocationRepository,
 ) {
+  fun getAllAgencies(excludeType: List<String>): AgencyIdsResponse {
+    val agencies = excludeType.takeIf { it.isNotEmpty() }?.let {
+      agencyLocationRepository.findByType_CodeNotIn(it)
+    } ?: agencyLocationRepository.findAll()
+
+    return AgencyIdsResponse(
+      agencyIds = agencies.map { AgencyId(it.id) },
+    )
+  }
 
   fun getAgencyLocation(agencyId: String): AgencyResponse = agencyLocationRepository.findByIdOrNull(agencyId)
     ?.toAgencyLocationResponse() ?: throw NotFoundException("Agency $agencyId does not exist")
