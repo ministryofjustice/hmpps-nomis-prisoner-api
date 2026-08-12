@@ -35,7 +35,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var regionRepository: RegionRepository
 
-  @DisplayName("GET /agency/all")
+  @DisplayName("GET /agency/ids/all")
   @Nested
   inner class GetAllAgencies {
     lateinit var legacyGenericAgency: AgencyLocation

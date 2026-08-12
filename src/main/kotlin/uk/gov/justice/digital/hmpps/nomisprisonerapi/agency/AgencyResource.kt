@@ -25,7 +25,7 @@ class AgencyResource(private val agencyService: AgencyService) {
 
   @GetMapping("/agency/{agencyId}")
   @Operation(
-    summary = "Gets details of a agency",
+    summary = "Gets details of an agency",
     description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
@@ -103,7 +103,7 @@ class AgencyResource(private val agencyService: AgencyService) {
   )
   fun getAllAgencies(
     @Schema(description = "Agency types to exclude", example = "INST")
-    @RequestParam(required = false, defaultValue = "") excludeType: List<String>,
+    @RequestParam(required = false) excludeType: List<String> = listOf(),
   ) = agencyService.getAllAgencies(excludeType)
 }
 
@@ -226,6 +226,6 @@ data class AgencyId(
 
 @Schema(description = "A response to get agency ids")
 data class AgencyIdsResponse(
-  @Schema(description = "The agency ids", example = "[\"LCSY02\", \"LCSY03\"]")
+  @Schema(description = "The agency ids")
   val agencyIds: List<AgencyId>,
 )
