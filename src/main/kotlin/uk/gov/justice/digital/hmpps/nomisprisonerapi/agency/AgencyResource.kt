@@ -11,6 +11,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -24,8 +25,8 @@ class AgencyResource(private val agencyService: AgencyService) {
 
   @GetMapping("/agency/{agencyId}")
   @Operation(
-    summary = "Gets details of a agency",
-    description = "Requires ROLE_NOMIS_AGENCYER_API__SYNCHRONISATION__RW",
+    summary = "Gets details of an agency",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -68,6 +69,42 @@ class AgencyResource(private val agencyService: AgencyService) {
     @Schema(description = "Agency id (aka agencyId)", example = "WWI")
     agencyId: String,
   ) = agencyService.getAgencyLocation(agencyId)
+
+  @GetMapping("/agency/ids/all")
+  @Operation(
+    summary = "Gets a list of all agency ids",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Agency ids",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAllAgencies(
+    @Schema(description = "Agency types to exclude", example = "INST")
+    @RequestParam(required = false) excludeType: List<String> = listOf(),
+  ) = agencyService.getAllAgencies(excludeType)
 }
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -179,4 +216,16 @@ data class AgencyAddress(
   val startDate: LocalDate?,
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate?,
+)
+
+@Schema(description = "A response to get agency id")
+data class AgencyId(
+  @Schema(description = "The agency id", example = "LCSY02")
+  val agencyId: String,
+)
+
+@Schema(description = "A response to get agency ids")
+data class AgencyIdsResponse(
+  @Schema(description = "The agency ids")
+  val agencyIds: List<AgencyId>,
 )
