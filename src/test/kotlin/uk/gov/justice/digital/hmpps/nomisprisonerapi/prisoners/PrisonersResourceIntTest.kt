@@ -1310,6 +1310,17 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will return all root offender ids if active not passed in`() {
+        webTestClient.get()
+          .uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(4)
+      }
+
+      @Test
       fun `will only return active root offender ids`() {
         webTestClient.get()
           .uri("/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}&active=true")
@@ -1443,6 +1454,16 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           .jsonPath("$.[1].toRootOffenderId").isEqualTo(activePrisoner2)
           .jsonPath("$.[2].fromRootOffenderId").isEqualTo(activePrisoner2)
           .jsonPath("$.[2].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+      }
+
+      @Test
+      fun `will return all root offender ids if active is not specified`() {
+        webTestClient.get().uri("/prisoners/id-ranges?size=1")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(5)
       }
     }
   }
