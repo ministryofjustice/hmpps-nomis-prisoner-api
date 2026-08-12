@@ -79,10 +79,13 @@ class PrisonerService(
     ?.let { PreviousBookingId(bookingId = it.bookingId, bookingSequence = it.bookingSequence.toLong()) }
     ?: throw NotFoundException("Prisoner with offenderNo $offenderNo and booking $bookingId not found or has no previous booking")
 
-  fun findPrisonersInRange(fromRootOffenderId: Long, toRootOffenderId: Long): List<PrisonNumberAndRootOffenderId> = offenderRepository.findPrisonerIdsBetweenIds(fromRootOffenderId, toRootOffenderId)
-    .map { PrisonNumberAndRootOffenderId(it.getOffenderId(), it.getPrisonerId()) }
+  fun findPrisonersInRange(fromRootOffenderId: Long, toRootOffenderId: Long, active: Boolean): List<PrisonNumberAndRootOffenderId> = if (active) {
+    offenderBookingRepository.findActivePrisonerIdsBetweenIds(fromRootOffenderId, toRootOffenderId)
+  } else {
+    offenderRepository.findPrisonerIdsBetweenIds(fromRootOffenderId, toRootOffenderId)
+  }.map { PrisonNumberAndRootOffenderId(it.getOffenderId(), it.getPrisonerId()) }
 
-  fun findRootOffenderIdRanges(pageSize: Int): List<RootOffenderIdRange> = prisonerSearchService.findRootOffenderIdRanges(false, pageSize)
+  fun findRootOffenderIdRanges(pageSize: Int, active: Boolean): List<RootOffenderIdRange> = prisonerSearchService.findRootOffenderIdRanges(active, pageSize)
 }
 
 private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetails(
