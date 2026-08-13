@@ -621,22 +621,17 @@ class OffenderCourtMovementsResourceIntTest(
   @DisplayName("GET /movements/{offenderNo}/court - query performance")
   inner class GetOffenderCourtMovementsQueryPerformance {
 
-    // Rotate through several court agencies (rather than reusing a single one) so the test also exercises
-    // any lazy/uncached association that could hide an N+1 behind Hibernate's persistence-context caching of a
-    // single repeated entity.
-    private val courts = listOf("COURT1", "ABDRCT", "LEEDYC", "LEICYC")
-
     /**
      * Builds an offender with [eventCount] court schedules, each with a movement out and a movement in - this
      * covers every relationship walked by
      * [uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.OffenderCourtMovementsService.getOffenderCourtMovements].
      *
      * Each schedule (and its movements) is booked to/from its own, distinct court agency (a new one created for
-     * every event, named `COURT-$nomsId-$index`) rather than reusing one of the handful of pre-seeded court
-     * agencies - reusing a small, fixed set of agencies would let Hibernate's persistence-context cache resolve
-     * the second and subsequent occurrences of the same agency for free, hiding a genuine N+1 on the
-     * `court`/`fromAgency`/`toAgency` associations exactly the way a single shared address hid the equivalent bug
-     * on the taps endpoint.
+     * every event, named `C<last 2 chars of nomsId><index>`, e.g. `CFA0`, `CFA1`) rather than reusing one of the
+     * handful of pre-seeded court agencies - reusing a small, fixed set of agencies would let Hibernate's
+     * persistence-context cache resolve the second and subsequent occurrences of the same agency for free, hiding
+     * a genuine N+1 on the `court`/`fromAgency`/`toAgency` associations exactly the way a single shared address hid
+     * the equivalent bug on the taps endpoint.
      */
     private fun buildOffenderWithCourtEvents(nomsId: String, eventCount: Int) {
       nomisDataBuilder.build {
