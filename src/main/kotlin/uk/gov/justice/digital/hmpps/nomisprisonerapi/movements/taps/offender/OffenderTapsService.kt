@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
@@ -60,10 +59,6 @@ class OffenderTapsService(
     val unscheduledTapMovementOuts = allTapMovementOuts - tapApplications.tapMovementOuts()
     val unscheduledTapMovementIns = allTapMovementIns - tapApplications.tapMovementIns()
 
-    // Batch-load all the address descriptions needed for this response in at most 2 queries, instead of looking
-    // each one up individually while mapping (which would cause an N+1 query problem for offenders with many taps).
-    val addressDescriptions = collectAddressDescriptions(tapApplications, allTapMovementOuts, allTapMovementIns)
-
     data class Booking(val id: Long, val active: Boolean, val latest: Boolean)
 
     val bookings = (
@@ -81,7 +76,6 @@ class OffenderTapsService(
           tapApplications = tapApplications,
           unscheduledTapMovementOuts = unscheduledTapMovementOuts,
           unscheduledTapMovementIns = unscheduledTapMovementIns,
-          addressDescriptions = addressDescriptions,
         )
       },
     )
@@ -106,10 +100,6 @@ class OffenderTapsService(
     val unscheduledTapMovementOuts = allTapMovementOuts - movementApplications.tapMovementOuts()
     val unscheduledTapMovementIns = allTapMovementIns - movementApplications.tapMovementIns()
 
-    // Batch-load all the address descriptions needed for this response in at most 2 queries, instead of looking
-    // each one up individually while mapping (which would cause an N+1 query problem for bookings with many taps).
-    val addressDescriptions = collectAddressDescriptions(movementApplications, allTapMovementOuts, allTapMovementIns)
-
     return toBookingTaps(
       bookingId = bookingId,
       active = booking.active,
@@ -117,7 +107,6 @@ class OffenderTapsService(
       tapApplications = movementApplications,
       unscheduledTapMovementOuts = unscheduledTapMovementOuts,
       unscheduledTapMovementIns = unscheduledTapMovementIns,
-      addressDescriptions = addressDescriptions,
     )
   }
 
@@ -235,41 +224,6 @@ class OffenderTapsService(
     }
   }
 
-  /**
-   * Collects every [Address] reachable from the given records so their descriptions can be batch-loaded via
-   * [TapAddressService.getAddressDescriptions] instead of one-by-one during mapping.
-   */
-  private fun collectAddressDescriptions(
-    tapApplications: List<OffenderTapApplication>,
-    allTapMovementOuts: List<OffenderTapMovementOut>,
-    allTapMovementIns: List<OffenderTapMovementIn>,
-  ): Map<Long, String?> {
-    val addresses = buildList {
-      tapApplications.forEach { application ->
-        application.toAddress?.let(::add)
-        application.tapScheduleOuts.forEach { scheduleOut ->
-          scheduleOut.toAddress?.let(::add)
-          scheduleOut.tapMovementOut?.toAddress?.let(::add)
-          scheduleOut.tapScheduleIns.forEach { scheduleIn ->
-            scheduleIn.tapMovementIn?.fromAddress?.let(::add)
-          }
-        }
-      }
-      allTapMovementOuts.forEach { movementOut ->
-        (movementOut.toAddress ?: movementOut.toAgency?.addresses?.firstOrNull())?.let(::add)
-        movementOut.tapScheduleOut?.toAddress?.let(::add)
-      }
-      allTapMovementIns.forEach { movementIn ->
-        (movementIn.fromAddress ?: movementIn.fromAgency?.addresses?.firstOrNull())?.let(::add)
-        movementIn.tapScheduleOut?.tapMovementOut?.toAddress?.let(::add)
-        movementIn.tapScheduleOut?.toAddress?.let(::add)
-      }
-    }
-    return tapAddressService.getAddressDescriptions(addresses)
-  }
-
-  private fun Map<Long, String?>.descriptionFor(address: Address?): String? = address?.addressId?.let { this[it] }
-
   // Make a tap movement in unscheduled if the schedules have been corrupted
   private fun toBookingTaps(
     bookingId: Long,
@@ -278,20 +232,19 @@ class OffenderTapsService(
     tapApplications: List<OffenderTapApplication>,
     unscheduledTapMovementOuts: List<OffenderTapMovementOut>,
     unscheduledTapMovementIns: List<OffenderTapMovementIn>,
-    addressDescriptions: Map<Long, String?>,
   ) = BookingTaps(
     bookingId = bookingId,
     activeBooking = active,
     latestBooking = latest,
     tapApplications = tapApplications.filter { it.offenderBooking.bookingId == bookingId }
-      .map { it.toResponse(addressDescriptions) },
+      .map { it.toResponse() },
     unscheduledTapMovementOuts = unscheduledTapMovementOuts.filter { it.offenderBooking.bookingId == bookingId }
-      .map { mov -> mov.toUnscheduledResponse(addressDescriptions) },
+      .map { mov -> mov.toUnscheduledResponse() },
     unscheduledTapMovementIns = unscheduledTapMovementIns.filter { it.offenderBooking.bookingId == bookingId }
-      .map { mov -> mov.toUnscheduledResponse(addressDescriptions) },
+      .map { mov -> mov.toUnscheduledResponse() },
   )
 
-  private fun OffenderTapApplication.toResponse(addressDescriptions: Map<Long, String?>) = BookingTapApplication(
+  private fun OffenderTapApplication.toResponse() = BookingTapApplication(
     tapApplicationId = tapApplicationId,
     eventSubType = eventSubType.code,
     applicationDate = applicationDate.toLocalDate(),
@@ -305,8 +258,8 @@ class OffenderTapsService(
     comment = comment,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
-    toAddressDescription = addressDescriptions.descriptionFor(toAddress),
-    toFullAddress = toAddress?.toFullAddress(addressDescriptions.descriptionFor(toAddress)),
+    toAddressDescription = tapAddressService.getAddressDescription(toAddress),
+    toFullAddress = toAddress?.toFullAddress(tapAddressService.getAddressDescription(toAddress)),
     toAddressPostcode = toAddress?.postalCode?.trim(),
     prisonId = prison.id,
     toAgencyId = toAgency?.id,
@@ -320,16 +273,16 @@ class OffenderTapsService(
         ?: it.tapScheduleIns.firstOrNull()
       val tapMovementIn = tapScheduleIn?.tapMovementIn
       BookingTap(
-        tapScheduleOut = it.toResponse(getToReturnDateAndTime(), addressDescriptions),
+        tapScheduleOut = it.toResponse(getToReturnDateAndTime()),
         tapScheduleIn = tapScheduleIn?.toResponse(),
-        tapMovementOut = it.tapMovementOut?.toResponse(addressDescriptions),
-        tapMovementIn = tapMovementIn?.toResponse(addressDescriptions),
+        tapMovementOut = it.tapMovementOut?.toResponse(),
+        tapMovementIn = tapMovementIn?.toResponse(),
       )
     },
     audit = toAudit(),
   )
 
-  private fun OffenderTapScheduleOut.toResponse(applicationReturnTime: LocalDateTime, addressDescriptions: Map<Long, String?>) = BookingTapScheduleOut(
+  private fun OffenderTapScheduleOut.toResponse(applicationReturnTime: LocalDateTime) = BookingTapScheduleOut(
     eventId = eventId,
     eventDate = eventDate ?: tapApplication.fromDate,
     startTime = getAppointmentStartDateAndTime() ?: tapApplication.releaseTime,
@@ -344,8 +297,8 @@ class OffenderTapsService(
     returnTime = returnTime ?: applicationReturnTime,
     toAddressId = toAddress?.addressId,
     toAddressOwnerClass = toAddress?.addressOwnerClass,
-    toAddressDescription = addressDescriptions.descriptionFor(toAddress),
-    toFullAddress = toAddress?.toFullAddress(addressDescriptions.descriptionFor(toAddress)),
+    toAddressDescription = tapAddressService.getAddressDescription(toAddress),
+    toFullAddress = toAddress?.toFullAddress(tapAddressService.getAddressDescription(toAddress)),
     toAddressPostcode = toAddress?.postalCode?.trim(),
     applicationDate = applicationDate,
     applicationTime = getApplicationDateAndTime(),
@@ -366,7 +319,7 @@ class OffenderTapsService(
     audit = toAudit(),
   )
 
-  private fun OffenderTapMovementOut.toUnscheduledResponse(addressDescriptions: Map<Long, String?>): BookingTapMovementOut {
+  private fun OffenderTapMovementOut.toUnscheduledResponse(): BookingTapMovementOut {
     val address = toAddress ?: toAgency?.addresses?.firstOrNull()
     return BookingTapMovementOut(
       sequence = id.sequence,
@@ -381,14 +334,14 @@ class OffenderTapsService(
       commentText = commentText,
       toAddressId = address?.addressId,
       toAddressOwnerClass = address?.addressOwnerClass,
-      toAddressDescription = addressDescriptions.descriptionFor(address),
-      toFullAddress = address?.toFullAddress(addressDescriptions.descriptionFor(address)) ?: toCity?.description,
+      toAddressDescription = tapAddressService.getAddressDescription(address),
+      toFullAddress = address?.toFullAddress(tapAddressService.getAddressDescription(address)) ?: toCity?.description,
       toAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
 
-  private fun OffenderTapMovementIn.toUnscheduledResponse(addressDescriptions: Map<Long, String?>): BookingTapMovementIn {
+  private fun OffenderTapMovementIn.toUnscheduledResponse(): BookingTapMovementIn {
     val address = fromAddress ?: fromAgency?.addresses?.firstOrNull()
     return BookingTapMovementIn(
       sequence = id.sequence,
@@ -402,14 +355,14 @@ class OffenderTapsService(
       commentText = commentText,
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
-      fromAddressDescription = addressDescriptions.descriptionFor(address),
-      fromFullAddress = address?.toFullAddress(addressDescriptions.descriptionFor(fromAddress)) ?: fromCity?.description,
+      fromAddressDescription = tapAddressService.getAddressDescription(address),
+      fromFullAddress = address?.toFullAddress(tapAddressService.getAddressDescription(fromAddress)) ?: fromCity?.description,
       fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
 
-  private fun OffenderTapMovementOut.toResponse(addressDescriptions: Map<Long, String?>): BookingTapMovementOut {
+  private fun OffenderTapMovementOut.toResponse(): BookingTapMovementOut {
     // The address may only exist on the schedule so check there too
     val toAddress = toAddress ?: tapScheduleOut?.toAddress
     return BookingTapMovementOut(
@@ -425,14 +378,14 @@ class OffenderTapsService(
       commentText = commentText,
       toAddressId = toAddress?.addressId,
       toAddressOwnerClass = toAddress?.addressOwnerClass,
-      toAddressDescription = addressDescriptions.descriptionFor(toAddress),
-      toFullAddress = toAddress?.toFullAddress(addressDescriptions.descriptionFor(toAddress)),
+      toAddressDescription = tapAddressService.getAddressDescription(toAddress),
+      toFullAddress = toAddress?.toFullAddress(tapAddressService.getAddressDescription(toAddress)),
       toAddressPostcode = toAddress?.postalCode?.trim(),
       audit = toAudit(),
     )
   }
 
-  private fun OffenderTapMovementIn.toResponse(addressDescriptions: Map<Long, String?>): BookingTapMovementIn {
+  private fun OffenderTapMovementIn.toResponse(): BookingTapMovementIn {
     // The address may only exist on the outbound movement or the scheduled outbound movement so check there too
     val address = fromAddress
       ?: tapScheduleOut?.tapMovementOut?.toAddress
@@ -449,8 +402,8 @@ class OffenderTapsService(
       commentText = commentText,
       fromAddressId = address?.addressId,
       fromAddressOwnerClass = address?.addressOwnerClass,
-      fromAddressDescription = addressDescriptions.descriptionFor(address),
-      fromFullAddress = address?.toFullAddress(addressDescriptions.descriptionFor(address)),
+      fromAddressDescription = tapAddressService.getAddressDescription(address),
+      fromFullAddress = address?.toFullAddress(tapAddressService.getAddressDescription(address)),
       fromAddressPostcode = address?.postalCode?.trim(),
       audit = toAudit(),
     )

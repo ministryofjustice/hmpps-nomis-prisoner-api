@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps
 
 import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
-import org.hibernate.SessionFactory
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -998,91 +997,6 @@ class OffenderTapsResourceIntTest(
         .jsonPath("$.bookings[0].tapApplications[0].taps[0].tapScheduleOut.toAddressDescription").isEqualTo("Boots")
         .jsonPath("$.bookings[0].tapApplications[0].taps[0].tapScheduleOut.toFullAddress").isEqualTo("41 High Street, Sheffield, England")
         .jsonPath("$.bookings[0].tapApplications[0].taps[0].tapScheduleOut.toAddressPostcode").isEqualTo("")
-    }
-  }
-
-  @Nested
-  @DisplayName("GET /movements/{offenderNo}/taps - query performance")
-  inner class GetOffenderTapsQueryPerformance {
-
-    /**
-     * Builds an offender with [applicationCount] TAP applications, each with a schedule out, a movement out, a
-     * schedule in and a movement in - this covers every relationship walked by
-     * [uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.offender.OffenderTapsService.getOffenderTaps].
-     *
-     * Each schedule out gets its own, distinct address, alternating between corporate addresses and offender
-     * addresses, so the test also exercises the bulk address-description lookup's handling of both address owner
-     * types (see `TapAddressService.getAddressDescriptions`) - a single shared address (or addresses of only one
-     * owner type) would let that N+1 slip through undetected. The same address is also set on the tap application,
-     * movement out and movement in (not just the schedule out) so every LEFT JOIN FETCH added to resolve an address
-     * is actually exercised by a distinct, non-null address rather than trivially satisfied by a null association.
-     */
-    private fun buildOffenderWithTapApplications(nomsId: String, applicationCount: Int) {
-      val corporateAddresses = mutableListOf<CorporateAddress>()
-      val offenderAddresses = mutableListOf<OffenderAddress>()
-      nomisDataBuilder.build {
-        repeat(applicationCount) { index ->
-          if (index % 2 == 0) {
-            corporate(corporateName = "Boots-$nomsId-$index") {
-              corporateAddresses += address(postcode = "S2 2A$index")
-            }
-          }
-        }
-        offender(nomsId = nomsId) {
-          repeat(applicationCount) { index ->
-            if (index % 2 != 0) {
-              offenderAddresses += address(postcode = "S3 3A$index")
-            }
-          }
-          booking {
-            repeat(applicationCount) { index ->
-              val address = if (index % 2 == 0) corporateAddresses[index / 2] else offenderAddresses[index / 2]
-              tapApplication(toAddress = address) {
-                tapScheduleOut(toAddress = address) {
-                  tapMovementOut(toAddress = address)
-                  tapScheduleIn {
-                    tapMovementIn(fromAddress = address)
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    private fun queryOffenderTaps(nomsId: String): Long {
-      val statistics = entityManager.entityManagerFactory.unwrap(SessionFactory::class.java).statistics
-      statistics.isStatisticsEnabled = true
-      statistics.clear()
-
-      webTestClient.get()
-        .uri("/movements/$nomsId/taps")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus().isOk
-
-      return statistics.prepareStatementCount
-    }
-
-    @Test
-    fun `should not issue additional queries per tap application (no N+1)`() {
-      // A correctly fetch-planned response should need roughly the same number of queries whether the offender
-      // has 1 tap application or 10 - the query count should not grow linearly with the number of applications.
-      buildOffenderWithTapApplications("D6347EA", applicationCount = 1)
-      val queryCountForOneApplication = queryOffenderTaps("D6347EA")
-      offenderRepository.deleteAll()
-
-      buildOffenderWithTapApplications("D6347EB", applicationCount = 10)
-      val queryCountForTenApplications = queryOffenderTaps("D6347EB")
-
-      assertThat(queryCountForTenApplications - queryCountForOneApplication)
-        .withFailMessage(
-          "Expected the query count to stay roughly constant as the number of tap applications grows " +
-            "(1 application took $queryCountForOneApplication queries, 10 applications took " +
-            "$queryCountForTenApplications queries) - this looks like an N+1 query problem.",
-        )
-        .isLessThanOrEqualTo(5)
     }
   }
 
