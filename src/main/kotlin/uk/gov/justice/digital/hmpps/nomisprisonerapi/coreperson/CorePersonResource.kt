@@ -5,12 +5,17 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -118,6 +123,55 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       example = "A1234BC",
     ) @PathVariable prisonNumber: String,
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
+
+  @PostMapping("/{prisonNumber}/merge")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Update the offender by prison number as a result of a merge",
+    description = "Updates the offender information as a result of a merge. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateOffenderByPrisonNumberAfterMerge(
+    @Schema(
+      description = "Prison number aka noms id / offender id display",
+      example = "A1234BC",
+    ) @PathVariable prisonNumber: String,
+    @RequestBody @Valid
+    request: CorePersonMergeRequest,
+  ) {
+    corePersonService.updateOffenderAfterMerge(prisonNumber, request)
+  }
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
@@ -371,4 +425,20 @@ data class OffenderAddressUsage(
   val usage: CodeDescription,
   @Schema(description = "Whether the address usage is active")
   val active: Boolean,
+)
+
+@Schema(description = "Update request for offender merge")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorePersonMergeRequest(
+  @Schema(description = "List of religions to be updated for the offender after a merge")
+  val religions: List<CorePersonReligionRequest>,
+)
+
+@Schema(description = "Update request for offender belief merge")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorePersonReligionRequest(
+  @Schema(description = "Offender belief id", example = "1123456")
+  val beliefId: Long,
+  @Schema(description = "Date the belief ended", example = "2024-12-12")
+  val endDate: LocalDate? = null,
 )

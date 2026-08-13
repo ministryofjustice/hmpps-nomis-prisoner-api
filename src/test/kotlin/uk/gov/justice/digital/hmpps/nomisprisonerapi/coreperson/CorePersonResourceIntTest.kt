@@ -8,7 +8,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
+import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.boot.test.system.CapturedOutput
+import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.returnResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
@@ -1170,6 +1174,91 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("beliefs[0].endDate").doesNotExist()
           .jsonPath("beliefs[0].changeReason").isEqualTo(true)
           .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+      }
+    }
+  }
+
+  @DisplayName("POST /core-person/{prisonNumber}/merge")
+  @Nested
+  @TestInstance(PER_CLASS)
+  @ExtendWith(OutputCaptureExtension::class)
+  inner class UpdateOffenderAfterMerge {
+    private lateinit var offender: Offender
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(
+          nomsId = "A1234BC",
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          booking {
+            belief(
+              beliefCode = "JAIN",
+              startDate = LocalDate.parse("2021-01-01"),
+            )
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/merge")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(CorePersonMergeRequest(religions = listOf(CorePersonReligionRequest(beliefId = 1L))))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/merge")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(CorePersonMergeRequest(religions = listOf(CorePersonReligionRequest(beliefId = 1L))))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/merge")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(CorePersonMergeRequest(religions = listOf(CorePersonReligionRequest(beliefId = 1L))))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `returns no content and logs the merge update`(capturedOutput: CapturedOutput) {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/merge")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            CorePersonMergeRequest(
+              religions = listOf(
+                CorePersonReligionRequest(
+                  beliefId = 1L,
+                  endDate = LocalDate.parse("2024-12-12"),
+                ),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isNoContent
+
+        assertThat(capturedOutput.all).contains("Updating offender ${offender.nomsId} after merge")
       }
     }
   }
