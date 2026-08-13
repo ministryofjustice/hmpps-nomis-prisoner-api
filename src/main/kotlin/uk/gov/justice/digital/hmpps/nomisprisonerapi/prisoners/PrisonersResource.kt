@@ -402,7 +402,10 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     @RequestParam(value = "toRootOffenderId", required = true)
     @Parameter(description = "Return prisoners with root offender id less than or equal to this value.")
     toRootOffenderId: Long,
-  ): List<PrisonNumberAndRootOffenderId> = prisonerService.findPrisonersInRange(fromRootOffenderId, toRootOffenderId)
+    @RequestParam(required = false, defaultValue = "false")
+    @Parameter(description = "When true only return active prisoners currently in prison else all prisoners are returned.")
+    active: Boolean,
+  ): List<PrisonNumberAndRootOffenderId> = prisonerService.findPrisonersInRange(fromRootOffenderId, toRootOffenderId, active)
 
   @GetMapping("/prisoners/id-ranges")
   @Operation(
@@ -438,7 +441,10 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     @RequestParam(value = "size", defaultValue = "1000")
     @Parameter(description = "Number of prisoners to get")
     pageSize: Int,
-  ): List<RootOffenderIdRange> = prisonerService.findRootOffenderIdRanges(pageSize)
+    @RequestParam(required = false, defaultValue = "false")
+    @Parameter(description = "When true only return active prisoners currently in prison else all prisoners are returned.")
+    active: Boolean,
+  ): List<RootOffenderIdRange> = prisonerService.findRootOffenderIdRanges(pageSize, active)
 }
 
 @Schema(description = "Prisoner identifiers")

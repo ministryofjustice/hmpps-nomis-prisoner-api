@@ -92,6 +92,16 @@ interface OffenderBookingRepository :
   )
   fun findActivePrisonNumbersBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long): List<String>
 
+  @Query(
+    """
+    select distinct rootOffender.nomsId as prisonerId, rootOffender.id as offenderId
+      from OffenderBooking
+    where rootOffender.id > :fromRootOffenderId and rootOffender.id <= :toRootOffenderId
+        and active = true
+  """,
+  )
+  fun findActivePrisonerIdsBetweenIds(fromRootOffenderId: Long, toRootOffenderId: Long): List<PrisonerWithId>
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
   @Query("from OffenderBooking ob where ob.bookingId = :bookingId")
