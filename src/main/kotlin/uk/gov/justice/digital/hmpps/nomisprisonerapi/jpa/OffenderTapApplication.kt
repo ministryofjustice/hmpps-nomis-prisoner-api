@@ -40,6 +40,7 @@ import java.time.LocalDateTime
     NamedAttributeNode(value = "applicationType"),
     NamedAttributeNode(value = "tapType"),
     NamedAttributeNode(value = "tapSubType"),
+    NamedAttributeNode(value = "toAddress"),
   ],
   subgraphs = [
     NamedSubgraph(
@@ -50,6 +51,7 @@ import java.time.LocalDateTime
         NamedAttributeNode(value = "escort"),
         NamedAttributeNode(value = "eventStatus"),
         NamedAttributeNode(value = "eventSubType"),
+        NamedAttributeNode(value = "toAddress"),
       ],
     ),
     NamedSubgraph(
@@ -60,6 +62,7 @@ import java.time.LocalDateTime
         NamedAttributeNode(value = "escort"),
         NamedAttributeNode(value = "fromCity"),
         NamedAttributeNode(value = "toCity"),
+        NamedAttributeNode(value = "toAddress"),
       ],
     ),
   ],
