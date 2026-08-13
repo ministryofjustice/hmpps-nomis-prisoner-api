@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court
 import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.hibernate.SessionFactory
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.BookingCourtMovements
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.OffenderCourtMovementsResponse
 import java.time.LocalDateTime
@@ -25,6 +27,7 @@ import java.time.temporal.ChronoUnit.SECONDS
 
 class OffenderCourtMovementsResourceIntTest(
   @Autowired private val entityManager: EntityManager,
+  @Autowired private val offenderRepository: OffenderRepository,
 ) : IntegrationTestBase() {
 
   private val offenderNo = "C7463CC"
@@ -611,6 +614,80 @@ class OffenderCourtMovementsResourceIntTest(
           .exchange()
           .expectStatus().isForbidden
       }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /movements/{offenderNo}/court - query performance")
+  inner class GetOffenderCourtMovementsQueryPerformance {
+
+    // Rotate through several court agencies (rather than reusing a single one) so the test also exercises
+    // any lazy/uncached association that could hide an N+1 behind Hibernate's persistence-context caching of a
+    // single repeated entity.
+    private val courts = listOf("COURT1", "ABDRCT", "LEEDYC", "LEICYC")
+
+    /**
+     * Builds an offender with [eventCount] court schedules, each with a movement out and a movement in - this
+     * covers every relationship walked by
+     * [uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.court.offender.OffenderCourtMovementsService.getOffenderCourtMovements].
+     *
+     * Each schedule (and its movements) is booked to/from its own, distinct court agency (a new one created for
+     * every event, named `COURT-$nomsId-$index`) rather than reusing one of the handful of pre-seeded court
+     * agencies - reusing a small, fixed set of agencies would let Hibernate's persistence-context cache resolve
+     * the second and subsequent occurrences of the same agency for free, hiding a genuine N+1 on the
+     * `court`/`fromAgency`/`toAgency` associations exactly the way a single shared address hid the equivalent bug
+     * on the taps endpoint.
+     */
+    private fun buildOffenderWithCourtEvents(nomsId: String, eventCount: Int) {
+      nomisDataBuilder.build {
+        val courtAgencies = (0 until eventCount).map { index ->
+          agencyLocation(agencyLocationId = "C${nomsId.takeLast(2)}$index", description = "Court $nomsId $index", type = "CRT")
+        }
+        offender(nomsId = nomsId) {
+          booking {
+            courtAgencies.forEach { court ->
+              courtEventOut(agencyId = court.id) {
+                courtMovementOut(fromPrison = "BXI", toCourt = court.id)
+                courtMovementIn(fromCourt = court.id, toPrison = "BXI")
+              }
+            }
+          }
+        }
+      }
+    }
+
+    private fun queryOffenderCourtMovements(nomsId: String): Long {
+      val statistics = entityManager.entityManagerFactory.unwrap(SessionFactory::class.java).statistics
+      statistics.isStatisticsEnabled = true
+      statistics.clear()
+
+      webTestClient.get()
+        .uri("/movements/$nomsId/court")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+
+      return statistics.prepareStatementCount
+    }
+
+    @Test
+    fun `should not issue additional queries per court event (no N+1)`() {
+      // A correctly fetch-planned response should need roughly the same number of queries whether the offender
+      // has 1 court event or 10 - the query count should not grow linearly with the number of events.
+      buildOffenderWithCourtEvents("D6347FA", eventCount = 1)
+      val queryCountForOneEvent = queryOffenderCourtMovements("D6347FA")
+      offenderRepository.deleteAll()
+
+      buildOffenderWithCourtEvents("D6347FB", eventCount = 10)
+      val queryCountForTenEvents = queryOffenderCourtMovements("D6347FB")
+
+      assertThat(queryCountForTenEvents - queryCountForOneEvent)
+        .withFailMessage(
+          "Expected the query count to stay roughly constant as the number of court events grows " +
+            "(1 event took $queryCountForOneEvent queries, 10 events took " +
+            "$queryCountForTenEvents queries) - this looks like an N+1 query problem.",
+        )
+        .isLessThanOrEqualTo(5)
     }
   }
 
