@@ -44,6 +44,31 @@ class TapAddressService(
     }
   }
 
+  /**
+   * Batch-loads the descriptions for many addresses in at most 2 queries (one for corporate addresses and one for
+   * agency addresses), instead of the 1 query per address that [getAddressDescription] performs. Use this instead of
+   * [getAddressDescription] when mapping a list of records that may each reference their own address, to avoid an
+   * N+1 query problem.
+   */
+  fun getAddressDescriptions(addresses: Collection<Address?>): Map<Long, String?> {
+    val distinctAddresses = addresses.filterNotNull().distinctBy { it.addressId }
+    val corporateIds = distinctAddresses.filter { it.addressOwnerClass == "CORP" }.map { it.addressId }
+    val agencyIds = distinctAddresses.filter { it.addressOwnerClass == "AGY" }.map { it.addressId }
+
+    val corporateDescriptions = if (corporateIds.isEmpty()) {
+      emptyMap()
+    } else {
+      corporateAddressRepository.findAllByAddressIdInWithCorporate(corporateIds).associate { it.addressId to it.corporate.corporateName }
+    }
+    val agencyDescriptions = if (agencyIds.isEmpty()) {
+      emptyMap()
+    } else {
+      agencyLocationAddressRepository.findAllByAddressIdInWithAgencyLocation(agencyIds).associate { it.addressId to it.agencyLocation.description }
+    }
+
+    return corporateDescriptions + agencyDescriptions
+  }
+
   fun findOrCreateAddress(request: UpsertTapAddress, offender: Offender): Address {
     // If we have an address id then use that
     if (request.id != null) return movementHelpers.addressOrThrow(request.id)
