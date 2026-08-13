@@ -8,7 +8,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
-import org.hibernate.annotations.BatchSize
 import org.hibernate.annotations.JoinColumnOrFormula
 import org.hibernate.annotations.JoinColumnsOrFormulas
 import org.hibernate.annotations.JoinFormula
@@ -72,11 +71,7 @@ class OffenderTapScheduleOut(
 
   // There should only be a single return, but due to a bug in merges there might be more
   // The current strategy is to move the incorrect returns to the correct parent before mapping to the DTO
-  //
-  // @BatchSize is set to the Oracle max here because prod data shows that some offenders have thousands of schedule OUTs
-  // and we'll be loading the associated schedule INs for as many of them as possible in one go - to avoid n+1 queries.
   @OneToMany(mappedBy = "tapScheduleOut", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  @BatchSize(size = 1000)
   var tapScheduleIns: MutableList<OffenderTapScheduleIn> = mutableListOf(),
 
   @OneToOne(mappedBy = "tapScheduleOut", cascade = [CascadeType.ALL])
