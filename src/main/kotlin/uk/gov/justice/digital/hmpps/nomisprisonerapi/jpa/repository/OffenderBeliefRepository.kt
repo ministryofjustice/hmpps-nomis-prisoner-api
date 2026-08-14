@@ -12,7 +12,7 @@ interface OffenderBeliefRepository : JpaRepository<OffenderBelief, Long> {
       select ob
       from OffenderBelief ob
       join fetch ob.beliefCode
-      where ob.rootOffender.id = :rootOffenderId
+      where ob.rootOffenderId = :rootOffenderId
       order by ob.startDate desc, ob.createDatetime desc
     """,
   )
@@ -23,7 +23,8 @@ interface OffenderBeliefRepository : JpaRepository<OffenderBelief, Long> {
       select ob
       from OffenderBelief ob
       join fetch ob.beliefCode
-      where ob.rootOffender.nomsId = :prisonNumber
+      join Offender o on ob.rootOffenderId = o.id
+      where o.nomsId = :prisonNumber
       order by ob.startDate desc, ob.createDatetime desc
     """,
   )

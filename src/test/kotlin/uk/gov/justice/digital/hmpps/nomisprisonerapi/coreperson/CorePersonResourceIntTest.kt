@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.returnResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -1184,6 +1185,9 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   @ExtendWith(OutputCaptureExtension::class)
   inner class UpdateOffenderAfterMerge {
     private lateinit var offender: Offender
+    private lateinit var latestBelief: OffenderBelief
+    private lateinit var deletedOffender: Offender
+    private lateinit var beliefToMove: OffenderBelief
 
     @BeforeAll
     fun setUp() {
@@ -1194,13 +1198,26 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           lastName = "BOG",
         ) {
           booking {
-            belief(
+            latestBelief = belief(
               beliefCode = "JAIN",
               startDate = LocalDate.parse("2021-01-01"),
             )
           }
         }
+        deletedOffender = offender(
+          nomsId = "A1234BD",
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          booking {
+            beliefToMove = belief(
+              beliefCode = "AGNO",
+              startDate = LocalDate.parse("2020-01-01"),
+            )
+          }
+        }
       }
+      repository.offenderRepository.delete(deletedOffender)
     }
 
     @AfterAll
@@ -1242,21 +1259,32 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `returns no content and logs the merge update`(capturedOutput: CapturedOutput) {
+        val request = CorePersonMergeRequest(
+          religions = listOf(
+            CorePersonReligionRequest(
+              beliefId = latestBelief.beliefId,
+            ),
+            CorePersonReligionRequest(
+              beliefId = beliefToMove.beliefId,
+              endDate = LocalDate.parse("2024-12-12"),
+            ),
+          ),
+        )
+
         webTestClient.post().uri("/core-person/${offender.nomsId}/merge")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(
-            CorePersonMergeRequest(
-              religions = listOf(
-                CorePersonReligionRequest(
-                  beliefId = 1L,
-                  endDate = LocalDate.parse("2024-12-12"),
-                ),
-              ),
-            ),
-          )
+          .bodyValue(request)
           .exchange()
           .expectStatus().isNoContent
+
+        val updatedBelief = repository.offenderBeliefRepository.findByIdOrNull(latestBelief.beliefId)!!
+        assertThat(updatedBelief.endDate).isNull()
+        assertThat(updatedBelief.rootOffenderId).isEqualTo(offender.id)
+
+        val updatedBelief2 = repository.offenderBeliefRepository.findByIdOrNull(beliefToMove.beliefId)!!
+        assertThat(updatedBelief2.endDate).isEqualTo(LocalDate.parse("2024-12-12"))
+        assertThat(updatedBelief2.rootOffenderId).isEqualTo(offender.id)
 
         assertThat(capturedOutput.all).contains("Updating offender ${offender.nomsId} after merge")
       }

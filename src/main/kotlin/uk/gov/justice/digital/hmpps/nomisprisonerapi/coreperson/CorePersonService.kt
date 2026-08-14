@@ -185,6 +185,15 @@ class CorePersonService(
 
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
     log.info("Updating offender {} after merge", prisonNumber)
+    val offender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
+    val religionsToUpdate = offenderBeliefRepository.findAllById(request.religions.map { it.beliefId }).associateBy { it.beliefId }
+    for ((beliefId, endDate) in request.religions) {
+      val toUpdate = religionsToUpdate[beliefId] ?: throw NotFoundException("Religion not found $beliefId")
+      if (toUpdate.rootOffenderId != offender.id) {
+        toUpdate.rootOffenderId = offender.id
+      }
+      toUpdate.endDate = endDate
+    }
   }
 
   companion object {

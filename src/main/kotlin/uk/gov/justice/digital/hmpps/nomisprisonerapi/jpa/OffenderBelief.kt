@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
@@ -27,11 +26,10 @@ data class OffenderBelief(
   var beliefId: Long = 0,
 
   @Column(name = "OFFENDER_BOOK_ID", nullable = false)
-  val booking: Long,
+  val bookingId: Long,
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "ROOT_OFFENDER_ID", nullable = false)
-  var rootOffender: Offender,
+  @Column(name = "ROOT_OFFENDER_ID", nullable = false)
+  var rootOffenderId: Long,
 
   @ManyToOne
   @JoinColumnsOrFormulas(
@@ -45,7 +43,7 @@ data class OffenderBelief(
   @Column(name = "EFFECTIVE_DATE")
   val startDate: LocalDate,
 
-  val endDate: LocalDate? = null,
+  var endDate: LocalDate? = null,
 
   @Convert(converter = YesNoConverter::class)
   val changeReason: Boolean? = null,
