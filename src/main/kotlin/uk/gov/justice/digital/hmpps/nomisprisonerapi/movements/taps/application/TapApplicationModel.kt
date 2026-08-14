@@ -152,4 +152,7 @@ data class UpsertTapApplicationResponse(
 
   @Schema(description = "Movement application ID")
   val tapApplicationId: Long,
+
+  @Schema(description = "Deleted schedule ID")
+  val deletedEventId: Long? = null,
 )

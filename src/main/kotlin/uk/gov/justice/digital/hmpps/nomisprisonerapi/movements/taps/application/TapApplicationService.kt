@@ -106,18 +106,22 @@ class TapApplicationService(
     }
 
     // NOMIS does not allow schedules on an unapproved single application - if we find one then remove it
+    var deletedEventId: Long? = null
     if (!application.isApproved() && application.isSingle()) {
       val schedule = application.tapScheduleOuts.firstOrNull()
       if (schedule?.tapMovementOut != null) throw BadDataException("Attempt to remove a schedule from an unapproved application failed - the schedule (${schedule.eventId}) is attached to a movement (${schedule.tapMovementOut!!.id.offenderBooking.bookingId}/${schedule.tapMovementOut!!.id.sequence}).")
       schedule?.run {
         scheduleOutRepository.findByEventIdOrNullWaitForLock(schedule.eventId)
-          ?.also { scheduleOutRepository.delete(it) }
+          ?.also {
+            scheduleOutRepository.delete(it)
+            deletedEventId = it.eventId
+          }
         application.tapScheduleOuts.remove(schedule)
       }
     }
 
     return applicationRepository.save(application)
-      .let { UpsertTapApplicationResponse(offenderBooking.bookingId, it.tapApplicationId) }
+      .let { UpsertTapApplicationResponse(offenderBooking.bookingId, it.tapApplicationId, deletedEventId) }
   }
 
   @Transactional

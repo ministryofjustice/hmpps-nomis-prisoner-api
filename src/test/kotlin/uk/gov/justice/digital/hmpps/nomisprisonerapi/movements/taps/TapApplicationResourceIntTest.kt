@@ -738,6 +738,8 @@ class TapApplicationResourceIntTest(
         webTestClient.upsertApplicationOk(request = anUpsertApplicationRequest(id = application.tapApplicationId, toAddresses = listOf(UpsertTapAddress(id = offenderAddress.addressId))))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(deletedEventId).isNull()
+
             repository.runInTransaction {
               with(applicationRepository.findByIdOrNull(tapApplicationId)!!) {
                 assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
@@ -1167,6 +1169,9 @@ class TapApplicationResourceIntTest(
           ),
         )
           .apply {
+            // should return deleted schedule event ID
+            assertThat(this.deletedEventId).isEqualTo(scheduleOut.eventId)
+            // should set application status and delete schedule
             repository.runInTransaction {
               with(applicationRepository.findByIdOrNull(application.tapApplicationId)!!) {
                 assertThat(applicationStatus.code).isEqualTo("PEN")
