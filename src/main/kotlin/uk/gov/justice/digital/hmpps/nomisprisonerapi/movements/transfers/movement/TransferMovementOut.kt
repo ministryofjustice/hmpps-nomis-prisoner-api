@@ -41,4 +41,7 @@ data class TransferMovementOut(
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
+
+  @Schema(description = "Audit user's active caseload ID (modified user else create user)")
+  val userActiveCaseloadId: String?,
 )

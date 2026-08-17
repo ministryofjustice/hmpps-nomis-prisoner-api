@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 
 @Service
 class MovementHelpers(
@@ -47,6 +48,7 @@ class MovementHelpers(
   private val tapSubTypeRepository: ReferenceCodeRepository<TapSubType>,
   private val tapTypeRepository: ReferenceCodeRepository<TapType>,
   private val transportTypeRepository: ReferenceCodeRepository<TapTransportType>,
+  private val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
 
   companion object {
@@ -113,6 +115,8 @@ class MovementHelpers(
 
   fun directionTypeOrThrow(directionType: String) = directionTypeRepository.findByIdOrNull(DirectionType.pk(directionType))
     ?: throw BadDataException("Direction type $directionType is invalid")
+
+  fun activeCaseloadId(username: String) = staffUserAccountRepository.findByUsername(username)?.activeCaseloadId
 }
 
 internal fun List<OffenderTapApplication>.tapMovementOuts() = flatMap {
