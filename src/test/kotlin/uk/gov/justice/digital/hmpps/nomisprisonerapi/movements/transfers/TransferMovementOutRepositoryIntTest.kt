@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.movement
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers
 
 import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
