@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 
 @Transactional(readOnly = true)
 @Service
@@ -20,6 +21,7 @@ class TransferMovementService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val transferScheduleOutRepository: OffenderTransferScheduleOutRepository,
+  private val movementHelpers: MovementHelpers,
 ) {
 
   fun getTransferMovementOut(offenderNo: String, bookingId: Long, sequence: Int): TransferMovementOut {
@@ -57,6 +59,7 @@ class TransferMovementService(
       active = active,
       commentText = commentText,
       audit = toAudit(),
+      userActiveCaseloadId = movementHelpers.activeCaseloadId(modifyUserId ?: createUsername),
     )
   }
 }

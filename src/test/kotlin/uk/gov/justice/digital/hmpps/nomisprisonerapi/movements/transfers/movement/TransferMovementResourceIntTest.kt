@@ -77,6 +77,7 @@ class TransferMovementResourceIntTest(
           assertThat(commentText).isEqualTo(movementOut.commentText)
           assertThat(audit.createUsername).isNotBlank()
           assertThat(audit.createDatetime).isCloseTo(movementOut.createDatetime, within(10, ChronoUnit.SECONDS))
+          assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
       }
 

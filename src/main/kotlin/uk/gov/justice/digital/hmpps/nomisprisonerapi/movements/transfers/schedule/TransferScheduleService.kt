@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferSchedul
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 
 private const val DEFAULT_TRANSFER_PRIORITY_CODE = "2" // Medium - used when the DB holds an invalid/expired code
 
@@ -18,7 +18,7 @@ private const val DEFAULT_TRANSFER_PRIORITY_CODE = "2" // Medium - used when the
 class TransferScheduleService(
   private val offenderRepository: OffenderRepository,
   private val transferScheduleOutRepository: OffenderTransferScheduleOutRepository,
-  private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val movementHelpers: MovementHelpers,
 ) {
   fun getTransferScheduleOut(offenderNo: String, eventId: Long): TransferScheduleOut {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -44,7 +44,7 @@ class TransferScheduleService(
     escortCode = escort?.code,
     waitlist = waitList?.toResponse(),
     audit = toAudit(),
-    userActiveCaseloadId = activeCaseloadId(modifyUserId ?: createUsername),
+    userActiveCaseloadId = movementHelpers.activeCaseloadId(modifyUserId ?: createUsername),
   )
 
   private fun OffenderTransferScheduleWaitList.toResponse() = TransferScheduleWaitlist(
@@ -57,8 +57,6 @@ class TransferScheduleService(
     cancellationReasonCode = cancellationReasonCode?.code,
     comment = commentText1,
     audit = toAudit(),
-    userActiveCaseloadId = activeCaseloadId(modifyUserId ?: createUsername),
+    userActiveCaseloadId = movementHelpers.activeCaseloadId(modifyUserId ?: createUsername),
   )
-
-  private fun activeCaseloadId(username: String) = staffUserAccountRepository.findByUsername(username)?.activeCaseloadId
 }
