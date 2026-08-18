@@ -1,7 +1,8 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers
 
 import jakarta.persistence.EntityManager
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -63,22 +64,22 @@ class TransferMovementResourceIntTest(
       @Test
       fun `should get all transfer movement details`() {
         webTestClient.getTransferMovementOutOk().apply {
-          Assertions.assertThat(bookingId).isEqualTo(booking.bookingId)
-          Assertions.assertThat(sequence).isEqualTo(movementOut.id.sequence)
-          Assertions.assertThat(eventId).isEqualTo(scheduleOut.eventId)
-          Assertions.assertThat(transferScheduleOutId).isEqualTo(scheduleOut.eventId)
-          Assertions.assertThat(movementTime.toLocalDate()).isEqualTo(movementOut.movementDate)
-          Assertions.assertThat(movementTime.toLocalTime()).isEqualTo(movementOut.getMovementDateAndTime().toLocalTime())
-          Assertions.assertThat(movementReason).isEqualTo(movementOut.movementReason.id.reasonCode)
-          Assertions.assertThat(escort).isEqualTo("U")
-          Assertions.assertThat(fromPrison).isEqualTo(movementOut.fromAgency!!.id)
-          Assertions.assertThat(toPrison).isEqualTo(movementOut.toAgency!!.id)
-          Assertions.assertThat(active).isEqualTo(movementOut.active)
-          Assertions.assertThat(commentText).isEqualTo(movementOut.commentText)
-          Assertions.assertThat(audit.createUsername).isNotBlank()
-          Assertions.assertThat(audit.createDatetime)
-            .isCloseTo(movementOut.createDatetime, Assertions.within(10, ChronoUnit.SECONDS))
-          Assertions.assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(eventId).isEqualTo(scheduleOut.eventId)
+          assertThat(transferScheduleOutId).isEqualTo(scheduleOut.eventId)
+          assertThat(movementTime.toLocalDate()).isEqualTo(movementOut.movementDate)
+          assertThat(movementTime.toLocalTime()).isEqualTo(movementOut.getMovementDateAndTime().toLocalTime())
+          assertThat(movementReason).isEqualTo(movementOut.movementReason.id.reasonCode)
+          assertThat(escort).isEqualTo("U")
+          assertThat(fromPrison).isEqualTo(movementOut.fromAgency!!.id)
+          assertThat(toPrison).isEqualTo(movementOut.toAgency!!.id)
+          assertThat(active).isEqualTo(movementOut.active)
+          assertThat(commentText).isEqualTo(movementOut.commentText)
+          assertThat(audit.createUsername).isNotBlank()
+          assertThat(audit.createDatetime)
+            .isCloseTo(movementOut.createDatetime, within(10, ChronoUnit.SECONDS))
+          assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
       }
 
@@ -93,10 +94,10 @@ class TransferMovementResourceIntTest(
         }
 
         webTestClient.getTransferMovementOutOk().apply {
-          Assertions.assertThat(bookingId).isEqualTo(booking.bookingId)
-          Assertions.assertThat(sequence).isEqualTo(movementOut.id.sequence)
-          Assertions.assertThat(eventId).isNull()
-          Assertions.assertThat(transferScheduleOutId).isNull()
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(eventId).isNull()
+          assertThat(transferScheduleOutId).isNull()
         }
       }
     }
@@ -164,10 +165,10 @@ class TransferMovementResourceIntTest(
         }
 
         webTestClient.getTransferMovementOutOk().apply {
-          Assertions.assertThat(bookingId).isEqualTo(booking.bookingId)
-          Assertions.assertThat(sequence).isEqualTo(movementOut.id.sequence)
-          Assertions.assertThat(eventId).isEqualTo(scheduleOut.eventId)
-          Assertions.assertThat(transferScheduleOutId).isNull()
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(eventId).isEqualTo(scheduleOut.eventId)
+          assertThat(transferScheduleOutId).isNull()
         }
       }
 
@@ -195,10 +196,10 @@ class TransferMovementResourceIntTest(
         }
 
         webTestClient.getTransferMovementOutOk().apply {
-          Assertions.assertThat(bookingId).isEqualTo(booking.bookingId)
-          Assertions.assertThat(sequence).isEqualTo(movementOut.id.sequence)
-          Assertions.assertThat(eventId).isEqualTo(otherBookingScheduleOut.eventId)
-          Assertions.assertThat(transferScheduleOutId).isNull()
+          assertThat(bookingId).isEqualTo(booking.bookingId)
+          assertThat(sequence).isEqualTo(movementOut.id.sequence)
+          assertThat(eventId).isEqualTo(otherBookingScheduleOut.eventId)
+          assertThat(transferScheduleOutId).isNull()
         }
       }
     }
