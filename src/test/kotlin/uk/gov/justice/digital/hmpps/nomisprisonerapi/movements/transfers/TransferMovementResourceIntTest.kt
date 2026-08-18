@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.movement
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers
 
 import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.movement.TransferMovementOut
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -76,7 +77,8 @@ class TransferMovementResourceIntTest(
           assertThat(active).isEqualTo(movementOut.active)
           assertThat(commentText).isEqualTo(movementOut.commentText)
           assertThat(audit.createUsername).isNotBlank()
-          assertThat(audit.createDatetime).isCloseTo(movementOut.createDatetime, within(10, ChronoUnit.SECONDS))
+          assertThat(audit.createDatetime)
+            .isCloseTo(movementOut.createDatetime, within(10, ChronoUnit.SECONDS))
           assertThat(userActiveCaseloadId).isEqualTo("CADM_I")
         }
       }
