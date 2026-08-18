@@ -35,6 +35,17 @@ class PropertyResourceIntTest : IntegrationTestBase() {
   private lateinit var container2: OffenderPropertyContainer
   private lateinit var container3: OffenderPropertyContainer
 
+  @BeforeEach
+  fun init() {
+    nomisDataBuilder.build {
+      location1 = agencyInternalLocation(
+        locationCode = "SYI-001",
+        locationType = "BOX",
+        prisonId = "SYI",
+      )
+    }
+  }
+
   @AfterEach
   fun deleteData() {
     repository.deleteAllPrisonerProperty()
@@ -48,11 +59,6 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun init() {
       nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "SYI-001",
-          locationType = "BOX",
-          prisonId = "SYI",
-        )
         offender(nomsId = OFFENDER_NO) { booking = booking() }
       }
     }
@@ -214,11 +220,6 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun init() {
       nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "SYI-001",
-          locationType = "BOX",
-          prisonId = "SYI",
-        )
         location2 = agencyInternalLocation(
           locationCode = "SYI-002",
           locationType = "BOX",
@@ -335,11 +336,6 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun init() {
       nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "SYI-001",
-          locationType = "BOX",
-          prisonId = "SYI",
-        )
         offender(nomsId = OFFENDER_NO) {
           booking = booking {
             container1 = property()
@@ -435,11 +431,6 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     @BeforeEach
     fun init() {
       nomisDataBuilder.build {
-        location1 = agencyInternalLocation(
-          locationCode = "SYI-001",
-          locationType = "BOX",
-          prisonId = "SYI",
-        )
         offender(nomsId = OFFENDER_NO) {
           booking = booking(agencyLocationId = "BXI") {
             container1 = property()
@@ -556,6 +547,134 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           .jsonPath("totalPages").isEqualTo(2)
           .jsonPath("size").isEqualTo(2)
           .jsonPath("$.content[0].containerId").isEqualTo(container3.propertyContainerId)
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /property-containers/id-ranges")
+  inner class IdRangesTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/property-containers/id-ranges")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/property-containers/id-ranges")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/property-containers/id-ranges")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 when page size is less than 1`() {
+        webTestClient.get().uri("/property-containers/id-ranges?pageSize=0")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @BeforeEach
+      fun init() {
+        nomisDataBuilder.build {
+          offender(nomsId = OFFENDER_NO) {
+            booking = booking {
+              container1 = property()
+              container2 = property()
+              container3 = property()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return id ranges`() {
+        println("ids are ${container1.propertyContainerId}, ${container2.propertyContainerId}, ${container3.propertyContainerId}")
+        webTestClient.get().uri("/property-containers/id-ranges?pageSize=2")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .json("""[ ${container2.propertyContainerId} ]""")
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("GET /property-containers/ids-in-range")
+  inner class IdsInRangeTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/property-containers/ids-in-range?fromId=0&toId=10")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/property-containers/ids-in-range?fromId=0&toId=10")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/property-containers/ids-in-range?fromId=0&toId=10")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @BeforeEach
+      fun init() {
+        nomisDataBuilder.build {
+          offender(nomsId = OFFENDER_NO) {
+            booking = booking {
+              container1 = property()
+              container2 = property()
+              container3 = property()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will return ids in range`() {
+        webTestClient.get().uri("/property-containers/ids-in-range?fromId=0&toId=${container2.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("[0]").isEqualTo(container1.propertyContainerId)
+          .jsonPath("[1]").isEqualTo(container2.propertyContainerId)
+          .jsonPath("$.size()").isEqualTo(2)
       }
     }
   }
