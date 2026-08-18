@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers
 
 import jakarta.persistence.EntityManager
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -63,20 +63,20 @@ class TransferScheduleRepositoryIntTest(
     }
 
     with(transferScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-      Assertions.assertThat(eventId).isGreaterThan(0L)
-      Assertions.assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
-      Assertions.assertThat(eventClass).isEqualTo(EventClass.EXT_MOV)
-      Assertions.assertThat(eventType).isEqualTo(EventType.TRN)
-      Assertions.assertThat(direction).isEqualTo(MovementDirection.OUT)
-      Assertions.assertThat(eventDate).isEqualTo(tomorrow)
-      Assertions.assertThat(eventSubType.code).isEqualTo("NOTR")
-      Assertions.assertThat(eventStatus.code).isEqualTo("SCH")
-      Assertions.assertThat(fromAgency?.id).isEqualTo("BXI")
-      Assertions.assertThat(toAgency?.id).isEqualTo("LEI")
-      Assertions.assertThat(comment).isEqualTo("Some comment")
-      Assertions.assertThat(escort?.code).isEqualTo("U")
-      Assertions.assertThat(cancellationReasonCode?.code).isEqualTo("TRANS")
-      Assertions.assertThat(waitList).isNull()
+      assertThat(eventId).isGreaterThan(0L)
+      assertThat(offenderBooking.bookingId).isEqualTo(booking.bookingId)
+      assertThat(eventClass).isEqualTo(EventClass.EXT_MOV)
+      assertThat(eventType).isEqualTo(EventType.TRN)
+      assertThat(direction).isEqualTo(MovementDirection.OUT)
+      assertThat(eventDate).isEqualTo(tomorrow)
+      assertThat(eventSubType.code).isEqualTo("NOTR")
+      assertThat(eventStatus.code).isEqualTo("SCH")
+      assertThat(fromAgency?.id).isEqualTo("BXI")
+      assertThat(toAgency?.id).isEqualTo("LEI")
+      assertThat(comment).isEqualTo("Some comment")
+      assertThat(escort?.code).isEqualTo("U")
+      assertThat(cancellationReasonCode?.code).isEqualTo("TRANS")
+      assertThat(waitList).isNull()
     }
   }
 
@@ -106,21 +106,21 @@ class TransferScheduleRepositoryIntTest(
     }
 
     with(waitListRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-      Assertions.assertThat(id).isEqualTo(scheduleOut.eventId)
-      Assertions.assertThat(schedule.eventId).isEqualTo(scheduleOut.eventId)
-      Assertions.assertThat(requestDate).isEqualTo(LocalDate.now())
-      Assertions.assertThat(waitListStatus.code).isEqualTo("PEN")
-      Assertions.assertThat(statusDate).isEqualTo(LocalDate.now())
-      Assertions.assertThat(transferPriority?.code).isEqualTo("1")
-      Assertions.assertThat(approvedFlag).isTrue()
-      Assertions.assertThat(approvedStaff?.id).isEqualTo(staff.id)
-      Assertions.assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
-      Assertions.assertThat(commentText1).isEqualTo("comment 1")
-      Assertions.assertThat(commentText2).isEqualTo("comment 2")
+      assertThat(id).isEqualTo(scheduleOut.eventId)
+      assertThat(schedule.eventId).isEqualTo(scheduleOut.eventId)
+      assertThat(requestDate).isEqualTo(LocalDate.now())
+      assertThat(waitListStatus.code).isEqualTo("PEN")
+      assertThat(statusDate).isEqualTo(LocalDate.now())
+      assertThat(transferPriority?.code).isEqualTo("1")
+      assertThat(approvedFlag).isTrue()
+      assertThat(approvedStaff?.id).isEqualTo(staff.id)
+      assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+      assertThat(commentText1).isEqualTo("comment 1")
+      assertThat(commentText2).isEqualTo("comment 2")
     }
 
     with(transferScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-      Assertions.assertThat(waitList?.id).isEqualTo(scheduleOut.eventId)
+      assertThat(waitList?.id).isEqualTo(scheduleOut.eventId)
     }
   }
 
@@ -153,7 +153,7 @@ class TransferScheduleRepositoryIntTest(
     }
 
     with(waitListRepository.findByIdOrNull(waitList.id)!!) {
-      Assertions.assertThat(transferPriority).isNull()
+      assertThat(transferPriority).isNull()
     }
   }
 
@@ -181,10 +181,10 @@ class TransferScheduleRepositoryIntTest(
     }.also { waitListRepository.saveAndFlush(it) }
 
     with(transferScheduleOutRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-      Assertions.assertThat(comment).isEqualTo("Updated comment")
+      assertThat(comment).isEqualTo("Updated comment")
     }
     with(waitListRepository.findByIdOrNull(scheduleOut.eventId)!!) {
-      Assertions.assertThat(commentText1).isEqualTo("Updated wait list comment")
+      assertThat(commentText1).isEqualTo("Updated wait list comment")
     }
   }
 
@@ -206,7 +206,7 @@ class TransferScheduleRepositoryIntTest(
     val eventId = scheduleOut.eventId
     transferScheduleOutRepository.deleteById(eventId)
 
-    Assertions.assertThat(waitListRepository.findByIdOrNull(eventId)).isNull()
-    Assertions.assertThat(transferScheduleOutRepository.findByIdOrNull(eventId)).isNull()
+    assertThat(waitListRepository.findByIdOrNull(eventId)).isNull()
+    assertThat(transferScheduleOutRepository.findByIdOrNull(eventId)).isNull()
   }
 }
