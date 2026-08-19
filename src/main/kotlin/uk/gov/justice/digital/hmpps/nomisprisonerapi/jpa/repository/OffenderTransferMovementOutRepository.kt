@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
@@ -6,4 +8,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 
 @Repository
-interface OffenderTransferMovementOutRepository : JpaRepository<OffenderTransferMovementOut, OffenderExternalMovementId>
+interface OffenderTransferMovementOutRepository : JpaRepository<OffenderTransferMovementOut, OffenderExternalMovementId> {
+  fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderTransferMovementOut>
+}

@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
@@ -22,7 +23,6 @@ annotation class OffenderTransferScheduleOutDslMarker
 
 @OffenderTransferScheduleOutDslMarker
 interface OffenderTransferScheduleOutDsl {
-  @OffenderTransferScheduleWaitListDslMarker
   fun waitList(
     requestDate: LocalDate = LocalDate.now(),
     waitListStatus: String = "PEN",
@@ -35,6 +35,15 @@ interface OffenderTransferScheduleOutDsl {
     commentText2: String? = null,
     dsl: OffenderTransferScheduleWaitListDsl.() -> Unit = {},
   ): OffenderTransferScheduleWaitList
+
+  fun transferMovementOut(
+    date: LocalDateTime = LocalDateTime.now(),
+    fromPrison: String = "BXI",
+    toPrison: String? = "MDI",
+    movementReason: String = "28",
+    escort: String? = null,
+    comment: String? = null,
+  ): OffenderTransferMovementOut
 }
 
 @Component
@@ -58,13 +67,15 @@ class OffenderTransferScheduleOutBuilderRepository(
 class OffenderTransferScheduleOutBuilderFactory(
   private val repository: OffenderTransferScheduleOutBuilderRepository,
   private val waitListBuilderFactory: OffenderTransferScheduleWaitListBuilderFactory,
+  private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) {
-  fun builder() = OffenderTransferScheduleOutBuilder(repository, waitListBuilderFactory)
+  fun builder() = OffenderTransferScheduleOutBuilder(repository, waitListBuilderFactory, offenderExternalMovementBuilderFactory)
 }
 
 class OffenderTransferScheduleOutBuilder(
   private val repository: OffenderTransferScheduleOutBuilderRepository,
   private val waitListBuilderFactory: OffenderTransferScheduleWaitListBuilderFactory,
+  private val offenderExternalMovementBuilderFactory: OffenderExternalMovementBuilderFactory,
 ) : OffenderTransferScheduleOutDsl {
 
   private lateinit var transferScheduleOut: OffenderTransferScheduleOut
@@ -125,4 +136,24 @@ class OffenderTransferScheduleOutBuilder(
       .also { transferScheduleOut.waitList = it }
       .also { builder.apply(dsl) }
   }
+
+  override fun transferMovementOut(
+    date: LocalDateTime,
+    fromPrison: String,
+    toPrison: String?,
+    movementReason: String,
+    escort: String?,
+    comment: String?,
+  ): OffenderTransferMovementOut = offenderExternalMovementBuilderFactory.builder()
+    .buildTransferMovementOut(
+      offenderBooking = transferScheduleOut.offenderBooking,
+      date = date.withNano(0),
+      fromPrison = fromPrison,
+      toPrison = toPrison,
+      movementReason = movementReason,
+      escort = escort,
+      comment = comment,
+      transferScheduleOutId = transferScheduleOut.eventId,
+    )
+    .also { transferScheduleOut.offenderBooking.externalMovements += it }
 }
