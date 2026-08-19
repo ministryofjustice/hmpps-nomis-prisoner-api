@@ -6,8 +6,11 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 
 @Transactional
@@ -16,6 +19,7 @@ class CorePersonService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderBeliefRepository: OffenderBeliefRepository,
+  private val offenderIdentifierRepository: OffenderIdentifierRepository,
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val latestBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
@@ -185,8 +189,10 @@ class CorePersonService(
 
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
     log.info("Updating offender {} after merge", prisonNumber)
-    val offender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-    val religionsToUpdate = offenderBeliefRepository.findAllById(request.religions.map { it.beliefId }).associateBy { it.beliefId }
+    val offender =
+      offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
+    val religionsToUpdate =
+      offenderBeliefRepository.findAllById(request.religions.map { it.beliefId }).associateBy { it.beliefId }
     for ((beliefId, endDate) in request.religions) {
       val toUpdate = religionsToUpdate[beliefId] ?: throw NotFoundException("Religion not found $beliefId")
       if (toUpdate.rootOffenderId != offender.id) {
@@ -195,6 +201,21 @@ class CorePersonService(
       toUpdate.endDate = endDate
     }
   }
+
+  fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier = offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
+    .orElseThrow { NotFoundException("Identifier not found for offender offenderId and sequence $sequenceNumber") }
+    .toIdentifier()
+
+  private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
+
+  private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
+    sequence = id.sequence,
+    type = identifierType.toCodeDescription(),
+    identifier = identifier,
+    issuedAuthority = issuedAuthority,
+    issuedDate = issuedDate,
+    verified = verified ?: false,
+  )
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)

@@ -36,6 +36,19 @@ class OffenderTransferMovementsResourceIntTest(
     repository.deleteOffenders()
   }
 
+  private lateinit var offender: Offender
+  private lateinit var booking: OffenderBooking
+  private lateinit var schedule: OffenderTransferScheduleOut
+  private lateinit var waitlist: OffenderTransferScheduleWaitList
+  private lateinit var staff: Staff
+  private lateinit var movement: OffenderTransferMovementOut
+  private lateinit var unscheduledMovement: OffenderTransferMovementOut
+
+  @AfterEach
+  fun tearDown() {
+    repository.deleteOffenders()
+  }
+
   @Nested
   inner class GetOffenderTransferMovements {
 
