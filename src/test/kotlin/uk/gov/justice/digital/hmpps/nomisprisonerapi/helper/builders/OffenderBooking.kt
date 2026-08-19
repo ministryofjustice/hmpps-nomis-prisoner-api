@@ -1281,7 +1281,7 @@ class BookingBuilder(
   ): OffenderTransferMovementOut = offenderExternalMovementBuilderFactory.builder()
     .buildTransferMovementOut(
       offenderBooking = offenderBooking,
-      date = date,
+      date = date.withNano(0),
       fromPrison = fromPrison,
       toPrison = toPrison,
       movementReason = movementReason,

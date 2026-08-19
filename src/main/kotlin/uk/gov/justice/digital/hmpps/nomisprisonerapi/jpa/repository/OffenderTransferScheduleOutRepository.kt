@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 
 @Repository
-interface OffenderTransferScheduleOutRepository : JpaRepository<OffenderTransferScheduleOut, Long>
+interface OffenderTransferScheduleOutRepository : JpaRepository<OffenderTransferScheduleOut, Long> {
+  fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderTransferScheduleOut>
+}
