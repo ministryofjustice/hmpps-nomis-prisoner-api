@@ -70,7 +70,7 @@ class OffenderTransferScheduleWaitList(
   @Convert(converter = YesNoConverter::class)
   var approvedFlag: Boolean = false,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "APPROVED_STAFF_ID")
   @NotFound(action = NotFoundAction.IGNORE)
   var approvedStaff: Staff? = null,
