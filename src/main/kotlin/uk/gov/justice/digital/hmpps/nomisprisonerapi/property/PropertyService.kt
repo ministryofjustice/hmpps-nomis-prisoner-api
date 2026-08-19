@@ -61,6 +61,12 @@ class PropertyService(
     offenderPropertyContainerRepository.findIdsByAgencyLocation_IdIn(pageRequest, propertyFilter.prisonIds)
   }.map { ContainerIdResponse(it.propertyContainerId) }
 
+  fun findIdRanges(pageSize: Int): List<Long> = offenderPropertyContainerRepository
+    .findEveryPageSizeId(pageSize)
+
+  fun findAllIdsBetweenIds(fromId: Long, toId: Long): List<Long> = offenderPropertyContainerRepository
+    .findAllIdsBetweenIds(fromId, toId)
+
   private fun PropertyContainerCreateRequest.toModel() = OffenderPropertyContainer(
     offenderBooking = findLatestBooking(),
     agencyInternalLocation = findLocation(this.internalLocationId),

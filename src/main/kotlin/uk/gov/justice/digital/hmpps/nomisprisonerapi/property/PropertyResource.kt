@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.constraints.Min
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -109,7 +110,6 @@ class PropertyResource(private val propertyService: PropertyService) {
     @Schema(description = "property container Id", example = "2345678") @PathVariable id: Long,
   ): PropertyContainerGetResponse = propertyService.getProperty(id)
 
-  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/property-containers/ids")
   @Operation(
     summary = "get property container by filter",
@@ -142,4 +142,70 @@ class PropertyResource(private val propertyService: PropertyService) {
     pageRequest = pageRequest,
     PropertyFilter(prisonIds = prisonIds),
   )
+
+  @GetMapping("/property-containers/id-ranges")
+  @Operation(
+    summary = "get property container ids by page size",
+    description = "Retrieves a list of property container ids, spaced by the page size. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "List of ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getPropertyContainerIdRanges(
+    @RequestParam(value = "pageSize", defaultValue = "1000")
+    @Parameter(description = "Range size of ids to get")
+    @Min(1)
+    pageSize: Int,
+  ): List<Long> = propertyService.findIdRanges(pageSize)
+
+  @GetMapping("/property-containers/ids-in-range")
+  @Operation(
+    summary = "Gets every id in range.",
+    description = """Returns a list of property container ids greater than the specified fromId and less than or equal to the
+      specified toId. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of property container ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getIdentifiersInRange(
+    @RequestParam(value = "fromId", required = true)
+    @Schema(description = "Return ids greater than this value.")
+    fromId: Long,
+    @RequestParam(value = "toId", required = true)
+    @Schema(description = "Return ids less than or equal to this value.")
+    toId: Long,
+  ): List<Long> = propertyService.findAllIdsBetweenIds(fromId, toId)
 }
