@@ -79,7 +79,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   @GetMapping("{offenderId}/identifier/{sequenceNumber}")
   @Operation(
     summary = "Get an identifier by offender id and sequence number",
-    description = "Retrieves an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Retrieves an offender identifier. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -107,7 +107,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Identifier does not exist",
+        description = "Identifier or offender does not exist",
         content = [
           Content(
             mediaType = "application/json",
