@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.offend
 
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.asDisplayName
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.movement.TransferMovementOut
@@ -18,14 +20,20 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedul
 class OffenderTransferMovementsService(
   private val scheduleRepository: OffenderTransferScheduleOutRepository,
   private val movementRepository: OffenderTransferMovementOutRepository,
+  private val offenderRepository: OffenderRepository,
 ) {
 
   fun getOffenderTransferMovements(offenderNo: String): OffenderTransferMovementsResponse {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Offender with nomsId=$offenderNo not found")
+    }
+
     val allSchedules = scheduleRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
     val allMovements = movementRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
-    val unscheduledMovements =
-      allMovements.filter { it.transferScheduleOutId == null || it.transferScheduleOutId !in (allSchedules.map { it.eventId }) }
+    val unscheduledMovements = (allSchedules.map { it.eventId }).let { allEventIds ->
+      allMovements.filter { it.transferScheduleOutId == null || it.transferScheduleOutId !in (allEventIds) }
+    }
 
     data class Booking(val id: Long, val active: Boolean, val latest: Boolean)
 
