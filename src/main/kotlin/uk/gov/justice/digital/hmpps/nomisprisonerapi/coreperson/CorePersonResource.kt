@@ -76,6 +76,54 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): CorePerson = corePersonService.getOffender(prisonNumber)
 
+  @GetMapping("{offenderId}/identifier/{sequenceNumber}")
+  @Operation(
+    summary = "Get an identifier by offender id and sequence number",
+    description = "Retrieves an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Identifier returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Identifier does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getIdentifier(
+    @Schema(description = "The offender id", example = "1234567")
+    @PathVariable offenderId: Long,
+    @Schema(description = "The sequence number", example = "3")
+    @PathVariable sequenceNumber: Int,
+  ) = corePersonService.getIdentifier(offenderId, sequenceNumber)
+
   @GetMapping("/{prisonNumber}/religions")
   @Operation(
     summary = "Get all the religion information for an offender by prison number",
@@ -331,9 +379,15 @@ data class OffenderNationality(
   val nationality: CodeDescription,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
-  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  @Schema(
+    description = "The end date of the booking, or null if the booking is still active",
+    example = "2021-07-16T12:34:56",
+  )
   val endDateTime: LocalDateTime?,
-  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  @Schema(
+    description = "Whether this is the latest booking or not. Note that latest does not imply active.",
+    example = "true",
+  )
   val latestBooking: Boolean,
 )
 
@@ -346,9 +400,15 @@ data class OffenderNationalityDetails(
   val details: String,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
-  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  @Schema(
+    description = "The end date of the booking, or null if the booking is still active",
+    example = "2021-07-16T12:34:56",
+  )
   val endDateTime: LocalDateTime?,
-  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  @Schema(
+    description = "Whether this is the latest booking or not. Note that latest does not imply active.",
+    example = "true",
+  )
   val latestBooking: Boolean,
 )
 
@@ -361,9 +421,15 @@ data class OffenderSexualOrientation(
   val sexualOrientation: CodeDescription,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
-  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  @Schema(
+    description = "The end date of the booking, or null if the booking is still active",
+    example = "2021-07-16T12:34:56",
+  )
   val endDateTime: LocalDateTime?,
-  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  @Schema(
+    description = "Whether this is the latest booking or not. Note that latest does not imply active.",
+    example = "true",
+  )
   val latestBooking: Boolean,
 )
 
@@ -376,9 +442,15 @@ data class OffenderDisability(
   val disability: Boolean,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
-  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  @Schema(
+    description = "The end date of the booking, or null if the booking is still active",
+    example = "2021-07-16T12:34:56",
+  )
   val endDateTime: LocalDateTime?,
-  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  @Schema(
+    description = "Whether this is the latest booking or not. Note that latest does not imply active.",
+    example = "true",
+  )
   val latestBooking: Boolean,
 )
 
@@ -391,9 +463,15 @@ data class OffenderInterestToImmigration(
   val interestToImmigration: Boolean,
   @Schema(description = "The start date of the booking", example = "2020-07-17T12:34:56")
   val startDateTime: LocalDateTime,
-  @Schema(description = "The end date of the booking, or null if the booking is still active", example = "2021-07-16T12:34:56")
+  @Schema(
+    description = "The end date of the booking, or null if the booking is still active",
+    example = "2021-07-16T12:34:56",
+  )
   val endDateTime: LocalDateTime?,
-  @Schema(description = "Whether this is the latest booking or not. Note that latest does not imply active.", example = "true")
+  @Schema(
+    description = "Whether this is the latest booking or not. Note that latest does not imply active.",
+    example = "true",
+  )
   val latestBooking: Boolean,
 )
 

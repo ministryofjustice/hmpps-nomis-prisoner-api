@@ -1519,4 +1519,158 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /core-person/{offenderId}/identifier/{sequenceNumber}")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class GetIdentifier {
+    private lateinit var offender: Offender
+    private lateinit var alias: Offender
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY", type = "GENERAL")
+        }
+        offender = offender(
+          nomsId = "D5678EF",
+          firstName = "JANE",
+          lastName = "NARK",
+          birthDate = LocalDate.parse("1999-12-22"),
+        ) {
+          identifier(
+            type = "PNC",
+            identifier = "20/0071818T",
+            issuedAuthority = "Met Police",
+            issuedDate = LocalDate.parse("2020-01-01"),
+            verified = true,
+          )
+          identifier(type = "STAFF", identifier = "123")
+          alias = alias {
+            identifier(type = "DL", identifier = "NARK991222")
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifier/1")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifier/1")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifier/1")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/core-person/999999/identifier/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when identifier not found`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifier/999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return identifier by offender id and sequence number`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifier/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("sequence").isEqualTo(1)
+          .jsonPath("identifier").isEqualTo("20/0071818T")
+          .jsonPath("type.code").isEqualTo("PNC")
+          .jsonPath("type.description").isEqualTo("PNC Number")
+          .jsonPath("issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("issuedDate").isEqualTo("2020-01-01")
+          .jsonPath("verified").isEqualTo(true)
+      }
+
+      @Test
+      fun `will return second identifier with correct data`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifier/2")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("sequence").isEqualTo(2)
+          .jsonPath("identifier").isEqualTo("123")
+          .jsonPath("type.code").isEqualTo("STAFF")
+          .jsonPath("type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("issuedAuthority").doesNotExist()
+          .jsonPath("issuedDate").doesNotExist()
+          .jsonPath("verified").isEqualTo(false)
+      }
+
+      @Test
+      fun `will return identifier for alias`() {
+        webTestClient.get().uri("/core-person/${alias.id}/identifier/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("sequence").isEqualTo(1)
+          .jsonPath("identifier").isEqualTo("NARK991222")
+          .jsonPath("type.code").isEqualTo("DL")
+          .jsonPath("type.description").isEqualTo("Driving Licence")
+          .jsonPath("issuedAuthority").doesNotExist()
+          .jsonPath("issuedDate").doesNotExist()
+          .jsonPath("verified").isEqualTo(false)
+      }
+
+      @Test
+      fun `is able to re-hydrate the identifier`() {
+        val identifier = webTestClient.get().uri("/core-person/${offender.id}/identifier/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .returnResult<Identifier>().responseBody.blockFirst()!!
+
+        assertThat(identifier.sequence).isEqualTo(1)
+        assertThat(identifier.identifier).isEqualTo("20/0071818T")
+        assertThat(identifier.type).isEqualTo(CodeDescription(code = "PNC", description = "PNC Number"))
+        assertThat(identifier.issuedAuthority).isEqualTo("Met Police")
+        assertThat(identifier.issuedDate).isEqualTo(LocalDate.parse("2020-01-01"))
+        assertThat(identifier.verified).isTrue()
+      }
+    }
+  }
 }
