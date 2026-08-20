@@ -1745,7 +1745,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `returns the offender when there is no booking`() {
+      fun `returns the alias when there is no booking`() {
         webTestClient.get().uri("/core-person/alias/${offenderWithoutBooking.id}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -1760,7 +1760,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `marks the alias as not working name when a different alias is current`() {
+      fun `marks the alias as not working name (not active) when a different alias is current`() {
         webTestClient.get().uri("/core-person/alias/${offenderWithActiveAlias.id}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
