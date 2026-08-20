@@ -325,7 +325,7 @@ data class CorePerson(
   @Schema(description = "Indicates that the person is currently in prison")
   val activeFlag: Boolean,
   @Schema(description = "List of offender records for the person")
-  val offenders: List<CoreOffender>? = emptyList(),
+  val offenders: List<CoreOffender>?,
   @Schema(description = "Current belief and history of all beliefs for the person")
   val beliefs: List<OffenderBelief>?,
 )
