@@ -24,13 +24,8 @@ class CorePersonService(
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val latestBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
-    val rootOffender =
-      offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-
-    // current active alias defined as the one linked to the latest booking or the root if there are no bookings
-    val currentAlias = latestBooking?.offender ?: rootOffender
+    val (currentAlias, rootOffender) = currentAliasAndRootOffender(prisonNumber)
     val allOffenders = offenderRepository.findByNomsId(prisonNumber).sortedBy { it.id }
-    val allBookings = rootOffender.getAllBookingsFromRoot()?.sortedBy { it.bookingSequence }
 
     return CorePerson(
       prisonNumber = prisonNumber,
@@ -38,122 +33,6 @@ class CorePersonService(
       activeFlag = latestBooking?.active ?: false,
       offenders = allOffenders.map {
         it.toCoreOffender(currentAlias.id)
-      },
-      sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList()
-        ?: emptyList(),
-      nationalities = allBookings?.flatMap { b ->
-        b.profileDetails.filter { it.id.profileType.type == "NAT" }
-          .filter { it.profileCodeId != null }
-          .map { n ->
-            OffenderNationality(
-              bookingId = b.bookingId,
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-              nationality = n.profileCode!!.toCodeDescription(),
-            )
-          }
-      } ?: emptyList(),
-      nationalityDetails = allBookings?.flatMap { b ->
-        b.profileDetails.filter { it.id.profileType.type == "NATIO" }
-          .filter { it.profileCodeId != null }
-          .map { n ->
-            OffenderNationalityDetails(
-              bookingId = b.bookingId,
-              details = n.profileCodeId!!,
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
-      } ?: emptyList(),
-      sexualOrientations = allBookings?.flatMap { b ->
-        b.profileDetails.filter { it.id.profileType.type == "SEXO" }
-          .filter { it.profileCodeId != null }
-          .map { n ->
-            OffenderSexualOrientation(
-              bookingId = b.bookingId,
-              sexualOrientation = n.profileCode!!.toCodeDescription(),
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
-      } ?: emptyList(),
-      disabilities = allBookings?.flatMap { b ->
-        b.profileDetails.filter { it.id.profileType.type == "DISABILITY" }
-          .filter { it.profileCodeId != null }
-          .map { n ->
-            OffenderDisability(
-              bookingId = b.bookingId,
-              disability = n.profileCodeId == "YES",
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
-      } ?: emptyList(),
-      interestsToImmigration = allBookings?.flatMap { b ->
-        b.profileDetails.filter { it.id.profileType.type == "IMM" }
-          .filter { it.profileCodeId != null }
-          .map { n ->
-            OffenderInterestToImmigration(
-              bookingId = b.bookingId,
-              interestToImmigration = n.profileCodeId == "Y",
-              startDateTime = b.bookingBeginDate,
-              endDateTime = b.getReleaseTime(),
-              latestBooking = b.bookingSequence == 1,
-            )
-          }
-      } ?: emptyList(),
-      addresses = rootOffender.addresses.map { address ->
-        OffenderAddress(
-          addressId = address.addressId,
-          flat = address.flat,
-          premise = address.premise,
-          street = address.street,
-          locality = address.locality,
-          postcode = address.postalCode,
-          city = address.city?.toCodeDescription(),
-          county = address.county?.toCodeDescription(),
-          country = address.country?.toCodeDescription(),
-          validatedPAF = address.validatedPAF,
-          primaryAddress = address.primaryAddress,
-          noFixedAddress = address.noFixedAddress,
-          mailAddress = address.mailAddress,
-          comment = address.comment,
-          startDate = address.startDate,
-          endDate = address.endDate,
-          phoneNumbers = address.phones.map { number ->
-            OffenderPhoneNumber(
-              phoneId = number.phoneId,
-              number = number.phoneNo,
-              type = number.phoneType.toCodeDescription(),
-              extension = number.extNo,
-            )
-          },
-          usages = address.usages.filter { u -> u.addressUsage != null }.map { u ->
-            OffenderAddressUsage(
-              addressId = address.addressId,
-              usage = u.addressUsage!!.toCodeDescription(),
-              active = u.active,
-            )
-          },
-        )
-      },
-      phoneNumbers = rootOffender.phones.map { number ->
-        OffenderPhoneNumber(
-          phoneId = number.phoneId,
-          number = number.phoneNo,
-          type = number.phoneType.toCodeDescription(),
-          extension = number.extNo,
-        )
-      },
-      emailAddresses = rootOffender.internetAddresses.map { address ->
-        OffenderEmailAddress(
-          emailAddressId = address.internetAddressId,
-          email = address.internetAddress,
-        )
       },
       beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(rootOffender.id)
         .map { it.toBelief() },
@@ -185,24 +64,25 @@ class CorePersonService(
   fun getAlias(offenderId: Long): CoreOffender {
     val offender = offenderOf(offenderId)
     val prisonNumber = offender.nomsId
-    val currentAlias = currentAlias(prisonNumber)
+    val (currentAlias, _) = currentAliasAndRootOffender(prisonNumber)
     return offender.toCoreOffender(currentAliasId = currentAlias.id, includeIdentifiers = false)
   }
 
   fun getOffenderAliasesAndIdentifiers(prisonNumber: String): List<CoreOffender> {
-    val currentAlias = currentAlias(prisonNumber)
+    val (currentAlias, _) = currentAliasAndRootOffender(prisonNumber)
     return offenderRepository.findByNomsId(prisonNumber).sortedBy { it.id }.map {
       it.toCoreOffender(currentAliasId = currentAlias.id, includeIdentifiers = true)
     }
   }
 
-  fun currentAlias(prisonNumber: String): Offender {
+  fun currentAliasAndRootOffender(prisonNumber: String): CurrentAliasAndRoot {
     val rootOffender = offenderRepository.findRootByNomsId(prisonNumber)
       ?: throw NotFoundException("Offender not found $prisonNumber")
     val currentAlias =
       offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)?.offender ?: rootOffender
-    return currentAlias
+    return CurrentAliasAndRoot(currentAlias, rootOffender)
   }
+  data class CurrentAliasAndRoot(val currentAlias: Offender, val rootOffender: Offender)
 
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 

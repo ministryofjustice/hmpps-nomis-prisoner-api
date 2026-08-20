@@ -326,27 +326,27 @@ data class CorePerson(
   @Schema(description = "Indicates that the person is currently in prison")
   val activeFlag: Boolean,
   @Schema(description = "List of offender records for the person")
-  val offenders: List<CoreOffender>?,
+  val offenders: List<CoreOffender>? = emptyList(),
   @Schema(description = "List of distinct sentence start dates")
-  val sentenceStartDates: List<LocalDate>?,
+  val sentenceStartDates: List<LocalDate>? = emptyList(),
   @Schema(description = "List of addresses for the person")
-  val addresses: List<OffenderAddress>?,
+  val addresses: List<OffenderAddress>? = emptyList(),
   @Schema(description = "List of phone numbers for the person")
-  val phoneNumbers: List<OffenderPhoneNumber>?,
+  val phoneNumbers: List<OffenderPhoneNumber>? = emptyList(),
   @Schema(description = "List of email addresses for the person")
-  val emailAddresses: List<OffenderEmailAddress>?,
+  val emailAddresses: List<OffenderEmailAddress>? = emptyList(),
   @Schema(description = "List of nationalities for the person")
-  val nationalities: List<OffenderNationality>?,
+  val nationalities: List<OffenderNationality>? = emptyList(),
   @Schema(description = "List of nationality details for the person")
-  val nationalityDetails: List<OffenderNationalityDetails>?,
+  val nationalityDetails: List<OffenderNationalityDetails>? = emptyList(),
   @Schema(description = "List of sexual orientations for the person")
-  val sexualOrientations: List<OffenderSexualOrientation>?,
+  val sexualOrientations: List<OffenderSexualOrientation>? = emptyList(),
   @Schema(description = "List of disabilities for the person")
-  val disabilities: List<OffenderDisability>?,
+  val disabilities: List<OffenderDisability>? = emptyList(),
   @Schema(description = "List of disabilities for the person")
-  val interestsToImmigration: List<OffenderInterestToImmigration>?,
+  val interestsToImmigration: List<OffenderInterestToImmigration>? = emptyList(),
   @Schema(description = "Current belief and history of all beliefs for the person")
-  val beliefs: List<OffenderBelief>?,
+  val beliefs: List<OffenderBelief>? = emptyList(),
 )
 
 @Schema(description = "The data held in NOMIS for an offender.")
