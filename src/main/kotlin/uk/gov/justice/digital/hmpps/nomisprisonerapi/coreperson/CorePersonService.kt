@@ -160,9 +160,8 @@ class CorePersonService(
     )
   }
 
-  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> =
-    offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
-      .map { it.toBelief() }
+  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
+    .map { it.toBelief() }
 
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
     log.info("Updating offender {} after merge", prisonNumber)
@@ -179,23 +178,20 @@ class CorePersonService(
     }
   }
 
-  fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier =
-    offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
-      .orElseThrow { NotFoundException("Identifier not found for offender offenderId and sequence $sequenceNumber") }
-      .toIdentifier()
-
+  fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier = offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
+    .orElseThrow { NotFoundException("Identifier not found for offender offenderId and sequence $sequenceNumber") }
+    .toIdentifier()
 
   fun getAlias(offenderId: Long): CoreOffender {
     val offender = offenderOf(offenderId)
     val prisonNumber = offender.nomsId
     val currentAlias =
       offenderBookingRepository.findLatestByOffenderNomsId(offender.nomsId)?.offender ?: offender.rootOffender
-      ?: throw NotFoundException("Offender not found $prisonNumber")
+        ?: throw NotFoundException("Offender not found $prisonNumber")
     return offender.toCoreOffender(currentAlias.id, false)
   }
 
-  private fun offenderOf(offenderId: Long) =
-    offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
+  private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
     sequence = id.sequence,
@@ -204,7 +200,7 @@ class CorePersonService(
     issuedAuthority = issuedAuthority,
     issuedDate = issuedDate,
     verified = verified ?: false,
-    )
+  )
 
   private fun Offender.toCoreOffender(currentAliasId: Long, includeIdentifiers: Boolean = true): CoreOffender = CoreOffender(
     offenderId = id,
@@ -242,13 +238,12 @@ class CorePersonService(
   }
 }
 
-private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief =
-  OffenderBelief(
-    beliefId = beliefId,
-    belief = beliefCode.toCodeDescription(),
-    startDate = startDate,
-    endDate = endDate,
-    changeReason = changeReason,
-    comments = comments,
-    audit = toAudit(),
-  )
+private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
+  beliefId = beliefId,
+  belief = beliefCode.toCodeDescription(),
+  startDate = startDate,
+  endDate = endDate,
+  changeReason = changeReason,
+  comments = comments,
+  audit = toAudit(),
+)

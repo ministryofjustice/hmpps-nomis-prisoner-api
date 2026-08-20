@@ -124,7 +124,6 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable sequenceNumber: Int,
   ) = corePersonService.getIdentifier(offenderId, sequenceNumber)
 
-
   @GetMapping("alias/{offenderId}")
   @Operation(
     summary = "Get an alias by offender id",
