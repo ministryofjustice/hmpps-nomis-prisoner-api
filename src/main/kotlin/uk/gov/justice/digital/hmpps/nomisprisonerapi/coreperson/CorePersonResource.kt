@@ -173,7 +173,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   @GetMapping("{prisonNumber}/aliases-identifiers")
   @Operation(
     summary = "Get the aliases and identifiers for an offender by prison number",
-    description = "Retrieves an offender identifier. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Retrieves the aliases and offenders for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",

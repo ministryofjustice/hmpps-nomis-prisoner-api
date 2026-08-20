@@ -1254,39 +1254,43 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       }
     }
 
-    @Test
-    fun `will return aliases and identifiers`() {
-      webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
-        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus()
-        .isOk
-        .expectBody()
-        .jsonPath("$.length()").isEqualTo(2)
-        .jsonPath("[0].offenderId").isEqualTo(offender.id)
-        .jsonPath("[0].firstName").isEqualTo("JANE")
-        .jsonPath("[0].lastName").isEqualTo("NARK")
-        .jsonPath("[0].workingName").isEqualTo(false)
-        .jsonPath("[0].identifiers.length()").isEqualTo(1)
-        .jsonPath("[0].identifiers[0].sequence").isEqualTo(1)
-        .jsonPath("[0].identifiers[0].identifier").isEqualTo("20/0071818T")
-        .jsonPath("[0].identifiers[0].type.code").isEqualTo("PNC")
-        .jsonPath("[0].identifiers[0].type.description").isEqualTo("PNC Number")
-        .jsonPath("[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
-        .jsonPath("[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
-        .jsonPath("[0].identifiers[0].verified").isEqualTo(true)
-        .jsonPath("[1].offenderId").isEqualTo(alias.id)
-        .jsonPath("[1].firstName").isEqualTo("AJOHN")
-        .jsonPath("[1].lastName").isEqualTo("ABARK")
-        .jsonPath("[1].workingName").isEqualTo(true)
-        .jsonPath("[1].identifiers.length()").isEqualTo(1)
-        .jsonPath("[1].identifiers[0].sequence").isEqualTo(1)
-        .jsonPath("[1].identifiers[0].identifier").isEqualTo("123")
-        .jsonPath("[1].identifiers[0].type.code").isEqualTo("STAFF")
-        .jsonPath("[1].identifiers[0].type.description").isEqualTo("Staff Pass/ Identity Card")
-        .jsonPath("[1].identifiers[0].issuedAuthority").doesNotExist()
-        .jsonPath("[1].identifiers[0].issuedDate").doesNotExist()
-        .jsonPath("[1].identifiers[0].verified").isEqualTo(false)
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `will return aliases and identifiers`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(2)
+          .jsonPath("[0].offenderId").isEqualTo(offender.id)
+          .jsonPath("[0].firstName").isEqualTo("JANE")
+          .jsonPath("[0].lastName").isEqualTo("NARK")
+          .jsonPath("[0].workingName").isEqualTo(false)
+          .jsonPath("[0].identifiers.length()").isEqualTo(1)
+          .jsonPath("[0].identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("[0].identifiers[0].identifier").isEqualTo("20/0071818T")
+          .jsonPath("[0].identifiers[0].type.code").isEqualTo("PNC")
+          .jsonPath("[0].identifiers[0].type.description").isEqualTo("PNC Number")
+          .jsonPath("[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
+          .jsonPath("[0].identifiers[0].verified").isEqualTo(true)
+          .jsonPath("[1].offenderId").isEqualTo(alias.id)
+          .jsonPath("[1].firstName").isEqualTo("AJOHN")
+          .jsonPath("[1].lastName").isEqualTo("ABARK")
+          .jsonPath("[1].workingName").isEqualTo(true)
+          .jsonPath("[1].identifiers.length()").isEqualTo(1)
+          .jsonPath("[1].identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("[1].identifiers[0].identifier").isEqualTo("123")
+          .jsonPath("[1].identifiers[0].type.code").isEqualTo("STAFF")
+          .jsonPath("[1].identifiers[0].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("[1].identifiers[0].issuedAuthority").doesNotExist()
+          .jsonPath("[1].identifiers[0].issuedDate").doesNotExist()
+          .jsonPath("[1].identifiers[0].verified").isEqualTo(false)
+      }
     }
   }
 
