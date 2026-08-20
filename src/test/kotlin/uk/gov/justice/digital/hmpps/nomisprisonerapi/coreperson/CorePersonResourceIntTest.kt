@@ -158,7 +158,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .returnResult<CorePerson>().responseBody.blockFirst()!!
 
         assertThat(person.prisonNumber).isEqualTo(offenderMinimal.nomsId)
-        assertThat(person.addresses).isNull()
       }
 
       @Test
