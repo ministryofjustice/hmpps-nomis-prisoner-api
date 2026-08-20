@@ -185,10 +185,23 @@ class CorePersonService(
   fun getAlias(offenderId: Long): CoreOffender {
     val offender = offenderOf(offenderId)
     val prisonNumber = offender.nomsId
+    val currentAlias = currentAlias(prisonNumber)
+    return offender.toCoreOffender(currentAliasId = currentAlias.id, includeIdentifiers = false)
+  }
+
+  fun getOffenderAliasesAndIdentifiers(prisonNumber: String): List<CoreOffender> {
+    val currentAlias = currentAlias(prisonNumber)
+    return offenderRepository.findByNomsId(prisonNumber).sortedBy { it.id }.map {
+      it.toCoreOffender(currentAliasId = currentAlias.id, includeIdentifiers = true)
+    }
+  }
+
+  fun currentAlias(prisonNumber: String): Offender {
+    val rootOffender = offenderRepository.findRootByNomsId(prisonNumber)
+      ?: throw NotFoundException("Offender not found $prisonNumber")
     val currentAlias =
-      offenderBookingRepository.findLatestByOffenderNomsId(offender.nomsId)?.offender ?: offender.rootOffender
-        ?: throw NotFoundException("Offender not found $prisonNumber")
-    return offender.toCoreOffender(currentAlias.id, false)
+      offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)?.offender ?: rootOffender
+    return currentAlias
   }
 
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
