@@ -1179,6 +1179,121 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /core-person/{prisonNumber}/aliases-identifiers")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class GetOffenderAliasesAndIdentifiers {
+    private lateinit var offender: Offender
+    private lateinit var alias: Offender
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(
+          nomsId = "D5678EF",
+          firstName = "JANE",
+          lastName = "NARK",
+          birthDate = LocalDate.parse("1999-12-22"),
+        ) {
+          identifier(
+            type = "PNC",
+            identifier = "20/0071818T",
+            issuedAuthority = "Met Police",
+            issuedDate = LocalDate.parse("2020-01-01"),
+            verified = true,
+          )
+          booking(bookingSequence = 2, active = false) { }
+          alias = alias(
+            firstName = "AJOHN",
+            lastName = "ABARK",
+          ) {
+            identifier(type = "STAFF", identifier = "123")
+            booking(bookingSequence = 1) { }
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/core-person/AB1234C/aliases-identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `will return aliases and identifiers`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(2)
+          .jsonPath("[0].offenderId").isEqualTo(offender.id)
+          .jsonPath("[0].firstName").isEqualTo("JANE")
+          .jsonPath("[0].lastName").isEqualTo("NARK")
+          .jsonPath("[0].workingName").isEqualTo(false)
+          .jsonPath("[0].identifiers.length()").isEqualTo(1)
+          .jsonPath("[0].identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("[0].identifiers[0].identifier").isEqualTo("20/0071818T")
+          .jsonPath("[0].identifiers[0].type.code").isEqualTo("PNC")
+          .jsonPath("[0].identifiers[0].type.description").isEqualTo("PNC Number")
+          .jsonPath("[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
+          .jsonPath("[0].identifiers[0].verified").isEqualTo(true)
+          .jsonPath("[1].offenderId").isEqualTo(alias.id)
+          .jsonPath("[1].firstName").isEqualTo("AJOHN")
+          .jsonPath("[1].lastName").isEqualTo("ABARK")
+          .jsonPath("[1].workingName").isEqualTo(true)
+          .jsonPath("[1].identifiers.length()").isEqualTo(1)
+          .jsonPath("[1].identifiers[0].sequence").isEqualTo(1)
+          .jsonPath("[1].identifiers[0].identifier").isEqualTo("123")
+          .jsonPath("[1].identifiers[0].type.code").isEqualTo("STAFF")
+          .jsonPath("[1].identifiers[0].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("[1].identifiers[0].issuedAuthority").doesNotExist()
+          .jsonPath("[1].identifiers[0].issuedDate").doesNotExist()
+          .jsonPath("[1].identifiers[0].verified").isEqualTo(false)
+      }
+    }
+  }
+
   @DisplayName("POST /core-person/{prisonNumber}/merge")
   @Nested
   @TestInstance(PER_CLASS)
