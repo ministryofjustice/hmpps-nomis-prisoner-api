@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.offender
 
 import jakarta.transaction.Transactional
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.asDisplayName
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -23,11 +25,22 @@ class OffenderTransferMovementsService(
   private val offenderRepository: OffenderRepository,
 ) {
 
-  fun getOffenderTransferMovements(offenderNo: String): OffenderTransferMovementsResponse {
-    if (!offenderRepository.existsByNomsId(offenderNo)) {
-      throw NotFoundException("Offender with nomsId=$offenderNo not found")
-    }
+  fun getOffenderTransferMovements(rootOffenderId: Long): OffenderTransferMovementsResponse {
+    val offender = offenderRepository.findByIdOrNull(rootOffenderId)
+      ?: throw NotFoundException("Offender with id $rootOffenderId not found")
 
+    return getOffenderTransferMovementDetails(offender)
+  }
+
+  fun getOffenderTransferMovements(offenderNo: String): OffenderTransferMovementsResponse {
+    val offender = offenderRepository.findRootByNomsId(offenderNo)
+      ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
+
+    return getOffenderTransferMovementDetails(offender)
+  }
+
+  private fun getOffenderTransferMovementDetails(offender: Offender): OffenderTransferMovementsResponse {
+    val offenderNo = offender.nomsId
     val allSchedules = scheduleRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
     val allMovements = movementRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
@@ -47,6 +60,8 @@ class OffenderTransferMovementsService(
       ).toSet()
 
     return OffenderTransferMovementsResponse(
+      offenderNo = offenderNo,
+      rootOffenderId = offender.rootOffenderId!!,
       bookings.map { bk ->
         toBookingTransferMovements(
           bookingId = bk.id,

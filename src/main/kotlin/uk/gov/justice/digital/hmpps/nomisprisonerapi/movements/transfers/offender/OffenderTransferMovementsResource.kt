@@ -22,7 +22,7 @@ class OffenderTransferMovementsResource(
 ) {
   @GetMapping("/movements/{offenderNo}/transfer")
   @Operation(
-    summary = "Get tansfer schedules and movements for an offender",
+    summary = "Get transfer schedules and movements for an offender",
     description = "Get transfer schedules and movements for an offender. This is used to migrate transfer movements to DPS and for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
@@ -55,4 +55,40 @@ class OffenderTransferMovementsResource(
   fun getOffenderTransferMovements(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
   ): OffenderTransferMovementsResponse? = service.getOffenderTransferMovements(offenderNo)
+
+  @GetMapping("/movements/root-offender-id/{rootOffenderId}/transfer")
+  @Operation(
+    summary = "Get transfer schedules and movements for an offender by their root offender id",
+    description = "Get transfer schedules and movements for an offender. This is used to migrate transfer movements to DPS and for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender transfer movements returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderTransferMovementsByRootOffenderId(
+    @Schema(description = "Root offender ID", example = "12345") @PathVariable rootOffenderId: Long,
+  ): OffenderTransferMovementsResponse? = service.getOffenderTransferMovements(rootOffenderId)
 }

@@ -72,6 +72,8 @@ class OffenderTransferMovementsResourceIntTest(
       fun `should return booking details`() {
         webTestClient.getOffenderTransferMovementsOk()
           .apply {
+            assertThat(offenderNo).isEqualTo(offender.nomsId)
+            assertThat(rootOffenderId).isEqualTo(offender.rootOffenderId)
             assertThat(bookings[0].bookingId).isEqualTo(booking.bookingId)
             assertThat(bookings[0].activeBooking).isTrue
             assertThat(bookings[0].latestBooking).isTrue
@@ -410,12 +412,119 @@ class OffenderTransferMovementsResourceIntTest(
     }
   }
 
+  // Note that as this endpoint delegates to the same service as GetTransferMovements we can mainly rely on its tests
+  @Nested
+  inner class GetTransferMovementsByRootOffenderId {
+
+    @Nested
+    inner class HappyPath {
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff = staff()
+          offender = offender(nomsId = "A1234BC") {
+            booking = booking {
+              schedule = transferScheduleOut {
+                waitlist = waitList()
+                movement = transferMovementOut()
+              }
+              unscheduledMovement = transferMovementOut()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should return all details`() {
+        webTestClient.getOffenderTransferMovementsByRootOffenderOk()
+          .apply {
+            assertThat(offenderNo).isEqualTo(offender.nomsId)
+            assertThat(rootOffenderId).isEqualTo(offender.rootOffenderId)
+            assertThat(bookings[0].bookingId).isEqualTo(booking.bookingId)
+            assertThat(bookings[0].activeBooking).isTrue
+            assertThat(bookings[0].latestBooking).isTrue
+            with(bookings[0].transferSchedules[0].schedule) {
+              assertThat(bookingId).isEqualTo(booking.bookingId)
+              assertThat(eventId).isEqualTo(schedule.eventId)
+              assertThat(startTime).isEqualTo(schedule.getAppointmentStartDateAndTime())
+            }
+            with(bookings[0].transferSchedules[0].schedule.waitlist!!) {
+              assertThat(requestDate).isEqualTo(waitlist.requestDate)
+            }
+            with(bookings[0].transferSchedules[0].movement!!) {
+              assertThat(bookingId).isEqualTo(booking.bookingId)
+              assertThat(sequence).isEqualTo(movement.id.sequence)
+              assertThat(eventId).isEqualTo(schedule.eventId)
+              assertThat(transferScheduleOutId).isEqualTo(schedule.eventId)
+              assertThat(movementTime).isEqualTo(movement.getMovementDateAndTime())
+            }
+            with(bookings[0].unscheduledTransferMovements[0]) {
+              assertThat(bookingId).isEqualTo(booking.bookingId)
+              assertThat(sequence).isEqualTo(unscheduledMovement.id.sequence)
+              assertThat(eventId).isNull()
+              assertThat(transferScheduleOutId).isNull()
+              assertThat(movementTime).isEqualTo(unscheduledMovement.getMovementDateAndTime())
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found if offender unknown`() {
+        webTestClient.getOffenderTransferMovementsByRootOffender(rootOffenderId = 99999)
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorised for missing token`() {
+        webTestClient.get()
+          .uri("/movements/root-offender-id/12345/transfer")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.get()
+          .uri("/movements/root-offender-id/12345/transfer")
+          .headers(setAuthorisation())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.get()
+          .uri("/movements/root-offender-id/12345/transfer")
+          .headers(setAuthorisation("ROLE_INVALID"))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+  }
+
   private fun WebTestClient.getOffenderTransferMovements(offenderNo: String = offender.nomsId) = get()
     .uri("/movements/$offenderNo/transfer")
     .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
     .exchange()
 
   private fun WebTestClient.getOffenderTransferMovementsOk(offenderNo: String = offender.nomsId) = getOffenderTransferMovements(offenderNo)
+    .expectStatus().isOk
+    .expectBodyResponse<OffenderTransferMovementsResponse>()
+
+  private fun WebTestClient.getOffenderTransferMovementsByRootOffender(rootOffenderId: Long = offender.rootOffenderId!!) = get()
+    .uri("/movements/root-offender-id/$rootOffenderId/transfer")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .exchange()
+
+  private fun WebTestClient.getOffenderTransferMovementsByRootOffenderOk(rootOffenderId: Long = offender.rootOffenderId!!) = getOffenderTransferMovementsByRootOffender(rootOffenderId)
     .expectStatus().isOk
     .expectBodyResponse<OffenderTransferMovementsResponse>()
 }
