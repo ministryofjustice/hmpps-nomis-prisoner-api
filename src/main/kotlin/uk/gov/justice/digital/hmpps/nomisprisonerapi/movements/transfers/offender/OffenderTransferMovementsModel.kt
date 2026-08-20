@@ -6,6 +6,10 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedul
 
 @Schema(description = "Offender transfer movements by booking, including schedules")
 data class OffenderTransferMovementsResponse(
+  @Schema(description = "The prisoner number")
+  val offenderNo: String,
+  @Schema(description = "The root offender ID")
+  val rootOffenderId: Long,
   @Schema(description = "List of bookings with their transfer movements")
   val bookings: List<BookingTransferMovements>,
 )
