@@ -27,7 +27,7 @@ class OffenderTransferMovementsService(
 
   fun getOffenderTransferMovements(rootOffenderId: Long): OffenderTransferMovementsResponse {
     val offender = offenderRepository.findByIdOrNull(rootOffenderId)
-      ?: throw NotFoundException("Offender with rootOffenderId=$rootOffenderId not found")
+      ?: throw NotFoundException("Offender with id $rootOffenderId not found")
 
     return getOffenderTransferMovementDetails(offender)
   }
