@@ -124,6 +124,52 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable sequenceNumber: Int,
   ) = corePersonService.getIdentifier(offenderId, sequenceNumber)
 
+  @GetMapping("alias/{offenderId}")
+  @Operation(
+    summary = "Get an alias by offender id",
+    description = "Retrieves an alias. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Alias returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Alias does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAlias(
+    @Schema(description = "The offender id", example = "1234567")
+    @PathVariable offenderId: Long,
+  ): CoreOffender = corePersonService.getAlias(offenderId)
+
   @GetMapping("/{prisonNumber}/religions")
   @Operation(
     summary = "Get all the religion information for an offender by prison number",

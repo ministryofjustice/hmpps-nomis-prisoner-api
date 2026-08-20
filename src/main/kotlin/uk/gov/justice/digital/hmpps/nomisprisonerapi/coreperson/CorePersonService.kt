@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
@@ -35,33 +36,8 @@ class CorePersonService(
       prisonNumber = prisonNumber,
       inOutStatus = latestBooking?.inOutStatus ?: "OUT",
       activeFlag = latestBooking?.active ?: false,
-      offenders = allOffenders.map { a ->
-        CoreOffender(
-          offenderId = a.id,
-          title = a.title?.toCodeDescription(),
-          firstName = a.firstName,
-          middleName1 = a.middleName,
-          middleName2 = a.middleName2,
-          lastName = a.lastName,
-          dateOfBirth = a.birthDate,
-          birthPlace = a.birthPlace,
-          birthCountry = a.birthCountry?.toCodeDescription(),
-          ethnicity = a.ethnicity?.toCodeDescription(),
-          sex = a.gender.toCodeDescription(),
-          nameType = a.nameType?.toCodeDescription(),
-          createDate = a.createDate,
-          workingName = a.id == currentAlias.id,
-          identifiers = a.identifiers.map { id ->
-            Identifier(
-              sequence = id.id.sequence,
-              type = id.identifierType.toCodeDescription(),
-              identifier = id.identifier,
-              issuedAuthority = id.issuedAuthority,
-              issuedDate = id.issuedDate,
-              verified = id.verified ?: false,
-            )
-          },
-        )
+      offenders = allOffenders.map {
+        it.toCoreOffender(currentAlias.id)
       },
       sentenceStartDates = allBookings?.flatMap { b -> b.sentences.map { s -> s.startDate } }?.toSortedSet()?.toList()
         ?: emptyList(),
@@ -203,8 +179,17 @@ class CorePersonService(
   }
 
   fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier = offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
-    .orElseThrow { NotFoundException("Identifier not found for offender offenderId and sequence $sequenceNumber") }
+    .orElseThrow { NotFoundException("Identifier not found for offender $offenderId and sequence $sequenceNumber") }
     .toIdentifier()
+
+  fun getAlias(offenderId: Long): CoreOffender {
+    val offender = offenderOf(offenderId)
+    val prisonNumber = offender.nomsId
+    val currentAlias =
+      offenderBookingRepository.findLatestByOffenderNomsId(offender.nomsId)?.offender ?: offender.rootOffender
+        ?: throw NotFoundException("Offender not found $prisonNumber")
+    return offender.toCoreOffender(currentAlias.id, false)
+  }
 
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 
@@ -215,6 +200,37 @@ class CorePersonService(
     issuedAuthority = issuedAuthority,
     issuedDate = issuedDate,
     verified = verified ?: false,
+  )
+
+  private fun Offender.toCoreOffender(currentAliasId: Long, includeIdentifiers: Boolean = true): CoreOffender = CoreOffender(
+    offenderId = id,
+    title = title?.toCodeDescription(),
+    firstName = firstName,
+    middleName1 = middleName,
+    middleName2 = middleName2,
+    lastName = lastName,
+    dateOfBirth = birthDate,
+    birthPlace = birthPlace,
+    birthCountry = birthCountry?.toCodeDescription(),
+    ethnicity = ethnicity?.toCodeDescription(),
+    sex = gender.toCodeDescription(),
+    nameType = nameType?.toCodeDescription(),
+    createDate = createDate,
+    workingName = id == currentAliasId,
+    identifiers = if (includeIdentifiers) {
+      identifiers.map { id ->
+        Identifier(
+          sequence = id.id.sequence,
+          type = id.identifierType.toCodeDescription(),
+          identifier = id.identifier,
+          issuedAuthority = id.issuedAuthority,
+          issuedDate = id.issuedDate,
+          verified = id.verified ?: false,
+        )
+      }
+    } else {
+      emptyList()
+    },
   )
 
   companion object {
