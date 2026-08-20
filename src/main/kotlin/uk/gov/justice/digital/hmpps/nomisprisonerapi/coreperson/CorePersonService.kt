@@ -179,7 +179,7 @@ class CorePersonService(
   }
 
   fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier = offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
-    .orElseThrow { NotFoundException("Identifier not found for offender offenderId and sequence $sequenceNumber") }
+    .orElseThrow { NotFoundException("Identifier not found for offender $offenderId and sequence $sequenceNumber") }
     .toIdentifier()
 
   fun getAlias(offenderId: Long): CoreOffender {
