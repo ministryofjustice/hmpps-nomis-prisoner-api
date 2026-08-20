@@ -1673,4 +1673,120 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /core-person/alias/{offenderId}")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class GetAlias {
+    private lateinit var offenderWithoutBooking: Offender
+    private lateinit var offenderWithActiveAlias: Offender
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        offenderWithoutBooking = offender(
+          nomsId = "F5678GH",
+          firstName = "JANE",
+          lastName = "NARK",
+        )
+        offenderWithActiveAlias = offender(
+          nomsId = "G5678HJ",
+          firstName = "JOHN",
+          lastName = "BARK",
+        ) {
+          booking(bookingSequence = 2, active = false) { }
+          alias {
+            booking(bookingSequence = 1, active = true) { }
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/core-person/alias/${offenderWithoutBooking.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/core-person/alias/${offenderWithoutBooking.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/core-person/alias/${offenderWithoutBooking.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/core-person/alias/999999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `returns the offender when there is no booking`() {
+        webTestClient.get().uri("/core-person/alias/${offenderWithoutBooking.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("offenderId").isEqualTo(offenderWithoutBooking.id)
+          .jsonPath("firstName").isEqualTo("JANE")
+          .jsonPath("lastName").isEqualTo("NARK")
+          .jsonPath("workingName").isEqualTo(true)
+          .jsonPath("identifiers.length()").isEqualTo(0)
+      }
+
+      @Test
+      fun `marks the alias as not working name when a different alias is current`() {
+        webTestClient.get().uri("/core-person/alias/${offenderWithActiveAlias.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("offenderId").isEqualTo(offenderWithActiveAlias.id)
+          .jsonPath("firstName").isEqualTo("JOHN")
+          .jsonPath("lastName").isEqualTo("BARK")
+          .jsonPath("workingName").isEqualTo(false)
+          .jsonPath("identifiers.length()").isEqualTo(0)
+      }
+
+      @Test
+      fun `is able to re-hydrate the alias offender`() {
+        val alias = webTestClient.get().uri("/core-person/alias/${offenderWithoutBooking.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .returnResult<CoreOffender>().responseBody.blockFirst()!!
+
+        assertThat(alias.offenderId).isEqualTo(offenderWithoutBooking.id)
+        assertThat(alias.workingName).isTrue()
+        assertThat(alias.identifiers).hasSize(0)
+      }
+    }
+  }
 }
