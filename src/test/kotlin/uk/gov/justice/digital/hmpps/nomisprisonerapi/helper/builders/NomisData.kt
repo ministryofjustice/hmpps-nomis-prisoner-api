@@ -109,9 +109,9 @@ class NomisData(
   private val agencyVisitDayBuilderFactory: AgencyVisitDayBuilderFactory? = null,
   private val areaBuilderFactory: AreaBuilderFactory? = null,
 ) : NomisDataDsl {
-  override fun staff(firstName: String, lastName: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
+  override fun staff(firstName: String, lastName: String, status: String, dsl: StaffDsl.() -> Unit): Staff = staffBuilderFactory!!.builder()
     .let { builder ->
-      builder.build(lastName, firstName)
+      builder.build(lastName, firstName, status)
         .also {
           builder.apply(dsl)
         }
@@ -685,7 +685,7 @@ interface NomisDataDsl {
     dsl: ProgramServiceDsl.() -> Unit = {},
   ): ProgramService
 
-  fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", dsl: StaffDsl.() -> Unit = {}): Staff
+  fun staff(firstName: String = "AAYAN", lastName: String = "AHMAD", status: String = "ACTIVE", dsl: StaffDsl.() -> Unit = {}): Staff
 
   fun adjudicationIncident(
     whenCreated: LocalDateTime = LocalDateTime.now(),

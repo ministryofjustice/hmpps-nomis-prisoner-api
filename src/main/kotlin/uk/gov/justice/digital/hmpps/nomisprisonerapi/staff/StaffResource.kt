@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.staff
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -29,6 +30,69 @@ import java.time.LocalDateTime
 @RequestMapping(value = ["/staff"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
 class StaffResource(private val staffService: StaffService) {
+
+  @GetMapping("/id-ranges")
+  @Operation(
+    summary = "Gets every size staff ids for staff search.",
+    description = """Returns a list of staff id ranges for staff. Each list item has a from and to 
+      staff id, with the number of staff between the from and to equal to the specified size. 
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of staff id ranges"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAllStaffIdRanges(
+    @RequestParam(value = "active", required = true)
+    @Parameter(
+      description = "When true only return active staff currently in prison else all staff are returned.",
+    )
+    active: Boolean,
+    @RequestParam(value = "size", defaultValue = "1000")
+    @Parameter(description = "Number of staff to get")
+    pageSize: Int,
+  ): List<StaffIdRange> = staffService.findStaffIdRanges(pageSize, active)
+
+  @GetMapping("/ids")
+  @Operation(
+    summary = "Gets every staff id between range.",
+    description = """Returns a list of staff ids for staff ids greater than the specified
+      fromStaffId and less than or equal to the specified toStaffId.
+      Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(responseCode = "200", description = "list of staff ids"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAllStaffInRange(
+    @RequestParam(value = "active", required = true)
+    @Parameter(description = "When true only return active staff (those with status \"ACTIVE\") else all staff are returned.")
+    active: Boolean,
+    @RequestParam(required = true)
+    @Parameter(description = "Return staff with staff id greater than this value.")
+    fromStaffId: Long,
+    @RequestParam(required = true)
+    @Parameter(description = "Return staff with staff id less than or equal to this value.")
+    toStaffId: Long,
+  ): List<Long> = staffService.findStaffIdsInRange(fromStaffId, toStaffId, active)
 
   @GetMapping("/id/{staffId}")
   @Operation(
@@ -78,7 +142,7 @@ class StaffResource(private val staffService: StaffService) {
 
   @GetMapping("/username/{username}")
   @Operation(
-    summary = "Get staff details by any of the staff's usernames",
+    summary = "Get staff details by any of the staff's username",
     description = "Gets staff details. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
@@ -122,10 +186,10 @@ class StaffResource(private val staffService: StaffService) {
     dpsRolesOnly: Boolean = true,
   ) = staffService.getStaffDetails(username, dpsRolesOnly)
 
-  @GetMapping("/ids")
+  @GetMapping("/pagedIds")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Get all staff Ids",
+    summary = "Get all staff Ids - DEPRECATED - use /ids instead",
     description = "Typically for a migration. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
@@ -282,3 +346,18 @@ data class RoleResponse(
   @Schema(description = "Audit data associated with the user role")
   val audit: NomisAudit,
 )
+
+@Schema(description = "Staff ID range.")
+data class StaffIdRange(
+  @Schema(description = "The lowest NOMIS staffId in the range", example = "1234567")
+  val fromStaffId: Long,
+  @Schema(description = "The highest NOMIS staffId in the range", example = "1234567")
+  val toStaffId: Long,
+)
+
+fun List<Long>.toStaffIdRanges(): List<StaffIdRange> = mutableListOf(0L).apply {
+  addAll(this@toStaffIdRanges)
+  add(Long.MAX_VALUE)
+}
+  .zipWithNext()
+  .map { StaffIdRange(it.first, it.second) }

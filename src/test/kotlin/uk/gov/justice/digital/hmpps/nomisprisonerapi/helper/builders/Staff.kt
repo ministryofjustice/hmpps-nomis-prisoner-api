@@ -66,10 +66,11 @@ class StaffBuilder(
   fun build(
     lastName: String,
     firstName: String,
+    status: String,
   ): Staff = Staff(
     lastName = lastName,
     firstName = firstName,
-    status = repository.lookupStaffStatus("ACTIVE"),
+    status = repository.lookupStaffStatus(status),
   )
     .let { repository.save(it) }
     .also { staff = it }

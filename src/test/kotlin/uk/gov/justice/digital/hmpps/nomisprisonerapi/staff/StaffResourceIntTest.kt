@@ -509,10 +509,11 @@ class StaffResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  // TODO Remove if switch to GET /staff/ids - left in for now if need to analyse timings
   @TestInstance(PER_CLASS)
   @Nested
-  @DisplayName("GET /staff/ids")
-  inner class GetStaffIds {
+  @DisplayName("GET /staff/pagedIds")
+  inner class GetPagedStaffIds {
     lateinit var staffIds: MutableList<Long>
 
     @BeforeAll
@@ -534,7 +535,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/staff/ids")
+        webTestClient.get().uri("/staff/pagedIds")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -542,7 +543,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/staff/ids")
+        webTestClient.get().uri("/staff/pagedIds")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -550,7 +551,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/staff/ids")
+        webTestClient.get().uri("/staff/pagedIds")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -561,7 +562,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
       @Test
       fun `by default will return first 20 staff`() {
         webTestClient.get().uri {
-          it.path("/staff/ids")
+          it.path("/staff/pagedIds")
             .build()
         }
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -578,7 +579,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
       @Test
       fun `can set page size`() {
         webTestClient.get().uri {
-          it.path("/staff/ids")
+          it.path("/staff/pagedIds")
             .queryParam("size", "1")
             .build()
         }
@@ -596,7 +597,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
       @Test
       fun `id just contains staff id`() {
         webTestClient.get().uri {
-          it.path("/staff/ids")
+          it.path("/staff/pagedIds")
             .queryParam("size", "2")
             .build()
         }
@@ -608,6 +609,287 @@ class StaffResourceIntTest : IntegrationTestBase() {
           .jsonPath("content.size()").isEqualTo(2)
           .jsonPath("content[0].staffId").isEqualTo(-1)
           .jsonPath("content[1].staffId").isEqualTo(staffIds[0])
+      }
+    }
+  }
+
+  @TestInstance(PER_CLASS)
+  @Nested
+  @DisplayName("GET /staff/id-ranges")
+  inner class GetAllStaffIdRanges {
+
+    private lateinit var staff1: Staff
+    private lateinit var staff2: Staff
+    private lateinit var staff3: Staff
+    private lateinit var role1: Role
+    private lateinit var role2: Role
+    private lateinit var role3: Role
+
+    @BeforeAll
+    fun setup() {
+      nomisDataBuilder.build {
+        role1 = role(
+          code = "DPS_CODE_1",
+          name = "This is Dps test role 1",
+          userAccountType = "GENERAL",
+        )
+        role2 = role(
+          code = "DPS_CODE_2",
+          name = "This is Dps test role 2",
+          userAccountType = "ADMIN",
+        )
+        role3 = role(
+          code = "NOMIS_CODE_1",
+          name = "This is Nomis test role 1",
+          userAccountType = "ADMIN",
+        )
+        role(
+          code = "DPS_CODE_3",
+          name = "This is Dps test role 3",
+          userAccountType = "ADMIN",
+        )
+        staff1 = staff(firstName = "JIM", lastName = "STAFFA") {
+          email(emailAddress = "jim.staffa@justice.gov.uk")
+          email(emailAddress = "jim.staffa2@justice.gov.uk")
+          account(username = "JIIMSTAFFA_GEN", activeCaseloadId = "MDI", lastLoggedIn = LocalDateTime.parse("2026-03-17T12:30"))
+          account(username = "JIIMSTAFFA_ADM", type = ADMIN) {
+            userCaseload(caseloadId = "MDI") {
+              userCaseloadRole(role = role3)
+            }
+            userCaseload(caseloadId = "LEI") {
+              userCaseloadRole(role = role3)
+            }
+            userCaseload(caseloadId = "NWEB") {
+              userCaseloadRole(role = role1)
+              userCaseloadRole(role = role2)
+            }
+          }
+        }
+
+        staff2 = staff(firstName = "JOE", lastName = "STAFFB") {
+          account(username = "JOESTAFFB")
+        }
+        staff3 = staff(firstName = "FRED", lastName = "STAFFC", status = "INACT") {
+          account(username = "FREDSTAFFC")
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown() {
+      repository.delete(staff1)
+      repository.delete(staff2)
+      repository.delete(staff3)
+      rolesRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/staff/id-ranges?active=true")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/staff/id-ranges?active=true")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/staff/id-ranges?active=false")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed for role NOMIS_PRISONER_API__SYNCHRONISATION__RW`() {
+        webTestClient.get().uri("/staff/id-ranges?active=false&size=1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 if active is not provided`() {
+        webTestClient.get().uri("/staff/id-ranges")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class HappyPath {
+
+      @Test
+      fun `will return list of pages of staff ids ordered by staffId ASC`() {
+        webTestClient.get().uri("/staff/id-ranges?active=false&size=2")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("$.[0].fromStaffId").isEqualTo(0)
+          .jsonPath("$.[0].toStaffId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].fromStaffId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].toStaffId").isEqualTo(staff3.id)
+          .jsonPath("$.[2].fromStaffId").isEqualTo(staff3.id)
+          .jsonPath("$.[2].toStaffId").isEqualTo(Long.MAX_VALUE)
+      }
+
+      @Test
+      fun `will return list of pages of staff ids for prisoners with active bookings ordered by staffId ASC`() {
+        webTestClient.get().uri("/staff/id-ranges?active=true&size=2")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(2)
+          .jsonPath("$.[0].fromStaffId").isEqualTo(0)
+          .jsonPath("$.[0].toStaffId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].fromStaffId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].toStaffId").isEqualTo(Long.MAX_VALUE)
+      }
+
+      @Test
+      fun `will default the size if not provided`() {
+        webTestClient.get().uri("/staff/id-ranges?active=false")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(1)
+          .jsonPath("$.[0].fromStaffId").isEqualTo(0)
+          .jsonPath("$.[0].toStaffId").isEqualTo(Long.MAX_VALUE)
+      }
+    }
+  }
+
+  @TestInstance(PER_CLASS)
+  @Nested
+  @DisplayName("GET /staff/ids")
+  inner class GetStaffIds {
+    lateinit var staffIds: MutableList<Long>
+    var inactiveStaffId: Long = 0
+
+    @BeforeAll
+    fun deleteExistingStaffApartFromPrisonUser() {
+      val staff = repository.staffRepository.findAll().filter { it.id != -1L }
+      staffRepository.deleteAll(staff)
+
+      nomisDataBuilder.build {
+        staffIds = (1L..32L).map { staff(firstName = "John", lastName = "Smith").id }.toMutableList()
+        inactiveStaffId = staff(firstName = "FRED", lastName = "STAFFC", status = "INACT").id
+      }
+    }
+
+    @AfterAll
+    fun tearDown() {
+      staffRepository.deleteAllById(staffIds)
+      staffRepository.deleteById(inactiveStaffId)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/staff/ids?active=true&fromStaffId=0&toStaffId=100")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/staff/ids?active=true&fromStaffId=0&toStaffId=100")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/staff/ids?active=false&fromStaffId=0&toStaffId=100")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 if active is not provided`() {
+        webTestClient.get().uri("/search/prisoners/ids?fromStaffId=0&toStaffId=100")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if fromStaffId is not provided`() {
+        webTestClient.get().uri("/search/prisoners/ids?active=false&toStaffId=100")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if toStaffId is not provided`() {
+        webTestClient.get().uri("/search/prisoners/ids?active=false&fromStaffId=0")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `will return list of all staff ids`() {
+        webTestClient.get()
+          .uri("/staff/ids?active=false&fromStaffId=0&toStaffId=${Long.MAX_VALUE}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(33)
+          .jsonPath("$[32]").isEqualTo(inactiveStaffId)
+      }
+
+      @Test
+      fun `will return list of active staff ids`() {
+        webTestClient.get()
+          .uri("/staff/ids?active=true&fromStaffId=0&toStaffId=${Long.MAX_VALUE}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(32)
+      }
+
+      @Test
+      fun `will return specified list of ids`() {
+        webTestClient.get().uri("/staff/ids?active=false&fromStaffId=-1&toStaffId=${staffIds[2]}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("[0]").isEqualTo(staffIds[0])
+          .jsonPath("[1]").isEqualTo(staffIds[1])
+          .jsonPath("[2]").isEqualTo(staffIds[2])
       }
     }
   }
