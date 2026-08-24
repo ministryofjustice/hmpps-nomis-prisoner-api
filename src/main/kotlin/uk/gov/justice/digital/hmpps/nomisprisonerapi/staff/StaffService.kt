@@ -28,6 +28,11 @@ class StaffService(
     ?.toStaffDetails(dpsRolesOnly)
     ?: throw NotFoundException("Staff with username=$username does not exist")
 
+  fun findStaffIdRanges(pageSize: Int, active: Boolean): List<StaffIdRange> = staffRepository.findEveryPageSizeStaffId(pageSize, active)
+    .toStaffIdRanges()
+
+  fun findStaffIdsInRange(fromStaffId: Long, toStaffId: Long, active: Boolean): List<Long> = staffRepository.findStaffIdsBetweenIds(fromStaffId, toStaffId, active)
+
   fun getStaffIdsFromId(
     staffId: Long,
     pageSize: Int,

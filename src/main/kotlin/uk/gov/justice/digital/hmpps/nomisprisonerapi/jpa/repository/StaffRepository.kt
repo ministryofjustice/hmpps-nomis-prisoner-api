@@ -14,6 +14,34 @@ interface StaffRepository : JpaRepository<Staff, Long> {
 
   @Query(
     """
+        select STAFF_ID from (
+          select STAFF_ID, rownum as seqnum from (
+            select STAFF_ID
+            from STAFF_MEMBERS
+            where 
+              (:active = false or status = 'ACTIVE')
+            order by STAFF_ID
+          )
+        ) where mod(seqnum, :pageSize) = 0
+    """,
+    nativeQuery = true,
+  )
+  fun findEveryPageSizeStaffId(pageSize: Int, active: Boolean): List<Long>
+
+  @Query(
+    """
+    select distinct STAFF_ID
+     from STAFF_MEMBERS
+    where 
+        STAFF_ID > :fromStaffId and STAFF_ID <= :toStaffId and 
+        (:active = false or status = 'ACTIVE')
+  """,
+    nativeQuery = true,
+  )
+  fun findStaffIdsBetweenIds(fromStaffId: Long, toStaffId: Long, active: Boolean): List<Long>
+
+  @Query(
+    """
       select *
       from (select s.STAFF_ID as id
             from STAFF_MEMBERS s
