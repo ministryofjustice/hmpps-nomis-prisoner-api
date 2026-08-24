@@ -39,6 +39,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class GetAllAgencies {
     lateinit var legacyGenericAgency: AgencyLocation
+    lateinit var dodgyAgency: AgencyLocation
     lateinit var approvedPremise: AgencyLocation
     lateinit var court: AgencyLocation
     lateinit var probationOffice: AgencyLocation
@@ -63,6 +64,11 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           agencyLocationId = "XXI",
           description = "HMP XXI",
           type = "CRC",
+        )
+        dodgyAgency = agencyLocation(
+          agencyLocationId = "AUHSA;",
+          description = "Augustus House AP",
+          type = "APPR",
         )
         prison = prison(
           agencyLocationId = "AAI",
@@ -162,6 +168,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       agencyLocationRepository.deleteById(legacyGenericAgency.id)
+      agencyLocationRepository.deleteById(dodgyAgency.id)
       agencyLocationRepository.delete(approvedPremise)
       agencyLocationRepository.delete(court)
       agencyLocationRepository.delete(probationOffice)
@@ -202,7 +209,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `can exclude prisons`() {
+      fun `can exclude prisons and the dodgy agency with semi-colon in ID`() {
         val response: AgencyIdsResponse = webTestClient.get().uri("/agency/ids/all?excludeType=INST")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -216,6 +223,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         )
         assertThat(response.agencyIds.map { it.agencyId }).doesNotContain(
           "AAI",
+          "AUHSA;",
         )
       }
 
