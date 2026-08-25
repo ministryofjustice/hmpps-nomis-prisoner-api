@@ -368,6 +368,8 @@ data class CoreOffender(
 @Schema(description = "The data held in NOMIS for an offender's identifiers")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Identifier(
+  @Schema(description = "The offender id")
+  val offenderId: Long,
   @Schema(description = "Unique NOMIS sequence for this identifier for this person")
   val sequence: Long,
   @Schema(description = "The identifier type")
