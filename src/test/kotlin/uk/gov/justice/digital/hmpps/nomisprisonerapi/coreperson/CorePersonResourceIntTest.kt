@@ -352,7 +352,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
           .jsonPath("offenders[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
           .jsonPath("offenders[0].identifiers[0].verified").isEqualTo(true)
-          .jsonPath("offenders[0].identifiers[1].offenderId").isEqualTo(offender.id)
+          .jsonPath("offenders[0].identifiers[0].offenderId").isEqualTo(offender.id)
           .jsonPath("offenders[0].identifiers[1].sequence").isEqualTo(2)
           .jsonPath("offenders[0].identifiers[1].offenderId").isEqualTo(offender.id)
           .jsonPath("offenders[0].identifiers[1].identifier").isEqualTo("123")
