@@ -2475,6 +2475,81 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
     @PathVariable
     offenderNo: String,
   ) = courtSentencingService.repairNullOffenderChargeOutcomes(offenderNo)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PostMapping("/prisoners/{offenderNo}/court-cases/{caseId}/breach")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates all the components of a breach for the given offender and case. Will also clone cases to latest booking if necessary",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    requestBody = RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = BreachRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Breach created",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createBreach(
+    @Schema(description = "Offender No", example = "AK1234B", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case ID", example = "12345", required = true)
+    @PathVariable
+    caseId: Long,
+  ): BreachResponse = BreachResponse(
+    sentenceTermsCreated = emptyList(),
+    courtAppearancesCreated = emptyList(),
+    sentencesCreated = emptyList(),
+    clonedCourtCases = null,
+  )
 }
 
 @Schema(description = "Court Case")
@@ -3089,4 +3164,68 @@ data class BookingCourtCaseCloneResponse(
 data class SentenceIdAndAdjustmentsCreated(
   val sentenceId: SentenceId,
   val adjustmentIds: List<Long>,
+)
+
+data class BreachSentenceTermRequest(
+  val sentenceId: SentenceId,
+  val sentenceTermRequest: SentenceTermRequest,
+)
+
+@Schema(description = "Breach sentence request")
+data class BreachSentenceRequest(
+  val startDate: LocalDate,
+  val endDate: LocalDate? = null,
+  // either I or A
+  val status: String = "A",
+  // 1967, 1991, 2003, 2020
+  val sentenceCategory: String,
+  // eg ADIMP_ORA
+  val sentenceCalcType: String,
+  // 'IND' or 'AGG'
+  val sentenceLevel: String,
+  val fine: BigDecimal? = null,
+  val offenderChargeIds: List<Long>,
+  val consecutiveToSentenceSeq: Long? = null,
+  val sentenceTermRequest: SentenceTermRequest,
+)
+
+data class BreachSentencedCourtAppearance(
+  @Schema(description = "The court appearance created for the new breach sentence")
+  val courtAppearance: CourtAppearanceRequest,
+  @Schema(description = "The offender charges created for the new breach sentence")
+  val offenderCharge: List<OffenderChargeRequest>,
+  @Schema(description = "The sentence created for the breach")
+  val sentence: BreachSentenceRequest,
+)
+data class BreachSentencedCourtAppearanceResponse(
+  @Schema(description = "The sentence created for the breach")
+  val sentencesCreated: SentenceResponse,
+  @Schema(description = "The sentence term created for the breach")
+  val sentenceTerm: SentenceTermResponse,
+  @Schema(description = "The court appearance created for the breach")
+  val courtAppearanceCreated: CourtEventResponse,
+  @Schema(description = "The offender charges created for the breach")
+  val offenderChargesCreated: List<OffenderChargeResponse>,
+)
+
+data class BreachRequest(
+  @Schema(description = "The sentence terms added to sentence created for supervision breach. None for offence breach since this will be bundled with the sentence")
+  val sentenceTerms: List<BreachSentenceTermRequest>,
+  @Schema(description = "The court appearances created for supervision breach")
+  val courtAppearances: List<CourtAppearanceRequest>,
+  @Schema(description = "The sentence, appearance, term created for offence breach, none for supervision breach")
+  val sentences: List<BreachSentencedCourtAppearance>,
+  @Schema(description = "Latest case identifiers")
+  val caseIdentifiers: List<CaseIdentifier>,
+)
+
+data class BreachResponse(
+  @Schema(description = "The sentence terms created for the breach, typically one")
+  val sentenceTermsCreated: List<SentenceTermResponse>,
+  @Schema(description = "The court appearances created for the breach, typically one")
+  val courtAppearancesCreated: List<CourtEventResponse>,
+  @Schema(description = "The sentences created for the breach, none for supervision breach")
+  val sentencesCreated: List<BreachSentencedCourtAppearanceResponse>,
+  @Schema(description = "Result of a clone court case operation when the appearance is added to a previous booking. Else null")
+  val clonedCourtCases: BookingCourtCaseCloneResponse?,
 )
