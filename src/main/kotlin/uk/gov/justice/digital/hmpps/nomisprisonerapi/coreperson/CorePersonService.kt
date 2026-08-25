@@ -87,6 +87,7 @@ class CorePersonService(
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
+    offenderId = id.offender.id,
     sequence = id.sequence,
     type = identifierType.toCodeDescription(),
     identifier = identifier,
@@ -113,6 +114,7 @@ class CorePersonService(
     identifiers = if (includeIdentifiers) {
       identifiers.map { id ->
         Identifier(
+          offenderId = id.id.offender.id,
           sequence = id.id.sequence,
           type = id.identifierType.toCodeDescription(),
           identifier = id.identifier,

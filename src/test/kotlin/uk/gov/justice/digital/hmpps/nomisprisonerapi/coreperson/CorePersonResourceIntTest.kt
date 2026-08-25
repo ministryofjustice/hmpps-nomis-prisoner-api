@@ -343,7 +343,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("offenders[0].offenderId").isEqualTo(offender.id)
+          .jsonPath("offenders[0].identifiers.length()").isEqualTo(2)
+          .jsonPath("offenders[0].identifiers[0].offenderId").isEqualTo(offender.id)
           .jsonPath("offenders[0].identifiers[0].sequence").isEqualTo(1)
           .jsonPath("offenders[0].identifiers[0].identifier").isEqualTo("20/0071818T")
           .jsonPath("offenders[0].identifiers[0].type.code").isEqualTo("PNC")
@@ -351,15 +352,17 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
           .jsonPath("offenders[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
           .jsonPath("offenders[0].identifiers[0].verified").isEqualTo(true)
+          .jsonPath("offenders[0].identifiers[1].offenderId").isEqualTo(offender.id)
           .jsonPath("offenders[0].identifiers[1].sequence").isEqualTo(2)
+          .jsonPath("offenders[0].identifiers[1].offenderId").isEqualTo(offender.id)
           .jsonPath("offenders[0].identifiers[1].identifier").isEqualTo("123")
           .jsonPath("offenders[0].identifiers[1].type.code").isEqualTo("STAFF")
           .jsonPath("offenders[0].identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
           .jsonPath("offenders[0].identifiers[1].issuedAuthority").doesNotExist()
           .jsonPath("offenders[0].identifiers[1].issuedDate").doesNotExist()
           .jsonPath("offenders[0].identifiers[1].verified").isEqualTo(false)
-          .jsonPath("offenders[0].identifiers.length()").isEqualTo(2)
-          .jsonPath("offenders[1].offenderId").isEqualTo(alias.id)
+          .jsonPath("offenders[1].identifiers.length()").isEqualTo(1)
+          .jsonPath("offenders[1].identifiers[0].offenderId").isEqualTo(alias.id)
           .jsonPath("offenders[1].identifiers[0].sequence").isEqualTo(1)
           .jsonPath("offenders[1].identifiers[0].identifier").isEqualTo("456")
           .jsonPath("offenders[1].identifiers[0].type.code").isEqualTo("STAFF")
@@ -367,7 +370,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[1].identifiers[0].issuedAuthority").doesNotExist()
           .jsonPath("offenders[1].identifiers[0].issuedDate").doesNotExist()
           .jsonPath("offenders[1].identifiers[0].verified").isEqualTo(false)
-          .jsonPath("offenders[1].identifiers.length()").isEqualTo(1)
       }
     }
 
@@ -594,6 +596,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[1].lastName").isEqualTo("ABARK")
           .jsonPath("[1].workingName").isEqualTo(true)
           .jsonPath("[1].identifiers.length()").isEqualTo(1)
+          .jsonPath("[1].identifiers[0].offenderId").isEqualTo(alias.id)
           .jsonPath("[1].identifiers[0].sequence").isEqualTo(1)
           .jsonPath("[1].identifiers[0].identifier").isEqualTo("123")
           .jsonPath("[1].identifiers[0].type.code").isEqualTo("STAFF")
@@ -1038,6 +1041,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
+          .jsonPath("offenderId").isEqualTo(offender.id)
           .jsonPath("sequence").isEqualTo(1)
           .jsonPath("identifier").isEqualTo("20/0071818T")
           .jsonPath("type.code").isEqualTo("PNC")
@@ -1055,6 +1059,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
+          .jsonPath("offenderId").isEqualTo(offender.id)
           .jsonPath("sequence").isEqualTo(2)
           .jsonPath("identifier").isEqualTo("123")
           .jsonPath("type.code").isEqualTo("STAFF")
@@ -1072,6 +1077,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
+          .jsonPath("offenderId").isEqualTo(alias.id)
           .jsonPath("sequence").isEqualTo(1)
           .jsonPath("identifier").isEqualTo("NARK991222")
           .jsonPath("type.code").isEqualTo("DL")
@@ -1090,6 +1096,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .isOk
           .returnResult<Identifier>().responseBody.blockFirst()!!
 
+        assertThat(identifier.offenderId).isEqualTo(offender.id)
         assertThat(identifier.sequence).isEqualTo(1)
         assertThat(identifier.identifier).isEqualTo("20/0071818T")
         assertThat(identifier.type).isEqualTo(CodeDescription(code = "PNC", description = "PNC Number"))
