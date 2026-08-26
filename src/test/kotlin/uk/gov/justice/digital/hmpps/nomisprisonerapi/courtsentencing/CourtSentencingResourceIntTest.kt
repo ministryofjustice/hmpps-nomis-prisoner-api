@@ -8864,12 +8864,14 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
   @DisplayName("POST /prisoners/{offenderNo}/court-cases/{caseId}/sentences/{sentenceSequence}/sentence-terms")
   inner class CreateSentenceTerm {
     private lateinit var courtCase: CourtCase
+    private lateinit var previousBookingCourtCase: CourtCase
     private lateinit var courtAppearance: CourtEvent
     private lateinit var courtAppearanceNoCourtOrder: CourtEvent
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var courtOrder: CourtOrder
     private lateinit var sentence: OffenderSentence
+    private lateinit var previousBookingSentence: OffenderSentence
     private var latestBookingId: Long = 0
 
     @BeforeEach
@@ -8880,7 +8882,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         }
         prisonerAtMoorland =
           offender(nomsId = "A1234AB") {
-            booking(agencyLocationId = "MDI") {
+            booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.parse("2023-01-05T09:00:00")) {
               courtCase = courtCase(
                 reportingStaff = staff,
                 beginDate = LocalDate.parse(aDateString),
@@ -8907,6 +8909,24 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     offenderCharge = offenderCharge2,
                     plea = "NG",
                   )
+                }
+              }
+            }
+            booking(agencyLocationId = "MDI") {
+              previousBookingCourtCase = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aDateString),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                lateinit var courtOrder: CourtOrder
+                val offenderCharge = offenderCharge(offenceCode = "RT88074")
+                courtEvent {
+                  courtEventCharge(offenderCharge = offenderCharge)
+                  courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                }
+                previousBookingSentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
                 }
               }
             }
@@ -8996,6 +9016,28 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isBadRequest
           .expectBody()
           .jsonPath("developerMessage").isEqualTo("Sentence term type TREE not found")
+      }
+
+      @Test
+      fun `will refuse to add a breach term to a case that needs cloning`() {
+        webTestClient.post()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${previousBookingCourtCase.id}/sentences/${previousBookingSentence.id.sequence}/sentence-terms")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(createSentenceTerm().copy(isBreach = true))
+          .exchange()
+          .expectStatus().isEqualTo(HttpStatus.FAILED_DEPENDENCY.value())
+      }
+
+      @Test
+      fun `will allow non-breach term to be added case on previous booking`() {
+        webTestClient.post()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${previousBookingCourtCase.id}/sentences/${previousBookingSentence.id.sequence}/sentence-terms")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(createSentenceTerm().copy(isBreach = false))
+          .exchange()
+          .expectStatus().isCreated
       }
     }
 
