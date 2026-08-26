@@ -5495,6 +5495,8 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private val offenderNo: String = "A1234AB"
     private lateinit var courtCase: CourtCase
     private var latestBookingId: Long = 0
+    private var previousBookingId: Long = 0
+    private lateinit var previousBookingCourtCase: CourtCase
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -5503,15 +5505,21 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           account {}
         }
         prisonerAtMoorland = offender(nomsId = offenderNo) {
-          booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.of(2023, 1, 5, 9, 0)) {
+          latestBookingId = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.parse("2023-01-05T09:00")) {
             courtCase = courtCase(
               reportingStaff = staff,
               statusUpdateStaff = staff,
             )
-          }
+          }.bookingId
+          previousBookingId = booking(agencyLocationId = "MDI", bookingBeginDate = LocalDateTime.parse("2022-01-01T09:00")) {
+            previousBookingCourtCase = courtCase(
+              reportingStaff = staff,
+              statusUpdateStaff = staff,
+              caseInfoNumber = "TARGET",
+            )
+          }.bookingId
         }
       }
-      latestBookingId = prisonerAtMoorland.latestBooking().bookingId
     }
 
     @Nested
@@ -5664,12 +5672,66 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           isNull(),
         )
       }
+
+      @Test
+      fun `will clone case to latest booking when adding charge to previous booking with breach set true`() {
+        val chargeResponse: OffenderChargeIdResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/charges")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(createOffenderChargeRequest(isBreach = true))
+            .exchange()
+            .expectStatus().isCreated.expectBodyResponse()
+
+        assertThat(chargeResponse.offenderChargeId).isGreaterThan(0)
+        assertThat(chargeResponse.clonedCourtCases).isNotNull()
+
+        val sourceCourtCaseResponse: CourtCaseResponse =
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectBodyResponse()
+
+        assertThat(sourceCourtCaseResponse.offenderCharges).isEmpty()
+
+        val clonedCaseId = chargeResponse.clonedCourtCases!!.findByCaseInfoNumberOrNull("TARGET")!!.id
+        val clonedCourtCaseResponse: CourtCaseResponse =
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/$clonedCaseId")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectBodyResponse()
+
+        assertThat(clonedCourtCaseResponse.offenderCharges).hasSize(1)
+      }
+
+      @Test
+      fun `will not clone case when adding charge to previous booking with breach set false`() {
+        val chargeResponse =
+          webTestClient.post().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}/charges")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(createOffenderChargeRequest(isBreach = false))
+            .exchange()
+            .expectStatus().isCreated.expectBody(OffenderChargeIdResponse::class.java)
+            .returnResult().responseBody!!
+
+        assertThat(chargeResponse.clonedCourtCases).isNull()
+
+        val sourceCourtCaseResponse: CourtCaseResponse =
+          webTestClient.get().uri("/prisoners/$offenderNo/sentencing/court-cases/${previousBookingCourtCase.id}")
+            .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+            .exchange()
+            .expectBodyResponse()
+
+        assertThat(sourceCourtCaseResponse.offenderCharges).hasSize(1)
+      }
     }
 
     @AfterEach
     internal fun deletePrisoner() {
       repository.delete(prisonerAtMoorland)
       repository.deleteOffenderChargeByBooking(latestBookingId)
+      repository.deleteOffenderChargeByBooking(previousBookingId)
     }
   }
 
@@ -9799,12 +9861,14 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     offenceEndDate: LocalDate? = LocalDate.of(2023, 1, 2),
     resultCode1: String? = "1067",
     futureAppearance: Boolean? = false,
+    isBreach: Boolean = false,
   ) = OffenderChargeRequest(
     offenceCode = offenceCode,
     offenceDate = offenceDate,
     offenceEndDate = offenceEndDate,
     resultCode1 = resultCode1,
     futureAppearance = futureAppearance,
+    isBreach = isBreach,
   )
 
   private fun createCourtAppearanceRequest(

@@ -509,7 +509,8 @@ class CourtSentencingService(
     offenderChargeRequest: OffenderChargeRequest,
   ): OffenderChargeIdResponse {
     checkOffenderExists(offenderNo)
-    findCourtCaseWithLock(caseId, offenderNo).let { courtCase ->
+    findCourtCaseWithLock(caseId, offenderNo).let {
+      val (courtCase, clonedCourtCases) = cloneCasesIfRequired(it, offenderChargeRequest)
       val resultCode =
         offenderChargeRequest.resultCode1?.let { lookupOffenceResultCode(it) }
       val offenderCharge = OffenderCharge(
@@ -525,8 +526,7 @@ class CourtSentencingService(
       offenderChargeRepository.saveAndFlush(offenderCharge).let { createdOffenderCharge ->
         return OffenderChargeIdResponse(
           offenderChargeId = createdOffenderCharge.id,
-          // TODO - clone case when breach and on old booking
-          clonedCourtCases = null,
+          clonedCourtCases = clonedCourtCases,
         ).also { response ->
           // calculates main offence
           imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
@@ -547,6 +547,21 @@ class CourtSentencingService(
           )
         }
       }
+    }
+  }
+  private fun cloneCasesIfRequired(courtCase: CourtCase, offenderChargeRequest: OffenderChargeRequest): ClonedCaseCreateCharge = if (courtCase.offenderBooking.bookingSequence == 1 || !offenderChargeRequest.isBreach) {
+    ClonedCaseCreateCharge(
+      courtCase = courtCase,
+      clonedCourtCases = null,
+    )
+  } else {
+    cloneCourtCasesToLatestBookingFrom(courtCase).let {
+      val sourceCase = it.courtCases.find { cases -> cases.sourceCourtCase.id == courtCase.id }!!
+      val clonedCourtCase = findCourtCase(id = sourceCase.courtCase.id, offenderNo = sourceCase.sourceCourtCase.offenderNo)
+      ClonedCaseCreateCharge(
+        courtCase = clonedCourtCase,
+        clonedCourtCases = it,
+      )
     }
   }
 
@@ -2478,4 +2493,5 @@ fun SentenceCalculationType.isRecallSentence() = with(this.id.calculationType) {
 }
 
 data class ClonedCaseCreateAppearance(val courtCase: CourtCase, val courtAppearanceRequest: CourtAppearanceRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)
+data class ClonedCaseCreateCharge(val courtCase: CourtCase, val clonedCourtCases: BookingCourtCaseCloneResponse?)
 fun OffenderBooking.isPreviousBooking() = bookingSequence != 1
