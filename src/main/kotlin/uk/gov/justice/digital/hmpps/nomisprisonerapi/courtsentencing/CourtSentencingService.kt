@@ -990,7 +990,10 @@ class CourtSentencingService(
   }
 
   fun createSentenceTerm(offenderNo: String, caseId: Long, sentenceSequence: Long, termRequest: SentenceTermRequest) = findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
-
+    // this is breach that needs to move to latest booking, but this hasn't happened yet, but will when appearance is added
+    if (case.offenderBooking.isPreviousBooking() && termRequest.isBreach) {
+      throw DependencyException("Cannot add breach term until case has been cloned to latest booking", entityId = case.id)
+    }
     val offenderBooking = case.offenderBooking
     val termSequence = offenderSentenceTermRepository.getNextTermSequence(
       offenderBookId = offenderBooking.bookingId,
@@ -2475,3 +2478,4 @@ fun SentenceCalculationType.isRecallSentence() = with(this.id.calculationType) {
 }
 
 data class ClonedCaseCreateAppearance(val courtCase: CourtCase, val courtAppearanceRequest: CourtAppearanceRequest, val clonedCourtCases: BookingCourtCaseCloneResponse?)
+fun OffenderBooking.isPreviousBooking() = bookingSequence != 1
