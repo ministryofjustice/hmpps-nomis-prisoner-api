@@ -1785,6 +1785,88 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   ): CreateCourtAppearanceResponse = courtSentencingService.createCourtAppearance(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/breach-court-appearances")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates a new Breach Court Appearance and refreshes case identifiers",
+    description = "Required role NOMIS_PRISONER_API__SYNCHRONISATION__RW Creates a new Breach Court Appearance for the offender and given Court Case",
+    requestBody = RequestBody(
+      content = [
+        Content(
+          mediaType = "application/json",
+          schema = Schema(implementation = CreateBreachAppearanceRequest::class),
+        ),
+      ],
+    ),
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Created Breach Court Appearance",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Supplied data is invalid, for instance missing required fields or invalid values. See schema for details",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court case does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createBreachCourtAppearance(
+    @Schema(description = "Offender no", example = "AB1234A", required = true)
+    @PathVariable
+    offenderNo: String,
+    @Schema(description = "Case Id", example = "34565", required = true)
+    @PathVariable
+    caseId: Long,
+    @org.springframework.web.bind.annotation.RequestBody @Valid
+    request: CreateBreachAppearanceRequest,
+  ): CreateCourtAppearanceResponse = courtSentencingService.createBreachCourtAppearance(offenderNo, caseId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/prisoners/{offenderNo}/sentencing/court-cases/{caseId}/charges")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -2853,6 +2935,8 @@ data class UpdateCourtAppearanceResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderChargeIdResponse(
   val offenderChargeId: Long,
+  @Schema(description = "Result of a clone court case operation when the charge is added to a previous booking as part of a breach. Else null")
+  val clonedCourtCases: BookingCourtCaseCloneResponse?,
 )
 
 @Schema(description = "Court Event")
@@ -2888,6 +2972,8 @@ data class OffenderChargeRequest(
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
   val futureAppearance: Boolean? = false,
+  @Schema(description = "Indicates if the sentence term is related to a breach supervision (or imprisonable offence)")
+  val isBreach: Boolean = false,
 
   /*
   val plea: String?,
@@ -3029,6 +3115,8 @@ data class SentenceTermRequest(
   val hours: Int? = null,
   val sentenceTermType: String,
   val lifeSentenceFlag: Boolean = false,
+  @Schema(description = "Indicates if the sentence term is related to a breach supervision (or imprisonable offence)")
+  val isBreach: Boolean = false,
 )
 
 @Schema(description = "Court case associated reference")
@@ -3089,4 +3177,12 @@ data class BookingCourtCaseCloneResponse(
 data class SentenceIdAndAdjustmentsCreated(
   val sentenceId: SentenceId,
   val adjustmentIds: List<Long>,
+)
+
+@Schema(description = "Request to add Breach Appearance")
+data class CreateBreachAppearanceRequest(
+  @Schema(description = "Court Appearance to be added")
+  val courtAppearance: CourtAppearanceRequest,
+  @Schema(description = "Case identifiers needing refreshing")
+  val caseIdentifiers: CaseIdentifierRequest,
 )
