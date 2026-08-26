@@ -411,6 +411,15 @@ class CourtSentencingService(
     }
   }
 
+  fun createBreachCourtAppearance(
+    offenderNo: String,
+    caseId: Long,
+    request: CreateBreachAppearanceRequest,
+  ): CreateCourtAppearanceResponse = createCourtAppearance(offenderNo, caseId, request = request.courtAppearance).also {
+    refreshCaseIdentifiers(offenderNo = offenderNo, caseId = it.clonedCaseIdOrSuppliedCaseId(caseId), request = request.caseIdentifiers)
+  }
+  private fun CreateCourtAppearanceResponse.clonedCaseIdOrSuppliedCaseId(caseId: Long): Long = clonedCourtCases?.courtCases?.find { it.sourceCourtCase.id == caseId }?.courtCase?.id ?: caseId
+
   private fun cloneCasesIfRequired(courtCase: CourtCase, courtAppearanceRequest: CourtAppearanceRequest): ClonedCaseCreateAppearance = if (courtCase.offenderBooking.bookingSequence == 1 || courtAppearanceRequest.forcePreventClone == true) {
     ClonedCaseCreateAppearance(
       courtCase = courtCase,
@@ -516,6 +525,8 @@ class CourtSentencingService(
       offenderChargeRepository.saveAndFlush(offenderCharge).let { createdOffenderCharge ->
         return OffenderChargeIdResponse(
           offenderChargeId = createdOffenderCharge.id,
+          // TODO - clone case when breach and on old booking
+          clonedCourtCases = null,
         ).also { response ->
           // calculates main offence
           imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
@@ -669,6 +680,8 @@ class CourtSentencingService(
           deletedOffenderChargesIds = deletedOffenderCharges.map { offenderCharge ->
             OffenderChargeIdResponse(
               offenderChargeId = offenderCharge.id,
+              // never clone on an update
+              clonedCourtCases = null,
             )
           },
         ).also {
