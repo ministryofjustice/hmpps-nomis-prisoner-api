@@ -88,11 +88,12 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
         select new uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.AccountSummaryDto(
         o.id.caseloadId,
         o.id.accountCode,
-        sum(o.balance)
+        sum(o.balance),
+        sum(o.holdBalance)
     )
     from OffenderSubAccount o
     where o.id.offender.id = :offenderId
-      and o.balance != 0
+      and (o.balance != 0 or o.holdBalance != 0)
     group by o.id.caseloadId, o.id.accountCode
     order by o.id.caseloadId, o.id.accountCode
     """,
@@ -103,7 +104,8 @@ interface OffenderSubAccountRepository : JpaRepository<OffenderSubAccount, Offen
     """
         select new uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.AggregatedAccountDto(
         o.id.accountCode,
-        sum(o.balance)
+        sum(o.balance),
+        sum(o.holdBalance)
     )
     from OffenderSubAccount o
     where o.id.offender.id = :rootOffenderId

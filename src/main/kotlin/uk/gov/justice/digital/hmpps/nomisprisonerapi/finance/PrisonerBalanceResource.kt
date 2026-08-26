@@ -447,6 +447,9 @@ data class AccountSummaryDto(
 
   @Schema(description = "The account balance", example = "12.50")
   val balance: BigDecimal,
+
+  @Schema(description = "The account hold balance", example = "2.50")
+  val holdBalance: BigDecimal? = BigDecimal.ZERO,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -468,6 +471,9 @@ data class AggregatedAccountDto(
 
   @Schema(description = "The account balance", example = "12.50")
   val balance: BigDecimal,
+
+  @Schema(description = "The hold balance", example = "1.50")
+  val holdBalance: BigDecimal? = BigDecimal.ZERO,
 )
 
 private fun List<String>?.normalisePrisonIds() = this?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() }
