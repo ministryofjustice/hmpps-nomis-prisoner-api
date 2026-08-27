@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Assessment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
@@ -161,9 +162,25 @@ class CsraService(
       throw NotFoundException("Prisoner $offenderNo not found")
     }
     return PrisonerCsrasResponse(
-      offenderAssessmentRepository.findById_OffenderBooking_Offender_NomsIdAndAssessment_AssessmentIdIn(offenderNo, csraStaticIds)
+      offenderAssessmentRepository.findById_OffenderBooking_Offender_NomsIdAndAssessment_AssessmentIdIn(
+        offenderNo,
+        csraStaticIds,
+      )
         .map { it.toDto() },
     )
+  }
+
+  fun getCurrentCsra(offenderNo: String): CsraGetDto {
+    if (!offenderRepository.existsByNomsId(offenderNo)) {
+      throw NotFoundException("Prisoner $offenderNo not found")
+    }
+    val currentCsra = offenderAssessmentRepository
+      .findFirstById_OffenderBooking_Offender_NomsIdAndAssessment_IsCellSharingAndAssessmentStatusOrderByAssessmentDateDescIdSequenceDesc(
+        offenderNo,
+        true,
+        AssessmentStatusType.A,
+      )
+    return currentCsra?.toDto() ?: throw NotFoundException("No CSRA found for prisoner $offenderNo")
   }
 }
 

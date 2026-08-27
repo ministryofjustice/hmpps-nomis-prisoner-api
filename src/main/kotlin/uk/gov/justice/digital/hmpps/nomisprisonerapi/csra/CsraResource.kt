@@ -95,6 +95,30 @@ class CsraResource(private val csraService: CsraService) {
     @PathVariable
     offenderNo: String,
   ): PrisonerCsrasResponse = csraService.getCsras(offenderNo)
+
+  @GetMapping("/prisoners/{offenderNo}/csras/current")
+  @Operation(
+    summary = "Gets current CSRA for a prisoner",
+    description = "Retrieves the current CSRA for a specific prisoner, for reconciliation. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = CsraGetDto::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getCurrentCsraForPrisoner(
+    @Schema(description = "Offender No AKA prisoner number", example = "A3745XD")
+    @PathVariable
+    offenderNo: String,
+  ): CsraGetDto = csraService.getCurrentCsra(offenderNo)
 }
 
 @Schema(description = "The list of CSRAs held against a prisoner")

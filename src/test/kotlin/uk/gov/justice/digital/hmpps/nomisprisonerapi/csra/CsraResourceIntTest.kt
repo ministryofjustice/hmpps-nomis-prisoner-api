@@ -551,7 +551,11 @@ class CsraResourceIntTest : IntegrationTestBase() {
               assessment(sequence = 3, username = "BILLSTAFF", assessmentType = AssessmentType.CATEGORY)
             }
           }
-          offender(nomsId = "OTHER") { booking { assessment(username = "BILLSTAFF") { assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I) } } }
+          offender(nomsId = "OTHER") {
+            booking {
+              assessment(username = "BILLSTAFF") { assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I) }
+            }
+          }
         }
 
         webTestClient.get().uri("/prisoners/A2222BB/csras")
@@ -578,6 +582,121 @@ class CsraResourceIntTest : IntegrationTestBase() {
               assertThat(comment).isEqualTo("a-comment")
               assertThat(sections[0].questions[0].responses[0].code).isEqualTo("S")
             }
+          }
+      }
+    }
+  }
+
+  @DisplayName("GET /prisoners/{offenderNo}/csras/current")
+  @Nested
+  inner class GetCurrentCsra {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/csras/current")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A1234AA/csras/current")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A1234AA/csras/current")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `Invalid prisoner`() {
+        webTestClient.get().uri("/prisoners/A1234ZZ/csras/current")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Prisoner A1234ZZ not found")
+          }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `prisoner has no CSRAs`() {
+        webTestClient.get().uri("/prisoners/A1111AA/csras/current")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `can get correct current CSRA`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A2222BB") {
+            booking {
+              assessment(
+                sequence = 1,
+                assessmentDate = LocalDate.parse("2025-12-20"),
+                assessmentStatus = AssessmentStatusType.A,
+                reviewLevel = AssessmentLevel.HI,
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 2,
+                assessmentDate = LocalDate.parse("2025-12-25"),
+                assessmentStatus = AssessmentStatusType.A,
+                reviewLevel = AssessmentLevel.MED,
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 3,
+                assessmentDate = LocalDate.parse("2025-12-25"),
+                assessmentStatus = AssessmentStatusType.A,
+                reviewLevel = AssessmentLevel.STANDARD,
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 4,
+                assessmentDate = LocalDate.parse("2025-12-29"),
+                assessmentStatus = AssessmentStatusType.I,
+                reviewLevel = AssessmentLevel.LOW,
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 5,
+                assessmentDate = LocalDate.parse("2025-12-30"),
+                assessmentType = AssessmentType.CATEGORY,
+                assessmentStatus = AssessmentStatusType.A,
+                reviewLevel = AssessmentLevel.HI,
+                username = "BILLSTAFF",
+              )
+            }
+          }
+        }
+
+        webTestClient.get().uri("/prisoners/A2222BB/csras/current")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody<CsraGetDto>()
+          .returnResult()
+          .responseBody!!
+          .apply {
+            assertThat(status).isEqualTo(AssessmentStatusType.A)
+            assertThat(assessmentDate).isEqualTo("2025-12-25")
+            assertThat(reviewLevel).isEqualTo(AssessmentLevel.STANDARD)
           }
       }
     }
