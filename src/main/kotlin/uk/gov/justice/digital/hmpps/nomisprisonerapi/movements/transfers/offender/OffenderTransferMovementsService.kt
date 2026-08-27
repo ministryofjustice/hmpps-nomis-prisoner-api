@@ -108,7 +108,7 @@ class OffenderTransferMovementsService(
       comment = comment,
       hiddenComment = hiddenComment,
       fromPrison = fromAgency!!.id,
-      toPrison = toAgency!!.id,
+      toPrison = toAgency?.id,
       cancellationReasonCode = cancellationReasonCode?.code,
       escortCode = escort?.code,
       audit = toAudit(),
