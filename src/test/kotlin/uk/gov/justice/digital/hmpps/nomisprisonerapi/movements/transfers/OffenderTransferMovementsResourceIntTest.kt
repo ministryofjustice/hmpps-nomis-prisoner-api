@@ -468,6 +468,25 @@ class OffenderTransferMovementsResourceIntTest(
             }
           }
       }
+
+      @Test
+      fun `should handle null to prison`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A4321CB") {
+            booking = booking {
+              schedule = transferScheduleOut(toPrison = null)
+            }
+          }
+        }
+
+        webTestClient.getOffenderTransferMovementsByRootOffenderOk(offender.rootOffenderId!!)
+          .apply {
+            assertThat(offenderNo).isEqualTo(offender.nomsId)
+            with(bookings[0].transferSchedules[0].schedule) {
+              assertThat(toPrison).isNull()
+            }
+          }
+      }
     }
 
     @Nested
