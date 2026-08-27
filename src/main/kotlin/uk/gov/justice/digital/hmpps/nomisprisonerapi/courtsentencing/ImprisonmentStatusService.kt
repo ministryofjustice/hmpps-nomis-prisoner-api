@@ -91,7 +91,7 @@ class ImprisonmentStatusService(
     offenderImprisonmentStatusRepository.getStatusAndMainOffenceViaSentenceByBookingId(booking.bookingId)?.also {
       log.info("Recalculated imprisonment status for offenderNo by sentence $offenderNo: $it")
     } ?: run {
-      offenderImprisonmentStatusRepository.getStatusAndMainOffenceViaChargeOutcomeByBookingId(booking.bookingId).also {
+      offenderImprisonmentStatusRepository.getStatusAndMainOffenceViaChargeOutcomeByBookingId(booking.bookingId).first().also {
         log.info("Recalculated imprisonment status for offenderNo by charge outcome $offenderNo: $it")
       }
     }

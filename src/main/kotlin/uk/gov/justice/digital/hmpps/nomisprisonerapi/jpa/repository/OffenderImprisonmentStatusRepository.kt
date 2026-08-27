@@ -103,7 +103,7 @@ SELECT NVL(imprisonment_status,'UNKNOWN'),
                """,
     nativeQuery = true,
   )
-  fun getStatusAndMainOffenceViaChargeOutcomeByBookingId(bookingId: Long): StatusAndMainOffence
+  fun getStatusAndMainOffenceViaChargeOutcomeByBookingId(bookingId: Long): List<StatusAndMainOffence>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "1000")])
