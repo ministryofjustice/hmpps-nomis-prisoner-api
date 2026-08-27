@@ -70,17 +70,22 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         }
 
         trustAccount()
-        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(34.50)) {
+        trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(33.50)) {
           subAccount(accountCode = 2101, lastTransactionId = 12345)
           subAccount(accountCode = 2102, balance = BigDecimal.valueOf(12.25), holdBalance = BigDecimal.ZERO, lastTransactionId = 34567)
           subAccount(accountCode = 2103, balance = BigDecimal.valueOf(21.25), holdBalance = BigDecimal.valueOf(2.50), lastTransactionId = 56789)
         }
-        trustAccount(caseloadId = "SSI", currentBalance = BigDecimal.valueOf(11.11)) {
-          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(11.11), holdBalance = BigDecimal.valueOf(2.50), lastTransactionId = 8888)
+        trustAccount(caseloadId = "SSI", currentBalance = BigDecimal.valueOf(11.11), holdBalance = BigDecimal.valueOf(2.5)) {
+          subAccount(accountCode = 2102, balance = BigDecimal.valueOf(11.11), holdBalance = BigDecimal.valueOf(2.3), lastTransactionId = 8888)
         }
       }.id
       id3 = offender(nomsId = "C3456DE") {
-        trustAccount(holdBalance = BigDecimal.valueOf(1.25))
+        booking {
+          transaction(transactionId = 9999, subAccountType = SubAccountType.SPND, transactionType = "DPST", entryDate = LocalDate.parse("2026-03-07"))
+        }
+        trustAccount(holdBalance = BigDecimal.valueOf(1.25)) {
+          subAccount(accountCode = 2102, holdBalance = BigDecimal.valueOf(1.25), lastTransactionId = 9999)
+        }
       }.id
       offender {
         trustAccount()
@@ -904,11 +909,14 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal.ZERO)
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[1].accountCode).isEqualTo(2102)
         // 11.25 - 1.5
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(9.75))
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
         assertThat(accounts[2].accountCode).isEqualTo(2103)
         assertThat(accounts[2].balance).isEqualTo(BigDecimal(1.25))
+        assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal(0))
       }
     }
 
@@ -927,9 +935,13 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
         assertThat(accounts[1].accountCode).isEqualTo(2102)
+        assertThat(accounts[1].balance).isEqualTo(BigDecimal("23.36"))
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal("2.3"))
         assertThat(accounts[2].accountCode).isEqualTo(2103)
-        assertThat(accounts[2].balance).isEqualTo("21.25")
+        assertThat(accounts[2].balance).isEqualTo(BigDecimal("21.25"))
+        assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal("2.5"))
       }
     }
 
@@ -987,11 +999,14 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal.ZERO)
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[1].accountCode).isEqualTo(2102)
         // 11.25 - 1.5
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(9.75))
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
         assertThat(accounts[2].accountCode).isEqualTo(2103)
         assertThat(accounts[2].balance).isEqualTo(BigDecimal(1.25))
+        assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal(0))
       }
     }
 
@@ -1010,10 +1025,13 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts.size).isEqualTo(3)
         assertThat(accounts[0].accountCode).isEqualTo(2101)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(0))
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
         assertThat(accounts[1].accountCode).isEqualTo(2102)
-
+        assertThat(accounts[1].balance).isEqualTo(BigDecimal("23.36"))
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal("2.3"))
         assertThat(accounts[2].accountCode).isEqualTo(2103)
-        assertThat(accounts[2].balance).isEqualTo("21.25")
+        assertThat(accounts[2].balance).isEqualTo(BigDecimal("21.25"))
+        assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal("2.5"))
       }
     }
 
@@ -1072,14 +1090,17 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2102)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(11.25))
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
 
         assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].accountCode).isEqualTo(2103)
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(1.25))
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal(0))
 
         assertThat(accounts[2].prisonId).isEqualTo("WWI")
         assertThat(accounts[2].accountCode).isEqualTo(2102)
         assertThat(accounts[2].balance).isEqualTo(BigDecimal(-1.5))
+        assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal(0))
       }
     }
 
@@ -1099,12 +1120,15 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].prisonId).isEqualTo("LEI")
         assertThat(accounts[0].accountCode).isEqualTo(2102)
         assertThat(accounts[0].balance).isEqualTo(BigDecimal(12.25))
+        assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal(0))
         assertThat(accounts[1].prisonId).isEqualTo("LEI")
         assertThat(accounts[1].accountCode).isEqualTo(2103)
-        assertThat(accounts[1].balance).isEqualTo("21.25")
+        assertThat(accounts[1].balance).isEqualTo(BigDecimal("21.25"))
+        assertThat(accounts[1].holdBalance).isEqualTo(BigDecimal("2.5"))
         assertThat(accounts[2].prisonId).isEqualTo("SSI")
         assertThat(accounts[2].accountCode).isEqualTo(2102)
-        assertThat(accounts[2].balance).isEqualTo("11.11")
+        assertThat(accounts[2].balance).isEqualTo(BigDecimal("11.11"))
+        assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal("2.3"))
       }
     }
 
