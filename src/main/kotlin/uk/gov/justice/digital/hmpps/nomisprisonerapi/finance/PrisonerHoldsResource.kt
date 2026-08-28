@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.PrisonerHold
 @Validated
 @RequestMapping(value = ["/finance/prisoners/holds"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class PrisonerHoldsesource(
+class PrisonerHoldsResource(
   private val prisonerHoldsService: PrisonerHoldsService,
 ) {
   @GetMapping("/{prisonNumber}")
