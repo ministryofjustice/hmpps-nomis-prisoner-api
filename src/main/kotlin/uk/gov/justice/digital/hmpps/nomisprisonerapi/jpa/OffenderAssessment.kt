@@ -79,7 +79,7 @@ data class OffenderAssessment(
 
   @Column(name = "ASSESS_STATUS")
   @Enumerated(EnumType.STRING)
-  val assessmentStatus: AssessmentStatusType,
+  var assessmentStatus: AssessmentStatusType,
 
   @Column(name = "CALC_SUP_LEVEL_TYPE")
   val calculatedLevel: AssessmentLevel? = null,
@@ -89,14 +89,14 @@ data class OffenderAssessment(
   val assessmentStaff: Staff,
 
   @Column(name = "ASSESS_COMMENT_TEXT")
-  val assessmentComment: String? = null,
+  var assessmentComment: String? = null,
 
   @Column(name = "OVERRIDE_REASON_TEXT")
   val overrideReasonComment: String? = null,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "PLACE_AGY_LOC_ID")
-  val placementAgency: AgencyLocation? = null,
+  var placementAgency: AgencyLocation? = null,
 
   @Column(name = "OVERRIDED_SUP_LEVEL_TYPE")
   val overrideLevel: AssessmentLevel? = null,
@@ -108,35 +108,35 @@ data class OffenderAssessment(
   @JoinColumn(name = "OVERRIDE_STAFF_ID")
   val overrideStaff: Staff? = null,
 
-  val evaluationDate: LocalDate? = null,
-  val nextReviewDate: LocalDate? = null,
+  var evaluationDate: LocalDate? = null,
+  var nextReviewDate: LocalDate? = null,
 
   @Enumerated(EnumType.STRING)
-  val evaluationResultCode: EvaluationResultCode? = null,
+  var evaluationResultCode: EvaluationResultCode? = null,
 
   @Column(name = "REVIEW_SUP_LEVEL_TYPE")
-  val reviewLevel: AssessmentLevel? = null,
+  var reviewLevel: AssessmentLevel? = null,
 
   @Column(name = "REVIEW_PLACEMENT_TEXT")
   val reviewPlacementComment: String? = null,
 
   @Column(name = "REVIEW_COMMITTE_CODE")
   @Enumerated(EnumType.STRING)
-  val reviewCommitteeCode: AssessmentCommittee? = null,
+  var reviewCommitteeCode: AssessmentCommittee? = null,
 
   @Column(name = "COMMITTE_COMMENT_TEXT")
-  val reviewCommitteeComment: String? = null,
+  var reviewCommitteeComment: String? = null,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "REVIEW_PLACE_AGY_LOC_ID")
-  val reviewPlacementAgency: AgencyLocation? = null,
+  var reviewPlacementAgency: AgencyLocation? = null,
 
   @Column(name = "REVIEW_SUP_LEVEL_TEXT")
-  val reviewComment: String? = null,
+  var reviewComment: String? = null,
 
   @Column(name = "ASSESS_COMMITTE_CODE")
   @Enumerated(EnumType.STRING)
-  val assessmentCommitteeCode: AssessmentCommittee? = null,
+  var assessmentCommitteeCode: AssessmentCommittee? = null,
 
   @Column(name = "CREATION_DATE")
   val creationDateTime: LocalDateTime? = null,
@@ -145,7 +145,7 @@ data class OffenderAssessment(
 
   // TODO: actually not used - all null for CSRA top level ***
   @Column(name = "APPROVED_SUP_LEVEL_TYPE")
-  val approvedLevel: AssessmentLevel? = null,
+  var approvedLevel: AssessmentLevel? = null,
 
   @Column(name = "ASSESSMENT_CREATE_LOCATION")
   val assessmentCreationLocation: String? = null,

@@ -20,7 +20,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 class CsraService(
   private val offenderRepository: OffenderRepository,
   private val offenderAssessmentRepository: OffenderAssessmentRepository,
@@ -28,6 +28,7 @@ class CsraService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val staffUserAccountRepository: StaffUserAccountRepository,
 ) {
+  @Transactional
   fun createCsra(offenderNo: String, csraCreateRequest: CsraCreateDto): CsraCreateResponse {
     val booking = offenderBookingRepository.findLatestByOffenderNomsId(offenderNo)
       ?: throw NotFoundException("Cannot find latest booking for offender $offenderNo")
@@ -83,6 +84,44 @@ class CsraService(
     )
     val saved = offenderAssessmentRepository.save(offenderAssessment)
     return CsraCreateResponse(saved.id.offenderBooking.bookingId, saved.id.sequence)
+  }
+
+  @Transactional
+  fun updateCsra(bookingId: Long, sequence: Int, csraUpdateRequest: CsraUpdateDto): CsraGetDto {
+    val booking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Booking with id $bookingId not found")
+
+    val offenderAssessment = offenderAssessmentRepository.findByIdOrNull(
+      OffenderAssessmentId(booking, sequence),
+    ) ?: throw NotFoundException("CSRA for booking $bookingId and sequence $sequence not found")
+
+    val placementAgency = csraUpdateRequest.placementAgencyId?.let {
+      agencyLocationRepository.findByIdOrNull(it)
+        ?: throw BadDataException("Cannot find placement agency $it")
+    }
+
+    val reviewPlacementAgency = csraUpdateRequest.reviewPlacementAgencyId?.let {
+      agencyLocationRepository.findByIdOrNull(it)
+        ?: throw BadDataException("Cannot find review placement agency $it")
+    }
+
+    offenderAssessment.apply {
+      assessmentStatus = csraUpdateRequest.status
+      assessmentComment = csraUpdateRequest.comment
+      nextReviewDate = csraUpdateRequest.nextReviewDate
+      this.placementAgency = placementAgency
+      evaluationDate = csraUpdateRequest.evaluationDate
+      evaluationResultCode = csraUpdateRequest.evaluationResultCode
+      reviewLevel = csraUpdateRequest.reviewLevel
+      reviewCommitteeCode = csraUpdateRequest.reviewCommitteeCode
+      reviewCommitteeComment = csraUpdateRequest.reviewCommitteeComment
+      this.reviewPlacementAgency = reviewPlacementAgency
+      reviewComment = csraUpdateRequest.reviewComment
+      assessmentCommitteeCode = csraUpdateRequest.committeeCode
+      approvedLevel = csraUpdateRequest.approvedLevel
+    }
+
+    return offenderAssessmentRepository.save(offenderAssessment).toDto()
   }
 
   fun getCsra(bookingId: Long, sequence: Int): CsraGetDto {

@@ -11,6 +11,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -45,9 +46,34 @@ class CsraResource(private val csraService: CsraService) {
     ],
   )
   fun createCsra(
-    @PathVariable offenderNo: String,
+    @Schema(description = "Offender Number", example = "A1234AA") @PathVariable offenderNo: String,
     @RequestBody csraCreateRequest: CsraCreateDto,
   ): CsraCreateResponse = csraService.createCsra(offenderNo, csraCreateRequest)
+
+  @PutMapping("/prisoners/booking-id/{bookingId}/csra/{sequence}")
+  @Operation(
+    summary = "Updates a CSRA record for a prisoner",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid agency or user",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "CSRA or booking does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun updateCsra(
+    @Schema(description = "Booking Id", example = "2345678") @PathVariable bookingId: Long,
+    @Schema(description = "Sequence within booking", example = "3") @PathVariable sequence: Int,
+    @RequestBody csraUpdateRequest: CsraUpdateDto,
+  ) {
+    csraService.updateCsra(bookingId, sequence, csraUpdateRequest)
+  }
 
   @GetMapping("/prisoners/booking-id/{bookingId}/csra/{sequence}")
   @Operation(
