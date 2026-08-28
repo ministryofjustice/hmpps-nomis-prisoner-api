@@ -10,6 +10,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
@@ -487,6 +489,8 @@ interface BookingDsl {
     username: String,
     assessmentDate: LocalDate = LocalDate.now(),
     assessmentType: AssessmentType = AssessmentType.CSR,
+    assessmentStatus: AssessmentStatusType = AssessmentStatusType.I,
+    reviewLevel: AssessmentLevel = AssessmentLevel.PEND,
     placementAgency: String? = null,
     dsl: OffenderAssessmentDsl.() -> Unit = {},
   ): OffenderAssessment
@@ -1618,6 +1622,8 @@ class BookingBuilder(
     username: String,
     assessmentDate: LocalDate,
     assessmentType: AssessmentType,
+    assessmentStatus: AssessmentStatusType,
+    reviewLevel: AssessmentLevel,
     placementAgency: String?,
     dsl: OffenderAssessmentDsl.() -> Unit,
   ): OffenderAssessment = offenderAssessmentBuilderFactory.builder().let { builder ->
@@ -1627,6 +1633,8 @@ class BookingBuilder(
       username,
       assessmentDate,
       assessmentType,
+      assessmentStatus,
+      reviewLevel,
       placementAgency,
     )
       .also { builder.apply(dsl) }
