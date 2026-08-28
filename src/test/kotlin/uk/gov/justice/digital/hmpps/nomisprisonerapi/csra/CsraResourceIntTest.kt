@@ -107,7 +107,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             fromValue(
-              """{ ${requiredFields()}, "placementAgencyId": "DUFF" }""",
+              """{ ${requiredCreateFields()}, "placementAgencyId": "DUFF" }""",
             ),
           )
           .exchange()
@@ -123,7 +123,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             fromValue(
-              """{ ${requiredFields()}, "reviewPlacementAgencyId": "DUFF" }""",
+              """{ ${requiredCreateFields()}, "reviewPlacementAgencyId": "DUFF" }""",
             ),
           )
           .exchange()
@@ -303,36 +303,150 @@ class CsraResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  fun validFullCreateJsonRequest(): String =
-    """
-      { ${requiredFields()},
-   "committeeCode": "GOV",
-   "nextReviewDate": "2026-12-15",
-   "comment": "comment",
-   "placementAgencyId": "LEI",
-   "reviewLevel": "MED",
-   "approvedLevel": "LOW",
-   "score": "1200",
-   "evaluationDate": "2025-12-16",
-   "evaluationResultCode": "APP",
-   "reviewCommitteeCode": "SECUR",
-   "reviewCommitteeComment": "reviewCommitteeComment",
-   "reviewPlacementAgencyId": "MDI",
-   "reviewComment": "reviewComment"
+  @DisplayName("PUT /prisoners/booking-id/{bookingId}/csra/{sequence}")
+  @Nested
+  inner class UpdateCsra {
+
+    @BeforeEach
+    fun init() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A2222BB") {
+          booking2 = booking {
+            assessment(
+              username = "BILLSTAFF",
+              assessmentDate = LocalDate.parse("2025-12-29"),
+              placementAgency = "BXI",
+              assessmentType = AssessmentType.CSR1,
+            )
+          }
+        }
       }
-    """.trimIndent()
+    }
 
-  fun validMinimalCreateJsonRequest(): String = "{ ${requiredFields()} }"
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/prisoners/booking-id/${booking1.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validFullCreateJsonRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
 
-  fun requiredFields() =
-    """
-      "assessmentDate": "2025-12-14",
-      "calculatedLevel": "HI",
-      "type": "CSRF",
-      "status": "A",
-      "createdBy": "BILLSTAFF",
-      "createdDateTime": "2025-12-04T12:34:56"
-    """.trimIndent()
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/prisoners/booking-id/${booking1.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validFullCreateJsonRequest()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/prisoners/booking-id/${booking1.bookingId}/csra/1")
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validFullCreateJsonRequest()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `invalid booking`() {
+        webTestClient.put().uri("/prisoners/booking-id/9999/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validFullCreateJsonRequest()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Not Found: Booking with id 9999 not found")
+      }
+
+      @Test
+      fun `invalid sequence`() {
+        webTestClient.put().uri("/prisoners/booking-id/${booking2.bookingId}/csra/99")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validFullCreateJsonRequest()))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Not Found: CSRA for booking ${booking2.bookingId} and sequence 99 not found")
+      }
+
+      @Test
+      fun `no placement agency`() {
+        webTestClient.put().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue("""{ ${requiredCreateFields()}, "placementAgencyId": "DUFF" }"""),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Cannot find placement agency DUFF")
+      }
+
+      @Test
+      fun `no review placement agency`() {
+        webTestClient.put().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            fromValue("""{ ${requiredCreateFields()}, "reviewPlacementAgencyId": "DUFF" }"""),
+          )
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Cannot find review placement agency DUFF")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `can update a CSRA with full data`() {
+        webTestClient.put().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validFullUpdateJsonRequest()))
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          val data = offenderAssessmentRepository.findByIdOrNull(
+            OffenderAssessmentId(booking2, 1),
+          )
+
+          with(data!!) {
+            assertThat(assessmentDate.toString()).isEqualTo("2025-12-29")
+            assertThat(calculatedLevel).isEqualTo(AssessmentLevel.STANDARD)
+            assertThat(assessmentStatus).isEqualTo(AssessmentStatusType.A)
+            assertThat(assessmentCommitteeCode).isEqualTo(AssessmentCommittee.GOV)
+            assertThat(nextReviewDate).isEqualTo("2026-12-26")
+            assertThat(assessmentComment).isEqualTo("comment")
+            assertThat(placementAgency?.id).isEqualTo("LEI")
+            assertThat(reviewLevel).isEqualTo(AssessmentLevel.MED)
+            assertThat(approvedLevel).isEqualTo(AssessmentLevel.LOW)
+            assertThat(evaluationDate).isEqualTo("2025-12-16")
+            assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
+            assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.SECUR)
+            assertThat(reviewCommitteeComment).isEqualTo("reviewCommitteeComment")
+            assertThat(reviewPlacementAgency?.id).isEqualTo("MDI")
+            assertThat(reviewComment).isEqualTo("reviewComment")
+          }
+        }
+      }
+    }
+  }
 
   @DisplayName("GET /prisoners/booking-id/{bookingId}/csra/{sequence}")
   @Nested
@@ -702,3 +816,49 @@ class CsraResourceIntTest : IntegrationTestBase() {
     }
   }
 }
+
+fun validFullCreateJsonRequest(): String = """
+  { ${requiredCreateFields()},
+   "committeeCode": "GOV",
+   "nextReviewDate": "2026-12-15",
+   "comment": "comment",
+   "placementAgencyId": "LEI",
+   "reviewLevel": "MED",
+   "approvedLevel": "LOW",
+   "score": "1200",
+   "evaluationDate": "2025-12-16",
+   "evaluationResultCode": "APP",
+   "reviewCommitteeCode": "SECUR",
+   "reviewCommitteeComment": "reviewCommitteeComment",
+   "reviewPlacementAgencyId": "MDI",
+   "reviewComment": "reviewComment"
+      }
+""".trimIndent()
+
+fun validMinimalCreateJsonRequest(): String = "{ ${requiredCreateFields()} }"
+
+fun requiredCreateFields() = """
+      "assessmentDate": "2025-12-14",
+      "calculatedLevel": "HI",
+      "type": "CSRF",
+      "status": "A",
+      "createdBy": "BILLSTAFF",
+      "createdDateTime": "2025-12-04T12:34:56"
+""".trimIndent()
+
+fun validFullUpdateJsonRequest() = """{
+   "status": "A",
+   "committeeCode": "GOV",
+   "nextReviewDate": "2026-12-26",
+   "comment": "comment",
+   "placementAgencyId": "LEI",
+   "reviewLevel": "MED",
+   "approvedLevel": "LOW",
+   "evaluationDate": "2025-12-16",
+   "evaluationResultCode": "APP",
+   "reviewCommitteeCode": "SECUR",
+   "reviewCommitteeComment": "reviewCommitteeComment",
+   "reviewPlacementAgencyId": "MDI",
+   "reviewComment": "reviewComment"
+     }
+""".trimIndent()
