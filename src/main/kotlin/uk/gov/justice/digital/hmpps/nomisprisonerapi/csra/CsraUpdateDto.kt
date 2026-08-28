@@ -15,7 +15,7 @@ data class CsraUpdateDto(
   @Schema(description = "The assessment committee code (reference code in domain 'ASSESS_COMM')", enumAsRef = true)
   val committeeCode: AssessmentCommittee? = null,
 
-  @Schema(description = "Next review date, defaults to current date + 6 months, if not provided")
+  @Schema(description = "Next review date")
   val nextReviewDate: LocalDate? = null,
 
   @Schema(description = "Comment text")

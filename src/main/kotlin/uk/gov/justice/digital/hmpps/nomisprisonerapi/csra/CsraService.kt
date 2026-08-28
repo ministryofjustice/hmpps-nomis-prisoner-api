@@ -87,7 +87,7 @@ class CsraService(
   }
 
   @Transactional
-  fun updateCsra(bookingId: Long, sequence: Int, csraUpdateRequest: CsraUpdateDto): CsraGetDto {
+  fun updateCsra(bookingId: Long, sequence: Int, csraUpdateRequest: CsraUpdateDto) {
     val booking = offenderBookingRepository.findByIdOrNull(bookingId)
       ?: throw NotFoundException("Booking with id $bookingId not found")
 
@@ -121,7 +121,7 @@ class CsraService(
       approvedLevel = csraUpdateRequest.approvedLevel
     }
 
-    return offenderAssessmentRepository.save(offenderAssessment).toDto()
+    offenderAssessmentRepository.save(offenderAssessment)
   }
 
   fun getCsra(bookingId: Long, sequence: Int): CsraGetDto {
