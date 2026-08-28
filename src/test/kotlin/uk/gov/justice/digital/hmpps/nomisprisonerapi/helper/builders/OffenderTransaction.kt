@@ -18,7 +18,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import kotlin.random.Random
 
 @DslMarker
 annotation class OffenderTransactionDslMarker
@@ -76,6 +75,9 @@ class OffenderTransactionBuilder(
     transactionType: String,
     entryDate: LocalDate,
     subAccountType: SubAccountType,
+    holdNumber: Long?,
+    holdClearFlag: Boolean,
+    clientUniqueRef: String,
   ): OffenderTransaction = OffenderTransaction(
     transactionId = transactionId,
     transactionEntrySequence = transactionEntrySequence,
@@ -84,12 +86,14 @@ class OffenderTransactionBuilder(
     subAccountType = subAccountType,
     transactionType = repository.lookupTransactionType(transactionType),
     transactionReferenceNumber = "FG1/12",
-    clientUniqueRef = "clientUniqueRef" + Random.nextInt(),
+    clientUniqueRef = clientUniqueRef,
     entryDate = entryDate,
     entryDescription = "entryDescription",
     entryAmount = BigDecimal.valueOf(2.34),
     modifyDate = LocalDateTime.now(),
     postingType = PostingType.CR,
+    holdNumber = holdNumber,
+    holdClearFlag = holdClearFlag,
   )
     .let {
       transaction = repository.save(it)
