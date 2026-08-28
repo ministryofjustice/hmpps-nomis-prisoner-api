@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction.Companion.Pk
+import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Repository
 interface OffenderTransactionRepository : JpaRepository<OffenderTransaction, Pk> {
@@ -61,8 +63,41 @@ interface OffenderTransactionRepository : JpaRepository<OffenderTransaction, Pk>
     nativeQuery = true,
   )
   fun findTransactionIdsInRange(minTxnId: Long, maxTxnId: Long, pageSize: Int): List<PrisonerTransactionIdProjection>
+
+  @Query(
+    """
+      select 
+        ot.txn_id txnId,
+        ot.txn_entry_seq txnEntrySeq,
+        ot.txn_entry_date txnEntryDate,
+        ot.txn_entry_desc txnEntryDesc,
+        ot.txn_reference_number txnReferenceNumber,
+        ot.txn_entry_amount txnEntryAmount,
+        ot.hold_number holdNumber,
+        ot.client_unique_ref as clientUniqueRef
+    from offender_transactions ot
+    where ot.offender_id = :offenderId
+      and ot.txn_type in ('HOA', 'WHF')
+      and ot.hold_clear_flag = 'N'
+      and ot.hold_number is not null
+    order by ot.txn_id, ot.txn_entry_seq
+  """,
+    nativeQuery = true,
+  )
+  fun getHoldTransactions(offenderId: Long): List<PrisonerHoldProjection>
 }
 
 interface PrisonerTransactionIdProjection {
   val id: Long
+}
+
+interface PrisonerHoldProjection {
+  val txnId: Long
+  val txnEntrySeq: Int
+  val txnEntryDate: LocalDateTime
+  val txnEntryDesc: String?
+  val txnReferenceNumber: String?
+  val txnEntryAmount: BigDecimal
+  val holdNumber: Long?
+  val clientUniqueRef: String?
 }

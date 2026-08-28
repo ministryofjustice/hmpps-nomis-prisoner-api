@@ -68,6 +68,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 
 @DslMarker
 annotation class BookingDslMarker
@@ -481,6 +482,9 @@ interface BookingDsl {
     transactionType: String,
     entryDate: LocalDate = LocalDate.parse("2025-06-01"),
     subAccountType: SubAccountType,
+    holdNumber: Long? = null,
+    holdClearFlag: Boolean = false,
+    clientUniqueRef: String = "clientUniqueRef" + Random.nextInt(),
     dsl: OffenderTransactionDsl.() -> Unit = {},
   ): OffenderTransaction
 
@@ -1602,6 +1606,9 @@ class BookingBuilder(
     transactionType: String,
     entryDate: LocalDate,
     subAccountType: SubAccountType,
+    holdNumber: Long?,
+    holdClearFlag: Boolean,
+    clientUniqueRef: String,
     dsl: OffenderTransactionDsl.() -> Unit,
   ): OffenderTransaction = offenderTransactionBuilderFactory.builder().let { builder ->
     builder.build(
@@ -1613,6 +1620,9 @@ class BookingBuilder(
       transactionType,
       entryDate,
       subAccountType,
+      holdNumber,
+      holdClearFlag,
+      clientUniqueRef,
     )
       .also { builder.apply(dsl) }
   }

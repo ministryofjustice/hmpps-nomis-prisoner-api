@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -15,6 +16,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.NotFound
 import org.hibernate.annotations.NotFoundAction
+import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.io.Serializable
 import java.math.BigDecimal
@@ -78,6 +80,13 @@ data class OffenderTransaction(
   @Column(name = "TXN_POSTING_TYPE", nullable = false)
   @Enumerated(EnumType.STRING)
   val postingType: PostingType,
+
+  @Column
+  val holdNumber: Long? = null,
+
+  @Column
+  @Convert(converter = YesNoConverter::class)
+  val holdClearFlag: Boolean = false,
 
   @OneToMany
   @JoinColumns(
