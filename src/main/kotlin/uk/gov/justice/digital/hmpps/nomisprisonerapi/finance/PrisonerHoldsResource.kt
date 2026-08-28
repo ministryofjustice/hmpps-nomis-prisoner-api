@@ -83,7 +83,7 @@ class PrisonerHoldsResource(
       ),
     ],
   )
-  fun getPrisonerHolds(
+  fun getPrisonerHoldsByOffenderId(
     @Schema(description = "rootOffenderId", example = "123456")
     @PathVariable
     rootOffenderId: Long,
