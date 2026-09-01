@@ -8026,7 +8026,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(eventId = courtAppearance.id),
+              createOrUpdateSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8040,7 +8040,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(eventId = courtAppearance.id),
+              createOrUpdateSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8053,7 +8053,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(eventId = courtAppearance.id),
+              createOrUpdateSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8070,7 +8070,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(eventId = courtAppearance.id),
+              createOrUpdateSentence(eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8086,7 +8086,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(category = "TREE", eventId = courtAppearance.id),
+              createOrUpdateSentence(category = "TREE", eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8102,7 +8102,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(calcType = "TREE", eventId = courtAppearance.id),
+              createOrUpdateSentence(calcType = "TREE", eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8119,7 +8119,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(category = "1991", calcType = "ADIMP_ORA", eventId = courtAppearance.id),
+              createOrUpdateSentence(category = "1991", calcType = "ADIMP_ORA", eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8136,7 +8136,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(offenderChargeIds = mutableListOf(123), eventId = courtAppearance.id),
+              createOrUpdateSentence(offenderChargeIds = mutableListOf(123), eventId = courtAppearance.id),
             ),
           )
           .exchange()
@@ -8152,7 +8152,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(
+              createOrUpdateSentence(
                 offenderChargeIds = mutableListOf(123),
                 consecSentenceSeq = 234,
                 eventId = courtAppearance.id,
@@ -8174,7 +8174,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .body(
           BodyInserters.fromValue(
-            createSentence(
+            createOrUpdateSentence(
               offenderChargeIds = mutableListOf(offenderCharge2.id),
               eventId = courtAppearanceNoCourtOrder.id,
             ),
@@ -8196,7 +8196,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
-                createSentence(
+                createOrUpdateSentence(
                   offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
                   eventId = courtAppearance.id,
                 ),
@@ -8263,7 +8263,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
-                createSentence(eventId = courtAppearance.id),
+                createOrUpdateSentence(eventId = courtAppearance.id),
               ),
             )
             .exchange()
@@ -8288,7 +8288,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(
+              createOrUpdateSentence(
                 offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
                 eventId = courtAppearance.id,
               ),
@@ -8328,7 +8328,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(
+              createOrUpdateSentence(
                 offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
                 eventId = courtAppearanceWithOrderToday.id,
               ),
@@ -8375,7 +8375,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
-                createSentence(
+                createOrUpdateSentence(
                   offenderChargeIds = mutableListOf(offenderCharge1.id, offenderCharge2.id),
                   eventId = courtAppearance.id,
                 ),
@@ -8391,7 +8391,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createSentence(
+              createOrUpdateSentence(
                 offenderChargeIds = mutableListOf(),
                 sentenceLevel = "AGG",
                 calcType = "AGG_IND_ORA",
@@ -8410,7 +8410,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .contentType(MediaType.APPLICATION_JSON)
             .body(
               BodyInserters.fromValue(
-                createSentence(
+                createOrUpdateSentence(
                   consecSentenceSeq = sentenceSeq1,
                   eventId = courtAppearance.id,
                 ),
@@ -8464,6 +8464,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var offenderCharge3: OffenderCharge
     private lateinit var offenderCharge4: OffenderCharge
     private val aLaterDateString = "2023-01-05"
+    private lateinit var previousBookingSentence: OffenderSentence
+    private lateinit var previousBookingCourtCase: CourtCase
+    private lateinit var previousBookingCourtEvent: CourtEvent
 
     @BeforeEach
     internal fun createPrisonerAndSentence() {
@@ -8504,6 +8507,24 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
+            booking(agencyLocationId = "MDI") {
+              previousBookingCourtCase = courtCase(
+                reportingStaff = staff,
+                beginDate = LocalDate.parse(aDateString),
+                statusUpdateDate = LocalDate.parse(aDateString),
+                statusUpdateStaff = staff,
+              ) {
+                lateinit var courtOrder: CourtOrder
+                val offenderCharge = offenderCharge(offenceCode = "RT88074")
+                previousBookingCourtEvent = courtEvent {
+                  courtEventCharge(offenderCharge = offenderCharge)
+                  courtOrder = courtOrder(courtDate = LocalDate.of(2023, 1, 1))
+                }
+                previousBookingSentence = sentence(statusUpdateStaff = staff, courtOrder = courtOrder) {
+                  offenderSentenceCharge(offenderCharge = offenderCharge)
+                }
+              }
+            }
           }
       }
       latestBookingId = prisonerAtMoorland.latestBooking().bookingId
@@ -8517,11 +8538,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf()))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(eventId = courtEvent.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(eventId = courtEvent.id))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -8532,11 +8549,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(eventId = courtEvent.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(eventId = courtEvent.id))
           .exchange()
           .expectStatus().isForbidden
       }
@@ -8546,11 +8559,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
         webTestClient.put()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(eventId = courtEvent.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(eventId = courtEvent.id))
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -8564,11 +8573,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/33/sentences/${sentenceTwo.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(eventId = courtEvent2.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(eventId = courtEvent2.id))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -8581,11 +8586,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/5555")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(eventId = courtEvent.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(eventId = courtEvent.id))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
@@ -8599,11 +8600,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(calcType = "ZZZ", eventId = courtEvent.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(calcType = "ZZZ", eventId = courtEvent.id))
           .exchange()
           .expectStatus().isBadRequest
           .expectBody()
@@ -8617,19 +8614,34 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                consecSentenceSeq = 234,
-                eventId = courtEvent.id,
-              ),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(consecSentenceSeq = 234, eventId = courtEvent.id))
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
           .jsonPath("developerMessage")
           .isEqualTo("Consecutive sentence with sequence 234 and booking ${courtCase.offenderBooking.bookingId} not found")
+      }
+
+      @Test
+      fun `will refuse to update sentence on a case that needs cloning`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${previousBookingCourtCase.id}/sentences/${previousBookingSentence.id.sequence}")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(createOrUpdateSentence(eventId = previousBookingCourtEvent.id).copy(isBreach = true))
+          .exchange()
+          .expectStatus().isEqualTo(HttpStatus.FAILED_DEPENDENCY.value())
+      }
+
+      @Test
+      fun `will allow non-breach sentence update on previous booking`() {
+        webTestClient.put()
+          .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${previousBookingCourtCase.id}/sentences/${previousBookingSentence.id.sequence}")
+          .contentType(MediaType.APPLICATION_JSON)
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(createOrUpdateSentence(eventId = previousBookingCourtEvent.id).copy(isBreach = false))
+          .exchange()
+          .expectStatus().isOk
       }
     }
 
@@ -8642,19 +8654,17 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(
-                calcType = "FTR_ORA",
-                category = "2020",
-                eventId = courtEvent2.id,
-                startDate = LocalDate.parse(aLaterDateString),
-                endDate = null,
-                sentenceLevel = "AGG",
-                fine = BigDecimal.valueOf(9.7),
-                offenderChargeIds = mutableListOf(offenderCharge2.id),
-                consecSentenceSeq = sentence.id.sequence,
-              ),
+          .bodyValue(
+            createOrUpdateSentence(
+              calcType = "FTR_ORA",
+              category = "2020",
+              eventId = courtEvent2.id,
+              startDate = LocalDate.parse(aLaterDateString),
+              endDate = null,
+              sentenceLevel = "AGG",
+              fine = BigDecimal.valueOf(9.7),
+              offenderChargeIds = mutableListOf(offenderCharge2.id),
+              consecSentenceSeq = sentence.id.sequence,
             ),
           )
           .exchange()
@@ -8699,11 +8709,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${newCourtCase.id}/sentences/${sentenceTwo.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(eventId = courtEvent2.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(eventId = courtEvent2.id))
           .exchange()
           .expectStatus().isOk
 
@@ -8725,11 +8731,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/court-cases/${courtCase.id}/sentences/${sentence.id.sequence}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
-          .body(
-            BodyInserters.fromValue(
-              createSentence(eventId = courtEvent.id),
-            ),
-          )
+          .bodyValue(createOrUpdateSentence(eventId = courtEvent.id))
           .exchange()
           .expectStatus().isOk
       }
@@ -9896,7 +9898,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     CaseIdentifierRequest(emptyList()),
   )
 
-  private fun createSentence(
+  private fun createOrUpdateSentence(
     category: String = "2020",
     calcType: String = "ADIMP",
     startDate: LocalDate = LocalDate.parse(aDateString),
@@ -9907,7 +9909,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     offenderChargeIds: MutableList<Long> = mutableListOf(),
     consecSentenceSeq: Long? = null,
     eventId: Long,
-  ) = CreateSentenceRequest(
+  ) = CreateOrUpdateSentenceRequest(
     startDate = startDate,
     status = status,
     endDate = endDate,

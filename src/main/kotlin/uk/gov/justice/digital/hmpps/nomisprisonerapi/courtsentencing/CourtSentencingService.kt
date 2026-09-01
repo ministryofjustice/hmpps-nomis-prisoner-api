@@ -936,7 +936,7 @@ class CourtSentencingService(
     return latestWithResultCode == courtEventCharge
   }
 
-  fun createSentence(offenderNo: String, caseId: Long, request: CreateSentenceRequest): CreateSentenceResponse {
+  fun createSentence(offenderNo: String, caseId: Long, request: CreateOrUpdateSentenceRequest): CreateSentenceResponse {
     findCourtCaseWithLock(id = caseId, offenderNo = offenderNo).let { case ->
       val offenderBooking = findOffenderBookingWithLock(case.offenderBooking.bookingId)
       checkConsecutiveSentenceExists(request, offenderBooking)
@@ -1125,10 +1125,14 @@ class CourtSentencingService(
   fun updateSentence(
     caseId: Long,
     sentenceSequence: Long,
-    request: CreateSentenceRequest,
+    request: CreateOrUpdateSentenceRequest,
     offenderNo: String,
   ) {
     findCourtCase(id = caseId, offenderNo = offenderNo).let { case ->
+      if (case.offenderBooking.isPreviousBooking() && request.isBreach) {
+        throw DependencyException("Cannot update breach supervision related sentence until case has been cloned to latest booking", entityId = case.id)
+      }
+
       findSentenceWithLock(booking = case.offenderBooking, sentenceSequence = sentenceSequence).let { sentence ->
         val offenderBooking = case.offenderBooking
         checkConsecutiveSentenceExists(request, offenderBooking)
@@ -1198,7 +1202,7 @@ class CourtSentencingService(
   }
 
   private fun checkConsecutiveSentenceExists(
-    request: CreateSentenceRequest,
+    request: CreateOrUpdateSentenceRequest,
     offenderBooking: OffenderBooking,
   ) {
     request.consecutiveToSentenceSeq?.let {
