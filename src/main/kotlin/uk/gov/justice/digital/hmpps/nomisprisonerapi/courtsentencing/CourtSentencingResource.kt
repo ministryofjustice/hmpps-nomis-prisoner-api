@@ -668,7 +668,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateSentenceRequest::class),
+          schema = Schema(implementation = CreateOrUpdateSentenceRequest::class),
         ),
       ],
     ),
@@ -727,7 +727,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
     @PathVariable
     caseId: Long,
     @org.springframework.web.bind.annotation.RequestBody @Valid
-    request: CreateSentenceRequest,
+    request: CreateOrUpdateSentenceRequest,
   ): CreateSentenceResponse = courtSentencingService.createSentence(offenderNo, caseId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
@@ -815,7 +815,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateSentenceRequest::class),
+          schema = Schema(implementation = CreateOrUpdateSentenceRequest::class),
         ),
       ],
     ),
@@ -887,7 +887,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
     @PathVariable
     sequence: Long,
     @org.springframework.web.bind.annotation.RequestBody @Valid
-    request: CreateSentenceRequest,
+    request: CreateOrUpdateSentenceRequest,
   ) = courtSentencingService.updateSentence(
     sentenceSequence = sequence,
     caseId = caseId,
@@ -1229,7 +1229,7 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
       content = [
         Content(
           mediaType = "application/json",
-          schema = Schema(implementation = CreateSentenceRequest::class),
+          schema = Schema(implementation = CreateOrUpdateSentenceRequest::class),
         ),
       ],
     ),
@@ -2972,7 +2972,7 @@ data class OffenderChargeRequest(
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
   val futureAppearance: Boolean? = false,
-  @Schema(description = "Indicates if the sentence term is related to a breach supervision (or imprisonable offence)")
+  @Schema(description = "Indicates if the charge is related to a breach supervision (or imprisonable offence)")
   val isBreach: Boolean = false,
 
   /*
@@ -3011,7 +3011,7 @@ data class ExistingOffenderChargeRequest(
 )
 
 @Schema(description = "Sentence request")
-data class CreateSentenceRequest(
+data class CreateOrUpdateSentenceRequest(
   val startDate: LocalDate,
   val endDate: LocalDate? = null,
   // either I or A
@@ -3026,6 +3026,8 @@ data class CreateSentenceRequest(
   val offenderChargeIds: List<Long>,
   val consecutiveToSentenceSeq: Long? = null,
   val eventId: Long,
+  @Schema(description = "Indicates if the sentence is related to a breach supervision (or imprisonable offence)")
+  val isBreach: Boolean = false,
 )
 
 data class SentenceId(
