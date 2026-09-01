@@ -91,7 +91,7 @@ class OffenderAssessmentBuilder(
     assessmentComment = "a-comment",
     placementAgency = placementAgency?.let { repository.lookupAgency(placementAgency) },
     assessmentCreationLocation = "BMI",
-    overrideLevel = AssessmentLevel.STANDARD,
+    overrideLevel = AssessmentLevel.MED,
     overrideComment = "overrideComment",
     overrideStaff = repository.lookupStaff(username).staff,
     evaluationDate = LocalDate.parse("2025-12-28"),
