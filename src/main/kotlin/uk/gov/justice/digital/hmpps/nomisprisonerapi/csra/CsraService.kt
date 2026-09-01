@@ -152,6 +152,7 @@ class CsraService(
       assessmentDate = assessmentDate,
       assessmentCreationLocation = assessmentCreationLocation,
       calculatedLevel = calculatedLevel,
+      overrideLevel = overrideLevel,
       score = score,
       status = assessmentStatus,
       assessmentStaffId = assessmentStaff.id,
