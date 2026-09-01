@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.TransferScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.UpsertTransferScheduleOut
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
@@ -230,5 +231,48 @@ class TransferScheduleResourceIntTest(
     private fun WebTestClient.getTransferScheduleOutOk(offenderNo: String, eventId: Long) = getTransferScheduleOut(offenderNo, eventId)
       .expectStatus().isOk
       .expectBodyResponse<TransferScheduleOut>()
+  }
+
+  @Nested
+  @DisplayName("PUT /movements/{offenderNo}/transfers/schedule/out")
+  inner class PutTransferScheduleOut {
+
+    @Nested
+    inner class Security {
+      private fun aRequest() = UpsertTransferScheduleOut(
+        eventSubType = "ANY",
+        fromPrison = "ANY",
+        eventStatus = "ANY",
+      )
+
+      @Test
+      fun `should return unauthorised for missing token`() {
+        webTestClient.put()
+          .uri("/movements/$offenderNo/transfers/schedule/out")
+          .bodyValue(aRequest())
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.put()
+          .uri("/movements/$offenderNo/transfers/schedule/out")
+          .headers(setAuthorisation())
+          .bodyValue(aRequest())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.put()
+          .uri("/movements/$offenderNo/transfers/schedule/out")
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+          .bodyValue(aRequest())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
   }
 }

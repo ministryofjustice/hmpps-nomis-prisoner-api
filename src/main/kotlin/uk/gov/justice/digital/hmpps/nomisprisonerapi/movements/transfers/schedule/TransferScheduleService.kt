@@ -59,4 +59,10 @@ class TransferScheduleService(
     audit = toAudit(),
     userActiveCaseloadId = movementHelpers.activeCaseloadId(modifyUserId ?: createUsername),
   )
+
+  @Transactional
+  fun upsertTransferScheduleOut(
+    offenderNo: String,
+    request: UpsertTransferScheduleOut,
+  ): UpsertTransferScheduleOutResponse = TODO("Service to be implemented")
 }
