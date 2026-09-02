@@ -39,7 +39,7 @@ class OffenderTransferScheduleOut(
   )
   var cancellationReasonCode: TransferCancellationReason? = null,
 
-  @OneToOne(mappedBy = "schedule", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  @OneToOne(mappedBy = "schedule", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   @JoinColumn(name = "EVENT_ID", insertable = false, updatable = false)
   var waitList: OffenderTransferScheduleWaitList? = null,
 

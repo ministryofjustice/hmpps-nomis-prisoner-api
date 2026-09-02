@@ -111,6 +111,11 @@ abstract class OffenderIndividualSchedule(
     setAppointmentStartDateAndTime(eventDate, startTime.toLocalTime())
   }
 
+  fun setAppointmentStartDateAndTimeNull() {
+    this.eventDate = null
+    this.startTime = null
+  }
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

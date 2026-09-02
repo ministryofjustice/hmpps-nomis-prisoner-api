@@ -26,7 +26,7 @@ import java.time.LocalDate
 class OffenderTransferScheduleWaitList(
   @Id
   @Column(name = "EVENT_ID")
-  var id: Long,
+  var id: Long = 0,
 
   @OneToOne(fetch = FetchType.LAZY)
   @MapsId

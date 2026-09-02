@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
@@ -16,14 +17,19 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.TransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.UpsertTransferScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.UpsertTransferScheduleOutResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.UpsertTransferScheduleWaitlist
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
 
 class TransferScheduleResourceIntTest(
   @Autowired private val entityManager: EntityManager,
+  @Autowired private val transferScheduleRepository: OffenderTransferScheduleOutRepository,
 ) : IntegrationTestBase() {
 
   private val offenderNo = "B7463BB"
@@ -236,6 +242,353 @@ class TransferScheduleResourceIntTest(
   @Nested
   @DisplayName("PUT /movements/{offenderNo}/transfers/schedule/out")
   inner class PutTransferScheduleOut {
+    private val scheduleStartTime = LocalDate.now().atTime(10, 0)
+    lateinit var staff: Staff
+
+    private fun aRequest(eventId: Long? = null) = UpsertTransferScheduleOut(
+      eventId = eventId,
+      startTime = scheduleStartTime,
+      eventSubType = "NOTR",
+      eventStatus = "SCH",
+      fromPrison = "BXI",
+      toPrison = "LEI",
+      comment = "Some comment",
+      escortCode = "U",
+      waitlist = UpsertTransferScheduleWaitlist(
+        requestDate = LocalDate.now().minusDays(1),
+        status = "PEN",
+        statusDate = LocalDate.now(),
+        priority = "1",
+        approved = true,
+        cancellationReasonCode = "ADMI",
+        comment = "comment 1",
+        approvedUserName = "MCBOBBY_GEN",
+      ),
+    )
+
+    @Nested
+    inner class Create {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff = staff("Bobby", "McBobby") {
+            account(username = "MCBOBBY_GEN")
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking()
+          }
+        }
+      }
+
+      @Test
+      fun `should create transfer schedule and waitlist`() {
+        webTestClient.upsertTransferScheduleOutOk()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(getAppointmentStartDateAndTime()).isEqualTo(scheduleStartTime)
+                assertThat(eventSubType.code).isEqualTo("NOTR")
+                assertThat(eventStatus.code).isEqualTo("SCH")
+                assertThat(fromAgency?.id).isEqualTo("BXI")
+                assertThat(toAgency?.id).isEqualTo("LEI")
+                assertThat(comment).isEqualTo("Some comment")
+                assertThat(escort?.code).isEqualTo("U")
+                with(waitList!!) {
+                  assertThat(requestDate).isEqualTo(LocalDate.now().minusDays(1))
+                  assertThat(waitListStatus.code).isEqualTo("PEN")
+                  assertThat(statusDate).isEqualTo(LocalDate.now())
+                  assertThat(transferPriority?.code).isEqualTo("1")
+                  assertThat(approvedFlag).isTrue
+                  assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+                  assertThat(commentText1).isEqualTo("comment 1")
+                  assertThat(approvedStaff?.id).isEqualTo(staff.id)
+                }
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should not create schedule hidden comment or cancellation reason`() {
+        webTestClient.upsertTransferScheduleOutOk()
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(hiddenComment).isNull()
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should create transfer schedule with null waitlist`() {
+        webTestClient.upsertTransferScheduleOutOk(request = aRequest().copy(waitlist = null))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(waitList).isNull()
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should create comments that fit in NOMIS`() {
+        webTestClient.upsertTransferScheduleOutOk(
+          request = aRequest().let {
+            it.copy(
+              comment = "1234567890".repeat(30),
+              waitlist = it.waitlist!!.copy(comment = "1234567890".repeat(30)),
+            )
+          },
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(comment?.length).isEqualTo(MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH)
+                assertThat(waitList?.commentText1?.length).isEqualTo(MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH)
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should create transfer schedule with null approved staff if not found`() {
+        webTestClient.upsertTransferScheduleOutOk(
+          request = aRequest().let { it.copy(waitlist = it.waitlist!!.copy(approvedUserName = "UNKNOWN")) },
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(waitList!!.approvedStaff).isNull()
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Update {
+      lateinit var scheduleNoWaitlist: OffenderTransferScheduleOut
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          staff = staff("Bobby", "McBobby") {
+            account(username = "MCBOBBY_GEN")
+          }
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = transferScheduleOut(
+                hiddenComment = "Should not change",
+                cancellationReasonCode = "TRANS",
+              ) {
+                waitList()
+              }
+              scheduleNoWaitlist = transferScheduleOut()
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should update transfer schedule and waitlist`() {
+        webTestClient.upsertTransferScheduleOutOk(request = aRequest(eventId = scheduleOut.eventId))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(eventId).isEqualTo(scheduleOut.eventId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(getAppointmentStartDateAndTime()).isEqualTo(scheduleStartTime)
+                assertThat(eventSubType.code).isEqualTo("NOTR")
+                assertThat(eventStatus.code).isEqualTo("SCH")
+                assertThat(fromAgency?.id).isEqualTo("BXI")
+                assertThat(toAgency?.id).isEqualTo("LEI")
+                assertThat(comment).isEqualTo("Some comment")
+                assertThat(escort?.code).isEqualTo("U")
+                with(waitList!!) {
+                  assertThat(requestDate).isEqualTo(LocalDate.now().minusDays(1))
+                  assertThat(waitListStatus.code).isEqualTo("PEN")
+                  assertThat(statusDate).isEqualTo(LocalDate.now())
+                  assertThat(transferPriority?.code).isEqualTo("1")
+                  assertThat(approvedFlag).isTrue
+                  assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+                  assertThat(commentText1).isEqualTo("comment 1")
+                  assertThat(approvedStaff?.id).isEqualTo(staff.id)
+                }
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should update schedule hidden comment or cancellation reason`() {
+        webTestClient.upsertTransferScheduleOutOk(request = aRequest(eventId = scheduleOut.eventId))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(eventId).isEqualTo(scheduleOut.eventId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(hiddenComment).isEqualTo("Should not change")
+                assertThat(cancellationReasonCode?.code).isEqualTo("TRANS")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should remove waitlist`() {
+        webTestClient.upsertTransferScheduleOutOk(request = aRequest(eventId = scheduleOut.eventId).copy(waitlist = null))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(eventId).isEqualTo(scheduleOut.eventId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(waitList).isNull()
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should add waitlist`() {
+        webTestClient.upsertTransferScheduleOutOk(request = aRequest(eventId = scheduleNoWaitlist.eventId))
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(eventId).isEqualTo(scheduleNoWaitlist.eventId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
+                assertThat(waitList).isNotNull()
+                assertThat(waitList?.id).isEqualTo(scheduleNoWaitlist.eventId)
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking()
+          }
+        }
+      }
+
+      @Test
+      fun `should return not found if offender unknown`() {
+        webTestClient.upsertTransferScheduleOut(offenderNo = "UNKNOWN")
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return not found if offender has no bookings`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "C1234DE")
+        }
+
+        webTestClient.upsertTransferScheduleOut()
+          .isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("C1234DE").contains("not found")
+          }
+      }
+
+      @Test
+      fun `should return bad request if event sub type invalid`() {
+        webTestClient.upsertTransferScheduleOut(request = aRequest().copy(eventSubType = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if event status invalid`() {
+        webTestClient.upsertTransferScheduleOut(request = aRequest().copy(eventStatus = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if escort invalid`() {
+        webTestClient.upsertTransferScheduleOut(request = aRequest().copy(escortCode = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if from prison invalid`() {
+        webTestClient.upsertTransferScheduleOut(request = aRequest().copy(fromPrison = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if to prison invalid`() {
+        webTestClient.upsertTransferScheduleOut(request = aRequest().copy(toPrison = "UNKNOWN"))
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if waitlist status invalid`() {
+        webTestClient.upsertTransferScheduleOut(
+          request = aRequest().let {
+            it.copy(waitlist = it.waitlist!!.copy(status = "UNKNOWN"))
+          },
+        )
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if waitlist transfer priority invalid`() {
+        webTestClient.upsertTransferScheduleOut(
+          request = aRequest().let {
+            it.copy(waitlist = it.waitlist!!.copy(priority = "UNKNOWN"))
+          },
+        )
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if waitlist cancellation reason invalid`() {
+        webTestClient.upsertTransferScheduleOut(
+          request = aRequest().let {
+            it.copy(waitlist = it.waitlist!!.copy(cancellationReasonCode = "UNKNOWN"))
+          },
+        )
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+    }
 
     @Nested
     inner class Security {
@@ -274,5 +627,27 @@ class TransferScheduleResourceIntTest(
           .expectStatus().isForbidden
       }
     }
+
+    private fun WebTestClient.upsertTransferScheduleOutOk(
+      request: UpsertTransferScheduleOut = aRequest(),
+      recreate: Boolean = false,
+    ) = upsertTransferScheduleOut(request, recreate = recreate)
+      .isOk
+      .expectBodyResponse<UpsertTransferScheduleOutResponse>()
+
+    private fun WebTestClient.upsertTransferScheduleOut(
+      request: UpsertTransferScheduleOut = aRequest(),
+      offenderNo: String = offender.nomsId,
+      recreate: Boolean = false,
+    ) = put()
+      .uri {
+        it.path("/movements/$offenderNo/transfers/schedule/out")
+          .queryParam("recreate", recreate)
+          .build()
+      }
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .bodyValue(request)
+      .exchange()
+      .expectStatus()
   }
 }
