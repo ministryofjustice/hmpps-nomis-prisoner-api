@@ -100,17 +100,11 @@ data class UpsertTransferScheduleOut(
   @Schema(description = "Comment")
   val comment: String? = null,
 
-  @Schema(description = "Hidden Comment")
-  val hiddenComment: String? = null,
-
   @Schema(description = "From prison")
   val fromPrison: String,
 
   @Schema(description = "To prison")
   val toPrison: String? = null,
-
-  @Schema(description = "Cancellation reason")
-  val cancellationReasonCode: String? = null,
 
   @Schema(description = "Escort code")
   val escortCode: String? = null,

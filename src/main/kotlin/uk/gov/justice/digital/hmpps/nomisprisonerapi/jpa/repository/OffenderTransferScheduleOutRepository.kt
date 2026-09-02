@@ -2,7 +2,9 @@
 
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
@@ -18,4 +20,8 @@ interface OffenderTransferScheduleOutRepository : JpaRepository<OffenderTransfer
   """,
   )
   fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderTransferScheduleOut>
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query(value = "select tso from OffenderTransferScheduleOut tso where (tso.eventId = :eventId)")
+  fun findByEventIdOrNullWaitForLock(eventId: Long): OffenderTransferScheduleOut?
 }

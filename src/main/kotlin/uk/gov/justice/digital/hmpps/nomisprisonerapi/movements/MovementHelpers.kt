@@ -17,6 +17,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapSubType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapTransportType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TapType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferCancellationReason
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferPriority
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferScheduleStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
@@ -43,17 +46,21 @@ class MovementHelpers(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
   private val offenderTapApplicationRepository: OffenderTapApplicationRepository,
+  private val staffUserAccountRepository: StaffUserAccountRepository,
   private val tapScheduleOutRepository: OffenderTapScheduleOutRepository,
   private val tapScheduleInRepository: OffenderTapScheduleInRepository,
   private val tapSubTypeRepository: ReferenceCodeRepository<TapSubType>,
   private val tapTypeRepository: ReferenceCodeRepository<TapType>,
   private val transportTypeRepository: ReferenceCodeRepository<TapTransportType>,
-  private val staffUserAccountRepository: StaffUserAccountRepository,
+  private val transferCancellationReasonRepository: ReferenceCodeRepository<TransferCancellationReason>,
+  private val transferPriorityRepository: ReferenceCodeRepository<TransferPriority>,
+  private val transferScheduleStatusRepository: ReferenceCodeRepository<TransferScheduleStatus>,
 ) {
 
   companion object {
     val MAX_TAP_COMMENT_LENGTH = 225
     val MAX_COURT_SCHEDULER_COMMENT_LENGTH = 225
+    val MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH = 225
   }
 
   fun offenderOrThrow(offenderNo: String) = offenderRepository.findRootByNomsId(offenderNo)
@@ -117,6 +124,17 @@ class MovementHelpers(
     ?: throw BadDataException("Direction type $directionType is invalid")
 
   fun activeCaseloadId(username: String) = staffUserAccountRepository.findByUsername(username)?.activeCaseloadId
+
+  fun transferCancellationReasonOrThrow(cancellationReasonCode: String) = transferCancellationReasonRepository.findByIdOrNull(TransferCancellationReason.pk(cancellationReasonCode))
+    ?: throw BadDataException("Transfer cancellation reason code $cancellationReasonCode is invalid")
+
+  fun transferScheduleStatusOrThrow(statusCode: String) = transferScheduleStatusRepository.findByIdOrNull(TransferScheduleStatus.pk(statusCode))
+    ?: throw BadDataException("Transfer schedule status code $statusCode is invalid")
+
+  fun transferPriorityOrThrow(priorityCode: String) = transferPriorityRepository.findByIdOrNull(TransferPriority.pk(priorityCode))
+    ?: throw BadDataException("Transfer priority code $priorityCode is invalid")
+
+  fun approvedStaff(username: String) = staffUserAccountRepository.findByUsername(username)
 }
 
 internal fun List<OffenderTapApplication>.tapMovementOuts() = flatMap {
