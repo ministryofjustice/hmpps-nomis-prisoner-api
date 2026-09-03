@@ -400,6 +400,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "listSequence"        : 1,
                 "unitType"            : "NA",
                 "tracking"            : true,
+                "active"              : false,
                 "profiles"            : [
                   {
                     "profileType"     : "HOU_UNIT_ATT",
@@ -440,6 +441,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           assertThat(listSequence).isEqualTo(1)
           assertThat(unitType?.code).isEqualTo("NA")
           assertThat(tracking).isTrue
+          assertThat(active).isFalse
           with(profiles) {
             assertThat(this).hasSize(2)
             assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
@@ -649,7 +651,7 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `already active`() {
+    fun `reactivate will succeed when already active`() {
       nomisDataBuilder.build {
         location1 = agencyInternalLocation(
           locationCode = "MEDI",
@@ -663,10 +665,15 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue("{}"))
         .exchange()
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("$.userMessage").value<String> {
-          assertThat(it).contains("Location with id=${location1!!.locationId} is already active")
-        }
+        .expectStatus().isOk
+
+      // Check the database
+      repository.lookupAgencyInternalLocation(location1!!.locationId)!!.apply {
+        assertThat(reactivateDate).isNull()
+        assertThat(deactivateDate).isNull()
+        assertThat(deactivateReason).isNull()
+        assertThat(active).isTrue()
+      }
     }
 
     @Test

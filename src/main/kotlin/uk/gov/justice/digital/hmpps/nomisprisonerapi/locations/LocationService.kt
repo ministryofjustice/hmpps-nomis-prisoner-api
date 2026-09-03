@@ -93,9 +93,7 @@ class LocationService(
       comment = locationDto.comment
       unitType = housingUnitType
       locationDto.tracking?.apply { tracking = locationDto.tracking }
-      // locationDto.active?.apply { active = locationDto.active }
-      // TODO for now leave active status to the deactivate / reactivate events. In future should do it all via update/amend though.
-      // DPS needs to do some work to ensure an amend event is raised for all deactivate / reactivate scenarios before this can happen.
+      locationDto.active?.apply { active = locationDto.active }
 
       saveProfiles(this, locationDto.profiles)
       saveUsages(this, locationDto.usages)
@@ -143,9 +141,9 @@ class LocationService(
     val location = agencyInternalLocationRepository.findWithLockByLocationId(locationId)
       ?: throw NotFoundException("Location with id=$locationId does not exist")
 
-    if (location.active) {
-      throw BadDataException("Location with id=$locationId is already active")
-    }
+//    if (location.active) {
+//      throw BadDataException("Location with id=$locationId is already active")
+//    }
     location.deactivateDate = null
     location.deactivateReason = null
     location.reactivateDate = null
