@@ -133,9 +133,6 @@ data class UpsertTransferScheduleWaitlist(
   @Schema(description = "Approved by user")
   val approvedUserName: String? = null,
 
-  @Schema(description = "Cancellation reason")
-  val cancellationReasonCode: String? = null,
-
   @Schema(description = "Comment")
   val comment: String? = null,
 )

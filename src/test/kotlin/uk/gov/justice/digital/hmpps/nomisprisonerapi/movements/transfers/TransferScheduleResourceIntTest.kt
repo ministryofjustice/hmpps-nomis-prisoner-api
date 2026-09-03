@@ -256,11 +256,10 @@ class TransferScheduleResourceIntTest(
       escortCode = "U",
       waitlist = UpsertTransferScheduleWaitlist(
         requestDate = LocalDate.now().minusDays(1),
-        status = "PEN",
+        status = "CON",
         statusDate = LocalDate.now(),
         priority = "1",
         approved = true,
-        cancellationReasonCode = "ADMI",
         comment = "comment 1",
         approvedUserName = "MCBOBBY_GEN",
       ),
@@ -296,11 +295,11 @@ class TransferScheduleResourceIntTest(
                 assertThat(escort?.code).isEqualTo("U")
                 with(waitList!!) {
                   assertThat(requestDate).isEqualTo(LocalDate.now().minusDays(1))
-                  assertThat(waitListStatus.code).isEqualTo("PEN")
+                  assertThat(waitListStatus.code).isEqualTo("CON")
                   assertThat(statusDate).isEqualTo(LocalDate.now())
                   assertThat(transferPriority?.code).isEqualTo("1")
                   assertThat(approvedFlag).isTrue
-                  assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+                  assertThat(cancellationReasonCode).isNull()
                   assertThat(commentText1).isEqualTo("comment 1")
                   assertThat(approvedStaff?.id).isEqualTo(staff.id)
                 }
@@ -414,11 +413,11 @@ class TransferScheduleResourceIntTest(
                 assertThat(escort?.code).isEqualTo("U")
                 with(waitList!!) {
                   assertThat(requestDate).isEqualTo(LocalDate.now().minusDays(1))
-                  assertThat(waitListStatus.code).isEqualTo("PEN")
+                  assertThat(waitListStatus.code).isEqualTo("CON")
                   assertThat(statusDate).isEqualTo(LocalDate.now())
                   assertThat(transferPriority?.code).isEqualTo("1")
                   assertThat(approvedFlag).isTrue
-                  assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+                  assertThat(cancellationReasonCode).isNull()
                   assertThat(commentText1).isEqualTo("comment 1")
                   assertThat(approvedStaff?.id).isEqualTo(staff.id)
                 }
@@ -469,6 +468,343 @@ class TransferScheduleResourceIntTest(
               }
             }
           }
+      }
+    }
+
+    @Nested
+    inner class WaitListStatusTransitions {
+
+      @Nested
+      inner class NewScheduleAndWaitlist {
+        @BeforeEach
+        fun setUp() {
+          nomisDataBuilder.build {
+            staff = staff("Bobby", "McBobby") {
+              account(username = "MCBOBBY_GEN")
+            }
+            offender = offender(nomsId = offenderNo) {
+              booking = booking()
+            }
+          }
+        }
+
+        @Test
+        fun `new pending waitlist`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest().let {
+              it.copy(eventStatus = "PEN", waitlist = it.waitlist!!.copy(status = "PEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("PEN")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `new confirmed waitlist`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest().let {
+              it.copy(eventStatus = "SCH", waitlist = it.waitlist!!.copy(status = "CON", approvedUserName = "MCBOBBY_GEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CON")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isTrue
+                assertThat(approvedStaff).isEqualTo(staff)
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `new cancelled waitlist`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest().let {
+              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CAN")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+              }
+            }
+          }
+        }
+      }
+
+      @Nested
+      inner class ExistingPendingWaitlist {
+        lateinit var pendingSchedule: OffenderTransferScheduleOut
+
+        @BeforeEach
+        fun setUp() {
+          nomisDataBuilder.build {
+            staff = staff("Bobby", "McBobby") {
+              account(username = "MCBOBBY_GEN")
+            }
+            offender = offender(nomsId = offenderNo) {
+              booking = booking {
+                pendingSchedule = transferScheduleOut(eventStatus = "PEN") {
+                  waitList(
+                    waitListStatus = "PEN",
+                    statusDate = LocalDate.now().minusDays(1),
+                    approvedFlag = false,
+                    approvedStaff = null,
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `pending waitlist unchanged`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = pendingSchedule.eventId).let {
+              it.copy(eventStatus = "PEN", waitlist = it.waitlist!!.copy(status = "PEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("PEN")
+                // status date still yesterday
+                assertThat(statusDate).isEqualTo(LocalDate.now().minusDays(1))
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `pending waitlist confirmed`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = pendingSchedule.eventId).let {
+              it.copy(eventStatus = "SCH", waitlist = it.waitlist!!.copy(status = "CON", approvedUserName = "MCBOBBY_GEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CON")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isTrue
+                // approved staff is taken from request
+                assertThat(approvedStaff).isEqualTo(staff)
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `pending waitlist cancelled`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = pendingSchedule.eventId).let {
+              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CAN")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                // Cancellation reason code uses hardcoded value
+                assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+              }
+            }
+          }
+        }
+      }
+
+      @Nested
+      inner class ExistingConfirmedWaitlist {
+        lateinit var confirmedSchedule: OffenderTransferScheduleOut
+        lateinit var staff2: Staff
+
+        @BeforeEach
+        fun setUp() {
+          nomisDataBuilder.build {
+            staff = staff("Bobby", "McBobby") {
+              account(username = "MCBOBBY_GEN")
+            }
+            staff2 = staff("Barry", "Barry") {
+              account(username = "BARRY_GEN")
+            }
+            offender = offender(nomsId = offenderNo) {
+              booking = booking {
+                confirmedSchedule = transferScheduleOut(eventStatus = "SCH") {
+                  waitList(
+                    waitListStatus = "CON",
+                    statusDate = LocalDate.now().minusDays(1),
+                    approvedFlag = true,
+                    approvedStaff = staff,
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `confirmed waitlist unchanged`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = confirmedSchedule.eventId).let {
+              it.copy(eventStatus = "SCH", waitlist = it.waitlist!!.copy(status = "CON", approvedUserName = "BARRY_GEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CON")
+                // status date still yesterday
+                assertThat(statusDate).isEqualTo(LocalDate.now().minusDays(1))
+                assertThat(approvedFlag).isTrue
+                // approved staff is not updated from request
+                assertThat(approvedStaff).isEqualTo(staff)
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `confirmed waitlist changed to pending`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = confirmedSchedule.eventId).let {
+              it.copy(eventStatus = "PEN", waitlist = it.waitlist!!.copy(status = "PEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("PEN")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `confirmed waitlist changed to cancelled`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = confirmedSchedule.eventId).let {
+              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CAN")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
+              }
+            }
+          }
+        }
+      }
+
+      @Nested
+      inner class ExistingCancelledWaitlist {
+        lateinit var cancelledSchedule: OffenderTransferScheduleOut
+
+        @BeforeEach
+        fun setUp() {
+          nomisDataBuilder.build {
+            staff = staff("Bobby", "McBobby") {
+              account(username = "MCBOBBY_GEN")
+            }
+            offender = offender(nomsId = offenderNo) {
+              booking = booking {
+                cancelledSchedule = transferScheduleOut(eventStatus = "CANC") {
+                  waitList(
+                    waitListStatus = "CAN",
+                    statusDate = LocalDate.now().minusDays(1),
+                    approvedFlag = false,
+                    approvedStaff = null,
+                    cancellationReasonCode = "TRANS",
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `cancelled waitlist unchanged`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = cancelledSchedule.eventId).let {
+              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CAN")
+                // status date still yesterday
+                assertThat(statusDate).isEqualTo(LocalDate.now().minusDays(1))
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                // Cancelled reason is not updated from existing value
+                assertThat(cancellationReasonCode?.code).isEqualTo("TRANS")
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `cancelled waitlist changed to pending`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = cancelledSchedule.eventId).let {
+              it.copy(eventStatus = "PEN", waitlist = it.waitlist!!.copy(status = "PEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("PEN")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isFalse
+                assertThat(approvedStaff).isNull()
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
+
+        @Test
+        fun `cancelled waitlist changed to confirmed`() {
+          webTestClient.upsertTransferScheduleOutOk(
+            request = aRequest(eventId = cancelledSchedule.eventId).let {
+              it.copy(eventStatus = "SCH", waitlist = it.waitlist!!.copy(status = "CON", approvedUserName = "MCBOBBY_GEN"))
+            },
+          ).apply {
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!.waitList!!) {
+                assertThat(waitListStatus.code).isEqualTo("CON")
+                assertThat(statusDate).isEqualTo(LocalDate.now())
+                assertThat(approvedFlag).isTrue
+                assertThat(approvedStaff).isEqualTo(staff)
+                assertThat(cancellationReasonCode).isNull()
+              }
+            }
+          }
+        }
       }
     }
 
@@ -568,19 +904,6 @@ class TransferScheduleResourceIntTest(
         webTestClient.upsertTransferScheduleOut(
           request = aRequest().let {
             it.copy(waitlist = it.waitlist!!.copy(priority = "UNKNOWN"))
-          },
-        )
-          .isBadRequest
-          .expectBody().jsonPath("userMessage").value<String> {
-            assertThat(it).contains("UNKNOWN")
-          }
-      }
-
-      @Test
-      fun `should return bad request if waitlist cancellation reason invalid`() {
-        webTestClient.upsertTransferScheduleOut(
-          request = aRequest().let {
-            it.copy(waitlist = it.waitlist!!.copy(cancellationReasonCode = "UNKNOWN"))
           },
         )
           .isBadRequest
