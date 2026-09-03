@@ -63,6 +63,8 @@ class OffenderTransferScheduleWaitList(
       ), JoinColumnOrFormula(column = JoinColumn(name = "TRANSFER_PRIORITY", referencedColumnName = "code")),
     ],
   )
+  // This column is not actually nullable but there are some records with invalid values,
+  // therefore we treat as nullable and default in the service layer if null
   @NotFound(action = NotFoundAction.IGNORE)
   var transferPriority: TransferPriority? = null,
 

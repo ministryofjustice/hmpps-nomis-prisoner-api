@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedu
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
@@ -12,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH
+import java.time.LocalDate
 
 internal const val DEFAULT_TRANSFER_PRIORITY_CODE = "2" // Medium - used when the DB holds an invalid/expired code
 
@@ -73,10 +75,6 @@ class TransferScheduleService(
     val escort = request.escortCode?.let { movementHelpers.escortOrThrow(it) }
     val fromPrison = movementHelpers.agencyLocationOrThrow(request.fromPrison)
     val toPrison = request.toPrison?.let { movementHelpers.agencyLocationOrThrow(it) }
-    val waitlistStatus = request.waitlist?.status?.let { movementHelpers.transferScheduleStatusOrThrow(it) }
-    val waitlistTransferPriority = request.waitlist?.priority?.let { movementHelpers.transferPriorityOrThrow(it) }
-    val waitlistCancellationReason = request.waitlist?.cancellationReasonCode?.let { movementHelpers.transferCancellationReasonOrThrow(it) }
-    val waitlistApprovedStaff = request.waitlist?.approvedUserName?.let { movementHelpers.approvedStaff(it) }
 
     val schedule = request.eventId
       ?.let { transferScheduleOutRepository.findByEventIdOrNullWaitForLock(it) }
@@ -90,9 +88,10 @@ class TransferScheduleService(
       schedule.waitList = OffenderTransferScheduleWaitList(
         schedule = schedule,
         requestDate = request.waitlist.requestDate,
-        waitListStatus = waitlistStatus ?: movementHelpers.transferScheduleStatusOrThrow("PEN"),
-        statusDate = request.waitlist.statusDate,
-        approvedFlag = request.waitlist.approved,
+        waitListStatus = movementHelpers.transferScheduleStatusOrThrow("PEN"),
+        statusDate = LocalDate.now(),
+        approvedFlag = false,
+        transferPriority = movementHelpers.transferPriorityOrThrow(request.waitlist.priority),
       )
     }
 
@@ -109,16 +108,7 @@ class TransferScheduleService(
       this.toAgency = toPrison
       this.escort = escort
       if (request.waitlist != null) {
-        with(waitList!!) {
-          requestDate = request.waitlist.requestDate
-          waitListStatus = waitlistStatus!!
-          statusDate = request.waitlist.statusDate
-          transferPriority = waitlistTransferPriority
-          approvedFlag = request.waitlist.approved
-          approvedStaff = waitlistApprovedStaff?.staff
-          cancellationReasonCode = waitlistCancellationReason
-          commentText1 = request.waitlist.comment?.truncateToUtf8Length(MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH, includeSeeDpsSuffix = true)
-        }
+        waitList!!.update(request.waitlist)
       } else {
         this.waitList = null
       }
@@ -128,5 +118,46 @@ class TransferScheduleService(
       .let {
         UpsertTransferScheduleOutResponse(offenderBooking.bookingId, schedule.eventId)
       }
+  }
+
+  private fun OffenderTransferScheduleWaitList.update(request: UpsertTransferScheduleWaitlist) {
+    val requestedStatus = request.status.let { movementHelpers.transferScheduleStatusOrThrow(it) }
+    val requestedPriority = request.priority.let { movementHelpers.transferPriorityOrThrow(it) }
+    val requestedApprovedStaff = request.approvedUserName?.let { movementHelpers.approvedStaff(it) }
+
+    // We only ever set to the default cancellation reason as DPS don't model cancel reason at all
+    val defaultCancellationReason = movementHelpers.transferCancellationReasonOrThrow("ADMI")
+
+    this.requestDate = request.requestDate
+    this.transferPriority = requestedPriority
+    this.commentText1 = request.comment?.truncateToUtf8Length(MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH, includeSeeDpsSuffix = true)
+
+    // Do nothing if status not changed
+    if (requestedStatus != this.waitListStatus) {
+      this.waitListStatus = requestedStatus
+      this.statusDate = LocalDate.now()
+
+      when (request.status) {
+        "PEN" -> {
+          this.approvedFlag = false
+          this.approvedStaff = null
+          this.cancellationReasonCode = null
+        }
+
+        "CON" -> {
+          this.approvedFlag = true
+          this.approvedStaff = requestedApprovedStaff?.staff
+          this.cancellationReasonCode = null
+        }
+
+        "CAN" -> {
+          this.approvedFlag = false
+          this.approvedStaff = null
+          this.cancellationReasonCode = defaultCancellationReason
+        }
+
+        else -> throw BadDataException("Invalid transfer waitlist status: ${requestedStatus.code}")
+      }
+    }
   }
 }
