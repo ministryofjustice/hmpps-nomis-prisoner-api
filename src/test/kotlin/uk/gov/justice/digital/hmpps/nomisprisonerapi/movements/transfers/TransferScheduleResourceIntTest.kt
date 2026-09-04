@@ -257,9 +257,7 @@ class TransferScheduleResourceIntTest(
       waitlist = UpsertTransferScheduleWaitlist(
         requestDate = LocalDate.now().minusDays(1),
         status = "CON",
-        statusDate = LocalDate.now(),
         priority = "1",
-        approved = true,
         comment = "comment 1",
         approvedUserName = "MCBOBBY_GEN",
       ),

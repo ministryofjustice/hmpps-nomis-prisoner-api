@@ -121,14 +121,8 @@ data class UpsertTransferScheduleWaitlist(
   @Schema(description = "Waitlist status")
   val status: String,
 
-  @Schema(description = "The date the status was changed")
-  val statusDate: LocalDate,
-
   @Schema(description = "The transfer priority")
   val priority: String,
-
-  @Schema(description = "Is the transfer approved?")
-  val approved: Boolean,
 
   @Schema(description = "Approved by user")
   val approvedUserName: String? = null,
