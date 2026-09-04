@@ -4,12 +4,16 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.COMPLETED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH
@@ -21,7 +25,9 @@ internal const val DEFAULT_TRANSFER_PRIORITY_CODE = "2" // Medium - used when th
 @Service
 class TransferScheduleService(
   private val offenderRepository: OffenderRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
   private val transferScheduleOutRepository: OffenderTransferScheduleOutRepository,
+  private val transferMovementOutRepository: OffenderTransferMovementOutRepository,
   private val movementHelpers: MovementHelpers,
 ) {
   fun getTransferScheduleOut(offenderNo: String, eventId: Long): TransferScheduleOut {
@@ -117,6 +123,25 @@ class TransferScheduleService(
     return transferScheduleOutRepository.save(schedule)
       .let {
         UpsertTransferScheduleOutResponse(offenderBooking.bookingId, schedule.eventId)
+      }
+  }
+
+  @Transactional
+  fun deleteTransferScheduleOut(offenderNo: String, eventId: Long) {
+    transferScheduleOutRepository.findByEventIdOrNullWaitForLock(eventId)
+      ?.also { schedule ->
+        transferMovementOutRepository.findByTransferScheduleOutId(eventId)
+          ?.run { throw ConflictException("Cannot delete transfer schedule out eventId $eventId because it has a movement ${id.offenderBooking.bookingId} / ${id.sequence}") }
+
+        if (schedule.eventStatus.code == COMPLETED) {
+          throw ConflictException("Cannot delete transfer schedule out eventId $eventId because it has status $COMPLETED")
+        }
+
+        offenderBookingRepository.findByIdOrNull(schedule.offenderBooking.bookingId)
+          ?.takeIf { it.offender.nomsId != offenderNo }
+          ?.run { throw ConflictException("EventId $eventId exists on a different offender") }
+
+        transferScheduleOutRepository.delete(schedule)
       }
   }
 

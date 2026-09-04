@@ -971,4 +971,121 @@ class TransferScheduleResourceIntTest(
       .exchange()
       .expectStatus()
   }
+
+  @Nested
+  @DisplayName("DELETE /movements/{offenderNo}/transfers/schedule/out/{eventId}")
+  inner class DeleteTransferScheduleOut {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(nomsId = offenderNo) {
+          booking = booking {
+            scheduleOut = transferScheduleOut(fromPrison = "BXI", toPrison = "LEI")
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `should delete schedule`() {
+        webTestClient.deleteTransferScheduleOut()
+          .expectStatus().isNoContent
+
+        repository.runInTransaction {
+          assertThat(transferScheduleRepository.findByIdOrNull(scheduleOut.eventId)).isNull()
+        }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return 204 if unknown event id sent`() {
+        webTestClient.deleteTransferScheduleOut(eventId = 9999)
+          .expectStatus().isNoContent
+      }
+
+      @Test
+      fun `should return conflict for unknown offender`() {
+        webTestClient.deleteTransferScheduleOut(offenderNo = "UNKNOWN")
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 for wrong offender`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A7897WW")
+        }
+
+        webTestClient.deleteTransferScheduleOut(offenderNo = "A7897WW")
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if schedule has a movement`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = transferScheduleOut(fromPrison = "BXI", toPrison = "LEI") {
+                transferMovementOut(fromPrison = "BXI", toPrison = "LEI")
+              }
+            }
+          }
+        }
+
+        webTestClient.deleteTransferScheduleOut()
+          .expectStatus().isEqualTo(409)
+      }
+
+      @Test
+      fun `should return 409 if status is completed`() {
+        nomisDataBuilder.build {
+          offender = offender(nomsId = offenderNo) {
+            booking = booking {
+              scheduleOut = transferScheduleOut(fromPrison = "BXI", toPrison = "LEI", eventStatus = "COMP")
+            }
+          }
+        }
+
+        webTestClient.deleteTransferScheduleOut()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `should return unauthorized for missing token`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/transfers/schedule/out/${scheduleOut.eventId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/transfers/schedule/out/${scheduleOut.eventId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.delete()
+          .uri("/movements/$offenderNo/transfers/schedule/out/${scheduleOut.eventId}")
+          .headers(setAuthorisation(roles = listOf("ROLE_INVALID")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    private fun WebTestClient.deleteTransferScheduleOut(offenderNo: String = offender.nomsId, eventId: Long = scheduleOut.eventId): WebTestClient.ResponseSpec = delete()
+      .uri("/movements/$offenderNo/transfers/schedule/out/$eventId")
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+      .exchange()
+  }
 }
