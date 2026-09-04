@@ -10,4 +10,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovemen
 @Repository
 interface OffenderTransferMovementOutRepository : JpaRepository<OffenderTransferMovementOut, OffenderExternalMovementId> {
   fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderTransferMovementOut>
+
+  fun findByTransferScheduleOutId(transferScheduleOutId: Long): OffenderTransferMovementOut?
 }
