@@ -48,9 +48,9 @@ class OffenderTransferMovementsService(
     val schedules = scheduleRepository.findAllByOffenderBooking_BookingId(bookingId)
     val movements = movementRepository.findAllByOffenderBooking_BookingId(bookingId)
       .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
-    val unscheduledMovements = (schedules.map { it.eventId }).let { allEventIds ->
-      movements.filter { it.transferScheduleOutId == null || it.transferScheduleOutId !in allEventIds }
-    }
+    val eventIds = schedules.map { it.eventId }.toSet()
+    val unscheduledMovements =
+      movements.filter { it.transferScheduleOutId == null || it.transferScheduleOutId !in eventIds }
 
     return toBookingTransferMovements(
       bookingId = bookingId,
