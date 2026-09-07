@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hibernate.SessionFactory
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.offender.BookingTransferMovements
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.offender.OffenderTransferMovementsResponse
 
 class OffenderTransferMovementsResourceIntTest(
@@ -529,6 +531,96 @@ class OffenderTransferMovementsResourceIntTest(
     }
   }
 
+  @Nested
+  @DisplayName("GET /movements/booking/{bookingId}/transfer")
+  inner class GetBookingTransferMovements {
+
+    @Nested
+    inner class HappyPath {
+
+      @Test
+      fun `should return only the requested booking`() {
+        lateinit var secondBooking: OffenderBooking
+        lateinit var secondSchedule: OffenderTransferScheduleOut
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "A1234BC") {
+            booking = booking {
+              schedule = transferScheduleOut {
+                movement = transferMovementOut()
+              }
+              unscheduledMovement = transferMovementOut()
+            }
+            secondBooking = booking {
+              secondSchedule = transferScheduleOut()
+            }
+          }
+        }
+
+        webTestClient.getBookingTransferMovementsOk(booking.bookingId)
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(activeBooking).isEqualTo(booking.active)
+            assertThat(latestBooking).isEqualTo(booking.bookingSequence == 1)
+            assertThat(transferSchedules).hasSize(1)
+            assertThat(transferSchedules[0].schedule.eventId).isEqualTo(schedule.eventId)
+            assertThat(transferSchedules[0].movement!!.sequence).isEqualTo(movement.id.sequence)
+            assertThat(unscheduledTransferMovements).extracting<Int> { it.sequence }.containsExactly(unscheduledMovement.id.sequence)
+          }
+
+        webTestClient.getBookingTransferMovementsOk(secondBooking.bookingId)
+          .apply {
+            assertThat(bookingId).isEqualTo(secondBooking.bookingId)
+            assertThat(transferSchedules).hasSize(1)
+            assertThat(transferSchedules[0].schedule.eventId).isEqualTo(secondSchedule.eventId)
+            assertThat(transferSchedules[0].movement).isNull()
+            assertThat(unscheduledTransferMovements).isEmpty()
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found for unknown booking id`() {
+        webTestClient.getBookingTransferMovements(99999)
+          .expectStatus().isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Offender booking 99999 not found")
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+
+      @Test
+      fun `should return unauthorised for missing token`() {
+        webTestClient.get()
+          .uri("/movements/booking/12345/transfer")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.get()
+          .uri("/movements/booking/12345/transfer")
+          .headers(setAuthorisation())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.get()
+          .uri("/movements/booking/12345/transfer")
+          .headers(setAuthorisation("ROLE_INVALID"))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+  }
+
   private fun WebTestClient.getOffenderTransferMovements(offenderNo: String = offender.nomsId) = get()
     .uri("/movements/$offenderNo/transfer")
     .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -546,4 +638,13 @@ class OffenderTransferMovementsResourceIntTest(
   private fun WebTestClient.getOffenderTransferMovementsByRootOffenderOk(rootOffenderId: Long = offender.rootOffenderId!!) = getOffenderTransferMovementsByRootOffender(rootOffenderId)
     .expectStatus().isOk
     .expectBodyResponse<OffenderTransferMovementsResponse>()
+
+  private fun WebTestClient.getBookingTransferMovements(bookingId: Long = booking.bookingId) = get()
+    .uri("/movements/booking/$bookingId/transfer")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .exchange()
+
+  private fun WebTestClient.getBookingTransferMovementsOk(bookingId: Long = booking.bookingId) = getBookingTransferMovements(bookingId)
+    .expectStatus().isOk
+    .expectBodyResponse<BookingTransferMovements>()
 }

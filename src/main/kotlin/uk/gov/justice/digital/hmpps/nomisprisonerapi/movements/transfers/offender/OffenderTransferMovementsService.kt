@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
@@ -23,6 +24,7 @@ class OffenderTransferMovementsService(
   private val scheduleRepository: OffenderTransferScheduleOutRepository,
   private val movementRepository: OffenderTransferMovementOutRepository,
   private val offenderRepository: OffenderRepository,
+  private val offenderBookingRepository: OffenderBookingRepository,
 ) {
 
   fun getOffenderTransferMovements(rootOffenderId: Long): OffenderTransferMovementsResponse {
@@ -37,6 +39,27 @@ class OffenderTransferMovementsService(
       ?: throw NotFoundException("Offender with nomsId=$offenderNo not found")
 
     return getOffenderTransferMovementDetails(offender)
+  }
+
+  fun getBookingTransferMovements(bookingId: Long): BookingTransferMovements {
+    val booking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Offender booking $bookingId not found")
+
+    val schedules = scheduleRepository.findAllByOffenderBooking_BookingId(bookingId)
+    val movements = movementRepository.findAllByOffenderBooking_BookingId(bookingId)
+      .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
+    val eventIds = schedules.map { it.eventId }.toSet()
+    val unscheduledMovements =
+      movements.filter { it.transferScheduleOutId == null || it.transferScheduleOutId !in eventIds }
+
+    return toBookingTransferMovements(
+      bookingId = bookingId,
+      active = booking.active,
+      latest = booking.bookingSequence == 1,
+      schedules = schedules,
+      allMovements = movements,
+      unscheduledMovements = unscheduledMovements,
+    )
   }
 
   private fun getOffenderTransferMovementDetails(offender: Offender): OffenderTransferMovementsResponse {
