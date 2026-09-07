@@ -21,6 +21,16 @@ interface OffenderTransferScheduleOutRepository : JpaRepository<OffenderTransfer
   )
   fun findAllByOffenderBooking_Offender_NomsId(offenderNo: String): List<OffenderTransferScheduleOut>
 
+  @Query(
+    """
+    SELECT o FROM OffenderTransferScheduleOut o
+        LEFT JOIN FETCH o.waitList
+        LEFT JOIN FETCH o.waitList.approvedStaff
+        WHERE o.offenderBooking.bookingId = :bookingId
+  """,
+  )
+  fun findAllByOffenderBooking_BookingId(bookingId: Long): List<OffenderTransferScheduleOut>
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query(value = "select tso from OffenderTransferScheduleOut tso where (tso.eventId = :eventId)")
   fun findByEventIdOrNullWaitForLock(eventId: Long): OffenderTransferScheduleOut?
