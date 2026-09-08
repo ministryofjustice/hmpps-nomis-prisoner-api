@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Lengt
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.COMPLETED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransferCancellationReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferMovementOutRepository
@@ -81,6 +82,7 @@ class TransferScheduleService(
     val escort = request.escortCode?.let { movementHelpers.escortOrThrow(it) }
     val fromPrison = movementHelpers.agencyLocationOrThrow(request.fromPrison)
     val toPrison = request.toPrison?.let { movementHelpers.agencyLocationOrThrow(it) }
+    val cancellationReason = request.cancellationReasonCode?.let { movementHelpers.transferCancellationReasonOrThrow(it) }
 
     val schedule = request.eventId
       ?.let { transferScheduleOutRepository.findByEventIdOrNullWaitForLock(it) }
@@ -113,8 +115,9 @@ class TransferScheduleService(
       this.fromAgency = fromPrison
       this.toAgency = toPrison
       this.escort = escort
+      this.cancellationReasonCode = if (eventStatus.code != "CANC") null else (cancellationReason ?: throw BadDataException("Cancellation reason code is required for CANC status"))
       if (request.waitlist != null) {
-        waitList!!.update(request.waitlist)
+        waitList!!.update(request.waitlist, cancellationReasonCode)
       } else {
         this.waitList = null
       }
@@ -145,17 +148,15 @@ class TransferScheduleService(
       }
   }
 
-  private fun OffenderTransferScheduleWaitList.update(request: UpsertTransferScheduleWaitlist) {
+  private fun OffenderTransferScheduleWaitList.update(request: UpsertTransferScheduleWaitlist, requestedCancellationReason: TransferCancellationReason?) {
     val requestedStatus = request.status.let { movementHelpers.transferScheduleStatusOrThrow(it) }
     val requestedPriority = request.priority.let { movementHelpers.transferPriorityOrThrow(it) }
     val requestedApprovedStaff = request.approvedUserName?.let { movementHelpers.approvedStaff(it) }
 
-    // We only ever set to the default cancellation reason as DPS don't model cancel reason at all
-    val defaultCancellationReason = movementHelpers.transferCancellationReasonOrThrow("ADMI")
-
     this.requestDate = request.requestDate
     this.transferPriority = requestedPriority
     this.commentText1 = request.comment?.truncateToUtf8Length(MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH, includeSeeDpsSuffix = true)
+    this.cancellationReasonCode = if (requestedStatus.code != "CAN") null else (requestedCancellationReason ?: throw BadDataException("Cancellation reason code is required for CAN status"))
 
     // Do nothing if status not changed
     if (requestedStatus != this.waitListStatus) {
@@ -166,19 +167,16 @@ class TransferScheduleService(
         "PEN" -> {
           this.approvedFlag = false
           this.approvedStaff = null
-          this.cancellationReasonCode = null
         }
 
         "CON" -> {
           this.approvedFlag = true
           this.approvedStaff = requestedApprovedStaff?.staff
-          this.cancellationReasonCode = null
         }
 
         "CAN" -> {
           this.approvedFlag = false
           this.approvedStaff = null
-          this.cancellationReasonCode = defaultCancellationReason
         }
 
         else -> throw BadDataException("Invalid transfer waitlist status: ${requestedStatus.code}")

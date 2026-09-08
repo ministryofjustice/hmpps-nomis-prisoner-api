@@ -384,7 +384,6 @@ class TransferScheduleResourceIntTest(
             booking = booking {
               scheduleOut = transferScheduleOut(
                 hiddenComment = "Should not change",
-                cancellationReasonCode = "TRANS",
               ) {
                 waitList()
               }
@@ -409,6 +408,7 @@ class TransferScheduleResourceIntTest(
                 assertThat(toAgency?.id).isEqualTo("LEI")
                 assertThat(comment).isEqualTo("Some comment")
                 assertThat(escort?.code).isEqualTo("U")
+                assertThat(cancellationReasonCode).isNull()
                 with(waitList!!) {
                   assertThat(requestDate).isEqualTo(LocalDate.now().minusDays(1))
                   assertThat(waitListStatus.code).isEqualTo("CON")
@@ -425,7 +425,7 @@ class TransferScheduleResourceIntTest(
       }
 
       @Test
-      fun `should update schedule hidden comment or cancellation reason`() {
+      fun `should not update schedule hidden comment`() {
         webTestClient.upsertTransferScheduleOutOk(request = aRequest(eventId = scheduleOut.eventId))
           .apply {
             assertThat(bookingId).isEqualTo(booking.bookingId)
@@ -433,7 +433,28 @@ class TransferScheduleResourceIntTest(
             repository.runInTransaction {
               with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
                 assertThat(hiddenComment).isEqualTo("Should not change")
+              }
+            }
+          }
+      }
+
+      @Test
+      fun `should update schedule cancellation reason if cancelled`() {
+        val request = aRequest(eventId = scheduleOut.eventId)
+        webTestClient.upsertTransferScheduleOutOk(
+          request = request.copy(
+            eventStatus = "CANC",
+            cancellationReasonCode = "TRANS",
+            waitlist = request.waitlist!!.copy(status = "CAN"),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            assertThat(eventId).isEqualTo(scheduleOut.eventId)
+            repository.runInTransaction {
+              with(transferScheduleRepository.findByIdOrNull(eventId)!!) {
                 assertThat(cancellationReasonCode?.code).isEqualTo("TRANS")
+                assertThat(waitList?.cancellationReasonCode?.code).isEqualTo("TRANS")
               }
             }
           }
@@ -528,7 +549,11 @@ class TransferScheduleResourceIntTest(
         fun `new cancelled waitlist`() {
           webTestClient.upsertTransferScheduleOutOk(
             request = aRequest().let {
-              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+              it.copy(
+                eventStatus = "CANC",
+                cancellationReasonCode = "ADMI",
+                waitlist = it.waitlist!!.copy(status = "CAN"),
+              )
             },
           ).apply {
             repository.runInTransaction {
@@ -613,7 +638,11 @@ class TransferScheduleResourceIntTest(
         fun `pending waitlist cancelled`() {
           webTestClient.upsertTransferScheduleOutOk(
             request = aRequest(eventId = pendingSchedule.eventId).let {
-              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+              it.copy(
+                eventStatus = "CANC",
+                cancellationReasonCode = "ADMI",
+                waitlist = it.waitlist!!.copy(status = "CAN"),
+              )
             },
           ).apply {
             repository.runInTransaction {
@@ -622,7 +651,6 @@ class TransferScheduleResourceIntTest(
                 assertThat(statusDate).isEqualTo(LocalDate.now())
                 assertThat(approvedFlag).isFalse
                 assertThat(approvedStaff).isNull()
-                // Cancellation reason code uses hardcoded value
                 assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
               }
             }
@@ -703,7 +731,11 @@ class TransferScheduleResourceIntTest(
         fun `confirmed waitlist changed to cancelled`() {
           webTestClient.upsertTransferScheduleOutOk(
             request = aRequest(eventId = confirmedSchedule.eventId).let {
-              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+              it.copy(
+                eventStatus = "CANC",
+                cancellationReasonCode = "ADMI",
+                waitlist = it.waitlist!!.copy(status = "CAN"),
+              )
             },
           ).apply {
             repository.runInTransaction {
@@ -749,7 +781,11 @@ class TransferScheduleResourceIntTest(
         fun `cancelled waitlist unchanged`() {
           webTestClient.upsertTransferScheduleOutOk(
             request = aRequest(eventId = cancelledSchedule.eventId).let {
-              it.copy(eventStatus = "CANC", waitlist = it.waitlist!!.copy(status = "CAN"))
+              it.copy(
+                eventStatus = "CANC",
+                cancellationReasonCode = "ADMI",
+                waitlist = it.waitlist!!.copy(status = "CAN"),
+              )
             },
           ).apply {
             repository.runInTransaction {
@@ -759,8 +795,7 @@ class TransferScheduleResourceIntTest(
                 assertThat(statusDate).isEqualTo(LocalDate.now().minusDays(1))
                 assertThat(approvedFlag).isFalse
                 assertThat(approvedStaff).isNull()
-                // Cancelled reason is not updated from existing value
-                assertThat(cancellationReasonCode?.code).isEqualTo("TRANS")
+                assertThat(cancellationReasonCode?.code).isEqualTo("ADMI")
               }
             }
           }
@@ -903,6 +938,38 @@ class TransferScheduleResourceIntTest(
           request = aRequest().let {
             it.copy(waitlist = it.waitlist!!.copy(priority = "UNKNOWN"))
           },
+        )
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("UNKNOWN")
+          }
+      }
+
+      @Test
+      fun `should return bad request if cancelled without a reason`() {
+        val request = aRequest()
+        webTestClient.upsertTransferScheduleOut(
+          request = request.copy(
+            eventStatus = "CANC",
+            cancellationReasonCode = null,
+            waitlist = request.waitlist!!.copy(status = "CAN"),
+          ),
+        )
+          .isBadRequest
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it.lowercase()).contains("cancellation reason")
+          }
+      }
+
+      @Test
+      fun `should return bad request if cancellation reason invalid`() {
+        val request = aRequest()
+        webTestClient.upsertTransferScheduleOut(
+          request = request.copy(
+            eventStatus = "CANC",
+            cancellationReasonCode = "UNKNOWN",
+            waitlist = request.waitlist!!.copy(status = "CAN"),
+          ),
         )
           .isBadRequest
           .expectBody().jsonPath("userMessage").value<String> {
