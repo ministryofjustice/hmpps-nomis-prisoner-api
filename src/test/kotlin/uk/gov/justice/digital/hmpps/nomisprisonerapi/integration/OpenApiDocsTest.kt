@@ -77,7 +77,7 @@ class OpenApiDocsTest(
       .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.example").isEqualTo("2021-07-16T12:34:56")
       .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.description")
       .isEqualTo("The time the profile info was last changed")
-      .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.type").isEqualTo("string")
+      .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.type").isEqualTo(["string", "null"])
       .jsonPath("$.components.schemas.ProfileDetailsResponse.properties.modifiedDateTime.format").isEqualTo("date-time")
   }
 

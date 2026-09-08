@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.7"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.8"
   kotlin("plugin.spring") version "2.4.10"
   kotlin("plugin.jpa") version "2.4.10"
   idea
@@ -10,14 +10,14 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-flyway")
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 
   implementation("org.flywaydb:flyway-core")
   implementation("org.hibernate.orm:hibernate-community-dialects")
   implementation("com.google.guava:guava:33.7.1-jre")
 
   runtimeOnly("com.zaxxer:HikariCP")
-  implementation("com.h2database:h2:2.4.240")
+  implementation("com.h2database:h2:2.5.250")
   // Ensure that the oracle version doesn't automatically get updated
   val oracleVersion = ":23.26.1.0.0"
   runtimeOnly("com.oracle.database.jdbc:ojdbc11$oracleVersion")
