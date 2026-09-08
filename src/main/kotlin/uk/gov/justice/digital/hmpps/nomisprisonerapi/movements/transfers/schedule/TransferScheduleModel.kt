@@ -109,6 +109,9 @@ data class UpsertTransferScheduleOut(
   @Schema(description = "Escort code")
   val escortCode: String? = null,
 
+  @Schema(description = "Cancellation reason")
+  val cancellationReasonCode: String? = null,
+
   @Schema(description = "The waitlist")
   val waitlist: UpsertTransferScheduleWaitlist? = null,
 )
