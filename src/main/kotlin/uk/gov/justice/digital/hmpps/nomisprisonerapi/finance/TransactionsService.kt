@@ -147,7 +147,7 @@ private fun mapOT(transaction: OffenderTransaction): OffenderTransactionDto = Of
 )
 
 private fun holdDto(transaction: OffenderTransaction): HoldDto = HoldDto(
-  holdNumber = transaction.holdNumber,
+  holdNumber = transaction.holdNumber!!,
   holdCleared = transaction.holdClearFlag,
   holdUntilDate = transaction.holdUntilDate,
 )

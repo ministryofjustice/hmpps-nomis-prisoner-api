@@ -309,7 +309,7 @@ data class TransactionIdRange(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class HoldDto(
   @Schema(description = "The hold number", required = false)
-  val holdNumber: Long?,
+  val holdNumber: Long,
   @Schema(description = "If the hold has been cleared - ie has an associated HOR/WFR transaction", required = true)
   val holdCleared: Boolean,
   @Schema(description = "The date until the hold is valid", required = false)
