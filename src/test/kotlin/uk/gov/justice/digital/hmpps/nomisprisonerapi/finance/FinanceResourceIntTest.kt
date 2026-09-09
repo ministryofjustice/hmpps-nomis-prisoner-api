@@ -21,6 +21,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   private lateinit var transaction1: OffenderTransaction
   private lateinit var transaction2: OffenderTransaction
   private lateinit var transaction3: OffenderTransaction
+  private lateinit var transaction4: OffenderTransaction
   private lateinit var glTransaction1: GeneralLedgerTransaction
   private lateinit var glTransaction2: GeneralLedgerTransaction
   private lateinit var glTransaction3: GeneralLedgerTransaction
@@ -39,6 +40,20 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           }
           transaction(transactionId = 3, subAccountType = SubAccountType.REG, transactionEntrySequence = 2, transactionType = "DPST")
           transaction3 = transaction(transactionId = 4, subAccountType = SubAccountType.REG, transactionEntrySequence = 1, transactionType = "DPST")
+        }
+      }
+
+      offender(nomsId = "A1234BC") {
+        booking {
+          transaction4 = transaction(transactionId = 108, subAccountType = SubAccountType.SAV, transactionType = "HOA", holdNumber = 2, clientUniqueRef = "Test-1234", entryDate = LocalDate.parse("2025-06-04")) {
+            generalLedgerTransaction(1, 2000)
+            generalLedgerTransaction(2, 2100)
+          }
+          transaction(transactionId = 106, subAccountType = SubAccountType.REG, transactionType = "SPEN", entryDate = LocalDate.parse("2025-06-04")) {
+            generalLedgerTransaction(1, 2101)
+          }
+          transaction(transactionId = 106, subAccountType = SubAccountType.REG, transactionEntrySequence = 2, transactionType = "DPST", entryDate = LocalDate.parse("2025-06-04"))
+          transaction(transactionId = 107, subAccountType = SubAccountType.REG, transactionEntrySequence = 1, transactionType = "DPST", entryDate = LocalDate.parse("2025-06-04"))
         }
       }
     }
@@ -111,6 +126,35 @@ class FinanceResourceIntTest : IntegrationTestBase() {
         .jsonPath("$[0].generalLedgerTransactions[1].transactionEntrySequence")
         .isEqualTo(glTransaction2.transactionEntrySequence)
         .jsonPath("$[0].generalLedgerTransactions[1].accountCode").isEqualTo(glTransaction2.accountCode.accountCode)
+    }
+
+    @Test
+    fun getHoldTransaction() {
+      webTestClient.get().uri("/transactions/${transaction4.transactionId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("$[0].transactionId").isEqualTo(transaction4.transactionId)
+        .jsonPath("$[0].transactionEntrySequence").isEqualTo(transaction4.transactionEntrySequence)
+        .jsonPath("$[0].offenderId").isEqualTo(transaction4.offenderBooking!!.offender.id)
+        .jsonPath("$[0].offenderNo").isEqualTo(transaction4.offenderBooking!!.offender.nomsId)
+        .jsonPath("$[0].bookingId").isEqualTo(transaction4.offenderBooking!!.bookingId)
+        .jsonPath("$[0].caseloadId").isEqualTo(transaction4.trustAccount.id.caseloadId)
+        .jsonPath("$[0].amount").value<Double> {
+          assertThat(it).isCloseTo(transaction4.entryAmount.toDouble(), Percentage.withPercentage(0.1))
+        }
+        .jsonPath("$[0].type").isEqualTo(transaction4.transactionType.type)
+        .jsonPath("$[0].postingType").isEqualTo(transaction4.postingType.name)
+        .jsonPath("$[0].description").isEqualTo(transaction4.entryDescription!!)
+        .jsonPath("$[0].entryDate").isEqualTo(transaction4.entryDate)
+        .jsonPath("$[0].clientReference").isEqualTo(transaction4.clientUniqueRef!!)
+        .jsonPath("$[0].reference").isEqualTo(transaction4.transactionReferenceNumber!!)
+        .jsonPath("$[0].subAccountType").isEqualTo(transaction4.subAccountType.name)
+        .jsonPath("$[0].holdDetails.holdNumber").isEqualTo(transaction4.holdNumber)
+        .jsonPath("$[0].holdDetails.holdCleared").isEqualTo(transaction4.holdClearFlag)
+        .jsonPath("$[0].holdDetails.holdUntilDate").doesNotExist()
     }
 
     @Test
@@ -424,7 +468,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(4)
+          .jsonPath("$.length()").isEqualTo(8)
       }
 
       @Test
@@ -452,7 +496,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("$.length()").isEqualTo(3)
+          .jsonPath("$.length()").isEqualTo(7)
           .jsonPath("$[0].transactionId").isEqualTo(3)
           .jsonPath("$[0].transactionEntrySequence").isEqualTo(1)
           .jsonPath("$[0].generalLedgerTransactions.length()").isEqualTo(1)
@@ -463,6 +507,10 @@ class FinanceResourceIntTest : IntegrationTestBase() {
           .jsonPath("$[2].transactionId").isEqualTo(4)
           .jsonPath("$[2].transactionEntrySequence").isEqualTo(1)
           .jsonPath("$[2].generalLedgerTransactions.length()").isEqualTo(0)
+          .jsonPath("$[3].transactionId").isEqualTo(106)
+          .jsonPath("$[4].transactionId").isEqualTo(106)
+          .jsonPath("$[5].transactionId").isEqualTo(107)
+          .jsonPath("$[6].transactionId").isEqualTo(108)
       }
 
       @Test

@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.GeneralLedgerTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransaction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.TransactionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.GeneralLedgerTransactionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransactionRepository
 import java.time.LocalDate
@@ -135,6 +136,7 @@ private fun mapOT(transaction: OffenderTransaction): OffenderTransactionDto = Of
   clientReference = transaction.clientUniqueRef,
   subAccountType = transaction.subAccountType,
   description = transaction.entryDescription ?: "",
+  holdDetails = transaction.transactionType.takeIf { it.isHold() }?.let { holdDto(transaction) },
   createdAt = transaction.createDatetime,
   createdBy = transaction.createUsername,
   createdByDisplayName = getDisplayName(transaction.createStaffUserAccount),
@@ -143,6 +145,14 @@ private fun mapOT(transaction: OffenderTransaction): OffenderTransactionDto = Of
   lastModifiedByDisplayName = getDisplayName(transaction.modifyStaffUserAccount),
   generalLedgerTransactions = transaction.generalLedgerTransactions.map(::mapGL),
 )
+
+private fun holdDto(transaction: OffenderTransaction): HoldDto = HoldDto(
+  holdNumber = transaction.holdNumber,
+  holdCleared = transaction.holdClearFlag,
+  holdUntilDate = transaction.holdUntilDate,
+)
+
+private fun TransactionType.isHold() = type == "HOA" || type == "WHF"
 
 private fun mapGL(gl: GeneralLedgerTransaction): GeneralLedgerTransactionDto = GeneralLedgerTransactionDto(
   transactionId = gl.transactionId,
