@@ -88,6 +88,9 @@ data class OffenderTransaction(
   @Convert(converter = YesNoConverter::class)
   val holdClearFlag: Boolean = false,
 
+  @Column
+  val holdUntilDate: LocalDate? = null,
+
   @OneToMany
   @JoinColumns(
     value = [

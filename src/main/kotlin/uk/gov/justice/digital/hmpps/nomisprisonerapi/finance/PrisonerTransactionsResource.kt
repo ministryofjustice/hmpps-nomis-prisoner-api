@@ -266,6 +266,9 @@ data class OffenderTransactionDto(
   @Schema(description = "The account type")
   val subAccountType: SubAccountType,
 
+  @Schema(description = "Hold information if this is a hold transaction")
+  val holdDetails: HoldDto?,
+
   @Schema(description = "Dependent GL transaction entries")
   val generalLedgerTransactions: List<GeneralLedgerTransactionDto>,
 
@@ -300,4 +303,15 @@ data class TransactionIdRange(
   val minTransactionId: Long,
   @Schema(description = "The maximum transaction id on the entry date", required = true)
   val maxTransactionId: Long,
+)
+
+@Schema(description = "The data held in NOMIS about a hold transaction")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class HoldDto(
+  @Schema(description = "The hold number", required = false)
+  val holdNumber: Long,
+  @Schema(description = "If the hold has been cleared - ie has an associated HOR/WFR transaction", required = true)
+  val holdCleared: Boolean,
+  @Schema(description = "The date until the hold is valid", required = false)
+  val holdUntilDate: LocalDate?,
 )
