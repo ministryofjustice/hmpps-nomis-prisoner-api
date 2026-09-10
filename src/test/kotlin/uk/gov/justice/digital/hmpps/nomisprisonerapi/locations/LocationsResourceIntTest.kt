@@ -401,6 +401,9 @@ class LocationsResourceIntTest : IntegrationTestBase() {
                 "unitType"            : "NA",
                 "tracking"            : true,
                 "active"              : false,
+                "deactivateDate"      : "2024-02-15",
+                "reasonCode"          : "C", 
+                "reactivateDate"      : "2024-02-27",
                 "profiles"            : [
                   {
                     "profileType"     : "HOU_UNIT_ATT",
@@ -442,6 +445,9 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           assertThat(unitType?.code).isEqualTo("NA")
           assertThat(tracking).isTrue
           assertThat(active).isFalse
+          assertThat(deactivateDate).isEqualTo(LocalDate.parse("2024-02-15"))
+          assertThat(reactivateDate).isEqualTo(LocalDate.parse("2024-02-27"))
+          assertThat(deactivateReason?.code).isEqualTo("C")
           with(profiles) {
             assertThat(this).hasSize(2)
             assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
