@@ -95,6 +95,13 @@ class LocationService(
       locationDto.tracking?.apply { tracking = locationDto.tracking }
       locationDto.active?.apply { active = locationDto.active }
 
+      location.deactivateDate = locationDto.deactivateDate
+      location.deactivateReason = locationDto.reasonCode?.let {
+        livingUnitReasonRepository.findByIdOrNull(LivingUnitReason.pk(it))
+          ?: throw BadDataException("Deactivate Reason code=$it does not exist")
+      }
+      location.reactivateDate = locationDto.reactivateDate
+
       saveProfiles(this, locationDto.profiles)
       saveUsages(this, locationDto.usages)
     }.also {
