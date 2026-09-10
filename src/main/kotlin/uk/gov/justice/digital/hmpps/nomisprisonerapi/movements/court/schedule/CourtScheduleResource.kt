@@ -122,10 +122,11 @@ class CourtScheduleResource(
     offenderNo: String,
     @RequestBody @Valid
     request: UpsertCourtScheduleOut,
+    // TODO Remove this once the only remaining client stops sending it
     @Schema(description = "Recreate the court schedule out with the same event ID. This either creates a new court schedule out or overwrites the existing one if it exists.")
     @RequestParam
-    recreate: Boolean = false,
-  ): UpsertCourtScheduleOutResponse = service.upsertCourtScheduleOut(offenderNo, request, recreate)
+    recreate: Boolean? = null,
+  ): UpsertCourtScheduleOutResponse = service.upsertCourtScheduleOut(offenderNo, request)
 
   @DeleteMapping("/out/{eventId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
