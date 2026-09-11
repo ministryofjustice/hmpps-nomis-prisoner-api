@@ -740,12 +740,12 @@ class StaffResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(3)
-          .jsonPath("$.[0].fromStaffId").isEqualTo(0)
-          .jsonPath("$.[0].toStaffId").isEqualTo(staff1.id)
-          .jsonPath("$.[1].fromStaffId").isEqualTo(staff1.id)
-          .jsonPath("$.[1].toStaffId").isEqualTo(staff3.id)
-          .jsonPath("$.[2].fromStaffId").isEqualTo(staff3.id)
-          .jsonPath("$.[2].toStaffId").isEqualTo(Long.MAX_VALUE)
+          .jsonPath("$.[0].fromId").isEqualTo(0)
+          .jsonPath("$.[0].toId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].fromId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].toId").isEqualTo(staff3.id)
+          .jsonPath("$.[2].fromId").isEqualTo(staff3.id)
+          .jsonPath("$.[2].toId").isEqualTo(Long.MAX_VALUE)
       }
 
       @Test
@@ -756,10 +756,10 @@ class StaffResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(2)
-          .jsonPath("$.[0].fromStaffId").isEqualTo(0)
-          .jsonPath("$.[0].toStaffId").isEqualTo(staff1.id)
-          .jsonPath("$.[1].fromStaffId").isEqualTo(staff1.id)
-          .jsonPath("$.[1].toStaffId").isEqualTo(Long.MAX_VALUE)
+          .jsonPath("$.[0].fromId").isEqualTo(0)
+          .jsonPath("$.[0].toId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].fromId").isEqualTo(staff1.id)
+          .jsonPath("$.[1].toId").isEqualTo(Long.MAX_VALUE)
       }
 
       @Test
@@ -770,8 +770,8 @@ class StaffResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(1)
-          .jsonPath("$.[0].fromStaffId").isEqualTo(0)
-          .jsonPath("$.[0].toStaffId").isEqualTo(Long.MAX_VALUE)
+          .jsonPath("$.[0].fromId").isEqualTo(0)
+          .jsonPath("$.[0].toId").isEqualTo(Long.MAX_VALUE)
       }
     }
   }
@@ -804,7 +804,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/staff/ids?active=true&fromStaffId=0&toStaffId=100")
+        webTestClient.get().uri("/staff/ids?active=true&fromId=0&toId=100")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -812,7 +812,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/staff/ids?active=true&fromStaffId=0&toStaffId=100")
+        webTestClient.get().uri("/staff/ids?active=true&fromId=0&toId=100")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -820,7 +820,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/staff/ids?active=false&fromStaffId=0&toStaffId=100")
+        webTestClient.get().uri("/staff/ids?active=false&fromId=0&toId=100")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -830,23 +830,23 @@ class StaffResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 400 if active is not provided`() {
-        webTestClient.get().uri("/search/prisoners/ids?fromStaffId=0&toStaffId=100")
+        webTestClient.get().uri("/search/prisoners/ids?fromId=0&toId=100")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
 
       @Test
-      fun `will return 400 if fromStaffId is not provided`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&toStaffId=100")
+      fun `will return 400 if fromId is not provided`() {
+        webTestClient.get().uri("/search/prisoners/ids?active=false&toId=100")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
       }
 
       @Test
-      fun `will return 400 if toStaffId is not provided`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromStaffId=0")
+      fun `will return 400 if toId is not provided`() {
+        webTestClient.get().uri("/search/prisoners/ids?active=false&fromId=0")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -859,7 +859,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return list of all staff ids`() {
         webTestClient.get()
-          .uri("/staff/ids?active=false&fromStaffId=0&toStaffId=${Long.MAX_VALUE}")
+          .uri("/staff/ids?active=false&fromId=0&toId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
@@ -871,7 +871,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return list of active staff ids`() {
         webTestClient.get()
-          .uri("/staff/ids?active=true&fromStaffId=0&toStaffId=${Long.MAX_VALUE}")
+          .uri("/staff/ids?active=true&fromId=0&toId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk
@@ -881,7 +881,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return specified list of ids`() {
-        webTestClient.get().uri("/staff/ids?active=false&fromStaffId=-1&toStaffId=${staffIds[2]}")
+        webTestClient.get().uri("/staff/ids?active=false&fromId=-1&toId=${staffIds[2]}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isOk

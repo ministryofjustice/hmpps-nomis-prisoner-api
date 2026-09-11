@@ -238,10 +238,10 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.size()").isEqualTo(2)
-        .jsonPath("$[0].fromRootOffenderId").isEqualTo(0)
-        .jsonPath("$[0].toRootOffenderId").isEqualTo(id2)
-        .jsonPath("$[1].fromRootOffenderId").isEqualTo(id2)
-        .jsonPath("$[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+        .jsonPath("$[0].fromId").isEqualTo(0)
+        .jsonPath("$[0].toId").isEqualTo(id2)
+        .jsonPath("$[1].fromId").isEqualTo(id2)
+        .jsonPath("$[1].toId").isEqualTo(Long.MAX_VALUE)
     }
 
     @Test
@@ -252,10 +252,10 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.size()").isEqualTo(2)
-        .jsonPath("$[0].fromRootOffenderId").isEqualTo(0)
-        .jsonPath("$[0].toRootOffenderId").isEqualTo(id1)
-        .jsonPath("$[1].fromRootOffenderId").isEqualTo(id1)
-        .jsonPath("$[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+        .jsonPath("$[0].fromId").isEqualTo(0)
+        .jsonPath("$[0].toId").isEqualTo(id1)
+        .jsonPath("$[1].fromId").isEqualTo(id1)
+        .jsonPath("$[1].toId").isEqualTo(Long.MAX_VALUE)
     }
 
     @Test
@@ -266,10 +266,10 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.size()").isEqualTo(2)
-        .jsonPath("$[0].fromRootOffenderId").isEqualTo(0)
-        .jsonPath("$[0].toRootOffenderId").isEqualTo(id2)
-        .jsonPath("$[1].fromRootOffenderId").isEqualTo(id2)
-        .jsonPath("$[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+        .jsonPath("$[0].fromId").isEqualTo(0)
+        .jsonPath("$[0].toId").isEqualTo(id2)
+        .jsonPath("$[1].fromId").isEqualTo(id2)
+        .jsonPath("$[1].toId").isEqualTo(Long.MAX_VALUE)
     }
   }
 
@@ -280,7 +280,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=10")
+        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromId=0&toId=10")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -288,7 +288,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=10")
+        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromId=0&toId=10")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -296,7 +296,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=10")
+        webTestClient.get().uri("/finance/prisoners/ids-in-range?fromId=0&toId=10")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -304,7 +304,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will return ids in range`() {
-      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=$id2")
+      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromId=0&toId=$id2")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
@@ -316,7 +316,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will apply prisonId filter`() {
-      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=$id3&prisonId=WWI")
+      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromId=0&toId=$id3&prisonId=WWI")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
@@ -327,7 +327,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun `will ignore empty prisonId query params`() {
-      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromRootOffenderId=0&toRootOffenderId=$id2&prisonId=")
+      webTestClient.get().uri("/finance/prisoners/ids-in-range?fromId=0&toId=$id2&prisonId=")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
