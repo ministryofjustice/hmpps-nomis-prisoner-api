@@ -4,7 +4,6 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
@@ -47,10 +46,7 @@ class CourtScheduleService(
   fun upsertCourtScheduleOut(
     offenderNo: String,
     request: UpsertCourtScheduleOut,
-    recreate: Boolean,
   ): UpsertCourtScheduleOutResponse {
-    if (recreate && request.eventId == null) throw BadDataException("Cannot recreate a court schedule out without an eventId")
-
     val offenderBooking = movementHelpers.offenderBookingOrThrow(offenderNo)
     val courtEventType = movementHelpers.movementReasonOrThrow(request.eventType)
     val eventStatus = movementHelpers.eventStatusOrThrow(request.eventStatus)
@@ -58,7 +54,6 @@ class CourtScheduleService(
     val court = movementHelpers.agencyLocationOrThrow(request.court)
 
     val scheduleOut = request.eventId
-      ?.takeIf { !recreate }
       ?.let { courtEventRepository.findByIdOrNullWaitForLock(it)!! }
       ?. apply {
         this.setEventDateAndTime(request.startTime)
@@ -68,7 +63,7 @@ class CourtScheduleService(
         this.court = court
       }
       ?: CourtEvent(
-        id = if (recreate) request.eventId!! else 0,
+        id = 0,
         offenderBooking = offenderBooking,
         eventDate = request.startTime.toLocalDate(),
         startTime = request.startTime,
