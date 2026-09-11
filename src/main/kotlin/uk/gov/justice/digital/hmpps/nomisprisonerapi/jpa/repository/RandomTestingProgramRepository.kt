@@ -13,8 +13,8 @@ interface RandomTestingProgramRepository : JpaRepository<RandomTestingProgram, L
           select RTP_ID, rownum as seqnum from (
             select RTP_ID
             from RANDOM_TESTING_PROGRAMS
-            where (:includedPrisonIds is null or CASELOAD_ID in :includedPrisonIds)
-            and CASELOAD_ID not in :excludedPrisonIds
+            where (:includedPrisonIds is null or CASELOAD_ID in (:includedPrisonIds))
+            and CASELOAD_ID not in (:excludedPrisonIds)
             order by RTP_ID
           )
         ) where mod(seqnum, :pageSize) = 0
