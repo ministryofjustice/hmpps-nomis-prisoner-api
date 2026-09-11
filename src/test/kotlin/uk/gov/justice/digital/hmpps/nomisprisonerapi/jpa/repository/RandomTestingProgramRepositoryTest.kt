@@ -87,7 +87,7 @@ class RandomTestingProgramRepositoryTest(
       },
     )
 
-    val found = repository.findRandomTestingProgramWithOffenders(saved.id)
+    val found = repository.findRandomTestingProgramWithOffenders(saved.id)!!
 
     assertThat(found.id).isEqualTo(22345)
     assertThat(found.offenderTestSelection).hasSize(1)
@@ -114,5 +114,10 @@ class RandomTestingProgramRepositoryTest(
     )
 
     repository.findRandomTestingProgramWithOffenders(saved.id)
+  }
+
+  @Test
+  fun `find random testing program with offenders for invalid id`() {
+    assertThat(repository.findRandomTestingProgramWithOffenders(9999)).isNull()
   }
 }
