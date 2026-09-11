@@ -592,8 +592,6 @@ class CourtScheduleResourceIntTest(
     ) = put()
       .uri {
         it.path("/movements/$offenderNo/court/schedule/out")
-          // TODO This is only here to prove the client can still send the (ignored) query parameter - remove this once the only remaining client stops sending it
-          .queryParam("recreate", false)
           .build()
       }
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))

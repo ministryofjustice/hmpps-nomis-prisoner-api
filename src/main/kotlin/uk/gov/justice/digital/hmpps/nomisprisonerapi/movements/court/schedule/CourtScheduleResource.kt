@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -122,10 +121,6 @@ class CourtScheduleResource(
     offenderNo: String,
     @RequestBody @Valid
     request: UpsertCourtScheduleOut,
-    // TODO Remove this once the only remaining client stops sending it
-    @Schema(description = "Recreate the court schedule out with the same event ID. This either creates a new court schedule out or overwrites the existing one if it exists.")
-    @RequestParam
-    recreate: Boolean? = null,
   ): UpsertCourtScheduleOutResponse = service.upsertCourtScheduleOut(offenderNo, request)
 
   @DeleteMapping("/out/{eventId}")
