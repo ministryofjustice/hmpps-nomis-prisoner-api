@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDateTime
 
@@ -60,7 +61,7 @@ class StaffResource(private val staffService: StaffService) {
     @RequestParam(value = "size", defaultValue = "1000")
     @Parameter(description = "Number of staff to get")
     pageSize: Int,
-  ): List<StaffIdRange> = staffService.findStaffIdRanges(pageSize, active)
+  ): List<IdRange> = staffService.findStaffIdRanges(pageSize, active)
 
   @GetMapping("/ids")
   @Operation(
@@ -346,18 +347,3 @@ data class RoleResponse(
   @Schema(description = "Audit data associated with the user role")
   val audit: NomisAudit,
 )
-
-@Schema(description = "Staff ID range.")
-data class StaffIdRange(
-  @Schema(description = "The lowest NOMIS staffId in the range", example = "1234567")
-  val fromStaffId: Long,
-  @Schema(description = "The highest NOMIS staffId in the range", example = "1234567")
-  val toStaffId: Long,
-)
-
-fun List<Long>.toStaffIdRanges(): List<StaffIdRange> = mutableListOf(0L).apply {
-  addAll(this@toStaffIdRanges)
-  add(Long.MAX_VALUE)
-}
-  .zipWithNext()
-  .map { StaffIdRange(it.first, it.second) }

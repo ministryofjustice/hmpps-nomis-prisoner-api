@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.RootOffenderIdRange
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -107,7 +107,7 @@ class PrisonerBalanceResource(
     @Schema(description = "Prison ids to filter by", required = false)
     @RequestParam(name = "prisonId")
     prisonIds: List<String>?,
-  ): List<RootOffenderIdRange> = prisonerBalanceService.findAllPrisonersWithAccountBalanceIdRanges(
+  ): List<IdRange> = prisonerBalanceService.findAllPrisonersWithAccountBalanceIdRanges(
     pageSize,
     prisonIds.normalisePrisonIds(),
   )

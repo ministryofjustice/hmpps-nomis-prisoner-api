@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 
 @RestController
 @Validated
@@ -49,7 +50,7 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
     @RequestParam(value = "size", defaultValue = "1000")
     @Parameter(description = "Number of prisoners to get")
     pageSize: Int,
-  ): List<RootOffenderIdRange> = prisonerSearchService.findRootOffenderIdRanges(active, pageSize)
+  ): List<IdRange> = prisonerSearchService.findRootOffenderIdRanges(active, pageSize)
 
   @GetMapping("/prisoners/ids")
   @Operation(
@@ -114,18 +115,3 @@ class PrisonerSearchResource(private val prisonerSearchService: PrisonerSearchSe
     prisonerNumber: String,
   ): List<Long> = prisonerSearchService.getAllBookingsForPrisoner(prisonerNumber)
 }
-
-@Schema(description = "Root offender ID range.")
-data class RootOffenderIdRange(
-  @Schema(description = "The lowest NOMIS rootOffenderId in the range", example = "1234567")
-  val fromRootOffenderId: Long,
-  @Schema(description = "The highest NOMIS rootOffenderId in the range", example = "1234567")
-  val toRootOffenderId: Long,
-)
-
-fun List<Long>.toRootOffenderIdRanges(): List<RootOffenderIdRange> = mutableListOf(0L).apply {
-  addAll(this@toRootOffenderIdRanges)
-  add(Long.MAX_VALUE)
-}
-  .zipWithNext()
-  .map { RootOffenderIdRange(it.first, it.second) }

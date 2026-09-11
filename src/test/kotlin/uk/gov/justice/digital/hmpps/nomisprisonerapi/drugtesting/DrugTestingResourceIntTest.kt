@@ -141,6 +141,11 @@ class DrugTestingResourceIntTest(
             assertThat(offenderTestSelection).hasSize(1)
             assertThat(offenderTestSelection.first().offenderBookId).isEqualTo(offender.allBookings.first().bookingId)
             assertThat(offenderTestSelection.first().prisonNumber).isEqualTo(offender.nomsId)
+            assertThat(offenderTestSelection.first().testSelectionType).isEqualTo("R")
+            assertThat(offenderTestSelection.first().testSelectionNo).isEqualTo(1)
+            assertThat(offenderTestSelection.first().testedFlag).isFalse()
+            assertThat(offenderTestSelection.first().reasonNotTested).isEqualTo("NOT_TAKEN")
+            assertThat(offenderTestSelection.first().notes).isEqualTo("selected in test")
           }
       }
 
@@ -250,7 +255,10 @@ class DrugTestingResourceIntTest(
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .json("""[2]""")
+          .jsonPath("$[0].fromId").isEqualTo(0)
+          .jsonPath("$[0].toId").isEqualTo(2)
+          .jsonPath("$[1].fromId").isEqualTo(2)
+          .jsonPath("$[1].toId").isEqualTo(Long.MAX_VALUE)
       }
 
       @Test
@@ -260,7 +268,12 @@ class DrugTestingResourceIntTest(
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .json("""[2,3]""")
+          .jsonPath("$[0].fromId").isEqualTo(0)
+          .jsonPath("$[0].toId").isEqualTo(2)
+          .jsonPath("$[1].fromId").isEqualTo(2)
+          .jsonPath("$[1].toId").isEqualTo(3)
+          .jsonPath("$[2].fromId").isEqualTo(3)
+          .jsonPath("$[2].toId").isEqualTo(Long.MAX_VALUE)
       }
 
       @Test
@@ -270,7 +283,12 @@ class DrugTestingResourceIntTest(
           .exchange()
           .expectStatus().isOk
           .expectBody()
-          .json("""[1,3]""")
+          .jsonPath("$[0].fromId").isEqualTo(0)
+          .jsonPath("$[0].toId").isEqualTo(1)
+          .jsonPath("$[1].fromId").isEqualTo(1)
+          .jsonPath("$[1].toId").isEqualTo(3)
+          .jsonPath("$[2].fromId").isEqualTo(3)
+          .jsonPath("$[2].toId").isEqualTo(Long.MAX_VALUE)
       }
     }
   }

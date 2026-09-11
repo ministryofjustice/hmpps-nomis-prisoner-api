@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MergeTransactionRepository
@@ -85,7 +86,7 @@ class PrisonerService(
     offenderRepository.findPrisonerIdsBetweenIds(fromRootOffenderId, toRootOffenderId)
   }.map { PrisonNumberAndRootOffenderId(it.getOffenderId(), it.getPrisonerId()) }
 
-  fun findRootOffenderIdRanges(pageSize: Int, active: Boolean): List<RootOffenderIdRange> = prisonerSearchService.findRootOffenderIdRanges(active, pageSize)
+  fun findRootOffenderIdRanges(pageSize: Int, active: Boolean): List<IdRange> = prisonerSearchService.findRootOffenderIdRanges(active, pageSize)
 }
 
 private fun OffenderBooking.toPrisonerDetails(): PrisonerDetails = PrisonerDetails(

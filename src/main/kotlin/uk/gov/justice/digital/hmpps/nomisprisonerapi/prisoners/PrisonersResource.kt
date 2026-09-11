@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.OFFENDER_NO_PATTERN
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -444,7 +445,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     @RequestParam(required = false, defaultValue = "false")
     @Parameter(description = "When true only return active prisoners currently in prison else all prisoners are returned.")
     active: Boolean,
-  ): List<RootOffenderIdRange> = prisonerService.findRootOffenderIdRanges(pageSize, active)
+  ): List<IdRange> = prisonerService.findRootOffenderIdRanges(pageSize, active)
 }
 
 @Schema(description = "Prisoner identifiers")
