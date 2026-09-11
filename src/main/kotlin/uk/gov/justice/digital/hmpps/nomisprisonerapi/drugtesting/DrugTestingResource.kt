@@ -61,7 +61,8 @@ class DrugTestingResource(private val drugTestingService: DrugTestingService) {
       reserveCount = program.reserveCount,
       offenderTestSelection = program.offenderTestSelection.map {
         OffenderTestSelectionResponse(
-          offenderBookId = it.id?.offenderBookId ?: 0L,
+          offenderBookId = it.id?.offenderBooking?.bookingId!!,
+          prisonNumber = it.id?.offenderBooking?.offender?.nomsId!!,
           testSelectionType = it.testSelectionType,
           testSelectionNo = it.testSelectionNo,
           testedFlag = it.testedFlag?.equals("Y"),
@@ -175,8 +176,8 @@ data class RandomTestingProgramResponse(
 data class OffenderTestSelectionResponse(
   @Schema(description = "Offender booking id")
   val offenderBookId: Long,
-//  @Schema(description = "Prisoner number")
-//  val prisonNumber: String,
+  @Schema(description = "Prisoner number")
+  val prisonNumber: String,
   @Schema(description = "Test selection type")
   val testSelectionType: String,
   @Schema(description = "Test selection number")

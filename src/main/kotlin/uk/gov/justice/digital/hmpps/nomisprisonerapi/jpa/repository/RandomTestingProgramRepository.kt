@@ -35,6 +35,12 @@ interface RandomTestingProgramRepository : JpaRepository<RandomTestingProgram, L
   )
   fun findAllIdsBetweenIds(fromId: Long, toId: Long, includedPrisonIds: List<String>?, excludedPrisonIds: List<String>): List<Long>
 
-  @Query("select rtp from RandomTestingProgram rtp left join fetch rtp.offenderTestSelection where rtp.id = :rtpId")
+  @Query(
+    """select rtp from RandomTestingProgram rtp
+              left join fetch rtp.offenderTestSelection otp
+              left join fetch otp.id.offenderBooking ob
+              left join fetch ob.offender
+             where rtp.id = :rtpId""",
+  )
   fun findRandomTestingProgramWithOffenders(rtpId: Long): RandomTestingProgram?
 }
