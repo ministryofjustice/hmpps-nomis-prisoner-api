@@ -62,6 +62,15 @@ class DrugTestingResourceIntTest(
         ),
       )
       randomTestingProgramRepository.save(program)
+      randomTestingProgramRepository.save(
+        RandomTestingProgram(
+          id = 32345,
+          caseloadId = "MDI",
+          rtpDate = LocalDate.parse("2024-01-04"),
+          mainPercentage = 20,
+          reservePercentage = 8,
+        ),
+      )
     }
 
     @AfterAll
@@ -132,6 +141,26 @@ class DrugTestingResourceIntTest(
             assertThat(offenderTestSelection).hasSize(1)
             assertThat(offenderTestSelection.first().offenderBookId).isEqualTo(offender.allBookings.first().bookingId)
             assertThat(offenderTestSelection.first().prisonNumber).isEqualTo(offender.nomsId)
+          }
+      }
+
+      @Test
+      fun `get random testing program when no offenders`() {
+        webTestClient.get().uri("/drug-testing/32345")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse<RandomTestingProgramResponse>()
+          .apply {
+            assertThat(rtpId).isEqualTo(32345)
+            assertThat(caseloadId).isEqualTo("MDI")
+            assertThat(rtpDate).isEqualTo(LocalDate.parse("2024-01-04"))
+            assertThat(mainPercentage).isEqualTo(20)
+            assertThat(reservePercentage).isEqualTo(8)
+            assertThat(selectionsCount).isNull()
+            assertThat(eligibleCount).isNull()
+            assertThat(reserveCount).isNull()
+            assertThat(offenderTestSelection).hasSize(0)
           }
       }
     }

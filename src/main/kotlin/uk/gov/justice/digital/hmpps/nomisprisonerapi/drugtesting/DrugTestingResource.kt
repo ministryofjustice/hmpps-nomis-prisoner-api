@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.drugtesting
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -49,9 +50,12 @@ class DrugTestingResource(private val drugTestingService: DrugTestingService) {
     @Schema(description = "Random testing program id", example = "12345", required = true)
     @PathVariable
     rtpId: Long,
-  ): RandomTestingProgramResponse = drugTestingService.findRandomTestingProgramWithPrisoners(rtpId).let { program ->
-    RandomTestingProgramResponse(
-      rtpId = program.id,
+  ): RandomTestingProgramResponse {
+    val programRows = drugTestingService.findRandomTestingProgramWithPrisoners(rtpId)
+    val program = programRows.first()
+
+    return RandomTestingProgramResponse(
+      rtpId = program.rtpId,
       caseloadId = program.caseloadId,
       rtpDate = program.rtpDate,
       mainPercentage = program.mainPercentage,
@@ -59,12 +63,12 @@ class DrugTestingResource(private val drugTestingService: DrugTestingService) {
       selectionsCount = program.selectionsCount,
       eligibleCount = program.eligibleCount,
       reserveCount = program.reserveCount,
-      offenderTestSelection = program.offenderTestSelection.map {
+      offenderTestSelection = programRows.filter { it.offenderBookId != null }.map {
         OffenderTestSelectionResponse(
-          offenderBookId = it.id?.offenderBooking?.bookingId!!,
-          prisonNumber = it.id?.offenderBooking?.offender?.nomsId!!,
-          testSelectionType = it.testSelectionType,
-          testSelectionNo = it.testSelectionNo,
+          offenderBookId = it.offenderBookId!!,
+          prisonNumber = it.prisonNumber!!,
+          testSelectionType = it.testSelectionType!!,
+          testSelectionNo = it.testSelectionNo!!,
           testedFlag = it.testedFlag?.equals("Y"),
           reasonNotTested = it.reasonNotTested,
           notes = it.notes,
@@ -152,6 +156,7 @@ class DrugTestingResource(private val drugTestingService: DrugTestingService) {
   )
 }
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class RandomTestingProgramResponse(
   @Schema(description = "Random testing program id", example = "12345")
   val rtpId: Long,
@@ -173,6 +178,7 @@ data class RandomTestingProgramResponse(
   val offenderTestSelection: List<OffenderTestSelectionResponse>,
 )
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderTestSelectionResponse(
   @Schema(description = "Offender booking id")
   val offenderBookId: Long,
