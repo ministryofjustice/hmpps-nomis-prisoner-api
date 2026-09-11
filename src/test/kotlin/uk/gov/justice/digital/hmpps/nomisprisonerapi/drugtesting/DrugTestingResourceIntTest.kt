@@ -51,7 +51,7 @@ class DrugTestingResourceIntTest(
       program.offenderTestSelection.add(
         OffenderTestSelection(
           id = OffenderTestSelectionId(
-            offenderBookId = offender.allBookings.first().bookingId,
+            offenderBooking = offender.allBookings.first(),
             randomTestingProgram = program,
           ),
           testSelectionType = "R",
@@ -131,6 +131,7 @@ class DrugTestingResourceIntTest(
             assertThat(reserveCount).isEqualTo(3)
             assertThat(offenderTestSelection).hasSize(1)
             assertThat(offenderTestSelection.first().offenderBookId).isEqualTo(offender.allBookings.first().bookingId)
+            assertThat(offenderTestSelection.first().prisonNumber).isEqualTo(offender.nomsId)
           }
       }
     }
@@ -221,6 +222,26 @@ class DrugTestingResourceIntTest(
           .expectStatus().isOk
           .expectBody()
           .json("""[2]""")
+      }
+
+      @Test
+      fun `get id ranges filtered by included prison ids`() {
+        webTestClient.get().uri("/drug-testing/id-ranges?pageSize=1&includedPrisonIds=LEI&includedPrisonIds=BXI")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .json("""[2,3]""")
+      }
+
+      @Test
+      fun `get id ranges filtered by excluded prison ids`() {
+        webTestClient.get().uri("/drug-testing/id-ranges?pageSize=1&excludedPrisonIds=LEI")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .json("""[1,3]""")
       }
     }
   }
@@ -318,6 +339,26 @@ class DrugTestingResourceIntTest(
           .expectStatus().isOk
           .expectBody()
           .json("""[10,20]""")
+      }
+
+      @Test
+      fun `get ids in range filtered by included prison ids`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?fromId=0&toId=30&includedPrisonIds=LEI&includedPrisonIds=BXI")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .json("""[20,30]""")
+      }
+
+      @Test
+      fun `get ids in range filtered by excluded prison ids`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?fromId=0&toId=30&excludedPrisonIds=LEI")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .json("""[10,30]""")
       }
     }
   }

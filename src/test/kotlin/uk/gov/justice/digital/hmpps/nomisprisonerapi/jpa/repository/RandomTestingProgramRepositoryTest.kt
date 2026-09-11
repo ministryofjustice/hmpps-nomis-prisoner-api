@@ -74,7 +74,7 @@ class RandomTestingProgramRepositoryTest(
         it.offenderTestSelection.add(
           OffenderTestSelection(
             id = OffenderTestSelectionId(
-              offenderBookId = savedOffender.allBookings.first().bookingId,
+              offenderBooking = savedOffender.allBookings.first(),
               randomTestingProgram = it,
             ),
             testSelectionType = "R",
@@ -91,7 +91,7 @@ class RandomTestingProgramRepositoryTest(
 
     assertThat(found.id).isEqualTo(22345)
     assertThat(found.offenderTestSelection).hasSize(1)
-    assertThat(found.offenderTestSelection.first().id?.offenderBookId).isEqualTo(savedOffender.allBookings.first().bookingId)
+    assertThat(found.offenderTestSelection.first().id?.offenderBooking).isEqualTo(savedOffender.allBookings.first())
     assertThat(found.offenderTestSelection.first().testSelectionType).isEqualTo("R")
     assertThat(found.offenderTestSelection.first().testSelectionNo).isEqualTo(1)
     assertThat(found.offenderTestSelection.first().testedFlag).isEqualTo("N")

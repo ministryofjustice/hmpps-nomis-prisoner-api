@@ -5,6 +5,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.FetchType.LAZY
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
@@ -15,9 +16,9 @@ import kotlin.jvm.javaClass
 
 @Embeddable
 data class OffenderTestSelectionId(
-  @NotNull
-  @Column(name = "OFFENDER_BOOK_ID", nullable = false)
-  val offenderBookId: Long = 0L,
+  @ManyToOne(optional = false, fetch = LAZY)
+  @JoinColumn(name = "OFFENDER_BOOK_ID", nullable = false)
+  val offenderBooking: OffenderBooking,
 
   @JoinColumn(name = "RTP_ID", nullable = false)
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
