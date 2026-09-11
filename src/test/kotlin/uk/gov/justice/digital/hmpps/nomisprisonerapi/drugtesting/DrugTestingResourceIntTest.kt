@@ -135,4 +135,190 @@ class DrugTestingResourceIntTest(
       }
     }
   }
+
+  @DisplayName("GET /drug-testing/id-ranges")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class GetDrugTestingIdRanges {
+    @BeforeAll
+    internal fun init() {
+      randomTestingProgramRepository.saveAll(
+        listOf(
+          RandomTestingProgram(
+            id = 1,
+            caseloadId = "MDI",
+            rtpDate = LocalDate.parse("2024-01-01"),
+            mainPercentage = 10,
+            reservePercentage = 5,
+          ),
+          RandomTestingProgram(
+            id = 2,
+            caseloadId = "LEI",
+            rtpDate = LocalDate.parse("2024-01-02"),
+            mainPercentage = 10,
+            reservePercentage = 5,
+          ),
+          RandomTestingProgram(
+            id = 3,
+            caseloadId = "BXI",
+            rtpDate = LocalDate.parse("2024-01-03"),
+            mainPercentage = 10,
+            reservePercentage = 5,
+          ),
+        ),
+      )
+    }
+
+    @AfterAll
+    internal fun deleteData() {
+      randomTestingProgramRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/drug-testing/id-ranges?pageSize=2")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/drug-testing/id-ranges?pageSize=2")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/drug-testing/id-ranges?pageSize=2")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `page size must be at least one`() {
+        webTestClient.get().uri("/drug-testing/id-ranges?pageSize=0")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `get id ranges`() {
+        webTestClient.get().uri("/drug-testing/id-ranges?pageSize=2")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .json("""[2]""")
+      }
+    }
+  }
+
+  @DisplayName("GET /drug-testing/ids-in-range")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class GetDrugTestingIdsInRange {
+    @BeforeAll
+    internal fun init() {
+      randomTestingProgramRepository.saveAll(
+        listOf(
+          RandomTestingProgram(
+            id = 10,
+            caseloadId = "MDI",
+            rtpDate = LocalDate.parse("2024-01-01"),
+            mainPercentage = 10,
+            reservePercentage = 5,
+          ),
+          RandomTestingProgram(
+            id = 20,
+            caseloadId = "LEI",
+            rtpDate = LocalDate.parse("2024-01-02"),
+            mainPercentage = 10,
+            reservePercentage = 5,
+          ),
+          RandomTestingProgram(
+            id = 30,
+            caseloadId = "BXI",
+            rtpDate = LocalDate.parse("2024-01-03"),
+            mainPercentage = 10,
+            reservePercentage = 5,
+          ),
+        ),
+      )
+    }
+
+    @AfterAll
+    internal fun deleteData() {
+      randomTestingProgramRepository.deleteAll()
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?fromId=0&toId=20")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?fromId=0&toId=20")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?fromId=0&toId=20")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `fromId is required`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?toId=20")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `toId is required`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?fromId=0")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `get ids in range`() {
+        webTestClient.get().uri("/drug-testing/ids-in-range?fromId=0&toId=20")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .json("""[10,20]""")
+      }
+    }
+  }
 }
