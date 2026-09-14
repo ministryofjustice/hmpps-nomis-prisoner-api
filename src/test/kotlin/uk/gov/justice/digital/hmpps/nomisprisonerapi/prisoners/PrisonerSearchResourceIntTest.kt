@@ -108,12 +108,12 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(3)
-          .jsonPath("$.[0].fromRootOffenderId").isEqualTo(0)
-          .jsonPath("$.[0].toRootOffenderId").isEqualTo(activePrisoner2)
-          .jsonPath("$.[1].fromRootOffenderId").isEqualTo(activePrisoner2)
-          .jsonPath("$.[1].toRootOffenderId").isEqualTo(prisoner4)
-          .jsonPath("$.[2].fromRootOffenderId").isEqualTo(prisoner4)
-          .jsonPath("$.[2].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+          .jsonPath("$.[0].fromId").isEqualTo(0)
+          .jsonPath("$.[0].toId").isEqualTo(activePrisoner2)
+          .jsonPath("$.[1].fromId").isEqualTo(activePrisoner2)
+          .jsonPath("$.[1].toId").isEqualTo(prisoner4)
+          .jsonPath("$.[2].fromId").isEqualTo(prisoner4)
+          .jsonPath("$.[2].toId").isEqualTo(Long.MAX_VALUE)
       }
 
       @Test
@@ -124,10 +124,10 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(2)
-          .jsonPath("$.[0].fromRootOffenderId").isEqualTo(0)
-          .jsonPath("$.[0].toRootOffenderId").isEqualTo(activePrisoner2)
-          .jsonPath("$.[1].fromRootOffenderId").isEqualTo(activePrisoner2)
-          .jsonPath("$.[1].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+          .jsonPath("$.[0].fromId").isEqualTo(0)
+          .jsonPath("$.[0].toId").isEqualTo(activePrisoner2)
+          .jsonPath("$.[1].fromId").isEqualTo(activePrisoner2)
+          .jsonPath("$.[1].toId").isEqualTo(Long.MAX_VALUE)
       }
 
       @Test
@@ -138,8 +138,8 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("$.length()").isEqualTo(1)
-          .jsonPath("$.[0].fromRootOffenderId").isEqualTo(0)
-          .jsonPath("$.[0].toRootOffenderId").isEqualTo(Long.MAX_VALUE)
+          .jsonPath("$.[0].fromId").isEqualTo(0)
+          .jsonPath("$.[0].toId").isEqualTo(Long.MAX_VALUE)
       }
     }
   }
@@ -151,7 +151,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=100")
+        webTestClient.get().uri("/search/prisoners/ids?active=true&fromId=0&toId=100")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -159,7 +159,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=100")
+        webTestClient.get().uri("/search/prisoners/ids?active=true&fromId=0&toId=100")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -167,14 +167,14 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=100")
+        webTestClient.get().uri("/search/prisoners/ids?active=false&fromId=0&toId=100")
           .exchange()
           .expectStatus().isUnauthorized
       }
 
       @Test
       fun `access allowed for role NOMIS_PRISONER_API__PRISONER_SEARCH_R`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=100")
+        webTestClient.get().uri("/search/prisoners/ids?active=false&fromId=0&toId=100")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
@@ -185,23 +185,23 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 400 if active is not provided`() {
-        webTestClient.get().uri("/search/prisoners/ids?fromRootOffenderId=0&toRootOffenderId=100")
+        webTestClient.get().uri("/search/prisoners/ids?fromId=0&toId=100")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isBadRequest
       }
 
       @Test
-      fun `will return 400 if fromRootOffenderId is not provided`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&toRootOffenderId=100")
+      fun `will return 400 if fromId is not provided`() {
+        webTestClient.get().uri("/search/prisoners/ids?active=false&toId=100")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isBadRequest
       }
 
       @Test
-      fun `will return 400 if toRootOffenderId is not provided`() {
-        webTestClient.get().uri("/search/prisoners/ids?active=false&fromRootOffenderId=0")
+      fun `will return 400 if toId is not provided`() {
+        webTestClient.get().uri("/search/prisoners/ids?active=false&fromId=0")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isBadRequest
@@ -251,7 +251,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return list of all root offender ids`() {
         webTestClient.get()
-          .uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
+          .uri("/search/prisoners/ids?active=false&fromId=0&toId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
@@ -265,7 +265,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return list of all active root offender ids`() {
         webTestClient.get()
-          .uri("/search/prisoners/ids?active=true&fromRootOffenderId=0&toRootOffenderId=${Long.MAX_VALUE}")
+          .uri("/search/prisoners/ids?active=true&fromId=0&toId=${Long.MAX_VALUE}")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk
@@ -279,7 +279,7 @@ class PrisonerSearchResourceIntTest : IntegrationTestBase() {
       @Test
       fun `will return specified list of root offender ids`() {
         webTestClient.get()
-          .uri("/search/prisoners/ids?active=false&fromRootOffenderId=0&toRootOffenderId=$activePrisoner1Id")
+          .uri("/search/prisoners/ids?active=false&fromId=0&toId=$activePrisoner1Id")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__PRISONER_SEARCH_R")))
           .exchange()
           .expectStatus().isOk

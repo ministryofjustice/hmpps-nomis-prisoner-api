@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.visits.OFFENDER_NO_PATTERN
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -369,7 +370,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
   @Operation(
     summary = "Gets every prison number and root offender id between range for prisoner search.",
     description = """Returns a list of ids for root offender ids greater than the specified
-      fromRootOffenderId and less than or equal to the specified toRootOffenderId.
+      fromId and less than or equal to the specified toId.
       Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
     responses = [
       ApiResponse(responseCode = "200", description = "list of prison numbers and root offender ids"),
@@ -396,16 +397,16 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     ],
   )
   fun getAllPrisonersInRange(
-    @RequestParam(value = "fromRootOffenderId", required = true)
+    @RequestParam(required = true)
     @Parameter(description = "Return prisoners with root offender id greater than this value.")
-    fromRootOffenderId: Long,
-    @RequestParam(value = "toRootOffenderId", required = true)
+    fromId: Long,
+    @RequestParam(required = true)
     @Parameter(description = "Return prisoners with root offender id less than or equal to this value.")
-    toRootOffenderId: Long,
+    toId: Long,
     @RequestParam(required = false, defaultValue = "false")
     @Parameter(description = "When true only return active prisoners currently in prison else all prisoners are returned.")
     active: Boolean,
-  ): List<PrisonNumberAndRootOffenderId> = prisonerService.findPrisonersInRange(fromRootOffenderId, toRootOffenderId, active)
+  ): List<PrisonNumberAndRootOffenderId> = prisonerService.findPrisonersInRange(fromId, toId, active)
 
   @GetMapping("/prisoners/id-ranges")
   @Operation(
@@ -444,7 +445,7 @@ class PrisonersResource(private val prisonerService: PrisonerService) {
     @RequestParam(required = false, defaultValue = "false")
     @Parameter(description = "When true only return active prisoners currently in prison else all prisoners are returned.")
     active: Boolean,
-  ): List<RootOffenderIdRange> = prisonerService.findRootOffenderIdRanges(pageSize, active)
+  ): List<IdRange> = prisonerService.findRootOffenderIdRanges(pageSize, active)
 }
 
 @Schema(description = "Prisoner identifiers")

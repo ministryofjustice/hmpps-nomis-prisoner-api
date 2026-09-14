@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.toIdRanges
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -12,14 +14,14 @@ class PrisonerSearchService(
   private val bookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
 ) {
-  fun findRootOffenderIdRanges(active: Boolean, pageSize: Int): List<RootOffenderIdRange> = (
+  fun findRootOffenderIdRanges(active: Boolean, pageSize: Int): List<IdRange> = (
     if (active) {
       bookingRepository.findEveryPageSizeActiveRootOffenderId(pageSize)
     } else {
       offenderRepository.findEveryPageSizeRootOffenderId(pageSize)
     }
     )
-    .toRootOffenderIdRanges()
+    .toIdRanges()
 
   fun findPrisonNumbersInRange(active: Boolean, fromRootOffenderId: Long, toRootOffenderId: Long): List<String> = if (active) {
     bookingRepository.findActivePrisonNumbersBetweenIds(fromRootOffenderId, toRootOffenderId)

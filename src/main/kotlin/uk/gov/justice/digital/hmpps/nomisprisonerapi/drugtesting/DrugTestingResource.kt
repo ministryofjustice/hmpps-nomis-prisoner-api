@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import java.time.LocalDate
 
 @RestController
@@ -106,7 +107,7 @@ class DrugTestingResource(private val drugTestingService: DrugTestingService) {
     @RequestParam(value = "excludedPrisonIds", required = false)
     @Parameter(description = "Filter results by excluded prison ids", example = "['MDI','LEI']")
     excludedPrisonIds: Set<String>?,
-  ): List<Long> = drugTestingService.findIdRanges(
+  ): List<IdRange> = drugTestingService.findIdRanges(
     pageSize,
     DrugTestingFilter(
       includedPrisonIds = includedPrisonIds,

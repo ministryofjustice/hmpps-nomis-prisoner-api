@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.RootOffenderIdRange
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -107,7 +107,7 @@ class PrisonerBalanceResource(
     @Schema(description = "Prison ids to filter by", required = false)
     @RequestParam(name = "prisonId")
     prisonIds: List<String>?,
-  ): List<RootOffenderIdRange> = prisonerBalanceService.findAllPrisonersWithAccountBalanceIdRanges(
+  ): List<IdRange> = prisonerBalanceService.findAllPrisonersWithAccountBalanceIdRanges(
     pageSize,
     prisonIds.normalisePrisonIds(),
   )
@@ -115,8 +115,8 @@ class PrisonerBalanceResource(
   @GetMapping("/ids-in-range")
   @Operation(
     summary = "Gets every prisoner root offender id with a trust account balance in range.",
-    description = """Returns a list of root offender ids greater than the specified fromRootOffenderId and less than or equal to the
-      specified toRootOffenderId. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    description = """Returns a list of root offender ids greater than the specified fromId and less than or equal to the
+      specified toId. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
     responses = [
       ApiResponse(responseCode = "200", description = "list of root offender ids"),
       ApiResponse(
@@ -142,18 +142,18 @@ class PrisonerBalanceResource(
     ],
   )
   fun getPrisonerBalanceIdentifiersInRange(
-    @RequestParam(value = "fromRootOffenderId", required = true)
+    @RequestParam(required = true)
     @Schema(description = "Return prisoners with root offender id greater than this value.")
-    fromRootOffenderId: Long,
-    @RequestParam(value = "toRootOffenderId", required = true)
+    fromId: Long,
+    @RequestParam(required = true)
     @Schema(description = "Return prisoners with root offender id less than or equal to this value.")
-    toRootOffenderId: Long,
+    toId: Long,
     @Schema(description = "Prison ids to filter by", required = false)
     @RequestParam(name = "prisonId")
     prisonIds: List<String>?,
   ): List<Long> = prisonerBalanceService.findAllPrisonersWithAccountBalanceInRange(
-    fromRootOffenderId,
-    toRootOffenderId,
+    fromId,
+    toId,
     prisonIds.normalisePrisonIds(),
   )
 

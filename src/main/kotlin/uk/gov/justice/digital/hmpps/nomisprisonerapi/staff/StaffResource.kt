@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDateTime
 
@@ -60,13 +61,13 @@ class StaffResource(private val staffService: StaffService) {
     @RequestParam(value = "size", defaultValue = "1000")
     @Parameter(description = "Number of staff to get")
     pageSize: Int,
-  ): List<StaffIdRange> = staffService.findStaffIdRanges(pageSize, active)
+  ): List<IdRange> = staffService.findStaffIdRanges(pageSize, active)
 
   @GetMapping("/ids")
   @Operation(
     summary = "Gets every staff id between range.",
     description = """Returns a list of staff ids for staff ids greater than the specified
-      fromStaffId and less than or equal to the specified toStaffId.
+      fromId and less than or equal to the specified toId.
       Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
     responses = [
       ApiResponse(responseCode = "200", description = "list of staff ids"),
@@ -88,11 +89,11 @@ class StaffResource(private val staffService: StaffService) {
     active: Boolean,
     @RequestParam(required = true)
     @Parameter(description = "Return staff with staff id greater than this value.")
-    fromStaffId: Long,
+    fromId: Long,
     @RequestParam(required = true)
     @Parameter(description = "Return staff with staff id less than or equal to this value.")
-    toStaffId: Long,
-  ): List<Long> = staffService.findStaffIdsInRange(fromStaffId, toStaffId, active)
+    toId: Long,
+  ): List<Long> = staffService.findStaffIdsInRange(fromId, toId, active)
 
   @GetMapping("/id/{staffId}")
   @Operation(
@@ -346,18 +347,3 @@ data class RoleResponse(
   @Schema(description = "Audit data associated with the user role")
   val audit: NomisAudit,
 )
-
-@Schema(description = "Staff ID range.")
-data class StaffIdRange(
-  @Schema(description = "The lowest NOMIS staffId in the range", example = "1234567")
-  val fromStaffId: Long,
-  @Schema(description = "The highest NOMIS staffId in the range", example = "1234567")
-  val toStaffId: Long,
-)
-
-fun List<Long>.toStaffIdRanges(): List<StaffIdRange> = mutableListOf(0L).apply {
-  addAll(this@toStaffIdRanges)
-  add(Long.MAX_VALUE)
-}
-  .zipWithNext()
-  .map { StaffIdRange(it.first, it.second) }

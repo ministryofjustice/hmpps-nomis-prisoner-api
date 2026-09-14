@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.drugtesting
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.toIdRanges
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RandomTestingProgramDto
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RandomTestingProgramRepository
@@ -11,11 +13,11 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RandomTestin
 class DrugTestingService(
   private val randomTestingProgramRepository: RandomTestingProgramRepository,
 ) {
-  fun findIdRanges(pageSize: Int, filter: DrugTestingFilter): List<Long> = randomTestingProgramRepository.findEveryPageSizeId(
+  fun findIdRanges(pageSize: Int, filter: DrugTestingFilter): List<IdRange> = randomTestingProgramRepository.findEveryPageSizeId(
     pageSize,
     filter.includedPrisonIdsAsList,
     filter.excludedPrisonIdsAsList,
-  )
+  ).toIdRanges()
 
   fun findAllIdsBetweenIds(fromId: Long, toId: Long, filter: DrugTestingFilter): List<Long> = randomTestingProgramRepository
     .findAllIdsBetweenIds(

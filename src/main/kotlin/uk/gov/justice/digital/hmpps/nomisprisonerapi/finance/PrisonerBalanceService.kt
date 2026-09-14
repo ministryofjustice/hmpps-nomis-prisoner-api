@@ -5,14 +5,14 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.data.web.PagedModel
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.toIdRanges
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccounWithTransactionDateTimeProjection
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccountRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTrustAccountRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.RootOffenderIdRange
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.prisoners.toRootOffenderIdRanges
 
 @Service
 @Transactional
@@ -85,12 +85,12 @@ class PrisonerBalanceService(
     offenderTrustAccountRepository.findAllOffenderIdsWithBalances(prisonIds, pageRequest),
   )
 
-  fun findAllPrisonersWithAccountBalanceIdRanges(pageSize: Int, prisonIds: List<String>?): List<RootOffenderIdRange> = (
+  fun findAllPrisonersWithAccountBalanceIdRanges(pageSize: Int, prisonIds: List<String>?): List<IdRange> = (
     prisonIds
       ?.takeIf { it.isNotEmpty() }
       ?.let { offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(it, pageSize) }
       ?: offenderTrustAccountRepository.findEveryPageSizeOffenderIdWithBalance(pageSize)
-    ).toRootOffenderIdRanges()
+    ).toIdRanges()
 
   fun findAllPrisonersWithAccountBalanceFromId(
     rootOffenderId: Long,
