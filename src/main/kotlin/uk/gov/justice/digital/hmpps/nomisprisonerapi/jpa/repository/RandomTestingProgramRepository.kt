@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.RandomTestingProgram
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Repository
 interface RandomTestingProgramRepository : JpaRepository<RandomTestingProgram, Long> {
@@ -42,6 +43,8 @@ interface RandomTestingProgramRepository : JpaRepository<RandomTestingProgram, L
         rtp.id,
         rtp.caseloadId,
         rtp.rtpDate,
+        rtp.createUsername,
+        rtp.createDatetime,
         rtp.mainPercentage,
         rtp.reservePercentage,
         rtp.selectionsCount,
@@ -69,6 +72,8 @@ data class RandomTestingProgramDto(
   val rtpId: Long,
   val caseloadId: String,
   val rtpDate: LocalDate,
+  val createUsername: String,
+  val createDatetime: LocalDateTime,
   val mainPercentage: Short,
   val reservePercentage: Short,
   val selectionsCount: Int?,
