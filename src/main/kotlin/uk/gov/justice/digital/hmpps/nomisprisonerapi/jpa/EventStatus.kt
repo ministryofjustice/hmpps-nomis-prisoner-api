@@ -14,6 +14,7 @@ class EventStatus(code: String, description: String) : ReferenceCode(EVENT_STS, 
     const val SCHEDULED = "SCH"
     const val EXPIRED = "EXP"
     const val COMPLETED = "COMP"
+    const val PENDING = "PEN"
     val CANCELLED = Pk(EVENT_STS, "CANC")
     val SCHEDULED_APPROVED = Pk(EVENT_STS, SCHEDULED)
     fun pk(code: String): Pk = Pk(EVENT_STS, code)

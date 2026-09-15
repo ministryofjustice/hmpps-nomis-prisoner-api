@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
@@ -177,9 +178,9 @@ class OffenderTransferMovementsResourceIntTest(
       fun setUp() {
         nomisDataBuilder.build {
           offender = offender(nomsId = "A1234BC") {
-            booking {
+            booking(active = true, bookingSequence = 1) {
               transferScheduleOut()
-              transferScheduleOut()
+              transferScheduleOut(eventStatus = EventStatus.CANCELLED.code)
               transferScheduleOut {
                 transferMovementOut()
               }
@@ -189,10 +190,11 @@ class OffenderTransferMovementsResourceIntTest(
               transferMovementOut()
               transferMovementOut()
             }
-            booking = booking {
-              schedule = transferScheduleOut {
+            booking(active = false, bookingSequence = 2) {
+              transferScheduleOut {
                 transferMovementOut()
               }
+              transferScheduleOut(eventStatus = EventStatus.PENDING, startTime = null)
               transferMovementOut()
             }
           }
@@ -205,13 +207,18 @@ class OffenderTransferMovementsResourceIntTest(
           .apply {
             assertThat(bookings.size).isEqualTo(2)
             assertThat(bookings[0].transferSchedules.size).isEqualTo(4)
+            assertThat(bookings[0].transferSchedules[0].schedule.eventStatus).isEqualTo(EventStatus.SCHEDULED)
             assertThat(bookings[0].transferSchedules[0].movement).isNull()
+            assertThat(bookings[0].transferSchedules[1].schedule.eventStatus).isEqualTo(EventStatus.CANCELLED.code)
             assertThat(bookings[0].transferSchedules[1].movement).isNull()
             assertThat(bookings[0].transferSchedules[2].movement).isNotNull
             assertThat(bookings[0].transferSchedules[3].movement).isNotNull
             assertThat(bookings[0].unscheduledTransferMovements.size).isEqualTo(2)
-            assertThat(bookings[1].transferSchedules.size).isEqualTo(1)
+            assertThat(bookings[1].transferSchedules.size).isEqualTo(2)
+            assertThat(bookings[1].transferSchedules[0].schedule.eventStatus).isEqualTo(EventStatus.EXPIRED)
             assertThat(bookings[1].transferSchedules[0].movement).isNotNull
+            assertThat(bookings[1].transferSchedules[1].schedule.eventStatus).isEqualTo(EventStatus.EXPIRED)
+            assertThat(bookings[1].transferSchedules[1].movement).isNull()
             assertThat(bookings[1].unscheduledTransferMovements.size).isEqualTo(1)
           }
       }
