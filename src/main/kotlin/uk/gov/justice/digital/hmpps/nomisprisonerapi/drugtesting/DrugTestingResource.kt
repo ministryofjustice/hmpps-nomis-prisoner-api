@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -59,6 +60,8 @@ class DrugTestingResource(private val drugTestingService: DrugTestingService) {
       rtpId = program.rtpId,
       caseloadId = program.caseloadId,
       rtpDate = program.rtpDate,
+      createdByUsername = program.createUsername,
+      createdDateTime = program.createDatetime,
       mainPercentage = program.mainPercentage,
       reservePercentage = program.reservePercentage,
       selectionsCount = program.selectionsCount,
@@ -165,6 +168,10 @@ data class RandomTestingProgramResponse(
   val caseloadId: String,
   @Schema(description = "Random testing program date", example = "2024-01-01")
   val rtpDate: LocalDate,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+  @Schema(description = "Date time when the record was created in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
   @Schema(description = "Main percentage")
   val mainPercentage: Short,
   @Schema(description = "Reserve percentage")

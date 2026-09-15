@@ -133,6 +133,8 @@ class DrugTestingResourceIntTest(
             assertThat(rtpId).isEqualTo(12345)
             assertThat(caseloadId).isEqualTo("MDI")
             assertThat(rtpDate).isEqualTo(LocalDate.parse("2024-01-02"))
+            assertThat(createdByUsername).isEqualTo("SA")
+            assertThat(createdDateTime).isNotNull
             assertThat(mainPercentage).isEqualTo(10)
             assertThat(reservePercentage).isEqualTo(5)
             assertThat(selectionsCount).isEqualTo(12)
@@ -160,6 +162,8 @@ class DrugTestingResourceIntTest(
             assertThat(rtpId).isEqualTo(32345)
             assertThat(caseloadId).isEqualTo("MDI")
             assertThat(rtpDate).isEqualTo(LocalDate.parse("2024-01-04"))
+            assertThat(createdByUsername).isEqualTo("SA")
+            assertThat(createdDateTime).isNotNull
             assertThat(mainPercentage).isEqualTo(20)
             assertThat(reservePercentage).isEqualTo(8)
             assertThat(selectionsCount).isNull()
@@ -255,6 +259,7 @@ class DrugTestingResourceIntTest(
           .exchange()
           .expectStatus().isOk
           .expectBody()
+          .jsonPath("$.length()").isEqualTo(2)
           .jsonPath("$[0].fromId").isEqualTo(0)
           .jsonPath("$[0].toId").isEqualTo(2)
           .jsonPath("$[1].fromId").isEqualTo(2)
@@ -268,6 +273,7 @@ class DrugTestingResourceIntTest(
           .exchange()
           .expectStatus().isOk
           .expectBody()
+          .jsonPath("$.length()").isEqualTo(3)
           .jsonPath("$[0].fromId").isEqualTo(0)
           .jsonPath("$[0].toId").isEqualTo(2)
           .jsonPath("$[1].fromId").isEqualTo(2)
@@ -283,6 +289,7 @@ class DrugTestingResourceIntTest(
           .exchange()
           .expectStatus().isOk
           .expectBody()
+          .jsonPath("$.length()").isEqualTo(3)
           .jsonPath("$[0].fromId").isEqualTo(0)
           .jsonPath("$[0].toId").isEqualTo(1)
           .jsonPath("$[1].fromId").isEqualTo(1)
