@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus.Companion.COMPLETED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleWaitList
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTran
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTransferScheduleOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.MovementHelpers.Companion.MAX_TRANSFER_SCHEDULER_COMMENT_LENGTH
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.transferExpiredForDps
 import java.time.LocalDate
 
 internal const val DEFAULT_TRANSFER_PRIORITY_CODE = "2" // Medium - used when the DB holds an invalid/expired code
@@ -46,7 +48,7 @@ class TransferScheduleService(
     eventId = eventId,
     startTime = getAppointmentStartDateAndTime(),
     eventSubType = eventSubType.code,
-    eventStatus = eventStatus.code,
+    eventStatus = if (transferExpiredForDps()) EventStatus.EXPIRED else eventStatus.code,
     comment = comment,
     hiddenComment = hiddenComment,
     fromPrison = fromAgency!!.id,

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.asDisplayName
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.movemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.DEFAULT_TRANSFER_PRIORITY_CODE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.TransferScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.schedule.TransferScheduleWaitlist
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.transfers.transferExpiredForDps
 
 @Service
 @Transactional
@@ -127,7 +129,7 @@ class OffenderTransferMovementsService(
       eventId = eventId,
       startTime = this.getAppointmentStartDateAndTime(),
       eventSubType = eventSubType.id.code,
-      eventStatus = eventStatus.code,
+      eventStatus = if (transferExpiredForDps()) EventStatus.EXPIRED else eventStatus.code,
       comment = comment,
       hiddenComment = hiddenComment,
       fromPrison = fromAgency!!.id,
