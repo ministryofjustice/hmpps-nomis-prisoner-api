@@ -320,7 +320,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Core addresses information returned",
+        description = "Core email address information returned",
       ),
       ApiResponse(
         responseCode = "401",
