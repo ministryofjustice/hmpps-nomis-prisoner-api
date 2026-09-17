@@ -141,6 +141,12 @@ data class Offender(
   @OneToMany(mappedBy = "id.offender", cascade = [CascadeType.ALL], fetch = LAZY)
   val trustAccounts: MutableList<OffenderTrustAccount> = mutableListOf(),
 
+  @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = LAZY)
+  val advances: MutableList<OffenderAdvance> = mutableListOf(),
+
+  @OneToMany(mappedBy = "offender", cascade = [CascadeType.ALL], fetch = LAZY)
+  val scheduledPayments: MutableList<OffenderScheduledPayment> = mutableListOf(),
+
   @Column(name = "LAST_NAME_KEY", nullable = false)
   var lastNameKey: String? = null,
 
