@@ -8,6 +8,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalScheduleReason
@@ -29,21 +30,41 @@ class AppointmentService(
   private val internalScheduleReasonRepository: ReferenceCodeRepository<InternalScheduleReason>,
   private val telemetryClient: TelemetryClient,
 ) {
-  fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse = CreateAppointmentResponse(
-    offenderAppointmentRepository.save(mapModel(dto))
-      .also {
-        telemetryClient.trackEvent(
-          "appointment-created",
-          mapOf(
-            "eventId" to it.eventId.toString(),
-            "bookingId" to it.offenderBooking.bookingId.toString(),
-            "location" to it.internalLocation?.locationId.toString(),
-          ),
-          null,
-        )
-      }
-      .eventId,
-  )
+  fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse {
+    val existing = offenderAppointmentRepository.findByBookingEventSubTypeDateAndStartTime(
+      bookingId = dto.bookingId,
+      eventSubType = dto.eventSubType,
+      date = dto.eventDate,
+      hour = dto.startTime.hour,
+      minute = dto.startTime.minute,
+    )
+
+    if (existing.isNotEmpty()) {
+      throw ConflictException(
+        "An appointment already exists for bookingId=${dto.bookingId}," +
+          " eventSubType=${dto.eventSubType}," +
+          " date=${dto.eventDate}, startTime=${dto.startTime}",
+        entityId = existing.first().eventId,
+      )
+    }
+
+    return CreateAppointmentResponse(
+      offenderAppointmentRepository.save(mapModel(dto))
+        .also {
+          telemetryClient.trackEvent(
+            "appointment-created",
+            mapOf(
+              "eventId" to it.eventId.toString(),
+              "bookingId" to it.offenderBooking.bookingId.toString(),
+              "location" to it.internalLocation?.locationId.toString(),
+              "eventSubType" to it.eventSubType.code,
+            ),
+            null,
+          )
+        }
+        .eventId,
+    )
+  }
 
   fun updateAppointment(eventId: Long, dto: UpdateAppointmentRequest) {
     offenderAppointmentRepository.findByIdOrNull(eventId)
