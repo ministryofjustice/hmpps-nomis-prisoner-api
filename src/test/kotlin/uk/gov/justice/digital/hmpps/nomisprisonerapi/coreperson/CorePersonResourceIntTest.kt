@@ -643,7 +643,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
     @Nested
     @TestInstance(PER_CLASS)
-    inner class OffenderEmailOffenderAddress {
+    inner class OffenderEmailAddresses {
       private lateinit var offender: Offender
       private lateinit var offenderWithActiveAlias: Offender
 
