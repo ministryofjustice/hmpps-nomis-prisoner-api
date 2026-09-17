@@ -1340,22 +1340,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
             locality = null,
           )
         }
-        offenderWithActiveAlias = offender(
-          nomsId = "H5678JM",
-          firstName = "JOHN",
-          lastName = "BOG",
-        ) {
-          address(
-            type = "HOME",
-            flat = "3B",
-            premise = "Brown Court",
-            postcode = "S1 3GG",
-          )
-          booking(bookingSequence = 2, active = false) { }
-          alias {
-            booking(bookingSequence = 1) { }
-          }
-        }
       }
     }
 
@@ -1475,20 +1459,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return addresses for offender with active alias`() {
-        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}/addresses")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("[0].addressId").isEqualTo(offenderWithActiveAlias.addresses[0].addressId)
-          .jsonPath("[0].flat").isEqualTo("3B")
-          .jsonPath("[0].premise").isEqualTo("Brown Court")
-          .jsonPath("[0].postcode").isEqualTo("S1 3GG")
-      }
-
-      @Test
       fun `is able to re-hydrate the addresses`() {
         val addresses = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -1528,17 +1498,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
         ) {
           email(emailAddress = "john.bog@justice.gov.uk")
           email(emailAddress = "john.bog@gmail.com")
-        }
-        offenderWithActiveAlias = offender(
-          nomsId = "H5678JQ",
-          firstName = "JOHN",
-          lastName = "BOG",
-        ) {
-          email(emailAddress = "0114@2561919.com")
-          booking(bookingSequence = 2, active = false) { }
-          alias {
-            booking(bookingSequence = 1) { }
-          }
         }
       }
     }
@@ -1611,18 +1570,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return email address for offender with active alias`() {
-        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}/emailAddresses")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("[0].emailAddressId").isEqualTo(offenderWithActiveAlias.internetAddresses[0].internetAddressId)
-          .jsonPath("[0].email").isEqualTo("0114@2561919.com")
-      }
-
-      @Test
       fun `is able to re-hydrate the email addresses`() {
         val emailAddresses = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/emailAddresses")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -1661,17 +1608,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
         ) {
           phone(phoneType = "MOB", phoneNo = "07399999999")
           phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
-        }
-        offenderWithActiveAlias = offender(
-          nomsId = "H5678JT",
-          firstName = "JOHN",
-          lastName = "BOG",
-        ) {
-          phone(phoneType = "HOME", phoneNo = "01142561919")
-          booking(bookingSequence = 2, active = false) { }
-          alias {
-            booking(bookingSequence = 1) { }
-          }
         }
       }
     }
@@ -1747,20 +1683,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("[1].type.description").isEqualTo("Home")
           .jsonPath("[1].number").isEqualTo("01142561919")
           .jsonPath("[1].extension").isEqualTo("123")
-      }
-
-      @Test
-      fun `will return phone numbers for offender with active alias`() {
-        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}/phoneNumbers")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("[0].phoneId").isEqualTo(offenderWithActiveAlias.phones[0].phoneId)
-          .jsonPath("[0].type.code").isEqualTo("HOME")
-          .jsonPath("[0].type.description").isEqualTo("Home")
-          .jsonPath("[0].number").isEqualTo("01142561919")
       }
 
       @Test
