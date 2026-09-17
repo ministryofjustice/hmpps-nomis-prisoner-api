@@ -390,10 +390,10 @@ data class Identifier(
   val verified: Boolean,
 )
 
-@Schema(description = "The data held in NOMIS about a address number")
+@Schema(description = "The data held in NOMIS about an address")
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 data class OffenderAddress(
-  @Schema(description = "Unique NOMIS Id of number")
+  @Schema(description = "Unique NOMIS ID of the address")
   val addressId: Long,
   @Schema(description = "Flat name or number", example = "Apartment 3")
   val flat: String?,
