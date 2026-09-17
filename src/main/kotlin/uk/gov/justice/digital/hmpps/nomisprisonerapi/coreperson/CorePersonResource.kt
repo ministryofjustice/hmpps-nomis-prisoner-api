@@ -432,7 +432,7 @@ data class OffenderAddress(
 @Schema(description = "Offender address usage")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderAddressUsage(
-  @Schema(description = "Offender belief id", example = "1123456")
+  @Schema(description = "Offender address id", example = "1123456")
   val addressId: Long,
   @Schema(description = "Address usage")
   val usage: CodeDescription,
