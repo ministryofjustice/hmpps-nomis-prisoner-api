@@ -16,6 +16,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.returnResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
@@ -370,6 +371,337 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("offenders[1].identifiers[0].issuedAuthority").doesNotExist()
           .jsonPath("offenders[1].identifiers[0].issuedDate").doesNotExist()
           .jsonPath("offenders[1].identifiers[0].verified").isEqualTo(false)
+      }
+    }
+
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class Addresses {
+      private lateinit var offender: Offender
+      private lateinit var offenderWithActiveAlias: Offender
+
+      @BeforeAll
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            address(
+              premise = null,
+              street = null,
+              locality = null,
+              postcode = "S1 3GG",
+            )
+            address(
+              type = "HOME",
+              flat = "3B",
+              premise = "Brown Court",
+              street = "Scotland Street",
+              locality = "Hunters Bar",
+              postcode = "S1 3GG",
+              city = SHEFFIELD,
+              county = "S.YORKSHIRE",
+              country = "ENG",
+              validatedPAF = true,
+              noFixedAddress = false,
+              primaryAddress = true,
+              mailAddress = true,
+              comment = "Not to be used",
+              startDate = "2024-10-01",
+              endDate = "2024-11-01",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            ) {
+              phone(
+                phoneType = "MOB",
+                phoneNo = "07399999999",
+                whoCreated = "KOFEADDY",
+                whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              )
+              phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+              usage(usageCode = "DAP", active = true)
+              usage(usageCode = "CURFEW", active = false)
+              // following row will be filtered out as invalid
+              usage(usageCode = "NOT_FOUND", active = false)
+            }
+            address(
+              noFixedAddress = true,
+              primaryAddress = false,
+              premise = null,
+              street = null,
+              locality = null,
+            )
+          }
+          offenderWithActiveAlias = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BK",
+          ) {
+            address(
+              type = "HOME",
+              flat = "3B",
+              premise = "Brown Court",
+              postcode = "S1 3GG",
+            )
+            booking(bookingSequence = 2, active = false) { }
+            alias {
+              booking(bookingSequence = 1) { }
+            }
+          }
+        }
+      }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteAll()
+
+      @Test
+      fun `will return addresses`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].addressId").isEqualTo(offender.addresses[0].addressId)
+          .jsonPath("addresses[0].flat").doesNotExist()
+          .jsonPath("addresses[0].premise").doesNotExist()
+          .jsonPath("addresses[0].street").doesNotExist()
+          .jsonPath("addresses[0].locality").doesNotExist()
+          .jsonPath("addresses[0].city").doesNotExist()
+          .jsonPath("addresses[0].county").doesNotExist()
+          .jsonPath("addresses[0].country").doesNotExist()
+          .jsonPath("addresses[0].noFixedAddress").doesNotExist()
+          .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
+          .jsonPath("addresses[0].mailAddress").isEqualTo(false)
+          .jsonPath("addresses[0].comment").doesNotExist()
+          .jsonPath("addresses[0].startDate").doesNotExist()
+          .jsonPath("addresses[0].endDate").doesNotExist()
+          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
+          .jsonPath("addresses[1].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].flat").isEqualTo("3B")
+          .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
+          .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
+          .jsonPath("addresses[1].locality").isEqualTo("Hunters Bar")
+          .jsonPath("addresses[1].postcode").isEqualTo("S1 3GG")
+          .jsonPath("addresses[1].city.code").isEqualTo("25343")
+          .jsonPath("addresses[1].city.description").isEqualTo("Sheffield")
+          .jsonPath("addresses[1].county.code").isEqualTo("S.YORKSHIRE")
+          .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
+          .jsonPath("addresses[1].country.code").isEqualTo("ENG")
+          .jsonPath("addresses[1].country.description").isEqualTo("England")
+          .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
+          .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
+          .jsonPath("addresses[1].mailAddress").isEqualTo(true)
+          .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
+          .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
+          .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
+          .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
+      }
+
+      @Test
+      fun `will return addresses for offender with active alias`() {
+        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].addressId").isEqualTo(offenderWithActiveAlias.addresses[0].addressId)
+          .jsonPath("addresses[0].flat").isEqualTo("3B")
+          .jsonPath("addresses[0].premise").isEqualTo("Brown Court")
+          .jsonPath("addresses[0].postcode").isEqualTo("S1 3GG")
+      }
+
+      @Test
+      fun `will return phone numbers associated with addresses`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(offender.addresses[1].phones[0].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
+          .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(offender.addresses[1].phones[1].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
+          .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
+          .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
+          .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
+      }
+
+      @Test
+      fun `will return address usages associated with addresses`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("addresses[0].usages").doesNotExist()
+          .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[0].usage.code").isEqualTo("CURFEW")
+          .jsonPath("addresses[1].usages[0].usage.description").isEqualTo("Curfew Order")
+          .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
+          .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offender.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
+          .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
+          .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
+      }
+
+      @Test
+      fun `is able to re-hydrate the core person`() {
+        val person = webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .returnResult<CorePerson>().responseBody.blockFirst()!!
+
+        assertThat(person.prisonNumber).isEqualTo(offender.nomsId)
+        assertThat(person.addresses?.get(0)?.usages).isNull()
+        assertThat(person.addresses?.get(1)?.usages).hasSize(2)
+      }
+    }
+
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class OffenderPhoneNumbers {
+      private lateinit var offender: Offender
+      private lateinit var offenderWithActiveAlias: Offender
+
+      @BeforeAll
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            phone(
+              phoneType = "MOB",
+              phoneNo = "07399999999",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
+            phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
+          }
+          offenderWithActiveAlias = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BD",
+          ) {
+            phone(phoneType = "HOME", phoneNo = "01142561919")
+            booking(bookingSequence = 2, active = false) { }
+            alias {
+              booking(bookingSequence = 1) { }
+            }
+          }
+        }
+      }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteAll()
+
+      @Test
+      fun `will return phone numbers`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offender.phones[0].phoneId)
+          .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Mobile")
+          .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("phoneNumbers[1].phoneId").isEqualTo(offender.phones[1].phoneId)
+          .jsonPath("phoneNumbers[1].type.code").isEqualTo("HOME")
+          .jsonPath("phoneNumbers[1].type.description").isEqualTo("Home")
+          .jsonPath("phoneNumbers[1].number").isEqualTo("01142561919")
+          .jsonPath("phoneNumbers[1].extension").isEqualTo("123")
+      }
+
+      @Test
+      fun `will return phone numbers for offender with active alias`() {
+        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderWithActiveAlias.phones[0].phoneId)
+          .jsonPath("phoneNumbers[0].type.code").isEqualTo("HOME")
+          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Home")
+          .jsonPath("phoneNumbers[0].number").isEqualTo("01142561919")
+      }
+    }
+
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class OffenderEmailOffenderAddress {
+      private lateinit var offender: Offender
+      private lateinit var offenderWithActiveAlias: Offender
+
+      @BeforeAll
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            email(
+              emailAddress = "john.bog@justice.gov.uk",
+              whoCreated = "KOFEADDY",
+              whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+            )
+            email(emailAddress = "john.bog@gmail.com")
+          }
+          offenderWithActiveAlias = offender(
+            firstName = "JOHN",
+            lastName = "BOG",
+            nomsId = "A1234BE",
+          ) {
+            email(emailAddress = "0114@2561919.com")
+            booking(bookingSequence = 2, active = false) { }
+            alias {
+              booking(bookingSequence = 1) { }
+            }
+          }
+        }
+      }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteAll()
+
+      @Test
+      fun `will return email address`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offender.internetAddresses[0].internetAddressId)
+          .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
+          .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(offender.internetAddresses[1].internetAddressId)
+          .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
+      }
+
+      @Test
+      fun `will return email address for offender with active alias`() {
+        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offenderWithActiveAlias.internetAddresses[0].internetAddressId)
+          .jsonPath("emailAddresses[0].email").isEqualTo("0114@2561919.com")
       }
     }
 
