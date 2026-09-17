@@ -268,7 +268,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
 
   @GetMapping("/{prisonNumber}/addresses")
   @Operation(
-    summary = "Get all the addresses information for an offender by prison number",
+    summary = "Get all the address information for an offender by prison number",
     description = "Retrieves the addresses information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
@@ -317,7 +317,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   @GetMapping("/{prisonNumber}/emailAddresses")
   @Operation(
     summary = "Get all the email address information for an offender by prison number",
-    description = "Retrieves the email address information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Retrieves the email addresses information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -365,7 +365,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   @GetMapping("/{prisonNumber}/phoneNumbers")
   @Operation(
     summary = "Get all the phone number information for an offender by prison number",
-    description = "Retrieves the phone number information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Retrieves the phone numbers information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
