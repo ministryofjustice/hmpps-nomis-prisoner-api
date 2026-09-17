@@ -34,6 +34,9 @@ class CorePersonService(
       offenders = allOffenders.map {
         it.toCoreOffender(currentAlias.id)
       },
+      addresses = getAddresses(rootOffender),
+      phoneNumbers = getPhoneNumbers(rootOffender),
+      emailAddresses = getEmailAddresses(rootOffender),
       beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(rootOffender.id)
         .map { it.toBelief() },
     )
@@ -75,14 +78,74 @@ class CorePersonService(
     }
   }
 
-  fun currentAliasAndRootOffender(prisonNumber: String): CurrentAliasAndRoot {
-    val rootOffender = offenderRepository.findRootByNomsId(prisonNumber)
-      ?: throw NotFoundException("Offender not found $prisonNumber")
+  fun getPhoneNumbers(prisonNumber: String): List<OffenderPhoneNumber> = getPhoneNumbers(rootOffender(prisonNumber))
+
+  fun getAddresses(prisonNumber: String): List<OffenderAddress> = getAddresses(rootOffender(prisonNumber))
+
+  fun getEmailAddresses(prisonNumber: String): List<OffenderEmailAddress> = getEmailAddresses(rootOffender(prisonNumber))
+
+  private fun getAddresses(rootOffender: Offender): List<OffenderAddress> = rootOffender.addresses.map { address ->
+    OffenderAddress(
+      addressId = address.addressId,
+      flat = address.flat,
+      premise = address.premise,
+      street = address.street,
+      locality = address.locality,
+      postcode = address.postalCode,
+      city = address.city?.toCodeDescription(),
+      county = address.county?.toCodeDescription(),
+      country = address.country?.toCodeDescription(),
+      primaryAddress = address.primaryAddress,
+      noFixedAddress = address.noFixedAddress,
+      mailAddress = address.mailAddress,
+      comment = address.comment,
+      startDate = address.startDate,
+      endDate = address.endDate,
+      phoneNumbers = address.phones.map { number ->
+        OffenderPhoneNumber(
+          phoneId = number.phoneId,
+          number = number.phoneNo,
+          type = number.phoneType.toCodeDescription(),
+          extension = number.extNo,
+        )
+      },
+      usages = address.usages.filter { u -> u.addressUsage != null }.map { u ->
+        OffenderAddressUsage(
+          addressId = address.addressId,
+          usage = u.addressUsage!!.toCodeDescription(),
+          active = u.active,
+        )
+      },
+    )
+  }
+
+  private fun getPhoneNumbers(rootOffender: Offender): List<OffenderPhoneNumber> = rootOffender.phones.map { number ->
+    OffenderPhoneNumber(
+      phoneId = number.phoneId,
+      number = number.phoneNo,
+      type = number.phoneType.toCodeDescription(),
+      extension = number.extNo,
+    )
+  }
+
+  private fun getEmailAddresses(rootOffender: Offender): List<OffenderEmailAddress> = rootOffender.internetAddresses.map { address ->
+    OffenderEmailAddress(
+      emailAddressId = address.internetAddressId,
+      email = address.internetAddress,
+    )
+  }
+
+  private fun currentAliasAndRootOffender(prisonNumber: String): CurrentAliasAndRoot {
+    val rootOffender = rootOffender(prisonNumber)
     val currentAlias =
       offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)?.offender ?: rootOffender
     return CurrentAliasAndRoot(currentAlias, rootOffender)
   }
-  data class CurrentAliasAndRoot(val currentAlias: Offender, val rootOffender: Offender)
+
+  private fun rootOffender(prisonNumber: String): Offender = offenderRepository.findRootByNomsId(prisonNumber)
+    ?: throw NotFoundException("Offender not found $prisonNumber")
+
+  private data class CurrentAliasAndRoot(val currentAlias: Offender, val rootOffender: Offender)
 
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 
