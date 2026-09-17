@@ -42,10 +42,8 @@ class CorePersonService(
     )
   }
 
-
-  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> =
-    offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
-      .map { it.toBelief() }
+  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
+    .map { it.toBelief() }
 
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
     log.info("Updating offender {} after merge", prisonNumber)
@@ -62,10 +60,9 @@ class CorePersonService(
     }
   }
 
-  fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier =
-    offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
-      .orElseThrow { NotFoundException("Identifier not found for offender $offenderId and sequence $sequenceNumber") }
-      .toIdentifier()
+  fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier = offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
+    .orElseThrow { NotFoundException("Identifier not found for offender $offenderId and sequence $sequenceNumber") }
+    .toIdentifier()
 
   fun getAlias(offenderId: Long): CoreOffender {
     val offender = offenderOf(offenderId)
@@ -87,59 +84,56 @@ class CorePersonService(
 
   fun getEmailAddresses(prisonNumber: String): List<OffenderEmailAddress> = getEmailAddresses(rootOffender(prisonNumber))
 
-  private fun getAddresses(rootOffender: Offender): List<OffenderAddress> =
-    rootOffender.addresses.map { address ->
-      OffenderAddress(
-        addressId = address.addressId,
-        flat = address.flat,
-        premise = address.premise,
-        street = address.street,
-        locality = address.locality,
-        postcode = address.postalCode,
-        city = address.city?.toCodeDescription(),
-        county = address.county?.toCodeDescription(),
-        country = address.country?.toCodeDescription(),
-        primaryAddress = address.primaryAddress,
-        noFixedAddress = address.noFixedAddress,
-        mailAddress = address.mailAddress,
-        comment = address.comment,
-        startDate = address.startDate,
-        endDate = address.endDate,
-        phoneNumbers = address.phones.map { number ->
-          OffenderPhoneNumber(
-            phoneId = number.phoneId,
-            number = number.phoneNo,
-            type = number.phoneType.toCodeDescription(),
-            extension = number.extNo,
-          )
-        },
-        usages = address.usages.filter { u -> u.addressUsage != null }.map { u ->
-          OffenderAddressUsage(
-            addressId = address.addressId,
-            usage = u.addressUsage!!.toCodeDescription(),
-            active = u.active,
-          )
-        },
-      )
-    }
-
-  private fun getPhoneNumbers(rootOffender: Offender): List<OffenderPhoneNumber> =
-    rootOffender.phones.map { number ->
-      OffenderPhoneNumber(
-        phoneId = number.phoneId,
-        number = number.phoneNo,
-        type = number.phoneType.toCodeDescription(),
-        extension = number.extNo,
-      )
+  private fun getAddresses(rootOffender: Offender): List<OffenderAddress> = rootOffender.addresses.map { address ->
+    OffenderAddress(
+      addressId = address.addressId,
+      flat = address.flat,
+      premise = address.premise,
+      street = address.street,
+      locality = address.locality,
+      postcode = address.postalCode,
+      city = address.city?.toCodeDescription(),
+      county = address.county?.toCodeDescription(),
+      country = address.country?.toCodeDescription(),
+      primaryAddress = address.primaryAddress,
+      noFixedAddress = address.noFixedAddress,
+      mailAddress = address.mailAddress,
+      comment = address.comment,
+      startDate = address.startDate,
+      endDate = address.endDate,
+      phoneNumbers = address.phones.map { number ->
+        OffenderPhoneNumber(
+          phoneId = number.phoneId,
+          number = number.phoneNo,
+          type = number.phoneType.toCodeDescription(),
+          extension = number.extNo,
+        )
+      },
+      usages = address.usages.filter { u -> u.addressUsage != null }.map { u ->
+        OffenderAddressUsage(
+          addressId = address.addressId,
+          usage = u.addressUsage!!.toCodeDescription(),
+          active = u.active,
+        )
+      },
+    )
   }
 
-  private fun getEmailAddresses(rootOffender: Offender): List<OffenderEmailAddress> =
-    rootOffender.internetAddresses.map { address ->
-      OffenderEmailAddress(
-        emailAddressId = address.internetAddressId,
-        email = address.internetAddress,
-      )
-    }
+  private fun getPhoneNumbers(rootOffender: Offender): List<OffenderPhoneNumber> = rootOffender.phones.map { number ->
+    OffenderPhoneNumber(
+      phoneId = number.phoneId,
+      number = number.phoneNo,
+      type = number.phoneType.toCodeDescription(),
+      extension = number.extNo,
+    )
+  }
+
+  private fun getEmailAddresses(rootOffender: Offender): List<OffenderEmailAddress> = rootOffender.internetAddresses.map { address ->
+    OffenderEmailAddress(
+      emailAddressId = address.internetAddressId,
+      email = address.internetAddress,
+    )
+  }
 
   private fun currentAliasAndRootOffender(prisonNumber: String): CurrentAliasAndRoot {
     val rootOffender = rootOffender(prisonNumber)
@@ -148,14 +142,12 @@ class CorePersonService(
     return CurrentAliasAndRoot(currentAlias, rootOffender)
   }
 
-  private fun rootOffender(prisonNumber: String): Offender =
-    offenderRepository.findRootByNomsId(prisonNumber)
-      ?: throw NotFoundException("Offender not found $prisonNumber")
+  private fun rootOffender(prisonNumber: String): Offender = offenderRepository.findRootByNomsId(prisonNumber)
+    ?: throw NotFoundException("Offender not found $prisonNumber")
 
   private data class CurrentAliasAndRoot(val currentAlias: Offender, val rootOffender: Offender)
 
-  private fun offenderOf(offenderId: Long) =
-    offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
+  private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
     offenderId = id.offender.id,
@@ -167,51 +159,49 @@ class CorePersonService(
     verified = verified ?: false,
   )
 
-  private fun Offender.toCoreOffender(currentAliasId: Long, includeIdentifiers: Boolean = true): CoreOffender =
-    CoreOffender(
-      offenderId = id,
-      title = title?.toCodeDescription(),
-      firstName = firstName,
-      middleName1 = middleName,
-      middleName2 = middleName2,
-      lastName = lastName,
-      dateOfBirth = birthDate,
-      birthPlace = birthPlace,
-      birthCountry = birthCountry?.toCodeDescription(),
-      ethnicity = ethnicity?.toCodeDescription(),
-      sex = gender.toCodeDescription(),
-      nameType = nameType?.toCodeDescription(),
-      createDate = createDate,
-      workingName = id == currentAliasId,
-      identifiers = if (includeIdentifiers) {
-        identifiers.map { id ->
-          Identifier(
-            offenderId = id.id.offender.id,
-            sequence = id.id.sequence,
-            type = id.identifierType.toCodeDescription(),
-            identifier = id.identifier,
-            issuedAuthority = id.issuedAuthority,
-            issuedDate = id.issuedDate,
-            verified = id.verified ?: false,
-          )
-        }
-      } else {
-        emptyList()
-      },
-    )
+  private fun Offender.toCoreOffender(currentAliasId: Long, includeIdentifiers: Boolean = true): CoreOffender = CoreOffender(
+    offenderId = id,
+    title = title?.toCodeDescription(),
+    firstName = firstName,
+    middleName1 = middleName,
+    middleName2 = middleName2,
+    lastName = lastName,
+    dateOfBirth = birthDate,
+    birthPlace = birthPlace,
+    birthCountry = birthCountry?.toCodeDescription(),
+    ethnicity = ethnicity?.toCodeDescription(),
+    sex = gender.toCodeDescription(),
+    nameType = nameType?.toCodeDescription(),
+    createDate = createDate,
+    workingName = id == currentAliasId,
+    identifiers = if (includeIdentifiers) {
+      identifiers.map { id ->
+        Identifier(
+          offenderId = id.id.offender.id,
+          sequence = id.id.sequence,
+          type = id.identifierType.toCodeDescription(),
+          identifier = id.identifier,
+          issuedAuthority = id.issuedAuthority,
+          issuedDate = id.issuedDate,
+          verified = id.verified ?: false,
+        )
+      }
+    } else {
+      emptyList()
+    },
+  )
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 }
 
-private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief =
-  OffenderBelief(
-    beliefId = beliefId,
-    belief = beliefCode.toCodeDescription(),
-    startDate = startDate,
-    endDate = endDate,
-    changeReason = changeReason,
-    comments = comments,
-    audit = toAudit(),
-  )
+private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
+  beliefId = beliefId,
+  belief = beliefCode.toCodeDescription(),
+  startDate = startDate,
+  endDate = endDate,
+  changeReason = changeReason,
+  comments = comments,
+  audit = toAudit(),
+)
