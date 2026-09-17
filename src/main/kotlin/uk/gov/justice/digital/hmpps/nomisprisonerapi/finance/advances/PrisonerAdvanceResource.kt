@@ -28,8 +28,8 @@ class PrisonerAdvanceResource(
   @GetMapping("/{prisonNumber}/advances")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Get a prisoner's finance details by their prison number",
-    description = "Retrieves a prisoner's trust account details for aggregated caseloads. Zero account balances are not returned. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Get a prisoner's advances by their prison number",
+    description = "Retrieves a prisoner's advances. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
       ApiResponse(

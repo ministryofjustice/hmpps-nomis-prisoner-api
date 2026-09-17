@@ -13,6 +13,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
+    // TODO Remove tidy up
+    repository.deleteOffenders()
+
     nomisDataBuilder.build {
       offender {
         advance()
