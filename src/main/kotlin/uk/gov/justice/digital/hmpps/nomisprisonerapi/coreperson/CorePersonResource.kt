@@ -453,7 +453,7 @@ data class OffenderPhoneNumber(
   val type: CodeDescription,
 )
 
-@Schema(description = "The data held in NOMIS about a email address")
+@Schema(description = "The data held in NOMIS about an email address")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OffenderEmailAddress(
   @Schema(description = "Unique NOMIS Id of email address")
