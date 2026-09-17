@@ -1287,7 +1287,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   inner class GetOffenderAddresses {
     private lateinit var offenderMinimal: Offender
     private lateinit var offenderFull: Offender
-    private lateinit var offenderWithActiveAlias: Offender
 
     @BeforeAll
     fun setUp() {
@@ -1481,7 +1480,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   inner class GetOffenderEmailAddresses {
     private lateinit var offenderMinimal: Offender
     private lateinit var offenderFull: Offender
-    private lateinit var offenderWithActiveAlias: Offender
 
     @BeforeAll
     fun setUp() {
@@ -1591,7 +1589,6 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
   inner class GetOffenderPhoneNumbers {
     private lateinit var offenderMinimal: Offender
     private lateinit var offenderFull: Offender
-    private lateinit var offenderWithActiveAlias: Offender
 
     @BeforeAll
     fun setUp() {
