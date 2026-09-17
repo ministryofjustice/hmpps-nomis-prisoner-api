@@ -265,7 +265,6 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
 
-
   @GetMapping("/{prisonNumber}/addresses")
   @Operation(
     summary = "Get all the address information for an offender by prison number",
