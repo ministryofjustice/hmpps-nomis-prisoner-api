@@ -412,6 +412,8 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
               endDate = "2024-11-01",
               whoCreated = "KOFEADDY",
               whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+              whoModified = "MODIFIER",
+              whenModified = LocalDateTime.parse("2021-02-02T11:00"),
             ) {
               phone(
                 phoneType = "MOB",
@@ -496,6 +498,10 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
           .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
           .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
+          .jsonPath("addresses[1].createdDateTime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("addresses[1].createdByUsername").isEqualTo("KOFEADDY")
+          .jsonPath("addresses[1].lastUpdatedDateTime").isEqualTo("2021-02-02T11:00:00")
+          .jsonPath("addresses[1].lastUpdatedByUsername").isEqualTo("MODIFIER")
           .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
       }
 
@@ -527,6 +533,10 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
           .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
           .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("addresses[1].phoneNumbers[0].createdByUsername").isEqualTo("KOFEADDY")
+          .jsonPath("addresses[1].phoneNumbers[0].lastUpdatedDateTime").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[0].lastUpdatedByUsername").doesNotExist()
           .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(offender.addresses[1].phones[1].phoneId)
           .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
           .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
@@ -547,6 +557,10 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("addresses[1].usages[0].usage.code").isEqualTo("CURFEW")
           .jsonPath("addresses[1].usages[0].usage.description").isEqualTo("Curfew Order")
           .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
+          .jsonPath("addresses[1].usages[0].createdDateTime").isNotEmpty
+          .jsonPath("addresses[1].usages[0].createdByUsername").isNotEmpty
+          .jsonPath("addresses[1].usages[0].lastUpdatedDateTime").doesNotExist()
+          .jsonPath("addresses[1].usages[0].lastUpdatedByUsername").doesNotExist()
           .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offender.addresses[1].addressId)
           .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
           .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
@@ -619,6 +633,10 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .jsonPath("phoneNumbers[0].type.description").isEqualTo("Mobile")
           .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
           .jsonPath("phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("phoneNumbers[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("phoneNumbers[0].createdByUsername").isEqualTo("KOFEADDY")
+          .jsonPath("phoneNumbers[0].lastUpdatedDateTime").doesNotExist()
+          .jsonPath("phoneNumbers[0].lastUpdatedByUsername").doesNotExist()
           .jsonPath("phoneNumbers[1].phoneId").isEqualTo(offender.phones[1].phoneId)
           .jsonPath("phoneNumbers[1].type.code").isEqualTo("HOME")
           .jsonPath("phoneNumbers[1].type.description").isEqualTo("Home")
@@ -688,6 +706,10 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offender.internetAddresses[0].internetAddressId)
           .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
+          .jsonPath("emailAddresses[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("emailAddresses[0].createdByUsername").isEqualTo("KOFEADDY")
+          .jsonPath("emailAddresses[0].lastUpdatedDateTime").doesNotExist()
+          .jsonPath("emailAddresses[0].lastUpdatedByUsername").doesNotExist()
           .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(offender.internetAddresses[1].internetAddressId)
           .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
       }
