@@ -21,16 +21,16 @@ import java.time.LocalDate
 @Validated
 @RequestMapping(value = ["/finance/prisoners"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class PrisonerAdvanceResource(
-  private val service: PrisonerAdvanceService,
+class PrisonerScheduledPaymentsResource(
+  private val service: PrisonerScheduledPaymentsService,
 ) {
-  @GetMapping("/advances/{advanceId}")
+  @GetMapping("/scheduled-payments/{scheduledPaymentId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Get a prisoner advance by id",
-    description = "Retrieves a prisoner advance identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Get a prisoner scheduled payment by id",
+    description = "Retrieves a prisoner scheduled payment identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
-      ApiResponse(responseCode = "200", description = "Advance Information Returned"),
+      ApiResponse(responseCode = "200", description = "Scheduled Payment Information Returned"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
@@ -43,24 +43,24 @@ class PrisonerAdvanceResource(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Advance does not exist",
+        description = "Scheduled Payment does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
   )
-  fun getAdvance(
+  fun getScheduledPayment(
     @Schema(description = "Id", example = "123456789")
     @PathVariable
-    advanceId: Long,
-  ): PrisonerAdvanceDto = service.getAdvance(advanceId)
+    scheduledPaymentId: Long,
+  ): PrisonerScheduledPaymentDto = service.getScheduledPayment(scheduledPaymentId)
 
-  @GetMapping("/{prisonNumber}/advances")
+  @GetMapping("/{prisonNumber}/scheduled-payments")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Get a prisoner's advances by their prison number",
-    description = "Retrieves a prisoner's advances. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Get a prisoner's scheduled payments by their prison number",
+    description = "Retrieves a prisoner's scheduled payments. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
-      ApiResponse(responseCode = "200", description = "Advance Information Returned"),
+      ApiResponse(responseCode = "200", description = "Scheduled Payment Information Returned"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
@@ -78,16 +78,16 @@ class PrisonerAdvanceResource(
       ),
     ],
   )
-  fun getPrisonerAdvances(
+  fun getPrisonerScheduledPayments(
     @Schema(description = "prisonNumber", example = "A1234BC")
     @PathVariable
     prisonNumber: String,
-  ): List<PrisonerAdvanceDto> = service.getAdvances(prisonNumber)
+  ): List<PrisonerScheduledPaymentDto> = service.getScheduledPayments(prisonNumber)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class PrisonerAdvanceDto(
-  @Schema(description = "The advance id", example = "123456")
+data class PrisonerScheduledPaymentDto(
+  @Schema(description = "The scheduled payment id", example = "123456")
   val id: Long,
 
   @Schema(description = "The prisonNumber", example = "A1234BC")
@@ -99,23 +99,21 @@ data class PrisonerAdvanceDto(
   @Schema(description = "transaction type", example = "TELE")
   val transactionType: String,
 
-  @Schema(description = "The total amount in pence to be paid to the prisoner, so £1.50 returned as 150", example = "150")
-  val advanceAmount: Long,
-  @Schema(description = "The date of the advance given to the prisoner", example = "2024-06-01")
-  val advanceDate: LocalDate?,
+  @Schema(description = "The amount in pence to be paid to the prison, so £1.50 returned as 150", example = "150")
+  val amount: Long,
 
-  @Schema(description = "The amount to be taken from the prisoner as a weekly repayment, in pence", example = "150")
-  val repaymentAmount: Long,
-  @Schema(description = "The start date of the repayment", example = "2024-06-01")
+  @Schema(description = "The start date of the scheduled payment", example = "2024-06-01")
   val startDate: LocalDate,
+  @Schema(description = "The date the scheduled payment ends or null if it does not end", example = "2024-06-01")
+  val endDate: LocalDate?,
 
-  @Schema(description = "The reference for the advance", example = "REF12345")
+  @Schema(description = "The reference for the scheduled payment", example = "REF12345")
   val reference: String?,
-  @Schema(description = "The comment for the advance", example = "Advance for personal expenses")
+  @Schema(description = "The comment for the scheduled payment", example = "Sched payment for personal expenses")
   val comment: String?,
-  @Schema(description = "The user who created the advance", example = "FRED_SMITH")
+  @Schema(description = "The user who created the scheduled payment", example = "FRED_SMITH")
   val createdBy: String,
 
-  @Schema(description = "The status of the advance", example = "ACTIVE")
+  @Schema(description = "The status of the scheduled payment", example = "ACTIVE")
   val status: String?,
 )
