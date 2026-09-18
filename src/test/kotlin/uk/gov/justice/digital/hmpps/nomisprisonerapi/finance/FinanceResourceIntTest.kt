@@ -62,7 +62,7 @@ class FinanceResourceIntTest : IntegrationTestBase() {
   @AfterEach
   fun tearDown() {
     repository.deleteAllTransactions()
-    repository.delete(offender)
+    deleteOffenders()
   }
 
   @Nested
