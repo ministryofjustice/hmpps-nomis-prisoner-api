@@ -61,7 +61,7 @@ data class PrisonerAdvanceDto(
   @Schema(description = "The prisonNumber", example = "A1234BC")
   val prisonNumber: String,
 
-  @Schema(description = "The caseload ID", example = "12345")
+  @Schema(description = "The caseload", example = "MDI")
   val caseloadId: String,
 
   @Column(name = "TXN_TYPE", nullable = false)
