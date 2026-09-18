@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -571,6 +572,14 @@ data class OffenderAddress(
   val endDate: LocalDate?,
   @Schema(description = "Usages for the address, also known as types")
   val usages: List<OffenderAddressUsage>?,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+  @Schema(description = "Date time when the record was last updated the record in NOMIS", required = true)
+  val lastUpdatedDateTime: LocalDateTime?,
+  @Schema(description = "Username of person who last updated the record in NOMIS", required = true)
+  val lastUpdatedByUsername: String?,
 )
 
 @Schema(description = "Offender address usage")
@@ -582,6 +591,14 @@ data class OffenderAddressUsage(
   val usage: CodeDescription,
   @Schema(description = "Whether the address usage is active")
   val active: Boolean,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+  @Schema(description = "Date time when the record was last updated the record in NOMIS", required = true)
+  val lastUpdatedDateTime: LocalDateTime?,
+  @Schema(description = "Username of person who last updated the record in NOMIS", required = true)
+  val lastUpdatedByUsername: String?,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
@@ -595,6 +612,14 @@ data class OffenderPhoneNumber(
   val extension: String?,
   @Schema(description = "Phone type")
   val type: CodeDescription,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+  @Schema(description = "Date time when the record was last updated the record in NOMIS", required = true)
+  val lastUpdatedDateTime: LocalDateTime?,
+  @Schema(description = "Username of person who last updated the record in NOMIS", required = true)
+  val lastUpdatedByUsername: String?,
 )
 
 @Schema(description = "The data held in NOMIS about an email address")
@@ -604,6 +629,14 @@ data class OffenderEmailAddress(
   val emailAddressId: Long,
   @Schema(description = "The email address", example = "john.smith@internet.co.uk")
   val email: String,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+  @Schema(description = "Date time when the record was last updated the record in NOMIS", required = true)
+  val lastUpdatedDateTime: LocalDateTime?,
+  @Schema(description = "Username of person who last updated the record in NOMIS", required = true)
+  val lastUpdatedByUsername: String?,
 )
 
 @Schema(description = "Offender beliefs")

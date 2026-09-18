@@ -107,6 +107,10 @@ class CorePersonService(
           number = number.phoneNo,
           type = number.phoneType.toCodeDescription(),
           extension = number.extNo,
+          createdDateTime = number.createDatetime,
+          createdByUsername = number.createUsername,
+          lastUpdatedDateTime = number.modifyDatetime,
+          lastUpdatedByUsername = number.modifyUserId,
         )
       },
       usages = address.usages.filter { u -> u.addressUsage != null }.map { u ->
@@ -114,8 +118,16 @@ class CorePersonService(
           addressId = address.addressId,
           usage = u.addressUsage!!.toCodeDescription(),
           active = u.active,
+          createdDateTime = u.createDatetime,
+          createdByUsername = u.createUsername,
+          lastUpdatedDateTime = u.modifyDatetime,
+          lastUpdatedByUsername = u.modifyUserId,
         )
       },
+      createdDateTime = address.createDatetime,
+      createdByUsername = address.createUsername,
+      lastUpdatedDateTime = address.modifyDatetime,
+      lastUpdatedByUsername = address.modifyUserId,
     )
   }
 
@@ -125,6 +137,10 @@ class CorePersonService(
       number = number.phoneNo,
       type = number.phoneType.toCodeDescription(),
       extension = number.extNo,
+      createdDateTime = number.createDatetime,
+      createdByUsername = number.createUsername,
+      lastUpdatedDateTime = number.modifyDatetime,
+      lastUpdatedByUsername = number.modifyUserId,
     )
   }
 
@@ -132,6 +148,10 @@ class CorePersonService(
     OffenderEmailAddress(
       emailAddressId = address.internetAddressId,
       email = address.internetAddress,
+      createdDateTime = address.createDatetime,
+      createdByUsername = address.createUsername,
+      lastUpdatedDateTime = address.modifyDatetime,
+      lastUpdatedByUsername = address.modifyUserId,
     )
   }
 

@@ -47,7 +47,7 @@ class AddressUsage(
     ],
   )
   val addressUsage: AddressUsageType?,
-) : Serializable {
+) : NomisAuditableEntityBasic() {
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
