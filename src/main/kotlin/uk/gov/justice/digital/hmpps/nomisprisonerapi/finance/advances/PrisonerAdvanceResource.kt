@@ -24,6 +24,36 @@ import java.time.LocalDate
 class PrisonerAdvanceResource(
   private val service: PrisonerAdvanceService,
 ) {
+  @GetMapping("/advances/{advanceId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner advance by id",
+    description = "Retrieves a prisoner advance identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Transaction does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAdvance(
+    @Schema(description = "Id", example = "123456789")
+    @PathVariable
+    advanceId: Long,
+  ): PrisonerAdvanceDto = service.getAdvance(advanceId)
+
   @GetMapping("/{prisonNumber}/advances")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -57,6 +87,9 @@ class PrisonerAdvanceResource(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PrisonerAdvanceDto(
+  @Schema(description = "The advance id", example = "123456")
+  val id: Long,
+
   @Schema(description = "The prisonNumber", example = "A1234BC")
   val prisonNumber: String,
 
