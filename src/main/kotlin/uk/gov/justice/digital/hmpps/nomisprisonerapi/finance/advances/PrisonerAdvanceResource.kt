@@ -30,7 +30,7 @@ class PrisonerAdvanceResource(
     summary = "Get a prisoner advance by id",
     description = "Retrieves a prisoner advance identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
-      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(responseCode = "200", description = "Advance Information Returned"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
@@ -43,7 +43,7 @@ class PrisonerAdvanceResource(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Transaction does not exist",
+        description = "Advance does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -60,7 +60,7 @@ class PrisonerAdvanceResource(
     summary = "Get a prisoner's advances by their prison number",
     description = "Retrieves a prisoner's advances. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
-      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(responseCode = "200", description = "Advance Information Returned"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",

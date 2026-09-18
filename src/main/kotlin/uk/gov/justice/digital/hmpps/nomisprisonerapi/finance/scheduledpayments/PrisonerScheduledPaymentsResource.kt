@@ -30,7 +30,7 @@ class PrisonerScheduledPaymentsResource(
     summary = "Get a prisoner scheduled payment by id",
     description = "Retrieves a prisoner scheduled payment identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
-      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(responseCode = "200", description = "Scheduled Payment Information Returned"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
@@ -43,7 +43,7 @@ class PrisonerScheduledPaymentsResource(
       ),
       ApiResponse(
         responseCode = "404",
-        description = "Transaction does not exist",
+        description = "Scheduled Payment does not exist",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],
@@ -60,7 +60,7 @@ class PrisonerScheduledPaymentsResource(
     summary = "Get a prisoner's scheduled payments by their prison number",
     description = "Retrieves a prisoner's scheduled payments. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
-      ApiResponse(responseCode = "200", description = "Transaction Information Returned"),
+      ApiResponse(responseCode = "200", description = "Scheduled Payment Information Returned"),
       ApiResponse(
         responseCode = "401",
         description = "Unauthorized to access this endpoint",
