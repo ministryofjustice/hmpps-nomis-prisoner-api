@@ -3,16 +3,19 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderPaymentProfileBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NameType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTrustAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
@@ -117,6 +120,20 @@ interface OffenderDsl {
     holdBalance: BigDecimal = BigDecimal.ZERO,
     dsl: OffenderTrustAccountDsl.() -> Unit = {},
   ): OffenderTrustAccount
+
+  @OffenderPaymentProfileDslMarker
+  fun advance(
+    caseloadId: String = "MDI",
+    transactionType: String = "TELE",
+    dsl: OffenderPaymentProfileDsl.() -> Unit = {},
+  ): OffenderAdvance
+
+  @OffenderPaymentProfileDslMarker
+  fun scheduledPayment(
+    caseloadId: String = "MDI",
+    transactionType: String = "TELE",
+    dsl: OffenderPaymentProfileDsl.() -> Unit = {},
+  ): OffenderScheduledPayment
 }
 
 @Component
@@ -149,6 +166,7 @@ class OffenderBuilderFactory(
   private val offenderPhoneBuilderFactory: OffenderPhoneBuilderFactory,
   private val offenderEmailBuilderFactory: OffenderEmailBuilderFactory,
   private val offenderTrustAccountBuilderFactory: OffenderTrustAccountBuilderFactory,
+  private val offenderPaymentProfileBuilderFactory: OffenderPaymentProfileBuilderFactory,
 ) {
   fun builder(): OffenderBuilder = OffenderBuilder(
     repository,
@@ -159,6 +177,7 @@ class OffenderBuilderFactory(
     offenderPhoneBuilderFactory,
     offenderEmailBuilderFactory,
     offenderTrustAccountBuilderFactory,
+    offenderPaymentProfileBuilderFactory,
   )
 }
 
@@ -171,6 +190,7 @@ class OffenderBuilder(
   private val offenderPhoneBuilderFactory: OffenderPhoneBuilderFactory,
   private val offenderEmailBuilderFactory: OffenderEmailBuilderFactory,
   private val offenderTrustAccountBuilderFactory: OffenderTrustAccountBuilderFactory,
+  private val offenderPaymentProfileBuilderFactory: OffenderPaymentProfileBuilderFactory,
 ) : OffenderDsl {
   lateinit var rootOffender: Offender
   var nextBookingSequence: Int = 1
@@ -395,6 +415,32 @@ class OffenderBuilder(
       currentBalance = currentBalance,
       holdBalance = holdBalance,
     ).also { rootOffender.trustAccounts += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun advance(
+    caseloadId: String,
+    transactionType: String,
+    dsl: OffenderPaymentProfileDsl.() -> Unit,
+  ): OffenderAdvance = offenderPaymentProfileBuilderFactory.builder().let { builder ->
+    builder.buildAdvance(
+      offender = rootOffender,
+      caseloadId = caseloadId,
+      transactionType = transactionType,
+    ).also { rootOffender.advances += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun scheduledPayment(
+    caseloadId: String,
+    transactionType: String,
+    dsl: OffenderPaymentProfileDsl.() -> Unit,
+  ): OffenderScheduledPayment = offenderPaymentProfileBuilderFactory.builder().let { builder ->
+    builder.buildScheduledPayment(
+      offender = rootOffender,
+      caseloadId = caseloadId,
+      transactionType = transactionType,
+    ).also { rootOffender.scheduledPayments += it }
       .also { builder.apply(dsl) }
   }
 }
