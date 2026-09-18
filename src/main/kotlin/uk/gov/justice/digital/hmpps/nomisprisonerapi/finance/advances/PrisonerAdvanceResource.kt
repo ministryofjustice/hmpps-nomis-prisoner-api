@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
-import jakarta.persistence.Column
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -64,7 +63,7 @@ data class PrisonerAdvanceDto(
   @Schema(description = "The caseload", example = "MDI")
   val caseloadId: String,
 
-  @Column(name = "TXN_TYPE", nullable = false)
+  @Schema(description = "transaction type", example = "TELE")
   val transactionType: String,
 
   @Schema(description = "The total amount in pence to be paid to the prisoner, so £1.50 returned as 150", example = "150")

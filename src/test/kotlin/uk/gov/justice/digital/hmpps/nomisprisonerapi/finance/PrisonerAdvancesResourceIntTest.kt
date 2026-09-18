@@ -13,9 +13,6 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
-    // TODO Remove tidy up
-    repository.deleteOffenders()
-
     nomisDataBuilder.build {
       offender {
         advance()
@@ -31,7 +28,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   fun tearDown() {
-    repository.deleteOffenders()
+    deleteOffenders()
   }
 
   @Nested
