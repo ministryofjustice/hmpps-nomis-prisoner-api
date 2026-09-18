@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
+import java.time.LocalDate
 
 @WithMockAuthUser
 class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
@@ -79,9 +80,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("[0].caseloadId").isEqualTo("MDI")
         .jsonPath("[0].transactionType").isEqualTo("TELE")
         .jsonPath("[0].advanceAmount").isEqualTo(1245)
-        .jsonPath("[0].advanceDate").isEqualTo("2026-09-18")
+        .jsonPath("[0].advanceDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("[0].repaymentAmount").isEqualTo(245)
-        .jsonPath("[0].startDate").isEqualTo("2026-09-18")
+        .jsonPath("[0].startDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("[0].createdBy").isEqualTo("SA")
         // TODO
         .jsonPath("[0].status").isEqualTo("TODO")

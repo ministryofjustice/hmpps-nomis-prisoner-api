@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderPaymentProfileBuilderFactory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender
@@ -132,6 +131,9 @@ interface OffenderDsl {
   fun scheduledPayment(
     caseloadId: String = "MDI",
     transactionType: String = "TELE",
+    endDate: LocalDate? = null,
+    reference: String? = null,
+    comment: String? = null,
     dsl: OffenderPaymentProfileDsl.() -> Unit = {},
   ): OffenderScheduledPayment
 }
@@ -434,12 +436,18 @@ class OffenderBuilder(
   override fun scheduledPayment(
     caseloadId: String,
     transactionType: String,
+    endDate: LocalDate?,
+    reference: String?,
+    comment: String?,
     dsl: OffenderPaymentProfileDsl.() -> Unit,
   ): OffenderScheduledPayment = offenderPaymentProfileBuilderFactory.builder().let { builder ->
     builder.buildScheduledPayment(
       offender = rootOffender,
       caseloadId = caseloadId,
       transactionType = transactionType,
+      endDate = endDate,
+      reference = reference,
+      comment = comment,
     ).also { rootOffender.scheduledPayments += it }
       .also { builder.apply(dsl) }
   }

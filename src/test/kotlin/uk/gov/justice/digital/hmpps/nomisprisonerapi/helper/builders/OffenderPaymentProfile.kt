@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
 import java.math.BigDecimal
+import java.time.LocalDate
 
 @DslMarker
 annotation class OffenderPaymentProfileDslMarker
@@ -35,10 +36,16 @@ class OffenderPaymentProfileBuilder : OffenderPaymentProfileDsl {
     offender: Offender,
     caseloadId: String,
     transactionType: String,
+    endDate: LocalDate?,
+    reference: String?,
+    comment: String?,
   ): OffenderScheduledPayment = OffenderScheduledPayment(
     offender = offender,
     caseloadId = caseloadId,
     transactionType = transactionType,
     paymentAmount = BigDecimal.valueOf(2.45),
+    endDate = endDate,
+    referenceText = reference,
+    commentText = comment,
   )
 }
