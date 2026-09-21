@@ -266,14 +266,14 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
 
-  @GetMapping("/{prisonNumber}/addresses")
+  @GetMapping("/{prisonNumber}/addresses-contacts")
   @Operation(
-    summary = "Get all the address information for an offender by prison number",
-    description = "Retrieves the addresses information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    summary = "Get all the address and contact information for an offender by prison number",
+    description = "Retrieves the address and contact information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Core addresses information returned",
+        description = "Core addresses and contacts returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -307,108 +307,12 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ),
     ],
   )
-  fun getOffenderAddressesByPrisonNumber(
+  fun getOffenderAddressesAndContactsByPrisonNumber(
     @Schema(
       description = "Prison number aka noms id / offender id display",
       example = "A1234BC",
     ) @PathVariable prisonNumber: String,
-  ): List<OffenderAddress> = corePersonService.getAddresses(prisonNumber)
-
-  @GetMapping("/{prisonNumber}/emailAddresses")
-  @Operation(
-    summary = "Get all the email address information for an offender by prison number",
-    description = "Retrieves the email addresses information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Core email address information returned",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Offender does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getOffenderEmailAddressesByPrisonNumber(
-    @Schema(
-      description = "Prison number aka noms id / offender id display",
-      example = "A1234BC",
-    ) @PathVariable prisonNumber: String,
-  ): List<OffenderEmailAddress> = corePersonService.getEmailAddresses(prisonNumber)
-
-  @GetMapping("/{prisonNumber}/phoneNumbers")
-  @Operation(
-    summary = "Get all the phone number information for an offender by prison number",
-    description = "Retrieves the phone numbers information for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-    responses = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Core phone number information returned",
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Offender does not exist",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  fun getOffenderPhoneNumbersByPrisonNumber(
-    @Schema(
-      description = "Prison number aka noms id / offender id display",
-      example = "A1234BC",
-    ) @PathVariable prisonNumber: String,
-  ): List<OffenderPhoneNumber> = corePersonService.getPhoneNumbers(prisonNumber)
+  ): CorePersonAddressContact = corePersonService.getAddressesAndContacts(prisonNumber)
 
   @PostMapping("/{prisonNumber}/merge")
   @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -473,6 +377,17 @@ data class CorePerson(
   val offenders: List<CoreOffender>?,
   @Schema(description = "Current belief and history of all beliefs for the person")
   val beliefs: List<OffenderBelief>?,
+  @Schema(description = "List of addresses for the person")
+  val addresses: List<OffenderAddress>?,
+  @Schema(description = "List of phone numbers for the person")
+  val phoneNumbers: List<OffenderPhoneNumber>?,
+  @Schema(description = "List of email addresses for the person")
+  val emailAddresses: List<OffenderEmailAddress>?,
+)
+
+@Schema(description = "The data held in NOMIS for an offender")
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+data class CorePersonAddressContact(
   @Schema(description = "List of addresses for the person")
   val addresses: List<OffenderAddress>?,
   @Schema(description = "List of phone numbers for the person")
