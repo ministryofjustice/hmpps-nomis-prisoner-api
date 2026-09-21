@@ -2595,7 +2595,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       @Test
       internal fun `404 when case does not exist`() {
         webTestClient.put()
-          .uri("/prisoners/$offenderNo/sentencing/court-cases/1234")
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/99999")
           .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .body(
@@ -2606,7 +2606,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectStatus().isNotFound
           .expectBody()
-          .jsonPath("developerMessage").isEqualTo("Court case 1234 for $offenderNo not found")
+          .jsonPath("developerMessage").isEqualTo("Court case 99999 for $offenderNo not found")
       }
     }
 
@@ -5747,6 +5747,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     private lateinit var offenderCharge1: OffenderCharge
     private lateinit var offenderCharge2: OffenderCharge
     private lateinit var offenderCharge3: OffenderCharge
+    private lateinit var offenderCharge4: OffenderCharge
 
     @BeforeEach
     internal fun createPrisonerAndCourtCase() {
@@ -5763,6 +5764,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               offenderCharge1 = offenderCharge(resultCode1 = "1004", offenceCode = "RR84005B", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
               offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
+              offenderCharge4 = offenderCharge(resultCode1 = "1004", offenceCode = "RR84009")
               courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30)) {
 // overrides from the parent offender charge fields
                 courtEventCharge(
@@ -5784,6 +5786,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
+                )
+                courtEventCharge(
+                  offenderCharge = offenderCharge4,
                 )
               }
               futureCourtEvent = courtEvent(eventDateTime = LocalDateTime.now().plusDays(7)) {
@@ -6039,6 +6044,33 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2024-03-01")
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2024-03-05")
           .jsonPath("courtOrders[0].id").doesNotExist()
+      }
+
+      @Test
+      fun `can update the court event charge and offender charge, when later court appearances exist but do not include the same charge`() {
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${earlierCourtEvent.id}/charges/${offenderCharge4.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createOffenderChargeRequest(
+                resultCode1 = "1019",
+                offenceDate = LocalDate.parse("2024-03-01"),
+                offenceEndDate = LocalDate.parse("2024-03-02"),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        // This is the latest CEC even though later appearances exist so result code is updated on the underlying charge
+        webTestClient.get().uri("/prisoners/$offenderNo/sentencing/offender-charges/${offenderCharge4.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("resultCode1.code").isEqualTo("1019")
       }
 
       @Test

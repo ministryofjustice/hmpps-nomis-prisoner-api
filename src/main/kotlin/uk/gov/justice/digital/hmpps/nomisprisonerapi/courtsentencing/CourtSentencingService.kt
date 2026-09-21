@@ -928,6 +928,7 @@ class CourtSentencingService(
   ): Boolean {
     val latestWithResultCode = courtEventCharge.id.courtEvent.courtCase?.courtEvents
       ?.flatMap { it.courtEventCharges }
+      ?.filter { it.id.offenderCharge == courtEventCharge.id.offenderCharge }
       ?.filter { cec ->
         cec.resultCode1 != null
       }
