@@ -78,11 +78,13 @@ class CorePersonService(
     }
   }
 
-  fun getPhoneNumbers(prisonNumber: String): List<OffenderPhoneNumber> = getPhoneNumbers(rootOffender(prisonNumber))
-
-  fun getAddresses(prisonNumber: String): List<OffenderAddress> = getAddresses(rootOffender(prisonNumber))
-
-  fun getEmailAddresses(prisonNumber: String): List<OffenderEmailAddress> = getEmailAddresses(rootOffender(prisonNumber))
+  fun getAddressesAndContacts(prisonNumber: String): CorePersonAddressContact = rootOffender(prisonNumber).let { rootOffender ->
+    CorePersonAddressContact(
+      addresses = getAddresses(rootOffender),
+      emailAddresses = getEmailAddresses(rootOffender),
+      phoneNumbers = getPhoneNumbers(rootOffender),
+    )
+  }
 
   private fun getAddresses(rootOffender: Offender): List<OffenderAddress> = rootOffender.addresses.map { address ->
     OffenderAddress(

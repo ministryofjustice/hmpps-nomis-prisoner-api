@@ -1303,10 +1303,10 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("GET /core-person/{prisonNumber}/addresses")
+  @DisplayName("GET /core-person/{prisonNumber}/addresses-contacts")
   @Nested
   @TestInstance(PER_CLASS)
-  inner class GetOffenderAddresses {
+  inner class GetOffenderAddressesContacts {
     private lateinit var offenderMinimal: Offender
     private lateinit var offenderFull: Offender
 
@@ -1323,6 +1323,13 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
           firstName = "JANE",
           lastName = "NARK",
         ) {
+          phone(phoneType = "MOB", phoneNo = "07399999999")
+          email(
+            emailAddress = "jane.nark@justice.gov.uk",
+            whoCreated = "KOFEADDY",
+            whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
+          )
+          email(emailAddress = "jane.nark@gmail.com")
           address(
             premise = null,
             street = null,
@@ -1371,7 +1378,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses")
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -1379,7 +1386,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses")
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -1387,7 +1394,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses")
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses-contacts")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -1397,7 +1404,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `return 404 when offender not found`() {
-        webTestClient.get().uri("/core-person/AB1234C/addresses")
+        webTestClient.get().uri("/core-person/AB1234C/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
@@ -1408,7 +1415,7 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will return empty list if no data`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses")
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
@@ -1419,303 +1426,95 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return addresses`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses")
+        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
           .expectBody()
-          .jsonPath("[0].addressId").isEqualTo(offenderFull.addresses[0].addressId)
-          .jsonPath("[0].flat").doesNotExist()
-          .jsonPath("[0].premise").doesNotExist()
-          .jsonPath("[0].street").doesNotExist()
-          .jsonPath("[0].locality").doesNotExist()
-          .jsonPath("[0].city").doesNotExist()
-          .jsonPath("[0].county").doesNotExist()
-          .jsonPath("[0].country").doesNotExist()
-          .jsonPath("[0].noFixedAddress").doesNotExist()
-          .jsonPath("[0].primaryAddress").isEqualTo(false)
-          .jsonPath("[0].mailAddress").isEqualTo(false)
-          .jsonPath("[0].comment").doesNotExist()
-          .jsonPath("[0].startDate").doesNotExist()
-          .jsonPath("[0].endDate").doesNotExist()
-          .jsonPath("[0].phoneNumbers").doesNotExist()
-          .jsonPath("[1].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("[1].flat").isEqualTo("3B")
-          .jsonPath("[1].premise").isEqualTo("Brown Court")
-          .jsonPath("[1].street").isEqualTo("Scotland Street")
-          .jsonPath("[1].locality").isEqualTo("Hunters Bar")
-          .jsonPath("[1].postcode").isEqualTo("S1 3GG")
-          .jsonPath("[1].city.code").isEqualTo("25343")
-          .jsonPath("[1].city.description").isEqualTo("Sheffield")
-          .jsonPath("[1].county.code").isEqualTo("S.YORKSHIRE")
-          .jsonPath("[1].county.description").isEqualTo("South Yorkshire")
-          .jsonPath("[1].country.code").isEqualTo("ENG")
-          .jsonPath("[1].country.description").isEqualTo("England")
-          .jsonPath("[1].noFixedAddress").isEqualTo(false)
-          .jsonPath("[1].primaryAddress").isEqualTo(true)
-          .jsonPath("[1].mailAddress").isEqualTo(true)
-          .jsonPath("[1].comment").isEqualTo("Not to be used")
-          .jsonPath("[1].startDate").isEqualTo("2024-10-01")
-          .jsonPath("[1].endDate").isEqualTo("2024-11-01")
-          .jsonPath("[1].phoneNumbers[0].phoneId").isEqualTo(offenderFull.addresses[1].phones[0].phoneId)
-          .jsonPath("[1].phoneNumbers[0].type.code").isEqualTo("MOB")
-          .jsonPath("[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
-          .jsonPath("[1].phoneNumbers[0].number").isEqualTo("07399999999")
-          .jsonPath("[1].phoneNumbers[0].extension").doesNotExist()
-          .jsonPath("[1].phoneNumbers[1].phoneId").isEqualTo(offenderFull.addresses[1].phones[1].phoneId)
-          .jsonPath("[1].phoneNumbers[1].type.code").isEqualTo("HOME")
-          .jsonPath("[1].phoneNumbers[1].type.description").isEqualTo("Home")
-          .jsonPath("[1].phoneNumbers[1].number").isEqualTo("01142561919")
-          .jsonPath("[1].phoneNumbers[1].extension").isEqualTo("123")
-          .jsonPath("[1].usages[0].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("[1].usages[0].usage.code").isEqualTo("CURFEW")
-          .jsonPath("[1].usages[0].usage.description").isEqualTo("Curfew Order")
-          .jsonPath("[1].usages[0].active").isEqualTo(false)
-          .jsonPath("[1].usages[1].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("[1].usages[1].usage.code").isEqualTo("DAP")
-          .jsonPath("[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
-          .jsonPath("[1].usages[1].active").isEqualTo(true)
-          .jsonPath("[2].noFixedAddress").isEqualTo(true)
+          .jsonPath("addresses[0].addressId").isEqualTo(offenderFull.addresses[0].addressId)
+          .jsonPath("addresses[0].flat").doesNotExist()
+          .jsonPath("addresses[0].premise").doesNotExist()
+          .jsonPath("addresses[0].street").doesNotExist()
+          .jsonPath("addresses[0].locality").doesNotExist()
+          .jsonPath("addresses[0].city").doesNotExist()
+          .jsonPath("addresses[0].county").doesNotExist()
+          .jsonPath("addresses[0].country").doesNotExist()
+          .jsonPath("addresses[0].noFixedAddress").doesNotExist()
+          .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
+          .jsonPath("addresses[0].mailAddress").isEqualTo(false)
+          .jsonPath("addresses[0].comment").doesNotExist()
+          .jsonPath("addresses[0].startDate").doesNotExist()
+          .jsonPath("addresses[0].endDate").doesNotExist()
+          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
+          .jsonPath("addresses[1].addressId").isEqualTo(offenderFull.addresses[1].addressId)
+          .jsonPath("addresses[1].flat").isEqualTo("3B")
+          .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
+          .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
+          .jsonPath("addresses[1].locality").isEqualTo("Hunters Bar")
+          .jsonPath("addresses[1].postcode").isEqualTo("S1 3GG")
+          .jsonPath("addresses[1].city.code").isEqualTo("25343")
+          .jsonPath("addresses[1].city.description").isEqualTo("Sheffield")
+          .jsonPath("addresses[1].county.code").isEqualTo("S.YORKSHIRE")
+          .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
+          .jsonPath("addresses[1].country.code").isEqualTo("ENG")
+          .jsonPath("addresses[1].country.description").isEqualTo("England")
+          .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
+          .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
+          .jsonPath("addresses[1].mailAddress").isEqualTo(true)
+          .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
+          .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
+          .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
+          .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(offenderFull.addresses[1].phones[0].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
+          .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(offenderFull.addresses[1].phones[1].phoneId)
+          .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
+          .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
+          .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
+          .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
+          .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offenderFull.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[0].usage.code").isEqualTo("CURFEW")
+          .jsonPath("addresses[1].usages[0].usage.description").isEqualTo("Curfew Order")
+          .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
+          .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offenderFull.addresses[1].addressId)
+          .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
+          .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
+          .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
+          .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
+          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderFull.phones[0].phoneId)
+          .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Mobile")
+          .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("phoneNumbers[0].extension").doesNotExist()
+          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offenderFull.internetAddresses[0].internetAddressId)
+          .jsonPath("emailAddresses[0].email").isEqualTo("jane.nark@justice.gov.uk")
+          .jsonPath("emailAddresses[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
+          .jsonPath("emailAddresses[0].createdByUsername").isEqualTo("KOFEADDY")
+          .jsonPath("emailAddresses[0].lastUpdatedDateTime").doesNotExist()
+          .jsonPath("emailAddresses[0].lastUpdatedByUsername").doesNotExist()
+          .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(offenderFull.internetAddresses[1].internetAddressId)
+          .jsonPath("emailAddresses[1].email").isEqualTo("jane.nark@gmail.com")
       }
 
       @Test
       fun `is able to re-hydrate the addresses`() {
-        val addresses = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses")
+        val addressesAndContacts = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .returnResult<OffenderAddress>().responseBody.collectList().block()!!
+          .returnResult<CorePersonAddressContact>().responseBody.blockFirst()!!
 
+        val addresses = addressesAndContacts.addresses!!
         assertThat(addresses).hasSize(3)
         assertThat(addresses[1].postcode).isEqualTo("S1 3GG")
         assertThat(addresses[1].phoneNumbers).hasSize(2)
         assertThat(addresses[1].usages).hasSize(2)
-      }
-    }
-  }
-
-  @DisplayName("GET /core-person/{prisonNumber}/emailAddresses")
-  @Nested
-  @TestInstance(PER_CLASS)
-  inner class GetOffenderEmailAddresses {
-    private lateinit var offenderMinimal: Offender
-    private lateinit var offenderFull: Offender
-
-    @BeforeAll
-    fun setUp() {
-      nomisDataBuilder.build {
-        offenderMinimal = offender(
-          nomsId = "H5678JN",
-          firstName = "JOHN",
-          lastName = "BOG",
-        )
-        offenderFull = offender(
-          nomsId = "H5678JP",
-          firstName = "JANE",
-          lastName = "NARK",
-        ) {
-          email(emailAddress = "john.bog@justice.gov.uk")
-          email(emailAddress = "john.bog@gmail.com")
-        }
-      }
-    }
-
-    @AfterAll
-    fun tearDown(): Unit = deleteAll()
-
-    @Nested
-    inner class Security {
-      @Test
-      fun `access forbidden when no role`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/emailAddresses")
-          .headers(setAuthorisation(roles = listOf()))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/emailAddresses")
-          .headers(setAuthorisation(roles = listOf("BANANAS")))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/emailAddresses")
-          .exchange()
-          .expectStatus().isUnauthorized
-      }
-    }
-
-    @Nested
-    inner class Validation {
-      @Test
-      fun `return 404 when offender not found`() {
-        webTestClient.get().uri("/core-person/AB1234C/emailAddresses")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isNotFound
-      }
-    }
-
-    @Nested
-    inner class HappyPath {
-      @Test
-      fun `will return empty list if no data`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/emailAddresses")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(0)
-      }
-
-      @Test
-      fun `will return email address`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/emailAddresses")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("[0].emailAddressId").isEqualTo(offenderFull.internetAddresses[0].internetAddressId)
-          .jsonPath("[0].email").isEqualTo("john.bog@justice.gov.uk")
-          .jsonPath("[1].emailAddressId").isEqualTo(offenderFull.internetAddresses[1].internetAddressId)
-          .jsonPath("[1].email").isEqualTo("john.bog@gmail.com")
-      }
-
-      @Test
-      fun `is able to re-hydrate the email addresses`() {
-        val emailAddresses = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/emailAddresses")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .returnResult<OffenderEmailAddress>().responseBody.collectList().block()!!
-
-        assertThat(emailAddresses).hasSize(2)
-        assertThat(emailAddresses[0].email).isEqualTo("john.bog@justice.gov.uk")
-        assertThat(emailAddresses[1].email).isEqualTo("john.bog@gmail.com")
-      }
-    }
-  }
-
-  @DisplayName("GET /core-person/{prisonNumber}/phoneNumbers")
-  @Nested
-  @TestInstance(PER_CLASS)
-  inner class GetOffenderPhoneNumbers {
-    private lateinit var offenderMinimal: Offender
-    private lateinit var offenderFull: Offender
-
-    @BeforeAll
-    fun setUp() {
-      nomisDataBuilder.build {
-        offenderMinimal = offender(
-          nomsId = "H5678JR",
-          firstName = "JOHN",
-          lastName = "BOG",
-        )
-        offenderFull = offender(
-          nomsId = "H5678JS",
-          firstName = "JANE",
-          lastName = "NARK",
-        ) {
-          phone(phoneType = "MOB", phoneNo = "07399999999")
-          phone(phoneType = "HOME", phoneNo = "01142561919", extNo = "123")
-        }
-      }
-    }
-
-    @AfterAll
-    fun tearDown(): Unit = deleteAll()
-
-    @Nested
-    inner class Security {
-      @Test
-      fun `access forbidden when no role`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/phoneNumbers")
-          .headers(setAuthorisation(roles = listOf()))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/phoneNumbers")
-          .headers(setAuthorisation(roles = listOf("BANANAS")))
-          .exchange()
-          .expectStatus().isForbidden
-      }
-
-      @Test
-      fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/phoneNumbers")
-          .exchange()
-          .expectStatus().isUnauthorized
-      }
-    }
-
-    @Nested
-    inner class Validation {
-      @Test
-      fun `return 404 when offender not found`() {
-        webTestClient.get().uri("/core-person/AB1234C/phoneNumbers")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isNotFound
-      }
-    }
-
-    @Nested
-    inner class HappyPath {
-      @Test
-      fun `will return empty list if no data`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/phoneNumbers")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(0)
-      }
-
-      @Test
-      fun `will return phone numbers`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/phoneNumbers")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .expectBody()
-          .jsonPath("[0].phoneId").isEqualTo(offenderFull.phones[0].phoneId)
-          .jsonPath("[0].type.code").isEqualTo("MOB")
-          .jsonPath("[0].type.description").isEqualTo("Mobile")
-          .jsonPath("[0].number").isEqualTo("07399999999")
-          .jsonPath("[0].extension").doesNotExist()
-          .jsonPath("[1].phoneId").isEqualTo(offenderFull.phones[1].phoneId)
-          .jsonPath("[1].type.code").isEqualTo("HOME")
-          .jsonPath("[1].type.description").isEqualTo("Home")
-          .jsonPath("[1].number").isEqualTo("01142561919")
-          .jsonPath("[1].extension").isEqualTo("123")
-      }
-
-      @Test
-      fun `is able to re-hydrate the phone numbers`() {
-        val phoneNumbers = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/phoneNumbers")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus()
-          .isOk
-          .returnResult<OffenderPhoneNumber>().responseBody.collectList().block()!!
-
-        assertThat(phoneNumbers).hasSize(2)
-        assertThat(phoneNumbers[0].number).isEqualTo("07399999999")
-        assertThat(phoneNumbers[1].extension).isEqualTo("123")
+        assertThat(addressesAndContacts.phoneNumbers).hasSize(1)
+        assertThat(addressesAndContacts.emailAddresses).hasSize(2)
       }
     }
   }
