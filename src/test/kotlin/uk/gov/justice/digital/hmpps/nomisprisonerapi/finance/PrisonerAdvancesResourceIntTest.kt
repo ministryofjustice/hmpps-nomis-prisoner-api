@@ -155,9 +155,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("caseloadId").isEqualTo("MDI")
         .jsonPath("transactionType").isEqualTo("TELE")
         .jsonPath("advanceAmount").isEqualTo(1245)
-        .jsonPath("advanceDate").isEqualTo("2026-09-18")
+        .jsonPath("advanceDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("repaymentAmount").isEqualTo(245)
-        .jsonPath("startDate").isEqualTo("2026-09-18")
+        .jsonPath("startDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("createdBy").isEqualTo("SA")
         // TODO
         .jsonPath("status").isEqualTo("TODO")
