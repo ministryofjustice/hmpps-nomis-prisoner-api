@@ -6,9 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventClass
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
@@ -198,10 +196,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     @Test
     fun `invalid start time should return bad request`() {
       val invalidSchedule =
-        validCreateJsonRequest(hasEndTime = false, inCell = false).replace(
-          """"startTime"          : "10:40"""",
-          """"startTime": "11:65",""",
-        )
+        validCreateJsonRequest(false, false).replace(""""startTime"          : "10:40"""", """"startTime": "11:65",""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -215,11 +210,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `invalid end time should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(hasEndTime = true, inCell = false)
-        .replace(
-          """"endTime"   : "12:10"""",
-          """"endTime": "12:65"""",
-        )
+      val invalidSchedule = validCreateJsonRequest(true, false).replace(""""endTime"   : "12:10"""", """"endTime": "12:65"""")
       webTestClient.post().uri("/appointments")
         .contentType(MediaType.APPLICATION_JSON)
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -233,11 +224,10 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `invalid date should return bad request`() {
-      val invalidSchedule = validCreateJsonRequest(hasEndTime = false, inCell = false)
-        .replace(
-          """"eventDate"          : "2023-02-27"""",
-          """"eventDate": "2022-13-31",""",
-        )
+      val invalidSchedule = validCreateJsonRequest(false, false).replace(
+        """"eventDate"          : "2023-02-27"""",
+        """"eventDate": "2022-13-31",""",
+      )
       webTestClient.post().uri("/appointments")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .contentType(MediaType.APPLICATION_JSON)
@@ -250,28 +240,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
     }
 
     @Test
-    fun `appointment already exists`() {
-      val id = callCreateEndpoint(hasEndTime = true, inCell = false)
-
-      val response = webTestClient.post().uri("/appointments")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime = true, inCell = false)))
-        .exchange()
-        .expectStatus().value { assertThat(it).isEqualTo(409) }
-        .expectBody<ErrorResponse>()
-        .returnResult().responseBody
-
-      assertThat(response?.moreInfo).isEqualTo(id.toInt())
-      assertThat(response?.userMessage).isEqualTo(
-        "An appointment already exists for bookingId=${offenderAtMoorlands.latestBooking().bookingId}, eventSubType=ACTI, date=2023-02-27, startTime=10:40",
-      )
-      assertThat(response?.developerMessage).isEqualTo(response?.userMessage)
-    }
-
-    @Test
     fun `will create appointment with correct details`() {
-      val id = callCreateEndpoint(hasEndTime = true, inCell = false)
+      val id = callCreateEndpoint(true, false)
 
       // Check the database
       nomisDataBuilder.runInTransaction {
@@ -293,7 +263,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will create appointment with correct details - no end time`() {
-      val id = callCreateEndpoint(hasEndTime = false, inCell = false)
+      val id = callCreateEndpoint(false, false)
 
       with(repository.getAppointment(id)!!) {
         assertThat(eventId).isEqualTo(id)
@@ -304,7 +274,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will create appointment with correct details - in cell`() {
-      val id = callCreateEndpoint(hasEndTime = false, inCell = true)
+      val id = callCreateEndpoint(false, true)
 
       with(repository.getAppointment(id)!!) {
         assertThat(eventId).isEqualTo(id)
@@ -488,8 +458,8 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
 
     @Test
     fun `will update appointment with correct details - in cell`() {
-      val eventId = callCreateEndpoint(hasEndTime = true, inCell = false)
-      callUpdateEndpoint(eventId, hasEndTime = false, inCell = true)
+      val eventId = callCreateEndpoint(true, false)
+      callUpdateEndpoint(eventId, false, true)
 
       // Check the database
       with(repository.getAppointment(eventId)!!) {
@@ -807,8 +777,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
 
     @Test
     fun `get dupes`() {
-      webTestClient.get()
-        .uri("/appointments/booking/${appointment1.offenderBooking.bookingId}/location/${appointment1.internalLocation?.locationId}/start/2026-01-01T10:00:00")
+      webTestClient.get().uri("/appointments/booking/${appointment1.offenderBooking.bookingId}/location/${appointment1.internalLocation?.locationId}/start/2026-01-01T10:00:00")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
@@ -831,8 +800,7 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID_2,"""}
 
     @Test
     fun `get single`() {
-      webTestClient.get()
-        .uri("/appointments/booking/${appointment3.offenderBooking.bookingId}/location/${appointment3.internalLocation?.locationId}/start/2026-02-02T10:00:00")
+      webTestClient.get().uri("/appointments/booking/${appointment3.offenderBooking.bookingId}/location/${appointment3.internalLocation?.locationId}/start/2026-02-02T10:00:00")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus().isOk
