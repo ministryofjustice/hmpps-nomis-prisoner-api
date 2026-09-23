@@ -2,16 +2,20 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson
 
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifierPK
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIdentifierRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 
 @Transactional
@@ -21,6 +25,7 @@ class CorePersonService(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderBeliefRepository: OffenderBeliefRepository,
   private val offenderIdentifierRepository: OffenderIdentifierRepository,
+  private val offenderInternetAddressRepository: OffenderInternetAddressRepository,
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val latestBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
@@ -44,6 +49,28 @@ class CorePersonService(
 
   fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
     .map { it.toBelief() }
+
+  fun createOffenderEmail(offenderId: Long, request: CreateOffenderEmailRequest): CreateOffenderEmailResponse = offenderInternetAddressRepository.saveAndFlush(
+    OffenderInternetAddress(
+      offender = offenderOf(offenderId),
+      emailAddress = request.email,
+    ),
+  ).let { CreateOffenderEmailResponse(emailAddressId = it.internetAddressId) }
+
+  fun updateOffenderEmail(offenderId: Long, emailAddressId: Long, request: UpdateOffenderEmailRequest) {
+    emailOf(offenderId = offenderId, emailAddressId = emailAddressId).run {
+      request.also {
+        internetAddress = it.email
+      }
+    }
+  }
+
+  fun deleteOffenderEmail(offenderId: Long, emailAddressId: Long) {
+    offenderInternetAddressRepository.findByIdOrNull(emailAddressId)?.also {
+      if (it.offender.id != offenderId) throw BadDataException("Internet Address of $emailAddressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+    }
+    offenderInternetAddressRepository.deleteById(emailAddressId)
+  }
 
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
     log.info("Updating offender {} after merge", prisonNumber)
@@ -170,6 +197,8 @@ class CorePersonService(
   private data class CurrentAliasAndRoot(val currentAlias: Offender, val rootOffender: Offender)
 
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
+
+  private fun emailOf(offenderId: Long, emailAddressId: Long): OffenderInternetAddress = (offenderInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("Email with id=$emailAddressId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Email with id=$emailAddressId on Offender with id=$offenderId does not exist")
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
     offenderId = id.offender.id,

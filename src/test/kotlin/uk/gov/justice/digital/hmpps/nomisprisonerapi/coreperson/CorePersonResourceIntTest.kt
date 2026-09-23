@@ -9,22 +9,28 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
+import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.returnResult
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.OffenderAddressDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderInternetAddressRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson.OffenderBelief as OffenderBeliefCorePerson
 
-class CorePersonResourceIntTest : IntegrationTestBase() {
+class CorePersonResourceIntTest(
+  @Autowired private val offenderInternetAddressRepository: OffenderInternetAddressRepository,
+) : IntegrationTestBase() {
   fun deleteAll() {
     repository.deleteAllBeliefs()
     deleteOffenders()
@@ -1789,6 +1795,305 @@ class CorePersonResourceIntTest : IntegrationTestBase() {
         assertThat(alias.offenderId).isEqualTo(offenderWithoutBooking.id)
         assertThat(alias.workingName).isTrue()
         assertThat(alias.identifiers).hasSize(0)
+      }
+    }
+  }
+
+  @DisplayName("POST /core-person/{offenderId}/email")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class CreateOffenderEmail {
+    private val validEmailRequest = CreateOffenderEmailRequest(
+      email = "test@test.com",
+    )
+
+    private lateinit var existingOffender: Offender
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingOffender = offender(
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when offender does not exist`() {
+        webTestClient.post().uri("/core-person/999/email")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a email`() {
+        val response: CreateOffenderEmailResponse = webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+          .bodyValue(
+            validEmailRequest.copy(
+              email = "test@email.com",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody<CreateOffenderEmailResponse>()
+          .returnResult()
+          .responseBody!!
+
+        val email = offenderInternetAddressRepository.findByIdOrNull(response.emailAddressId)!!
+
+        with(email) {
+          assertThat(internetAddressId).isEqualTo(response.emailAddressId)
+          assertThat(offender.id).isEqualTo(existingOffender.id)
+          assertThat(email.internetAddress).isEqualTo("test@email.com")
+          assertThat(email.internetAddressClass).isEqualTo("EMAIL")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val offender = repository.offenderRepository.findByIdOrNull(existingOffender.id)
+          assertThat(offender?.internetAddresses).anyMatch { it.internetAddressId == email.internetAddressId }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /core-person/{offenderId}/email/{emailAddressId}")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class UpdateOffenderEmail {
+    private val validEmailRequest = UpdateOffenderEmailRequest(
+      email = "test@test.com",
+    )
+
+    private lateinit var existingOffender: Offender
+    private lateinit var existingEmail: OffenderInternetAddress
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingOffender = offender(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingEmail = email(emailAddress = "test@justice.gov.uk")
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when offender does not exist`() {
+        webTestClient.put().uri("/core-person/99999/email/${existingEmail.internetAddressId}")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when email does not exist`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/email/9999")
+          .bodyValue(validEmailRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update a email`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .bodyValue(
+            validEmailRequest.copy(
+              email = "test@email.com",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val email = offenderInternetAddressRepository.findByIdOrNull(existingEmail.internetAddressId)!!
+
+        with(email) {
+          assertThat(internetAddressId).isEqualTo(existingEmail.internetAddressId)
+          assertThat(offender.id).isEqualTo(existingOffender.id)
+          assertThat(email.internetAddress).isEqualTo("test@email.com")
+          assertThat(email.internetAddressClass).isEqualTo("EMAIL")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val offender = repository.offenderRepository.findByIdOrNull(existingOffender.id)
+          assertThat(offender?.internetAddresses).anyMatch { it.internetAddressId == email.internetAddressId }
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /core-person/{offenderId}/email/{emailAddressId}")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class DeleteOffenderEmail {
+    private lateinit var existingOffender: Offender
+    private lateinit var existingEmail: OffenderInternetAddress
+    private lateinit var differentEmail: OffenderInternetAddress
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingOffender = offender(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingEmail = email(emailAddress = "test@justice.gov.uk")
+        }
+        offender(
+          firstName = "FRED",
+          lastName = "BOG",
+        ) {
+          differentEmail = email(emailAddress = "test2@justice.gov.uk")
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when emails exists but not on the offender`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${differentEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when email does not exist`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/9999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete a email`() {
+        assertThat(offenderInternetAddressRepository.existsById(existingEmail.internetAddressId)).isTrue()
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(offenderInternetAddressRepository.existsById(existingEmail.internetAddressId)).isFalse()
       }
     }
   }
