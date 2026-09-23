@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -37,6 +38,7 @@ class CorePersonService(
   private val offenderInternetAddressRepository: OffenderInternetAddressRepository,
   private val offenderPhoneRepository: OffenderPhoneRepository,
   private val offenderAddressRepository: OffenderAddressRepository,
+  private val addressPhoneRepository: AddressPhoneRepository,
   private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
   private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
   private val cityRepository: ReferenceCodeRepository<City>,
@@ -168,6 +170,36 @@ class CorePersonService(
       if (it.offender.id != offenderId) throw BadDataException("Address of $addressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
     }
     offenderAddressRepository.deleteById(addressId)
+  }
+
+  fun createOffenderAddressPhone(offenderId: Long, addressId: Long, request: CreateOffenderPhoneRequest): CreateOffenderPhoneResponse = addressPhoneRepository.saveAndFlush(
+    uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone(
+      address = offenderAddressOf(offenderId = offenderId, addressId = addressId),
+      phoneNo = request.number,
+      extNo = request.extension,
+      phoneType = phoneTypeOf(request.typeCode),
+    ),
+  ).let { CreateOffenderPhoneResponse(phoneId = it.phoneId) }
+
+  fun updateOffenderAddressPhone(offenderId: Long, addressId: Long, phoneId: Long, request: UpdateOffenderPhoneRequest) {
+    addressPhoneOf(offenderId = offenderId, addressId = addressId, phoneId = phoneId).run {
+      request.also {
+        phoneNo = it.number
+        extNo = it.extension
+        phoneType = phoneTypeOf(it.typeCode)
+      }
+    }
+  }
+
+  fun deleteOffenderAddressPhone(offenderId: Long, addressId: Long, phoneId: Long) {
+    addressPhoneRepository.findByIdOrNull(phoneId)?.also {
+      if (it.address.addressId != addressId) throw BadDataException("Phone of $phoneId does not exist on address $addressId but does on address ${it.address.addressId}")
+    }
+    offenderAddressRepository.findByIdOrNull(addressId)?.also {
+      if (it.offender.id != offenderId) throw BadDataException("Address of $addressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+    }
+
+    addressPhoneRepository.deleteById(phoneId)
   }
 
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
@@ -311,6 +343,8 @@ class CorePersonService(
   private fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
 
   private fun offenderAddressOf(offenderId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress = (offenderAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Address with id=$addressId on Offender with id=$offenderId does not exist")
+
+  private fun addressPhoneOf(offenderId: Long, addressId: Long, phoneId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address.addressId == offenderAddressOf(offenderId = offenderId, addressId = addressId).addressId } ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Offender with id=$offenderId does not exist")
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
     offenderId = id.offender.id,

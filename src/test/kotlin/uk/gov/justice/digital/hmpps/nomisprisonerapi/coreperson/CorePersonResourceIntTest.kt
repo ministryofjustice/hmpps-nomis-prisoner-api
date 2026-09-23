@@ -24,18 +24,21 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhoneRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson.OffenderBelief as OffenderBeliefCorePerson
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone as OffenderAddressPhoneJpa
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress as OffenderAddressJpa
 
 class CorePersonResourceIntTest(
   @Autowired private val offenderInternetAddressRepository: OffenderInternetAddressRepository,
   @Autowired private val offenderPhoneRepository: OffenderPhoneRepository,
   @Autowired private val offenderAddressRepository: OffenderAddressRepository,
+  @Autowired private val addressPhoneRepository: AddressPhoneRepository,
 ) : IntegrationTestBase() {
   fun deleteAll() {
     repository.deleteAllBeliefs()
@@ -2848,6 +2851,375 @@ class CorePersonResourceIntTest(
           .expectStatus()
           .isNoContent
         assertThat(offenderAddressRepository.existsById(existingAddress.addressId)).isFalse()
+      }
+    }
+  }
+
+  @DisplayName("POST /core-person/{offenderId}/address/{addressId}/phone")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class CreateOffenderAddressPhone {
+    private val validPhoneRequest = CreateOffenderPhoneRequest(
+      number = "0114 555 5555",
+      typeCode = "MOB",
+    )
+
+    private lateinit var existingOffender: Offender
+    private lateinit var anotherOffender: Offender
+    private lateinit var existingAddress: OffenderAddressJpa
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        anotherOffender = offender(
+          firstName = "JANE",
+          lastName = "BOG",
+        )
+        existingOffender = offender(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingAddress = address()
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when offender does not exist`() {
+        webTestClient.post().uri("/core-person/999/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/address/999/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist on offender`() {
+        webTestClient.post().uri("/core-person/${anotherOffender.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a phone`() {
+        val response: CreateOffenderPhoneResponse = webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+          .bodyValue(
+            validPhoneRequest.copy(
+              number = "07973 555 5555",
+              typeCode = "MOB",
+              extension = "x555",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody(CreateOffenderPhoneResponse::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val phone = addressPhoneRepository.findByIdOrNull(response.phoneId)!!
+
+        with(phone) {
+          assertThat(phoneId).isEqualTo(response.phoneId)
+          assertThat(address.addressId).isEqualTo(existingAddress.addressId)
+          assertThat(phone.phoneNo).isEqualTo("07973 555 5555")
+          assertThat(phone.extNo).isEqualTo("x555")
+          assertThat(phone.phoneType.description).isEqualTo("Mobile")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val offender = repository.offenderRepository.findByIdOrNull(existingOffender.id)
+          val address = offender!!.addresses.find { it.addressId == existingAddress.addressId }
+          assertThat(address?.phones).anyMatch { it.phoneId == phone.phoneId }
+        }
+      }
+    }
+  }
+
+  @DisplayName("PUT /core-person/{offenderId}/address/{addressId}/phone/{phoneId}")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class UpdateOffenderAddressPhone {
+    private val validPhoneRequest = UpdateOffenderPhoneRequest(
+      number = "0114 555 5555",
+      typeCode = "MOB",
+    )
+
+    private lateinit var existingOffender: Offender
+    private lateinit var existingAddress: OffenderAddressJpa
+    private lateinit var existingPhone: OffenderAddressPhoneJpa
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingOffender = offender(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingAddress = address {
+            existingPhone = phone(phoneType = "HOME", phoneNo = "0113 4546 4646", extNo = "ext 567")
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 404 when offender does not exist`() {
+        webTestClient.put().uri("/core-person/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when address does not exist`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/address/99999/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 404 when phone does not exist`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/99999")
+          .bodyValue(validPhoneRequest)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when phone type code does not exist`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update the phone`() {
+        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .bodyValue(
+            validPhoneRequest.copy(
+              number = "07973 555 5555",
+              typeCode = "MOB",
+              extension = "x555",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        val phone = addressPhoneRepository.findByIdOrNull(existingPhone.phoneId)!!
+
+        with(phone) {
+          assertThat(phoneId).isEqualTo(existingPhone.phoneId)
+          assertThat(address.addressId).isEqualTo(existingAddress.addressId)
+          assertThat(phone.phoneNo).isEqualTo("07973 555 5555")
+          assertThat(phone.extNo).isEqualTo("x555")
+          assertThat(phone.phoneType.description).isEqualTo("Mobile")
+        }
+
+        nomisDataBuilder.runInTransaction {
+          val offender = repository.offenderRepository.findByIdOrNull(existingOffender.id)
+          val address = offender!!.addresses.find { it.addressId == existingAddress.addressId }
+          assertThat(address?.phones).anyMatch { it.phoneId == phone.phoneId }
+        }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /core-person/{offenderId}/address/{addressId}/phone/{phoneId}")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class DeleteOffenderAddressPhone {
+    private lateinit var existingOffender: Offender
+    private lateinit var existingAddress: OffenderAddressJpa
+    private lateinit var existingPhone: OffenderAddressPhoneJpa
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingOffender = offender(
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          existingAddress = address {
+            existingPhone = phone(phoneType = "HOME", phoneNo = "0113 4546 4646", extNo = "ext 567")
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `return 400 when phone exists on address but address does not belong to offender`() {
+        webTestClient.delete().uri("/core-person/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 400 when phone exists but not on address`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/99999/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `return 204 when phone does not exist`() {
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/99999")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNoContent
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete the phone`() {
+        assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
+        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+        assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isFalse()
       }
     }
   }
