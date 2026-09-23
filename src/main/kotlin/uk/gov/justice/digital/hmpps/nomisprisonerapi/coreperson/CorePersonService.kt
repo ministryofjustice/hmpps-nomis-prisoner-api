@@ -8,15 +8,24 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIdentifierRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderInternetAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @Transactional
 @Service
@@ -26,6 +35,13 @@ class CorePersonService(
   private val offenderBeliefRepository: OffenderBeliefRepository,
   private val offenderIdentifierRepository: OffenderIdentifierRepository,
   private val offenderInternetAddressRepository: OffenderInternetAddressRepository,
+  private val offenderPhoneRepository: OffenderPhoneRepository,
+  private val offenderAddressRepository: OffenderAddressRepository,
+  private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
+  private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
+  private val cityRepository: ReferenceCodeRepository<City>,
+  private val countyRepository: ReferenceCodeRepository<County>,
+  private val countryRepository: ReferenceCodeRepository<Country>,
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val latestBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
@@ -70,6 +86,88 @@ class CorePersonService(
       if (it.offender.id != offenderId) throw BadDataException("Internet Address of $emailAddressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
     }
     offenderInternetAddressRepository.deleteById(emailAddressId)
+  }
+
+  fun createOffenderPhone(offenderId: Long, request: CreateOffenderPhoneRequest): CreateOffenderPhoneResponse = offenderPhoneRepository.saveAndFlush(
+    OffenderPhone(
+      offender = offenderOf(offenderId),
+      phoneNo = request.number,
+      extNo = request.extension,
+      phoneType = phoneTypeOf(request.typeCode),
+    ),
+  ).let { CreateOffenderPhoneResponse(phoneId = it.phoneId) }
+
+  fun updateOffenderPhone(offenderId: Long, phoneId: Long, request: UpdateOffenderPhoneRequest) {
+    phoneOf(offenderId = offenderId, phoneId = phoneId).run {
+      request.also {
+        phoneNo = it.number
+        extNo = it.extension
+        phoneType = phoneTypeOf(it.typeCode)
+      }
+    }
+  }
+
+  fun deleteOffenderPhone(offenderId: Long, phoneId: Long) {
+    offenderPhoneRepository.findByIdOrNull(phoneId)?.also {
+      if (it.offender.id != offenderId) throw BadDataException("Phone of $phoneId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+    }
+    offenderPhoneRepository.deleteById(phoneId)
+  }
+
+  fun createOffenderAddress(offenderId: Long, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse = offenderAddressRepository.saveAndFlush(
+    request.let {
+      uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress(
+        offender = offenderOf(offenderId),
+        addressType = addressTypeOf(it.typeCode),
+        premise = it.premise,
+        street = it.street,
+        locality = it.locality,
+        flat = it.flat,
+        postalCode = it.postcode,
+        city = cityOf(it.cityCode),
+        county = countyOf(it.countyCode),
+        country = countryOf(it.countryCode),
+        validatedPAF = false,
+        noFixedAddress = it.noFixedAddress,
+        primaryAddress = it.primaryAddress,
+        mailAddress = it.mailAddress,
+        comment = it.comment,
+        startDate = it.startDate,
+        endDate = it.endDate,
+      )
+    },
+  ).let { CreateOffenderAddressResponse(addressId = it.addressId) }
+
+  fun updateOffenderAddress(offenderId: Long, addressId: Long, request: UpdateOffenderAddressRequest) {
+    offenderAddressOf(offenderId = offenderId, addressId = addressId).run {
+      request.also {
+        addressType = addressTypeOf(it.typeCode)
+        premise = it.premise
+        street = it.street
+        locality = it.locality
+        flat = it.flat
+        postalCode = it.postcode
+        city = cityOf(it.cityCode)
+        county = countyOf(it.countyCode)
+        country = countryOf(it.countryCode)
+        noFixedAddress = it.noFixedAddress
+        primaryAddress = it.primaryAddress
+        mailAddress = it.mailAddress
+        comment = it.comment
+        startDate = it.startDate
+        endDate = it.endDate
+        it.validatedPAF?.also { validated ->
+          validatedPAF = validated
+        }
+      }
+    }
+  }
+
+  fun deleteOffenderAddress(offenderId: Long, addressId: Long) {
+    offenderAddressRepository.findByIdOrNull(addressId)?.also {
+      if (it.offender.id != offenderId) throw BadDataException("Address of $addressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+    }
+    offenderAddressRepository.deleteById(addressId)
   }
 
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
@@ -199,6 +297,20 @@ class CorePersonService(
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 
   private fun emailOf(offenderId: Long, emailAddressId: Long): OffenderInternetAddress = (offenderInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("Email with id=$emailAddressId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Email with id=$emailAddressId on Offender with id=$offenderId does not exist")
+
+  private fun phoneOf(offenderId: Long, phoneId: Long): OffenderPhone = (offenderPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Phone with id=$phoneId on Offender with id=$offenderId does not exist")
+
+  private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
+
+  private fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
+
+  private fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
+
+  private fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) ?: throw BadDataException("County with code $code does not exist") }
+
+  private fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
+
+  private fun offenderAddressOf(offenderId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress = (offenderAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Address with id=$addressId on Offender with id=$offenderId does not exist")
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
     offenderId = id.offender.id,
