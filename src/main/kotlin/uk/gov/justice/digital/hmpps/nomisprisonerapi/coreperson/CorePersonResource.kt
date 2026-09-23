@@ -10,9 +10,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -362,6 +364,178 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   ) {
     corePersonService.updateOffenderAfterMerge(prisonNumber, request)
   }
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PostMapping("/{offenderId}/email")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates an offender email",
+    description = "Creates an offender email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Offender Email ID aka InternetAddressId Returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateOffenderEmailResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createOffenderEmail(
+    @Schema(description = "Offender Id", example = "12345")
+    @PathVariable
+    offenderId: Long,
+    @RequestBody @Valid
+    request: CreateOffenderEmailRequest,
+  ): CreateOffenderEmailResponse = corePersonService.createOffenderEmail(offenderId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PutMapping("/{offenderId}/email/{emailAddressId}")
+  @Operation(
+    summary = "Updates an offender email",
+    description = "Updates an offender email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender Email ID aka InternetAddressId Update",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or email address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateOffenderEmail(
+    @Schema(description = "Offender Id", example = "12345")
+    @PathVariable
+    offenderId: Long,
+    @Schema(description = "Email address Id", example = "76554")
+    @PathVariable
+    emailAddressId: Long,
+    @RequestBody @Valid
+    request: UpdateOffenderEmailRequest,
+  ) = corePersonService.updateOffenderEmail(offenderId = offenderId, emailAddressId = emailAddressId, request = request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @DeleteMapping("/{offenderId}/email/{emailAddressId}")
+  @Operation(
+    summary = "Deletes an offender email",
+    description = "Deletes an offender email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Offender Email ID aka InternetAddressId Delete",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The email exists but not for this offender",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or email address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteOffenderEmail(
+    @Schema(description = "Offender Id", example = "12345")
+    @PathVariable
+    offenderId: Long,
+    @Schema(description = "Email address Id", example = "76554")
+    @PathVariable
+    emailAddressId: Long,
+  ) = corePersonService.deleteOffenderEmail(offenderId = offenderId, emailAddressId = emailAddressId)
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
@@ -552,6 +726,21 @@ data class OffenderEmailAddress(
   val lastUpdatedDateTime: LocalDateTime?,
   @Schema(description = "Username of person who last updated the record in NOMIS", required = true)
   val lastUpdatedByUsername: String?,
+)
+
+data class CreateOffenderEmailRequest(
+  @Schema(description = "Email address", example = "test@test.justice.gov.uk")
+  val email: String,
+)
+
+data class UpdateOffenderEmailRequest(
+  @Schema(description = "Email address", example = "test@test.justice.gov.uk")
+  val email: String,
+)
+
+data class CreateOffenderEmailResponse(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val emailAddressId: Long,
 )
 
 @Schema(description = "Offender beliefs")
