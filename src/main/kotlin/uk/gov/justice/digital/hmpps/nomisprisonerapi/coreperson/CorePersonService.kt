@@ -68,6 +68,11 @@ class CorePersonService(
   fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
     .map { it.toBelief() }
 
+  fun getOffenderEmail(offenderId: Long, emailAddressId: Long): OffenderEmailAddress = emailOf(
+    offenderId = offenderId,
+    emailAddressId = emailAddressId,
+  ).toOffenderEmailAddress()
+
   fun createOffenderEmail(offenderId: Long, request: CreateOffenderEmailRequest): CreateOffenderEmailResponse = offenderInternetAddressRepository.saveAndFlush(
     OffenderInternetAddress(
       offender = offenderOf(offenderId),
@@ -89,6 +94,11 @@ class CorePersonService(
     }
     offenderInternetAddressRepository.deleteById(emailAddressId)
   }
+
+  fun getOffenderPhone(offenderId: Long, phoneId: Long): OffenderPhoneNumber = phoneOf(
+    offenderId = offenderId,
+    phoneId = phoneId,
+  ).toOffenderPhoneNumber()
 
   fun createOffenderPhone(offenderId: Long, request: CreateOffenderPhoneRequest): CreateOffenderPhoneResponse = offenderPhoneRepository.saveAndFlush(
     OffenderPhone(
@@ -115,6 +125,11 @@ class CorePersonService(
     }
     offenderPhoneRepository.deleteById(phoneId)
   }
+
+  fun getOffenderAddress(offenderId: Long, addressId: Long): OffenderAddress = offenderAddressOf(
+    offenderId = offenderId,
+    addressId = addressId,
+  ).toOffenderAddress()
 
   fun createOffenderAddress(offenderId: Long, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse = offenderAddressRepository.saveAndFlush(
     request.let {
@@ -171,6 +186,12 @@ class CorePersonService(
     }
     offenderAddressRepository.deleteById(addressId)
   }
+
+  fun getOffenderAddressPhone(offenderId: Long, addressId: Long, phoneId: Long): OffenderPhoneNumber = addressPhoneOf(
+    offenderId = offenderId,
+    addressId = addressId,
+    phoneId = phoneId,
+  ).toOffenderPhoneNumber()
 
   fun createOffenderAddressPhone(offenderId: Long, addressId: Long, request: CreateOffenderPhoneRequest): CreateOffenderPhoneResponse = addressPhoneRepository.saveAndFlush(
     uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone(
@@ -243,76 +264,69 @@ class CorePersonService(
     )
   }
 
-  private fun getAddresses(rootOffender: Offender): List<OffenderAddress> = rootOffender.addresses.map { address ->
-    OffenderAddress(
-      addressId = address.addressId,
-      flat = address.flat,
-      premise = address.premise,
-      street = address.street,
-      locality = address.locality,
-      postcode = address.postalCode,
-      city = address.city?.toCodeDescription(),
-      county = address.county?.toCodeDescription(),
-      country = address.country?.toCodeDescription(),
-      primaryAddress = address.primaryAddress,
-      noFixedAddress = address.noFixedAddress,
-      mailAddress = address.mailAddress,
-      comment = address.comment,
-      startDate = address.startDate,
-      endDate = address.endDate,
-      phoneNumbers = address.phones.map { number ->
-        OffenderPhoneNumber(
-          phoneId = number.phoneId,
-          number = number.phoneNo,
-          type = number.phoneType.toCodeDescription(),
-          extension = number.extNo,
-          createdDateTime = number.createDatetime,
-          createdByUsername = number.createUsername,
-          lastUpdatedDateTime = number.modifyDatetime,
-          lastUpdatedByUsername = number.modifyUserId,
-        )
-      },
-      usages = address.usages.filter { u -> u.addressUsage != null }.map { u ->
-        OffenderAddressUsage(
-          addressId = address.addressId,
-          usage = u.addressUsage!!.toCodeDescription(),
-          active = u.active,
-          createdDateTime = u.createDatetime,
-          createdByUsername = u.createUsername,
-          lastUpdatedDateTime = u.modifyDatetime,
-          lastUpdatedByUsername = u.modifyUserId,
-        )
-      },
-      createdDateTime = address.createDatetime,
-      createdByUsername = address.createUsername,
-      lastUpdatedDateTime = address.modifyDatetime,
-      lastUpdatedByUsername = address.modifyUserId,
-    )
-  }
+  private fun getAddresses(rootOffender: Offender): List<OffenderAddress> = rootOffender.addresses.map { it.toOffenderAddress() }
+
+  private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress.toOffenderAddress(): OffenderAddress = OffenderAddress(
+    addressId = addressId,
+    flat = flat,
+    premise = premise,
+    street = street,
+    locality = locality,
+    postcode = postalCode,
+    city = city?.toCodeDescription(),
+    county = county?.toCodeDescription(),
+    country = country?.toCodeDescription(),
+    primaryAddress = primaryAddress,
+    noFixedAddress = noFixedAddress,
+    mailAddress = mailAddress,
+    comment = comment,
+    startDate = startDate,
+    endDate = endDate,
+    phoneNumbers = phones.map { number -> number.toOffenderPhoneNumber() },
+    usages = usages.filter { u -> u.addressUsage != null }.map { u ->
+      OffenderAddressUsage(
+        addressId = addressId,
+        usage = u.addressUsage!!.toCodeDescription(),
+        active = u.active,
+        createdDateTime = u.createDatetime,
+        createdByUsername = u.createUsername,
+        lastUpdatedDateTime = u.modifyDatetime,
+        lastUpdatedByUsername = u.modifyUserId,
+      )
+    },
+    createdDateTime = createDatetime,
+    createdByUsername = createUsername,
+    lastUpdatedDateTime = modifyDatetime,
+    lastUpdatedByUsername = modifyUserId,
+  )
 
   private fun getPhoneNumbers(rootOffender: Offender): List<OffenderPhoneNumber> = rootOffender.phones.map { number ->
-    OffenderPhoneNumber(
-      phoneId = number.phoneId,
-      number = number.phoneNo,
-      type = number.phoneType.toCodeDescription(),
-      extension = number.extNo,
-      createdDateTime = number.createDatetime,
-      createdByUsername = number.createUsername,
-      lastUpdatedDateTime = number.modifyDatetime,
-      lastUpdatedByUsername = number.modifyUserId,
-    )
+    number.toOffenderPhoneNumber()
   }
 
+  private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Phone.toOffenderPhoneNumber() = OffenderPhoneNumber(
+    phoneId = phoneId,
+    number = phoneNo,
+    type = phoneType.toCodeDescription(),
+    extension = extNo,
+    createdDateTime = createDatetime,
+    createdByUsername = createUsername,
+    lastUpdatedDateTime = modifyDatetime,
+    lastUpdatedByUsername = modifyUserId,
+  )
+
   private fun getEmailAddresses(rootOffender: Offender): List<OffenderEmailAddress> = rootOffender.internetAddresses.map { address ->
-    OffenderEmailAddress(
-      emailAddressId = address.internetAddressId,
-      email = address.internetAddress,
-      createdDateTime = address.createDatetime,
-      createdByUsername = address.createUsername,
-      lastUpdatedDateTime = address.modifyDatetime,
-      lastUpdatedByUsername = address.modifyUserId,
-    )
+    address.toOffenderEmailAddress()
   }
+
+  private fun OffenderInternetAddress.toOffenderEmailAddress() = OffenderEmailAddress(
+    emailAddressId = internetAddressId,
+    email = internetAddress,
+    createdDateTime = createDatetime,
+    createdByUsername = createUsername,
+    lastUpdatedDateTime = modifyDatetime,
+    lastUpdatedByUsername = modifyUserId,
+  )
 
   private fun currentAliasAndRootOffender(prisonNumber: String): CurrentAliasAndRoot {
     val rootOffender = rootOffender(prisonNumber)

@@ -366,6 +366,63 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   }
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/{offenderId}/email/{emailAddressId}")
+  @Operation(
+    summary = "Gets an offender email",
+    description = "Gets an offender email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender email returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = OffenderEmailAddress::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or email address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderEmail(
+    @Schema(description = "Offender Id", example = "12345")
+    @PathVariable
+    offenderId: Long,
+    @Schema(description = "Email address Id", example = "76554")
+    @PathVariable
+    emailAddressId: Long,
+  ): OffenderEmailAddress = corePersonService.getOffenderEmail(offenderId, emailAddressId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/{offenderId}/email")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -536,6 +593,63 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable
     emailAddressId: Long,
   ) = corePersonService.deleteOffenderEmail(offenderId = offenderId, emailAddressId = emailAddressId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/{offenderId}/phone/{phoneId}")
+  @Operation(
+    summary = "Gets an offender global phone",
+    description = "Gets an offender global phone in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender phone returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = OffenderPhoneNumber::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or phone does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderPhone(
+    @Schema(description = "Offender Id", example = "12345")
+    @PathVariable
+    offenderId: Long,
+    @Schema(description = "Phone Id", example = "35355")
+    @PathVariable
+    phoneId: Long,
+  ): OffenderPhoneNumber = corePersonService.getOffenderPhone(offenderId = offenderId, phoneId = phoneId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/{offenderId}/phone")
@@ -720,6 +834,63 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   ) = corePersonService.deleteOffenderPhone(offenderId = offenderId, phoneId = phoneId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/{offenderId}/address/{addressId}")
+  @Operation(
+    summary = "Gets an offender address",
+    description = "Gets an offender address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender address returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = OffenderAddress::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or address does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderAddress(
+    @Schema(description = "Offender Id", example = "12345")
+    @PathVariable
+    offenderId: Long,
+    @Schema(description = "Address Id", example = "47474")
+    @PathVariable
+    addressId: Long,
+  ): OffenderAddress = corePersonService.getOffenderAddress(offenderId = offenderId, addressId = addressId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/{offenderId}/address")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -900,6 +1071,70 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable
     addressId: Long,
   ) = corePersonService.deleteOffenderAddress(offenderId = offenderId, addressId = addressId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/{offenderId}/address/{addressId}/phone/{phoneId}")
+  @Operation(
+    summary = "Gets an offender address phone",
+    description = "Gets an offender phone associated with an address in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender address phone returned",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = OffenderPhoneNumber::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender, address or phone does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderAddressPhone(
+    @Schema(description = "Offender Id", example = "12345")
+    @PathVariable
+    offenderId: Long,
+    @Schema(description = "Address Id", example = "56789")
+    @PathVariable
+    addressId: Long,
+    @Schema(description = "Phone Id", example = "585850")
+    @PathVariable
+    phoneId: Long,
+  ): OffenderPhoneNumber = corePersonService.getOffenderAddressPhone(
+    offenderId = offenderId,
+    addressId = addressId,
+    phoneId = phoneId,
+  )
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @PostMapping("/{offenderId}/address/{addressId}/phone")
