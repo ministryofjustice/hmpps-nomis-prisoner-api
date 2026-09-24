@@ -78,6 +78,54 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): CorePerson = corePersonService.getOffender(prisonNumber)
 
+  @GetMapping("/{prisonNumber}/reconciliation")
+  @Operation(
+    summary = "Get an offender for reconciliation by prison number",
+    description = "Retrieves an offender with data necessary for reconciliation. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Core person information returned for reconciliation",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getOffenderForReconciliation(
+    @Schema(
+      description = "Prison number aka noms id / offender id display",
+      example = "A1234BC",
+    ) @PathVariable prisonNumber: String,
+  ): CorePerson = corePersonService.getOffenderForReconciliation(prisonNumber)
+
   @GetMapping("{offenderId}/identifier/{sequenceNumber}")
   @Operation(
     summary = "Get an identifier by offender id and sequence number",
