@@ -12,25 +12,28 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepo
 @Transactional
 class PrisonerAdvanceService(
   private val offenderRepository: OffenderRepository,
-  private val offenderAdvanceRepository: OffenderAdvanceRepository,
+  private val repository: OffenderAdvanceRepository,
 ) {
-  fun getAdvance(offenderAdvanceId: Long): PrisonerAdvanceDto = offenderAdvanceRepository.findByIdOrNull(offenderAdvanceId)
+  fun getAdvance(offenderAdvanceId: Long): PrisonerAdvanceDto = repository.findByIdOrNull(offenderAdvanceId)
     ?.toDto()
     ?: throw NotFoundException("Offender advance with id $offenderAdvanceId not found")
 
   fun getAdvances(prisonNumber: String): List<PrisonerAdvanceDto> = offenderRepository.findRootByNomsId(prisonNumber)
-    ?.let {
-      offenderAdvanceRepository.findByOffenderId(it.rootOffenderId!!)
-        .map { it.toDto() }
-    }
+    ?.let { getAdvances(it.rootOffenderId!!) }
     ?: throw NotFoundException("Offender $prisonNumber not found")
+
+  fun getAdvances(rootOffenderId: Long): List<PrisonerAdvanceDto> {
+    offenderRepository.findByIdOrNull(rootOffenderId)
+      ?: throw NotFoundException("Offender with id $rootOffenderId not found")
+
+    return repository.findByOffenderId(rootOffenderId).map { it.toDto() }
+  }
 }
 
 fun OffenderAdvance.toDto() = PrisonerAdvanceDto(
   id = this.id,
   prisonNumber = offender.nomsId,
   caseloadId = caseloadId,
-  transactionType = transactionType,
   advanceAmount = MoneySupport.poundsToPence(advanceAmount),
   advanceDate = advanceDate,
   startDate = startDate,
@@ -38,6 +41,7 @@ fun OffenderAdvance.toDto() = PrisonerAdvanceDto(
   reference = referenceText,
   comment = commentText,
   createdBy = createUsername,
+  createDatetime = createDatetime,
   // TODO
   status = "TODO",
 )

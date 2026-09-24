@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @RestController
 @Validated
@@ -58,7 +59,7 @@ class PrisonerAdvanceResource(
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's advances by their prison number",
-    description = "Retrieves a prisoner's advances. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Retrieves a prisoner's advances by prison number. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Advance Information Returned"),
       ApiResponse(
@@ -83,21 +84,46 @@ class PrisonerAdvanceResource(
     @PathVariable
     prisonNumber: String,
   ): List<PrisonerAdvanceDto> = service.getAdvances(prisonNumber)
+
+  @GetMapping("/root-offender-id/{rootOffenderId}/advances")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner's advances by their root offender id",
+    description = "Retrieves a prisoner's advances by root offender id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Advance Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getPrisonerAdvancesById(
+    @Schema(description = "root offender id", example = "123456")
+    @PathVariable
+    rootOffenderId: Long,
+  ): List<PrisonerAdvanceDto> = service.getAdvances(rootOffenderId)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class PrisonerAdvanceDto(
   @Schema(description = "The advance id", example = "123456")
   val id: Long,
-
   @Schema(description = "The prisonNumber", example = "A1234BC")
   val prisonNumber: String,
-
   @Schema(description = "The caseload", example = "MDI")
   val caseloadId: String,
-
-  @Schema(description = "transaction type", example = "TELE")
-  val transactionType: String,
 
   @Schema(description = "The total amount in pence to be paid to the prisoner, so £1.50 returned as 150", example = "150")
   val advanceAmount: Long,
@@ -113,8 +139,11 @@ data class PrisonerAdvanceDto(
   val reference: String?,
   @Schema(description = "The comment for the advance", example = "Advance for personal expenses")
   val comment: String?,
+
   @Schema(description = "The user who created the advance", example = "FRED_SMITH")
   val createdBy: String,
+  @Schema(description = "The date time when the advance was created", example = "2024-06-01T12:00:00")
+  val createDatetime: LocalDateTime,
 
   @Schema(description = "The status of the advance", example = "ACTIVE")
   val status: String?,
