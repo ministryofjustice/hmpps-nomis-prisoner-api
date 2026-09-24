@@ -122,13 +122,13 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /finance/prisoners/rootOffenderId/{rootOffenderId}/advances")
+  @DisplayName("GET /finance/prisoners/root-offender-id/{rootOffenderId}/advances")
   inner class PrisonerAdvancesByRootOffenderIdTests {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/finance/prisoners/rootOffenderId/$id1/advances")
+        webTestClient.get().uri("/finance/prisoners/root-offender-id/$id1/advances")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -136,7 +136,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/finance/prisoners/rootOffenderId/$id1/advances")
+        webTestClient.get().uri("/finance/prisoners/root-offender-id/$id1/advances")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -144,7 +144,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/finance/prisoners/rootOffenderId/$id1/advances")
+        webTestClient.get().uri("/finance/prisoners/root-offender-id/$id1/advances")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -152,7 +152,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonerAdvances() {
-      webTestClient.get().uri("/finance/prisoners/rootOffenderId/$id1/advances")
+      webTestClient.get().uri("/finance/prisoners/root-offender-id/$id1/advances")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -176,7 +176,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonerAdvancesEmptyList() {
-      webTestClient.get().uri("/finance/prisoners/rootOffenderId/$id2/advances")
+      webTestClient.get().uri("/finance/prisoners/root-offender-id/$id2/advances")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -187,7 +187,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonerAdvancesMultiple() {
-      webTestClient.get().uri("/finance/prisoners/rootOffenderId/$id3/advances")
+      webTestClient.get().uri("/finance/prisoners/root-offender-id/$id3/advances")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()

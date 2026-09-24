@@ -85,7 +85,7 @@ class PrisonerAdvanceResource(
     prisonNumber: String,
   ): List<PrisonerAdvanceDto> = service.getAdvances(prisonNumber)
 
-  @GetMapping("/rootOffenderId/{rootOffenderId}/advances")
+  @GetMapping("/root-offender-id/{rootOffenderId}/advances")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's advances by their root offender id",
