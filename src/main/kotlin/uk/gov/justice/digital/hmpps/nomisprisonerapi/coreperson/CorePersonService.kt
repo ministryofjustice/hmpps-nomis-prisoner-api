@@ -64,7 +64,19 @@ class CorePersonService(
         .map { it.toBelief() },
     )
   }
-
+  fun getOffenderForReconciliation(prisonNumber: String): CorePerson = with(rootOffender(prisonNumber)) {
+    CorePerson(
+      prisonNumber = prisonNumber,
+      inOutStatus = null,
+      activeFlag = false,
+      offenders = null,
+      addresses = getAddresses(this),
+      phoneNumbers = getPhoneNumbers(this),
+      emailAddresses = getEmailAddresses(this),
+      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(this.id)
+        .map { it.toBelief() },
+    )
+  }
   fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
     .map { it.toBelief() }
 

@@ -861,6 +861,214 @@ class CorePersonResourceIntTest(
     }
   }
 
+  @DisplayName("GET /core-person/{prisonNumber}/reconciliation")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class GetOffenderForReconciliation {
+    private lateinit var offenderMinimal: Offender
+    private lateinit var offenderFull: Offender
+    private lateinit var belief: OffenderBelief
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY", type = "GENERAL")
+        }
+        offenderMinimal = offender(
+          nomsId = "R1234BC",
+          firstName = "JOHN",
+          lastName = "BOG",
+        )
+        offenderFull = offender(
+          nomsId = "R1234BD",
+          firstName = "JANE",
+          lastName = "NARK",
+        ) {
+          booking {
+            belief = belief(
+              beliefCode = "JAIN",
+              changeReason = true,
+              comments = "No longer believes in Zoroastrianism",
+              verified = true,
+            )
+          }
+          phone(phoneType = "MOB", phoneNo = "07399999999")
+          email(emailAddress = "jane.nark@justice.gov.uk")
+          address(
+            type = "HOME",
+            flat = "3B",
+            premise = "Brown Court",
+            street = "Scotland Street",
+            locality = "Hunters Bar",
+            postcode = "S1 3GG",
+            primaryAddress = true,
+            mailAddress = true,
+          )
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/reconciliation")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/reconciliation")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/reconciliation")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/core-person/AB1234C/reconciliation")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return basic reconciliation data when there is no related data`() {
+        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/reconciliation")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("prisonNumber").isEqualTo(offenderMinimal.nomsId)
+          .jsonPath("inOutStatus").doesNotExist()
+          .jsonPath("activeFlag").isEqualTo(false)
+          .jsonPath("offenders").doesNotExist()
+          .jsonPath("addresses").doesNotExist()
+          .jsonPath("phoneNumbers").doesNotExist()
+          .jsonPath("emailAddresses").doesNotExist()
+          .jsonPath("beliefs").doesNotExist()
+      }
+
+      @Test
+      fun `will return addresses, phone numbers, email addresses and beliefs`() {
+        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/reconciliation")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("prisonNumber").isEqualTo(offenderFull.nomsId)
+          .jsonPath("inOutStatus").doesNotExist()
+          .jsonPath("activeFlag").isEqualTo(false)
+          .jsonPath("offenders").doesNotExist()
+          .jsonPath("addresses[0].addressId").isEqualTo(offenderFull.addresses[0].addressId)
+          .jsonPath("addresses[0].flat").isEqualTo("3B")
+          .jsonPath("addresses[0].premise").isEqualTo("Brown Court")
+          .jsonPath("addresses[0].street").isEqualTo("Scotland Street")
+          .jsonPath("addresses[0].locality").isEqualTo("Hunters Bar")
+          .jsonPath("addresses[0].postcode").isEqualTo("S1 3GG")
+          .jsonPath("addresses[0].primaryAddress").isEqualTo(true)
+          .jsonPath("addresses[0].mailAddress").isEqualTo(true)
+          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderFull.phones[0].phoneId)
+          .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
+          .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
+          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offenderFull.internetAddresses[0].internetAddressId)
+          .jsonPath("emailAddresses[0].email").isEqualTo("jane.nark@justice.gov.uk")
+          .jsonPath("beliefs.length()").isEqualTo(1)
+          .jsonPath("beliefs[0].beliefId").isEqualTo(belief.beliefId)
+          .jsonPath("beliefs[0].belief.code").isEqualTo("JAIN")
+          .jsonPath("beliefs[0].belief.description").isEqualTo("Jain")
+          .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+      }
+
+      @Test
+      fun `is able to re-hydrate the core person for reconciliation`() {
+        val person = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/reconciliation")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .returnResult<CorePerson>().responseBody.blockFirst()!!
+
+        assertThat(person.prisonNumber).isEqualTo(offenderFull.nomsId)
+        assertThat(person.inOutStatus).isNull()
+        assertThat(person.activeFlag).isFalse()
+        assertThat(person.offenders).isNull()
+        assertThat(person.addresses).hasSize(1)
+        assertThat(person.phoneNumbers).hasSize(1)
+        assertThat(person.emailAddresses).hasSize(1)
+        assertThat(person.beliefs).hasSize(1)
+      }
+    }
+
+    @Nested
+    @TestInstance(PER_CLASS)
+    inner class WithAlias {
+      private lateinit var offender: Offender
+
+      @BeforeAll
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender(
+            nomsId = "R1234BE",
+            firstName = "JOHN",
+            lastName = "BOG",
+          ) {
+            address(
+              premise = "Root House",
+              street = "Root Street",
+              locality = "Root Locality",
+            )
+            booking(bookingSequence = 2, active = false) { }
+            alias(
+              firstName = "AJOHN",
+              lastName = "ABARK",
+            ) {
+              booking(bookingSequence = 1) { }
+            }
+          }
+        }
+      }
+
+      @AfterAll
+      fun tearDown(): Unit = deleteAll()
+
+      @Test
+      fun `will return addresses from the root offender even when current alias is different`() {
+        webTestClient.get().uri("/core-person/${offender.nomsId}/reconciliation")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("prisonNumber").isEqualTo(offender.nomsId)
+          .jsonPath("addresses[0].addressId").isEqualTo(offender.addresses[0].addressId)
+          .jsonPath("addresses[0].premise").isEqualTo("Root House")
+          .jsonPath("offenders").doesNotExist()
+      }
+    }
+  }
+
   @DisplayName("GET /core-person/{prisonNumber}/aliases-identifiers")
   @Nested
   @TestInstance(PER_CLASS)
