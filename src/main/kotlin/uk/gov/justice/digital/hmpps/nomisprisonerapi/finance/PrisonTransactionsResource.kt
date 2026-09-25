@@ -211,7 +211,7 @@ data class GeneralLedgerTransactionDto(
   @Schema(description = "The account code", example = "21020")
   val accountCode: Int,
 
-  @Schema(description = "A description of the transaction entry", example = "???")
+  @Schema(description = "A description of the transaction entry", example = "Open/Reopen Trust Account")
   val description: String,
 
   @Schema(description = "When the transaction occurred", example = "2025-07-14T12:13:14")
