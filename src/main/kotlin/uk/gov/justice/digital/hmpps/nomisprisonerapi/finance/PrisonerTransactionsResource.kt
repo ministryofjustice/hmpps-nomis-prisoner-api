@@ -308,7 +308,7 @@ data class TransactionIdRange(
 @Schema(description = "The data held in NOMIS about a hold transaction")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class HoldDto(
-  @Schema(description = "The hold number - this may not be present in old hold transactions")
+  @Schema(description = "The hold number - this may not be present in old release hold transactions")
   val holdNumber: Long?,
   @Schema(description = "If the hold has been cleared - ie has an associated HOR/WFR transaction")
   val holdCleared: Boolean,
