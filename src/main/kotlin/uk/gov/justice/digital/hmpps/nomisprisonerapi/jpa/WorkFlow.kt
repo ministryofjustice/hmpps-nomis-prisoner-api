@@ -29,13 +29,11 @@ abstract class WorkFlow(
   @Id
   @Column(name = "WORK_FLOW_ID")
   val id: Long = 0,
-
   @OneToMany(mappedBy = "id.workFlow", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val logs: MutableList<WorkFlowLog> = mutableListOf(),
   @Column(name = "CREATE_USER_ID")
   val createUsername: String,
 ) {
-
   @Column(name = "CREATE_DATETIME", insertable = false, updatable = false)
   @Generated
   lateinit var createDatetime: LocalDateTime
@@ -50,5 +48,6 @@ abstract class WorkFlow(
   override fun hashCode(): Int = javaClass.hashCode()
 
   fun highestSequence() = this.logs.maxOfOrNull { it.id.workFlowSeq } ?: 0
+
   fun nextSequence() = this.highestSequence() + 1
 }
