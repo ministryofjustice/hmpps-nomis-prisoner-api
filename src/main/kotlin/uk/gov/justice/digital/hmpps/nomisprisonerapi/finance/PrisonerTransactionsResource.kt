@@ -308,10 +308,10 @@ data class TransactionIdRange(
 @Schema(description = "The data held in NOMIS about a hold transaction")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class HoldDto(
-  @Schema(description = "The hold number", required = false)
-  val holdNumber: Long,
-  @Schema(description = "If the hold has been cleared - ie has an associated HOR/WFR transaction", required = true)
+  @Schema(description = "The hold number - this may not be present in old hold transactions")
+  val holdNumber: Long?,
+  @Schema(description = "If the hold has been cleared - ie has an associated HOR/WFR transaction")
   val holdCleared: Boolean,
-  @Schema(description = "The date until the hold is valid", required = false)
+  @Schema(description = "The date until the hold is valid")
   val holdUntilDate: LocalDate?,
 )
