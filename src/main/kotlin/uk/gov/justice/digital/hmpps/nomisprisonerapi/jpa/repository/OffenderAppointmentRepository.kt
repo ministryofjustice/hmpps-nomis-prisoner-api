@@ -25,6 +25,20 @@ interface OffenderAppointmentRepository :
   ): List<OffenderAppointment>
 
   @Query(
+    "from OffenderAppointment oa where oa.offenderBooking.bookingId = :bookingId and oa.eventSubType.code = :eventSubType " +
+      "and oa.internalLocation.locationId = :locationId and oa.eventDate = :date " +
+      "and hour(oa.startTime) = :hour and minute(oa.startTime) = :minute",
+  )
+  fun findByBookingEventSubTypeLocationDateAndStartTime(
+    bookingId: Long,
+    eventSubType: String,
+    locationId: Long,
+    date: LocalDate,
+    hour: Int,
+    minute: Int,
+  ): List<OffenderAppointment>
+
+  @Query(
     """SELECT event_id FROM  (
         SELECT /*+ index(offender_ind_schedules OFFENDER_IND_SCHEDULES_X03) */ 
             event_id,
