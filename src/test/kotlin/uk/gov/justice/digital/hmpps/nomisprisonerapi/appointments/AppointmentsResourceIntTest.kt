@@ -5,10 +5,12 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
-import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventClass
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventType
@@ -258,15 +260,61 @@ ${if (inCell) "" else """ "internalLocationId" : $MDI_ROOM_ID,"""}
         .contentType(MediaType.APPLICATION_JSON)
         .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime = true, inCell = false)))
         .exchange()
-        .expectStatus().value { assertThat(it).isEqualTo(409) }
-        .expectBody<ErrorResponse>()
-        .returnResult().responseBody
+        .expectStatus().value { assertThat(it).isEqualTo(201) } // 409
+//        .expectBody<ErrorResponse>()
+//        .returnResult().responseBody
 
-      assertThat(response?.moreInfo).isEqualTo(id.toInt())
-      assertThat(response?.userMessage).isEqualTo(
-        "An appointment already exists for bookingId=${offenderAtMoorlands.latestBooking().bookingId}, eventSubType=ACTI, date=2023-02-27, startTime=10:40",
+//      assertThat(response?.moreInfo).isEqualTo(id.toInt())
+//      assertThat(response?.userMessage).isEqualTo(
+//        "An appointment already exists for bookingId=${offenderAtMoorlands.latestBooking().bookingId}, eventSubType=ACTI, date=2023-02-27, startTime=10:40",
+//      )
+//      assertThat(response?.developerMessage).isEqualTo(response?.userMessage)
+
+      verify(telemetryClient).trackEvent(
+        eq("appointment-duplicate-detected"),
+        check { actual ->
+          println("Checking actual: $actual")
+          println("Checking against booking id: ${offenderAtMoorlands.latestBooking().bookingId}")
+          assertThat(actual).containsEntry("bookingId", offenderAtMoorlands.latestBooking().bookingId.toString())
+          assertThat(actual).containsEntry("eventSubType", "ACTI")
+          assertThat(actual).containsEntry("location", "$MDI_ROOM_ID")
+          assertThat(actual).containsEntry("eventDate", "2023-02-27")
+          assertThat(actual).containsEntry("startTime", "10:40")
+        },
+        isNull(),
       )
-      assertThat(response?.developerMessage).isEqualTo(response?.userMessage)
+    }
+
+    @Test
+    fun `appointment already exists - in cell`() {
+      val id = callCreateEndpoint(hasEndTime = true, inCell = true)
+
+      val response = webTestClient.post().uri("/appointments")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(validCreateJsonRequest(hasEndTime = true, inCell = true)))
+        .exchange()
+        .expectStatus().value { assertThat(it).isEqualTo(201) } // 409
+//        .expectBody<ErrorResponse>()
+//        .returnResult().responseBody
+
+//      assertThat(response?.moreInfo).isEqualTo(id.toInt())
+//      assertThat(response?.userMessage).isEqualTo(
+//        "An appointment already exists for bookingId=${offenderAtMoorlands.latestBooking().bookingId}, eventSubType=ACTI, date=2023-02-27, startTime=10:40",
+//      )
+//      assertThat(response?.developerMessage).isEqualTo(response?.userMessage)
+
+      verify(telemetryClient).trackEvent(
+        eq("appointment-duplicate-detected"),
+        check { actual ->
+          assertThat(actual).containsEntry("bookingId", offenderAtMoorlands.latestBooking().bookingId.toString())
+          assertThat(actual).containsEntry("eventSubType", "ACTI")
+          assertThat(actual).containsEntry("location", "${offenderAtMoorlands.latestBooking().assignedLivingUnit?.locationId}")
+          assertThat(actual).containsEntry("eventDate", "2023-02-27")
+          assertThat(actual).containsEntry("startTime", "10:40")
+        },
+        isNull(),
+      )
     }
 
     @Test

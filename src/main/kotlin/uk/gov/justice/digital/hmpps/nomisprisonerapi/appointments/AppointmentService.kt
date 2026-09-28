@@ -8,11 +8,11 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.EventStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternalScheduleReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAppointment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAppointmentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
@@ -31,25 +31,40 @@ class AppointmentService(
   private val telemetryClient: TelemetryClient,
 ) {
   fun createAppointment(dto: CreateAppointmentRequest): CreateAppointmentResponse {
-    val existing = offenderAppointmentRepository.findByBookingEventSubTypeDateAndStartTime(
+    val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)
+      ?: throw BadDataException("Booking with id=${dto.bookingId} not found")
+
+    val locationId = dto.internalLocationId ?: offenderBooking.assignedLivingUnit?.locationId ?: 0
+
+    val existing = offenderAppointmentRepository.findByBookingEventSubTypeLocationDateAndStartTime(
       bookingId = dto.bookingId,
       eventSubType = dto.eventSubType,
+      locationId = locationId,
       date = dto.eventDate,
       hour = dto.startTime.hour,
       minute = dto.startTime.minute,
     )
 
     if (existing.isNotEmpty()) {
-      throw ConflictException(
-        "An appointment already exists for bookingId=${dto.bookingId}," +
-          " eventSubType=${dto.eventSubType}," +
-          " date=${dto.eventDate}, startTime=${dto.startTime}",
-        entityId = existing.first().eventId,
+      val message = "An appointment already exists for bookingId=${dto.bookingId}," +
+        " eventSubType=${dto.eventSubType}," +
+        " date=${dto.eventDate}, startTime=${dto.startTime}"
+      // throw ConflictException(message, entityId = existing.first().eventId)
+      telemetryClient.trackEvent(
+        "appointment-duplicate-detected",
+        mapOf(
+          "bookingId" to dto.bookingId.toString(),
+          "eventSubType" to dto.eventSubType,
+          "location" to locationId.toString(),
+          "eventDate" to dto.eventDate.toString(),
+          "startTime" to dto.startTime.toString(),
+        ),
+        null,
       )
     }
 
     return CreateAppointmentResponse(
-      offenderAppointmentRepository.save(mapModel(dto))
+      offenderAppointmentRepository.save(mapModel(dto, offenderBooking))
         .also {
           telemetryClient.trackEvent(
             "appointment-created",
@@ -155,10 +170,7 @@ class AppointmentService(
       ?: throw NotFoundException("Appointment with event id $eventId not found")
   }
 
-  private fun mapModel(dto: CreateAppointmentRequest): OffenderAppointment {
-    val offenderBooking = offenderBookingRepository.findByIdOrNull(dto.bookingId)
-      ?: throw BadDataException("Booking with id=${dto.bookingId} not found")
-
+  private fun mapModel(dto: CreateAppointmentRequest, offenderBooking: OffenderBooking): OffenderAppointment {
     val location = dto.internalLocationId?.let {
       agencyInternalLocationRepository.findByIdOrNull(dto.internalLocationId)
         ?: throw BadDataException("Room with id=${dto.internalLocationId} does not exist")

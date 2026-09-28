@@ -26,11 +26,13 @@ interface OffenderAppointmentRepository :
 
   @Query(
     "from OffenderAppointment oa where oa.offenderBooking.bookingId = :bookingId and oa.eventSubType.code = :eventSubType " +
-      "and oa.eventDate = :date and hour(oa.startTime) = :hour and minute(oa.startTime) = :minute",
+      "and oa.internalLocation.locationId = :locationId and oa.eventDate = :date " +
+      "and hour(oa.startTime) = :hour and minute(oa.startTime) = :minute",
   )
-  fun findByBookingEventSubTypeDateAndStartTime(
+  fun findByBookingEventSubTypeLocationDateAndStartTime(
     bookingId: Long,
     eventSubType: String,
+    locationId: Long,
     date: LocalDate,
     hour: Int,
     minute: Int,
