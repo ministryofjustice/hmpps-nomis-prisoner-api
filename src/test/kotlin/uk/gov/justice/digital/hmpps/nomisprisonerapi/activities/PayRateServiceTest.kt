@@ -116,7 +116,7 @@ class PayRateServiceTest {
 
     @BeforeEach
     fun `set up validation mocks`() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), any(), any())).thenAnswer {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenAnswer {
         val prison = (it.arguments[0] as AgencyLocation)
         val code = (it.arguments[1] as String)
         PrisonIepLevel(code, prison, defaultIepLevel(code))
@@ -151,7 +151,7 @@ class PayRateServiceTest {
 
     @Test
     fun invalidPayBandIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), eq("BAS"), any())).thenReturn(null)
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), eq("BAS"))).thenReturn(null)
 
       assertThatThrownBy {
         payRatesService.mapRates(createRequest, courseActivity)
@@ -171,7 +171,7 @@ class PayRateServiceTest {
           courseActivity = courseActivity()
         }
       }
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), any(), any())).thenAnswer {
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), any())).thenAnswer {
         val prison = (it.arguments[0] as AgencyLocation)
         val code = (it.arguments[1] as String)
         PrisonIepLevel(code, prison, defaultIepLevel(code))
@@ -603,7 +603,7 @@ class PayRateServiceTest {
 
     @Test
     fun invalidPayBandIEP() {
-      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(any(), eq("BAS"), any())).thenReturn(null)
+      whenever(availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCode(any(), eq("BAS"))).thenReturn(null)
       val request = listOf(PayRateRequest(incentiveLevel = "BAS", payBand = "5", rate = rate(3.2)))
 
       assertThatThrownBy {

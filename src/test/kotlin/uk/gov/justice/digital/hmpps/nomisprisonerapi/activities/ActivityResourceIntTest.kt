@@ -130,9 +130,10 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           }
       }
 
+      // We've relaxed the rules such that we allow expired pay rates - it's up to DPS if they want to enforce this in their service or not
       @Test
-      fun `Inactive pay band IEP should return bad request`() {
-        val invalidSchedule = validJsonRequest(
+      fun `Inactive pay band IEP should NOT return bad request`() {
+        val validSchedule = validJsonRequest(
           payRatesJson = """
               "payRates" : [ {
                   "incentiveLevel" : "ENT",
@@ -142,10 +143,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           """.trimIndent(),
         )
 
-        createActivityExpectingBadRequest(invalidSchedule)
-          .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("IEP type ENT does not exist for prison BXI")
-          }
+        callCreateEndpoint(validSchedule)
       }
     }
 
@@ -744,8 +742,9 @@ class ActivityResourceIntTest : IntegrationTestBase() {
           }
       }
 
+      // We've relaxed the rules such that we allow expired pay rates - it's up to DPS if they want to enforce this in their service or not
       @Test
-      fun `should return bad request when incentive level inactive for prison`() {
+      fun `should NOT return bad request when incentive level inactive for prison`() {
         callUpdateEndpoint(
           courseActivityId = courseActivity.courseActivityId,
           jsonBody = updateActivityRequestJson(
@@ -759,10 +758,7 @@ class ActivityResourceIntTest : IntegrationTestBase() {
             """.trimIndent(),
           ),
         )
-          .expectStatus().isBadRequest
-          .expectBody().jsonPath("$.userMessage").value<String> {
-            assertThat(it).contains("IEP type ENT does not exist for prison BXI")
-          }
+          .expectStatus().isOk
       }
 
       @Test
