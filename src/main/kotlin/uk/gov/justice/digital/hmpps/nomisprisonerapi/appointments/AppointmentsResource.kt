@@ -68,6 +68,12 @@ class AppointmentsResource(private val appointmentService: AppointmentService) {
         description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Conflict, an appointment already exists for the given booking, location, date, and start time." +
+          "This can occur if the same request is sent twice, e.g. due to a network error. 'moreInfo' contains the eventId of the existing appointment.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
     ],
   )
   fun createAppointment(
