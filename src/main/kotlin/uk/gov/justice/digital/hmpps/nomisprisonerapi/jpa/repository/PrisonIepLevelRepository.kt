@@ -8,6 +8,5 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PrisonIepLevel
 @Repository
 interface PrisonIepLevelRepository : JpaRepository<PrisonIepLevel, PrisonIepLevel.Companion.PK> {
   fun findFirstByAgencyLocationAndIepLevelCode(agencyLocation: AgencyLocation, iepLevelCode: String): PrisonIepLevel?
-  fun findFirstByAgencyLocationAndIepLevelCodeAndActive(agencyLocation: AgencyLocation, iepLevelCode: String, active: Boolean = true): PrisonIepLevel?
   fun findAllByAgencyLocationAndActive(agencyLocation: AgencyLocation, active: Boolean = true): List<PrisonIepLevel>
 }

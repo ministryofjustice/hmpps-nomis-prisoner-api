@@ -27,7 +27,8 @@ class PayRatesService(
   fun mapRates(dto: CreateActivityRequest, courseActivity: CourseActivity): MutableList<CourseActivityPayRate> {
     return dto.payRates.map { rate ->
 
-      val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(
+      // We've relaxed the rules such that we allow expired pay rates - it's up to DPS if they want to enforce this in their service or not
+      val availablePrisonIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCode(
         courseActivity.prison,
         rate.incentiveLevel,
       )
@@ -222,7 +223,8 @@ class PayRatesService(
     val payBand = payBandRepository.findByIdOrNull(PayBand.pk(payBand))
       ?: throw BadDataException("Pay band code $payBand does not exist")
 
-    val availableIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCodeAndActive(courseActivity.prison, incentiveLevel)
+    // We've relaxed the rules such that we allow expired pay rates - it's up to DPS if they want to enforce this in their service or not
+    val availableIepLevel = availablePrisonIepLevelRepository.findFirstByAgencyLocationAndIepLevelCode(courseActivity.prison, incentiveLevel)
       ?: throw BadDataException("Pay rate IEP type $incentiveLevel does not exist for prison ${courseActivity.prison.id}")
 
     return CourseActivityPayRate(
