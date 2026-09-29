@@ -322,7 +322,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     description = "Inserts a new religion record for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
-        responseCode = "200",
+        responseCode = "201",
         description = "Religion record inserted and its identifier returned",
       ),
       ApiResponse(
@@ -357,6 +357,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       ),
     ],
   )
+  @ResponseStatus(HttpStatus.CREATED)
   fun insertOffenderReligion(
     @Schema(
       description = "Prison number aka noms id / offender id display",

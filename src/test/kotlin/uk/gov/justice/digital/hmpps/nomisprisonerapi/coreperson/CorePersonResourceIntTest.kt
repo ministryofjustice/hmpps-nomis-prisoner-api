@@ -1628,7 +1628,7 @@ class CorePersonResourceIntTest(
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(religionRequest)
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
           .expectBody(Long::class.java)
           .returnResult()
           .responseBody!!
@@ -1654,7 +1654,7 @@ class CorePersonResourceIntTest(
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(religionRequest)
           .exchange()
-          .expectStatus().isOk
+          .expectStatus().isCreated
 
         val insertedBelief = repository.offenderBeliefRepository.findBeliefsByPrisonNumber(offender.nomsId).first()
         assertThat(insertedBelief.comments).isEqualTo("${"A".repeat(3975)}... see DPS for full text")
