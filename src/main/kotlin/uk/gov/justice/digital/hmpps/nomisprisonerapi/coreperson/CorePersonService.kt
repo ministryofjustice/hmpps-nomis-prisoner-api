@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
@@ -256,7 +257,7 @@ class CorePersonService(
 
   fun insertReligion(prisonNumber: String, request: CorePersonInsertReligionRequest) {
     val offender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
-    val latestReligion = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber).lastOrNull()
+    val latestReligion = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber).firstOrNull()
     if (latestReligion != null) {
       latestReligion.endDate = request.startDate
     }
@@ -265,7 +266,8 @@ class CorePersonService(
       request.toOffenderBelief(
         rootOffenderId = offender.id,
         bookingId = offender.latestBooking().bookingId,
-        profileCode = profileCodeRepository.getReferenceById(ProfileCodeId("RELF", request.beliefCode)),
+        profileCode = profileCodeRepository.findByIdOrNull(ProfileCodeId("RELF", request.beliefCode))
+          ?: throw BadDataException("Belief code ${request.beliefCode} does not exist"),
       ),
     )
   }
@@ -445,7 +447,7 @@ private fun CorePersonInsertReligionRequest.toOffenderBelief(rootOffenderId: Lon
   beliefCode = profileCode,
   startDate = startDate,
   changeReason = comments?.isNotBlank() ?: false,
-  comments = comments,
+  comments = comments?.truncateToUtf8Length(4000, true),
 )
 
 private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(

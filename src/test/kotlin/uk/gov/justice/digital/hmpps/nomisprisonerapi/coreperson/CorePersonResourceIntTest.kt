@@ -1603,6 +1603,18 @@ class CorePersonResourceIntTest(
           .exchange()
           .expectStatus().isNotFound
       }
+
+      @Test
+      fun `return 400 when belief code not found`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(request().copy(beliefCode = "UNKNOWN"))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Belief code UNKNOWN does not exist")
+      }
     }
 
     @Nested
@@ -1627,6 +1639,22 @@ class CorePersonResourceIntTest(
         assertThat(insertedBelief.startDate).isEqualTo(religionRequest.startDate)
         assertThat(insertedBelief.changeReason).isTrue()
         assertThat(insertedBelief.comments).isEqualTo(religionRequest.comments)
+      }
+
+      @Test
+      fun `comments are truncated to the maximum length`() {
+        val religionRequest = request().copy(comments = "A".repeat(4001))
+
+        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(religionRequest)
+          .exchange()
+          .expectStatus().isNoContent
+
+        val insertedBelief = repository.offenderBeliefRepository.findBeliefsByPrisonNumber(offender.nomsId).first()
+        assertThat(insertedBelief.comments).isEqualTo("${"A".repeat(3975)}... see DPS for full text")
+        assertThat(insertedBelief.comments).hasSize(4000)
       }
     }
   }
