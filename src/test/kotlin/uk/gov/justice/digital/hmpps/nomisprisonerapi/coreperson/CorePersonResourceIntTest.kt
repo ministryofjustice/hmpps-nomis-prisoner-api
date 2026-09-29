@@ -1526,6 +1526,143 @@ class CorePersonResourceIntTest(
     }
   }
 
+  @DisplayName("POST /core-person/{prisonNumber}/religion")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class InsertOffenderReligion {
+    private lateinit var offender: Offender
+    private lateinit var existingBelief: OffenderBelief
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        offender = offender(
+          nomsId = "C1234DE",
+          firstName = "JOHN",
+          lastName = "BOG",
+        ) {
+          booking {
+            existingBelief = belief(
+              beliefCode = "JAIN",
+              startDate = LocalDate.parse("2018-01-01"),
+            )
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    private fun request() = CorePersonInsertReligionRequest(
+      beliefCode = "ZORO",
+      startDate = LocalDate.parse("2024-01-01"),
+      comments = "Change of belief",
+    )
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .headers(setAuthorisation(roles = listOf()))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(request())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(request())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(request())
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.post().uri("/core-person/UNKNOWN/religion")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(request())
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `return 400 when belief code not found`() {
+        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(request().copy(beliefCode = "UNKNOWN"))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Belief code UNKNOWN does not exist")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `inserts a new belief and ends the existing belief`() {
+        val religionRequest = request()
+
+        val beliefId = webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(religionRequest)
+          .exchange()
+          .expectStatus().isOk
+          .expectBody(Long::class.java)
+          .returnResult()
+          .responseBody!!
+
+        val beliefs = repository.offenderBeliefRepository.findBeliefsByPrisonNumber(offender.nomsId)
+        assertThat(beliefs).hasSize(2)
+        assertThat(repository.offenderBeliefRepository.findByIdOrNull(existingBelief.beliefId)!!.endDate)
+          .isEqualTo(religionRequest.startDate)
+        val insertedBelief = beliefs.first { it.beliefId != existingBelief.beliefId }
+        assertThat(beliefId).isEqualTo(insertedBelief.beliefId)
+        assertThat(insertedBelief.beliefCode.id.code).isEqualTo(religionRequest.beliefCode)
+        assertThat(insertedBelief.startDate).isEqualTo(religionRequest.startDate)
+        assertThat(insertedBelief.changeReason).isTrue()
+        assertThat(insertedBelief.comments).isEqualTo(religionRequest.comments)
+      }
+
+      @Test
+      fun `comments are truncated to the maximum length`() {
+        val religionRequest = request().copy(comments = "A".repeat(4001))
+
+        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(religionRequest)
+          .exchange()
+          .expectStatus().isOk
+
+        val insertedBelief = repository.offenderBeliefRepository.findBeliefsByPrisonNumber(offender.nomsId).first()
+        assertThat(insertedBelief.comments).isEqualTo("${"A".repeat(3975)}... see DPS for full text")
+        assertThat(insertedBelief.comments).hasSize(4000)
+      }
+    }
+  }
+
   @DisplayName("GET /core-person/{prisonNumber}/addresses-contacts")
   @Nested
   @TestInstance(PER_CLASS)

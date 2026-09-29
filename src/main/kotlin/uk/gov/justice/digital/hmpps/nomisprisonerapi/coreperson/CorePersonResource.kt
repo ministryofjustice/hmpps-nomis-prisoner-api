@@ -316,6 +316,55 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
 
+  @PostMapping("/{prisonNumber}/religion")
+  @Operation(
+    summary = "Insert a new religion for an offender",
+    description = "Inserts a new religion record for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Religion record inserted and its identifier returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun insertOffenderReligion(
+    @Schema(
+      description = "Prison number aka noms id / offender id display",
+      example = "A1234BC",
+    ) @PathVariable prisonNumber: String,
+    @RequestBody @Valid request: CorePersonInsertReligionRequest,
+  ) = corePersonService.insertReligion(prisonNumber, request)
+
   @GetMapping("/{prisonNumber}/addresses-contacts")
   @Operation(
     summary = "Get all the address and contact information for an offender by prison number",
@@ -1723,4 +1772,15 @@ data class CorePersonReligionRequest(
   val beliefId: Long,
   @Schema(description = "Date the belief ended", example = "2024-12-12")
   val endDate: LocalDate? = null,
+)
+
+@Schema(description = "Insert request for offender belief")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CorePersonInsertReligionRequest(
+  @Schema(description = "Belief", example = "SCIE")
+  val beliefCode: String,
+  @Schema(description = "Date the belief started", example = "2024-01-01")
+  val startDate: LocalDate,
+  @Schema(description = "Comments describing reason for change of belief")
+  val comments: String? = null,
 )
