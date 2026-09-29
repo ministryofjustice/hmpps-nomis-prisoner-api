@@ -18,6 +18,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifierPK
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ProfileCodeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeliefRepository
@@ -26,6 +28,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderIden
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @Transactional
@@ -44,6 +47,7 @@ class CorePersonService(
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
+  private val profileCodeRepository: ProfileCodeRepository,
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val latestBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
@@ -250,6 +254,22 @@ class CorePersonService(
     }
   }
 
+  fun insertReligion(prisonNumber: String, request: CorePersonInsertReligionRequest) {
+    val offender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
+    val latestReligion = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber).lastOrNull()
+    if (latestReligion != null) {
+      latestReligion.endDate = request.startDate
+    }
+
+    offenderBeliefRepository.save(
+      request.toOffenderBelief(
+        rootOffenderId = offender.id,
+        bookingId = offender.latestBooking().bookingId,
+        profileCode = profileCodeRepository.getReferenceById(ProfileCodeId("RELF", request.beliefCode)),
+      ),
+    )
+  }
+
   fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier = offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))
     .orElseThrow { NotFoundException("Identifier not found for offender $offenderId and sequence $sequenceNumber") }
     .toIdentifier()
@@ -418,6 +438,15 @@ class CorePersonService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 }
+
+private fun CorePersonInsertReligionRequest.toOffenderBelief(rootOffenderId: Long, bookingId: Long, profileCode: ProfileCode): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief(
+  rootOffenderId = rootOffenderId,
+  bookingId = bookingId,
+  beliefCode = profileCode,
+  startDate = startDate,
+  changeReason = comments?.isNotBlank() ?: false,
+  comments = comments,
+)
 
 private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
   beliefId = beliefId,
