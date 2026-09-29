@@ -255,14 +255,14 @@ class CorePersonService(
     }
   }
 
-  fun insertReligion(prisonNumber: String, request: CorePersonInsertReligionRequest) {
+  fun insertReligion(prisonNumber: String, request: CorePersonInsertReligionRequest): Long {
     val offender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
     val latestReligion = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber).firstOrNull()
     if (latestReligion != null) {
       latestReligion.endDate = request.startDate
     }
 
-    offenderBeliefRepository.save(
+    val belief = offenderBeliefRepository.save(
       request.toOffenderBelief(
         rootOffenderId = offender.id,
         bookingId = offender.latestBooking().bookingId,
@@ -270,6 +270,7 @@ class CorePersonService(
           ?: throw BadDataException("Belief code ${request.beliefCode} does not exist"),
       ),
     )
+    return belief.beliefId
   }
 
   fun getIdentifier(offenderId: Long, sequenceNumber: Int): Identifier = offenderIdentifierRepository.findById(OffenderIdentifierPK(offenderOf(offenderId), sequenceNumber.toLong()))

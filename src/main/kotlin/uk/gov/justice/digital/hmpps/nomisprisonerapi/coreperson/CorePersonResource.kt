@@ -317,14 +317,13 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   ): List<OffenderBelief> = corePersonService.getOffenderReligions(prisonNumber)
 
   @PostMapping("/{prisonNumber}/religion")
-  @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(
     summary = "Insert a new religion for an offender",
     description = "Inserts a new religion record for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
-        responseCode = "204",
-        description = "Religion record inserted",
+        responseCode = "200",
+        description = "Religion record inserted and its identifier returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -364,9 +363,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
       example = "A1234BC",
     ) @PathVariable prisonNumber: String,
     @RequestBody @Valid request: CorePersonInsertReligionRequest,
-  ) {
-    corePersonService.insertReligion(prisonNumber, request)
-  }
+  ) = corePersonService.insertReligion(prisonNumber, request)
 
   @GetMapping("/{prisonNumber}/addresses-contacts")
   @Operation(

@@ -1623,18 +1623,22 @@ class CorePersonResourceIntTest(
       fun `inserts a new belief and ends the existing belief`() {
         val religionRequest = request()
 
-        webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
+        val beliefId = webTestClient.post().uri("/core-person/${offender.nomsId}/religion")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(religionRequest)
           .exchange()
-          .expectStatus().isNoContent
+          .expectStatus().isOk
+          .expectBody(Long::class.java)
+          .returnResult()
+          .responseBody!!
 
         val beliefs = repository.offenderBeliefRepository.findBeliefsByPrisonNumber(offender.nomsId)
         assertThat(beliefs).hasSize(2)
         assertThat(repository.offenderBeliefRepository.findByIdOrNull(existingBelief.beliefId)!!.endDate)
           .isEqualTo(religionRequest.startDate)
         val insertedBelief = beliefs.first { it.beliefId != existingBelief.beliefId }
+        assertThat(beliefId).isEqualTo(insertedBelief.beliefId)
         assertThat(insertedBelief.beliefCode.id.code).isEqualTo(religionRequest.beliefCode)
         assertThat(insertedBelief.startDate).isEqualTo(religionRequest.startDate)
         assertThat(insertedBelief.changeReason).isTrue()
@@ -1650,7 +1654,7 @@ class CorePersonResourceIntTest(
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(religionRequest)
           .exchange()
-          .expectStatus().isNoContent
+          .expectStatus().isOk
 
         val insertedBelief = repository.offenderBeliefRepository.findBeliefsByPrisonNumber(offender.nomsId).first()
         assertThat(insertedBelief.comments).isEqualTo("${"A".repeat(3975)}... see DPS for full text")
