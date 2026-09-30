@@ -6,7 +6,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.BRENT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.BROMLEY
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.SHEFFIELD
@@ -16,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RegionRepository
@@ -25,6 +31,9 @@ import java.time.LocalDate
 class AgencyResourceIntTest : IntegrationTestBase() {
   @Autowired
   private lateinit var agencyLocationRepository: AgencyLocationRepository
+
+  @Autowired
+  private lateinit var agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository
 
   @Autowired
   private lateinit var areaRepository: AreaRepository
@@ -599,6 +608,115 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(agency.emailAddresses[0].emailAddress).isEqualTo("probation@gov.uk")
         assertThat(agency.emailAddresses[1].id).isEqualTo(probationOffice.emailAddresses[1].internetAddressId)
         assertThat(agency.emailAddresses[1].emailAddress).isEqualTo("justice@gov.uk")
+      }
+    }
+  }
+
+  @DisplayName("POST /agency/{agencyId}/email")
+  @Nested
+  inner class CreateAgencyEmail {
+    private val validEmailRequest = CreateAgencyEmailAddressRequest(
+      emailAddress = "test1@test.com",
+    )
+
+    private lateinit var existingAgency: AgencyLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById(existingAgency.id)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/email")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/email")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/email")
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `will return 404 if agency does not exist`() {
+        webTestClient.post().uri("/agency/ZZI/email")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validEmailRequest)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an email address for the agency`() {
+        val response: CreateAgencyEmailAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/email")
+          .bodyValue(
+            validEmailRequest.copy(
+              emailAddress = "test@justice.gov.uk",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(agencyLocationInternetAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(internetAddressId).isEqualTo(response.id)
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(internetAddressClass).isEqualTo("EMAIL")
+          assertThat(internetAddress).isEqualTo("test@justice.gov.uk")
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.emailAddresses).anyMatch { it.id == response.id && it.emailAddress == "test@justice.gov.uk" }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-email-inserted"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("emailAddressId", response.id.toString())
+            assertThat(it).doesNotContainValue("test@justice.gov.uk")
+          },
+          isNull(),
+        )
       }
     }
   }
