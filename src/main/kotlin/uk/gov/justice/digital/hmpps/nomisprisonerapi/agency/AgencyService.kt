@@ -6,12 +6,16 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress.Companion.EMAIL_INTERNET_ADDRESS_CLASS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 
 @Service
 @Transactional
 class AgencyService(
   val agencyLocationRepository: AgencyLocationRepository,
+  val agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository,
 ) {
   fun getAllAgencies(excludeType: List<String>): AgencyIdsResponse {
     val agencies = excludeType.takeIf { it.isNotEmpty() }?.let {
@@ -27,6 +31,17 @@ class AgencyService(
 
   fun getAgencyLocation(agencyId: String): AgencyResponse = agencyLocationRepository.findByIdOrNull(agencyId)
     ?.toAgencyLocationResponse() ?: throw NotFoundException("Agency $agencyId does not exist")
+
+  fun createAgencyEmail(agencyId: String, request: CreateAgencyEmailAddressRequest): CreateAgencyEmailAddressResponse = agencyLocationInternetAddressRepository.saveAndFlush(
+    AgencyLocationInternetAddress(
+      agencyLocation = getAgency(agencyId),
+      internetAddress = request.emailAddress,
+      internetAddressClass = EMAIL_INTERNET_ADDRESS_CLASS,
+    ),
+  ).let { CreateAgencyEmailAddressResponse(id = it.internetAddressId) }
+
+  private fun getAgency(agencyId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(agencyId)
+    ?: throw NotFoundException("Agency $agencyId does not exist")
 }
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyResponse(

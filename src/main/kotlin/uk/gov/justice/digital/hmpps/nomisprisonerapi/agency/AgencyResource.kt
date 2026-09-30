@@ -5,13 +5,18 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -105,6 +110,62 @@ class AgencyResource(private val agencyService: AgencyService) {
     @Schema(description = "Agency types to exclude", example = "INST")
     @RequestParam(required = false) excludeType: List<String> = listOf(),
   ) = agencyService.getAllAgencies(excludeType)
+
+  @PostMapping("/agency/{agencyId}/email")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an agency email address",
+    description = "Creates a new email address for an agency. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Agency email address created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateAgencyEmailAddressResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createAgencyEmail(
+    @PathVariable
+    @Schema(description = "Agency id (aka agencyId)", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: CreateAgencyEmailAddressRequest,
+  ) = agencyService.createAgencyEmail(agencyId, request)
 }
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -228,4 +289,16 @@ data class AgencyId(
 data class AgencyIdsResponse(
   @Schema(description = "The agency ids")
   val agencyIds: List<AgencyId>,
+)
+
+@Schema(description = "A request to create an agency email address")
+data class CreateAgencyEmailAddressRequest(
+  @Schema(description = "The email address", example = "john.smith@internet.co.uk")
+  val emailAddress: String,
+)
+
+@Schema(description = "A response to creating an agency email address")
+data class CreateAgencyEmailAddressResponse(
+  @Schema(description = "Unique NOMIS Id of email address")
+  val id: Long,
 )
