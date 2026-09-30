@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.agency
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -16,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 class AgencyService(
   val agencyLocationRepository: AgencyLocationRepository,
   val agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository,
+  private val telemetryClient: TelemetryClient,
 ) {
   fun getAllAgencies(excludeType: List<String>): AgencyIdsResponse {
     val agencies = excludeType.takeIf { it.isNotEmpty() }?.let {
@@ -38,7 +41,16 @@ class AgencyService(
       internetAddress = request.emailAddress,
       internetAddressClass = EMAIL_INTERNET_ADDRESS_CLASS,
     ),
-  ).let { CreateAgencyEmailAddressResponse(id = it.internetAddressId) }
+  ).let {
+    telemetryClient.trackEvent(
+      "agency-email-inserted",
+      mapOf(
+        "agencyId" to agencyId,
+        "emailAddressId" to it.internetAddressId.toString(),
+      ),
+    )
+    CreateAgencyEmailAddressResponse(id = it.internetAddressId)
+  }
 
   private fun getAgency(agencyId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw NotFoundException("Agency $agencyId does not exist")

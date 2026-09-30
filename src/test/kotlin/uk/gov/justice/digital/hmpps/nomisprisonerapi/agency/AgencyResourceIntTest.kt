@@ -6,6 +6,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.BRENT
@@ -703,6 +707,16 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           .exchange()
           .expectBodyResponse()
         assertThat(agency.emailAddresses).anyMatch { it.id == response.id && it.emailAddress == "test@justice.gov.uk" }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-email-inserted"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("emailAddressId", response.id.toString())
+            assertThat(it).doesNotContainValue("test@justice.gov.uk")
+          },
+          isNull(),
+        )
       }
     }
   }
