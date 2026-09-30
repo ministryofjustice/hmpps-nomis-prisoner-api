@@ -1437,6 +1437,134 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     addressId = addressId,
     phoneId = phoneId,
   )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/{offenderId}/address/{addressId}/usage/{usageCode}")
+  @Operation(
+    summary = "Gets an offender address usage",
+    description = "Gets an offender address usage in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Offender address usage returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender, address or usage does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getOffenderAddressUsage(
+    @Schema(description = "Offender Id", example = "12345") @PathVariable offenderId: Long,
+    @Schema(description = "Address Id", example = "56789") @PathVariable addressId: Long,
+    @Schema(description = "Address usage code", example = "CURFEW") @PathVariable usageCode: String,
+  ): OffenderAddressUsage = corePersonService.getOffenderAddressUsage(offenderId, addressId, usageCode)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PostMapping("/{offenderId}/address/{addressId}/usage")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates an offender address usage",
+    description = "Creates an offender address usage in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "201", description = "Offender address usage returned"),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request data, e.g. usage code is not valid",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender or address does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun createOffenderAddressUsage(
+    @Schema(description = "Offender Id", example = "12345") @PathVariable offenderId: Long,
+    @Schema(description = "Address Id", example = "56789") @PathVariable addressId: Long,
+    @RequestBody @Valid request: CreateOffenderAddressUsageRequest,
+  ): OffenderAddressUsage = corePersonService.createOffenderAddressUsage(offenderId, addressId, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @PutMapping("/{offenderId}/address/{addressId}/usage/{usageCode}")
+  @Operation(
+    summary = "Updates an offender address usage",
+    description = "Updates an offender address usage in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Offender address usage updated"),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request data",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender, address or usage does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun updateOffenderAddressUsage(
+    @Schema(description = "Offender Id", example = "12345") @PathVariable offenderId: Long,
+    @Schema(description = "Address Id", example = "56789") @PathVariable addressId: Long,
+    @Schema(description = "Address usage code", example = "CURFEW") @PathVariable usageCode: String,
+    @RequestBody @Valid request: UpdateOffenderAddressUsageRequest,
+  ) = corePersonService.updateOffenderAddressUsage(offenderId, addressId, usageCode, request)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @DeleteMapping("/{offenderId}/address/{addressId}/usage/{usageCode}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(
+    summary = "Deletes an offender address usage",
+    description = "Deletes an offender address usage in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "204", description = "Offender address usage deleted"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun deleteOffenderAddressUsage(
+    @Schema(description = "Offender Id", example = "12345") @PathVariable offenderId: Long,
+    @Schema(description = "Address Id", example = "56789") @PathVariable addressId: Long,
+    @Schema(description = "Address usage code", example = "CURFEW") @PathVariable usageCode: String,
+  ) = corePersonService.deleteOffenderAddressUsage(offenderId, addressId, usageCode)
 }
 
 @Schema(description = "The data held in NOMIS for an offender")
@@ -1665,6 +1793,18 @@ data class UpdateOffenderPhoneRequest(
 data class CreateOffenderPhoneResponse(
   @Schema(description = "Unique NOMIS Id of phone")
   val phoneId: Long,
+)
+
+data class CreateOffenderAddressUsageRequest(
+  @Schema(description = "Address usage code", example = "CURFEW")
+  val usageCode: String,
+  @Schema(description = "Whether the address usage is active", example = "true")
+  val active: Boolean,
+)
+
+data class UpdateOffenderAddressUsageRequest(
+  @Schema(description = "Whether the address usage is active", example = "true")
+  val active: Boolean,
 )
 
 data class CreateOffenderAddressRequest(
