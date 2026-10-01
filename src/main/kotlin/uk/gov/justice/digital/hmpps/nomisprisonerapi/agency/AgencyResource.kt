@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -166,6 +167,61 @@ class AgencyResource(private val agencyService: AgencyService) {
     @RequestBody @Valid
     request: CreateAgencyEmailAddressRequest,
   ) = agencyService.createAgencyEmail(agencyId, request)
+
+  @PutMapping("/agency/{agencyId}/email")
+  @Operation(
+    summary = "Refreshes the list of agency email addresses",
+    description = "Replaces the existing list of email addresses for an agency with the list supplied. Where possible, existing email addresses are updated in place so their ids are preserved; any extra existing email addresses are removed and any extra new ones are created. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Agency email addresses updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AgencyEmailAddressesResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateAgencyEmailAddresses(
+    @PathVariable
+    @Schema(description = "Agency id", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: UpdateAgencyEmailAddressesRequest,
+  ) = agencyService.updateAgencyEmailAddresses(agencyId, request)
 }
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -301,4 +357,16 @@ data class CreateAgencyEmailAddressRequest(
 data class CreateAgencyEmailAddressResponse(
   @Schema(description = "Unique NOMIS Id of email address")
   val id: Long,
+)
+
+@Schema(description = "A request to refresh and replace the list of email addresses for an agency")
+data class UpdateAgencyEmailAddressesRequest(
+  @Schema(description = "The complete list of email addresses to hold against the agency, replacing any existing list", example = "[\"john.smith@internet.co.uk\"]")
+  val emailAddresses: List<String>,
+)
+
+@Schema(description = "A response to refreshing the list of email addresses for an agency")
+data class AgencyEmailAddressesResponse(
+  @Schema(description = "The list of email addresses now held for the agency")
+  val emailAddresses: List<AgencyEmailAddress>,
 )
