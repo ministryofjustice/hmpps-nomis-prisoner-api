@@ -570,6 +570,7 @@ private fun CorePersonInsertReligionRequest.toOffenderBelief(
   startDate = startDate,
   changeReason = comments?.isNotBlank() ?: false,
   comments = comments?.truncateToUtf8Length(4000, true),
+  verified = false,
 )
 
 private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
