@@ -58,7 +58,7 @@ class AgencyService(
     val requestedEmailAddresses = request.emailAddresses
     // the common case is a single existing email address being replaced with a single new one, but this will also
     // handle growing or shrinking the list, updating the overlapping entries in place so their ids are preserved
-    val existingEmailAddresses = agency.emailAddresses.toList()
+    val existingEmailAddresses = agency.emailAddresses.sortedBy { it.internetAddressId }
 
     if (existingEmailAddresses.map { it.internetAddress } == requestedEmailAddresses) {
       return existingEmailAddresses.toAgencyEmailAddressesResponse()
