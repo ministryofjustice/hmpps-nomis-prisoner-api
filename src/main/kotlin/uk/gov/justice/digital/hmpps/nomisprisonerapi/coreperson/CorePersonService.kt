@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson
 
+import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
@@ -10,6 +11,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
@@ -35,6 +39,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCod
 @Transactional
 @Service
 class CorePersonService(
+  private val entityManager: EntityManager,
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderBeliefRepository: OffenderBeliefRepository,
@@ -45,6 +50,7 @@ class CorePersonService(
   private val addressPhoneRepository: AddressPhoneRepository,
   private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
   private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
+  private val addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
@@ -65,10 +71,10 @@ class CorePersonService(
       addresses = getAddresses(rootOffender),
       phoneNumbers = getPhoneNumbers(rootOffender),
       emailAddresses = getEmailAddresses(rootOffender),
-      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(rootOffender.id)
-        .map { it.toBelief() },
+      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(rootOffender.id).map { it.toBelief() },
     )
   }
+
   fun getOffenderForReconciliation(prisonNumber: String): CorePerson = with(rootOffender(prisonNumber)) {
     CorePerson(
       prisonNumber = prisonNumber,
@@ -78,12 +84,11 @@ class CorePersonService(
       addresses = getAddresses(this),
       phoneNumbers = getPhoneNumbers(this),
       emailAddresses = getEmailAddresses(this),
-      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(this.id)
-        .map { it.toBelief() },
+      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(this.id).map { it.toBelief() },
     )
   }
-  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber)
-    .map { it.toBelief() }
+
+  fun getOffenderReligions(prisonNumber: String): List<OffenderBelief> = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber).map { it.toBelief() }
 
   fun getOffenderEmail(offenderId: Long, emailAddressId: Long): OffenderEmailAddress = emailOf(
     offenderId = offenderId,
@@ -210,7 +215,11 @@ class CorePersonService(
     phoneId = phoneId,
   ).toOffenderPhoneNumber()
 
-  fun createOffenderAddressPhone(offenderId: Long, addressId: Long, request: CreateOffenderPhoneRequest): CreateOffenderPhoneResponse = addressPhoneRepository.saveAndFlush(
+  fun createOffenderAddressPhone(
+    offenderId: Long,
+    addressId: Long,
+    request: CreateOffenderPhoneRequest,
+  ): CreateOffenderPhoneResponse = addressPhoneRepository.saveAndFlush(
     uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone(
       address = offenderAddressOf(offenderId = offenderId, addressId = addressId),
       phoneNo = request.number,
@@ -219,7 +228,12 @@ class CorePersonService(
     ),
   ).let { CreateOffenderPhoneResponse(phoneId = it.phoneId) }
 
-  fun updateOffenderAddressPhone(offenderId: Long, addressId: Long, phoneId: Long, request: UpdateOffenderPhoneRequest) {
+  fun updateOffenderAddressPhone(
+    offenderId: Long,
+    addressId: Long,
+    phoneId: Long,
+    request: UpdateOffenderPhoneRequest,
+  ) {
     addressPhoneOf(offenderId = offenderId, addressId = addressId, phoneId = phoneId).run {
       request.also {
         phoneNo = it.number
@@ -240,6 +254,48 @@ class CorePersonService(
     addressPhoneRepository.deleteById(phoneId)
   }
 
+  fun getOffenderAddressUsage(offenderId: Long, addressId: Long, usageCode: String): OffenderAddressUsage = addressUsageOf(offenderId, addressId, usageCode).toOffenderAddressUsage()
+
+  fun createOffenderAddressUsage(
+    offenderId: Long,
+    addressId: Long,
+    request: CreateOffenderAddressUsageRequest,
+  ): OffenderAddressUsage {
+    val address = offenderAddressOf(offenderId, addressId)
+    if (address.usages.any { it.id.usageCode == request.usageCode }) {
+      throw BadDataException("Usage of ${request.usageCode} already exists on address $addressId")
+    }
+    val usage = AddressUsage(
+      id = AddressUsageId(address = address, usageCode = request.usageCode),
+      active = request.active,
+      addressUsage = addressUsageTypeOf(request.usageCode),
+    ).also { address.usages.add(it) }
+    offenderAddressRepository.saveAndFlush(address)
+    entityManager.clear()
+    return offenderAddressRepository.findByIdOrNull(address.addressId)!!
+      .usages.first { it.id.usageCode == request.usageCode }
+      .toOffenderAddressUsage()
+  }
+
+  fun updateOffenderAddressUsage(
+    offenderId: Long,
+    addressId: Long,
+    usageCode: String,
+    request: UpdateOffenderAddressUsageRequest,
+  ) {
+    addressUsageOf(offenderId, addressId, usageCode).let {
+      // Address usage records are immutable apart from their active flag.
+      it.active = request.active
+    }
+  }
+
+  fun deleteOffenderAddressUsage(offenderId: Long, addressId: Long, usageCode: String) {
+    val address = offenderAddressOf(offenderId, addressId)
+    if (!address.usages.removeIf { it.id.usageCode == usageCode }) {
+      throw NotFoundException("Usage $usageCode not found on address $addressId")
+    }
+  }
+
   fun updateOffenderAfterMerge(prisonNumber: String, request: CorePersonMergeRequest) {
     log.info("Updating offender {} after merge", prisonNumber)
     val offender =
@@ -256,7 +312,8 @@ class CorePersonService(
   }
 
   fun insertReligion(prisonNumber: String, request: CorePersonInsertReligionRequest): Long {
-    val offender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
+    val offender =
+      offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
     val latestReligion = offenderBeliefRepository.findBeliefsByPrisonNumber(prisonNumber).firstOrNull()
     if (latestReligion != null) {
       latestReligion.endDate = request.startDate
@@ -350,6 +407,16 @@ class CorePersonService(
     lastUpdatedByUsername = modifyUserId,
   )
 
+  private fun AddressUsage.toOffenderAddressUsage() = OffenderAddressUsage(
+    addressId = id.address.addressId,
+    usage = addressUsage?.toCodeDescription() ?: throw NotFoundException("Usage ${id.usageCode} not found on address ${id.address.addressId}"),
+    active = active,
+    createdDateTime = createDatetime,
+    createdByUsername = createUsername,
+    lastUpdatedDateTime = modifyDatetime,
+    lastUpdatedByUsername = modifyUserId,
+  )
+
   private fun getEmailAddresses(rootOffender: Offender): List<OffenderEmailAddress> = rootOffender.internetAddresses.map { address ->
     address.toOffenderEmailAddress()
   }
@@ -365,35 +432,85 @@ class CorePersonService(
 
   private fun currentAliasAndRootOffender(prisonNumber: String): CurrentAliasAndRoot {
     val rootOffender = rootOffender(prisonNumber)
-    val currentAlias =
-      offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)?.offender ?: rootOffender
+    val currentAlias = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)?.offender ?: rootOffender
     return CurrentAliasAndRoot(currentAlias, rootOffender)
   }
 
-  private fun rootOffender(prisonNumber: String): Offender = offenderRepository.findRootByNomsId(prisonNumber)
-    ?: throw NotFoundException("Offender not found $prisonNumber")
+  private fun rootOffender(prisonNumber: String): Offender = offenderRepository.findRootByNomsId(prisonNumber) ?: throw NotFoundException("Offender not found $prisonNumber")
 
   private data class CurrentAliasAndRoot(val currentAlias: Offender, val rootOffender: Offender)
 
   private fun offenderOf(offenderId: Long) = offenderRepository.findById(offenderId).orElseThrow { NotFoundException("Offender not found $offenderId") }
 
-  private fun emailOf(offenderId: Long, emailAddressId: Long): OffenderInternetAddress = (offenderInternetAddressRepository.findByIdOrNull(emailAddressId) ?: throw NotFoundException("Email with id=$emailAddressId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Email with id=$emailAddressId on Offender with id=$offenderId does not exist")
+  private fun emailOf(offenderId: Long, emailAddressId: Long): OffenderInternetAddress = (
+    offenderInternetAddressRepository.findByIdOrNull(emailAddressId)
+      ?: throw NotFoundException("Email with id=$emailAddressId does not exist")
+    ).takeIf { it.offender.id == offenderId }
+    ?: throw NotFoundException("Email with id=$emailAddressId on Offender with id=$offenderId does not exist")
 
-  private fun phoneOf(offenderId: Long, phoneId: Long): OffenderPhone = (offenderPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Phone with id=$phoneId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Phone with id=$phoneId on Offender with id=$offenderId does not exist")
+  private fun phoneOf(offenderId: Long, phoneId: Long): OffenderPhone = (
+    offenderPhoneRepository.findByIdOrNull(phoneId)
+      ?: throw NotFoundException("Phone with id=$phoneId does not exist")
+    ).takeIf { it.offender.id == offenderId }
+    ?: throw NotFoundException("Phone with id=$phoneId on Offender with id=$offenderId does not exist")
 
-  private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code)) ?: throw BadDataException("PhoneUsage with code $code does not exist")
+  private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))
+    ?: throw BadDataException("PhoneUsage with code $code does not exist")
 
-  private fun addressTypeOf(code: String?): AddressType? = code?.let { addressTypeRepository.findByIdOrNull(AddressType.pk(code)) ?: throw BadDataException("AddressType with code $code does not exist") }
+  private fun addressUsageTypeOf(code: String): AddressUsageType = addressUsageTypeRepository.findByIdOrNull(AddressUsageType.pk(code))
+    ?: throw BadDataException("Address usage with code $code does not exist")
 
-  private fun cityOf(code: String?): City? = code?.let { cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist") }
+  private fun addressTypeOf(code: String?): AddressType? = code?.let {
+    addressTypeRepository.findByIdOrNull(AddressType.pk(code))
+      ?: throw BadDataException("AddressType with code $code does not exist")
+  }
 
-  private fun countyOf(code: String?): County? = code?.let { countyRepository.findByIdOrNull(County.pk(code)) ?: throw BadDataException("County with code $code does not exist") }
+  private fun cityOf(code: String?): City? = code?.let {
+    cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist")
+  }
 
-  private fun countryOf(code: String?): Country? = code?.let { countryRepository.findByIdOrNull(Country.pk(code)) ?: throw BadDataException("Country with code $code does not exist") }
+  private fun countyOf(code: String?): County? = code?.let {
+    countyRepository.findByIdOrNull(County.pk(code)) ?: throw BadDataException("County with code $code does not exist")
+  }
 
-  private fun offenderAddressOf(offenderId: Long, addressId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress = (offenderAddressRepository.findByIdOrNull(addressId) ?: throw NotFoundException("Address with id=$addressId does not exist")).takeIf { it.offender.id == offenderId } ?: throw NotFoundException("Address with id=$addressId on Offender with id=$offenderId does not exist")
+  private fun countryOf(code: String?): Country? = code?.let {
+    countryRepository.findByIdOrNull(Country.pk(code))
+      ?: throw BadDataException("Country with code $code does not exist")
+  }
 
-  private fun addressPhoneOf(offenderId: Long, addressId: Long, phoneId: Long): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone = (addressPhoneRepository.findByIdOrNull(phoneId) ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")).takeIf { it.address.addressId == offenderAddressOf(offenderId = offenderId, addressId = addressId).addressId } ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Offender with id=$offenderId does not exist")
+  private fun offenderAddressOf(
+    offenderId: Long,
+    addressId: Long,
+  ): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress = (
+    offenderAddressRepository.findByIdOrNull(addressId)
+      ?: throw NotFoundException("Address with id=$addressId does not exist")
+    ).takeIf { it.offender.id == offenderId }
+    ?: throw NotFoundException("Address with id=$addressId on Offender with id=$offenderId does not exist")
+
+  private fun addressUsageOf(
+    offenderId: Long,
+    addressId: Long,
+    usageCode: String,
+  ): AddressUsage {
+    val address = offenderAddressOf(offenderId, addressId)
+    return address.usages.firstOrNull { it.id.usageCode == usageCode }
+      ?: throw NotFoundException("Usage $usageCode not found on address $addressId")
+  }
+
+  private fun addressPhoneOf(
+    offenderId: Long,
+    addressId: Long,
+    phoneId: Long,
+  ): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone = (
+    addressPhoneRepository.findByIdOrNull(phoneId)
+      ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")
+    ).takeIf {
+    it.address.addressId == offenderAddressOf(
+      offenderId = offenderId,
+      addressId = addressId,
+    ).addressId
+  }
+    ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Offender with id=$offenderId does not exist")
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
     offenderId = id.offender.id,
@@ -442,7 +559,11 @@ class CorePersonService(
   }
 }
 
-private fun CorePersonInsertReligionRequest.toOffenderBelief(rootOffenderId: Long, bookingId: Long, profileCode: ProfileCode): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief(
+private fun CorePersonInsertReligionRequest.toOffenderBelief(
+  rootOffenderId: Long,
+  bookingId: Long,
+  profileCode: ProfileCode,
+): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief(
   rootOffenderId = rootOffenderId,
   bookingId = bookingId,
   beliefCode = profileCode,

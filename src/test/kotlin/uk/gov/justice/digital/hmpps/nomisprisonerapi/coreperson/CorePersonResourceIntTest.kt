@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -1629,7 +1630,7 @@ class CorePersonResourceIntTest(
           .bodyValue(religionRequest)
           .exchange()
           .expectStatus().isCreated
-          .expectBody(Long::class.java)
+          .expectBody<Long>()
           .returnResult()
           .responseBody!!
 
@@ -2715,7 +2716,7 @@ class CorePersonResourceIntTest(
           .exchange()
           .expectStatus()
           .isCreated
-          .expectBody(CreateOffenderPhoneResponse::class.java)
+          .expectBody<CreateOffenderPhoneResponse>()
           .returnResult()
           .responseBody!!
 
@@ -3169,7 +3170,7 @@ class CorePersonResourceIntTest(
           .exchange()
           .expectStatus()
           .isCreated
-          .expectBody(CreateOffenderAddressResponse::class.java)
+          .expectBody<CreateOffenderAddressResponse>()
           .returnResult()
           .responseBody!!
 
@@ -3677,7 +3678,7 @@ class CorePersonResourceIntTest(
           .exchange()
           .expectStatus()
           .isCreated
-          .expectBody(CreateOffenderPhoneResponse::class.java)
+          .expectBody<CreateOffenderPhoneResponse>()
           .returnResult()
           .responseBody!!
 
@@ -3927,5 +3928,183 @@ class CorePersonResourceIntTest(
         assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isFalse()
       }
     }
+  }
+
+  @DisplayName("Address usage endpoints")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class OffenderAddressUsage {
+    private lateinit var existingOffender: Offender
+    private lateinit var existingAddress: OffenderAddressJpa
+    private val syncRole = "NOMIS_PRISONER_API__SYNCHRONISATION__RW"
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingOffender = offender(firstName = "JOHN", lastName = "BOG") {
+          existingAddress = address {
+            usage(usageCode = "CURFEW", active = false)
+            usage(usageCode = "NOT_FOUND", active = false)
+          }
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Test
+    fun `access is forbidden without the required role`() {
+      webTestClient.get().uri(usageUri("CURFEW"))
+        .headers(setAuthorisation(roles = listOf("BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access is unauthorised without an auth token`() {
+      webTestClient.get().uri(usageUri("CURFEW"))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `get returns 404 when usage does not exist`() {
+      webTestClient.get().uri(usageUri("DAP"))
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get returns 404 when usage reference code does not exist`() {
+      webTestClient.get().uri(usageUri("NOT_FOUND"))
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .exchange()
+        .expectStatus().isNotFound
+        .expectBody()
+        .jsonPath("userMessage")
+        .isEqualTo("Not Found: Usage NOT_FOUND not found on address ${existingAddress.addressId}")
+    }
+
+    @Test
+    fun `get returns 404 when address does not belong to offender`() {
+      webTestClient.get().uri("/core-person/99999/address/${existingAddress.addressId}/usage/CURFEW")
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `get returns an address usage`() {
+      webTestClient.get().uri(usageUri("CURFEW"))
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("addressId").isEqualTo(existingAddress.addressId)
+        .jsonPath("usage.code").isEqualTo("CURFEW")
+        .jsonPath("usage.description").isEqualTo("Curfew Order")
+        .jsonPath("active").isEqualTo(false)
+    }
+
+    @Test
+    fun `create returns 400 when usage code does not exist`() {
+      webTestClient.post().uri(baseUsageUri())
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateOffenderAddressUsageRequest(usageCode = "UNKNOWN", active = true))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `create returns 400 when usage already exists`() {
+      webTestClient.post().uri(baseUsageUri())
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateOffenderAddressUsageRequest(usageCode = "CURFEW", active = true))
+        .exchange()
+        .expectStatus().isBadRequest
+    }
+
+    @Test
+    fun `create returns 404 when address does not exist`() {
+      webTestClient.post().uri("/core-person/${existingOffender.id}/address/99999/usage")
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateOffenderAddressUsageRequest(usageCode = "DAP", active = true))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `create adds an address usage`() {
+      webTestClient.post().uri(baseUsageUri())
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(CreateOffenderAddressUsageRequest(usageCode = "DAP", active = true))
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody()
+        .jsonPath("addressId").isEqualTo(existingAddress.addressId)
+        .jsonPath("usage.code").isEqualTo("DAP")
+        .jsonPath("active").isEqualTo(true)
+
+      nomisDataBuilder.runInTransaction {
+        val address = offenderAddressRepository.findByIdOrNull(existingAddress.addressId)!!
+        assertThat(address.usages).anyMatch { it.id.usageCode == "DAP" && it.active }
+      }
+    }
+
+    @Test
+    fun `update changes whether an address usage is active`() {
+      webTestClient.put().uri(usageUri("CURFEW"))
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(UpdateOffenderAddressUsageRequest(active = true))
+        .exchange()
+        .expectStatus().isOk
+
+      nomisDataBuilder.runInTransaction {
+        val address = offenderAddressRepository.findByIdOrNull(existingAddress.addressId)!!
+        assertThat(address.usages.single { it.id.usageCode == "CURFEW" }.active).isTrue()
+      }
+    }
+
+    @Test
+    fun `update returns 404 when usage does not exist`() {
+      webTestClient.put().uri(usageUri("DAP"))
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(UpdateOffenderAddressUsageRequest(active = true))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `delete removes an address usage`() {
+      webTestClient.delete().uri(usageUri("CURFEW"))
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .exchange()
+        .expectStatus().isNoContent
+
+      nomisDataBuilder.runInTransaction {
+        val address = offenderAddressRepository.findByIdOrNull(existingAddress.addressId)!!
+        assertThat(address.usages).noneMatch { it.id.usageCode == "CURFEW" }
+      }
+    }
+
+    @Test
+    fun `delete returns 404 when usage does not exist`() {
+      webTestClient.delete().uri(usageUri("DAP"))
+        .headers(setAuthorisation(roles = listOf(syncRole)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    private fun baseUsageUri() = "/core-person/${existingOffender.id}/address/${existingAddress.addressId}/usage"
+
+    private fun usageUri(usageCode: String) = "${baseUsageUri()}/$usageCode"
   }
 }
