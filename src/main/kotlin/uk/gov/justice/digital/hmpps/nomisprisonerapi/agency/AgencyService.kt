@@ -52,6 +52,46 @@ class AgencyService(
     CreateAgencyEmailAddressResponse(id = it.internetAddressId)
   }
 
+  // used by deletions and updates
+  fun updateAgencyEmailAddresses(agencyId: String, request: UpdateAgencyEmailAddressesRequest): AgencyEmailAddressesResponse {
+    val agency = getAgency(agencyId)
+    val requestedEmailAddresses = request.emailAddresses
+    // the common case is a single existing email address being replaced with a single new one, but this will also
+    // handle growing or shrinking the list, updating the overlapping entries in place so their ids are preserved
+    val existingEmailAddresses = agency.emailAddresses.sortedBy { it.internetAddressId }
+
+    if (existingEmailAddresses.map { it.internetAddress } == requestedEmailAddresses) {
+      return existingEmailAddresses.toAgencyEmailAddressesResponse()
+    }
+
+    val updatedEmailAddresses = requestedEmailAddresses.mapIndexed { index, emailAddress ->
+      existingEmailAddresses.getOrNull(index)?.also { it.internetAddress = emailAddress }
+        ?: agencyLocationInternetAddressRepository.save(
+          AgencyLocationInternetAddress(
+            agencyLocation = agency,
+            internetAddress = emailAddress,
+            internetAddressClass = EMAIL_INTERNET_ADDRESS_CLASS,
+          ),
+        )
+    }
+
+    if (existingEmailAddresses.size > requestedEmailAddresses.size) {
+      agencyLocationInternetAddressRepository.deleteAll(
+        existingEmailAddresses.subList(requestedEmailAddresses.size, existingEmailAddresses.size),
+      )
+    }
+
+    telemetryClient.trackEvent(
+      "agency.email.updated",
+      mapOf(
+        "agencyId" to agencyId,
+        "emailAddressIds" to updatedEmailAddresses.joinToString(",") { it.internetAddressId.toString() },
+      ),
+    )
+
+    return updatedEmailAddresses.toAgencyEmailAddressesResponse()
+  }
+
   private fun getAgency(agencyId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw NotFoundException("Agency $agencyId does not exist")
 }
@@ -86,6 +126,11 @@ fun AgencyLocation.toEmailAddresses(): List<AgencyEmailAddress> = emailAddresses
     emailAddress = email.internetAddress,
   )
 }
+
+fun List<AgencyLocationInternetAddress>.toAgencyEmailAddressesResponse() = AgencyEmailAddressesResponse(
+  emailAddresses = this.map { AgencyEmailAddress(id = it.internetAddressId, emailAddress = it.internetAddress) },
+)
+
 fun AgencyLocation.toPhoneNumbers(): List<AgencyPhoneNumber> = phones.map { phone ->
   AgencyPhoneNumber(
     id = phone.phoneId,

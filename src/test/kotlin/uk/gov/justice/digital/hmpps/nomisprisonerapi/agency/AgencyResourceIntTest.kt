@@ -720,4 +720,108 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("PUT /agency/{agencyId}/email")
+  @Nested
+  inner class UpdateAgencyEmailAddresses {
+    private lateinit var existingAgency: AgencyLocation
+    private lateinit var existingEmail: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        ) {
+          existingEmail = email(address = "old@justice.gov.uk")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById(existingAgency.id)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/agency/${existingAgency.id}/email")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/agency/${existingAgency.id}/email")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/agency/${existingAgency.id}/email")
+          .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if agency does not exist`() {
+        webTestClient.put().uri("/agency/ZZI/email")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will replace the single existing email address with the single new one`() {
+        val response: AgencyEmailAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/email")
+          .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.emailAddresses).hasSize(1)
+        assertThat(response.emailAddresses[0].id).isEqualTo(existingEmail.internetAddressId)
+        assertThat(response.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
+
+        with(agencyLocationInternetAddressRepository.findByIdOrNull(existingEmail.internetAddressId)!!) {
+          assertThat(internetAddress).isEqualTo("new@justice.gov.uk")
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.emailAddresses).hasSize(1)
+        assertThat(agency.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.email.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("emailAddressIds", existingEmail.internetAddressId.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+  }
 }
