@@ -570,17 +570,16 @@ class CorePersonResourceIntTest(
           .expectBody()
           .jsonPath("addresses[0].usages").doesNotExist()
           .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offender.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[0].usage.code").isEqualTo("CURFEW")
-          .jsonPath("addresses[1].usages[0].usage.description").isEqualTo("Curfew Order")
+          .jsonPath("addresses[1].usages[0].usage").isEqualTo("CURFEW")
           .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
           .jsonPath("addresses[1].usages[0].createdDateTime").isNotEmpty
           .jsonPath("addresses[1].usages[0].createdByUsername").isNotEmpty
           .jsonPath("addresses[1].usages[0].lastUpdatedDateTime").doesNotExist()
           .jsonPath("addresses[1].usages[0].lastUpdatedByUsername").doesNotExist()
           .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offender.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
-          .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
+          .jsonPath("addresses[1].usages[1].usage").isEqualTo("DAP")
           .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
+          .jsonPath("addresses[1].usages[2].usage").isEqualTo("NOT_FOUND")
       }
 
       @Test
@@ -594,7 +593,7 @@ class CorePersonResourceIntTest(
 
         assertThat(person.prisonNumber).isEqualTo(offender.nomsId)
         assertThat(person.addresses?.get(0)?.usages).isNull()
-        assertThat(person.addresses?.get(1)?.usages).hasSize(2)
+        assertThat(person.addresses?.get(1)?.usages).hasSize(3)
       }
     }
 
@@ -1837,13 +1836,12 @@ class CorePersonResourceIntTest(
           .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
           .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
           .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[0].usage.code").isEqualTo("CURFEW")
-          .jsonPath("addresses[1].usages[0].usage.description").isEqualTo("Curfew Order")
+          .jsonPath("addresses[1].usages[0].usage").isEqualTo("CURFEW")
           .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
           .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[1].usage.code").isEqualTo("DAP")
-          .jsonPath("addresses[1].usages[1].usage.description").isEqualTo("Discharge - Approved Premises")
+          .jsonPath("addresses[1].usages[1].usage").isEqualTo("DAP")
           .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
+          .jsonPath("addresses[1].usages[2].usage").isEqualTo("NOT_FOUND")
           .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
           .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderFull.phones[0].phoneId)
           .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
@@ -1873,7 +1871,7 @@ class CorePersonResourceIntTest(
         assertThat(addresses).hasSize(3)
         assertThat(addresses[1].postcode).isEqualTo("S1 3GG")
         assertThat(addresses[1].phoneNumbers).hasSize(2)
-        assertThat(addresses[1].usages).hasSize(2)
+        assertThat(addresses[1].usages).hasSize(3)
         assertThat(addressesAndContacts.phoneNumbers).hasSize(1)
         assertThat(addressesAndContacts.emailAddresses).hasSize(2)
       }
@@ -3977,14 +3975,15 @@ class CorePersonResourceIntTest(
     }
 
     @Test
-    fun `get returns 404 when usage reference code does not exist`() {
+    fun `get returns usage code when reference code does not exist`() {
       webTestClient.get().uri(usageUri("NOT_FOUND"))
         .headers(setAuthorisation(roles = listOf(syncRole)))
         .exchange()
-        .expectStatus().isNotFound
+        .expectStatus().isOk
         .expectBody()
-        .jsonPath("userMessage")
-        .isEqualTo("Not Found: Usage NOT_FOUND not found on address ${existingAddress.addressId}")
+        .jsonPath("addressId").isEqualTo(existingAddress.addressId)
+        .jsonPath("usage").isEqualTo("NOT_FOUND")
+        .jsonPath("active").isEqualTo(false)
     }
 
     @Test
@@ -4003,8 +4002,7 @@ class CorePersonResourceIntTest(
         .expectStatus().isOk
         .expectBody()
         .jsonPath("addressId").isEqualTo(existingAddress.addressId)
-        .jsonPath("usage.code").isEqualTo("CURFEW")
-        .jsonPath("usage.description").isEqualTo("Curfew Order")
+        .jsonPath("usage").isEqualTo("CURFEW")
         .jsonPath("active").isEqualTo(false)
     }
 
@@ -4048,7 +4046,7 @@ class CorePersonResourceIntTest(
         .expectStatus().isCreated
         .expectBody()
         .jsonPath("addressId").isEqualTo(existingAddress.addressId)
-        .jsonPath("usage.code").isEqualTo("DAP")
+        .jsonPath("usage").isEqualTo("DAP")
         .jsonPath("active").isEqualTo(true)
 
       nomisDataBuilder.runInTransaction {
