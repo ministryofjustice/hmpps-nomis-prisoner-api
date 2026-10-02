@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RegionRepository
@@ -34,6 +35,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository
+
+  @Autowired
+  private lateinit var agencyLocationPhoneRepository: AgencyLocationPhoneRepository
 
   @Autowired
   private lateinit var areaRepository: AreaRepository
@@ -714,6 +718,126 @@ class AgencyResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("agencyId", existingAgency.id)
             assertThat(it).containsEntry("emailAddressId", response.id.toString())
             assertThat(it).doesNotContainValue("test@justice.gov.uk")
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("POST /agency/{agencyId}/phone")
+  @Nested
+  inner class CreateAgencyPhone {
+    private val validPhoneRequest = CreateAgencyPhoneNumberRequest(
+      number = "0114 555 555",
+      typeCode = "BUS",
+    )
+
+    private lateinit var existingAgency: AgencyLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById(existingAgency.id)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `will return 404 if agency does not exist`() {
+        webTestClient.post().uri("/agency/ZZI/phone")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validPhoneRequest)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 400 if phone type does not exist`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validPhoneRequest.copy(typeCode = "RUBBISH"))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create a phone number at the agency level`() {
+        val response: CreateAgencyPhoneNumberResponse = webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+          .bodyValue(
+            validPhoneRequest.copy(
+              number = "0114 555 555",
+              extension = "x432",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(agencyLocationPhoneRepository.findByIdOrNull(response.id)!!) {
+          assertThat(phoneId).isEqualTo(response.id)
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(phoneNo).isEqualTo("0114 555 555")
+          assertThat(extNo).isEqualTo("x432")
+          assertThat(phoneType.code).isEqualTo("BUS")
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.phones).anyMatch { it.id == response.id && it.number == "0114 555 555" && it.extension == "x432" }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-phone-inserted"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("phoneId", response.id.toString())
           },
           isNull(),
         )
