@@ -5,19 +5,26 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress.Companion.EMAIL_INTERNET_ADDRESS_CLASS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 
 @Service
 @Transactional
 class AgencyService(
   val agencyLocationRepository: AgencyLocationRepository,
   val agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository,
+  val agencyLocationPhoneRepository: AgencyLocationPhoneRepository,
+  private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
   private val telemetryClient: TelemetryClient,
 ) {
   fun getAllAgencies(excludeType: List<String>): AgencyIdsResponse {
@@ -51,6 +58,27 @@ class AgencyService(
     )
     CreateAgencyEmailAddressResponse(id = it.internetAddressId)
   }
+
+  fun createAgencyPhone(agencyId: String, request: CreateAgencyPhoneNumberRequest): CreateAgencyPhoneNumberResponse = agencyLocationPhoneRepository.saveAndFlush(
+    AgencyLocationPhone(
+      agencyLocation = getAgency(agencyId),
+      phoneType = phoneTypeOf(request.typeCode),
+      phoneNo = request.number,
+      extNo = request.extension,
+    ),
+  ).let {
+    telemetryClient.trackEvent(
+      "agency-phone-inserted",
+      mapOf(
+        "agencyId" to agencyId,
+        "phoneId" to it.phoneId.toString(),
+      ),
+    )
+    CreateAgencyPhoneNumberResponse(id = it.phoneId)
+  }
+
+  private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))
+    ?: throw BadDataException("PhoneUsage with code $code does not exist")
 
   // used by deletions and updates
   fun updateAgencyEmailAddresses(agencyId: String, request: UpdateAgencyEmailAddressesRequest): AgencyEmailAddressesResponse {

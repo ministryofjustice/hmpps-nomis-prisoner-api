@@ -168,6 +168,72 @@ class AgencyResource(private val agencyService: AgencyService) {
     request: CreateAgencyEmailAddressRequest,
   ) = agencyService.createAgencyEmail(agencyId, request)
 
+  @PostMapping("/agency/{agencyId}/phone")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an agency phone number",
+    description = "Creates a new phone number for an agency, stored at the agency level (not the address level). Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Agency phone number created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateAgencyPhoneNumberResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example the phone type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createAgencyPhone(
+    @PathVariable
+    @Schema(description = "Agency id ", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: CreateAgencyPhoneNumberRequest,
+  ) = agencyService.createAgencyPhone(agencyId, request)
+
   @PutMapping("/agency/{agencyId}/email")
   @Operation(
     summary = "Refreshes the list of agency email addresses",
@@ -356,6 +422,22 @@ data class CreateAgencyEmailAddressRequest(
 @Schema(description = "A response to creating an agency email address")
 data class CreateAgencyEmailAddressResponse(
   @Schema(description = "Unique NOMIS Id of email address")
+  val id: Long,
+)
+
+@Schema(description = "A request to create an agency phone number")
+data class CreateAgencyPhoneNumberRequest(
+  @Schema(description = "The number", example = "0114 555 555")
+  val number: String,
+  @Schema(description = "Extension", example = "x432")
+  val extension: String? = null,
+  @Schema(description = "Phone type code", example = "BUS")
+  val typeCode: String,
+)
+
+@Schema(description = "A response to creating an agency phone number")
+data class CreateAgencyPhoneNumberResponse(
+  @Schema(description = "Unique NOMIS Id of phone")
   val id: Long,
 )
 
