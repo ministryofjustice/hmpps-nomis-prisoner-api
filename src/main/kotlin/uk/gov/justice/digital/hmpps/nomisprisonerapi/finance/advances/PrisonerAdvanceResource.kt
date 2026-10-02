@@ -140,6 +140,9 @@ data class PrisonerAdvanceDto(
   @Schema(description = "The comment for the advance", example = "Advance for personal expenses")
   val comment: String?,
 
+  @Schema(description = "The information number", example = "12345678-1")
+  val informationNumber: String?,
+
   @Schema(description = "The user who created the advance", example = "FRED_SMITH")
   val createdBy: String,
   @Schema(description = "The date time when the advance was created", example = "2024-06-01T12:00:00")

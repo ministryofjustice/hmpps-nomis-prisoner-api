@@ -27,7 +27,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   fun setUp() {
     nomisDataBuilder.build {
       id1 = offender {
-        advance = advance()
+        advance = advance(informationNumber = "12341234-2")
       }.id
       id2 = offender(nomsId = "A1234BC").id
       id3 = offender(nomsId = "A6789CD") {
@@ -247,6 +247,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("createDatetime").value<String> {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
+        .jsonPath("informationNumber").isEqualTo("12345678-2")
         // TODO
         .jsonPath("status").isEqualTo("TODO")
     }

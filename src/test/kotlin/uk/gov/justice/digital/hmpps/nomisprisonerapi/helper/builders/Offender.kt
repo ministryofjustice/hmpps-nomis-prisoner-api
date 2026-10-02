@@ -124,6 +124,7 @@ interface OffenderDsl {
   fun advance(
     caseloadId: String = "MDI",
     transactionType: String = "TELE",
+    informationNumber: String? = null,
     dsl: OffenderPaymentProfileDsl.() -> Unit = {},
   ): OffenderAdvance
 
@@ -423,12 +424,14 @@ class OffenderBuilder(
   override fun advance(
     caseloadId: String,
     transactionType: String,
+    informationNumber: String?,
     dsl: OffenderPaymentProfileDsl.() -> Unit,
   ): OffenderAdvance = offenderPaymentProfileBuilderFactory.builder().let { builder ->
     builder.buildAdvance(
       offender = rootOffender,
       caseloadId = caseloadId,
       transactionType = transactionType,
+      informationNumber = informationNumber,
     ).also { rootOffender.advances += it }
       .also { builder.apply(dsl) }
   }

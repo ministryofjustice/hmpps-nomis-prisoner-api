@@ -73,6 +73,9 @@ data class GeneralLedgerTransaction(
   @Column(name = "TXN_ENTRY_AMOUNT", nullable = false)
   val entryAmount: BigDecimal,
 
+  @Column
+  val deductionId: Long? = null,
+
   // A redundant copy of CREATE_DATETIME truncated to day but not nullable!
   @Column(nullable = false)
   val createDate: LocalDate,

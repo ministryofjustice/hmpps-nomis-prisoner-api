@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.Column
 import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
+import jakarta.persistence.OneToMany
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -24,6 +25,8 @@ class OffenderAdvance(
   @Column
   var advanceDate: LocalDate = LocalDate.now(),
 
+  @OneToMany(mappedBy = "offenderAdvance")
+  val deductions: MutableList<OffenderDeduction> = mutableListOf(),
 ) : OffenderPaymentProfile(
   offender = offender,
   caseloadId = caseloadId,
