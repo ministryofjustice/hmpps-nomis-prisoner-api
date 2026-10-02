@@ -265,7 +265,7 @@ class CorePersonService(
     if (address.usages.any { it.id.usageCode == request.usageCode }) {
       throw BadDataException("Usage of ${request.usageCode} already exists on address $addressId")
     }
-    val usage = AddressUsage(
+    AddressUsage(
       id = AddressUsageId(address = address, usageCode = request.usageCode),
       active = request.active,
       addressUsage = addressUsageTypeOf(request.usageCode),
@@ -374,18 +374,8 @@ class CorePersonService(
     comment = comment,
     startDate = startDate,
     endDate = endDate,
-    phoneNumbers = phones.map { number -> number.toOffenderPhoneNumber() },
-    usages = usages.filter { u -> u.addressUsage != null }.map { u ->
-      OffenderAddressUsage(
-        addressId = addressId,
-        usage = u.addressUsage!!.toCodeDescription(),
-        active = u.active,
-        createdDateTime = u.createDatetime,
-        createdByUsername = u.createUsername,
-        lastUpdatedDateTime = u.modifyDatetime,
-        lastUpdatedByUsername = u.modifyUserId,
-      )
-    },
+    phoneNumbers = phones.map { it.toOffenderPhoneNumber() },
+    usages = usages.map { it.toOffenderAddressUsage() },
     createdDateTime = createDatetime,
     createdByUsername = createUsername,
     lastUpdatedDateTime = modifyDatetime,
@@ -409,7 +399,7 @@ class CorePersonService(
 
   private fun AddressUsage.toOffenderAddressUsage() = OffenderAddressUsage(
     addressId = id.address.addressId,
-    usage = addressUsage?.toCodeDescription() ?: throw NotFoundException("Usage ${id.usageCode} not found on address ${id.address.addressId}"),
+    usage = if (id.usageCode == "DISC") "RELEASE" else id.usageCode,
     active = active,
     createdDateTime = createDatetime,
     createdByUsername = createUsername,
