@@ -1705,8 +1705,8 @@ data class OffenderAddress(
 data class OffenderAddressUsage(
   @Schema(description = "Offender address id", example = "1123456")
   val addressId: Long,
-  @Schema(description = "Address usage")
-  val usage: CodeDescription,
+  @Schema(description = "Address usage code")
+  val usage: String,
   @Schema(description = "Whether the address usage is active")
   val active: Boolean,
   @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
