@@ -120,6 +120,56 @@ class AgencyService(
     return updatedEmailAddresses.toAgencyEmailAddressesResponse()
   }
 
+  // used by deletions and updates
+  fun updateAgencyPhoneNumbers(agencyId: String, request: UpdateAgencyPhoneNumbersRequest): AgencyPhoneNumbersResponse {
+    val agency = getAgency(agencyId)
+
+    // numbers already held against one of the agency's addresses are left unchanged there, so are excluded
+    // from the agency-level list we are refreshing
+    val addressPhoneNumbers = agency.addresses.flatMap { it.phones }.map { it.phoneNo }.toSet()
+    val requestedPhoneNumbers = request.phoneNumbers.filterNot { it.number in addressPhoneNumbers }
+
+    // the common case is a single existing phone number being replaced with a single new one, but this will also
+    // handle growing or shrinking the list, updating the overlapping entries in place so their ids are preserved
+    val existingPhoneNumbers = agency.phones.sortedBy { it.phoneId }
+
+    if (existingPhoneNumbers.map { it.toUpdateAgencyPhoneNumber() } == requestedPhoneNumbers) {
+      return existingPhoneNumbers.toAgencyPhoneNumbersResponse()
+    }
+
+    val updatedPhoneNumbers = requestedPhoneNumbers.mapIndexed { index, phoneNumber ->
+      existingPhoneNumbers.getOrNull(index)?.also {
+        it.phoneNo = phoneNumber.number
+        it.extNo = phoneNumber.extension
+        it.phoneType = phoneTypeOf(phoneNumber.typeCode)
+      }
+        ?: agencyLocationPhoneRepository.save(
+          AgencyLocationPhone(
+            agencyLocation = agency,
+            phoneType = phoneTypeOf(phoneNumber.typeCode),
+            phoneNo = phoneNumber.number,
+            extNo = phoneNumber.extension,
+          ),
+        )
+    }
+
+    if (existingPhoneNumbers.size > requestedPhoneNumbers.size) {
+      agencyLocationPhoneRepository.deleteAll(
+        existingPhoneNumbers.subList(requestedPhoneNumbers.size, existingPhoneNumbers.size),
+      )
+    }
+
+    telemetryClient.trackEvent(
+      "agency.phone.updated",
+      mapOf(
+        "agencyId" to agencyId,
+        "phoneIds" to updatedPhoneNumbers.joinToString(",") { it.phoneId.toString() },
+      ),
+    )
+
+    return updatedPhoneNumbers.toAgencyPhoneNumbersResponse()
+  }
+
   private fun getAgency(agencyId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw NotFoundException("Agency $agencyId does not exist")
 }
@@ -167,6 +217,19 @@ fun AgencyLocation.toPhoneNumbers(): List<AgencyPhoneNumber> = phones.map { phon
     type = phone.phoneType.toCodeDescription(),
   )
 }
+
+fun AgencyLocationPhone.toUpdateAgencyPhoneNumber() = UpdateAgencyPhoneNumber(
+  number = phoneNo,
+  extension = extNo,
+  typeCode = phoneType.code,
+)
+
+fun List<AgencyLocationPhone>.toAgencyPhoneNumbersResponse() = AgencyPhoneNumbersResponse(
+  phoneNumbers = this.map {
+    AgencyPhoneNumber(id = it.phoneId, number = it.phoneNo, extension = it.extNo, type = it.phoneType.toCodeDescription())
+  },
+)
+
 fun AgencyLocation.toAgencyAddresses(): List<AgencyAddress> = addresses.map { address ->
   AgencyAddress(
     id = address.addressId,

@@ -19,7 +19,9 @@ import org.mockito.kotlin.whenever
 import org.springframework.test.util.ReflectionTestUtils
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress.Companion.EMAIL_INTERNET_ADDRESS_CLASS
@@ -365,6 +367,156 @@ class AgencyServiceTest {
         },
         isNull(),
       )
+    }
+  }
+
+  @Nested
+  @DisplayName("updateAgencyPhoneNumbers")
+  inner class UpdateAgencyPhoneNumbers {
+    private val busPhoneUsage = PhoneUsage("BUS", "Business")
+    private val homePhoneUsage = PhoneUsage("HOME", "Home")
+
+    private fun agencyPhone(agency: AgencyLocation, id: Long, number: String, phoneType: PhoneUsage = busPhoneUsage, extension: String? = null) = AgencyLocationPhone(
+      agencyLocation = agency,
+      phoneType = phoneType,
+      phoneNo = number,
+      extNo = extension,
+    ).also { ReflectionTestUtils.setField(it, "phoneId", id) }
+
+    @BeforeEach
+    fun setUp() {
+      whenever(phoneUsageRepository.findById(PhoneUsage.pk("BUS"))).thenReturn(Optional.of(busPhoneUsage))
+      whenever(phoneUsageRepository.findById(PhoneUsage.pk("HOME"))).thenReturn(Optional.of(homePhoneUsage))
+    }
+
+    @Test
+    fun `will throw not found if agency does not exist`() {
+      whenever(agencyLocationRepository.findById("ZZI")).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        agencyService.updateAgencyPhoneNumbers(
+          "ZZI",
+          UpdateAgencyPhoneNumbersRequest(listOf(UpdateAgencyPhoneNumber(number = "0114 555 555", typeCode = "BUS"))),
+        )
+      }.isInstanceOf(NotFoundException::class.java)
+    }
+
+    @Nested
+    @DisplayName("happy path - single existing phone number replaced with a single new one")
+    inner class HappyPath {
+      private val agency = AgencyLocation(id = "WWI", description = "Wandsworth")
+      private val existingPhone = agencyPhone(agency, 1, "0114 555 555")
+
+      @BeforeEach
+      fun setUp() {
+        agency.phones.add(existingPhone)
+        whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
+      }
+
+      @Test
+      fun `will update the existing phone number in place preserving its id`() {
+        val response = agencyService.updateAgencyPhoneNumbers(
+          "WWI",
+          UpdateAgencyPhoneNumbersRequest(listOf(UpdateAgencyPhoneNumber(number = "0114 999 999", extension = "x432", typeCode = "HOME"))),
+        )
+
+        assertThat(response.phoneNumbers).hasSize(1)
+        assertThat(response.phoneNumbers[0].id).isEqualTo(1)
+        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 999 999")
+        assertThat(response.phoneNumbers[0].extension).isEqualTo("x432")
+        assertThat(existingPhone.phoneNo).isEqualTo("0114 999 999")
+        assertThat(existingPhone.phoneType).isEqualTo(homePhoneUsage)
+      }
+
+      @Test
+      fun `will not raise a telemetry event or change anything if the phone number is unchanged`() {
+        val response = agencyService.updateAgencyPhoneNumbers(
+          "WWI",
+          UpdateAgencyPhoneNumbersRequest(listOf(UpdateAgencyPhoneNumber(number = "0114 555 555", typeCode = "BUS"))),
+        )
+
+        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 555 555")
+        verifyNoInteractions(telemetryClient)
+      }
+    }
+
+    @Nested
+    @DisplayName("when a requested number already exists against one of the agency's addresses")
+    inner class AddressLevelNumber {
+      private val agency = AgencyLocation(id = "WWI", description = "Wandsworth")
+      private val address = AgencyLocationAddress(agencyLocation = agency, premise = "22")
+      private val addressPhone = AddressPhone(address = address, phoneType = busPhoneUsage, phoneNo = "0114 111 111")
+        .also { ReflectionTestUtils.setField(it, "phoneId", 99L) }
+
+      @BeforeEach
+      fun setUp() {
+        address.phones.add(addressPhone)
+        agency.addresses.add(address)
+        whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
+      }
+
+      @Test
+      fun `will leave the address-level phone number unchanged and not create an agency-level duplicate`() {
+        val response = agencyService.updateAgencyPhoneNumbers(
+          "WWI",
+          UpdateAgencyPhoneNumbersRequest(listOf(UpdateAgencyPhoneNumber(number = "0114 111 111", typeCode = "BUS"))),
+        )
+
+        assertThat(response.phoneNumbers).isEmpty()
+        assertThat(address.phones).containsExactly(addressPhone)
+        verifyNoInteractions(telemetryClient)
+      }
+
+      @Test
+      fun `will add any other requested number at the agency level while leaving the address number alone`() {
+        whenever(agencyLocationPhoneRepository.save(any<AgencyLocationPhone>())).thenAnswer {
+          (it.arguments[0] as AgencyLocationPhone).also { phone -> ReflectionTestUtils.setField(phone, "phoneId", 2L) }
+        }
+
+        val response = agencyService.updateAgencyPhoneNumbers(
+          "WWI",
+          UpdateAgencyPhoneNumbersRequest(
+            listOf(
+              UpdateAgencyPhoneNumber(number = "0114 111 111", typeCode = "BUS"),
+              UpdateAgencyPhoneNumber(number = "0114 222 222", typeCode = "HOME"),
+            ),
+          ),
+        )
+
+        assertThat(response.phoneNumbers).hasSize(1)
+        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 222 222")
+        assertThat(address.phones).containsExactly(addressPhone)
+      }
+    }
+
+    @Nested
+    @DisplayName("shrinking the list")
+    inner class ShrinkingList {
+      private val agency = AgencyLocation(id = "WWI", description = "Wandsworth")
+      private val existingPhone1 = agencyPhone(agency, 1, "0114 111 111")
+      private val existingPhone2 = agencyPhone(agency, 2, "0114 222 222")
+
+      @BeforeEach
+      fun setUp() {
+        agency.phones.add(existingPhone1)
+        agency.phones.add(existingPhone2)
+        whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
+      }
+
+      @Test
+      fun `will remove all phone numbers when requesting an empty list`() {
+        val response = agencyService.updateAgencyPhoneNumbers("WWI", UpdateAgencyPhoneNumbersRequest(emptyList()))
+
+        assertThat(response.phoneNumbers).isEmpty()
+        verify(agencyLocationPhoneRepository).deleteAll(listOf(existingPhone1, existingPhone2))
+        verify(telemetryClient).trackEvent(
+          eq("agency.phone.updated"),
+          check {
+            assertThat(it).containsEntry("phoneIds", "")
+          },
+          isNull(),
+        )
+      }
     }
   }
 }

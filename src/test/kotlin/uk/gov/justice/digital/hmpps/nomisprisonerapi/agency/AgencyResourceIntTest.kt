@@ -616,7 +616,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("POST /agency/{agencyId}/email")
+  @DisplayName("POST /agency/{agencyId}/emails")
   @Nested
   inner class CreateAgencyEmail {
     private val validEmailRequest = CreateAgencyEmailAddressRequest(
@@ -645,7 +645,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/agency/${existingAgency.id}/email")
+        webTestClient.post().uri("/agency/${existingAgency.id}/emails")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validEmailRequest)
           .exchange()
@@ -654,7 +654,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/agency/${existingAgency.id}/email")
+        webTestClient.post().uri("/agency/${existingAgency.id}/emails")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validEmailRequest)
           .exchange()
@@ -663,7 +663,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/agency/${existingAgency.id}/email")
+        webTestClient.post().uri("/agency/${existingAgency.id}/emails")
           .bodyValue(validEmailRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -675,7 +675,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if agency does not exist`() {
-        webTestClient.post().uri("/agency/ZZI/email")
+        webTestClient.post().uri("/agency/ZZI/emails")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(validEmailRequest)
           .exchange()
@@ -687,7 +687,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will create an email address for the agency`() {
-        val response: CreateAgencyEmailAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/email")
+        val response: CreateAgencyEmailAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/emails")
           .bodyValue(
             validEmailRequest.copy(
               emailAddress = "test@justice.gov.uk",
@@ -725,7 +725,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("POST /agency/{agencyId}/phone")
+  @DisplayName("POST /agency/{agencyId}/phones")
   @Nested
   inner class CreateAgencyPhone {
     private val validPhoneRequest = CreateAgencyPhoneNumberRequest(
@@ -755,7 +755,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+        webTestClient.post().uri("/agency/${existingAgency.id}/phones")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -764,7 +764,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+        webTestClient.post().uri("/agency/${existingAgency.id}/phones")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -773,7 +773,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+        webTestClient.post().uri("/agency/${existingAgency.id}/phones")
           .bodyValue(validPhoneRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -785,7 +785,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 404 if agency does not exist`() {
-        webTestClient.post().uri("/agency/ZZI/phone")
+        webTestClient.post().uri("/agency/ZZI/phones")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -794,7 +794,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `will return 400 if phone type does not exist`() {
-        webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+        webTestClient.post().uri("/agency/${existingAgency.id}/phones")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(validPhoneRequest.copy(typeCode = "RUBBISH"))
           .exchange()
@@ -806,7 +806,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will create a phone number at the agency level`() {
-        val response: CreateAgencyPhoneNumberResponse = webTestClient.post().uri("/agency/${existingAgency.id}/phone")
+        val response: CreateAgencyPhoneNumberResponse = webTestClient.post().uri("/agency/${existingAgency.id}/phones")
           .bodyValue(
             validPhoneRequest.copy(
               number = "0114 555 555",
@@ -845,7 +845,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  @DisplayName("PUT /agency/{agencyId}/email")
+  @DisplayName("PUT /agency/{agencyId}/emails")
   @Nested
   inner class UpdateAgencyEmailAddresses {
     private lateinit var existingAgency: AgencyLocation
@@ -873,7 +873,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.put().uri("/agency/${existingAgency.id}/email")
+        webTestClient.put().uri("/agency/${existingAgency.id}/emails")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
           .exchange()
@@ -882,7 +882,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.put().uri("/agency/${existingAgency.id}/email")
+        webTestClient.put().uri("/agency/${existingAgency.id}/emails")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
           .exchange()
@@ -891,7 +891,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.put().uri("/agency/${existingAgency.id}/email")
+        webTestClient.put().uri("/agency/${existingAgency.id}/emails")
           .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
           .exchange()
           .expectStatus().isUnauthorized
@@ -902,7 +902,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class Validation {
       @Test
       fun `will return 404 if agency does not exist`() {
-        webTestClient.put().uri("/agency/ZZI/email")
+        webTestClient.put().uri("/agency/ZZI/emails")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
           .exchange()
@@ -914,7 +914,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     inner class HappyPath {
       @Test
       fun `will replace the single existing email address with the single new one`() {
-        val response: AgencyEmailAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/email")
+        val response: AgencyEmailAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/emails")
           .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -942,6 +942,77 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           check {
             assertThat(it).containsEntry("agencyId", existingAgency.id)
             assertThat(it).containsEntry("emailAddressIds", existingEmail.internetAddressId.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("PUT /agency/{agencyId}/phones")
+  @Nested
+  inner class UpdateAgencyPhoneNumbers {
+    private lateinit var existingAgency: AgencyLocation
+    private lateinit var existingPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        ) {
+          existingPhone = phone(phoneType = "BUS", phoneNo = "0114 555 555")
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById(existingAgency.id)
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will replace the single existing phone number with the single new one`() {
+        val response: AgencyPhoneNumbersResponse = webTestClient.put().uri("/agency/${existingAgency.id}/phones")
+          .bodyValue(
+            UpdateAgencyPhoneNumbersRequest(
+              phoneNumbers = listOf(UpdateAgencyPhoneNumber(number = "0114 999 999", extension = "x432", typeCode = "HOME")),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.phoneNumbers).hasSize(1)
+        assertThat(response.phoneNumbers[0].id).isEqualTo(existingPhone.phoneId)
+        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 999 999")
+        assertThat(response.phoneNumbers[0].extension).isEqualTo("x432")
+        assertThat(response.phoneNumbers[0].type.code).isEqualTo("HOME")
+
+        with(agencyLocationPhoneRepository.findByIdOrNull(existingPhone.phoneId)!!) {
+          assertThat(phoneNo).isEqualTo("0114 999 999")
+          assertThat(extNo).isEqualTo("x432")
+          assertThat(phoneType.code).isEqualTo("HOME")
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.phones).hasSize(1)
+        assertThat(agency.phones[0].number).isEqualTo("0114 999 999")
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.phone.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("phoneIds", existingPhone.phoneId.toString())
           },
           isNull(),
         )
