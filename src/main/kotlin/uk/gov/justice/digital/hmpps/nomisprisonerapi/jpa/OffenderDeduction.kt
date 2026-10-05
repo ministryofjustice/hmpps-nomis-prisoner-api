@@ -4,9 +4,12 @@ import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.type.YesNoConverter
@@ -18,11 +21,10 @@ import java.time.LocalDateTime
 @Table(name = "OFFENDER_DEDUCTIONS")
 data class OffenderDeduction(
   @Id
+  @SequenceGenerator(name = "OFFENDER_DEDUCTION_ID", sequenceName = "DEDUCTION_ID", allocationSize = 1)
+  @GeneratedValue(generator = "OFFENDER_DEDUCTION_ID")
   @Column(name = "OFFENDER_DEDUCTION_ID")
   val deductionId: Long = 0,
-
-  @Column(name = "CASELOAD_ID", nullable = false)
-  val caseloadId: String,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_ID", nullable = false)
@@ -31,9 +33,12 @@ data class OffenderDeduction(
   @Column(name = "CREDIT_LIMIT")
   val creditLimit: BigDecimal? = null,
 
-  @Column(name = "DEDUCTION_TYPE", nullable = false)
-  val deductionType: String = "ADV",
-  // always 'ADV'
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumns(
+    JoinColumn(name = "CASELOAD_ID", referencedColumnName = "CASELOAD_ID", nullable = false),
+    JoinColumn(name = "DEDUCTION_TYPE", referencedColumnName = "DEDUCTION_TYPE", nullable = false),
+  )
+  val caseloadDeductionProfile: CaseloadDeductionProfile,
 
   @Column(name = "DEDUCTION_STATUS", nullable = false)
   val deductionStatus: String = "A",
@@ -129,7 +134,7 @@ data class OffenderDeduction(
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_PAYMENT_PROFILE_ID")
-  val offenderAdvance: OffenderAdvance? = null,
+  var offenderAdvance: OffenderAdvance? = null,
 
   /*
     Not mapped:

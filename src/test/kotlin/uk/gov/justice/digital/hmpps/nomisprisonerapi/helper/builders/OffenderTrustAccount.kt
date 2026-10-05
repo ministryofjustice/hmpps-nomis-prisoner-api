@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTrustAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTrustAccountId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTrustAccountRepository
 import java.math.BigDecimal
 
 @DslMarker
@@ -24,11 +25,22 @@ interface OffenderTrustAccountDsl {
 }
 
 @Component
-class OffenderTrustAccountBuilderFactory(private val offenderSubAccountBuilderFactory: OffenderSubAccountBuilderFactory) {
-  fun builder() = OffenderTrustAccountBuilder(offenderSubAccountBuilderFactory)
+class OffenderTrustAccountBuilderRepository(
+  val repository: OffenderTrustAccountRepository,
+) {
+  fun save(offenderTrustAccount: OffenderTrustAccount): OffenderTrustAccount = repository.saveAndFlush(offenderTrustAccount)
+}
+
+@Component
+class OffenderTrustAccountBuilderFactory(
+  private val repository: OffenderTrustAccountBuilderRepository,
+  private val offenderSubAccountBuilderFactory: OffenderSubAccountBuilderFactory,
+) {
+  fun builder() = OffenderTrustAccountBuilder(repository, offenderSubAccountBuilderFactory)
 }
 
 class OffenderTrustAccountBuilder(
+  private val repository: OffenderTrustAccountBuilderRepository,
   private val offenderSubAccountBuilderFactory: OffenderSubAccountBuilderFactory,
 ) : OffenderTrustAccountDsl {
 
@@ -45,7 +57,10 @@ class OffenderTrustAccountBuilder(
     holdBalance = holdBalance,
     accountClosed = false,
   )
-    .also { offenderTrustAccount = it }
+    .let { repository.save(it) }
+    .also {
+      offenderTrustAccount = it
+    }
 
   override fun subAccount(
     accountCode: Long,

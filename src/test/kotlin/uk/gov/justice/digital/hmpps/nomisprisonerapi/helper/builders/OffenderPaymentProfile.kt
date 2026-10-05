@@ -1,11 +1,14 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseloadDeductionProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderDeduction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderDeductionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.CaseloadDeductionProfileRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdvanceRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -24,9 +27,15 @@ class OffenderPaymentProfileBuilderFactory(
 
 @Component
 class OffenderDeductionBuilderRepository(
-  val offenderDeductionRepository: OffenderDeductionRepository,
+  val offenderAdvanceRepository: OffenderAdvanceRepository,
+  val caseloadDeductionProfileRepository: CaseloadDeductionProfileRepository,
 ) {
-  fun save(deduction: OffenderDeduction): OffenderDeduction = offenderDeductionRepository.save(deduction)
+  fun lookupCaseloadDeductionProfile(caseloadId: String, deductionType: String) = caseloadDeductionProfileRepository.findByIdOrNull(
+    CaseloadDeductionProfileId(caseloadId, deductionType),
+  )
+    ?: throw IllegalArgumentException("No CaseloadDeductionProfile found for caseloadId=$caseloadId and deductionType=$deductionType")
+
+  fun save(advance: OffenderAdvance): OffenderAdvance = offenderAdvanceRepository.saveAndFlush(advance)
 }
 
 class OffenderPaymentProfileBuilder(
@@ -37,26 +46,30 @@ class OffenderPaymentProfileBuilder(
     offender: Offender,
     caseloadId: String,
     transactionType: String,
+    deductionPriority: Int,
     informationNumber: String?,
   ): OffenderAdvance {
-    val od = offenderDeductionBuilderRepository.save(
-      OffenderDeduction(
-        caseloadId = caseloadId,
-        offender = offender,
-        deductionPriority = 1,
-        effectiveDate = LocalDate.now(),
-        deductionPercentage = 20,
-        informationNumber = informationNumber,
-      ),
-    )
-    return OffenderAdvance(
+    val caseloadDeductionProfile = offenderDeductionBuilderRepository.lookupCaseloadDeductionProfile(caseloadId, "ADV")
+    val od = OffenderDeduction(
+      caseloadDeductionProfile = caseloadDeductionProfile,
       offender = offender,
-      caseloadId = caseloadId,
-      transactionType = transactionType,
-      advanceAmount = BigDecimal.valueOf(12.45),
-      paymentAmount = BigDecimal.valueOf(2.45),
-      deductions = mutableListOf(od),
+      deductionPriority = deductionPriority,
+      effectiveDate = LocalDate.now(),
+      deductionPercentage = 20,
+      informationNumber = informationNumber,
     )
+    return offenderDeductionBuilderRepository.save(
+      OffenderAdvance(
+        offender = offender,
+        caseloadId = caseloadId,
+        transactionType = transactionType,
+        advanceAmount = BigDecimal.valueOf(12.45),
+        paymentAmount = BigDecimal.valueOf(2.45),
+        deductions = mutableListOf(od),
+      ),
+    ).also {
+      it.deductions.first().offenderAdvance = it
+    }
   }
 
   fun buildScheduledPayment(
