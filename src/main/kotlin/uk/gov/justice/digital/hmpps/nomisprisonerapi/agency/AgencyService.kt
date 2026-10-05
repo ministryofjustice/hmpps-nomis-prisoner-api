@@ -126,6 +126,7 @@ class AgencyService(
 
     // numbers already held against one of the agency's addresses are left unchanged there, so are excluded
     // from the agency-level list we are refreshing
+    request.phoneNumbers.forEach { phoneTypeOf(it.typeCode) }
     val addressPhoneNumbers = agency.addresses.flatMap { it.phones }.map { it.phoneNo }.toSet()
     val requestedPhoneNumbers = request.phoneNumbers.filterNot { it.number in addressPhoneNumbers }
 
