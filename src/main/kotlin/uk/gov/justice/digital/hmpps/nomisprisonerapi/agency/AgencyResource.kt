@@ -112,7 +112,7 @@ class AgencyResource(private val agencyService: AgencyService) {
     @RequestParam(required = false) excludeType: List<String> = listOf(),
   ) = agencyService.getAllAgencies(excludeType)
 
-  @PostMapping("/agency/{agencyId}/email")
+  @PostMapping("/agency/{agencyId}/emails")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create an agency email address",
@@ -168,7 +168,7 @@ class AgencyResource(private val agencyService: AgencyService) {
     request: CreateAgencyEmailAddressRequest,
   ) = agencyService.createAgencyEmail(agencyId, request)
 
-  @PostMapping("/agency/{agencyId}/phone")
+  @PostMapping("/agency/{agencyId}/phones")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create an agency phone number",
@@ -234,7 +234,7 @@ class AgencyResource(private val agencyService: AgencyService) {
     request: CreateAgencyPhoneNumberRequest,
   ) = agencyService.createAgencyPhone(agencyId, request)
 
-  @PutMapping("/agency/{agencyId}/email")
+  @PutMapping("/agency/{agencyId}/emails")
   @Operation(
     summary = "Refreshes the list of agency email addresses",
     description = "Replaces the existing list of email addresses for an agency with the list supplied. Where possible, existing email addresses are updated in place so their ids are preserved; any extra existing email addresses are removed and any extra new ones are created. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -288,6 +288,71 @@ class AgencyResource(private val agencyService: AgencyService) {
     @RequestBody @Valid
     request: UpdateAgencyEmailAddressesRequest,
   ) = agencyService.updateAgencyEmailAddresses(agencyId, request)
+
+  @PutMapping("/agency/{agencyId}/phones")
+  @Operation(
+    summary = "Refreshes the list of agency phone numbers",
+    description = "Replaces the existing list of agency-level phone numbers for an agency with the list supplied. Where possible, existing phone numbers are updated in place so their ids are preserved; any extra existing phone numbers are removed and any extra new ones are created. If a requested phone number already exists against one of the agency's addresses it is left unchanged there and is not duplicated at the agency level. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Agency phone numbers updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AgencyPhoneNumbersResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example the phone type code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateAgencyPhoneNumbers(
+    @PathVariable
+    @Schema(description = "Agency id", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: UpdateAgencyPhoneNumbersRequest,
+  ) = agencyService.updateAgencyPhoneNumbers(agencyId, request)
 }
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -451,4 +516,26 @@ data class UpdateAgencyEmailAddressesRequest(
 data class AgencyEmailAddressesResponse(
   @Schema(description = "The list of email addresses now held for the agency")
   val emailAddresses: List<AgencyEmailAddress>,
+)
+
+@Schema(description = "A phone number to be held against an agency")
+data class UpdateAgencyPhoneNumber(
+  @Schema(description = "The number", example = "0114 555 555")
+  val number: String,
+  @Schema(description = "Extension", example = "x432")
+  val extension: String? = null,
+  @Schema(description = "Phone type code", example = "BUS")
+  val typeCode: String,
+)
+
+@Schema(description = "A request to refresh and replace the list of agency-level phone numbers for an agency")
+data class UpdateAgencyPhoneNumbersRequest(
+  @Schema(description = "The complete list of phone numbers to hold against the agency, replacing any existing agency-level list. Any number that already exists against one of the agency's addresses will be left unchanged there and excluded from the agency-level list")
+  val phoneNumbers: List<UpdateAgencyPhoneNumber>,
+)
+
+@Schema(description = "A response to refreshing the list of phone numbers for an agency")
+data class AgencyPhoneNumbersResponse(
+  @Schema(description = "The list of agency-level phone numbers now held for the agency")
+  val phoneNumbers: List<AgencyPhoneNumber>,
 )
