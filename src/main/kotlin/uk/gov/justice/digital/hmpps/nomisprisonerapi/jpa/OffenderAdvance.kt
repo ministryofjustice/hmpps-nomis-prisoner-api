@@ -5,7 +5,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
-import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -27,8 +27,8 @@ class OffenderAdvance(
   @Column
   var advanceDate: LocalDate = LocalDate.now(),
 
-  @OneToMany(mappedBy = "offenderAdvance", orphanRemoval = true, cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-  val deductions: MutableList<OffenderDeduction> = mutableListOf(),
+  @OneToOne(mappedBy = "offenderAdvance", orphanRemoval = true, cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val deduction: OffenderDeduction? = null,
 ) : OffenderPaymentProfile(
   offender = offender,
   caseloadId = caseloadId,

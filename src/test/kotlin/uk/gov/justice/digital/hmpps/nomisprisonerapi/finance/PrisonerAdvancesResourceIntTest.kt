@@ -42,7 +42,6 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
   @AfterEach
   fun tearDown() {
-    repository.deleteAllDeductions()
     deleteOffenders()
   }
 

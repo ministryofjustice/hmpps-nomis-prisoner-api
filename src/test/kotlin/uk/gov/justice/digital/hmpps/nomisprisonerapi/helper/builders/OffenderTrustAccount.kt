@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
@@ -28,6 +29,9 @@ interface OffenderTrustAccountDsl {
 class OffenderTrustAccountBuilderRepository(
   val repository: OffenderTrustAccountRepository,
 ) {
+  fun lookup(offender: Offender, caseloadId: String): OffenderTrustAccount = repository.findByIdOrNull(OffenderTrustAccountId(caseloadId = caseloadId, offender = offender))
+    ?: throw IllegalArgumentException("No OffenderTrustAccount found for offenderId=${offender.id} and caseloadId=$caseloadId")
+
   fun save(offenderTrustAccount: OffenderTrustAccount): OffenderTrustAccount = repository.saveAndFlush(offenderTrustAccount)
 }
 

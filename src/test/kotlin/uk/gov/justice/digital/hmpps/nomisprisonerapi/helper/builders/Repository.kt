@@ -67,7 +67,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBeli
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCaseNoteRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderChargeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderCourseAttendanceRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderDeductionRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderNonAssociationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderProgramProfileRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPropertyContainerRepository
@@ -129,7 +128,6 @@ class Repository(
   val offenderTransactionRepository: OffenderTransactionRepository,
   val generalLedgerTransactionRepository: GeneralLedgerTransactionRepository,
   val offenderTrustAccountRepository: OffenderTrustAccountRepository,
-  val offenderDeductionRepository: OffenderDeductionRepository,
   val linkCaseTxnRepository: LinkCaseTxnRepository,
   val caseloadCurrentAccountsBaseRepository: CaseloadCurrentAccountsBaseRepository,
   val caseloadCurrentAccountsTxnRepository: CaseloadCurrentAccountsTxnRepository,
@@ -330,8 +328,6 @@ class Repository(
   fun deleteAllPrisonBalances() = caseloadCurrentAccountsBaseRepository.deleteAll().also {
     caseloadCurrentAccountsTxnRepository.deleteAll()
   }
-
-  fun deleteAllDeductions() = offenderDeductionRepository.deleteAll()
 
   fun deleteAssessments() = offenderAssessmentRepository.deleteAll()
   fun deleteAllPrisonerProperty() = offenderPropertyContainerRepository.deleteAll()

@@ -42,7 +42,7 @@ fun OffenderAdvance.toDto() = PrisonerAdvanceDto(
   comment = commentText,
   createdBy = createUsername,
   createDatetime = createDatetime,
-  informationNumber = deductions.firstOrNull()?.informationNumber,
+  informationNumber = deduction?.informationNumber,
   // TODO
   status = "TODO",
 )

@@ -21,8 +21,9 @@ interface OffenderPaymentProfileDsl
 @Component
 class OffenderPaymentProfileBuilderFactory(
   private val repository: OffenderDeductionBuilderRepository,
+  private val offenderTrustAccountRepository: OffenderTrustAccountBuilderRepository,
 ) {
-  fun builder() = OffenderPaymentProfileBuilder(repository)
+  fun builder() = OffenderPaymentProfileBuilder(repository, offenderTrustAccountRepository)
 }
 
 @Component
@@ -40,6 +41,7 @@ class OffenderDeductionBuilderRepository(
 
 class OffenderPaymentProfileBuilder(
   private val offenderDeductionBuilderRepository: OffenderDeductionBuilderRepository,
+  private val offenderTrustAccountRepository: OffenderTrustAccountBuilderRepository,
 ) : OffenderPaymentProfileDsl {
 
   fun buildAdvance(
@@ -50,9 +52,11 @@ class OffenderPaymentProfileBuilder(
     informationNumber: String?,
   ): OffenderAdvance {
     val caseloadDeductionProfile = offenderDeductionBuilderRepository.lookupCaseloadDeductionProfile(caseloadId, "ADV")
+    val offenderTrustAccount = offenderTrustAccountRepository.lookup(offender, caseloadId)
+
     val od = OffenderDeduction(
       caseloadDeductionProfile = caseloadDeductionProfile,
-      offender = offender,
+      offenderTrustAccount = offenderTrustAccount,
       deductionPriority = deductionPriority,
       effectiveDate = LocalDate.now(),
       deductionPercentage = 20,
@@ -65,10 +69,10 @@ class OffenderPaymentProfileBuilder(
         transactionType = transactionType,
         advanceAmount = BigDecimal.valueOf(12.45),
         paymentAmount = BigDecimal.valueOf(2.45),
-        deductions = mutableListOf(od),
+        deduction = od,
       ),
     ).also {
-      it.deductions.first().offenderAdvance = it
+      it.deduction!!.offenderAdvance = it
     }
   }
 

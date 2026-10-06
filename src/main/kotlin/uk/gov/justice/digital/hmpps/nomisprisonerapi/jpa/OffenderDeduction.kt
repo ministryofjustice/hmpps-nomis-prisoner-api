@@ -9,6 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -27,18 +28,27 @@ data class OffenderDeduction(
   val deductionId: Long = 0,
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "OFFENDER_ID", nullable = false)
-  val offender: Offender,
+  @JoinColumns(
+    JoinColumn(name = "CASELOAD_ID", referencedColumnName = "CASELOAD_ID", nullable = false),
+    JoinColumn(name = "OFFENDER_ID", referencedColumnName = "OFFENDER_ID", nullable = false),
+  )
+  var offenderTrustAccount: OffenderTrustAccount,
 
   @Column(name = "CREDIT_LIMIT")
   val creditLimit: BigDecimal? = null,
 
+  /** mapped as not insertable due to repeated CASELOAD_ID */
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   @JoinColumns(
-    JoinColumn(name = "CASELOAD_ID", referencedColumnName = "CASELOAD_ID", nullable = false),
-    JoinColumn(name = "DEDUCTION_TYPE", referencedColumnName = "DEDUCTION_TYPE", nullable = false),
+    JoinColumn(name = "CASELOAD_ID", referencedColumnName = "CASELOAD_ID", nullable = false, insertable = false, updatable = false),
+    JoinColumn(name = "DEDUCTION_TYPE", referencedColumnName = "DEDUCTION_TYPE", nullable = false, insertable = false, updatable = false),
   )
   val caseloadDeductionProfile: CaseloadDeductionProfile,
+
+  /** mapped again so it is insertable */
+  @Column(name = "DEDUCTION_TYPE", nullable = false)
+  val deductionType: String = "ADV",
+  // Always 'ADV'
 
   @Column(name = "DEDUCTION_STATUS", nullable = false)
   val deductionStatus: String = "A",
@@ -132,7 +142,7 @@ data class OffenderDeduction(
   @Column(name = "COLLECT_SENT_DATE")
   val collectSentDate: LocalDate? = null,
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "OFFENDER_PAYMENT_PROFILE_ID")
   var offenderAdvance: OffenderAdvance? = null,
 
