@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.DiscriminatorValue
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.OneToOne
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -24,6 +27,8 @@ class OffenderAdvance(
   @Column
   var advanceDate: LocalDate = LocalDate.now(),
 
+  @OneToOne(mappedBy = "offenderAdvance", orphanRemoval = true, cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val deduction: OffenderDeduction? = null,
 ) : OffenderPaymentProfile(
   offender = offender,
   caseloadId = caseloadId,

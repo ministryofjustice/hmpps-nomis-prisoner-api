@@ -27,12 +27,14 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   fun setUp() {
     nomisDataBuilder.build {
       id1 = offender {
-        advance = advance()
+        trustAccount()
+        advance = advance(informationNumber = "12341234-2", deductionPriority = 1)
       }.id
       id2 = offender(nomsId = "A1234BC").id
       id3 = offender(nomsId = "A6789CD") {
-        advance2 = advance()
-        advance3 = advance()
+        trustAccount()
+        advance2 = advance(informationNumber = "10002000", deductionPriority = 2)
+        advance3 = advance(informationNumber = "10002000-1", deductionPriority = 3)
         scheduledPayment()
       }.id
     }
@@ -92,6 +94,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("[0].createDatetime").value<String> {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
+        .jsonPath("[0].informationNumber").isEqualTo("12341234-2")
         // TODO
         .jsonPath("[0].status").isEqualTo("TODO")
     }
@@ -170,6 +173,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("[0].createDatetime").value<String> {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
+        .jsonPath("[0].informationNumber").isEqualTo("12341234-2")
         // TODO
         .jsonPath("[0].status").isEqualTo("TODO")
     }
@@ -247,6 +251,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("createDatetime").value<String> {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
+        .jsonPath("informationNumber").isEqualTo("12341234-2")
         // TODO
         .jsonPath("status").isEqualTo("TODO")
     }

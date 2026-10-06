@@ -91,6 +91,13 @@ data class OffenderTransaction(
   @Column
   val holdUntilDate: LocalDate? = null,
 
+  @Column
+  @Convert(converter = YesNoConverter::class)
+  val deductionFlag: Boolean = false,
+
+  @Column
+  val deductionType: String? = null, // Always 'ADV' or null
+
   @OneToMany
   @JoinColumns(
     value = [

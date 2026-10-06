@@ -56,6 +56,9 @@ data class OffenderTrustAccount(
   // no longer used (null recently):
   // val notifyDate: LocalDateTime? = null,
 
+  @OneToMany(mappedBy = "offenderTrustAccount", orphanRemoval = true, cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val deduction: MutableList<OffenderDeduction> = mutableListOf(),
+
 ) : Serializable {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
