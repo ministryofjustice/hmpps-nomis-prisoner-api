@@ -2272,7 +2272,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("POST /core-person/{offenderId}/email")
+  @DisplayName("POST /core-person/{prisonNumber}/email")
   @Nested
   @TestInstance(PER_CLASS)
   inner class CreateOffenderEmail {
@@ -2299,7 +2299,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/email")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validEmailRequest)
           .exchange()
@@ -2308,7 +2308,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/email")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validEmailRequest)
           .exchange()
@@ -2317,7 +2317,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/email")
           .bodyValue(validEmailRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -2329,7 +2329,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.post().uri("/core-person/999/email")
+        webTestClient.post().uri("/core-person/A9999ZZ/email")
           .bodyValue(validEmailRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2341,7 +2341,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will create a email`() {
-        val response: CreateOffenderEmailResponse = webTestClient.post().uri("/core-person/${existingOffender.id}/email")
+        val response: CreateOffenderEmailResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/email")
           .bodyValue(
             validEmailRequest.copy(
               email = "test@email.com",
@@ -2372,7 +2372,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("PUT /core-person/{offenderId}/email/{emailAddressId}")
+  @DisplayName("PUT /core-person/{prisonNumber}/email/{emailAddressId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class UpdateOffenderEmail {
@@ -2402,7 +2402,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validEmailRequest)
           .exchange()
@@ -2411,7 +2411,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validEmailRequest)
           .exchange()
@@ -2420,7 +2420,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .bodyValue(validEmailRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -2432,7 +2432,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.put().uri("/core-person/99999/email/${existingEmail.internetAddressId}")
+        webTestClient.put().uri("/core-person/A9999ZZ/email/${existingEmail.internetAddressId}")
           .bodyValue(validEmailRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2441,7 +2441,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when email does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/email/9999")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/email/9999")
           .bodyValue(validEmailRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2453,7 +2453,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will update a email`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .bodyValue(
             validEmailRequest.copy(
               email = "test@email.com",
@@ -2481,7 +2481,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("DELETE /core-person/{offenderId}/email/{emailAddressId}")
+  @DisplayName("DELETE /core-person/{prisonNumber}/email/{emailAddressId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class DeleteOffenderEmail {
@@ -2499,6 +2499,7 @@ class CorePersonResourceIntTest(
           existingEmail = email(emailAddress = "test@justice.gov.uk")
         }
         offender(
+          nomsId = "A1234BC",
           firstName = "FRED",
           lastName = "BOG",
         ) {
@@ -2514,7 +2515,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -2522,7 +2523,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -2530,7 +2531,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -2541,7 +2542,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when emails exists but not on the offender`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${differentEmail.internetAddressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/email/${differentEmail.internetAddressId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -2549,7 +2550,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 204 when email does not exist`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/9999")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/email/9999")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
@@ -2561,7 +2562,7 @@ class CorePersonResourceIntTest(
       @Test
       fun `will delete a email`() {
         assertThat(offenderInternetAddressRepository.existsById(existingEmail.internetAddressId)).isTrue()
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/email/${existingEmail.internetAddressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/email/${existingEmail.internetAddressId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()

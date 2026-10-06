@@ -521,7 +521,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   ): OffenderEmailAddress = corePersonService.getOffenderEmail(offenderId, emailAddressId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @PostMapping("/{offenderId}/email")
+  @PostMapping("/{prisonNumber}/email")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates an offender email",
@@ -570,15 +570,15 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ],
   )
   fun createOffenderEmail(
-    @Schema(description = "Offender Id", example = "12345")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
-    offenderId: Long,
+    prisonNumber: String,
     @RequestBody @Valid
     request: CreateOffenderEmailRequest,
-  ): CreateOffenderEmailResponse = corePersonService.createOffenderEmail(offenderId, request)
+  ): CreateOffenderEmailResponse = corePersonService.createOffenderEmail(prisonNumber, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @PutMapping("/{offenderId}/email/{emailAddressId}")
+  @PutMapping("/{prisonNumber}/email/{emailAddressId}")
   @Operation(
     summary = "Updates an offender email",
     description = "Updates an offender email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -620,19 +620,19 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ],
   )
   fun updateOffenderEmail(
-    @Schema(description = "Offender Id", example = "12345")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
-    offenderId: Long,
+    prisonNumber: String,
     @Schema(description = "Email address Id", example = "76554")
     @PathVariable
     emailAddressId: Long,
     @RequestBody @Valid
     request: UpdateOffenderEmailRequest,
-  ) = corePersonService.updateOffenderEmail(offenderId = offenderId, emailAddressId = emailAddressId, request = request)
+  ) = corePersonService.updateOffenderEmail(prisonNumber = prisonNumber, emailAddressId = emailAddressId, request = request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  @DeleteMapping("/{offenderId}/email/{emailAddressId}")
+  @DeleteMapping("/{prisonNumber}/email/{emailAddressId}")
   @Operation(
     summary = "Deletes an offender email",
     description = "Deletes an offender email in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -684,13 +684,13 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ],
   )
   fun deleteOffenderEmail(
-    @Schema(description = "Offender Id", example = "12345")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
-    offenderId: Long,
+    prisonNumber: String,
     @Schema(description = "Email address Id", example = "76554")
     @PathVariable
     emailAddressId: Long,
-  ) = corePersonService.deleteOffenderEmail(offenderId = offenderId, emailAddressId = emailAddressId)
+  ) = corePersonService.deleteOffenderEmail(prisonNumber = prisonNumber, emailAddressId = emailAddressId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{offenderId}/phone/{phoneId}")

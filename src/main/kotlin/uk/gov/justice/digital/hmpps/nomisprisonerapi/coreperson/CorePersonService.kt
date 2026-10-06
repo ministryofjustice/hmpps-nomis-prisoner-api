@@ -95,24 +95,25 @@ class CorePersonService(
     emailAddressId = emailAddressId,
   ).toOffenderEmailAddress()
 
-  fun createOffenderEmail(offenderId: Long, request: CreateOffenderEmailRequest): CreateOffenderEmailResponse = offenderInternetAddressRepository.saveAndFlush(
+  fun createOffenderEmail(prisonNumber: String, request: CreateOffenderEmailRequest): CreateOffenderEmailResponse = offenderInternetAddressRepository.saveAndFlush(
     OffenderInternetAddress(
-      offender = offenderOf(offenderId),
+      offender = rootOffender(prisonNumber),
       emailAddress = request.email,
     ),
   ).let { CreateOffenderEmailResponse(emailAddressId = it.internetAddressId) }
 
-  fun updateOffenderEmail(offenderId: Long, emailAddressId: Long, request: UpdateOffenderEmailRequest) {
-    emailOf(offenderId = offenderId, emailAddressId = emailAddressId).run {
+  fun updateOffenderEmail(prisonNumber: String, emailAddressId: Long, request: UpdateOffenderEmailRequest) {
+    emailOf(prisonNumber = prisonNumber, emailAddressId = emailAddressId).run {
       request.also {
         internetAddress = it.email
       }
     }
   }
 
-  fun deleteOffenderEmail(offenderId: Long, emailAddressId: Long) {
+  fun deleteOffenderEmail(prisonNumber: String, emailAddressId: Long) {
+    val rootOffenderId = rootOffender(prisonNumber).id
     offenderInternetAddressRepository.findByIdOrNull(emailAddressId)?.also {
-      if (it.offender.id != offenderId) throw BadDataException("Internet Address of $emailAddressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+      if (it.offender.id != rootOffenderId) throw BadDataException("Internet Address of $emailAddressId does not exist on offender $prisonNumber but does on offender ${it.offender.id}")
     }
     offenderInternetAddressRepository.deleteById(emailAddressId)
   }
@@ -437,6 +438,11 @@ class CorePersonService(
       ?: throw NotFoundException("Email with id=$emailAddressId does not exist")
     ).takeIf { it.offender.id == offenderId }
     ?: throw NotFoundException("Email with id=$emailAddressId on Offender with id=$offenderId does not exist")
+
+  private fun emailOf(prisonNumber: String, emailAddressId: Long): OffenderInternetAddress = emailOf(
+    offenderId = rootOffender(prisonNumber).id,
+    emailAddressId = emailAddressId,
+  )
 
   private fun phoneOf(offenderId: Long, phoneId: Long): OffenderPhone = (
     offenderPhoneRepository.findByIdOrNull(phoneId)
