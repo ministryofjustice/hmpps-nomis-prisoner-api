@@ -94,6 +94,8 @@ class OffenderTransactionBuilder(
     postingType = PostingType.CR,
     holdNumber = holdNumber,
     holdClearFlag = holdClearFlag,
+    deductionFlag = null,
+    deductionType = null,
   )
     .let {
       transaction = repository.save(it)
