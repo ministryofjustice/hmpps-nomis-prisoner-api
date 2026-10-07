@@ -2658,7 +2658,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("POST /core-person/{offenderId}/phone")
+  @DisplayName("POST /core-person/{prisonNumber}/phone")
   @Nested
   @TestInstance(PER_CLASS)
   inner class CreateOffenderPhone {
@@ -2686,7 +2686,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/phone")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -2695,7 +2695,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/phone")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -2704,7 +2704,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/phone")
           .bodyValue(validPhoneRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -2716,7 +2716,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.post().uri("/core-person/999/phone")
+        webTestClient.post().uri("/core-person/A9999ZZ/phone")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2725,7 +2725,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when phone type code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/phone")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2737,7 +2737,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will create a phone`() {
-        val response: CreateOffenderPhoneResponse = webTestClient.post().uri("/core-person/${existingOffender.id}/phone")
+        val response: CreateOffenderPhoneResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/phone")
           .bodyValue(
             validPhoneRequest.copy(
               number = "07973 555 5555",
@@ -2771,7 +2771,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("PUT /core-person/{offenderId}/phone/{phoneId}")
+  @DisplayName("PUT /core-person/{prisonNumber}/phone/{phoneId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class UpdateOffenderPhone {
@@ -2802,7 +2802,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -2811,7 +2811,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -2820,7 +2820,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -2832,7 +2832,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.put().uri("/core-person/9999/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/A9999ZZ/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2841,7 +2841,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when phone does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/phone/99999")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/phone/99999")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2850,7 +2850,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when phone type code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -2862,7 +2862,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will update the phone`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .bodyValue(
             validPhoneRequest.copy(
               number = "07973 555 5555",
@@ -2893,7 +2893,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("DELETE /core-person/{offenderId}/phone/{phoneId}")
+  @DisplayName("DELETE /core-person/{prisonNumber}/phone/{phoneId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class DeleteOffenderPhone {
@@ -2911,6 +2911,7 @@ class CorePersonResourceIntTest(
           existingPhone = phone(phoneType = "HOME", phoneNo = "0113 4546 4646", extNo = "ext 567")
         }
         offender(
+          nomsId = "A1234BC",
           firstName = "JAMES",
           lastName = "BOG",
         ) {
@@ -2926,7 +2927,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -2934,7 +2935,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -2942,7 +2943,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -2953,7 +2954,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when phone exists but not on that offender`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/phone/${differentPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/phone/${differentPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -2961,7 +2962,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 204 when phone does not exist`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/phone/99999")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/phone/99999")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
@@ -2973,7 +2974,7 @@ class CorePersonResourceIntTest(
       @Test
       fun `will delete the phone`() {
         assertThat(offenderPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()

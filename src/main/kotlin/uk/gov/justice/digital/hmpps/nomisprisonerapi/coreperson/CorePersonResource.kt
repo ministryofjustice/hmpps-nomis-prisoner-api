@@ -750,7 +750,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
   ): OffenderPhoneNumber = corePersonService.getOffenderPhone(offenderId = offenderId, phoneId = phoneId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @PostMapping("/{offenderId}/phone")
+  @PostMapping("/{prisonNumber}/phone")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates an offender global phone",
@@ -809,15 +809,15 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ],
   )
   fun createOffenderPhone(
-    @Schema(description = "Offender Id", example = "12345")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
-    offenderId: Long,
+    prisonNumber: String,
     @RequestBody @Valid
     request: CreateOffenderPhoneRequest,
-  ): CreateOffenderPhoneResponse = corePersonService.createOffenderPhone(offenderId, request)
+  ): CreateOffenderPhoneResponse = corePersonService.createOffenderPhone(prisonNumber, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-  @PutMapping("/{offenderId}/phone/{phoneId}")
+  @PutMapping("/{prisonNumber}/phone/{phoneId}")
   @Operation(
     summary = "Updated an offender global phone",
     description = "Updates an offender global phone in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -869,19 +869,19 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ],
   )
   fun updateOffenderPhone(
-    @Schema(description = "Offender Id", example = "12345")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
-    offenderId: Long,
+    prisonNumber: String,
     @Schema(description = "Phone Id", example = "35355")
     @PathVariable
     phoneId: Long,
     @RequestBody @Valid
     request: UpdateOffenderPhoneRequest,
-  ) = corePersonService.updateOffenderPhone(offenderId = offenderId, phoneId = phoneId, request)
+  ) = corePersonService.updateOffenderPhone(prisonNumber = prisonNumber, phoneId = phoneId, request)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  @DeleteMapping("/{offenderId}/phone/{phoneId}")
+  @DeleteMapping("/{prisonNumber}/phone/{phoneId}")
   @Operation(
     summary = "Deleted an offender global phone",
     description = "Deletes an offender global phone in NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -923,13 +923,13 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ],
   )
   fun deleteOffenderPhone(
-    @Schema(description = "Offender Id", example = "12345")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
-    offenderId: Long,
+    prisonNumber: String,
     @Schema(description = "Phone Id", example = "35355")
     @PathVariable
     phoneId: Long,
-  ) = corePersonService.deleteOffenderPhone(offenderId = offenderId, phoneId = phoneId)
+  ) = corePersonService.deleteOffenderPhone(prisonNumber = prisonNumber, phoneId = phoneId)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/{offenderId}/address/{addressId}")

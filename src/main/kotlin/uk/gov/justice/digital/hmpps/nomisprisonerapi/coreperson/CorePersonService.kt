@@ -123,17 +123,17 @@ class CorePersonService(
     phoneId = phoneId,
   ).toOffenderPhoneNumber()
 
-  fun createOffenderPhone(offenderId: Long, request: CreateOffenderPhoneRequest): CreateOffenderPhoneResponse = offenderPhoneRepository.saveAndFlush(
+  fun createOffenderPhone(prisonNumber: String, request: CreateOffenderPhoneRequest): CreateOffenderPhoneResponse = offenderPhoneRepository.saveAndFlush(
     OffenderPhone(
-      offender = offenderOf(offenderId),
+      offender = rootOffender(prisonNumber),
       phoneNo = request.number,
       extNo = request.extension,
       phoneType = phoneTypeOf(request.typeCode),
     ),
   ).let { CreateOffenderPhoneResponse(phoneId = it.phoneId) }
 
-  fun updateOffenderPhone(offenderId: Long, phoneId: Long, request: UpdateOffenderPhoneRequest) {
-    phoneOf(offenderId = offenderId, phoneId = phoneId).run {
+  fun updateOffenderPhone(prisonNumber: String, phoneId: Long, request: UpdateOffenderPhoneRequest) {
+    phoneOf(prisonNumber = prisonNumber, phoneId = phoneId).run {
       request.also {
         phoneNo = it.number
         extNo = it.extension
@@ -142,9 +142,10 @@ class CorePersonService(
     }
   }
 
-  fun deleteOffenderPhone(offenderId: Long, phoneId: Long) {
+  fun deleteOffenderPhone(prisonNumber: String, phoneId: Long) {
+    val rootOffenderId = rootOffender(prisonNumber).id
     offenderPhoneRepository.findByIdOrNull(phoneId)?.also {
-      if (it.offender.id != offenderId) throw BadDataException("Phone of $phoneId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+      if (it.offender.id != rootOffenderId) throw BadDataException("Phone of $phoneId does not exist on offender $prisonNumber but does on offender ${it.offender.id}")
     }
     offenderPhoneRepository.deleteById(phoneId)
   }
@@ -449,6 +450,11 @@ class CorePersonService(
       ?: throw NotFoundException("Phone with id=$phoneId does not exist")
     ).takeIf { it.offender.id == offenderId }
     ?: throw NotFoundException("Phone with id=$phoneId on Offender with id=$offenderId does not exist")
+
+  private fun phoneOf(prisonNumber: String, phoneId: Long): OffenderPhone = phoneOf(
+    offenderId = rootOffender(prisonNumber).id,
+    phoneId = phoneId,
+  )
 
   private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))
     ?: throw BadDataException("PhoneUsage with code $code does not exist")
