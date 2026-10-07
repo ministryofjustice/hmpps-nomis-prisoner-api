@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageId
@@ -35,6 +36,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderPhon
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ProfileCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress as JpaOffenderAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief as JpaOffenderBelief
 
 @Transactional
 @Service
@@ -155,10 +158,10 @@ class CorePersonService(
     addressId = addressId,
   ).toOffenderAddress()
 
-  fun createOffenderAddress(offenderId: Long, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse = offenderAddressRepository.saveAndFlush(
+  fun createOffenderAddress(prisonNumber: String, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse = offenderAddressRepository.saveAndFlush(
     request.let {
-      uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress(
-        offender = offenderOf(offenderId),
+      JpaOffenderAddress(
+        offender = rootOffender(prisonNumber),
         addressType = addressTypeOf(it.typeCode),
         premise = it.premise,
         street = it.street,
@@ -179,8 +182,8 @@ class CorePersonService(
     },
   ).let { CreateOffenderAddressResponse(addressId = it.addressId) }
 
-  fun updateOffenderAddress(offenderId: Long, addressId: Long, request: UpdateOffenderAddressRequest) {
-    offenderAddressOf(offenderId = offenderId, addressId = addressId).run {
+  fun updateOffenderAddress(prisonNumber: String, addressId: Long, request: UpdateOffenderAddressRequest) {
+    offenderAddressOf(prisonNumber = prisonNumber, addressId = addressId).run {
       request.also {
         addressType = addressTypeOf(it.typeCode)
         premise = it.premise
@@ -204,9 +207,10 @@ class CorePersonService(
     }
   }
 
-  fun deleteOffenderAddress(offenderId: Long, addressId: Long) {
+  fun deleteOffenderAddress(prisonNumber: String, addressId: Long) {
+    val rootOffenderId = rootOffender(prisonNumber).id
     offenderAddressRepository.findByIdOrNull(addressId)?.also {
-      if (it.offender.id != offenderId) throw BadDataException("Address of $addressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+      if (it.offender.id != rootOffenderId) throw BadDataException("Address of $addressId does not exist on offender $prisonNumber but does on offender ${it.offender.id}")
     }
     offenderAddressRepository.deleteById(addressId)
   }
@@ -218,12 +222,12 @@ class CorePersonService(
   ).toOffenderPhoneNumber()
 
   fun createOffenderAddressPhone(
-    offenderId: Long,
+    prisonNumber: String,
     addressId: Long,
     request: CreateOffenderPhoneRequest,
   ): CreateOffenderPhoneResponse = addressPhoneRepository.saveAndFlush(
-    uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone(
-      address = offenderAddressOf(offenderId = offenderId, addressId = addressId),
+    AddressPhone(
+      address = offenderAddressOf(prisonNumber = prisonNumber, addressId = addressId),
       phoneNo = request.number,
       extNo = request.extension,
       phoneType = phoneTypeOf(request.typeCode),
@@ -231,12 +235,12 @@ class CorePersonService(
   ).let { CreateOffenderPhoneResponse(phoneId = it.phoneId) }
 
   fun updateOffenderAddressPhone(
-    offenderId: Long,
+    prisonNumber: String,
     addressId: Long,
     phoneId: Long,
     request: UpdateOffenderPhoneRequest,
   ) {
-    addressPhoneOf(offenderId = offenderId, addressId = addressId, phoneId = phoneId).run {
+    addressPhoneOf(prisonNumber = prisonNumber, addressId = addressId, phoneId = phoneId).run {
       request.also {
         phoneNo = it.number
         extNo = it.extension
@@ -245,12 +249,13 @@ class CorePersonService(
     }
   }
 
-  fun deleteOffenderAddressPhone(offenderId: Long, addressId: Long, phoneId: Long) {
+  fun deleteOffenderAddressPhone(prisonNumber: String, addressId: Long, phoneId: Long) {
+    val rootOffenderId = rootOffender(prisonNumber).id
     addressPhoneRepository.findByIdOrNull(phoneId)?.also {
       if (it.address.addressId != addressId) throw BadDataException("Phone of $phoneId does not exist on address $addressId but does on address ${it.address.addressId}")
     }
     offenderAddressRepository.findByIdOrNull(addressId)?.also {
-      if (it.offender.id != offenderId) throw BadDataException("Address of $addressId does not exist on offender $offenderId but does on offender ${it.offender.id}")
+      if (it.offender.id != rootOffenderId) throw BadDataException("Address of $addressId does not exist on offender $prisonNumber but does on offender ${it.offender.id}")
     }
 
     addressPhoneRepository.deleteById(phoneId)
@@ -259,11 +264,11 @@ class CorePersonService(
   fun getOffenderAddressUsage(offenderId: Long, addressId: Long, usageCode: String): OffenderAddressUsage = addressUsageOf(offenderId, addressId, usageCode).toOffenderAddressUsage()
 
   fun createOffenderAddressUsage(
-    offenderId: Long,
+    prisonNumber: String,
     addressId: Long,
     request: CreateOffenderAddressUsageRequest,
   ): OffenderAddressUsage {
-    val address = offenderAddressOf(offenderId, addressId)
+    val address = offenderAddressOf(prisonNumber, addressId)
     if (address.usages.any { it.id.usageCode == request.usageCode }) {
       throw BadDataException("Usage of ${request.usageCode} already exists on address $addressId")
     }
@@ -280,19 +285,19 @@ class CorePersonService(
   }
 
   fun updateOffenderAddressUsage(
-    offenderId: Long,
+    prisonNumber: String,
     addressId: Long,
     usageCode: String,
     request: UpdateOffenderAddressUsageRequest,
   ) {
-    addressUsageOf(offenderId, addressId, usageCode).let {
+    addressUsageOf(prisonNumber, addressId, usageCode).let {
       // Address usage records are immutable, apart from their active flag.
       it.active = request.active
     }
   }
 
-  fun deleteOffenderAddressUsage(offenderId: Long, addressId: Long, usageCode: String) {
-    val address = offenderAddressOf(offenderId, addressId)
+  fun deleteOffenderAddressUsage(prisonNumber: String, addressId: Long, usageCode: String) {
+    val address = offenderAddressOf(prisonNumber, addressId)
     if (!address.usages.removeIf { it.id.usageCode == usageCode }) {
       throw NotFoundException("Usage $usageCode not found on address $addressId")
     }
@@ -360,7 +365,7 @@ class CorePersonService(
 
   private fun getAddresses(rootOffender: Offender): List<OffenderAddress> = rootOffender.addresses.map { it.toOffenderAddress() }
 
-  private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress.toOffenderAddress(): OffenderAddress = OffenderAddress(
+  private fun JpaOffenderAddress.toOffenderAddress(): OffenderAddress = OffenderAddress(
     addressId = addressId,
     flat = flat,
     premise = premise,
@@ -483,11 +488,19 @@ class CorePersonService(
   private fun offenderAddressOf(
     offenderId: Long,
     addressId: Long,
-  ): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAddress = (
+  ): JpaOffenderAddress = (
     offenderAddressRepository.findByIdOrNull(addressId)
       ?: throw NotFoundException("Address with id=$addressId does not exist")
     ).takeIf { it.offender.id == offenderId }
     ?: throw NotFoundException("Address with id=$addressId on Offender with id=$offenderId does not exist")
+
+  private fun offenderAddressOf(
+    prisonNumber: String,
+    addressId: Long,
+  ): JpaOffenderAddress = offenderAddressOf(
+    offenderId = rootOffender(prisonNumber).id,
+    addressId = addressId,
+  )
 
   private fun addressUsageOf(
     offenderId: Long,
@@ -499,11 +512,21 @@ class CorePersonService(
       ?: throw NotFoundException("Usage $usageCode not found on address $addressId")
   }
 
+  private fun addressUsageOf(
+    prisonNumber: String,
+    addressId: Long,
+    usageCode: String,
+  ): AddressUsage = addressUsageOf(
+    offenderId = rootOffender(prisonNumber).id,
+    addressId = addressId,
+    usageCode = usageCode,
+  )
+
   private fun addressPhoneOf(
     offenderId: Long,
     addressId: Long,
     phoneId: Long,
-  ): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone = (
+  ): AddressPhone = (
     addressPhoneRepository.findByIdOrNull(phoneId)
       ?: throw NotFoundException("Address Phone with id=$phoneId does not exist")
     ).takeIf {
@@ -513,6 +536,16 @@ class CorePersonService(
     ).addressId
   }
     ?: throw NotFoundException("Address Phone with id=$phoneId on Address with id=$addressId on Offender with id=$offenderId does not exist")
+
+  private fun addressPhoneOf(
+    prisonNumber: String,
+    addressId: Long,
+    phoneId: Long,
+  ): AddressPhone = addressPhoneOf(
+    offenderId = rootOffender(prisonNumber).id,
+    addressId = addressId,
+    phoneId = phoneId,
+  )
 
   private fun OffenderIdentifier.toIdentifier(): Identifier = Identifier(
     offenderId = id.offender.id,
@@ -565,7 +598,7 @@ private fun CorePersonInsertReligionRequest.toOffenderBelief(
   rootOffenderId: Long,
   bookingId: Long,
   profileCode: ProfileCode,
-): uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief = uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief(
+): JpaOffenderBelief = JpaOffenderBelief(
   rootOffenderId = rootOffenderId,
   bookingId = bookingId,
   beliefCode = profileCode,
@@ -575,7 +608,7 @@ private fun CorePersonInsertReligionRequest.toOffenderBelief(
   verified = false,
 )
 
-private fun uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
+private fun JpaOffenderBelief.toBelief(): OffenderBelief = OffenderBelief(
   beliefId = beliefId,
   belief = beliefCode.toCodeDescription(),
   startDate = startDate,
