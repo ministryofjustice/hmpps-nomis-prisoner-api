@@ -2,19 +2,23 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit.SECONDS
 
 @WithMockAuthUser
+@TestInstance(PER_CLASS)
 class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   private lateinit var advance: OffenderAdvance
   private lateinit var advance2: OffenderAdvance
@@ -23,7 +27,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   private var id2: Long = 0
   private var id3: Long = 0
 
-  @BeforeEach
+  @BeforeAll
   fun setUp() {
     nomisDataBuilder.build {
       id1 = offender {
@@ -34,13 +38,14 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
       id3 = offender(nomsId = "A6789CD") {
         trustAccount()
         advance2 = advance(informationNumber = "10002000", deductionPriority = 2)
-        advance3 = advance(informationNumber = "10002000-1", deductionPriority = 3)
+        // paid off
+        advance3 = advance(paymentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TEN, informationNumber = "10002000-1", deductionPriority = 3)
         scheduledPayment()
       }.id
     }
   }
 
-  @AfterEach
+  @AfterAll
   fun tearDown() {
     deleteOffenders()
   }
@@ -86,9 +91,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("[0].id").isEqualTo(advance.id)
         .jsonPath("[0].prisonNumber").isEqualTo("A5194DY")
         .jsonPath("[0].caseloadId").isEqualTo("MDI")
-        .jsonPath("[0].advanceAmount").isEqualTo(1245)
+        .jsonPath("[0].advanceAmount").isEqualTo(1000)
         .jsonPath("[0].advanceDate").isEqualTo(LocalDate.now().toString())
-        .jsonPath("[0].repaymentAmount").isEqualTo(245)
+        .jsonPath("[0].repaymentAmount").isEqualTo(100)
         .jsonPath("[0].startDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("[0].createdBy").isEqualTo("SA")
         .jsonPath("[0].createDatetime").value<String> {
@@ -121,6 +126,31 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("size()").isEqualTo(2)
         .jsonPath("[0].id").isEqualTo(advance2.id)
         .jsonPath("[1].id").isEqualTo(advance3.id)
+    }
+
+    @Test
+    fun getActivePrisonerAdvances() {
+      webTestClient.get().uri("/finance/prisoners/A6789CD/advances?activeOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .consumeWith(::println)
+        .jsonPath("size()").isEqualTo(1)
+        .jsonPath("[0].id").isEqualTo(advance2.id)
+        .jsonPath("[0].prisonNumber").isEqualTo("A6789CD")
+        .jsonPath("[0].caseloadId").isEqualTo("MDI")
+        .jsonPath("[0].advanceAmount").isEqualTo(1000)
+        .jsonPath("[0].advanceDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("[0].repaymentAmount").isEqualTo(100)
+        .jsonPath("[0].startDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("[0].createdBy").isEqualTo("SA")
+        .jsonPath("[0].createDatetime").value<String> {
+          assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        }
+        .jsonPath("[0].informationNumber").isEqualTo("10002000")
+        .jsonPath("[0].status").isEqualTo("ACTIVE")
     }
   }
 
@@ -165,9 +195,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("[0].id").isEqualTo(advance.id)
         .jsonPath("[0].prisonNumber").isEqualTo("A5194DY")
         .jsonPath("[0].caseloadId").isEqualTo("MDI")
-        .jsonPath("[0].advanceAmount").isEqualTo(1245)
+        .jsonPath("[0].advanceAmount").isEqualTo(1000)
         .jsonPath("[0].advanceDate").isEqualTo(LocalDate.now().toString())
-        .jsonPath("[0].repaymentAmount").isEqualTo(245)
+        .jsonPath("[0].repaymentAmount").isEqualTo(100)
         .jsonPath("[0].startDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("[0].createdBy").isEqualTo("SA")
         .jsonPath("[0].createDatetime").value<String> {
@@ -243,9 +273,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("id").isEqualTo(advance.id)
         .jsonPath("prisonNumber").isEqualTo("A5194DY")
         .jsonPath("caseloadId").isEqualTo("MDI")
-        .jsonPath("advanceAmount").isEqualTo(1245)
+        .jsonPath("advanceAmount").isEqualTo(1000)
         .jsonPath("advanceDate").isEqualTo(LocalDate.now().toString())
-        .jsonPath("repaymentAmount").isEqualTo(245)
+        .jsonPath("repaymentAmount").isEqualTo(100)
         .jsonPath("startDate").isEqualTo(LocalDate.now().toString())
         .jsonPath("createdBy").isEqualTo("SA")
         .jsonPath("createDatetime").value<String> {

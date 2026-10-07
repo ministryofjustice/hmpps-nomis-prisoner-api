@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.advances
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
@@ -83,7 +84,10 @@ class PrisonerAdvanceResource(
     @Schema(description = "prisonNumber", example = "A1234BC")
     @PathVariable
     prisonNumber: String,
-  ): List<PrisonerAdvanceDto> = service.getAdvances(prisonNumber)
+    @Schema(description = "whether to return just active advances", example = "true", defaultValue = "false")
+    @RequestParam
+    activeOnly: Boolean = false,
+  ): List<PrisonerAdvanceDto> = service.getAdvances(prisonNumber, activeOnly)
 
   @GetMapping("/root-offender-id/{rootOffenderId}/advances")
   @ResponseStatus(HttpStatus.OK)
@@ -113,7 +117,10 @@ class PrisonerAdvanceResource(
     @Schema(description = "root offender id", example = "123456")
     @PathVariable
     rootOffenderId: Long,
-  ): List<PrisonerAdvanceDto> = service.getAdvances(rootOffenderId)
+    @Schema(description = "whether to return just active advances", example = "true", defaultValue = "false")
+    @RequestParam
+    activeOnly: Boolean = false,
+  ): List<PrisonerAdvanceDto> = service.getAdvances(rootOffenderId, activeOnly)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -141,7 +148,7 @@ data class PrisonerAdvanceDto(
   val comment: String?,
 
   @Schema(description = "The information number", example = "12345678-1")
-  val informationNumber: String?,
+  val informationNumber: String,
 
   @Schema(description = "The user who created the advance", example = "FRED_SMITH")
   val createdBy: String,
@@ -149,5 +156,8 @@ data class PrisonerAdvanceDto(
   val createDatetime: LocalDateTime,
 
   @Schema(description = "The status of the advance", example = "ACTIVE")
-  val status: String?,
+  val status: AdvanceStatus,
 )
+
+// TODO Remove TODO status
+enum class AdvanceStatus { ACTIVE, REPAID, WRITTEN_OFF, TODO }
