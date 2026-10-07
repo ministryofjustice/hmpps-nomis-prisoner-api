@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -3075,7 +3076,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("POST /core-person/{offenderId}/address")
+  @DisplayName("POST /core-person/{prisonNumber}/address")
   @Nested
   @TestInstance(PER_CLASS)
   inner class CreateOffenderAddress {
@@ -3103,7 +3104,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validAddressRequest)
           .exchange()
@@ -3112,7 +3113,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validAddressRequest)
           .exchange()
@@ -3121,7 +3122,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(validAddressRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -3133,7 +3134,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.post().uri("/core-person/999/address")
+        webTestClient.post().uri("/core-person/A9999ZZ/address")
           .bodyValue(validAddressRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3142,7 +3143,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when city code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3151,7 +3152,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when county code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3160,7 +3161,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when country code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3169,7 +3170,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when address type code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3181,7 +3182,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will create a address`() {
-        val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${existingOffender.id}/address")
+        val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(
             validAddressRequest.copy(
               typeCode = "HOME",
@@ -3236,7 +3237,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("PUT /core-person/{offenderId}/address/{addressId}")
+  @DisplayName("PUT /core-person/{prisonNumber}/address/{addressId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class UpdateOffenderAddress {
@@ -3267,7 +3268,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validAddressRequest)
           .exchange()
@@ -3276,7 +3277,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validAddressRequest)
           .exchange()
@@ -3285,7 +3286,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -3297,7 +3298,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.put().uri("/core-person/9999/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/A9999ZZ/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3306,7 +3307,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when address does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/99999")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/99999")
           .bodyValue(validAddressRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3315,7 +3316,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when city code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3324,7 +3325,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when county code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3333,7 +3334,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when country code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3342,7 +3343,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when address type code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3354,7 +3355,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will update a address`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(
             validAddressRequest.copy(
               typeCode = "HOME",
@@ -3408,7 +3409,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("DELETE /core-person/{offenderId}/address/{addressId}")
+  @DisplayName("DELETE /core-person/{prisonNumber}/address/{addressId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class DeleteOffenderAddress {
@@ -3426,6 +3427,7 @@ class CorePersonResourceIntTest(
           existingAddress = address()
         }
         offender(
+          nomsId = "A1234BC",
           firstName = "JAMES",
           lastName = "BOG",
         ) {
@@ -3441,7 +3443,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -3449,7 +3451,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -3457,7 +3459,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3468,7 +3470,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when address exists but not on that offender`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${differentAddress.addressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${differentAddress.addressId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -3476,7 +3478,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 204 when address does not exist`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/99999")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/99999")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
@@ -3488,7 +3490,7 @@ class CorePersonResourceIntTest(
       @Test
       fun `will delete the address`() {
         assertThat(offenderAddressRepository.existsById(existingAddress.addressId)).isTrue()
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
@@ -3595,7 +3597,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("POST /core-person/{offenderId}/address/{addressId}/phone")
+  @DisplayName("POST /core-person/{prisonNumber}/address/{addressId}/phone")
   @Nested
   @TestInstance(PER_CLASS)
   inner class CreateOffenderAddressPhone {
@@ -3612,6 +3614,7 @@ class CorePersonResourceIntTest(
     fun setUp() {
       nomisDataBuilder.build {
         anotherOffender = offender(
+          nomsId = "A1234BC",
           firstName = "JANE",
           lastName = "BOG",
         )
@@ -3631,7 +3634,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -3640,7 +3643,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -3649,7 +3652,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -3661,7 +3664,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.post().uri("/core-person/999/address/${existingAddress.addressId}/phone")
+        webTestClient.post().uri("/core-person/A9999ZZ/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3670,7 +3673,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when address does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address/999/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address/999/phone")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3679,7 +3682,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when address does not exist on offender`() {
-        webTestClient.post().uri("/core-person/${anotherOffender.id}/address/${existingAddress.addressId}/phone")
+        webTestClient.post().uri("/core-person/${anotherOffender.nomsId}/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3688,7 +3691,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when phone type code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3700,7 +3703,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will create a phone`() {
-        val response: CreateOffenderPhoneResponse = webTestClient.post().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone")
+        val response: CreateOffenderPhoneResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone")
           .bodyValue(
             validPhoneRequest.copy(
               number = "07973 555 5555",
@@ -3735,7 +3738,7 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("PUT /core-person/{offenderId}/address/{addressId}/phone/{phoneId}")
+  @DisplayName("PUT /core-person/{prisonNumber}/address/{addressId}/phone/{phoneId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class UpdateOffenderAddressPhone {
@@ -3769,7 +3772,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf()))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -3778,7 +3781,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .bodyValue(validPhoneRequest)
           .exchange()
@@ -3787,7 +3790,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
           .exchange()
           .expectStatus().isUnauthorized
@@ -3799,7 +3802,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when offender does not exist`() {
-        webTestClient.put().uri("/core-person/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/A9999ZZ/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3808,7 +3811,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when address does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/99999/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/99999/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3817,7 +3820,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 404 when phone does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/99999")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/99999")
           .bodyValue(validPhoneRequest)
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3826,7 +3829,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when phone type code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(validPhoneRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -3838,7 +3841,7 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will update the phone`() {
-        webTestClient.put().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .bodyValue(
             validPhoneRequest.copy(
               number = "07973 555 5555",
@@ -3870,17 +3873,23 @@ class CorePersonResourceIntTest(
     }
   }
 
-  @DisplayName("DELETE /core-person/{offenderId}/address/{addressId}/phone/{phoneId}")
+  @DisplayName("DELETE /core-person/{prisonNumber}/address/{addressId}/phone/{phoneId}")
   @Nested
   @TestInstance(PER_CLASS)
   inner class DeleteOffenderAddressPhone {
     private lateinit var existingOffender: Offender
+    private lateinit var anotherOffender: Offender
     private lateinit var existingAddress: OffenderAddressJpa
     private lateinit var existingPhone: OffenderAddressPhoneJpa
 
     @BeforeAll
     fun setUp() {
       nomisDataBuilder.build {
+        anotherOffender = offender(
+          nomsId = "A1234BC",
+          firstName = "JANE",
+          lastName = "BOG",
+        )
         existingOffender = offender(
           firstName = "JOHN",
           lastName = "BOG",
@@ -3899,7 +3908,7 @@ class CorePersonResourceIntTest(
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -3907,7 +3916,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -3915,7 +3924,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -3925,8 +3934,16 @@ class CorePersonResourceIntTest(
     inner class Validation {
 
       @Test
+      fun `return 404 when offender does not exist`() {
+        webTestClient.delete().uri("/core-person/A9999ZZ/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
       fun `return 400 when phone exists on address but address does not belong to offender`() {
-        webTestClient.delete().uri("/core-person/9999/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${anotherOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -3934,7 +3951,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 400 when phone exists but not on address`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/99999/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/99999/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -3942,7 +3959,7 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `return 204 when phone does not exist`() {
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/99999")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/99999")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNoContent
@@ -3954,7 +3971,7 @@ class CorePersonResourceIntTest(
       @Test
       fun `will delete the phone`() {
         assertThat(addressPhoneRepository.existsById(existingPhone.phoneId)).isTrue()
-        webTestClient.delete().uri("/core-person/${existingOffender.id}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
+        webTestClient.delete().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/phone/${existingPhone.phoneId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
@@ -3984,12 +4001,12 @@ class CorePersonResourceIntTest(
       }
     }
 
-    @AfterAll
+    @AfterEach
     fun tearDown(): Unit = deleteAll()
 
     @Test
     fun `access is forbidden without the required role`() {
-      webTestClient.get().uri(usageUri("CURFEW"))
+      webTestClient.get().uri(getUsageUri("CURFEW"))
         .headers(setAuthorisation(roles = listOf("BANANAS")))
         .exchange()
         .expectStatus().isForbidden
@@ -3997,14 +4014,14 @@ class CorePersonResourceIntTest(
 
     @Test
     fun `access is unauthorised without an auth token`() {
-      webTestClient.get().uri(usageUri("CURFEW"))
+      webTestClient.get().uri(getUsageUri("CURFEW"))
         .exchange()
         .expectStatus().isUnauthorized
     }
 
     @Test
     fun `get returns 404 when usage does not exist`() {
-      webTestClient.get().uri(usageUri("DAP"))
+      webTestClient.get().uri(getUsageUri("DAP"))
         .headers(setAuthorisation(roles = listOf(syncRole)))
         .exchange()
         .expectStatus().isNotFound
@@ -4012,7 +4029,7 @@ class CorePersonResourceIntTest(
 
     @Test
     fun `get returns usage code when reference code does not exist`() {
-      webTestClient.get().uri(usageUri("NOT_FOUND"))
+      webTestClient.get().uri(getUsageUri("NOT_FOUND"))
         .headers(setAuthorisation(roles = listOf(syncRole)))
         .exchange()
         .expectStatus().isOk
@@ -4032,7 +4049,7 @@ class CorePersonResourceIntTest(
 
     @Test
     fun `get returns an address usage`() {
-      webTestClient.get().uri(usageUri("CURFEW"))
+      webTestClient.get().uri(getUsageUri("CURFEW"))
         .headers(setAuthorisation(roles = listOf(syncRole)))
         .exchange()
         .expectStatus().isOk
@@ -4064,7 +4081,7 @@ class CorePersonResourceIntTest(
 
     @Test
     fun `create returns 404 when address does not exist`() {
-      webTestClient.post().uri("/core-person/${existingOffender.id}/address/99999/usage")
+      webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address/99999/usage")
         .headers(setAuthorisation(roles = listOf(syncRole)))
         .contentType(MediaType.APPLICATION_JSON)
         .bodyValue(CreateOffenderAddressUsageRequest(usageCode = "DAP", active = true))
@@ -4137,8 +4154,10 @@ class CorePersonResourceIntTest(
         .expectStatus().isNotFound
     }
 
-    private fun baseUsageUri() = "/core-person/${existingOffender.id}/address/${existingAddress.addressId}/usage"
+    private fun baseUsageUri() = "/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}/usage"
 
     private fun usageUri(usageCode: String) = "${baseUsageUri()}/$usageCode"
+
+    private fun getUsageUri(usageCode: String) = "/core-person/${existingOffender.id}/address/${existingAddress.addressId}/usage/$usageCode"
   }
 }
