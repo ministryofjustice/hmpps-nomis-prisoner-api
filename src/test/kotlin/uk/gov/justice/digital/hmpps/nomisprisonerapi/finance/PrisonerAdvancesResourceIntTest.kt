@@ -136,7 +136,6 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .consumeWith(::println)
         .jsonPath("size()").isEqualTo(1)
         .jsonPath("[0].id").isEqualTo(advance2.id)
         .jsonPath("[0].prisonNumber").isEqualTo("A6789CD")
@@ -230,6 +229,30 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .jsonPath("size()").isEqualTo(2)
         .jsonPath("[0].id").isEqualTo(advance2.id)
         .jsonPath("[1].id").isEqualTo(advance3.id)
+    }
+
+    @Test
+    fun getActivePrisonerAdvances() {
+      webTestClient.get().uri("/finance/prisoners/root-offender-id/$id3/advances?activeOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("size()").isEqualTo(1)
+        .jsonPath("[0].id").isEqualTo(advance2.id)
+        .jsonPath("[0].prisonNumber").isEqualTo("A6789CD")
+        .jsonPath("[0].caseloadId").isEqualTo("MDI")
+        .jsonPath("[0].advanceAmount").isEqualTo(1000)
+        .jsonPath("[0].advanceDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("[0].repaymentAmount").isEqualTo(100)
+        .jsonPath("[0].startDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("[0].createdBy").isEqualTo("SA")
+        .jsonPath("[0].createDatetime").value<String> {
+          assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        }
+        .jsonPath("[0].informationNumber").isEqualTo("10002000")
+        .jsonPath("[0].status").isEqualTo("ACTIVE")
     }
   }
 
