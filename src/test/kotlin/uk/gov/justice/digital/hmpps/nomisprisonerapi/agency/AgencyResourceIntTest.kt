@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -38,6 +39,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var agencyLocationPhoneRepository: AgencyLocationPhoneRepository
+
+  @Autowired
+  private lateinit var agencyLocationAddressRepository: AgencyLocationAddressRepository
 
   @Autowired
   private lateinit var areaRepository: AreaRepository
@@ -841,6 +845,203 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           },
           isNull(),
         )
+      }
+    }
+  }
+
+  @DisplayName("POST /agency/{agencyId}/addresses")
+  @Nested
+  inner class CreateAgencyAddress {
+    private val validAddressRequest = CreateAgencyAddressRequest(
+      mailAddress = true,
+      primaryAddress = true,
+      noFixedAddress = false,
+    )
+
+    private lateinit var existingAgency: AgencyLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById(existingAgency.id)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `will return 404 if agency does not exist`() {
+        webTestClient.post().uri("/agency/ZZI/addresses")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 400 if address type does not exist`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validAddressRequest.copy(typeCode = "RUBBISH"))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an address at the agency level`() {
+        val response: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              typeCode = "BUS",
+              flat = "1A",
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+              locality = "Broomhill",
+              cityCode = SHEFFIELD,
+              countyCode = "S.YORKSHIRE",
+              countryCode = "GBR",
+              postcode = "S10 2HH",
+              primaryAddress = true,
+              mailAddress = true,
+              noFixedAddress = false,
+              startDate = LocalDate.parse("2001-01-01"),
+              endDate = LocalDate.parse("2032-12-31"),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(agencyLocationAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(addressId).isEqualTo(response.id)
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(addressType?.code).isEqualTo("BUS")
+          assertThat(flat).isEqualTo("1A")
+          assertThat(premise).isEqualTo("Bolden Court")
+          assertThat(street).isEqualTo("Fulwood Road")
+          assertThat(locality).isEqualTo("Broomhill")
+          assertThat(city?.code).isEqualTo(SHEFFIELD)
+          assertThat(county?.code).isEqualTo("S.YORKSHIRE")
+          assertThat(country?.code).isEqualTo("GBR")
+          assertThat(postalCode).isEqualTo("S10 2HH")
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+          assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
+          assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.addresses).anyMatch { it.id == response.id && it.premise == "Bolden Court" }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-address-inserted"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("addressId", response.id.toString())
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will add a second address to the agency, keeping the first`() {
+        val firstResponse: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              typeCode = "BUS",
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        val secondResponse: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              typeCode = "HOME",
+              premise = "22",
+              street = "West Street",
+              cityCode = SHEFFIELD,
+              countyCode = "S.YORKSHIRE",
+              countryCode = "GBR",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        assertThat(secondResponse.id).isNotEqualTo(firstResponse.id)
+
+        with(agencyLocationAddressRepository.findByIdOrNull(firstResponse.id)!!) {
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(premise).isEqualTo("Bolden Court")
+        }
+        with(agencyLocationAddressRepository.findByIdOrNull(secondResponse.id)!!) {
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(premise).isEqualTo("22")
+          assertThat(city?.code).isEqualTo(SHEFFIELD)
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.addresses).hasSize(2)
+        assertThat(agency.addresses).anyMatch { it.id == firstResponse.id && it.premise == "Bolden Court" }
+        assertThat(agency.addresses).anyMatch { it.id == secondResponse.id && it.premise == "22" }
       }
     }
   }

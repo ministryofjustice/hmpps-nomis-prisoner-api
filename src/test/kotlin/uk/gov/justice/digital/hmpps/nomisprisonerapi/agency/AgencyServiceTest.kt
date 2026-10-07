@@ -20,12 +20,17 @@ import org.springframework.test.util.ReflectionTestUtils
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress.Companion.EMAIL_INTERNET_ADDRESS_CLASS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -36,13 +41,23 @@ class AgencyServiceTest {
   private val agencyLocationRepository: AgencyLocationRepository = mock()
   private val agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository = mock()
   private val agencyLocationPhoneRepository: AgencyLocationPhoneRepository = mock()
+  private val agencyLocationAddressRepository: AgencyLocationAddressRepository = mock()
   private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage> = mock()
+  private val addressTypeRepository: ReferenceCodeRepository<AddressType> = mock()
+  private val cityRepository: ReferenceCodeRepository<City> = mock()
+  private val countyRepository: ReferenceCodeRepository<County> = mock()
+  private val countryRepository: ReferenceCodeRepository<Country> = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val agencyService = AgencyService(
     agencyLocationRepository = agencyLocationRepository,
     agencyLocationInternetAddressRepository = agencyLocationInternetAddressRepository,
     agencyLocationPhoneRepository = agencyLocationPhoneRepository,
+    agencyLocationAddressRepository = agencyLocationAddressRepository,
     phoneUsageRepository = phoneUsageRepository,
+    addressTypeRepository = addressTypeRepository,
+    cityRepository = cityRepository,
+    countyRepository = countyRepository,
+    countryRepository = countryRepository,
     telemetryClient = telemetryClient,
   )
 
@@ -371,6 +386,129 @@ class AgencyServiceTest {
   }
 
   @Nested
+  @DisplayName("createAgencyAddress")
+  inner class CreateAgencyAddress {
+    private val agency = AgencyLocation(id = "WWI", description = "Wandsworth")
+    private val addressType = AddressType("BUS", "Business")
+    private val city = City("25343", "Sheffield")
+    private val county = County("S.YORKSHIRE", "South Yorkshire")
+    private val country = Country("ENG", "England")
+
+    @BeforeEach
+    fun setUp() {
+      whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
+      whenever(addressTypeRepository.findById(AddressType.pk("BUS"))).thenReturn(Optional.of(addressType))
+      whenever(cityRepository.findById(City.pk("25343"))).thenReturn(Optional.of(city))
+      whenever(countyRepository.findById(County.pk("S.YORKSHIRE"))).thenReturn(Optional.of(county))
+      whenever(countryRepository.findById(Country.pk("ENG"))).thenReturn(Optional.of(country))
+      whenever(agencyLocationAddressRepository.saveAndFlush(any<AgencyLocationAddress>())).thenAnswer {
+        (it.arguments[0] as AgencyLocationAddress).also { address -> ReflectionTestUtils.setField(address, "addressId", 1L) }
+      }
+    }
+
+    @Test
+    fun `will throw not found if agency does not exist`() {
+      whenever(agencyLocationRepository.findById("ZZI")).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        agencyService.createAgencyAddress("ZZI", CreateAgencyAddressRequest())
+      }.isInstanceOf(NotFoundException::class.java)
+
+      verifyNoInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `will throw bad data if address type does not exist`() {
+      whenever(addressTypeRepository.findById(AddressType.pk("RUBBISH"))).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(typeCode = "RUBBISH"))
+      }.isInstanceOf(BadDataException::class.java)
+
+      verifyNoInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `will throw bad data if city does not exist`() {
+      whenever(cityRepository.findById(City.pk("RUBBISH"))).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(cityCode = "RUBBISH"))
+      }.isInstanceOf(BadDataException::class.java)
+    }
+
+    @Test
+    fun `will throw bad data if county does not exist`() {
+      whenever(countyRepository.findById(County.pk("RUBBISH"))).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(countyCode = "RUBBISH"))
+      }.isInstanceOf(BadDataException::class.java)
+    }
+
+    @Test
+    fun `will throw bad data if country does not exist`() {
+      whenever(countryRepository.findById(Country.pk("RUBBISH"))).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(countryCode = "RUBBISH"))
+      }.isInstanceOf(BadDataException::class.java)
+    }
+
+    @Test
+    fun `will create an address at the agency level, looking up reference data by code`() {
+      val response = agencyService.createAgencyAddress(
+        "WWI",
+        CreateAgencyAddressRequest(
+          typeCode = "BUS",
+          flat = "1A",
+          premise = "Bolden Court",
+          street = "Fulwood Road",
+          locality = "Broomhill",
+          postcode = "S10 2HH",
+          cityCode = "25343",
+          countyCode = "S.YORKSHIRE",
+          countryCode = "ENG",
+          primaryAddress = true,
+          mailAddress = true,
+        ),
+      )
+
+      assertThat(response.id).isEqualTo(1)
+      verify(agencyLocationAddressRepository).saveAndFlush(
+        check {
+          assertThat(it.agencyLocation).isEqualTo(agency)
+          assertThat(it.addressType).isEqualTo(addressType)
+          assertThat(it.flat).isEqualTo("1A")
+          assertThat(it.premise).isEqualTo("Bolden Court")
+          assertThat(it.street).isEqualTo("Fulwood Road")
+          assertThat(it.locality).isEqualTo("Broomhill")
+          assertThat(it.postalCode).isEqualTo("S10 2HH")
+          assertThat(it.city).isEqualTo(city)
+          assertThat(it.county).isEqualTo(county)
+          assertThat(it.country).isEqualTo(country)
+          assertThat(it.primaryAddress).isTrue()
+          assertThat(it.mailAddress).isTrue()
+        },
+      )
+    }
+
+    @Test
+    fun `will raise telemetry event with the address id`() {
+      val response = agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest())
+
+      verify(telemetryClient).trackEvent(
+        eq("agency-address-inserted"),
+        check {
+          assertThat(it).containsEntry("agencyId", "WWI")
+          assertThat(it).containsEntry("addressId", response.id.toString())
+        },
+        isNull(),
+      )
+    }
+  }
+
+  @Nested
   @DisplayName("updateAgencyPhoneNumbers")
   inner class UpdateAgencyPhoneNumbers {
     private val busPhoneUsage = PhoneUsage("BUS", "Business")
@@ -516,6 +654,20 @@ class AgencyServiceTest {
           },
           isNull(),
         )
+      }
+
+      @Test
+      fun `will keep the id of the matching existing phone number and remove the other one`() {
+        val response = agencyService.updateAgencyPhoneNumbers(
+          "WWI",
+          UpdateAgencyPhoneNumbersRequest(listOf(UpdateAgencyPhoneNumber(number = "0114 111 111", typeCode = "BUS"))),
+        )
+
+        assertThat(response.phoneNumbers).hasSize(1)
+        assertThat(response.phoneNumbers[0].id).isEqualTo(1)
+        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 111 111")
+        verify(agencyLocationPhoneRepository, never()).deleteAll(listOf(existingPhone1))
+        verify(agencyLocationPhoneRepository).deleteAll(listOf(existingPhone2))
       }
     }
   }

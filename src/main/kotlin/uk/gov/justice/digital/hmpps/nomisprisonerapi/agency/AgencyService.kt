@@ -8,11 +8,17 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress.Companion.EMAIL_INTERNET_ADDRESS_CLASS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -24,7 +30,12 @@ class AgencyService(
   val agencyLocationRepository: AgencyLocationRepository,
   val agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository,
   val agencyLocationPhoneRepository: AgencyLocationPhoneRepository,
+  val agencyLocationAddressRepository: AgencyLocationAddressRepository,
   private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
+  private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
+  private val cityRepository: ReferenceCodeRepository<City>,
+  private val countyRepository: ReferenceCodeRepository<County>,
+  private val countryRepository: ReferenceCodeRepository<Country>,
   private val telemetryClient: TelemetryClient,
 ) {
   fun getAllAgencies(excludeType: List<String>): AgencyIdsResponse {
@@ -79,6 +90,57 @@ class AgencyService(
 
   private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))
     ?: throw BadDataException("PhoneUsage with code $code does not exist")
+
+  fun createAgencyAddress(agencyId: String, request: CreateAgencyAddressRequest): CreateAgencyAddressResponse = agencyLocationAddressRepository.saveAndFlush(
+    AgencyLocationAddress(
+      agencyLocation = getAgency(agencyId),
+      addressType = addressTypeOf(request.typeCode),
+      flat = request.flat,
+      premise = request.premise,
+      street = request.street,
+      locality = request.locality,
+      postalCode = request.postcode,
+      city = cityOf(request.cityCode),
+      county = countyOf(request.countyCode),
+      country = countryOf(request.countryCode),
+      validatedPAF = false,
+      noFixedAddress = request.noFixedAddress,
+      primaryAddress = request.primaryAddress,
+      mailAddress = request.mailAddress,
+      comment = request.comment,
+      startDate = request.startDate,
+      endDate = request.endDate,
+    ),
+  ).let {
+    telemetryClient.trackEvent(
+      "agency-address-inserted",
+      mapOf(
+        "agencyId" to agencyId,
+        "addressId" to it.addressId.toString(),
+      ),
+    )
+    CreateAgencyAddressResponse(id = it.addressId)
+  }
+
+  private fun addressTypeOf(code: String?): AddressType? = code?.let {
+    addressTypeRepository.findByIdOrNull(AddressType.pk(code))
+      ?: throw BadDataException("AddressType with code $code does not exist")
+  }
+
+  private fun cityOf(code: String?): City? = code?.let {
+    cityRepository.findByIdOrNull(City.pk(code))
+      ?: throw BadDataException("City with code $code does not exist")
+  }
+
+  private fun countyOf(code: String?): County? = code?.let {
+    countyRepository.findByIdOrNull(County.pk(code))
+      ?: throw BadDataException("County with code $code does not exist")
+  }
+
+  private fun countryOf(code: String?): Country? = code?.let {
+    countryRepository.findByIdOrNull(Country.pk(code))
+      ?: throw BadDataException("Country with code $code does not exist")
+  }
 
   // used by deletions and updates
   fun updateAgencyEmailAddresses(agencyId: String, request: UpdateAgencyEmailAddressesRequest): AgencyEmailAddressesResponse {

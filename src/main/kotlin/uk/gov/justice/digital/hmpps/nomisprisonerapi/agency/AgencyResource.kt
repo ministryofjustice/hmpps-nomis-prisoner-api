@@ -234,6 +234,72 @@ class AgencyResource(private val agencyService: AgencyService) {
     request: CreateAgencyPhoneNumberRequest,
   ) = agencyService.createAgencyPhone(agencyId, request)
 
+  @PostMapping("/agency/{agencyId}/addresses")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an agency address",
+    description = "Creates a new address for an agency. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Agency address created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateAgencyAddressResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example the address type, city, county or country code does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createAgencyAddress(
+    @PathVariable
+    @Schema(description = "Agency id", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: CreateAgencyAddressRequest,
+  ) = agencyService.createAgencyAddress(agencyId, request)
+
   @PutMapping("/agency/{agencyId}/emails")
   @Operation(
     summary = "Refreshes the list of agency email addresses",
@@ -538,4 +604,45 @@ data class UpdateAgencyPhoneNumbersRequest(
 data class AgencyPhoneNumbersResponse(
   @Schema(description = "The list of agency-level phone numbers now held for the agency")
   val phoneNumbers: List<AgencyPhoneNumber>,
+)
+
+@Schema(description = "A request to create an agency address")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateAgencyAddressRequest(
+  @Schema(description = "Address type code", example = "BUS")
+  val typeCode: String? = null,
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String? = null,
+  @Schema(description = "Premise", example = "22")
+  val premise: String? = null,
+  @Schema(description = "Street", example = "West Street")
+  val street: String? = null,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String? = null,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String? = null,
+  @Schema(description = "City code", example = "25343")
+  val cityCode: String? = null,
+  @Schema(description = "County code", example = "S.YORKSHIRE")
+  val countyCode: String? = null,
+  @Schema(description = "Country code", example = "ENG")
+  val countryCode: String? = null,
+  @Schema(description = "true if address not fixed. for example homeless")
+  val noFixedAddress: Boolean = false,
+  @Schema(description = "true if this is the agency's primary address")
+  val primaryAddress: Boolean = false,
+  @Schema(description = "true if this is used for mail")
+  val mailAddress: Boolean = false,
+  @Schema(description = "Free format comment about the address")
+  val comment: String? = null,
+  @Schema(description = "Date address was valid from")
+  val startDate: LocalDate = LocalDate.now(),
+  @Schema(description = "Date address was valid to")
+  val endDate: LocalDate? = null,
+)
+
+@Schema(description = "A response to creating an agency address")
+data class CreateAgencyAddressResponse(
+  @Schema(description = "Unique NOMIS Id of address")
+  val id: Long,
 )
