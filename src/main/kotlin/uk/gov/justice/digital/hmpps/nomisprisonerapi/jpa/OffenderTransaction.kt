@@ -93,7 +93,7 @@ data class OffenderTransaction(
 
   @Column
   @Convert(converter = YesNoConverter::class)
-  val deductionFlag: Boolean = false,
+  val deductionFlag: Boolean? = null,
 
   @Column
   val deductionType: String? = null, // Always 'ADV' or null
