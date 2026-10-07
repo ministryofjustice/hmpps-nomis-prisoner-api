@@ -38,6 +38,8 @@ class PrisonerAdvanceService(
   } else {
     repository.findByOffenderId(rootOffenderId).map { it.toDto() }
   }
+
+  fun getActiveAdvancesCount(): AdvancesCount = AdvancesCount(repository.findActiveAdvancesCount())
 }
 
 // TODO Evaluate status for the advance

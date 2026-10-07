@@ -29,4 +29,23 @@ interface OffenderAdvanceRepository : JpaRepository<OffenderAdvance, Long> {
     nativeQuery = true,
   )
   fun findActiveAdvancesByOffenderId(offenderId: Long): List<OffenderAdvance>
+
+  @Query(
+    """
+      SELECT
+          count(*)
+        FROM 
+          offender_payment_profiles opp
+          inner join  offender_deductions od on opp.offender_payment_profile_id = od.offender_payment_profile_id
+      WHERE 
+          opp.start_date <= TRUNC (SYSDATE)
+          AND opp.payment_amount > 0
+          AND od.effective_date <= TRUNC (SYSDATE)
+          AND od.deduction_status = 'A'
+          AND od.max_total_amount > (NVL (od.deduction_amount, 0) + NVL(od.adjustment_amount,0))
+          AND GREATEST ( NVL (od.max_total_amount, 0) - (NVL (od.deduction_amount, 0) + NVL(od.adjustment_amount,0)), 0) > 0
+    """,
+    nativeQuery = true,
+  )
+  fun findActiveAdvancesCount(): Long
 }

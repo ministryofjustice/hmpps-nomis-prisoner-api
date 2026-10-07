@@ -56,6 +56,32 @@ class PrisonerAdvanceResource(
     advanceId: Long,
   ): PrisonerAdvanceDto = service.getAdvance(advanceId)
 
+  @GetMapping("/advances/activeCount")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a count of all active prisoner advances",
+    description = "Retrieves a count of all prisoner advances that are ACTIVE. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Advance Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Advance does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getActiveAdvancesCount(): AdvancesCount = service.getActiveAdvancesCount()
+
   @GetMapping("/{prisonNumber}/advances")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
@@ -157,6 +183,11 @@ data class PrisonerAdvanceDto(
 
   @Schema(description = "The status of the advance", example = "ACTIVE")
   val status: AdvanceStatus,
+)
+
+data class AdvancesCount(
+  @Schema(description = "The count of active advances", example = "3")
+  val activeCount: Long,
 )
 
 // TODO Remove TODO status

@@ -322,4 +322,45 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         }
     }
   }
+
+  @Nested
+  @DisplayName("GET /finance/prisoners/advances/activeCount")
+  inner class GetPrisonerAdvancesCountTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun getPrisonerAdvances() {
+      webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("activeCount").isEqualTo(2)
+    }
+  }
 }
