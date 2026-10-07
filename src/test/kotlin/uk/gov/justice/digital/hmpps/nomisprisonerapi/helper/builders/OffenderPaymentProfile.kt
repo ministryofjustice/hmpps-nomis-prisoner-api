@@ -48,6 +48,9 @@ class OffenderPaymentProfileBuilder(
     offender: Offender,
     caseloadId: String,
     transactionType: String,
+    advanceAmount: BigDecimal,
+    paymentAmount: BigDecimal,
+    deductionAmount: BigDecimal,
     deductionPriority: Int,
     informationNumber: String?,
   ): OffenderAdvance {
@@ -59,16 +62,18 @@ class OffenderPaymentProfileBuilder(
       offenderTrustAccount = offenderTrustAccount,
       deductionPriority = deductionPriority,
       effectiveDate = LocalDate.now(),
+      deductionAmount = deductionAmount,
       deductionPercentage = 20,
       informationNumber = informationNumber,
+      maxTotalAmount = advanceAmount,
     )
     return offenderDeductionBuilderRepository.save(
       OffenderAdvance(
         offender = offender,
         caseloadId = caseloadId,
         transactionType = transactionType,
-        advanceAmount = BigDecimal.valueOf(12.45),
-        paymentAmount = BigDecimal.valueOf(2.45),
+        advanceAmount = advanceAmount,
+        paymentAmount = paymentAmount,
         deduction = od,
       ),
     ).also {

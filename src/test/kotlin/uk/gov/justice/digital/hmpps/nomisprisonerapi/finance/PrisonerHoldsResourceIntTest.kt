@@ -88,7 +88,7 @@ class PrisonerHoldsResourceIntTest : IntegrationTestBase() {
   @AfterEach
   fun tearDown() {
     repository.deleteAllTransactions()
-    repository.deleteOffenders()
+    deleteOffenders()
   }
 
   @Nested
