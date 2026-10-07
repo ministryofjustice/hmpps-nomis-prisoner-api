@@ -56,7 +56,7 @@ class PrisonerAdvanceResource(
     advanceId: Long,
   ): PrisonerAdvanceDto = service.getAdvance(advanceId)
 
-  @GetMapping("/advances/activeCount")
+  @GetMapping("/advances/active-count")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a count of all active prisoner advances",

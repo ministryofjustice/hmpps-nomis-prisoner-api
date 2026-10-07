@@ -324,13 +324,13 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
-  @DisplayName("GET /finance/prisoners/advances/activeCount")
+  @DisplayName("GET /finance/prisoners/advances/active-count")
   inner class GetPrisonerAdvancesCountTests {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+        webTestClient.get().uri("/finance/prisoners/advances/active-count")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -338,7 +338,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+        webTestClient.get().uri("/finance/prisoners/advances/active-count")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -346,7 +346,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+        webTestClient.get().uri("/finance/prisoners/advances/active-count")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -354,7 +354,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getPrisonerAdvances() {
-      webTestClient.get().uri("/finance/prisoners/advances/activeCount")
+      webTestClient.get().uri("/finance/prisoners/advances/active-count")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
