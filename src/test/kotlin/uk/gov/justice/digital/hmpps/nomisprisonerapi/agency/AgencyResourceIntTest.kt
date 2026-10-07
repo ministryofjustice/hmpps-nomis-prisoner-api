@@ -852,11 +852,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   @DisplayName("POST /agency/{agencyId}/addresses")
   @Nested
   inner class CreateAgencyAddress {
-    private val validAddressRequest = CreateAgencyAddressRequest(
-      mailAddress = true,
-      primaryAddress = true,
-      noFixedAddress = false,
-    )
+    private val validAddressRequest = CreateAgencyAddressRequest()
 
     private lateinit var existingAgency: AgencyLocation
 
@@ -918,10 +914,28 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
-      fun `will return 400 if address type does not exist`() {
+      fun `will return 400 if city does not exist`() {
         webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .bodyValue(validAddressRequest.copy(typeCode = "RUBBISH"))
+          .bodyValue(validAddressRequest.copy(city = "Rubbish"))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if county does not exist`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validAddressRequest.copy(county = "Rubbish"))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if country does not exist`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validAddressRequest.copy(country = "Rubbish"))
           .exchange()
           .expectStatus().isBadRequest
       }
@@ -934,20 +948,14 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         val response: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
           .bodyValue(
             validAddressRequest.copy(
-              typeCode = "BUS",
               flat = "1A",
               premise = "Bolden Court",
               street = "Fulwood Road",
               locality = "Broomhill",
-              cityCode = SHEFFIELD,
-              countyCode = "S.YORKSHIRE",
-              countryCode = "GBR",
+              city = "Sheffield",
+              county = "South Yorkshire",
+              country = "United Kingdom",
               postcode = "S10 2HH",
-              primaryAddress = true,
-              mailAddress = true,
-              noFixedAddress = false,
-              startDate = LocalDate.parse("2001-01-01"),
-              endDate = LocalDate.parse("2032-12-31"),
             ),
           )
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -968,10 +976,12 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           assertThat(county?.code).isEqualTo("S.YORKSHIRE")
           assertThat(country?.code).isEqualTo("GBR")
           assertThat(postalCode).isEqualTo("S10 2HH")
-          assertThat(primaryAddress).isTrue()
-          assertThat(mailAddress).isTrue()
-          assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
-          assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
+          assertThat(primaryAddress).isFalse()
+          assertThat(mailAddress).isFalse()
+          assertThat(noFixedAddress).isFalse()
+          assertThat(comment).isNull()
+          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(endDate).isNull()
         }
 
         val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
@@ -995,7 +1005,6 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         val firstResponse: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
           .bodyValue(
             validAddressRequest.copy(
-              typeCode = "BUS",
               premise = "Bolden Court",
               street = "Fulwood Road",
             ),
@@ -1009,12 +1018,11 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         val secondResponse: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
           .bodyValue(
             validAddressRequest.copy(
-              typeCode = "HOME",
               premise = "22",
               street = "West Street",
-              cityCode = SHEFFIELD,
-              countyCode = "S.YORKSHIRE",
-              countryCode = "GBR",
+              city = "Sheffield",
+              county = "South Yorkshire",
+              country = "United Kingdom",
             ),
           )
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))

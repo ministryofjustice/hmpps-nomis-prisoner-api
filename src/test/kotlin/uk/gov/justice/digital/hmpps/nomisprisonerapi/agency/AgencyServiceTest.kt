@@ -389,7 +389,7 @@ class AgencyServiceTest {
   @DisplayName("createAgencyAddress")
   inner class CreateAgencyAddress {
     private val agency = AgencyLocation(id = "WWI", description = "Wandsworth")
-    private val addressType = AddressType("BUS", "Business")
+    private val addressType = AddressType("BUS", "Business Address")
     private val city = City("25343", "Sheffield")
     private val county = County("S.YORKSHIRE", "South Yorkshire")
     private val country = Country("ENG", "England")
@@ -398,9 +398,9 @@ class AgencyServiceTest {
     fun setUp() {
       whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
       whenever(addressTypeRepository.findById(AddressType.pk("BUS"))).thenReturn(Optional.of(addressType))
-      whenever(cityRepository.findById(City.pk("25343"))).thenReturn(Optional.of(city))
-      whenever(countyRepository.findById(County.pk("S.YORKSHIRE"))).thenReturn(Optional.of(county))
-      whenever(countryRepository.findById(Country.pk("ENG"))).thenReturn(Optional.of(country))
+      whenever(cityRepository.findByDomainAndDescription(City.CITY, "Sheffield")).thenReturn(city)
+      whenever(countyRepository.findByDomainAndDescription(County.COUNTY, "South Yorkshire")).thenReturn(county)
+      whenever(countryRepository.findByDomainAndDescription(Country.COUNTRY, "England")).thenReturn(country)
       whenever(agencyLocationAddressRepository.saveAndFlush(any<AgencyLocationAddress>())).thenAnswer {
         (it.arguments[0] as AgencyLocationAddress).also { address -> ReflectionTestUtils.setField(address, "addressId", 1L) }
       }
@@ -418,11 +418,11 @@ class AgencyServiceTest {
     }
 
     @Test
-    fun `will throw bad data if address type does not exist`() {
-      whenever(addressTypeRepository.findById(AddressType.pk("RUBBISH"))).thenReturn(Optional.empty())
+    fun `will throw bad data if the default BUS address type does not exist`() {
+      whenever(addressTypeRepository.findById(AddressType.pk("BUS"))).thenReturn(Optional.empty())
 
       assertThatThrownBy {
-        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(typeCode = "RUBBISH"))
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest())
       }.isInstanceOf(BadDataException::class.java)
 
       verifyNoInteractions(telemetryClient)
@@ -430,47 +430,44 @@ class AgencyServiceTest {
 
     @Test
     fun `will throw bad data if city does not exist`() {
-      whenever(cityRepository.findById(City.pk("RUBBISH"))).thenReturn(Optional.empty())
+      whenever(cityRepository.findByDomainAndDescription(City.CITY, "Rubbish")).thenReturn(null)
 
       assertThatThrownBy {
-        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(cityCode = "RUBBISH"))
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(city = "Rubbish"))
       }.isInstanceOf(BadDataException::class.java)
     }
 
     @Test
     fun `will throw bad data if county does not exist`() {
-      whenever(countyRepository.findById(County.pk("RUBBISH"))).thenReturn(Optional.empty())
+      whenever(countyRepository.findByDomainAndDescription(County.COUNTY, "Rubbish")).thenReturn(null)
 
       assertThatThrownBy {
-        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(countyCode = "RUBBISH"))
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(county = "Rubbish"))
       }.isInstanceOf(BadDataException::class.java)
     }
 
     @Test
     fun `will throw bad data if country does not exist`() {
-      whenever(countryRepository.findById(Country.pk("RUBBISH"))).thenReturn(Optional.empty())
+      whenever(countryRepository.findByDomainAndDescription(Country.COUNTRY, "Rubbish")).thenReturn(null)
 
       assertThatThrownBy {
-        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(countryCode = "RUBBISH"))
+        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(country = "Rubbish"))
       }.isInstanceOf(BadDataException::class.java)
     }
 
     @Test
-    fun `will create an address at the agency level, looking up reference data by code`() {
+    fun `will create an address at the agency level, defaulting the address type and looking up other reference data by description`() {
       val response = agencyService.createAgencyAddress(
         "WWI",
         CreateAgencyAddressRequest(
-          typeCode = "BUS",
           flat = "1A",
           premise = "Bolden Court",
           street = "Fulwood Road",
           locality = "Broomhill",
           postcode = "S10 2HH",
-          cityCode = "25343",
-          countyCode = "S.YORKSHIRE",
-          countryCode = "ENG",
-          primaryAddress = true,
-          mailAddress = true,
+          city = "Sheffield",
+          county = "South Yorkshire",
+          country = "England",
         ),
       )
 
@@ -487,8 +484,22 @@ class AgencyServiceTest {
           assertThat(it.city).isEqualTo(city)
           assertThat(it.county).isEqualTo(county)
           assertThat(it.country).isEqualTo(country)
-          assertThat(it.primaryAddress).isTrue()
-          assertThat(it.mailAddress).isTrue()
+        },
+      )
+    }
+
+    @Test
+    fun `will default primary, mail and no-fixed-address flags, comment and dates rather than take them from the request`() {
+      agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest())
+
+      verify(agencyLocationAddressRepository).saveAndFlush(
+        check {
+          assertThat(it.primaryAddress).isFalse()
+          assertThat(it.mailAddress).isFalse()
+          assertThat(it.noFixedAddress).isFalse()
+          assertThat(it.comment).isNull()
+          assertThat(it.startDate).isEqualTo(java.time.LocalDate.now())
+          assertThat(it.endDate).isNull()
         },
       )
     }

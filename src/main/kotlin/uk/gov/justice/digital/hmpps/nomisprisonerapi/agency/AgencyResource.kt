@@ -252,7 +252,7 @@ class AgencyResource(private val agencyService: AgencyService) {
       ),
       ApiResponse(
         responseCode = "400",
-        description = "The request contains bad data, for example the address type, city, county or country code does not exist",
+        description = "The request contains bad data, for example the city, county or country description does not exist",
         content = [
           Content(
             mediaType = "application/json",
@@ -609,8 +609,6 @@ data class AgencyPhoneNumbersResponse(
 @Schema(description = "A request to create an agency address")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateAgencyAddressRequest(
-  @Schema(description = "Address type code", example = "BUS")
-  val typeCode: String? = null,
   @Schema(description = "Flat name or number", example = "Apartment 3")
   val flat: String? = null,
   @Schema(description = "Premise", example = "22")
@@ -621,24 +619,12 @@ data class CreateAgencyAddressRequest(
   val locality: String? = null,
   @Schema(description = "Post code", example = "MK15 2ST")
   val postcode: String? = null,
-  @Schema(description = "City code", example = "25343")
-  val cityCode: String? = null,
-  @Schema(description = "County code", example = "S.YORKSHIRE")
-  val countyCode: String? = null,
-  @Schema(description = "Country code", example = "ENG")
-  val countryCode: String? = null,
-  @Schema(description = "true if address not fixed. for example homeless")
-  val noFixedAddress: Boolean = false,
-  @Schema(description = "true if this is the agency's primary address")
-  val primaryAddress: Boolean = false,
-  @Schema(description = "true if this is used for mail")
-  val mailAddress: Boolean = false,
-  @Schema(description = "Free format comment about the address")
-  val comment: String? = null,
-  @Schema(description = "Date address was valid from")
-  val startDate: LocalDate = LocalDate.now(),
-  @Schema(description = "Date address was valid to")
-  val endDate: LocalDate? = null,
+  @Schema(description = "City description", example = "Sheffield")
+  val city: String? = null,
+  @Schema(description = "County description", example = "South Yorkshire")
+  val county: String? = null,
+  @Schema(description = "Country description", example = "England")
+  val country: String? = null,
 )
 
 @Schema(description = "A response to creating an agency address")

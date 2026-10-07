@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocati
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -94,22 +95,22 @@ class AgencyService(
   fun createAgencyAddress(agencyId: String, request: CreateAgencyAddressRequest): CreateAgencyAddressResponse = agencyLocationAddressRepository.saveAndFlush(
     AgencyLocationAddress(
       agencyLocation = getAgency(agencyId),
-      addressType = addressTypeOf(request.typeCode),
+      addressType = defaultAddressType(),
       flat = request.flat,
       premise = request.premise,
       street = request.street,
       locality = request.locality,
       postalCode = request.postcode,
-      city = cityOf(request.cityCode),
-      county = countyOf(request.countyCode),
-      country = countryOf(request.countryCode),
+      city = cityOf(request.city),
+      county = countyOf(request.county),
+      country = countryOf(request.country),
       validatedPAF = false,
-      noFixedAddress = request.noFixedAddress,
-      primaryAddress = request.primaryAddress,
-      mailAddress = request.mailAddress,
-      comment = request.comment,
-      startDate = request.startDate,
-      endDate = request.endDate,
+      noFixedAddress = false,
+      primaryAddress = false,
+      mailAddress = false,
+      comment = null,
+      startDate = LocalDate.now(),
+      endDate = null,
     ),
   ).let {
     telemetryClient.trackEvent(
@@ -122,24 +123,22 @@ class AgencyService(
     CreateAgencyAddressResponse(id = it.addressId)
   }
 
-  private fun addressTypeOf(code: String?): AddressType? = code?.let {
-    addressTypeRepository.findByIdOrNull(AddressType.pk(code))
-      ?: throw BadDataException("AddressType with code $code does not exist")
+  private fun defaultAddressType(): AddressType = addressTypeRepository.findByIdOrNull(AddressType.pk("BUS"))
+    ?: throw BadDataException("AddressType with code BUS does not exist")
+
+  private fun cityOf(description: String?): City? = description?.let {
+    cityRepository.findByDomainAndDescription(City.CITY, description)
+      ?: throw BadDataException("City with description $description does not exist")
   }
 
-  private fun cityOf(code: String?): City? = code?.let {
-    cityRepository.findByIdOrNull(City.pk(code))
-      ?: throw BadDataException("City with code $code does not exist")
+  private fun countyOf(description: String?): County? = description?.let {
+    countyRepository.findByDomainAndDescription(County.COUNTY, description)
+      ?: throw BadDataException("County with description $description does not exist")
   }
 
-  private fun countyOf(code: String?): County? = code?.let {
-    countyRepository.findByIdOrNull(County.pk(code))
-      ?: throw BadDataException("County with code $code does not exist")
-  }
-
-  private fun countryOf(code: String?): Country? = code?.let {
-    countryRepository.findByIdOrNull(Country.pk(code))
-      ?: throw BadDataException("Country with code $code does not exist")
+  private fun countryOf(description: String?): Country? = description?.let {
+    countryRepository.findByDomainAndDescription(Country.COUNTRY, description)
+      ?: throw BadDataException("Country with description $description does not exist")
   }
 
   // used by deletions and updates
