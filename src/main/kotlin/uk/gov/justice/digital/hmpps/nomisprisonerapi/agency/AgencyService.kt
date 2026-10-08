@@ -8,15 +8,22 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress.Companion.EMAIL_INTERNET_ADDRESS_CLASS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -24,7 +31,12 @@ class AgencyService(
   val agencyLocationRepository: AgencyLocationRepository,
   val agencyLocationInternetAddressRepository: AgencyLocationInternetAddressRepository,
   val agencyLocationPhoneRepository: AgencyLocationPhoneRepository,
+  val agencyLocationAddressRepository: AgencyLocationAddressRepository,
   private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
+  private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
+  private val cityRepository: ReferenceCodeRepository<City>,
+  private val countyRepository: ReferenceCodeRepository<County>,
+  private val countryRepository: ReferenceCodeRepository<Country>,
   private val telemetryClient: TelemetryClient,
 ) {
   fun getAllAgencies(excludeType: List<String>): AgencyIdsResponse {
@@ -79,6 +91,63 @@ class AgencyService(
 
   private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))
     ?: throw BadDataException("PhoneUsage with code $code does not exist")
+
+  fun createAgencyAddress(agencyId: String, request: CreateAgencyAddressRequest): CreateAgencyAddressResponse {
+    val lookupFailures = mutableMapOf<String, String>()
+    val address = agencyLocationAddressRepository.saveAndFlush(
+      AgencyLocationAddress(
+        agencyLocation = getAgency(agencyId),
+        addressType = defaultAddressType(),
+        flat = request.flat,
+        premise = request.premise,
+        street = request.street,
+        locality = request.locality,
+        postalCode = request.postcode,
+        city = cityOf(request.city, lookupFailures),
+        county = countyOf(request.county, lookupFailures),
+        country = countryOf(request.country, lookupFailures),
+        validatedPAF = false,
+        noFixedAddress = false,
+        primaryAddress = false,
+        mailAddress = false,
+        comment = null,
+        startDate = LocalDate.now(),
+        endDate = null,
+      ),
+    )
+    telemetryClient.trackEvent(
+      "agency-address-inserted",
+      mapOf(
+        "agencyId" to agencyId,
+        "addressId" to address.addressId.toString(),
+      ) + lookupFailures,
+    )
+    return CreateAgencyAddressResponse(id = address.addressId)
+  }
+
+  private fun defaultAddressType(): AddressType = addressTypeRepository.findByIdOrNull(AddressType.pk("BUS"))
+    ?: throw BadDataException("AddressType with code BUS does not exist")
+
+  private fun cityOf(description: String?, lookupFailures: MutableMap<String, String>): City? = description?.let {
+    cityRepository.findByDomainAndDescriptionIgnoreCase(City.CITY, description) ?: run {
+      lookupFailures["cityLookupFailure"] = description
+      null
+    }
+  }
+
+  private fun countyOf(description: String?, lookupFailures: MutableMap<String, String>): County? = description?.let {
+    countyRepository.findByDomainAndDescriptionIgnoreCase(County.COUNTY, description) ?: run {
+      lookupFailures["countyLookupFailure"] = description
+      null
+    }
+  }
+
+  private fun countryOf(description: String?, lookupFailures: MutableMap<String, String>): Country? = description?.let {
+    countryRepository.findByDomainAndDescriptionIgnoreCase(Country.COUNTRY, description) ?: run {
+      lookupFailures["countryLookupFailure"] = description
+      null
+    }
+  }
 
   // used by deletions and updates
   fun updateAgencyEmailAddresses(agencyId: String, request: UpdateAgencyEmailAddressesRequest): AgencyEmailAddressesResponse {

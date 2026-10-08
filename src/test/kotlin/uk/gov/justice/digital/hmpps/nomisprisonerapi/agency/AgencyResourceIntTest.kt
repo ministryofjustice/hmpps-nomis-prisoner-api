@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
@@ -38,6 +39,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var agencyLocationPhoneRepository: AgencyLocationPhoneRepository
+
+  @Autowired
+  private lateinit var agencyLocationAddressRepository: AgencyLocationAddressRepository
 
   @Autowired
   private lateinit var areaRepository: AreaRepository
@@ -838,6 +842,242 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           check {
             assertThat(it).containsEntry("agencyId", existingAgency.id)
             assertThat(it).containsEntry("phoneId", response.id.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+  }
+
+  @DisplayName("POST /agency/{agencyId}/addresses")
+  @Nested
+  inner class CreateAgencyAddress {
+    private val validAddressRequest = CreateAgencyAddressRequest()
+
+    private lateinit var existingAgency: AgencyLocation
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById(existingAgency.id)
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `will return 404 if agency does not exist`() {
+        webTestClient.post().uri("/agency/ZZI/addresses")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validAddressRequest)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an address at the agency level`() {
+        val response: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              flat = "1A",
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+              locality = "Broomhill",
+              city = "Sheffield",
+              county = "South Yorkshire",
+              country = "United Kingdom",
+              postcode = "S10 2HH",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(agencyLocationAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(addressId).isEqualTo(response.id)
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(addressType?.code).isEqualTo("BUS")
+          assertThat(flat).isEqualTo("1A")
+          assertThat(premise).isEqualTo("Bolden Court")
+          assertThat(street).isEqualTo("Fulwood Road")
+          assertThat(locality).isEqualTo("Broomhill")
+          assertThat(city?.code).isEqualTo(SHEFFIELD)
+          assertThat(county?.code).isEqualTo("S.YORKSHIRE")
+          assertThat(country?.code).isEqualTo("GBR")
+          assertThat(postalCode).isEqualTo("S10 2HH")
+          assertThat(primaryAddress).isFalse()
+          assertThat(mailAddress).isFalse()
+          assertThat(noFixedAddress).isFalse()
+          assertThat(comment).isNull()
+          assertThat(startDate).isEqualTo(LocalDate.now())
+          assertThat(endDate).isNull()
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.addresses).anyMatch { it.id == response.id && it.premise == "Bolden Court" }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-address-inserted"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("addressId", response.id.toString())
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will add a second address to the agency, keeping the first`() {
+        val firstResponse: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              premise = "Bolden Court",
+              street = "Fulwood Road",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        val secondResponse: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              premise = "22",
+              street = "West Street",
+              city = "Sheffield",
+              county = "South Yorkshire",
+              country = "United Kingdom",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        assertThat(secondResponse.id).isNotEqualTo(firstResponse.id)
+
+        with(agencyLocationAddressRepository.findByIdOrNull(firstResponse.id)!!) {
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(premise).isEqualTo("Bolden Court")
+        }
+        with(agencyLocationAddressRepository.findByIdOrNull(secondResponse.id)!!) {
+          assertThat(agencyLocation.id).isEqualTo(existingAgency.id)
+          assertThat(premise).isEqualTo("22")
+          assertThat(city?.code).isEqualTo(SHEFFIELD)
+        }
+
+        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectBodyResponse()
+        assertThat(agency.addresses).hasSize(2)
+        assertThat(agency.addresses).anyMatch { it.id == firstResponse.id && it.premise == "Bolden Court" }
+        assertThat(agency.addresses).anyMatch { it.id == secondResponse.id && it.premise == "22" }
+      }
+
+      @Test
+      fun `will match city, county and country descriptions case insensitively`() {
+        val response: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              city = "SHEFFIELD",
+              county = "south yorkshire",
+              country = "united kingdom",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(agencyLocationAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(city?.code).isEqualTo(SHEFFIELD)
+          assertThat(county?.code).isEqualTo("S.YORKSHIRE")
+          assertThat(country?.code).isEqualTo("GBR")
+        }
+      }
+
+      @Test
+      fun `will set city, county and country to null and record lookup failures in telemetry when descriptions do not match`() {
+        val response: CreateAgencyAddressResponse = webTestClient.post().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            validAddressRequest.copy(
+              city = "Rubbish City",
+              county = "Rubbish County",
+              country = "Rubbish Country",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        with(agencyLocationAddressRepository.findByIdOrNull(response.id)!!) {
+          assertThat(city).isNull()
+          assertThat(county).isNull()
+          assertThat(country).isNull()
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-address-inserted"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("addressId", response.id.toString())
+            assertThat(it).containsEntry("cityLookupFailure", "Rubbish City")
+            assertThat(it).containsEntry("countyLookupFailure", "Rubbish County")
+            assertThat(it).containsEntry("countryLookupFailure", "Rubbish Country")
           },
           isNull(),
         )
