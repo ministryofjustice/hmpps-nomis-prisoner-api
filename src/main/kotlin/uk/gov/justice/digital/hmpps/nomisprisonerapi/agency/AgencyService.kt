@@ -160,7 +160,12 @@ class AgencyService(
 
     // the common case is a single existing address being replaced with a single new one - there is no id in the
     // request to correlate the two, but since there is only one of each they can only mean each other
-    val updatedAddresses = if (existingAddresses.size == 1 && requestedAddresses.size == 1) {
+    val updatedAddresses = if (
+      existingAddresses.size == 1 &&
+      requestedAddresses.size == 1 &&
+      !existingAddresses[0].postalCode.isNullOrBlank() &&
+      !requestedAddresses[0].postcode.isNullOrBlank()
+    ) {
       listOf(updateAddress(existingAddresses[0], requestedAddresses[0], lookupFailures, indexKeySuffix.format(0)))
     } else {
       // with more than one address there is still no id to correlate by, so existing and requested addresses are
