@@ -153,49 +153,50 @@ class AgencyService(
   fun updateAgencyAddresses(agencyId: String, request: UpdateAgencyAddressesRequest): AgencyAddressesResponse {
     val agency = getAgency(agencyId)
     val requestedAddresses = request.addresses
-
-    // the common case is a single existing address being replaced with a single new one. There is no id in the
-    // request to correlate addresses with, so when there is more than one, existing and requested addresses are
-    // matched up by ordering both by postcode - this also handles growing or shrinking the list, updating the
-    // overlapping entries in place so their ids are preserved
-    val existingAddresses = agency.addresses.sortedBy { it.postalCode.orEmpty() }
-    val sortedRequestedAddresses = requestedAddresses.sortedBy { it.postcode.orEmpty() }
-    val indexKeySuffix = if (sortedRequestedAddresses.size > 1) "[%d]" else ""
+    val existingAddresses = agency.addresses
 
     val lookupFailures = mutableMapOf<String, String>()
+    val indexKeySuffix = if (requestedAddresses.size > 1) "[%d]" else ""
 
-    val updatedAddresses = sortedRequestedAddresses.mapIndexed { index, address ->
-      val suffix = indexKeySuffix.format(index)
-      existingAddresses.getOrNull(index)?.also {
-        it.flat = address.flat
-        it.premise = address.premise
-        it.street = address.street
-        it.locality = address.locality
-        it.postalCode = address.postcode
-        it.city = cityOf(address.city, lookupFailures, "cityLookupFailure$suffix")
-        it.county = countyOf(address.county, lookupFailures, "countyLookupFailure$suffix")
-        it.country = countryOf(address.country, lookupFailures, "countryLookupFailure$suffix")
+    // the common case is a single existing address being replaced with a single new one - there is no id in the
+    // request to correlate the two, but since there is only one of each they can only mean each other
+    val updatedAddresses = if (existingAddresses.size == 1 && requestedAddresses.size == 1) {
+      listOf(updateAddress(existingAddresses[0], requestedAddresses[0], lookupFailures, indexKeySuffix.format(0)))
+    } else {
+      // with more than one address there is still no id to correlate by, so existing and requested addresses are
+      // instead matched up explicitly by postcode. Existing addresses are only available to be matched once each;
+      // where more than one existing or requested address shares the same postcode they are matched in the order
+      // the existing addresses were created (by id). A null (or blank) postcode is never treated as a match, even
+      // against another null postcode, since it carries no identifying information - matching it would risk
+      // silently reassigning the identity (and id) of an unrelated address. So: existing addresses with a null
+      // postcode that are not otherwise referenced are removed, and requested addresses with a null postcode
+      // always result in a new address being created
+      val unmatchedExistingByPostcode = existingAddresses
+        .filterNot { it.postalCode.isNullOrBlank() }
+        .sortedBy { it.addressId }
+        .groupByTo(mutableMapOf()) { it.postalCode!! }
+        .mapValuesTo(mutableMapOf()) { (_, addresses) -> ArrayDeque(addresses) }
+
+      val matchedExistingIds = mutableSetOf<Long>()
+
+      val result = requestedAddresses.mapIndexed { index, address ->
+        val suffix = indexKeySuffix.format(index)
+        val matchingExisting = address.postcode
+          ?.takeIf { it.isNotBlank() }
+          ?.let { unmatchedExistingByPostcode[it]?.removeFirstOrNull() }
+
+        matchingExisting
+          ?.also { matchedExistingIds.add(it.addressId) }
+          ?.let { updateAddress(it, address, lookupFailures, suffix) }
+          ?: createAddress(agency, address, lookupFailures, suffix)
       }
-        ?: agencyLocationAddressRepository.save(
-          AgencyLocationAddress(
-            agencyLocation = agency,
-            addressType = defaultAddressType(),
-            flat = address.flat,
-            premise = address.premise,
-            street = address.street,
-            locality = address.locality,
-            postalCode = address.postcode,
-            city = cityOf(address.city, lookupFailures, "cityLookupFailure$suffix"),
-            county = countyOf(address.county, lookupFailures, "countyLookupFailure$suffix"),
-            country = countryOf(address.country, lookupFailures, "countryLookupFailure$suffix"),
-          ),
-        )
-    }
 
-    if (existingAddresses.size > sortedRequestedAddresses.size) {
-      agencyLocationAddressRepository.deleteAll(
-        existingAddresses.subList(sortedRequestedAddresses.size, existingAddresses.size),
-      )
+      val addressesToRemove = existingAddresses.filterNot { it.addressId in matchedExistingIds }
+      if (addressesToRemove.isNotEmpty()) {
+        agencyLocationAddressRepository.deleteAll(addressesToRemove)
+      }
+
+      result
     }
 
     telemetryClient.trackEvent(
@@ -208,6 +209,33 @@ class AgencyService(
 
     return updatedAddresses.toAgencyAddressesResponse()
   }
+
+  private fun updateAddress(existing: AgencyLocationAddress, address: UpdateAgencyAddress, lookupFailures: MutableMap<String, String>, telemetryKeySuffix: String): AgencyLocationAddress = existing.also {
+    it.flat = address.flat
+    it.premise = address.premise
+    it.street = address.street
+    it.locality = address.locality
+    it.postalCode = address.postcode
+    it.city = cityOf(address.city, lookupFailures, "cityLookupFailure$telemetryKeySuffix")
+    it.county = countyOf(address.county, lookupFailures, "countyLookupFailure$telemetryKeySuffix")
+    it.country = countryOf(address.country, lookupFailures, "countryLookupFailure$telemetryKeySuffix")
+  }
+
+  private fun createAddress(agency: AgencyLocation, address: UpdateAgencyAddress, lookupFailures: MutableMap<String, String>, telemetryKeySuffix: String): AgencyLocationAddress = agencyLocationAddressRepository.save(
+    AgencyLocationAddress(
+      agencyLocation = agency,
+      addressType = defaultAddressType(),
+      flat = address.flat,
+      premise = address.premise,
+      street = address.street,
+      locality = address.locality,
+      postalCode = address.postcode,
+      startDate = LocalDate.now(),
+      city = cityOf(address.city, lookupFailures, "cityLookupFailure$telemetryKeySuffix"),
+      county = countyOf(address.county, lookupFailures, "countyLookupFailure$telemetryKeySuffix"),
+      country = countryOf(address.country, lookupFailures, "countryLookupFailure$telemetryKeySuffix"),
+    ),
+  )
 
   // used by deletions and updates
   fun updateAgencyEmailAddresses(agencyId: String, request: UpdateAgencyEmailAddressesRequest): AgencyEmailAddressesResponse {

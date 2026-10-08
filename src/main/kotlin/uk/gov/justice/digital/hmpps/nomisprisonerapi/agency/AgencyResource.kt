@@ -423,7 +423,7 @@ class AgencyResource(private val agencyService: AgencyService) {
   @PutMapping("/agency/{agencyId}/addresses")
   @Operation(
     summary = "Refreshes the list of agency addresses",
-    description = "Replaces the existing list of addresses for an agency with the list supplied. Where there is a single existing address and a single requested address they are matched directly and updated in place so the id is preserved. Where there is more than one address, existing and requested addresses are matched by ordering both lists by postcode; any extra existing addresses are removed and any extra new ones are created, defaulting the address type to BUS. City, county and country are looked up by description, matched case insensitively; if a description does not match any reference data the value is left unset on the address and the lookup failure is recorded in the response telemetry. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Replaces the existing list of addresses for an agency with the list supplied. Where there is a single existing address and a single requested address they are matched directly and updated in place so the id is preserved. Where there is more than one address, there is no id in the request to correlate addresses with, so existing and requested addresses are instead matched by exact postcode; where more than one address shares the same postcode they are matched in the order the existing addresses were created. A null or blank postcode never matches anything, even another null postcode, to avoid silently reassigning the identity of an unrelated address. Any requested address that cannot be matched to an existing one results in a new address being created, defaulting its address type to BUS; any existing address that is not matched by a requested one is removed. City, county and country are looked up by description, matched case insensitively; if a description does not match any reference data the value is left unset on the address and the lookup failure is recorded in the response telemetry. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -721,7 +721,7 @@ data class UpdateAgencyAddress(
 
 @Schema(description = "A request to refresh and replace the list of addresses for an agency")
 data class UpdateAgencyAddressesRequest(
-  @Schema(description = "The complete list of addresses to hold against the agency, replacing any existing list. If there is a single existing address and a single requested address they are matched directly; otherwise existing and requested addresses are matched by ordering both by postcode")
+  @Schema(description = "The complete list of addresses to hold against the agency, replacing any existing list. If there is a single existing address and a single requested address they are matched directly; otherwise existing and requested addresses are matched by exact postcode, with a null or blank postcode never matching")
   val addresses: List<UpdateAgencyAddress>,
 )
 

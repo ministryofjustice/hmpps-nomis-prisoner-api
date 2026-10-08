@@ -898,6 +898,21 @@ class AgencyServiceTest {
       }
 
       @Test
+      fun `will match a requested address to its postcode and remove the other existing address, rather than overwriting the wrong one`() {
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(UpdateAgencyAddress(premise = "Updated Second", postcode = "BB2 2BB")),
+          ),
+        )
+
+        assertThat(response.addresses).hasSize(1)
+        assertThat(response.addresses[0].id).isEqualTo(existingAddress2.addressId)
+        assertThat(existingAddress2.premise).isEqualTo("Updated Second")
+        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddress1))
+      }
+
+      @Test
       fun `will remove all addresses when requesting an empty list`() {
         val response = agencyService.updateAgencyAddresses("WWI", UpdateAgencyAddressesRequest(emptyList()))
 
@@ -929,6 +944,88 @@ class AgencyServiceTest {
             assertThat(it.addressType).isEqualTo(addressType)
           },
         )
+      }
+
+      @Test
+      fun `will not rewrite the identity of an existing address when a new postcode is inserted ahead of it in the request`() {
+        whenever(agencyLocationAddressRepository.save(any<AgencyLocationAddress>())).thenAnswer {
+          (it.arguments[0] as AgencyLocationAddress).also { address -> ReflectionTestUtils.setField(address, "addressId", 3L) }
+        }
+
+        // the new address is listed before the two existing ones - a naive positional match (after sorting both
+        // lists by postcode) would incorrectly pair it with existingAddress1 and shift everything along, rewriting
+        // the identity of both existing addresses even though their postcodes are unchanged
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(
+              UpdateAgencyAddress(premise = "New", postcode = "CC3 3CC"),
+              UpdateAgencyAddress(premise = "First", postcode = "AA1 1AA"),
+              UpdateAgencyAddress(premise = "Second", postcode = "BB2 2BB"),
+            ),
+          ),
+        )
+
+        assertThat(response.addresses).hasSize(3)
+        assertThat(existingAddress1.premise).isEqualTo("First")
+        assertThat(existingAddress1.addressId).isEqualTo(1)
+        assertThat(existingAddress2.premise).isEqualTo("Second")
+        assertThat(existingAddress2.addressId).isEqualTo(2)
+        verify(agencyLocationAddressRepository).save(
+          check<AgencyLocationAddress> {
+            assertThat(it.premise).isEqualTo("New")
+          },
+        )
+        verify(agencyLocationAddressRepository, never()).deleteAll(any())
+      }
+
+      @Test
+      fun `will match addresses sharing a duplicate postcode in the order the existing addresses were created`() {
+        val existingAddress3 = agencyAddress(agency, 3, postcode = "AA1 1AA", premise = "First duplicate")
+        agency.addresses.add(existingAddress3)
+
+        agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(
+              UpdateAgencyAddress(premise = "Updated first duplicate", postcode = "AA1 1AA"),
+              UpdateAgencyAddress(premise = "Updated second duplicate", postcode = "AA1 1AA"),
+            ),
+          ),
+        )
+
+        // existingAddress1 (id 1) was created before existingAddress3 (id 3), so is matched first
+        assertThat(existingAddress1.premise).isEqualTo("Updated first duplicate")
+        assertThat(existingAddress3.premise).isEqualTo("Updated second duplicate")
+        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddress2))
+      }
+
+      @Test
+      fun `will never match a null postcode to another null postcode, creating a new address and removing the unmatched existing one`() {
+        val existingAddressWithNullPostcode = agencyAddress(agency, 3, postcode = null, premise = "No postcode")
+        agency.addresses.add(existingAddressWithNullPostcode)
+        whenever(agencyLocationAddressRepository.save(any<AgencyLocationAddress>())).thenAnswer {
+          (it.arguments[0] as AgencyLocationAddress).also { address -> ReflectionTestUtils.setField(address, "addressId", 4L) }
+        }
+
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(
+              UpdateAgencyAddress(premise = "First", postcode = "AA1 1AA"),
+              UpdateAgencyAddress(premise = "Second", postcode = "BB2 2BB"),
+              UpdateAgencyAddress(premise = "New, no postcode", postcode = null),
+            ),
+          ),
+        )
+
+        assertThat(response.addresses).hasSize(3)
+        verify(agencyLocationAddressRepository).save(
+          check<AgencyLocationAddress> {
+            assertThat(it.premise).isEqualTo("New, no postcode")
+          },
+        )
+        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddressWithNullPostcode))
       }
 
       @Test
