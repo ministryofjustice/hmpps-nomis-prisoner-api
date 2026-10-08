@@ -784,6 +784,9 @@ class AgencyServiceTest {
       fun setUp() {
         agency.addresses.add(existingAddress)
         whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
+        whenever(agencyLocationAddressRepository.save(any<AgencyLocationAddress>())).thenAnswer {
+          (it.arguments[0] as AgencyLocationAddress).also { address -> ReflectionTestUtils.setField(address, "addressId", 1L) }
+        }
       }
 
       @Test
