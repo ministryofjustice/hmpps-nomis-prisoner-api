@@ -252,7 +252,7 @@ class AgencyResource(private val agencyService: AgencyService) {
       ),
       ApiResponse(
         responseCode = "400",
-        description = "The request contains bad data, for example the city, county or country description does not exist",
+        description = "The request contains bad data, for example the default BUS address type reference data is missing",
         content = [
           Content(
             mediaType = "application/json",
@@ -619,11 +619,11 @@ data class CreateAgencyAddressRequest(
   val locality: String? = null,
   @Schema(description = "Post code", example = "MK15 2ST")
   val postcode: String? = null,
-  @Schema(description = "City description", example = "Sheffield")
+  @Schema(description = "City description, matched case insensitively. If not found the city will not be set", example = "Sheffield")
   val city: String? = null,
-  @Schema(description = "County description", example = "South Yorkshire")
+  @Schema(description = "County description, matched case insensitively. If not found the county will not be set", example = "South Yorkshire")
   val county: String? = null,
-  @Schema(description = "Country description", example = "England")
+  @Schema(description = "Country description, matched case insensitively. If not found the country will not be set", example = "England")
   val country: String? = null,
 )
 

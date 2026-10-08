@@ -398,9 +398,9 @@ class AgencyServiceTest {
     fun setUp() {
       whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
       whenever(addressTypeRepository.findById(AddressType.pk("BUS"))).thenReturn(Optional.of(addressType))
-      whenever(cityRepository.findByDomainAndDescription(City.CITY, "Sheffield")).thenReturn(city)
-      whenever(countyRepository.findByDomainAndDescription(County.COUNTY, "South Yorkshire")).thenReturn(county)
-      whenever(countryRepository.findByDomainAndDescription(Country.COUNTRY, "England")).thenReturn(country)
+      whenever(cityRepository.findByDomainAndDescriptionIgnoreCase(City.CITY, "Sheffield")).thenReturn(city)
+      whenever(countyRepository.findByDomainAndDescriptionIgnoreCase(County.COUNTY, "South Yorkshire")).thenReturn(county)
+      whenever(countryRepository.findByDomainAndDescriptionIgnoreCase(Country.COUNTRY, "England")).thenReturn(country)
       whenever(agencyLocationAddressRepository.saveAndFlush(any<AgencyLocationAddress>())).thenAnswer {
         (it.arguments[0] as AgencyLocationAddress).also { address -> ReflectionTestUtils.setField(address, "addressId", 1L) }
       }
@@ -429,30 +429,89 @@ class AgencyServiceTest {
     }
 
     @Test
-    fun `will throw bad data if city does not exist`() {
-      whenever(cityRepository.findByDomainAndDescription(City.CITY, "Rubbish")).thenReturn(null)
+    fun `will set city to null and record telemetry if city does not exist`() {
+      whenever(cityRepository.findByDomainAndDescriptionIgnoreCase(City.CITY, "Rubbish")).thenReturn(null)
 
-      assertThatThrownBy {
-        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(city = "Rubbish"))
-      }.isInstanceOf(BadDataException::class.java)
+      val response = agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(city = "Rubbish"))
+
+      verify(agencyLocationAddressRepository).saveAndFlush(
+        check {
+          assertThat(it.city).isNull()
+        },
+      )
+      verify(telemetryClient).trackEvent(
+        eq("agency-address-inserted"),
+        check {
+          assertThat(it).containsEntry("agencyId", "WWI")
+          assertThat(it).containsEntry("addressId", response.id.toString())
+          assertThat(it).containsEntry("cityLookupFailure", "Rubbish")
+        },
+        isNull(),
+      )
     }
 
     @Test
-    fun `will throw bad data if county does not exist`() {
-      whenever(countyRepository.findByDomainAndDescription(County.COUNTY, "Rubbish")).thenReturn(null)
+    fun `will set county to null and record telemetry if county does not exist`() {
+      whenever(countyRepository.findByDomainAndDescriptionIgnoreCase(County.COUNTY, "Rubbish")).thenReturn(null)
 
-      assertThatThrownBy {
-        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(county = "Rubbish"))
-      }.isInstanceOf(BadDataException::class.java)
+      val response = agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(county = "Rubbish"))
+
+      verify(agencyLocationAddressRepository).saveAndFlush(
+        check {
+          assertThat(it.county).isNull()
+        },
+      )
+      verify(telemetryClient).trackEvent(
+        eq("agency-address-inserted"),
+        check {
+          assertThat(it).containsEntry("agencyId", "WWI")
+          assertThat(it).containsEntry("addressId", response.id.toString())
+          assertThat(it).containsEntry("countyLookupFailure", "Rubbish")
+        },
+        isNull(),
+      )
     }
 
     @Test
-    fun `will throw bad data if country does not exist`() {
-      whenever(countryRepository.findByDomainAndDescription(Country.COUNTRY, "Rubbish")).thenReturn(null)
+    fun `will set country to null and record telemetry if country does not exist`() {
+      whenever(countryRepository.findByDomainAndDescriptionIgnoreCase(Country.COUNTRY, "Rubbish")).thenReturn(null)
 
-      assertThatThrownBy {
-        agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(country = "Rubbish"))
-      }.isInstanceOf(BadDataException::class.java)
+      val response = agencyService.createAgencyAddress("WWI", CreateAgencyAddressRequest(country = "Rubbish"))
+
+      verify(agencyLocationAddressRepository).saveAndFlush(
+        check {
+          assertThat(it.country).isNull()
+        },
+      )
+      verify(telemetryClient).trackEvent(
+        eq("agency-address-inserted"),
+        check {
+          assertThat(it).containsEntry("agencyId", "WWI")
+          assertThat(it).containsEntry("addressId", response.id.toString())
+          assertThat(it).containsEntry("countryLookupFailure", "Rubbish")
+        },
+        isNull(),
+      )
+    }
+
+    @Test
+    fun `will match city, county and country descriptions case insensitively`() {
+      whenever(cityRepository.findByDomainAndDescriptionIgnoreCase(City.CITY, "SHEFFIELD")).thenReturn(city)
+      whenever(countyRepository.findByDomainAndDescriptionIgnoreCase(County.COUNTY, "south yorkshire")).thenReturn(county)
+      whenever(countryRepository.findByDomainAndDescriptionIgnoreCase(Country.COUNTRY, "EnglanD")).thenReturn(country)
+
+      agencyService.createAgencyAddress(
+        "WWI",
+        CreateAgencyAddressRequest(city = "SHEFFIELD", county = "south yorkshire", country = "EnglanD"),
+      )
+
+      verify(agencyLocationAddressRepository).saveAndFlush(
+        check {
+          assertThat(it.city).isEqualTo(city)
+          assertThat(it.county).isEqualTo(county)
+          assertThat(it.country).isEqualTo(country)
+        },
+      )
     }
 
     @Test

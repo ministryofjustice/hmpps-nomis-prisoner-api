@@ -11,5 +11,5 @@ interface ReferenceCodeRepository<T : ReferenceCode> : JpaRepository<T, Pk> {
 
   // domain must be included - without it, derived queries are not scoped to the subtype T (the entity hierarchy uses
   // single table inheritance keyed on domain) and can match rows belonging to other reference code domains
-  fun findByDomainAndDescription(domain: String, description: String): T?
+  fun findByDomainAndDescriptionIgnoreCase(domain: String, description: String): T?
 }

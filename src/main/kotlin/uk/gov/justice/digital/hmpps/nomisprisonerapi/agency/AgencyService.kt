@@ -92,53 +92,61 @@ class AgencyService(
   private fun phoneTypeOf(code: String): PhoneUsage = phoneUsageRepository.findByIdOrNull(PhoneUsage.pk(code))
     ?: throw BadDataException("PhoneUsage with code $code does not exist")
 
-  fun createAgencyAddress(agencyId: String, request: CreateAgencyAddressRequest): CreateAgencyAddressResponse = agencyLocationAddressRepository.saveAndFlush(
-    AgencyLocationAddress(
-      agencyLocation = getAgency(agencyId),
-      addressType = defaultAddressType(),
-      flat = request.flat,
-      premise = request.premise,
-      street = request.street,
-      locality = request.locality,
-      postalCode = request.postcode,
-      city = cityOf(request.city),
-      county = countyOf(request.county),
-      country = countryOf(request.country),
-      validatedPAF = false,
-      noFixedAddress = false,
-      primaryAddress = false,
-      mailAddress = false,
-      comment = null,
-      startDate = LocalDate.now(),
-      endDate = null,
-    ),
-  ).let {
+  fun createAgencyAddress(agencyId: String, request: CreateAgencyAddressRequest): CreateAgencyAddressResponse {
+    val lookupFailures = mutableMapOf<String, String>()
+    val address = agencyLocationAddressRepository.saveAndFlush(
+      AgencyLocationAddress(
+        agencyLocation = getAgency(agencyId),
+        addressType = defaultAddressType(),
+        flat = request.flat,
+        premise = request.premise,
+        street = request.street,
+        locality = request.locality,
+        postalCode = request.postcode,
+        city = cityOf(request.city, lookupFailures),
+        county = countyOf(request.county, lookupFailures),
+        country = countryOf(request.country, lookupFailures),
+        validatedPAF = false,
+        noFixedAddress = false,
+        primaryAddress = false,
+        mailAddress = false,
+        comment = null,
+        startDate = LocalDate.now(),
+        endDate = null,
+      ),
+    )
     telemetryClient.trackEvent(
       "agency-address-inserted",
       mapOf(
         "agencyId" to agencyId,
-        "addressId" to it.addressId.toString(),
-      ),
+        "addressId" to address.addressId.toString(),
+      ) + lookupFailures,
     )
-    CreateAgencyAddressResponse(id = it.addressId)
+    return CreateAgencyAddressResponse(id = address.addressId)
   }
 
   private fun defaultAddressType(): AddressType = addressTypeRepository.findByIdOrNull(AddressType.pk("BUS"))
     ?: throw BadDataException("AddressType with code BUS does not exist")
 
-  private fun cityOf(description: String?): City? = description?.let {
-    cityRepository.findByDomainAndDescription(City.CITY, description)
-      ?: throw BadDataException("City with description $description does not exist")
+  private fun cityOf(description: String?, lookupFailures: MutableMap<String, String>): City? = description?.let {
+    cityRepository.findByDomainAndDescriptionIgnoreCase(City.CITY, description) ?: run {
+      lookupFailures["cityLookupFailure"] = description
+      null
+    }
   }
 
-  private fun countyOf(description: String?): County? = description?.let {
-    countyRepository.findByDomainAndDescription(County.COUNTY, description)
-      ?: throw BadDataException("County with description $description does not exist")
+  private fun countyOf(description: String?, lookupFailures: MutableMap<String, String>): County? = description?.let {
+    countyRepository.findByDomainAndDescriptionIgnoreCase(County.COUNTY, description) ?: run {
+      lookupFailures["countyLookupFailure"] = description
+      null
+    }
   }
 
-  private fun countryOf(description: String?): Country? = description?.let {
-    countryRepository.findByDomainAndDescription(Country.COUNTRY, description)
-      ?: throw BadDataException("Country with description $description does not exist")
+  private fun countryOf(description: String?, lookupFailures: MutableMap<String, String>): Country? = description?.let {
+    countryRepository.findByDomainAndDescriptionIgnoreCase(Country.COUNTRY, description) ?: run {
+      lookupFailures["countryLookupFailure"] = description
+      null
+    }
   }
 
   // used by deletions and updates
