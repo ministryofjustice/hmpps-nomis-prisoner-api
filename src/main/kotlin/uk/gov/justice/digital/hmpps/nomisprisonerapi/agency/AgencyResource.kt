@@ -419,6 +419,71 @@ class AgencyResource(private val agencyService: AgencyService) {
     @RequestBody @Valid
     request: UpdateAgencyPhoneNumbersRequest,
   ) = agencyService.updateAgencyPhoneNumbers(agencyId, request)
+
+  @PutMapping("/agency/{agencyId}/addresses")
+  @Operation(
+    summary = "Refreshes the list of agency addresses",
+    description = "Replaces the existing list of addresses for an agency with the list supplied. Where there is a single existing address and a single requested address they are matched directly and updated in place so the id is preserved. Where there is more than one address, there is no id in the request to correlate addresses with, so existing and requested addresses are instead matched by exact postcode; where more than one address shares the same postcode they are matched in the order the existing addresses were created. A null or blank postcode never matches anything, even another null postcode, to avoid silently reassigning the identity of an unrelated address. Any requested address that cannot be matched to an existing one results in a new address being created, defaulting its address type to BUS; any existing address that is not matched by a requested one is removed. City, county and country are looked up by description, matched case insensitively; if a description does not match any reference data the value is left unset on the address and the lookup failure is recorded in the response telemetry. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Agency addresses updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AgencyAddressesResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example the default BUS address type reference data is missing",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateAgencyAddresses(
+    @PathVariable
+    @Schema(description = "Agency id", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: UpdateAgencyAddressesRequest,
+  ) = agencyService.updateAgencyAddresses(agencyId, request)
 }
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -631,4 +696,37 @@ data class CreateAgencyAddressRequest(
 data class CreateAgencyAddressResponse(
   @Schema(description = "Unique NOMIS Id of address")
   val id: Long,
+)
+
+@Schema(description = "An address to be held against an agency")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class UpdateAgencyAddress(
+  @Schema(description = "Flat name or number", example = "Apartment 3")
+  val flat: String? = null,
+  @Schema(description = "Premise", example = "22")
+  val premise: String? = null,
+  @Schema(description = "Street", example = "West Street")
+  val street: String? = null,
+  @Schema(description = "Locality", example = "Keighley")
+  val locality: String? = null,
+  @Schema(description = "Post code", example = "MK15 2ST")
+  val postcode: String? = null,
+  @Schema(description = "City description, matched case insensitively. If not found the city will not be set", example = "Sheffield")
+  val city: String? = null,
+  @Schema(description = "County description, matched case insensitively. If not found the county will not be set", example = "South Yorkshire")
+  val county: String? = null,
+  @Schema(description = "Country description, matched case insensitively. If not found the country will not be set", example = "England")
+  val country: String? = null,
+)
+
+@Schema(description = "A request to refresh and replace the list of addresses for an agency")
+data class UpdateAgencyAddressesRequest(
+  @Schema(description = "The complete list of addresses to hold against the agency, replacing any existing list. If there is a single existing address and a single requested address they are matched directly; otherwise existing and requested addresses are matched by exact postcode, with a null or blank postcode never matching")
+  val addresses: List<UpdateAgencyAddress>,
+)
+
+@Schema(description = "A response to refreshing the list of addresses for an agency")
+data class AgencyAddressesResponse(
+  @Schema(description = "The list of addresses now held for the agency")
+  val addresses: List<AgencyAddress>,
 )

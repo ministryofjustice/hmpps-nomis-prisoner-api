@@ -1352,7 +1352,7 @@ class CourtSentencingService(
 
   fun OffenceResultCode.resultRequiresACourtOrder(): Boolean = this.chargeStatus == ACTIVE_CHARGE_STATUS && (this.dispositionCode == PARTIAL_RESULT_CODE_INDICATOR || this.dispositionCode == FINAL_RESULT_CODE_INDICATOR)
 
-  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findFirstByOffenderBookingAndCourtEventAndOrderTypeOrderByIdAsc(offenderBooking, courtEvent)
+  private fun existingCourtOrder(offenderBooking: OffenderBooking, courtEvent: CourtEvent) = courtOrderRepository.findFirstByCourtEventAndOrderTypeOrderByIdAsc(courtEvent)
 
   fun determineEventStatus(eventDate: LocalDate, booking: OffenderBooking): EventStatus = if (eventDate < booking.bookingBeginDate.toLocalDate()
       .plusDays(1)

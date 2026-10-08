@@ -1259,4 +1259,171 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("PUT /agency/{agencyId}/addresses")
+  @Nested
+  inner class UpdateAgencyAddresses {
+    private lateinit var existingAgency: AgencyLocation
+
+    @AfterEach
+    fun tearDown() {
+      if (::existingAgency.isInitialized) {
+        agencyLocationRepository.deleteById(existingAgency.id)
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
+            address(postcode = "S10 2HH")
+          }
+        }
+      }
+
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(UpdateAgencyAddressesRequest(addresses = emptyList()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/agency/${existingAgency.id}/addresses")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(UpdateAgencyAddressesRequest(addresses = emptyList()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(UpdateAgencyAddressesRequest(addresses = emptyList()))
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if agency does not exist`() {
+        webTestClient.put().uri("/agency/ZZI/addresses")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(UpdateAgencyAddressesRequest(addresses = emptyList()))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPathSingleAddress {
+      private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
+            existingAddress = address(premise = "Old Premise", postcode = "S10 1AA")
+          }
+        }
+      }
+
+      @Test
+      fun `will update the single existing address in place, preserving its id`() {
+        val response: AgencyAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            UpdateAgencyAddressesRequest(
+              addresses = listOf(
+                UpdateAgencyAddress(
+                  premise = "New Premise",
+                  street = "Fulwood Road",
+                  postcode = "S10 2HH",
+                  city = "Sheffield",
+                  county = "South Yorkshire",
+                  country = "United Kingdom",
+                ),
+              ),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.addresses).hasSize(1)
+        assertThat(response.addresses[0].id).isEqualTo(existingAddress.addressId)
+        assertThat(response.addresses[0].premise).isEqualTo("New Premise")
+
+        with(agencyLocationAddressRepository.findByIdOrNull(existingAddress.addressId)!!) {
+          assertThat(premise).isEqualTo("New Premise")
+          assertThat(street).isEqualTo("Fulwood Road")
+          assertThat(postalCode).isEqualTo("S10 2HH")
+          assertThat(city?.code).isEqualTo(SHEFFIELD)
+          assertThat(county?.code).isEqualTo("S.YORKSHIRE")
+          assertThat(country?.code).isEqualTo("GBR")
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.address.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("addressIds", existingAddress.addressId.toString())
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    inner class HappyPathMultipleAddresses {
+      private lateinit var firstAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+      private lateinit var secondAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
+            firstAddress = address(premise = "First", postcode = "AA1 1AA")
+            secondAddress = address(premise = "Second", postcode = "BB2 2BB")
+          }
+        }
+      }
+
+      @Test
+      fun `will match existing and requested addresses by ordering both by postcode`() {
+        val response: AgencyAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(
+            UpdateAgencyAddressesRequest(
+              addresses = listOf(
+                // supplied in the opposite order to the existing addresses, should still match on postcode
+                UpdateAgencyAddress(premise = "Updated Second", postcode = "BB2 2BB"),
+                UpdateAgencyAddress(premise = "Updated First", postcode = "AA1 1AA"),
+              ),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.addresses).hasSize(2)
+
+        with(agencyLocationAddressRepository.findByIdOrNull(firstAddress.addressId)!!) {
+          assertThat(premise).isEqualTo("Updated First")
+        }
+        with(agencyLocationAddressRepository.findByIdOrNull(secondAddress.addressId)!!) {
+          assertThat(premise).isEqualTo("Updated Second")
+        }
+      }
+    }
+  }
 }
