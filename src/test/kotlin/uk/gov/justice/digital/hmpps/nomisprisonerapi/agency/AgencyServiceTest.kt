@@ -741,4 +741,218 @@ class AgencyServiceTest {
       }
     }
   }
+
+  @Nested
+  @DisplayName("updateAgencyAddresses")
+  inner class UpdateAgencyAddresses {
+    private val addressType = AddressType("BUS", "Business Address")
+    private val city = City("25343", "Sheffield")
+    private val county = County("S.YORKSHIRE", "South Yorkshire")
+    private val country = Country("ENG", "England")
+
+    private fun agencyAddress(agency: AgencyLocation, id: Long, postcode: String? = null, premise: String? = null) = AgencyLocationAddress(
+      agencyLocation = agency,
+      addressType = addressType,
+      postalCode = postcode,
+      premise = premise,
+    ).also { ReflectionTestUtils.setField(it, "addressId", id) }
+
+    @BeforeEach
+    fun setUp() {
+      whenever(addressTypeRepository.findById(AddressType.pk("BUS"))).thenReturn(Optional.of(addressType))
+      whenever(cityRepository.findByDomainAndDescriptionIgnoreCase(City.CITY, "Sheffield")).thenReturn(city)
+      whenever(countyRepository.findByDomainAndDescriptionIgnoreCase(County.COUNTY, "South Yorkshire")).thenReturn(county)
+      whenever(countryRepository.findByDomainAndDescriptionIgnoreCase(Country.COUNTRY, "England")).thenReturn(country)
+    }
+
+    @Test
+    fun `will throw not found if agency does not exist`() {
+      whenever(agencyLocationRepository.findById("ZZI")).thenReturn(Optional.empty())
+
+      assertThatThrownBy {
+        agencyService.updateAgencyAddresses("ZZI", UpdateAgencyAddressesRequest(listOf(UpdateAgencyAddress(premise = "22"))))
+      }.isInstanceOf(NotFoundException::class.java)
+    }
+
+    @Nested
+    @DisplayName("happy path - single existing address replaced with a single new one")
+    inner class HappyPath {
+      private val agency = AgencyLocation(id = "WWI", description = "Wandsworth")
+      private val existingAddress = agencyAddress(agency, 1, postcode = "S10 1AA", premise = "Old Premise")
+
+      @BeforeEach
+      fun setUp() {
+        agency.addresses.add(existingAddress)
+        whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
+      }
+
+      @Test
+      fun `will update the existing address in place preserving its id, looking up reference data by description`() {
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(
+              UpdateAgencyAddress(
+                premise = "New Premise",
+                street = "Fulwood Road",
+                postcode = "S10 2HH",
+                city = "Sheffield",
+                county = "South Yorkshire",
+                country = "England",
+              ),
+            ),
+          ),
+        )
+
+        assertThat(response.addresses).hasSize(1)
+        assertThat(response.addresses[0].id).isEqualTo(1)
+        assertThat(response.addresses[0].premise).isEqualTo("New Premise")
+        assertThat(existingAddress.premise).isEqualTo("New Premise")
+        assertThat(existingAddress.street).isEqualTo("Fulwood Road")
+        assertThat(existingAddress.postalCode).isEqualTo("S10 2HH")
+        assertThat(existingAddress.city).isEqualTo(city)
+        assertThat(existingAddress.county).isEqualTo(county)
+        assertThat(existingAddress.country).isEqualTo(country)
+        // address type is not part of the update request and is left unchanged
+        assertThat(existingAddress.addressType).isEqualTo(addressType)
+      }
+
+      @Test
+      fun `will match the single existing and requested address directly even when postcodes differ`() {
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(listOf(UpdateAgencyAddress(premise = "New Premise", postcode = "DIFFERENT"))),
+        )
+
+        assertThat(response.addresses).hasSize(1)
+        assertThat(response.addresses[0].id).isEqualTo(1)
+        assertThat(existingAddress.premise).isEqualTo("New Premise")
+      }
+
+      @Test
+      fun `will raise telemetry event with the address id`() {
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(listOf(UpdateAgencyAddress(premise = "New Premise"))),
+        )
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.address.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", "WWI")
+            assertThat(it).containsEntry("addressIds", response.addresses[0].id.toString())
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will set city to null and record a lookup failure in telemetry if city does not exist`() {
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(listOf(UpdateAgencyAddress(city = "Rubbish"))),
+        )
+
+        assertThat(existingAddress.city).isNull()
+        verify(telemetryClient).trackEvent(
+          eq("agency.address.updated"),
+          check {
+            assertThat(it).containsEntry("addressIds", response.addresses[0].id.toString())
+            assertThat(it).containsEntry("cityLookupFailure", "Rubbish")
+          },
+          isNull(),
+        )
+      }
+    }
+
+    @Nested
+    @DisplayName("when there is more than one address")
+    inner class MultipleAddresses {
+      private val agency = AgencyLocation(id = "WWI", description = "Wandsworth")
+      private val existingAddress1 = agencyAddress(agency, 1, postcode = "AA1 1AA", premise = "First")
+      private val existingAddress2 = agencyAddress(agency, 2, postcode = "BB2 2BB", premise = "Second")
+
+      @BeforeEach
+      fun setUp() {
+        agency.addresses.add(existingAddress1)
+        agency.addresses.add(existingAddress2)
+        whenever(agencyLocationRepository.findById("WWI")).thenReturn(Optional.of(agency))
+      }
+
+      @Test
+      fun `will match existing and requested addresses by ordering both by postcode`() {
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(
+              // supplied in the opposite order to the existing addresses, should still match on postcode
+              UpdateAgencyAddress(premise = "Updated Second", postcode = "BB2 2BB"),
+              UpdateAgencyAddress(premise = "Updated First", postcode = "AA1 1AA"),
+            ),
+          ),
+        )
+
+        assertThat(response.addresses).hasSize(2)
+        assertThat(existingAddress1.premise).isEqualTo("Updated First")
+        assertThat(existingAddress2.premise).isEqualTo("Updated Second")
+      }
+
+      @Test
+      fun `will remove all addresses when requesting an empty list`() {
+        val response = agencyService.updateAgencyAddresses("WWI", UpdateAgencyAddressesRequest(emptyList()))
+
+        assertThat(response.addresses).isEmpty()
+        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddress1, existingAddress2))
+      }
+
+      @Test
+      fun `will create a new address, defaulting the address type to BUS, when requesting more addresses than exist`() {
+        whenever(agencyLocationAddressRepository.save(any<AgencyLocationAddress>())).thenAnswer {
+          (it.arguments[0] as AgencyLocationAddress).also { address -> ReflectionTestUtils.setField(address, "addressId", 3L) }
+        }
+
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(
+              UpdateAgencyAddress(premise = "First", postcode = "AA1 1AA"),
+              UpdateAgencyAddress(premise = "Second", postcode = "BB2 2BB"),
+              UpdateAgencyAddress(premise = "Third", postcode = "ZZ9 9ZZ"),
+            ),
+          ),
+        )
+
+        assertThat(response.addresses).hasSize(3)
+        verify(agencyLocationAddressRepository).save(
+          check<AgencyLocationAddress> {
+            assertThat(it.premise).isEqualTo("Third")
+            assertThat(it.addressType).isEqualTo(addressType)
+          },
+        )
+      }
+
+      @Test
+      fun `will record each address's lookup failure separately in telemetry`() {
+        val response = agencyService.updateAgencyAddresses(
+          "WWI",
+          UpdateAgencyAddressesRequest(
+            listOf(
+              UpdateAgencyAddress(premise = "First", postcode = "AA1 1AA", city = "Rubbish 1"),
+              UpdateAgencyAddress(premise = "Second", postcode = "BB2 2BB", city = "Rubbish 2"),
+            ),
+          ),
+        )
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.address.updated"),
+          check {
+            assertThat(it).containsEntry("addressIds", "${response.addresses[0].id},${response.addresses[1].id}")
+            assertThat(it).containsEntry("cityLookupFailure[0]", "Rubbish 1")
+            assertThat(it).containsEntry("cityLookupFailure[1]", "Rubbish 2")
+          },
+          isNull(),
+        )
+      }
+    }
+  }
 }
