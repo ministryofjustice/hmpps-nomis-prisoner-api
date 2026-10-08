@@ -32,7 +32,7 @@ data class BookingPrisonerLocations(
   val bookingBeginTime: LocalDateTime,
 
   @Schema(description = "The booking end date ")
-  val bookingEndTime: LocalDateTime?
+  val bookingEndTime: LocalDateTime?,
 
   @Schema(description = "Movements related to the booking")
   val movements: List<PrisonerLocationMovement>,
@@ -59,7 +59,7 @@ data class PrisonerLocationMovement(
   val movementReason: CodeDescription,
 
   @Schema(description = "From location")
-  val from: MovementLocation?
+  val from: MovementLocation?,
 
   @Schema(description = "To location")
   val to: MovementLocation?,
