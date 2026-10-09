@@ -1,18 +1,18 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.prisonerlocation.offender
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
 import java.time.LocalDateTime
 
-@Schema(description = "Offender prisoner locations, with bookings and movements")
-data class OffenderPrisonerLocationsResponse(
+@Schema(description = "Offender person locations, with bookings and movements")
+data class OffenderPersonLocationsResponse(
   @Schema(description = "List of bookings with their external movements")
-  val bookings: List<BookingPrisonerLocations>,
+  val bookings: List<BookingPersonLocations>,
 )
 
-@Schema(description = "Booking prisoner locations")
-data class BookingPrisonerLocations(
+@Schema(description = "Booking person locations")
+data class BookingPersonLocations(
   @Schema(description = "Booking ID")
   val bookingId: Long,
 
@@ -35,13 +35,13 @@ data class BookingPrisonerLocations(
   val bookingEndTime: LocalDateTime?,
 
   @Schema(description = "Movements related to the booking")
-  val movements: List<PrisonerLocationMovement>,
+  val movements: List<PersonLocationMovement>,
 
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )
 
-data class PrisonerLocationMovement(
+data class PersonLocationMovement(
 
   @Schema(description = "Movement sequence")
   val sequence: Int,

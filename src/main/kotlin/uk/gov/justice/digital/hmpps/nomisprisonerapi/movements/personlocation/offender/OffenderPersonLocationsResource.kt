@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.prisonerlocation.offender
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -17,17 +17,17 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 @RestController
 @Validated
 @RequestMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
-class OffenderPrisonerLocationsResource(
-  private val service: OffenderPrisonerLocationsService,
+class OffenderPersonLocationsResource(
+  private val service: OffenderPersonLocationsService,
 ) {
-  @GetMapping("/movements/{offenderNo}/prisoner-locations")
+  @GetMapping("/movements/{offenderNo}/person-locations")
   @Operation(
     summary = "Get bookings and movements for an offender",
-    description = "Get bookings and movements for an offender. This is used to migrate prisoner locations to DPS and for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Get bookings and movements for an offender. This is used to migrate person locations to DPS and for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Prisoner locations returned",
+        description = "Person locations returned",
       ),
       ApiResponse(
         responseCode = "401",
@@ -52,7 +52,7 @@ class OffenderPrisonerLocationsResource(
       ),
     ],
   )
-  fun getOffenderPrisonerLocations(
+  fun getOffenderPersonLocations(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
-  ): OffenderPrisonerLocationsResponse? = service.getOffenderPrisonerLocations(offenderNo)
+  ): OffenderPersonLocationsResponse? = service.getOffenderPersonLocations(offenderNo)
 }
