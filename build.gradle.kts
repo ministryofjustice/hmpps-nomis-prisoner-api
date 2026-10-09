@@ -1,12 +1,12 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.11"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.12"
   kotlin("plugin.spring") version "2.4.20"
   kotlin("plugin.jpa") version "2.4.20"
   idea
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.2")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.3")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("org.springframework.boot:spring-boot-starter-flyway")
@@ -14,15 +14,15 @@ dependencies {
 
   implementation("org.flywaydb:flyway-core")
   implementation("org.hibernate.orm:hibernate-community-dialects")
-  implementation("com.google.guava:guava:33.7.1-jre")
+  implementation("com.google.guava:guava:33.7.2-jre")
 
   runtimeOnly("com.zaxxer:HikariCP")
-  implementation("com.h2database:h2:2.5.250")
+  implementation("com.h2database:h2:2.5.252")
   // Ensure that the oracle version doesn't automatically get updated
   val oracleVersion = ":23.26.1.0.0"
   runtimeOnly("com.oracle.database.jdbc:ojdbc11$oracleVersion")
 
-  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.2")
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.3")
   testImplementation("org.springframework.boot:spring-boot-test-autoconfigure")
   testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
