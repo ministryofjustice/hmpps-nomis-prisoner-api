@@ -270,7 +270,7 @@ class AgencyServiceTest {
         assertThat(response.emailAddresses[0].id).isEqualTo(1)
         assertThat(response.emailAddresses[0].emailAddress).isEqualTo("updated@justice.gov.uk")
 
-        verify(agencyLocationInternetAddressRepository).deleteAll(listOf(existingEmail2))
+        assertThat(agency.emailAddresses).containsExactly(existingEmail1)
         verify(agencyLocationInternetAddressRepository, never()).save(any<AgencyLocationInternetAddress>())
       }
 
@@ -279,7 +279,7 @@ class AgencyServiceTest {
         val response = agencyService.updateAgencyEmailAddresses("WWI", UpdateAgencyEmailAddressesRequest(emptyList()))
 
         assertThat(response.emailAddresses).isEmpty()
-        verify(agencyLocationInternetAddressRepository).deleteAll(listOf(existingEmail1, existingEmail2))
+        assertThat(agency.emailAddresses).isEmpty()
         verify(telemetryClient).trackEvent(
           eq("agency.email.updated"),
           check {
@@ -301,7 +301,7 @@ class AgencyServiceTest {
         assertThat(response.emailAddresses[0].id).isEqualTo(1)
         assertThat(response.emailAddresses[0].emailAddress).isEqualTo("one@justice.gov.uk")
 
-        verify(agencyLocationInternetAddressRepository).deleteAll(listOf(existingEmail2))
+        assertThat(agency.emailAddresses).containsExactly(existingEmail1)
         verify(agencyLocationInternetAddressRepository, never()).save(any<AgencyLocationInternetAddress>())
         verify(telemetryClient).trackEvent(
           eq("agency.email.updated"),
@@ -716,7 +716,7 @@ class AgencyServiceTest {
         val response = agencyService.updateAgencyPhoneNumbers("WWI", UpdateAgencyPhoneNumbersRequest(emptyList()))
 
         assertThat(response.phoneNumbers).isEmpty()
-        verify(agencyLocationPhoneRepository).deleteAll(listOf(existingPhone1, existingPhone2))
+        assertThat(agency.phones).isEmpty()
         verify(telemetryClient).trackEvent(
           eq("agency.phone.updated"),
           check {
@@ -736,8 +736,7 @@ class AgencyServiceTest {
         assertThat(response.phoneNumbers).hasSize(1)
         assertThat(response.phoneNumbers[0].id).isEqualTo(1)
         assertThat(response.phoneNumbers[0].number).isEqualTo("0114 111 111")
-        verify(agencyLocationPhoneRepository, never()).deleteAll(listOf(existingPhone1))
-        verify(agencyLocationPhoneRepository).deleteAll(listOf(existingPhone2))
+        assertThat(agency.phones).containsExactly(existingPhone1)
       }
     }
   }
@@ -912,7 +911,7 @@ class AgencyServiceTest {
         assertThat(response.addresses).hasSize(1)
         assertThat(response.addresses[0].id).isEqualTo(existingAddress2.addressId)
         assertThat(existingAddress2.premise).isEqualTo("Updated Second")
-        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddress1))
+        assertThat(agency.addresses).containsExactly(existingAddress2)
       }
 
       @Test
@@ -920,7 +919,7 @@ class AgencyServiceTest {
         val response = agencyService.updateAgencyAddresses("WWI", UpdateAgencyAddressesRequest(emptyList()))
 
         assertThat(response.addresses).isEmpty()
-        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddress1, existingAddress2))
+        assertThat(agency.addresses).isEmpty()
       }
 
       @Test
@@ -979,7 +978,7 @@ class AgencyServiceTest {
             assertThat(it.premise).isEqualTo("New")
           },
         )
-        verify(agencyLocationAddressRepository, never()).deleteAll(any())
+        assertThat(agency.addresses).containsExactlyInAnyOrder(existingAddress1, existingAddress2)
       }
 
       @Test
@@ -1000,7 +999,7 @@ class AgencyServiceTest {
         // existingAddress1 (id 1) was created before existingAddress3 (id 3), so is matched first
         assertThat(existingAddress1.premise).isEqualTo("Updated first duplicate")
         assertThat(existingAddress3.premise).isEqualTo("Updated second duplicate")
-        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddress2))
+        assertThat(agency.addresses).containsExactlyInAnyOrder(existingAddress1, existingAddress3)
       }
 
       @Test
@@ -1028,7 +1027,7 @@ class AgencyServiceTest {
             assertThat(it.premise).isEqualTo("New, no postcode")
           },
         )
-        verify(agencyLocationAddressRepository).deleteAll(listOf(existingAddressWithNullPostcode))
+        assertThat(agency.addresses).containsExactlyInAnyOrder(existingAddress1, existingAddress2)
       }
 
       @Test

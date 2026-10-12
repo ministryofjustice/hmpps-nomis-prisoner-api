@@ -158,8 +158,7 @@ class AgencyService(
     val lookupFailures = mutableMapOf<String, String>()
     val indexKeySuffix = if (requestedAddresses.size > 1) "[%d]" else ""
 
-    // the common case is a single existing address being replaced with a single new one - there is no id in the
-    // request to correlate the two, but since there is only one of each they can only mean each other
+    // the common case is a single existing address being replaced with a single new one
     val updatedAddresses = if (
       existingAddresses.size == 1 &&
       requestedAddresses.size == 1 &&
@@ -169,13 +168,9 @@ class AgencyService(
       listOf(updateAddress(existingAddresses[0], requestedAddresses[0], lookupFailures, indexKeySuffix.format(0)))
     } else {
       // with more than one address there is still no id to correlate by, so existing and requested addresses are
-      // instead matched up explicitly by postcode. Existing addresses are only available to be matched once each;
+      // instead matched up explicitly by postcode.
       // where more than one existing or requested address shares the same postcode they are matched in the order
-      // the existing addresses were created (by id). A null (or blank) postcode is never treated as a match, even
-      // against another null postcode, since it carries no identifying information - matching it would risk
-      // silently reassigning the identity (and id) of an unrelated address. So: existing addresses with a null
-      // postcode that are not otherwise referenced are removed, and requested addresses with a null postcode
-      // always result in a new address being created
+      // the existing addresses were created (by id).
       val unmatchedExistingByPostcode = existingAddresses
         .filterNot { it.postalCode.isNullOrBlank() }
         .sortedBy { it.addressId }
@@ -197,9 +192,7 @@ class AgencyService(
       }
 
       val addressesToRemove = existingAddresses.filterNot { it.addressId in matchedExistingIds }
-      if (addressesToRemove.isNotEmpty()) {
-        agencyLocationAddressRepository.deleteAll(addressesToRemove)
-      }
+      agency.addresses.removeAll(addressesToRemove)
 
       result
     }
@@ -266,9 +259,8 @@ class AgencyService(
     }
 
     if (existingEmailAddresses.size > requestedEmailAddresses.size) {
-      agencyLocationInternetAddressRepository.deleteAll(
-        existingEmailAddresses.subList(requestedEmailAddresses.size, existingEmailAddresses.size),
-      )
+      val toDelete = existingEmailAddresses.subList(requestedEmailAddresses.size, existingEmailAddresses.size)
+      agency.emailAddresses.removeAll(toDelete)
     }
 
     telemetryClient.trackEvent(
@@ -317,9 +309,8 @@ class AgencyService(
     }
 
     if (existingPhoneNumbers.size > requestedPhoneNumbers.size) {
-      agencyLocationPhoneRepository.deleteAll(
-        existingPhoneNumbers.subList(requestedPhoneNumbers.size, existingPhoneNumbers.size),
-      )
+      val toDelete = existingPhoneNumbers.subList(requestedPhoneNumbers.size, existingPhoneNumbers.size)
+      agency.phones.removeAll(toDelete)
     }
 
     telemetryClient.trackEvent(
