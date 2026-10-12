@@ -21,7 +21,7 @@ import org.hibernate.type.YesNoConverter
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType.Companion.PRISON_TYPE
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.helper.EntityOpen
 import java.time.LocalDate
-import java.util.*
+import java.util.Objects
 
 @Entity
 @Table(name = "AGENCY_LOCATIONS")
@@ -63,15 +63,15 @@ class AgencyLocation(
   @Column(name = "DEACTIVATION_DATE")
   var deactivationDate: LocalDate? = null,
 
-  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
+  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${AgencyLocationAddress.ADDR_TYPE}'")
   val addresses: MutableList<AgencyLocationAddress> = mutableListOf(),
 
-  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
+  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${AgencyLocationPhone.PHONE_TYPE}'")
   val phones: MutableList<AgencyLocationPhone> = mutableListOf(),
 
-  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], fetch = LAZY)
+  @OneToMany(mappedBy = "agencyLocation", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = LAZY)
   @SQLRestriction("OWNER_CLASS = '${AgencyLocationInternetAddress.TYPE}'")
   val emailAddresses: MutableList<AgencyLocationInternetAddress> = mutableListOf(),
 
