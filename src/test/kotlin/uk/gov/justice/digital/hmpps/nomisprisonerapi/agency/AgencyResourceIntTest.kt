@@ -1179,16 +1179,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(response.emailAddresses[0].id).isEqualTo(existingEmail.internetAddressId)
         assertThat(response.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
 
-        with(agencyLocationInternetAddressRepository.findByIdOrNull(existingEmail.internetAddressId)!!) {
-          assertThat(internetAddress).isEqualTo("new@justice.gov.uk")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(emailAddresses).hasSize(1)
+            assertThat(emailAddresses[0].internetAddressId).isEqualTo(existingEmail.internetAddressId)
+            assertThat(emailAddresses[0].internetAddress).isEqualTo("new@justice.gov.uk")
+          }
         }
-
-        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agency.emailAddresses).hasSize(1)
-        assertThat(agency.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
 
         verify(telemetryClient).trackEvent(
           eq("agency.email.updated"),
@@ -1230,17 +1227,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(response.emailAddresses[0].id).isEqualTo(firstEmail.internetAddressId)
         assertThat(response.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
 
-        with(agencyLocationInternetAddressRepository.findByIdOrNull(firstEmail.internetAddressId)!!) {
-          assertThat(internetAddress).isEqualTo("new@justice.gov.uk")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(emailAddresses).hasSize(1)
+            assertThat(emailAddresses[0].internetAddressId).isEqualTo(firstEmail.internetAddressId)
+            assertThat(emailAddresses[0].internetAddress).isEqualTo("new@justice.gov.uk")
+          }
         }
-        assertThat(agencyLocationInternetAddressRepository.findByIdOrNull(secondEmail.internetAddressId)).isNull()
-
-        val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agencyResponse.emailAddresses).hasSize(1)
-        assertThat(agencyResponse.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
 
         verify(telemetryClient).trackEvent(
           eq("agency.email.updated"),
@@ -1264,14 +1257,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.emailAddresses).isEmpty()
 
-        assertThat(agencyLocationInternetAddressRepository.findByIdOrNull(firstEmail.internetAddressId)).isNull()
-        assertThat(agencyLocationInternetAddressRepository.findByIdOrNull(secondEmail.internetAddressId)).isNull()
-
-        val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agencyResponse.emailAddresses).isEmpty()
+        nomisDataBuilder.runInTransaction {
+          assertThat(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!.emailAddresses).isEmpty()
+        }
 
         verify(telemetryClient).trackEvent(
           eq("agency.email.updated"),
@@ -1340,12 +1328,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           assertThat(phoneType.code).isEqualTo("HOME")
         }
 
-        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agency.phones).hasSize(1)
-        assertThat(agency.phones[0].number).isEqualTo("0114 999 999")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(phones).hasSize(1)
+            assertThat(phones[0].phoneId).isEqualTo(existingPhone.phoneId)
+            assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
+          }
+        }
 
         verify(telemetryClient).trackEvent(
           eq("agency.phone.updated"),
@@ -1396,14 +1385,14 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           assertThat(extNo).isEqualTo("x432")
           assertThat(phoneType.code).isEqualTo("HOME")
         }
-        assertThat(agencyLocationPhoneRepository.findByIdOrNull(secondPhone.phoneId)).isNull()
 
-        val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agencyResponse.phones).hasSize(1)
-        assertThat(agencyResponse.phones[0].number).isEqualTo("0114 999 999")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(phones).hasSize(1)
+            assertThat(phones[0].phoneId).isEqualTo(firstPhone.phoneId)
+            assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
+          }
+        }
 
         verify(telemetryClient).trackEvent(
           eq("agency.phone.updated"),
@@ -1427,14 +1416,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.phoneNumbers).isEmpty()
 
-        assertThat(agencyLocationPhoneRepository.findByIdOrNull(firstPhone.phoneId)).isNull()
-        assertThat(agencyLocationPhoneRepository.findByIdOrNull(secondPhone.phoneId)).isNull()
-
-        val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agencyResponse.phones).isEmpty()
+        nomisDataBuilder.runInTransaction {
+          assertThat(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!.phones).isEmpty()
+        }
 
         verify(telemetryClient).trackEvent(
           eq("agency.phone.updated"),
@@ -1605,11 +1589,12 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.addresses).hasSize(2)
 
-        with(agencyLocationAddressRepository.findByIdOrNull(firstAddress.addressId)!!) {
-          assertThat(premise).isEqualTo("Updated First")
-        }
-        with(agencyLocationAddressRepository.findByIdOrNull(secondAddress.addressId)!!) {
-          assertThat(premise).isEqualTo("Updated Second")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(addresses).hasSize(2)
+            assertThat(addresses.find { it.addressId == firstAddress.addressId }?.premise).isEqualTo("Updated First")
+            assertThat(addresses.find { it.addressId == secondAddress.addressId }?.premise).isEqualTo("Updated Second")
+          }
         }
       }
 
@@ -1631,17 +1616,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(response.addresses[0].id).isEqualTo(secondAddress.addressId)
         assertThat(response.addresses[0].premise).isEqualTo("Updated Second")
 
-        with(agencyLocationAddressRepository.findByIdOrNull(secondAddress.addressId)!!) {
-          assertThat(premise).isEqualTo("Updated Second")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(addresses).hasSize(1)
+            assertThat(addresses[0].addressId).isEqualTo(secondAddress.addressId)
+            assertThat(addresses[0].premise).isEqualTo("Updated Second")
+          }
         }
-        assertThat(agencyLocationAddressRepository.findByIdOrNull(firstAddress.addressId)).isNull()
-
-        val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agencyResponse.addresses).hasSize(1)
-        assertThat(agencyResponse.addresses[0].premise).isEqualTo("Updated Second")
 
         verify(telemetryClient).trackEvent(
           eq("agency.address.updated"),
@@ -1665,14 +1646,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.addresses).isEmpty()
 
-        assertThat(agencyLocationAddressRepository.findByIdOrNull(firstAddress.addressId)).isNull()
-        assertThat(agencyLocationAddressRepository.findByIdOrNull(secondAddress.addressId)).isNull()
-
-        val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agencyResponse.addresses).isEmpty()
+        nomisDataBuilder.runInTransaction {
+          assertThat(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!.addresses).isEmpty()
+        }
 
         verify(telemetryClient).trackEvent(
           eq("agency.address.updated"),
