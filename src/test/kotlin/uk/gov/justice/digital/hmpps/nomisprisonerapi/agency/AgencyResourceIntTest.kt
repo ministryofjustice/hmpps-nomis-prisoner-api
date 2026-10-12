@@ -1090,28 +1090,25 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class UpdateAgencyEmailAddresses {
     private lateinit var existingAgency: AgencyLocation
-    private lateinit var existingEmail: AgencyLocationInternetAddress
-
-    @BeforeEach
-    fun setUp() {
-      nomisDataBuilder.build {
-        existingAgency = agencyLocation(
-          agencyLocationId = "XXI",
-          description = "HMP XXI",
-          type = "INST",
-        ) {
-          existingEmail = email(address = "old@justice.gov.uk")
-        }
-      }
-    }
 
     @AfterEach
     fun tearDown() {
-      agencyLocationRepository.deleteById(existingAgency.id)
+      if (::existingAgency.isInitialized) {
+        agencyLocationRepository.deleteById(existingAgency.id)
+      }
     }
 
     @Nested
     inner class Security {
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
+            email(address = "old@justice.gov.uk")
+          }
+        }
+      }
+
       @Test
       fun `access forbidden when no role`() {
         webTestClient.put().uri("/agency/${existingAgency.id}/emails")
@@ -1152,7 +1149,22 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     }
 
     @Nested
-    inner class HappyPath {
+    inner class HappyPathSingleEmail {
+      private lateinit var existingEmail: AgencyLocationInternetAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(
+            agencyLocationId = "XXI",
+            description = "HMP XXI",
+            type = "INST",
+          ) {
+            existingEmail = email(address = "old@justice.gov.uk")
+          }
+        }
+      }
+
       @Test
       fun `will replace the single existing email address with the single new one`() {
         val response: AgencyEmailAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/emails")
@@ -1167,16 +1179,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(response.emailAddresses[0].id).isEqualTo(existingEmail.internetAddressId)
         assertThat(response.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
 
-        with(agencyLocationInternetAddressRepository.findByIdOrNull(existingEmail.internetAddressId)!!) {
-          assertThat(internetAddress).isEqualTo("new@justice.gov.uk")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(emailAddresses).hasSize(1)
+            assertThat(emailAddresses[0].internetAddressId).isEqualTo(existingEmail.internetAddressId)
+            assertThat(emailAddresses[0].internetAddress).isEqualTo("new@justice.gov.uk")
+          }
         }
-
-        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agency.emailAddresses).hasSize(1)
-        assertThat(agency.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
 
         verify(telemetryClient).trackEvent(
           eq("agency.email.updated"),
@@ -1187,55 +1196,79 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           isNull(),
         )
       }
+    }
 
-      @Test
-      fun `will update the first existing email address in place and remove the second when two exist and one is requested`() {
-        lateinit var agency: AgencyLocation
-        lateinit var firstEmail: AgencyLocationInternetAddress
-        lateinit var secondEmail: AgencyLocationInternetAddress
+    @Nested
+    inner class HappyPathMultipleEmails {
+      private lateinit var firstEmail: AgencyLocationInternetAddress
+      private lateinit var secondEmail: AgencyLocationInternetAddress
+
+      @BeforeEach
+      fun setUp() {
         nomisDataBuilder.build {
-          agency = agencyLocation(agencyLocationId = "XXJ", description = "HMP XXJ", type = "INST") {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
             firstEmail = email(address = "old1@justice.gov.uk")
             secondEmail = email(address = "old2@justice.gov.uk")
           }
         }
+      }
 
-        try {
-          val response: AgencyEmailAddressesResponse = webTestClient.put().uri("/agency/${agency.id}/emails")
-            .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
-            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBodyResponse()
+      @Test
+      fun `will update the first existing email address in place and remove the second when two exist and one is requested`() {
+        val response: AgencyEmailAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/emails")
+          .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = listOf("new@justice.gov.uk")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
 
-          assertThat(response.emailAddresses).hasSize(1)
-          assertThat(response.emailAddresses[0].id).isEqualTo(firstEmail.internetAddressId)
-          assertThat(response.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
+        assertThat(response.emailAddresses).hasSize(1)
+        assertThat(response.emailAddresses[0].id).isEqualTo(firstEmail.internetAddressId)
+        assertThat(response.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
 
-          with(agencyLocationInternetAddressRepository.findByIdOrNull(firstEmail.internetAddressId)!!) {
-            assertThat(internetAddress).isEqualTo("new@justice.gov.uk")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(emailAddresses).hasSize(1)
+            assertThat(emailAddresses[0].internetAddressId).isEqualTo(firstEmail.internetAddressId)
+            assertThat(emailAddresses[0].internetAddress).isEqualTo("new@justice.gov.uk")
           }
-          assertThat(agencyLocationInternetAddressRepository.findByIdOrNull(secondEmail.internetAddressId)).isNull()
-
-          val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${agency.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectBodyResponse()
-          assertThat(agencyResponse.emailAddresses).hasSize(1)
-          assertThat(agencyResponse.emailAddresses[0].emailAddress).isEqualTo("new@justice.gov.uk")
-
-          verify(telemetryClient).trackEvent(
-            eq("agency.email.updated"),
-            check {
-              assertThat(it).containsEntry("agencyId", agency.id)
-              assertThat(it).containsEntry("emailAddressIds", firstEmail.internetAddressId.toString())
-            },
-            isNull(),
-          )
-        } finally {
-          agencyLocationRepository.deleteById(agency.id)
         }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.email.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("emailAddressIds", firstEmail.internetAddressId.toString())
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will remove both existing email addresses when none are requested`() {
+        val response: AgencyEmailAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/emails")
+          .bodyValue(UpdateAgencyEmailAddressesRequest(emailAddresses = emptyList()))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.emailAddresses).isEmpty()
+
+        nomisDataBuilder.runInTransaction {
+          assertThat(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!.emailAddresses).isEmpty()
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.email.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("emailAddressIds", "")
+          },
+          isNull(),
+        )
       }
     }
   }
@@ -1244,28 +1277,31 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   @Nested
   inner class UpdateAgencyPhoneNumbers {
     private lateinit var existingAgency: AgencyLocation
-    private lateinit var existingPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
-
-    @BeforeEach
-    fun setUp() {
-      nomisDataBuilder.build {
-        existingAgency = agencyLocation(
-          agencyLocationId = "XXI",
-          description = "HMP XXI",
-          type = "INST",
-        ) {
-          existingPhone = phone(phoneType = "BUS", phoneNo = "0114 555 555")
-        }
-      }
-    }
 
     @AfterEach
     fun tearDown() {
-      agencyLocationRepository.deleteById(existingAgency.id)
+      if (::existingAgency.isInitialized) {
+        agencyLocationRepository.deleteById(existingAgency.id)
+      }
     }
 
     @Nested
-    inner class HappyPath {
+    inner class HappyPathSinglePhone {
+      private lateinit var existingPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(
+            agencyLocationId = "XXI",
+            description = "HMP XXI",
+            type = "INST",
+          ) {
+            existingPhone = phone(phoneType = "BUS", phoneNo = "0114 555 555")
+          }
+        }
+      }
+
       @Test
       fun `will replace the single existing phone number with the single new one`() {
         val response: AgencyPhoneNumbersResponse = webTestClient.put().uri("/agency/${existingAgency.id}/phones")
@@ -1292,12 +1328,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           assertThat(phoneType.code).isEqualTo("HOME")
         }
 
-        val agency: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agency.phones).hasSize(1)
-        assertThat(agency.phones[0].number).isEqualTo("0114 999 999")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(phones).hasSize(1)
+            assertThat(phones[0].phoneId).isEqualTo(existingPhone.phoneId)
+            assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
+          }
+        }
 
         verify(telemetryClient).trackEvent(
           eq("agency.phone.updated"),
@@ -1308,61 +1345,89 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           isNull(),
         )
       }
+    }
 
-      @Test
-      fun `will update the first existing phone number in place and remove the second when two exist and one is requested`() {
-        lateinit var agency: AgencyLocation
-        lateinit var firstPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
-        lateinit var secondPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+    @Nested
+    inner class HappyPathMultiplePhones {
+      private lateinit var firstPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+      private lateinit var secondPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+
+      @BeforeEach
+      fun setUp() {
         nomisDataBuilder.build {
-          agency = agencyLocation(agencyLocationId = "XXJ", description = "HMP XXJ", type = "INST") {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
             firstPhone = phone(phoneType = "BUS", phoneNo = "0114 111 111")
             secondPhone = phone(phoneType = "BUS", phoneNo = "0114 222 222")
           }
         }
+      }
 
-        try {
-          val response: AgencyPhoneNumbersResponse = webTestClient.put().uri("/agency/${agency.id}/phones")
-            .bodyValue(
-              UpdateAgencyPhoneNumbersRequest(
-                phoneNumbers = listOf(UpdateAgencyPhoneNumber(number = "0114 999 999", extension = "x432", typeCode = "HOME")),
-              ),
-            )
-            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectStatus()
-            .isOk
-            .expectBodyResponse()
-
-          assertThat(response.phoneNumbers).hasSize(1)
-          assertThat(response.phoneNumbers[0].id).isEqualTo(firstPhone.phoneId)
-          assertThat(response.phoneNumbers[0].number).isEqualTo("0114 999 999")
-
-          with(agencyLocationPhoneRepository.findByIdOrNull(firstPhone.phoneId)!!) {
-            assertThat(phoneNo).isEqualTo("0114 999 999")
-            assertThat(extNo).isEqualTo("x432")
-            assertThat(phoneType.code).isEqualTo("HOME")
-          }
-          assertThat(agencyLocationPhoneRepository.findByIdOrNull(secondPhone.phoneId)).isNull()
-
-          val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${agency.id}")
-            .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-            .exchange()
-            .expectBodyResponse()
-          assertThat(agencyResponse.phones).hasSize(1)
-          assertThat(agencyResponse.phones[0].number).isEqualTo("0114 999 999")
-
-          verify(telemetryClient).trackEvent(
-            eq("agency.phone.updated"),
-            check {
-              assertThat(it).containsEntry("agencyId", agency.id)
-              assertThat(it).containsEntry("phoneIds", firstPhone.phoneId.toString())
-            },
-            isNull(),
+      @Test
+      fun `will update the first existing phone number in place and remove the second when two exist and one is requested`() {
+        val response: AgencyPhoneNumbersResponse = webTestClient.put().uri("/agency/${existingAgency.id}/phones")
+          .bodyValue(
+            UpdateAgencyPhoneNumbersRequest(
+              phoneNumbers = listOf(UpdateAgencyPhoneNumber(number = "0114 999 999", extension = "x432", typeCode = "HOME")),
+            ),
           )
-        } finally {
-          agencyLocationRepository.deleteById(agency.id)
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.phoneNumbers).hasSize(1)
+        assertThat(response.phoneNumbers[0].id).isEqualTo(firstPhone.phoneId)
+        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 999 999")
+
+        with(agencyLocationPhoneRepository.findByIdOrNull(firstPhone.phoneId)!!) {
+          assertThat(phoneNo).isEqualTo("0114 999 999")
+          assertThat(extNo).isEqualTo("x432")
+          assertThat(phoneType.code).isEqualTo("HOME")
         }
+
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(phones).hasSize(1)
+            assertThat(phones[0].phoneId).isEqualTo(firstPhone.phoneId)
+            assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
+          }
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.phone.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("phoneIds", firstPhone.phoneId.toString())
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will remove both existing phone numbers when none are requested`() {
+        val response: AgencyPhoneNumbersResponse = webTestClient.put().uri("/agency/${existingAgency.id}/phones")
+          .bodyValue(UpdateAgencyPhoneNumbersRequest(phoneNumbers = emptyList()))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.phoneNumbers).isEmpty()
+
+        nomisDataBuilder.runInTransaction {
+          assertThat(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!.phones).isEmpty()
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.phone.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("phoneIds", "")
+          },
+          isNull(),
+        )
       }
     }
   }
@@ -1524,11 +1589,12 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
         assertThat(response.addresses).hasSize(2)
 
-        with(agencyLocationAddressRepository.findByIdOrNull(firstAddress.addressId)!!) {
-          assertThat(premise).isEqualTo("Updated First")
-        }
-        with(agencyLocationAddressRepository.findByIdOrNull(secondAddress.addressId)!!) {
-          assertThat(premise).isEqualTo("Updated Second")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(addresses).hasSize(2)
+            assertThat(addresses.find { it.addressId == firstAddress.addressId }?.premise).isEqualTo("Updated First")
+            assertThat(addresses.find { it.addressId == secondAddress.addressId }?.premise).isEqualTo("Updated Second")
+          }
         }
       }
 
@@ -1550,23 +1616,45 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(response.addresses[0].id).isEqualTo(secondAddress.addressId)
         assertThat(response.addresses[0].premise).isEqualTo("Updated Second")
 
-        with(agencyLocationAddressRepository.findByIdOrNull(secondAddress.addressId)!!) {
-          assertThat(premise).isEqualTo("Updated Second")
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(addresses).hasSize(1)
+            assertThat(addresses[0].addressId).isEqualTo(secondAddress.addressId)
+            assertThat(addresses[0].premise).isEqualTo("Updated Second")
+          }
         }
-        assertThat(agencyLocationAddressRepository.findByIdOrNull(firstAddress.addressId)).isNull()
-
-        val agencyResponse: AgencyResponse = webTestClient.get().uri("/agency/${existingAgency.id}")
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectBodyResponse()
-        assertThat(agencyResponse.addresses).hasSize(1)
-        assertThat(agencyResponse.addresses[0].premise).isEqualTo("Updated Second")
 
         verify(telemetryClient).trackEvent(
           eq("agency.address.updated"),
           check {
             assertThat(it).containsEntry("agencyId", existingAgency.id)
             assertThat(it).containsEntry("addressIds", secondAddress.addressId.toString())
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will remove both existing addresses when none are requested`() {
+        val response: AgencyAddressesResponse = webTestClient.put().uri("/agency/${existingAgency.id}/addresses")
+          .bodyValue(UpdateAgencyAddressesRequest(addresses = emptyList()))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.addresses).isEmpty()
+
+        nomisDataBuilder.runInTransaction {
+          assertThat(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!.addresses).isEmpty()
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency.address.updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+            assertThat(it).containsEntry("addressIds", "")
           },
           isNull(),
         )
