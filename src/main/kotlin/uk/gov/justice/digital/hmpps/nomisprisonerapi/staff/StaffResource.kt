@@ -321,6 +321,8 @@ data class StaffAccount(
   val caseloads: List<CaseloadResponse>,
   @Schema(description = "Caseloads the user administers")
   val adminCaseloads: List<AdminCaseloadResponse>,
+  @Schema(description = "Caseloads the user is a member of")
+  val memberCaseloads: List<MemberCaseloadResponse>,
   @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,
 )
@@ -357,6 +359,20 @@ data class AdminCaseloadResponse(
   val caseloadId: String,
   @Schema(description = "Whether the caseload is active", example = "true")
   val active: Boolean,
+  @Schema(description = "The expiry date", example = "2023-12-31")
+  val expiryDate: LocalDate?,
+  @Schema(description = "Audit data associated with the user caseload")
+  val audit: NomisAudit,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class MemberCaseloadResponse(
+  @Schema(description = "Caseload id", example = "MDI")
+  val caseloadId: String,
+  @Schema(description = "Whether the caseload is active", example = "true")
+  val active: Boolean,
+  @Schema(description = "The start date", example = "2023-12-31")
+  val startDate: LocalDate,
   @Schema(description = "The expiry date", example = "2023-12-31")
   val expiryDate: LocalDate?,
   @Schema(description = "Audit data associated with the user caseload")

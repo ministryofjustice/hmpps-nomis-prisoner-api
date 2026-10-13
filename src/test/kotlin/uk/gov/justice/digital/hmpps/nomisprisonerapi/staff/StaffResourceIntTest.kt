@@ -79,6 +79,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
               userCaseloadRole(role = role2)
             }
             adminCaseload(caseloadId = "LEI", expiryDate = LocalDate.parse("2028-03-17"))
+            memberCaseload(caseloadId = "MDI", startDate = LocalDate.parse("2022-01-12"), expiryDate = LocalDate.parse("2028-04-12"))
           }
         }
 
@@ -282,6 +283,37 @@ class StaffResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `will return a staff user's account member caseloads`() {
+      val staffDetails = webTestClient.get().uri("/staff/id/${staff1.id}?dpsRolesOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<StaffDetails>()
+        .returnResult()
+        .responseBody!!
+
+      with(staffDetails) {
+        assertThat(id).isEqualTo(staff1.id)
+        assertThat(accounts.size).isEqualTo(2)
+        with(accounts[1]) {
+          assertThat(typeCode).isEqualTo("ADMIN")
+          assertThat(memberCaseloads.size).isEqualTo(1)
+          with(memberCaseloads[0]) {
+            assertThat(caseloadId).isEqualTo("MDI")
+            assertThat(active).isTrue
+            assertThat(startDate).isEqualTo(LocalDate.parse("2022-01-12"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2028-04-12"))
+            assertThat(audit.createDatetime).isNotNull
+            assertThat(audit.createUsername).isEqualTo("SA")
+          }
+          assertThat(lastLoggedIn).isNull()
+          assertThat(audit.createDatetime).isNotNull
+          assertThat(audit.createUsername).isEqualTo("SA")
+        }
+      }
+    }
+
+    @Test
     fun `will return a staff user's details with dps roles only`() {
       webTestClient.get().uri("/staff/id/${staff1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -350,6 +382,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
               userCaseloadRole(role = role2)
             }
             adminCaseload(caseloadId = "LEI", expiryDate = LocalDate.parse("2028-03-17"))
+            memberCaseload(caseloadId = "MDI", startDate = LocalDate.parse("2022-01-12"), expiryDate = LocalDate.parse("2028-04-12"))
           }
         }
 
@@ -561,6 +594,37 @@ class StaffResourceIntTest : IntegrationTestBase() {
             assertThat(caseloadId).isEqualTo("LEI")
             assertThat(active).isTrue
             assertThat(expiryDate).isEqualTo(LocalDate.parse("2028-03-17"))
+            assertThat(audit.createDatetime).isNotNull
+            assertThat(audit.createUsername).isEqualTo("SA")
+          }
+          assertThat(lastLoggedIn).isNull()
+          assertThat(audit.createDatetime).isNotNull
+          assertThat(audit.createUsername).isEqualTo("SA")
+        }
+      }
+    }
+
+    @Test
+    fun `will return a staff user's account member caseloads`() {
+      val staffDetails = webTestClient.get().uri("/staff/id/${staff1.id}?dpsRolesOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<StaffDetails>()
+        .returnResult()
+        .responseBody!!
+
+      with(staffDetails) {
+        assertThat(id).isEqualTo(staff1.id)
+        assertThat(accounts.size).isEqualTo(2)
+        with(accounts[1]) {
+          assertThat(typeCode).isEqualTo("ADMIN")
+          assertThat(memberCaseloads.size).isEqualTo(1)
+          with(memberCaseloads[0]) {
+            assertThat(caseloadId).isEqualTo("MDI")
+            assertThat(active).isTrue
+            assertThat(startDate).isEqualTo(LocalDate.parse("2022-01-12"))
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2028-04-12"))
             assertThat(audit.createDatetime).isNotNull
             assertThat(audit.createUsername).isEqualTo("SA")
           }
