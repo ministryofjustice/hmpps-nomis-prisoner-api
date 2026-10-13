@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserAccountType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserGroupCaseloadAdministrator
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserSourceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
@@ -25,16 +26,25 @@ interface StaffUserAccountDsl {
     startDate: LocalDate = LocalDate.now(),
     dsl: UserCaseloadDsl.() -> Unit = {},
   ): UserCaseload
+
+  @AdminCaseloadDslMarker
+  fun adminCaseload(
+    caseloadId: String,
+    expiryDate: LocalDate? = null,
+    dsl: AdminCaseloadDsl.() -> Unit = {},
+  ): UserGroupCaseloadAdministrator
 }
 
 @Component
 class StaffUserAccountBuilderFactory(
   private val repository: StaffUserAccountBuilderRepository,
   private val userCaseloadBuilderFactory: UserCaseloadBuilderFactory,
+  private val userGroupAdministratorBuilderFactory: AdminCaseloadBuilderFactory,
 ) {
   fun builder(): StaffUserAccountBuilder = StaffUserAccountBuilder(
     repository,
     userCaseloadBuilderFactory,
+    userGroupAdministratorBuilderFactory = userGroupAdministratorBuilderFactory,
   )
 }
 
@@ -50,6 +60,7 @@ class StaffUserAccountBuilderRepository(
 class StaffUserAccountBuilder(
   private val repository: StaffUserAccountBuilderRepository,
   private val userCaseloadBuilderFactory: UserCaseloadBuilderFactory,
+  private val userGroupAdministratorBuilderFactory: AdminCaseloadBuilderFactory,
 ) : StaffUserAccountDsl {
   private lateinit var staffUserAccount: StaffUserAccount
 
@@ -81,6 +92,20 @@ class StaffUserAccountBuilder(
       startDate = startDate,
     )
       .also { staffUserAccount.userCaseloads += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun adminCaseload(
+    caseloadId: String,
+    expiryDate: LocalDate?,
+    dsl: AdminCaseloadDsl.() -> Unit,
+  ): UserGroupCaseloadAdministrator = userGroupAdministratorBuilderFactory.builder().let { builder ->
+    builder.build(
+      username = staffUserAccount.username,
+      caseloadId = caseloadId,
+      expiryDate = expiryDate,
+    )
+      .also { staffUserAccount.adminCaseloads += it }
       .also { builder.apply(dsl) }
   }
 }

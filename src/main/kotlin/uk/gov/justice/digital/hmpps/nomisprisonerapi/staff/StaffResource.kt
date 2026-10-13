@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.NomisAudit
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @RestController
@@ -223,7 +224,7 @@ class StaffResource(private val staffService: StaffService) {
     @PageableDefault(size = 20, sort = ["id"], direction = Sort.Direction.ASC)
     @ParameterObject
     pageRequest: Pageable,
-  ): PagedModel<StaffIdResponse> = PagedModel(staffService.getStaffIds(pageRequest = pageRequest))
+  ): PagedModel<StaffIdResponse> = PagedModel(staffService.getStaffIds(pageRequest))
 
   @GetMapping("/ids/all-from-id")
   @ResponseStatus(HttpStatus.OK)
@@ -318,6 +319,8 @@ data class StaffAccount(
   val activeCaseloadId: String? = null,
   @Schema(description = "Caseloads and roles associated with the user")
   val caseloads: List<CaseloadResponse>,
+  @Schema(description = "Caseloads the user administers")
+  val adminCaseloads: List<AdminCaseloadResponse>,
   @Schema(description = "Audit data associated with the account")
   val audit: NomisAudit,
 )
@@ -345,5 +348,17 @@ data class RoleResponse(
   @Schema(description = "Role Description", example = "Ability to access user details")
   val name: String,
   @Schema(description = "Audit data associated with the user role")
+  val audit: NomisAudit,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AdminCaseloadResponse(
+  @Schema(description = "Caseload id", example = "MDI")
+  val caseloadId: String,
+  @Schema(description = "Whether the caseload is active", example = "true")
+  val active: Boolean,
+  @Schema(description = "The expiry date", example = "2023-12-31")
+  val expiryDate: LocalDate?,
+  @Schema(description = "Audit data associated with the user caseload")
   val audit: NomisAudit,
 )
