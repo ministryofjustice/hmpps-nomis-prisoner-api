@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Role
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Staff
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RoleRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 class StaffResourceIntTest : IntegrationTestBase() {
@@ -77,6 +78,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
               userCaseloadRole(role = role1)
               userCaseloadRole(role = role2)
             }
+            adminCaseload(caseloadId = "LEI", expiryDate = LocalDate.parse("2028-03-17"))
           }
         }
 
@@ -250,6 +252,36 @@ class StaffResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `will return a staff user's account administration caseloads`() {
+      val staffDetails = webTestClient.get().uri("/staff/id/${staff1.id}?dpsRolesOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<StaffDetails>()
+        .returnResult()
+        .responseBody!!
+
+      with(staffDetails) {
+        assertThat(id).isEqualTo(staff1.id)
+        assertThat(accounts.size).isEqualTo(2)
+        with(accounts[1]) {
+          assertThat(typeCode).isEqualTo("ADMIN")
+          assertThat(adminCaseloads.size).isEqualTo(1)
+          with(adminCaseloads[0]) {
+            assertThat(caseloadId).isEqualTo("LEI")
+            assertThat(active).isTrue
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2028-03-17"))
+            assertThat(audit.createDatetime).isNotNull
+            assertThat(audit.createUsername).isEqualTo("SA")
+          }
+          assertThat(lastLoggedIn).isNull()
+          assertThat(audit.createDatetime).isNotNull
+          assertThat(audit.createUsername).isEqualTo("SA")
+        }
+      }
+    }
+
+    @Test
     fun `will return a staff user's details with dps roles only`() {
       webTestClient.get().uri("/staff/id/${staff1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -317,6 +349,7 @@ class StaffResourceIntTest : IntegrationTestBase() {
               userCaseloadRole(role = role1)
               userCaseloadRole(role = role2)
             }
+            adminCaseload(caseloadId = "LEI", expiryDate = LocalDate.parse("2028-03-17"))
           }
         }
 
@@ -506,6 +539,36 @@ class StaffResourceIntTest : IntegrationTestBase() {
         .jsonPath("accounts[1].caseloads[2].roles.size()").isEqualTo(2)
         .jsonPath("accounts[1].caseloads[2].roles[0].code").isEqualTo("DPS_CODE_1")
         .jsonPath("accounts[1].caseloads[2].roles[1].code").isEqualTo("DPS_CODE_2")
+    }
+
+    @Test
+    fun `will return a staff user's account administration caseloads`() {
+      val staffDetails = webTestClient.get().uri("/staff/username/${staff1.accounts[0].username}?dpsRolesOnly=false")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus().isOk
+        .expectBody<StaffDetails>()
+        .returnResult()
+        .responseBody!!
+
+      with(staffDetails) {
+        assertThat(id).isEqualTo(staff1.id)
+        assertThat(accounts.size).isEqualTo(2)
+        with(accounts[1]) {
+          assertThat(typeCode).isEqualTo("ADMIN")
+          assertThat(adminCaseloads.size).isEqualTo(1)
+          with(adminCaseloads[0]) {
+            assertThat(caseloadId).isEqualTo("LEI")
+            assertThat(active).isTrue
+            assertThat(expiryDate).isEqualTo(LocalDate.parse("2028-03-17"))
+            assertThat(audit.createDatetime).isNotNull
+            assertThat(audit.createUsername).isEqualTo("SA")
+          }
+          assertThat(lastLoggedIn).isNull()
+          assertThat(audit.createDatetime).isNotNull
+          assertThat(audit.createUsername).isEqualTo("SA")
+        }
+      }
     }
   }
 

@@ -73,6 +73,13 @@ class StaffUserAccount(
   @OneToMany(mappedBy = "staffUserAccount", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val userCaseloads: MutableList<UserCaseload> = mutableListOf(),
 
+  @OneToMany(mappedBy = "staffUserAccount", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  val adminCaseloads: MutableList<UserGroupCaseloadAdministrator> = mutableListOf(),
+
+  /* TODO
+  @OneToMany(mappedBy = "staffUserAccount", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  val memberCaseloads: MutableList<UserGroupMember> = mutableListOf(),
+   */
 ) : NomisAuditableEntityBasic() {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
