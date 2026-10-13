@@ -129,6 +129,7 @@ interface OffenderDsl {
     deductionAmount: BigDecimal = BigDecimal.ZERO,
     deductionPriority: Int,
     informationNumber: String? = null,
+    writeOffAdjustmentAmount: BigDecimal? = null,
     dsl: OffenderPaymentProfileDsl.() -> Unit = {},
   ): OffenderAdvance
 
@@ -433,6 +434,7 @@ class OffenderBuilder(
     deductionAmount: BigDecimal,
     deductionPriority: Int,
     informationNumber: String?,
+    writeOffAdjustmentAmount: BigDecimal?,
     dsl: OffenderPaymentProfileDsl.() -> Unit,
   ): OffenderAdvance = offenderPaymentProfileBuilderFactory.builder().let { builder ->
     builder.buildAdvance(
@@ -444,6 +446,7 @@ class OffenderBuilder(
       deductionAmount = deductionAmount,
       deductionPriority = deductionPriority,
       informationNumber = informationNumber,
+      writeOffAdjustmentAmount = writeOffAdjustmentAmount,
     ).also { rootOffender.advances += it }
       .also { builder.apply(dsl) }
   }

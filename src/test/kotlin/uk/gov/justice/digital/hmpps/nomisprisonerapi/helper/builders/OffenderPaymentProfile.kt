@@ -53,6 +53,7 @@ class OffenderPaymentProfileBuilder(
     deductionAmount: BigDecimal,
     deductionPriority: Int,
     informationNumber: String?,
+    writeOffAdjustmentAmount: BigDecimal?,
   ): OffenderAdvance {
     val caseloadDeductionProfile = offenderDeductionBuilderRepository.lookupCaseloadDeductionProfile(caseloadId, "ADV")
     val offenderTrustAccount = offenderTrustAccountRepository.lookup(offender, caseloadId)
@@ -66,6 +67,8 @@ class OffenderPaymentProfileBuilder(
       deductionPercentage = 20,
       informationNumber = informationNumber,
       maxTotalAmount = advanceAmount,
+      adjustmentAmount = writeOffAdjustmentAmount,
+      adjustmentReasonCode = writeOffAdjustmentAmount?.let { "WRT" },
     )
     return offenderDeductionBuilderRepository.save(
       OffenderAdvance(

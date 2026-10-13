@@ -191,4 +191,4 @@ data class AdvancesCount(
 )
 
 // TODO Remove TODO status
-enum class AdvanceStatus { ACTIVE, REPAID, WRITTEN_OFF, TODO }
+enum class AdvanceStatus { ACTIVE, REPAID, WRITTEN_OFF }
