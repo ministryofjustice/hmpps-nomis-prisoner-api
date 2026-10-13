@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -111,6 +112,69 @@ class AgencyResource(private val agencyService: AgencyService) {
     @Schema(description = "Agency types to exclude", example = "INST")
     @RequestParam(required = false) excludeType: List<String> = listOf(),
   ) = agencyService.getAllAgencies(excludeType)
+
+  @PostMapping("/agency")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Creates an agency",
+    description = "Creates a new agency, for example a court or probation office. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Agency created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AgencyResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example a reference data code that does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Agency with this id already exists",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createAgency(
+    @RequestBody @Valid
+    request: CreateAgencyRequest,
+  ) = agencyService.createAgency(request)
 
   @PostMapping("/agency/{agencyId}/emails")
   @ResponseStatus(HttpStatus.CREATED)
@@ -607,6 +671,48 @@ data class AgencyId(
 data class AgencyIdsResponse(
   @Schema(description = "The agency ids")
   val agencyIds: List<AgencyId>,
+)
+
+@Schema(description = "A request to create an agency")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateAgencyRequest(
+  @Schema(description = "The agency id", example = "LCSY02")
+  @field:NotBlank
+  val agencyId: String,
+  @Schema(description = "Name of agency", example = "Blackburn YOT")
+  @field:NotBlank
+  val description: String,
+  @Schema(description = "Description of agency", example = "Blackburn YOT")
+  val longDescription: String? = null,
+  @Schema(description = "Agency type code", example = "CRT")
+  @field:NotBlank
+  val typeCode: String,
+  @Schema(description = "Indicates if still used", example = "true")
+  val active: Boolean = true,
+  @Schema(description = "Date no longer active", example = "2020-01-01")
+  val deactivationDate: LocalDate? = null,
+  @Schema(description = "Name of contact at agency", example = "John Smith")
+  val contactName: String? = null,
+  @Schema(description = "Court type code, only relevant for agencies of type CRT", example = "CO")
+  val courtTypeCode: String? = null,
+  @Schema(description = "Disability access code", example = "Y")
+  val disabilityAccessCode: String? = null,
+  @Schema(description = "Area code", example = "LOND")
+  val areaCode: String? = null,
+  @Schema(description = "Sub-Area code", example = "BRENT")
+  val subAreaCode: String? = null,
+  @Schema(description = "Geographic region code", example = "LOND")
+  val regionCode: String? = null,
+  @Schema(description = "Geographic district code", example = "LOND")
+  val districtCode: String? = null,
+  @Schema(description = "NOMS region code", example = "LOND")
+  val nomsRegionCode: String? = null,
+  @Schema(description = "CJIT code", example = "D62L087")
+  val cjitCode: String? = null,
+  @Schema(description = "Payroll region code", example = "LOND")
+  val payrollRegionCode: String? = null,
+  @Schema(description = "Local authority codes, with a maximum of one allowed", example = "[\"BRENT\"]")
+  val localAuthorityCodes: List<String> = emptyList(),
 )
 
 @Schema(description = "A request to create an agency email address")
