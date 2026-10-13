@@ -190,5 +190,4 @@ data class AdvancesCount(
   val activeCount: Long,
 )
 
-// TODO Remove TODO status
 enum class AdvanceStatus { ACTIVE, REPAID, WRITTEN_OFF }
