@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocat
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
@@ -1428,6 +1429,100 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           },
           isNull(),
         )
+      }
+    }
+
+    @Nested
+    inner class HappyPathAddressLevelPhone {
+      private lateinit var existingAddress: AgencyLocationAddress
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
+            existingAddress = address(postcode = "S10 2HH") {
+              phone(phoneType = "BUS", phoneNo = "0114 555 555")
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will update an address level phone number (move to agency level) and leave nothing at the address level`() {
+        val response: AgencyPhoneNumbersResponse = webTestClient.put().uri("/agency/${existingAgency.id}/phones")
+          .bodyValue(
+            UpdateAgencyPhoneNumbersRequest(
+              phoneNumbers = listOf(UpdateAgencyPhoneNumber(number = "0114 999 999", extension = "x432", typeCode = "HOME")),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        assertThat(response.phoneNumbers).hasSize(1)
+
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(phones).hasSize(1)
+            assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
+            assertThat(addresses.single { it.addressId == existingAddress.addressId }.phones).isEmpty()
+          }
+        }
+      }
+    }
+
+    @Nested
+    inner class HappyPathAgencyAndAddressLevelPhone {
+      private lateinit var existingAddress: AgencyLocationAddress
+      private lateinit var existingAgencyPhone: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          existingAgency = agencyLocation(agencyLocationId = "XXI", description = "HMP XXI", type = "INST") {
+            existingAgencyPhone = phone(phoneType = "BUS", phoneNo = "0114 111 111")
+            existingAddress = address(postcode = "S10 2HH") {
+              phone(phoneType = "BUS", phoneNo = "0114 555 555")
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will update an agency level phone number and leave an address level phone unchanged when included in the request`() {
+        val response: AgencyPhoneNumbersResponse = webTestClient.put().uri("/agency/${existingAgency.id}/phones")
+          .bodyValue(
+            UpdateAgencyPhoneNumbersRequest(
+              phoneNumbers = listOf(
+                UpdateAgencyPhoneNumber(number = "0114 555 555", typeCode = "BUS"),
+                UpdateAgencyPhoneNumber(number = "0114 999 999", extension = "x432", typeCode = "HOME"),
+              ),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyResponse()
+
+        // only one changed
+        assertThat(response.phoneNumbers).hasSize(1)
+
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(phones).hasSize(1)
+            assertThat(phones[0].phoneId).isEqualTo(existingAgencyPhone.phoneId)
+            assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
+
+            with(addresses.single { it.addressId == existingAddress.addressId }) {
+              assertThat(phones).hasSize(1)
+              assertThat(phones[0].phoneId).isEqualTo(existingAddress.phones[0].phoneId)
+              assertThat(phones[0].phoneNo).isEqualTo("0114 555 555")
+            }
+          }
+        }
       }
     }
   }
