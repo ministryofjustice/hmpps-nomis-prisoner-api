@@ -1462,14 +1462,13 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           .expectBodyResponse()
 
         assertThat(response.phoneNumbers).hasSize(1)
-        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 999 999")
 
         nomisDataBuilder.runInTransaction {
           with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
             assertThat(phones).hasSize(1)
             assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
+            assertThat(addresses.single { it.addressId == existingAddress.addressId }.phones).isEmpty()
           }
-          assertThat(agencyLocationAddressRepository.findByIdOrNull(existingAddress.addressId)!!.phones).isEmpty()
         }
       }
     }
@@ -1508,20 +1507,20 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           .isOk
           .expectBodyResponse()
 
+        // only one changed
         assertThat(response.phoneNumbers).hasSize(1)
-        assertThat(response.phoneNumbers[0].id).isEqualTo(existingAgencyPhone.phoneId)
-        assertThat(response.phoneNumbers[0].number).isEqualTo("0114 999 999")
 
         nomisDataBuilder.runInTransaction {
           with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
             assertThat(phones).hasSize(1)
             assertThat(phones[0].phoneId).isEqualTo(existingAgencyPhone.phoneId)
             assertThat(phones[0].phoneNo).isEqualTo("0114 999 999")
-          }
-          with(agencyLocationAddressRepository.findByIdOrNull(existingAddress.addressId)!!) {
-            assertThat(phones).hasSize(1)
-            assertThat(phones[0].phoneId).isEqualTo(existingAddress.phones[0].phoneId)
-            assertThat(phones[0].phoneNo).isEqualTo("0114 555 555")
+
+            with(addresses.single { it.addressId == existingAddress.addressId }) {
+              assertThat(phones).hasSize(1)
+              assertThat(phones[0].phoneId).isEqualTo(existingAddress.phones[0].phoneId)
+              assertThat(phones[0].phoneNo).isEqualTo("0114 555 555")
+            }
           }
         }
       }
