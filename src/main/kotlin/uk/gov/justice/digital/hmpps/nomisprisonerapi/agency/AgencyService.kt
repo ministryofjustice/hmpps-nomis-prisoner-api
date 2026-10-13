@@ -6,23 +6,36 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.ConflictException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAuthority
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAuthorityId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationPhone
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Country
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.County
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.InternetAddress.Companion.EMAIL_INTERNET_ADDRESS_CLASS
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LocalAuthorityType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PayrollRegionType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.PhoneUsage
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AreaRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.RegionRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.SubAreaRepository
 import java.time.LocalDate
 
 @Service
@@ -37,6 +50,13 @@ class AgencyService(
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
+  private val agencyLocationTypeRepository: ReferenceCodeRepository<AgencyLocationType>,
+  private val courtTypeRepository: ReferenceCodeRepository<CourtType>,
+  private val payrollRegionTypeRepository: ReferenceCodeRepository<PayrollRegionType>,
+  private val localAuthorityTypeRepository: ReferenceCodeRepository<LocalAuthorityType>,
+  private val areaRepository: AreaRepository,
+  private val subAreaRepository: SubAreaRepository,
+  private val regionRepository: RegionRepository,
   private val telemetryClient: TelemetryClient,
 ) {
   fun getAllAgencies(excludeType: List<String>): AgencyIdsResponse {
@@ -53,6 +73,68 @@ class AgencyService(
 
   fun getAgencyLocation(agencyId: String): AgencyResponse = agencyLocationRepository.findByIdOrNull(agencyId)
     ?.toAgencyLocationResponse() ?: throw NotFoundException("Agency $agencyId does not exist")
+
+  fun createAgency(request: CreateAgencyRequest): AgencyResponse {
+    if (agencyLocationRepository.existsById(request.agencyId)) {
+      throw ConflictException("Agency with id ${request.agencyId} already exists")
+    }
+
+    val agency = AgencyLocation(
+      id = request.agencyId,
+      description = request.description,
+      longDescription = request.longDescription,
+      type = agencyTypeOf(request.typeCode),
+      active = request.active,
+      deactivationDate = request.deactivationDate,
+      contactName = request.contactName,
+      courtType = request.courtTypeCode?.let { courtTypeOf(it) },
+      disabilityAccessCode = request.disabilityAccessCode,
+      subArea = request.subAreaCode?.let { subAreaOf(it) },
+      area = request.areaCode?.let { areaOf(it) },
+      region = request.regionCode?.let { areaOf(it) },
+      district = request.districtCode?.let { areaOf(it) },
+      nomsRegion = request.nomsRegionCode?.let { regionOf(it) },
+      cjitCode = request.cjitCode,
+      payrollRegion = request.payrollRegionCode?.let { payrollRegionOf(it) },
+    )
+
+    // there is only ever at most one local authority in the request, so only the first is ever read
+    request.localAuthorityCodes.firstOrNull()?.let {
+      val localAuthorityType = localAuthorityOf(it)
+      agency.localAuthorities += AgencyLocationAuthority(
+        id = AgencyLocationAuthorityId(agencyLocation = agency, localAuthorityCode = localAuthorityType.code),
+      ).apply { authority = localAuthorityType }
+    }
+
+    return agencyLocationRepository.saveAndFlush(agency).let {
+      telemetryClient.trackEvent(
+        "agency-created",
+        mapOf("agencyId" to it.id),
+      )
+      it.toAgencyLocationResponse()
+    }
+  }
+
+  private fun agencyTypeOf(code: String): AgencyLocationType = agencyLocationTypeRepository.findByIdOrNull(AgencyLocationType.pk(code))
+    ?: throw BadDataException("AgencyLocationType with code $code does not exist")
+
+  private fun courtTypeOf(code: String): CourtType = courtTypeRepository.findByIdOrNull(CourtType.pk(code))
+    ?: throw BadDataException("CourtType with code $code does not exist")
+
+  private fun payrollRegionOf(code: String): PayrollRegionType = payrollRegionTypeRepository.findByIdOrNull(PayrollRegionType.pk(code))
+    ?: throw BadDataException("PayrollRegionType with code $code does not exist")
+
+  private fun localAuthorityOf(code: String): LocalAuthorityType = localAuthorityTypeRepository.findByIdOrNull(LocalAuthorityType.pk(code))
+    ?: throw BadDataException("LocalAuthorityType with code $code does not exist")
+
+  private fun areaOf(code: String): Area = areaRepository.findByIdOrNull(code)
+    ?: throw BadDataException("Area with code $code does not exist")
+
+  private fun subAreaOf(code: String): SubArea = subAreaRepository.findByIdOrNull(code)
+    ?: throw BadDataException("SubArea with code $code does not exist")
+
+  private fun regionOf(code: String): Region = regionRepository.findByIdOrNull(code)
+    ?: throw BadDataException("Region with code $code does not exist")
 
   fun createAgencyEmail(agencyId: String, request: CreateAgencyEmailAddressRequest): CreateAgencyEmailAddressResponse = agencyLocationInternetAddressRepository.saveAndFlush(
     AgencyLocationInternetAddress(

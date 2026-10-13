@@ -264,6 +264,165 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("POST /agency")
+  @Nested
+  inner class CreateAgency {
+    private val validCreateRequest = CreateAgencyRequest(
+      agencyId = "ZZI",
+      description = "Test Agency",
+      typeCode = "INST",
+    )
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteById("ZZI")
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validCreateRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validCreateRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.post().uri("/agency")
+          .bodyValue(validCreateRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 400 if agency id is blank`() {
+        webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validCreateRequest.copy(agencyId = ""))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if agency type does not exist`() {
+        webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validCreateRequest.copy(typeCode = "BANANAS"))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 400 if local authority code does not exist`() {
+        webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validCreateRequest.copy(localAuthorityCodes = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
+      fun `will return 409 if agency already exists`() {
+        nomisDataBuilder.build {
+          agencyLocation(agencyLocationId = "ZZI", description = "Already Exists", type = "INST")
+        }
+
+        webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validCreateRequest)
+          .exchange()
+          .expectStatus().isEqualTo(409)
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will create an agency with only the required fields set`() {
+        val response: AgencyResponse = webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validCreateRequest)
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        assertThat(response.agencyId).isEqualTo("ZZI")
+        assertThat(response.description).isEqualTo("Test Agency")
+        assertThat(response.type.code).isEqualTo("INST")
+        assertThat(response.active).isTrue()
+        assertThat(response.updateAllowed).isTrue()
+
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull("ZZI")!!) {
+            assertThat(description).isEqualTo("Test Agency")
+            assertThat(type.code).isEqualTo("INST")
+          }
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-created"),
+          check {
+            assertThat(it).containsEntry("agencyId", "ZZI")
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will create an agency with all optional fields set`() {
+        val response: AgencyResponse = webTestClient.post().uri("/agency")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            validCreateRequest.copy(
+              typeCode = "CRT",
+              longDescription = "Test Agency Long Description",
+              active = false,
+              deactivationDate = LocalDate.parse("2023-01-01"),
+              contactName = "John Smith",
+              courtTypeCode = "CC",
+              disabilityAccessCode = "Y",
+              cjitCode = "D62L087",
+              payrollRegionCode = "LTV",
+              localAuthorityCodes = listOf(BRENT),
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBodyResponse()
+
+        assertThat(response.agencyId).isEqualTo("ZZI")
+        assertThat(response.type.code).isEqualTo("CRT")
+        assertThat(response.longDescription).isEqualTo("Test Agency Long Description")
+        assertThat(response.active).isFalse()
+        assertThat(response.deactivationDate).isEqualTo(LocalDate.parse("2023-01-01"))
+        assertThat(response.updateAllowed).isFalse()
+        assertThat(response.contactName).isEqualTo("John Smith")
+        assertThat(response.courtType?.code).isEqualTo("CC")
+        assertThat(response.disabilityAccessCode).isEqualTo("Y")
+        assertThat(response.cjitCode).isEqualTo("D62L087")
+        assertThat(response.payrollRegion?.code).isEqualTo("LTV")
+        assertThat(response.localAuthorities).extracting("code").containsExactly(BRENT)
+      }
+    }
+  }
+
   @DisplayName("GET /agency/{agencyId}")
   @Nested
   inner class GetAgency {
@@ -1591,7 +1750,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPathSingleAddress {
-      private lateinit var existingAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+      private lateinit var existingAddress: AgencyLocationAddress
 
       @BeforeEach
       fun setUp() {
@@ -1651,8 +1810,8 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPathMultipleAddresses {
-      private lateinit var firstAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
-      private lateinit var secondAddress: uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
+      private lateinit var firstAddress: AgencyLocationAddress
+      private lateinit var secondAddress: AgencyLocationAddress
 
       @BeforeEach
       fun setUp() {
