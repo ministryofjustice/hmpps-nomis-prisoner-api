@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserAccountType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserGroupCaseloadAdministrator
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserGroupMember
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserSourceType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffUserAccountRepository
@@ -33,6 +34,14 @@ interface StaffUserAccountDsl {
     expiryDate: LocalDate? = null,
     dsl: AdminCaseloadDsl.() -> Unit = {},
   ): UserGroupCaseloadAdministrator
+
+  @MemberCaseloadDslMarker
+  fun memberCaseload(
+    caseloadId: String,
+    startDate: LocalDate = LocalDate.now(),
+    expiryDate: LocalDate? = null,
+    dsl: MemberCaseloadDsl.() -> Unit = {},
+  ): UserGroupMember
 }
 
 @Component
@@ -40,11 +49,13 @@ class StaffUserAccountBuilderFactory(
   private val repository: StaffUserAccountBuilderRepository,
   private val userCaseloadBuilderFactory: UserCaseloadBuilderFactory,
   private val userGroupAdministratorBuilderFactory: AdminCaseloadBuilderFactory,
+  private val userGroupMemberBuilderFactory: MemberCaseloadBuilderFactory,
 ) {
   fun builder(): StaffUserAccountBuilder = StaffUserAccountBuilder(
     repository,
     userCaseloadBuilderFactory,
-    userGroupAdministratorBuilderFactory = userGroupAdministratorBuilderFactory,
+    userGroupAdministratorBuilderFactory,
+    userGroupMemberBuilderFactory,
   )
 }
 
@@ -61,6 +72,7 @@ class StaffUserAccountBuilder(
   private val repository: StaffUserAccountBuilderRepository,
   private val userCaseloadBuilderFactory: UserCaseloadBuilderFactory,
   private val userGroupAdministratorBuilderFactory: AdminCaseloadBuilderFactory,
+  private val userGroupMemberBuilderFactory: MemberCaseloadBuilderFactory,
 ) : StaffUserAccountDsl {
   private lateinit var staffUserAccount: StaffUserAccount
 
@@ -106,6 +118,22 @@ class StaffUserAccountBuilder(
       expiryDate = expiryDate,
     )
       .also { staffUserAccount.adminCaseloads += it }
+      .also { builder.apply(dsl) }
+  }
+
+  override fun memberCaseload(
+    caseloadId: String,
+    startDate: LocalDate,
+    expiryDate: LocalDate?,
+    dsl: MemberCaseloadDsl.() -> Unit,
+  ): UserGroupMember = userGroupMemberBuilderFactory.builder().let { builder ->
+    builder.build(
+      username = staffUserAccount.username,
+      caseloadId = caseloadId,
+      startDate = startDate,
+      expiryDate = expiryDate,
+    )
+      .also { staffUserAccount.memberCaseloads += it }
       .also { builder.apply(dsl) }
   }
 }

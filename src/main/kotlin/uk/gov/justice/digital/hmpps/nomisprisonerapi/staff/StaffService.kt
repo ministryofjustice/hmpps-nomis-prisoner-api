@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.StaffUserAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseload
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserCaseloadRole
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserGroupCaseloadAdministrator
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.UserGroupMember
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.StaffRepository
 
 @Service
@@ -77,6 +78,7 @@ class StaffService(
     caseloads = userCaseloads.sortedBy { it.id.caseloadId }.map { it.toResponse(dpsRolesOnly) },
     audit = toAudit(),
     adminCaseloads = adminCaseloads.sortedBy { it.id.caseloadId }.map { it.toResponse() },
+    memberCaseloads = memberCaseloads.sortedBy { it.id.caseloadId }.map { it.toResponse() },
   )
 
   fun UserCaseload.toResponse(dpsRolesOnly: Boolean): CaseloadResponse = CaseloadResponse(
@@ -97,6 +99,13 @@ class StaffService(
   fun UserGroupCaseloadAdministrator.toResponse(): AdminCaseloadResponse = AdminCaseloadResponse(
     caseloadId = id.caseloadId,
     active = active,
+    expiryDate = expiryDate,
+    audit = toAudit(),
+  )
+  fun UserGroupMember.toResponse(): MemberCaseloadResponse = MemberCaseloadResponse(
+    caseloadId = id.caseloadId,
+    active = active,
+    startDate = startDate,
     expiryDate = expiryDate,
     audit = toAudit(),
   )
