@@ -117,7 +117,7 @@ class AgencyResource(private val agencyService: AgencyService) {
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Creates an agency",
-    description = "Creates a new agency that is not a prison, for example a court or probation office. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Creates a new agency, for example a court or probation office. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",

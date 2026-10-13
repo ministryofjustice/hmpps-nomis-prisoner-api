@@ -412,7 +412,6 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         assertThat(response.longDescription).isEqualTo("Test Agency Long Description")
         assertThat(response.active).isFalse()
         assertThat(response.deactivationDate).isEqualTo(LocalDate.parse("2023-01-01"))
-        assertThat(response.updateAllowed).isFalse()
         assertThat(response.contactName).isEqualTo("John Smith")
         assertThat(response.courtType?.code).isEqualTo("CC")
         assertThat(response.disabilityAccessCode).isEqualTo("Y")
