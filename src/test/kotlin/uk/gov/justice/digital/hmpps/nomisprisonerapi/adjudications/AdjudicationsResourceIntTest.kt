@@ -117,9 +117,9 @@ class AdjudicationsResourceIntTest : IntegrationTestBase() {
 
           prisonerAtMoorlandPreviouslyAtBrixton =
             offender(nomsId = "A1234AA") {
-              booking(agencyLocationId = "BXI", active = false)
+              booking(agencyLocationId = "BXI") { release() }
               alias {
-                booking(agencyLocationId = "MDI", active = true)
+                booking(agencyLocationId = "MDI")
               }
             }
           prisonerAtMoorland =

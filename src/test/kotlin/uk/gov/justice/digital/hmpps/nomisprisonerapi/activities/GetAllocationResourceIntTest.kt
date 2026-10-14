@@ -513,19 +513,22 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
             courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
-            booking(active = false) {
+            booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              release()
             }
           }
           offender {
-            booking(active = false) {
+            booking {
               courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
+              release()
             }
           }
           offender {
-            booking(active = false) {
+            booking {
               incentive(iepLevelCode = "BAS")
               courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              release()
             }
           }
         }
@@ -550,19 +553,22 @@ class GetAllocationResourceIntTest : IntegrationTestBase() {
             courseActivity = courseActivity(startDate = "$today", createdByDps = false)
           }
           offender {
-            booking(active = true, inOutStatus = "OUT") {
+            booking {
               courseAllocation = courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              tapMovementOut()
             }
           }
           offender(nomsId = nomsIdSuspended) {
-            booking(active = true, inOutStatus = "OUT") {
+            booking {
               courseAllocationSuspended = courseAllocation(courseActivity = courseActivity, startDate = "$today", suspended = true)
+              tapMovementOut()
             }
           }
           offender(nomsId = nomsIdMissingPayBand) {
-            booking(active = true, inOutStatus = "OUT") {
+            booking {
               incentive(iepLevelCode = "BAS")
               courseAllocationMissingPayBand = courseAllocation(courseActivity = courseActivity, startDate = "$today")
+              tapMovementOut()
             }
           }
         }

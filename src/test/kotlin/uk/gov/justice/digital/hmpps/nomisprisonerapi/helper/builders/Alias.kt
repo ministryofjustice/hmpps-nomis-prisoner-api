@@ -23,8 +23,6 @@ interface AliasDsl {
   @BookingDslMarker
   fun booking(
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
-    active: Boolean = true,
-    inOutStatus: String = "IN",
     youthAdultCode: String = "N",
     agencyLocationId: String = "BXI",
     livingUnitId: Long = -3009,
@@ -110,8 +108,6 @@ class AliasBuilder(
 
   override fun booking(
     bookingBeginDate: LocalDateTime,
-    active: Boolean,
-    inOutStatus: String,
     youthAdultCode: String,
     agencyLocationId: String,
     livingUnitId: Long,
@@ -126,8 +122,6 @@ class AliasBuilder(
         bookingSequence = bookingSequence ?: offenderBuilder.nextBookingSequence++,
         agencyLocationCode = agencyLocationId,
         bookingBeginDate = bookingBeginDate,
-        active = active,
-        inOutStatus = inOutStatus,
         youthAdultCode = youthAdultCode,
         livingUnitId = livingUnitId,
       )

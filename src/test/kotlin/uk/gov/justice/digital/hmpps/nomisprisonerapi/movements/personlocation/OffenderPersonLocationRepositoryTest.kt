@@ -76,7 +76,7 @@ class OffenderPersonLocationRepositoryTest(
           assertThat(id.sequence).isEqualTo(1)
           assertThat(getMovementDateAndTime()).isEqualTo("2026-01-01T12:00:00")
           assertThat(movementDirection).isEqualTo(IN)
-          assertThat(fromAgency!!.id).isEqualTo("COURT1")
+          assertThat(fromAgency!!.id).isEqualTo("ABDRCT")
         }
         with(find { it.movementReason.id.type == "CRT" && it.movementDirection == OUT }!!) {
           assertThat(id.sequence).isEqualTo(2)

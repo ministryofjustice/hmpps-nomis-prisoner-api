@@ -36,7 +36,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCaseNote
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderContactPerson
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderFixedTermRecall
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifyingMark
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderImprisonmentStatus
@@ -323,21 +322,23 @@ interface BookingDsl {
     from: String = "BXI",
     to: String = "MDI",
     date: LocalDateTime = LocalDateTime.now(),
-  ): Pair<OffenderExternalMovement, OffenderExternalMovement>
+  ): Pair<OffenderTransferMovementOut, OffenderAdmissionMovementIn>
 
   fun release(
     date: LocalDateTime = LocalDateTime.now(),
-    reason: String = "REL",
-    type: String = "CR",
+    movementReason: String = "CR",
     toAgency: String = "OUT",
     escort: String? = null,
     comment: String? = null,
   ): OffenderReleaseMovementOut
 
+  /**
+   * If [movementReason] is not supplied it is derived from the previous movement on the booking, as in NOMIS:
+   * TRNCRT after a court movement out, INT after a transfer out, TRNTAP after a TAP out, otherwise N (e.g. first movement or after a release).
+   */
   fun receive(
     date: LocalDateTime = LocalDateTime.now(),
-    reason: String = "ADM",
-    type: String = "N",
+    movementReason: String? = null,
     fromAgency: String = "ABDRCT",
     toPrison: String = "BXI",
     escort: String? = null,
@@ -678,9 +679,6 @@ class BookingBuilder(
     bookingSequence: Int,
     agencyLocationCode: String,
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
-    bookingEndDate: LocalDate? = null,
-    active: Boolean,
-    inOutStatus: String,
     youthAdultCode: String,
     livingUnitId: Long,
   ): OffenderBooking {
@@ -692,25 +690,22 @@ class BookingBuilder(
       createLocation = agencyLocation,
       location = agencyLocation,
       bookingBeginDate = bookingBeginDate,
-      // note this overrides the booking end date set by the release() function
-      bookingEndDate = bookingEndDate?.atStartOfDay(),
-      active = active,
-      inOutStatus = inOutStatus,
       youthAdultCode = youthAdultCode,
       assignedLivingUnit = repository.lookupAgencyInternalLocation(livingUnitId),
     )
-      .let { repository.save(it) }
       .also {
         offenderExternalMovementBuilderFactory.builder()
-          .build(
-            toPrisonId = agencyLocationCode,
+          .buildAdmissionMovementIn(
             date = bookingBeginDate,
-            fromPrisonId = "COURT1",
-            movementReason = "N",
-            movementType = "ADM",
             offenderBooking = it,
+            movementReason = "N",
+            fromAgency = "ABDRCT",
+            toPrison = agencyLocationCode,
+            escort = null,
+            comment = null,
           ).also { movement -> it.externalMovements += movement }
       }
+      .let { repository.save(it) }
       .also { offenderBooking = it }
   }
 
@@ -1142,23 +1137,19 @@ class BookingBuilder(
     from: String,
     to: String,
     date: LocalDateTime,
-  ): Pair<OffenderExternalMovement, OffenderExternalMovement> = offenderExternalMovementBuilderFactory.builder()
-    .let { builder ->
-      builder.buildTransfer(
-        offenderBooking = offenderBooking,
-        fromPrisonId = from,
-        toPrisonId = to,
-        date = date,
-      )
-        .also { offenderBooking.externalMovements.forEach { it.active = false } }
-        .also { offenderBooking.externalMovements += it.first }
-        .also { offenderBooking.externalMovements += it.second }
-    }
+  ): Pair<OffenderTransferMovementOut, OffenderAdmissionMovementIn> = transferMovementOut(
+    date = date,
+    fromPrison = from,
+    toPrison = to,
+  ) to receive(
+    date = date.plusSeconds(1),
+    fromAgency = from,
+    toPrison = to,
+  )
 
   override fun release(
     date: LocalDateTime,
-    reason: String,
-    type: String,
+    movementReason: String,
     toAgency: String,
     escort: String?,
     comment: String?,
@@ -1167,8 +1158,7 @@ class BookingBuilder(
       builder.buildReleaseMovementOut(
         offenderBooking = offenderBooking,
         date = date,
-        reason = reason,
-        type = type,
+        movementReason = movementReason,
         toAgency = toAgency,
         escort = escort,
         comment = comment,
@@ -1179,8 +1169,7 @@ class BookingBuilder(
 
   override fun receive(
     date: LocalDateTime,
-    reason: String,
-    type: String,
+    movementReason: String?,
     fromAgency: String,
     toPrison: String,
     escort: String?,
@@ -1190,8 +1179,7 @@ class BookingBuilder(
       builder.buildAdmissionMovementIn(
         offenderBooking = offenderBooking,
         date = date,
-        reason = reason,
-        type = type,
+        movementReason = movementReason ?: defaultAdmissionReason(),
         fromAgency = fromAgency,
         toPrison = toPrison,
         escort = escort,
@@ -1200,6 +1188,13 @@ class BookingBuilder(
         .also { offenderBooking.externalMovements.forEach { it.active = false } }
         .also { offenderBooking.externalMovements += it }
     }
+
+  private fun defaultAdmissionReason() = when (offenderBooking.externalMovements.maxByOrNull { it.id.sequence }) {
+    is OffenderCourtMovementOut -> "TRNCRT"
+    is OffenderTransferMovementOut -> "INT"
+    is OffenderTapMovementOut -> "TRNTAP"
+    else -> "N"
+  }
 
   override fun tapMovementOut(
     date: LocalDateTime,

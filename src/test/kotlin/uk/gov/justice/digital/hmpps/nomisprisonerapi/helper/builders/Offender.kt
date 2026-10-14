@@ -30,13 +30,17 @@ annotation class OffenderDslMarker
 
 @NomisDataDslMarker
 interface OffenderDsl {
+  /**
+   * Creates an active booking, IN at [agencyLocationId], with an admission movement.
+   *
+   * To set the booking's active, inOutStatus or bookingEndDate use movements, as NOMIS does:
+   * - [BookingDsl.release] ends the booking (inactive, OUT)
+   * - [BookingDsl.tapMovementOut] leaves the booking active but OUT
+   * - [BookingDsl.transferMovementOut] without a following [BookingDsl.receive] leaves the booking in transit (location TRN)
+   */
   @BookingDslMarker
   fun booking(
     bookingBeginDate: LocalDateTime = LocalDateTime.now(),
-    // This is a date because NOMIS uses a DATE column which truncates the time
-    bookingEndDate: LocalDate? = null,
-    active: Boolean = true,
-    inOutStatus: String = "IN",
     youthAdultCode: String = "N",
     agencyLocationId: String = "BXI",
     livingUnitId: Long = -3009,
@@ -246,9 +250,6 @@ class OffenderBuilder(
 
   override fun booking(
     bookingBeginDate: LocalDateTime,
-    bookingEndDate: LocalDate?,
-    active: Boolean,
-    inOutStatus: String,
     youthAdultCode: String,
     agencyLocationId: String,
     livingUnitId: Long,
@@ -263,9 +264,6 @@ class OffenderBuilder(
         bookingSequence = bookingSequence ?: nextBookingSequence++,
         agencyLocationCode = agencyLocationId,
         bookingBeginDate = bookingBeginDate,
-        bookingEndDate = bookingEndDate,
-        active = active,
-        inOutStatus = inOutStatus,
         youthAdultCode = youthAdultCode,
         livingUnitId = livingUnitId,
       )

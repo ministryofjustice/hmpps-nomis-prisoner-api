@@ -71,13 +71,13 @@ class BookingResourceIntTest : IntegrationTestBase() {
               }
             }
             offender(nomsId = "A123${it}WW") {
-              booking(active = false, agencyLocationId = "OUT")
+              booking { release() }
               booking {
                 release()
               }
             }
             offender(nomsId = "A123${it}XX") {
-              booking(active = false, agencyLocationId = "TRN")
+              booking { transferMovementOut() }
               booking {
                 release()
               }

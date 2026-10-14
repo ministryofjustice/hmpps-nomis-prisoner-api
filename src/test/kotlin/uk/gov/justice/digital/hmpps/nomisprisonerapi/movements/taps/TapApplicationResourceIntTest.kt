@@ -231,8 +231,9 @@ class TapApplicationResourceIntTest(
     fun `should retrieve latest booking even if inactive`() {
       nomisDataBuilder.build {
         offender = offender(nomsId = "A9843AA") {
-          booking = booking(bookingSequence = 1, active = false) {
+          booking = booking(bookingSequence = 1) {
             application = tapApplication()
+            release()
           }
         }
       }

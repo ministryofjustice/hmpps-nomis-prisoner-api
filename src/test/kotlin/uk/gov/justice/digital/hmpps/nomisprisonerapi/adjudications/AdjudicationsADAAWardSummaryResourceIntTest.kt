@@ -53,7 +53,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
         existingIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         previousIncident = adjudicationIncident(reportingStaff = reportingStaff) {}
         prisoner = offender(nomsId = offenderNo) {
-          booking(agencyLocationId = "LEI", bookingBeginDate = LocalDateTime.parse("1999-01-01T10:00"), active = false) {
+          booking(agencyLocationId = "LEI", bookingBeginDate = LocalDateTime.parse("1999-01-01T10:00")) {
             adjudicationParty(incident = veryOldIncident, adjudicationNumber = veryOldAdjudicationNumber) {
               val charge = charge(offenceCode = "51:1B")
               hearing(
@@ -84,6 +84,7 @@ class AdjudicationsADAAWardSummaryResourceIntTest : IntegrationTestBase() {
                 }
               }
             }
+            release()
           }
           bookingId = booking(agencyLocationId = "BXI", bookingBeginDate = LocalDateTime.parse("2022-01-01T10:00")) {
             adjudicationParty(incident = previousIncident, adjudicationNumber = previousAdjudicationNumber) {

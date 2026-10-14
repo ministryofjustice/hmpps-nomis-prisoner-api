@@ -421,10 +421,11 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
               profileDetail(profileType = "HAIR", profileCode = "BROWN")
               profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
             }
-            booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+            booking(bookingSequence = 2, bookingBeginDate = yesterday) {
               profile()
               profileDetail(profileType = "HAIR", profileCode = "BLACK")
               profileDetail(profileType = "SHOESIZE", profileCode = "9")
+              release(date = today)
             }
           }
         }
@@ -452,10 +453,11 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
               profileDetail(profileType = "HAIR", profileCode = "BROWN")
               profileDetail(profileType = "SHOESIZE", profileCode = "8.5")
             }
-            booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+            booking(bookingSequence = 2, bookingBeginDate = yesterday) {
               profile()
               profileDetail(profileType = "HAIR", profileCode = "BLACK")
               profileDetail(profileType = "SHOESIZE", profileCode = "9")
+              release(date = today)
             }
           }
         }
@@ -483,11 +485,12 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
               profileDetail(profileType = "CHILD", profileCode = "0")
               profileDetail(profileType = "HAIR", profileCode = "BALD")
             }
-            booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+            booking(bookingSequence = 2, bookingBeginDate = yesterday) {
               profile()
               profileDetail(profileType = "MARITAL", profileCode = "M")
               profileDetail(profileType = "CHILD", profileCode = "3")
               profileDetail(profileType = "HAIR", profileCode = "BROWN")
+              release(date = today)
             }
           }
         }
@@ -519,9 +522,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
               profile()
               profileDetail(profileType = "MARITAL", profileCode = "D")
             }
-            oldBooking = booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = today.toLocalDate()) {
+            oldBooking = booking(bookingSequence = 2, bookingBeginDate = yesterday) {
               profile()
               profileDetail(profileType = "MARITAL", profileCode = "M")
+              release(date = today)
             }
           }
         }
@@ -740,9 +744,10 @@ class ProfilesDetailsIntTest : IntegrationTestBase() {
               profileDetail(profileType = "BUILD", profileCode = "MEDIUM")
             }
             oldBooking =
-              booking(bookingSequence = 2, bookingBeginDate = yesterday, bookingEndDate = yesterday.toLocalDate()) {
+              booking(bookingSequence = 2, bookingBeginDate = yesterday) {
                 profile()
                 profileDetail(profileType = "BUILD", profileCode = "HEAVY")
+                release(date = yesterday)
               }
           }
         }
