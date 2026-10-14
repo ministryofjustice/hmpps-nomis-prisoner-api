@@ -136,6 +136,49 @@ class AgencyService(
   private fun regionOf(code: String): Region = regionRepository.findByIdOrNull(code)
     ?: throw BadDataException("Region with code $code does not exist")
 
+  fun updateAgency(agencyId: String, request: UpdateAgencyRequest): AgencyResponse {
+    val agency = getAgency(agencyId)
+
+    agency.description = request.description
+    agency.longDescription = request.longDescription
+    agency.active = request.active
+    agency.deactivationDate = request.deactivationDate
+    agency.contactName = request.contactName
+    agency.courtType = request.courtTypeCode?.let { courtTypeOf(it) }
+    agency.disabilityAccessCode = request.disabilityAccessCode
+    agency.area = request.areaCode?.let { areaOf(it) }
+    agency.subArea = request.subAreaCode?.let { subAreaOf(it) }
+    agency.region = request.regionCode?.let { areaOf(it) }
+    agency.district = request.districtCode?.let { areaOf(it) }
+    agency.nomsRegion = request.nomsRegionCode?.let { regionOf(it) }
+    agency.cjitCode = request.cjitCode
+    agency.payrollRegion = request.payrollRegionCode?.let { payrollRegionOf(it) }
+
+    updateLocalAuthorities(agency, request.localAuthorityCodes)
+
+    telemetryClient.trackEvent(
+      "agency-updated",
+      mapOf("agencyId" to agencyId),
+    )
+
+    return agency.toAgencyLocationResponse()
+  }
+
+  // there is only ever at most one local authority in the request, so only the first is ever read
+  private fun updateLocalAuthorities(agency: AgencyLocation, localAuthorityCodes: List<String>) {
+    val requestedCode = localAuthorityCodes.firstOrNull()
+    val existingCode = agency.localAuthorities.firstOrNull()?.id?.localAuthorityCode
+    if (existingCode != requestedCode) {
+      agency.localAuthorities.clear()
+      requestedCode?.let {
+        val localAuthorityType = localAuthorityOf(it)
+        agency.localAuthorities += AgencyLocationAuthority(
+          id = AgencyLocationAuthorityId(agencyLocation = agency, localAuthorityCode = localAuthorityType.code),
+        ).apply { authority = localAuthorityType }
+      }
+    }
+  }
+
   fun createAgencyEmail(agencyId: String, request: CreateAgencyEmailAddressRequest): CreateAgencyEmailAddressResponse = agencyLocationInternetAddressRepository.saveAndFlush(
     AgencyLocationInternetAddress(
       agencyLocation = getAgency(agencyId),

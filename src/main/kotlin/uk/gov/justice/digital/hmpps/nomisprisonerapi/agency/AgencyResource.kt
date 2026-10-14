@@ -176,6 +176,71 @@ class AgencyResource(private val agencyService: AgencyService) {
     request: CreateAgencyRequest,
   ) = agencyService.createAgency(request)
 
+  @PutMapping("/agency/{agencyId}")
+  @Operation(
+    summary = "Updates the core details of an agency",
+    description = "Replaces the core, non-collection details of an agency, for example its description or active status. Addresses, phone numbers and email addresses are managed via their own endpoints. The agency's type can not be changed. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Agency updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AgencyResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example a reference data code that does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updateAgency(
+    @PathVariable
+    @Schema(description = "Agency id (aka agencyId)", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: UpdateAgencyRequest,
+  ) = agencyService.updateAgency(agencyId, request)
+
   @PostMapping("/agency/{agencyId}/emails")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
@@ -687,6 +752,41 @@ data class CreateAgencyRequest(
   @Schema(description = "Agency type code", example = "CRT")
   @field:NotBlank
   val typeCode: String,
+  @Schema(description = "Indicates if still used", example = "true")
+  val active: Boolean = true,
+  @Schema(description = "Date no longer active", example = "2020-01-01")
+  val deactivationDate: LocalDate? = null,
+  @Schema(description = "Name of contact at agency", example = "John Smith")
+  val contactName: String? = null,
+  @Schema(description = "Court type code, only relevant for agencies of type CRT", example = "CO")
+  val courtTypeCode: String? = null,
+  @Schema(description = "Disability access code", example = "Y")
+  val disabilityAccessCode: String? = null,
+  @Schema(description = "Area code", example = "LOND")
+  val areaCode: String? = null,
+  @Schema(description = "Sub-Area code", example = "BRENT")
+  val subAreaCode: String? = null,
+  @Schema(description = "Geographic region code", example = "LOND")
+  val regionCode: String? = null,
+  @Schema(description = "Geographic district code", example = "LOND")
+  val districtCode: String? = null,
+  @Schema(description = "NOMS region code", example = "LOND")
+  val nomsRegionCode: String? = null,
+  @Schema(description = "CJIT code", example = "D62L087")
+  val cjitCode: String? = null,
+  @Schema(description = "Payroll region code", example = "LOND")
+  val payrollRegionCode: String? = null,
+  @Schema(description = "Local authority codes, with a maximum of one allowed", example = "[\"BRENT\"]")
+  val localAuthorityCodes: List<String> = emptyList(),
+)
+
+@Schema(description = "A request to update the core details of an agency")
+data class UpdateAgencyRequest(
+  @Schema(description = "Name of agency", example = "Blackburn YOT")
+  @field:NotBlank
+  val description: String,
+  @Schema(description = "Description of agency", example = "Blackburn YOT")
+  val longDescription: String? = null,
   @Schema(description = "Indicates if still used", example = "true")
   val active: Boolean = true,
   @Schema(description = "Date no longer active", example = "2020-01-01")
