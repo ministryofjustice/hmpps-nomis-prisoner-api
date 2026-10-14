@@ -150,6 +150,18 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `invalid deactivate reason`() {
+      webTestClient.post().uri("/locations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .body(BodyInserters.fromValue(createLocationRequest().copy(reasonCode = "invalid")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Deactivate Reason code=invalid does not exist")
+        }
+    }
+
+    @Test
     fun `userDescription too long`() {
       webTestClient.post().uri("/locations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -357,6 +369,18 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("Housing unit type with id=invalid does not exist")
+        }
+    }
+
+    @Test
+    fun `invalid deactivate reason`() {
+      webTestClient.put().uri("/locations/{locationId}", location1.locationId)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .body(BodyInserters.fromValue(createLocationRequest().copy(reasonCode = "invalid")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Deactivate Reason code=invalid does not exist")
         }
     }
 

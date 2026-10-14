@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyIntern
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.InternalLocationUsageRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
+import java.time.LocalDate
 import java.util.Optional
 
 private const val PRISON_ID = "SWI"
@@ -89,6 +90,9 @@ internal class LocationServiceTest {
       unitType = "HC",
       userDescription = "Some description",
       active = false,
+      deactivateDate = LocalDate.of(2021, 1, 1),
+      reasonCode = "E",
+      reactivateDate = LocalDate.of(2022, 1, 1),
       profiles = listOf(
         ProfileRequest(profileType = "HOU_SANI_FIT", profileCode = "MOB"),
       ),
@@ -128,6 +132,9 @@ internal class LocationServiceTest {
           assertThat(it.cnaCapacity).isNull()
           assertThat(it.comment).isEqualTo("Some comment")
           assertThat(it.unitType?.code).isEqualTo("HC")
+          assertThat(it.deactivateDate).isEqualTo(LocalDate.of(2021, 1, 1))
+          assertThat(it.deactivateReason?.code).isEqualTo("E")
+          assertThat(it.reactivateDate).isEqualTo(LocalDate.of(2022, 1, 1))
 
           assertThat(it.profiles).extracting("id.profileType", "id.profileCode").containsExactly(
             tuple("HOU_SANI_FIT", "MOB"),
