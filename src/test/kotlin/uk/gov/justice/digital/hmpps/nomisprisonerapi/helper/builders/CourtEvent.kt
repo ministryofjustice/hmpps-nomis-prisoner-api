@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.roundToNearestSecond
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
@@ -65,7 +66,7 @@ interface CourtEventDsl {
   ): CourtOrder
 
   fun courtMovementOut(
-    date: LocalDateTime = LocalDateTime.now(),
+    date: LocalDateTime = LocalDateTime.now().roundToNearestSecond(),
     fromPrison: String = "BXI",
     toCourt: String = "ABDRCT",
     movementReason: String = "CRT",
@@ -73,7 +74,7 @@ interface CourtEventDsl {
   ): OffenderCourtMovementOut
 
   fun courtMovementIn(
-    date: LocalDateTime = LocalDateTime.now(),
+    date: LocalDateTime = LocalDateTime.now().roundToNearestSecond(),
     toPrison: String = "BXI",
     fromCourt: String = "ABDRCT",
     movementReason: String = "CRT",

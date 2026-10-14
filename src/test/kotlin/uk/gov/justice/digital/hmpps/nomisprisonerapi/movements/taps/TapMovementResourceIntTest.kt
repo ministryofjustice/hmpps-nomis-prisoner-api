@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.roundToNearestSecond
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -43,7 +44,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.offender.Off
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.offender.TapSummary
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.schedule.TapScheduleOut
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 class TapMovementResourceIntTest(
   @Autowired private val scheduleOutRepository: OffenderTapScheduleOutRepository,
@@ -970,7 +970,7 @@ class TapMovementResourceIntTest(
             assertThat(tapApplicationId).isNull()
             assertThat(movementDate).isEqualTo(twoDaysAgo.toLocalDate())
             assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
-            assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+            assertThat(movementTime.toLocalTime()).isEqualTo(twoDaysAgo.toLocalTime())
             assertThat(movementReason).isEqualTo("C5")
             assertThat(escort).isEqualTo("L")
             assertThat(escortText).isEqualTo("SE")

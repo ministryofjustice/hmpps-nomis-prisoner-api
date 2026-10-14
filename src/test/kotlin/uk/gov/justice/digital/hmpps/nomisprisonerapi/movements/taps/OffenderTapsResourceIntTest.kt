@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.roundToNearestSecond
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
@@ -37,7 +38,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.offender.Off
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.offender.TapSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 class OffenderTapsResourceIntTest(
   @Autowired private val scheduleOutRepository: OffenderTapScheduleOutRepository,
@@ -331,7 +331,7 @@ class OffenderTapsResourceIntTest(
         .jsonPath("$.bookings[0].tapApplications[0].taps[0].tapMovementOut.movementTime").value<String> {
           LocalDateTime.parse(it).also { movementTime: LocalDateTime ->
             assertThat(movementTime.toLocalDate()).isEqualTo(twoDaysAgo.toLocalDate())
-            assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+            assertThat(movementTime.toLocalTime()).isEqualTo(twoDaysAgo.toLocalTime())
           }
         }
         .jsonPath("$.bookings[0].tapApplications[0].taps[0].tapMovementOut.movementReason").isEqualTo("C5")
@@ -514,7 +514,7 @@ class OffenderTapsResourceIntTest(
         .jsonPath("$.bookings[0].tapApplications[0].taps[0].tapMovementIn.movementTime").value<String> {
           LocalDateTime.parse(it).also { movementTime: LocalDateTime ->
             assertThat(movementTime.toLocalDate()).isEqualTo(yesterday.toLocalDate())
-            assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+            assertThat(movementTime.toLocalTime()).isEqualTo(yesterday.toLocalTime())
           }
         }
         .jsonPath("$.bookings[0].tapApplications[0].taps[0].tapMovementIn.movementReason").isEqualTo("R25")
@@ -712,7 +712,7 @@ class OffenderTapsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTapMovementOuts[0].movementTime").value<String> {
           LocalDateTime.parse(it).also { movementTime: LocalDateTime ->
             assertThat(movementTime.toLocalDate()).isEqualTo(yesterday.toLocalDate())
-            assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+            assertThat(movementTime.toLocalTime()).isEqualTo(yesterday.toLocalTime())
           }
         }
         .jsonPath("$.bookings[0].unscheduledTapMovementOuts[0].movementReason").isEqualTo("C5")
@@ -797,7 +797,7 @@ class OffenderTapsResourceIntTest(
         .jsonPath("$.bookings[0].unscheduledTapMovementIns[0].movementTime").value<String> {
           LocalDateTime.parse(it).also { movementTime: LocalDateTime ->
             assertThat(movementTime.toLocalDate()).isEqualTo(today.toLocalDate())
-            assertThat(movementTime.toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+            assertThat(movementTime.toLocalTime()).isEqualTo(today.toLocalTime())
           }
         }
         .jsonPath("$.bookings[0].unscheduledTapMovementIns[0].movementReason").isEqualTo("C5")

@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.IncidentDecisionAction
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NoteSourceCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdmissionMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAlert
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBelief
@@ -45,6 +46,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProfileDetail
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderProgramProfile
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPropertyContainer
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderReleaseMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderRestrictions
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentence
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapApplication
@@ -325,11 +327,22 @@ interface BookingDsl {
 
   fun release(
     date: LocalDateTime = LocalDateTime.now(),
-  ): OffenderExternalMovement
+    reason: String = "REL",
+    type: String = "CR",
+    toAgency: String = "OUT",
+    escort: String? = null,
+    comment: String? = null,
+  ): OffenderReleaseMovementOut
 
   fun receive(
     date: LocalDateTime = LocalDateTime.now(),
-  ): OffenderExternalMovement
+    reason: String = "ADM",
+    type: String = "N",
+    fromAgency: String = "ABDRCT",
+    toPrison: String = "BXI",
+    escort: String? = null,
+    comment: String? = null,
+  ): OffenderAdmissionMovementIn
 
   fun tapMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
@@ -1144,11 +1157,21 @@ class BookingBuilder(
 
   override fun release(
     date: LocalDateTime,
-  ): OffenderExternalMovement = offenderExternalMovementBuilderFactory.builder()
+    reason: String,
+    type: String,
+    toAgency: String,
+    escort: String?,
+    comment: String?,
+  ): OffenderReleaseMovementOut = offenderExternalMovementBuilderFactory.builder()
     .let { builder ->
-      builder.buildRelease(
+      builder.buildReleaseMovementOut(
         offenderBooking = offenderBooking,
         date = date,
+        reason = reason,
+        type = type,
+        toAgency = toAgency,
+        escort = escort,
+        comment = comment,
       )
         .also { offenderBooking.externalMovements.forEach { it.active = false } }
         .also { offenderBooking.externalMovements += it }
@@ -1156,12 +1179,25 @@ class BookingBuilder(
 
   override fun receive(
     date: LocalDateTime,
-  ): OffenderExternalMovement = offenderExternalMovementBuilderFactory.builder()
+    reason: String,
+    type: String,
+    fromAgency: String,
+    toPrison: String,
+    escort: String?,
+    comment: String?,
+  ): OffenderAdmissionMovementIn = offenderExternalMovementBuilderFactory.builder()
     .let { builder ->
-      builder.buildReceive(
+      builder.buildAdmissionMovementIn(
         offenderBooking = offenderBooking,
         date = date,
+        reason = reason,
+        type = type,
+        fromAgency = fromAgency,
+        toPrison = toPrison,
+        escort = escort,
+        comment = comment,
       )
+        .also { offenderBooking.externalMovements.forEach { it.active = false } }
         .also { offenderBooking.externalMovements += it }
     }
 
@@ -1190,6 +1226,7 @@ class BookingBuilder(
       toCity = toCity,
       toAddress = toAddress,
     )
+    .also { offenderBooking.externalMovements.forEach { it.active = false } }
     .also { offenderBooking.externalMovements += it }
 
   override fun tapMovementIn(
@@ -1215,6 +1252,7 @@ class BookingBuilder(
       fromCity = fromCity,
       fromAddress = fromAddress,
     )
+    .also { offenderBooking.externalMovements.forEach { it.active = false } }
     .also { offenderBooking.externalMovements += it }
 
   override fun courtScheduleOut(
@@ -1259,6 +1297,7 @@ class BookingBuilder(
       movementReason = movementReason,
       comment = comment,
     )
+    .also { offenderBooking.externalMovements.forEach { it.active = false } }
     .also { offenderBooking.externalMovements += it }
 
   override fun courtMovementIn(
@@ -1276,6 +1315,7 @@ class BookingBuilder(
       movementReason = movementReason,
       comment = comment,
     )
+    .also { offenderBooking.externalMovements.forEach { it.active = false } }
     .also { offenderBooking.externalMovements += it }
 
   override fun transferMovementOut(
@@ -1297,6 +1337,7 @@ class BookingBuilder(
       comment = comment,
       transferScheduleOutId = transferScheduleOutId,
     )
+    .also { offenderBooking.externalMovements.forEach { it.active = false } }
     .also { offenderBooking.externalMovements += it }
 
   override fun visitBalance(
