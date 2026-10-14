@@ -15,7 +15,7 @@ interface RandomTestingProgramRepository : JpaRepository<RandomTestingProgram, L
           select RTP_ID, rownum as seqnum from (
             select RTP_ID
             from RANDOM_TESTING_PROGRAMS
-            where (:includedPrisonIds is null or CASELOAD_ID in (:includedPrisonIds))
+            where (:filterByIncludedPrisonIds = 0 or CASELOAD_ID in (:includedPrisonIds))
             and CASELOAD_ID not in (:excludedPrisonIds)
             order by RTP_ID
           )
@@ -23,19 +23,19 @@ interface RandomTestingProgramRepository : JpaRepository<RandomTestingProgram, L
     """,
     nativeQuery = true,
   )
-  fun findEveryPageSizeId(pageSize: Int, includedPrisonIds: List<String>?, excludedPrisonIds: List<String>): List<Long>
+  fun findEveryPageSizeId(pageSize: Int, filterByIncludedPrisonIds: Int, includedPrisonIds: List<String>, excludedPrisonIds: List<String>): List<Long>
 
   @Query(
     """
      select rtp.id
         from RandomTestingProgram rtp
         where rtp.id > :fromId and rtp.id <= :toId
-        and (:includedPrisonIds is null or rtp.caseloadId in :includedPrisonIds)
+        and (:filterByIncludedPrisonIds = 0 or rtp.caseloadId in :includedPrisonIds)
         and rtp.caseloadId not in :excludedPrisonIds
         order by rtp.id
   """,
   )
-  fun findAllIdsBetweenIds(fromId: Long, toId: Long, includedPrisonIds: List<String>?, excludedPrisonIds: List<String>): List<Long>
+  fun findAllIdsBetweenIds(fromId: Long, toId: Long, filterByIncludedPrisonIds: Int, includedPrisonIds: List<String>, excludedPrisonIds: List<String>): List<Long>
 
   @Query(
     """
