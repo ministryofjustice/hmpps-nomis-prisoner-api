@@ -150,6 +150,18 @@ class LocationsResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun `invalid deactivate reason`() {
+      webTestClient.post().uri("/locations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .body(BodyInserters.fromValue(createLocationRequest().copy(reasonCode = "invalid")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Deactivate Reason code=invalid does not exist")
+        }
+    }
+
+    @Test
     fun `userDescription too long`() {
       webTestClient.post().uri("/locations")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -225,7 +237,8 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .returnResult().responseBody!!
 
       // Check the database
-      createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
+      createdLocation = repository.lookupAgencyInternalLocation(result.locationId)
+      createdLocation!!.apply {
         assertThat(locationCode).isEqualTo("CLASS7")
         assertThat(description).isEqualTo("LEI-CLASS7")
         assertThat(locationType).isEqualTo("CLAS")
@@ -238,6 +251,11 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         assertThat(listSequence).isEqualTo(1)
         assertThat(certified).isTrue
         assertThat(tracking).isFalse
+        assertThat(active).isTrue
+        assertThat(deactivateDate).isNull()
+        assertThat(deactivateReason).isNull()
+        assertThat(reactivateDate).isNull()
+
         with(profiles) {
           assertThat(this).hasSize(2)
           assertThat(this[0].id.profileType).isEqualTo("HOU_UNIT_ATT")
@@ -287,7 +305,8 @@ class LocationsResourceIntTest : IntegrationTestBase() {
 
       // Check the database
       nomisDataBuilder.runInTransaction {
-        createdLocation = repository.lookupAgencyInternalLocation(result.locationId)!!.apply {
+        createdLocation = repository.lookupAgencyInternalLocation(result.locationId)
+        createdLocation!!.apply {
           assertThat(locationCode).isEqualTo("005")
           assertThat(description).isEqualTo("BXI-A-1-005")
           assertThat(locationType).isEqualTo("CELL")
@@ -301,6 +320,43 @@ class LocationsResourceIntTest : IntegrationTestBase() {
           assertThat(listSequence).isEqualTo(5)
           assertThat(certified).isTrue
         }
+      }
+    }
+
+    @Test
+    fun `will create a deactivated location with correct details`() {
+      val result = webTestClient.post().uri("/locations")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(
+          BodyInserters.fromValue(
+            """{
+                "locationCode"        : "CLASS7",
+                "description"         : "LEI-CLASS7",
+                "locationType"        : "CLAS",
+                "prisonId"            : "LEI",
+                "deactivateDate"      : "2026-01-01",
+                "reasonCode"          : "D", 
+                "reactivateDate"      : "2026-01-02",
+                "active"              : false
+               }
+            """.trimIndent(),
+          ),
+        )
+        .exchange()
+        .expectStatus().isCreated
+        .expectBody(LocationIdResponse::class.java)
+        .returnResult().responseBody!!
+
+      // Check the database
+      createdLocation = repository.lookupAgencyInternalLocation(result.locationId)
+      createdLocation!!.apply {
+        assertThat(locationCode).isEqualTo("CLASS7")
+        assertThat(agency.id).isEqualTo("LEI")
+        assertThat(active).isFalse
+        assertThat(deactivateDate).isEqualTo("2026-01-01")
+        assertThat(deactivateReason?.code).isEqualTo("D")
+        assertThat(reactivateDate).isEqualTo("2026-01-02")
       }
     }
   }
@@ -357,6 +413,18 @@ class LocationsResourceIntTest : IntegrationTestBase() {
         .expectStatus().isBadRequest
         .expectBody().jsonPath("$.userMessage").value<String> {
           assertThat(it).contains("Housing unit type with id=invalid does not exist")
+        }
+    }
+
+    @Test
+    fun `invalid deactivate reason`() {
+      webTestClient.put().uri("/locations/{locationId}", location1.locationId)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .body(BodyInserters.fromValue(createLocationRequest().copy(reasonCode = "invalid")))
+        .exchange()
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("$.userMessage").value<String> {
+          assertThat(it).contains("Deactivate Reason code=invalid does not exist")
         }
     }
 

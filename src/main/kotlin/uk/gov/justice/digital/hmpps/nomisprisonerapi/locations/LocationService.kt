@@ -50,9 +50,14 @@ class LocationService(
         ?: throw BadDataException("Parent location with id=$it does not exist")
     }
 
+    val deactivateReason = locationDto.reasonCode?.let {
+      livingUnitReasonRepository.findByIdOrNull(LivingUnitReason.pk(it))
+        ?: throw BadDataException("Deactivate Reason code=$it does not exist")
+    }
+
     return LocationIdResponse(
       agencyInternalLocationRepository.save(
-        locationDto.toAgencyInternalLocation(locationDto.locationType, housingUnitType, agency, parent),
+        locationDto.toAgencyInternalLocation(locationDto.locationType, housingUnitType, agency, parent, deactivateReason),
       ).also {
         saveProfiles(it, locationDto.profiles)
         saveUsages(it, locationDto.usages)

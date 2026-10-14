@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.HousingUnitType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LivingUnitReason
+import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Location creation request")
@@ -76,6 +78,18 @@ data class CreateLocationRequest(
   @Schema(description = "Whether location is activated")
   val active: Boolean? = null,
 
+  @Schema(description = "The deactivation date, if not active", example = "2024-12-31")
+  val deactivateDate: LocalDate? = null,
+
+  @Schema(
+    description = "The reason code for deactivation, reference data 'LIV_UN_RSN'",
+    allowableValues = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
+  )
+  val reasonCode: String? = null,
+
+  @Schema(description = "The expected reactivation date if any", example = "2024-12-31")
+  val reactivateDate: LocalDate? = null,
+
   @Schema(description = "Profiles")
   val profiles: List<ProfileRequest>? = null,
 
@@ -87,6 +101,7 @@ data class CreateLocationRequest(
     housingUnitType: HousingUnitType?,
     agency: AgencyLocation,
     parent: AgencyInternalLocation?,
+    reason: LivingUnitReason?,
   ): AgencyInternalLocation = AgencyInternalLocation(
     active = active ?: true,
     certified = certified,
@@ -104,6 +119,9 @@ data class CreateLocationRequest(
     listSequence = listSequence,
     cnaCapacity = cnaCapacity,
     comment = comment,
+    deactivateDate = deactivateDate,
+    deactivateReason = reason,
+    reactivateDate = reactivateDate,
   )
 }
 

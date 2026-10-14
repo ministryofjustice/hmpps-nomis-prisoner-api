@@ -57,7 +57,7 @@ data class UpdateLocationRequest(
   @Schema(description = "Whether location is activated")
   val active: Boolean? = null,
 
-  @Schema(description = "The deactivation date, defaults to today", example = "2024-12-31")
+  @Schema(description = "The deactivation date, if not active", example = "2024-12-31")
   val deactivateDate: LocalDate? = null,
 
   @Schema(
