@@ -23,6 +23,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   private lateinit var advance: OffenderAdvance
   private lateinit var advance2: OffenderAdvance
   private lateinit var advance3: OffenderAdvance
+  private lateinit var advance4: OffenderAdvance
   private var id1: Long = 0
   private var id2: Long = 0
   private var id3: Long = 0
@@ -37,9 +38,11 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
       id2 = offender(nomsId = "A1234BC").id
       id3 = offender(nomsId = "A6789CD") {
         trustAccount()
-        advance2 = advance(informationNumber = "10002000", deductionPriority = 2)
+        advance2 = advance(informationNumber = "10002000", deductionPriority = 1)
         // paid off
-        advance3 = advance(paymentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TEN, informationNumber = "10002000-1", deductionPriority = 3)
+        advance3 = advance(advanceAmount = BigDecimal.TWO, paymentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-1", deductionPriority = 2)
+        // written off
+        advance4 = advance(writeOffAdjustmentAmount = BigDecimal.TWO, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-2", deductionPriority = 3)
         scheduledPayment()
       }.id
     }
@@ -100,8 +103,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("[0].informationNumber").isEqualTo("12341234-2")
-        // TODO
-        .jsonPath("[0].status").isEqualTo("TODO")
+        .jsonPath("[0].status").isEqualTo("ACTIVE")
     }
 
     @Test
@@ -123,9 +125,13 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("size()").isEqualTo(2)
+        .jsonPath("size()").isEqualTo(3)
         .jsonPath("[0].id").isEqualTo(advance2.id)
+        .jsonPath("[0].status").isEqualTo("ACTIVE")
         .jsonPath("[1].id").isEqualTo(advance3.id)
+        .jsonPath("[1].status").isEqualTo("REPAID")
+        .jsonPath("[2].id").isEqualTo(advance4.id)
+        .jsonPath("[2].status").isEqualTo("WRITTEN_OFF")
     }
 
     @Test
@@ -203,8 +209,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("[0].informationNumber").isEqualTo("12341234-2")
-        // TODO
-        .jsonPath("[0].status").isEqualTo("TODO")
+        .jsonPath("[0].status").isEqualTo("ACTIVE")
     }
 
     @Test
@@ -226,9 +231,13 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("size()").isEqualTo(2)
+        .jsonPath("size()").isEqualTo(3)
         .jsonPath("[0].id").isEqualTo(advance2.id)
+        .jsonPath("[0].status").isEqualTo("ACTIVE")
         .jsonPath("[1].id").isEqualTo(advance3.id)
+        .jsonPath("[1].status").isEqualTo("REPAID")
+        .jsonPath("[2].id").isEqualTo(advance4.id)
+        .jsonPath("[2].status").isEqualTo("WRITTEN_OFF")
     }
 
     @Test
@@ -258,12 +267,14 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
   @Nested
   @DisplayName("GET /finance/prisoners/advances/{advanceId}")
-  inner class GetPrisonerAdvanceTests {
+  inner class GetAdvanceTests {
+    val advanceId = advance.id
+
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/finance/prisoners/advances/${advance.id}")
+        webTestClient.get().uri("/finance/prisoners/advances/$advanceId")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -271,7 +282,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/finance/prisoners/advances/${advance.id}")
+        webTestClient.get().uri("/finance/prisoners/advances/$advanceId")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -279,21 +290,21 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/finance/prisoners/advances/${advance.id}")
+        webTestClient.get().uri("/finance/prisoners/advances/$advanceId")
           .exchange()
           .expectStatus().isUnauthorized
       }
     }
 
     @Test
-    fun getPrisonerAdvances() {
-      webTestClient.get().uri("/finance/prisoners/advances/${advance.id}")
+    fun getActiveAdvance() {
+      webTestClient.get().uri("/finance/prisoners/advances/$advanceId")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("id").isEqualTo(advance.id)
+        .jsonPath("id").isEqualTo(advanceId)
         .jsonPath("prisonNumber").isEqualTo("A5194DY")
         .jsonPath("caseloadId").isEqualTo("MDI")
         .jsonPath("advanceAmount").isEqualTo(1000)
@@ -305,12 +316,57 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("informationNumber").isEqualTo("12341234-2")
-        // TODO
-        .jsonPath("status").isEqualTo("TODO")
+        .jsonPath("status").isEqualTo("ACTIVE")
     }
 
     @Test
-    fun getPrisonerAdvanceDoesNotExist() {
+    fun getPaidOffAdvance() {
+      webTestClient.get().uri("/finance/prisoners/advances/${advance3.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(advance3.id)
+        .jsonPath("prisonNumber").isEqualTo("A6789CD")
+        .jsonPath("caseloadId").isEqualTo("MDI")
+        .jsonPath("advanceAmount").isEqualTo(200)
+        .jsonPath("advanceDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("repaymentAmount").isEqualTo(100)
+        .jsonPath("startDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createDatetime").value<String> {
+          assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        }
+        .jsonPath("informationNumber").isEqualTo("10002000-1")
+        .jsonPath("status").isEqualTo("REPAID")
+    }
+
+    @Test
+    fun getWrittenOffAdvance() {
+      webTestClient.get().uri("/finance/prisoners/advances/${advance4.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(advance4.id)
+        .jsonPath("prisonNumber").isEqualTo("A6789CD")
+        .jsonPath("caseloadId").isEqualTo("MDI")
+        .jsonPath("advanceAmount").isEqualTo(1000)
+        .jsonPath("advanceDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("repaymentAmount").isEqualTo(100)
+        .jsonPath("startDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createDatetime").value<String> {
+          assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        }
+        .jsonPath("informationNumber").isEqualTo("10002000-2")
+        .jsonPath("status").isEqualTo("WRITTEN_OFF")
+    }
+
+    @Test
+    fun getAdvanceDoesNotExist() {
       webTestClient.get().uri("/finance/prisoners/advances/99999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()

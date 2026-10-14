@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.MoneySupport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdvanceRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdvanceWithStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 
 @Service
@@ -15,7 +16,7 @@ class PrisonerAdvanceService(
   private val offenderRepository: OffenderRepository,
   private val repository: OffenderAdvanceRepository,
 ) {
-  fun getAdvance(offenderAdvanceId: Long): PrisonerAdvanceDto = repository.findByIdOrNull(offenderAdvanceId)
+  fun getAdvance(offenderAdvanceId: Long): PrisonerAdvanceDto = repository.findByIdWithStatus(offenderAdvanceId)
     ?.toDto()
     ?: throw NotFoundException("Offender advance with id $offenderAdvanceId not found")
 
@@ -34,16 +35,15 @@ class PrisonerAdvanceService(
   }
 
   private fun findAdvances(rootOffenderId: Long, activeOnly: Boolean): List<PrisonerAdvanceDto> = if (activeOnly) {
-    repository.findActiveAdvancesByOffenderId(rootOffenderId).map { it.toDto(AdvanceStatus.ACTIVE) }
+    repository.findActiveAdvancesByOffenderId(rootOffenderId).map { it.toActiveDto() }
   } else {
-    repository.findByOffenderId(rootOffenderId).map { it.toDto() }
+    repository.findAdvancesByOffenderIdWithStatus(rootOffenderId).map { it.toDto() }
   }
 
   fun getActiveAdvancesCount(): AdvancesCount = AdvancesCount(repository.findActiveAdvancesCount())
 }
 
-// TODO Evaluate status for the advance
-fun OffenderAdvance.toDto(status: AdvanceStatus = AdvanceStatus.TODO) = PrisonerAdvanceDto(
+fun OffenderAdvance.toActiveDto() = PrisonerAdvanceDto(
   id = this.id,
   prisonNumber = offender.nomsId,
   caseloadId = caseloadId,
@@ -56,5 +56,21 @@ fun OffenderAdvance.toDto(status: AdvanceStatus = AdvanceStatus.TODO) = Prisoner
   createdBy = createUsername,
   createDatetime = createDatetime,
   informationNumber = deduction?.informationNumber!!,
-  status = status,
+  status = AdvanceStatus.ACTIVE,
+)
+
+fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
+  id = id,
+  prisonNumber = prisonNumber,
+  caseloadId = caseloadId,
+  advanceAmount = MoneySupport.poundsToPence(advanceAmount),
+  advanceDate = advanceDate?.toLocalDate(),
+  startDate = startDate.toLocalDate(),
+  repaymentAmount = MoneySupport.poundsToPence(paymentAmount),
+  reference = reference,
+  comment = comment,
+  createdBy = createdBy,
+  createDatetime = createDatetime,
+  informationNumber = informationNumber,
+  status = AdvanceStatus.valueOf(status),
 )
