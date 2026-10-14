@@ -15,6 +15,7 @@ class DrugTestingService(
 ) {
   fun findIdRanges(pageSize: Int, filter: DrugTestingFilter): List<IdRange> = randomTestingProgramRepository.findEveryPageSizeId(
     pageSize,
+    filter.filterByIncludedPrisonIds,
     filter.includedPrisonIdsAsList,
     filter.excludedPrisonIdsAsList,
   ).toIdRanges()
@@ -23,6 +24,7 @@ class DrugTestingService(
     .findAllIdsBetweenIds(
       fromId,
       toId,
+      filter.filterByIncludedPrisonIds,
       filter.includedPrisonIdsAsList,
       filter.excludedPrisonIdsAsList,
     )
