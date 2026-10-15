@@ -122,8 +122,7 @@ class TapApplicationResourceIntTest(
                 }
               }
             }
-            tapMovementOut()
-            tapMovementIn()
+            tapMovement()
           }
           inactiveBooking = booking(bookingSequence = 2) {
             receive(twoDaysAgo)
@@ -728,8 +727,7 @@ class TapApplicationResourceIntTest(
                   }
                 }
               }
-              tapMovementOut()
-              tapMovementIn()
+              tapMovement()
             }
           }
         }
@@ -816,8 +814,7 @@ class TapApplicationResourceIntTest(
                   }
                 }
               }
-              tapMovementOut()
-              tapMovementIn()
+              tapMovement()
             }
           }
         }

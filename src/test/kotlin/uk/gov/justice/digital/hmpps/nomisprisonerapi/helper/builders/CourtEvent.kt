@@ -65,18 +65,24 @@ interface CourtEventDsl {
     dsl: CourtOrderDsl.() -> Unit = {},
   ): CourtOrder
 
+  /**
+   * If [fromPrison] is null it's derived from the booking location
+   */
   fun courtMovementOut(
     date: LocalDateTime = LocalDateTime.now().roundToNearestSecond(),
-    fromPrison: String = "BXI",
+    fromPrison: String? = null,
     toCourt: String = "ABDRCT",
     movementReason: String = "CRT",
     comment: String? = null,
   ): OffenderCourtMovementOut
 
+  /**
+   * If [toPrison] or [fromCourt] are null they are derived from the court movement out
+   */
   fun courtMovementIn(
     date: LocalDateTime = LocalDateTime.now().roundToNearestSecond(),
-    toPrison: String = "BXI",
-    fromCourt: String = "ABDRCT",
+    toPrison: String? = null,
+    fromCourt: String? = null,
     movementReason: String = "CRT",
     comment: String? = null,
   ): OffenderCourtMovementIn
@@ -138,7 +144,7 @@ class CourtEventBuilder(
 
   fun build(
     commentText: String?,
-    agencyId: String,
+    court: String,
     courtEventType: String,
     eventStatusCode: String,
     outcomeReasonCode: String?,
@@ -158,7 +164,7 @@ class CourtEventBuilder(
     courtEventType = repository.lookupCourtEventType(courtEventType),
     judgeName = judgeName,
     eventStatus = repository.lookupEventStatus(eventStatusCode),
-    court = repository.lookupAgency(agencyId),
+    court = repository.lookupAgency(court),
     outcomeReasonCode = outcomeReasonCode?.let { repository.lookupOffenceResultCode(outcomeReasonCode) },
     commentText = commentText,
     orderRequestedFlag = orderRequestedFlag,
@@ -247,7 +253,7 @@ class CourtEventBuilder(
 
   override fun courtMovementOut(
     date: LocalDateTime,
-    fromPrison: String,
+    fromPrison: String?,
     toCourt: String,
     movementReason: String,
     comment: String?,
@@ -255,35 +261,33 @@ class CourtEventBuilder(
     .buildCourtMovementOut(
       offenderBooking = courtEvent.offenderBooking,
       date = date,
-      fromPrison = fromPrison,
+      fromPrison = fromPrison ?: courtEvent.offenderBooking.location.id,
       toCourt = toCourt,
       movementReason = movementReason,
       comment = comment,
       courtScheduleOut = courtEvent,
     )
-    .also {
-      courtEvent.offenderBooking.externalMovements += it
-    }
 
   override fun courtMovementIn(
     date: LocalDateTime,
-    toPrison: String,
-    fromCourt: String,
+    toPrison: String?,
+    fromCourt: String?,
     movementReason: String,
     comment: String?,
-  ): OffenderCourtMovementIn = externalMovementBuilderFactory.builder()
-    .buildCourtMovementIn(
+  ): OffenderCourtMovementIn = externalMovementBuilderFactory.builder().let { builder ->
+    val previous = courtEvent.offenderBooking.externalMovements
+      .filterIsInstance<OffenderCourtMovementOut>()
+      .singleOrNull { it.courtScheduleOutId == courtEvent.id }
+    builder.buildCourtMovementIn(
       offenderBooking = courtEvent.offenderBooking,
       date = date,
-      toPrison = toPrison,
-      fromCourt = fromCourt,
+      toPrison = toPrison ?: previous?.fromAgency?.id ?: "BXI",
+      fromCourt = fromCourt ?: previous?.toAgency?.id ?: "ABDRCT",
       movementReason = movementReason,
       comment = comment,
       courtScheduleOut = courtEvent,
     )
-    .also {
-      courtEvent.offenderBooking.externalMovements += it
-    }
+  }
 
   override fun courtEventIn(
     eventStatusCode: String,

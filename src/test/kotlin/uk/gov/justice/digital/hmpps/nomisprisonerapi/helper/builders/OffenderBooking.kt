@@ -74,6 +74,17 @@ import kotlin.random.Random
 @DslMarker
 annotation class BookingDslMarker
 
+/**
+ * Movements are modelled in 2 ways:
+ * - composite movements, e.g. prisonTransfer, courtMovement, tapMovement etc. These add both outbound and inbound movements
+ *   and should be used when you just need a movement but don't care much about the details.
+ * - single movements, e.g. transferOut, courtMovementOut, courtMovementIn etc. These add only the movement specified and
+ *   should be used when you're saving the movements for assertions, or where the movement is nested in a plan / schedule.
+ * Every booking automatically gets an admnission movement - if you need the prisoner to be OUT and/or inactive
+ * then you'll need to add a release or tap/court movement.
+ * Note that you generally only need to specify the to location of an outbound movement. The builders will attempt to
+ * default the prison from the booking and inbound locations from the outbound movement or schedule.
+ */
 @NomisDataDslMarker
 interface BookingDsl {
 
@@ -239,7 +250,7 @@ interface BookingDsl {
 
   fun courtEventOut(
     commentText: String? = "Court event comment",
-    agencyId: String = "LEEDYC",
+    court: String = "LEEDYC",
     courtEventType: String = "TRIAL",
     eventStatusCode: String = "SCH",
     eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
@@ -318,11 +329,56 @@ interface BookingDsl {
     sequence: Int = 1,
   ): OffenderProfileDetail
 
+  /** A null [from] location is defaulted from the booking **/
   fun prisonTransfer(
-    from: String = "BXI",
+    from: String? = null,
     to: String = "MDI",
     date: LocalDateTime = LocalDateTime.now(),
+    arrivalDate: LocalDateTime = date.plusSeconds(1),
   ): Pair<OffenderTransferMovementOut, OffenderAdmissionMovementIn>
+
+  /** A null [prison] is defaulted from the booking **/
+  fun tapMovement(
+    prison: String? = null,
+    toAgency: String? = null,
+    toCity: String? = null,
+    toAddress: Address? = null,
+    movementReason: String = "C5",
+    escort: String? = null,
+    date: LocalDateTime = LocalDateTime.now(),
+    returnDate: LocalDateTime = date.plusSeconds(1),
+  ): Pair<OffenderTapMovementOut, OffenderTapMovementIn>
+
+  /** A null [prison] is defaulted from the booking **/
+  fun courtMovement(
+    prison: String? = null,
+    court: String = "ABDRCT",
+    movementReason: String = "CRT",
+    date: LocalDateTime = LocalDateTime.now(),
+    returnDate: LocalDateTime = date.plusSeconds(1),
+  ): Pair<OffenderCourtMovementOut, OffenderCourtMovementIn>
+
+  /** A null [fromPrison] is defaulted from the booking **/
+  fun tapTransfer(
+    fromPrison: String? = null,
+    toPrison: String = "MDI",
+    toAgency: String? = null,
+    toCity: String? = null,
+    toAddress: Address? = null,
+    movementReason: String = "C5",
+    escort: String? = null,
+    date: LocalDateTime = LocalDateTime.now(),
+    arrivalDate: LocalDateTime = date.plusSeconds(1),
+  ): Pair<OffenderTapMovementOut, OffenderAdmissionMovementIn>
+
+  /** A null [fromPrison] is defaulted from the booking **/
+  fun courtTransfer(
+    fromPrison: String? = null,
+    toPrison: String = "MDI",
+    court: String = "ABDRCT",
+    date: LocalDateTime = LocalDateTime.now(),
+    arrivalDate: LocalDateTime = date.plusSeconds(1),
+  ): Pair<OffenderCourtMovementOut, OffenderAdmissionMovementIn>
 
   fun release(
     date: LocalDateTime = LocalDateTime.now(),
@@ -332,22 +388,20 @@ interface BookingDsl {
     comment: String? = null,
   ): OffenderReleaseMovementOut
 
-  /**
-   * If [movementReason] is not supplied it is derived from the previous movement on the booking, as in NOMIS:
-   * TRNCRT after a court movement out, INT after a transfer out, TRNTAP after a TAP out, otherwise N (e.g. first movement or after a release).
-   */
+  /** Null [movementReason], [fromAgency] or [toPrison] are derived if not provided */
   fun receive(
     date: LocalDateTime = LocalDateTime.now(),
     movementReason: String? = null,
-    fromAgency: String = "ABDRCT",
-    toPrison: String = "BXI",
+    fromAgency: String? = null,
+    toPrison: String? = null,
     escort: String? = null,
     comment: String? = null,
   ): OffenderAdmissionMovementIn
 
+  /** A null [fromPrison] is derived from the booking **/
   fun tapMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
-    fromPrison: String = "BXI",
+    fromPrison: String? = null,
     toAgency: String? = null,
     movementReason: String = "C5",
     arrestAgency: String? = null,
@@ -358,10 +412,14 @@ interface BookingDsl {
     toAddress: Address? = null,
   ): OffenderTapMovementOut
 
+  /**
+   * If [toPrison] is null it's derived from the movement out
+   * If the [fromAgency]/[fromCity]/[fromAddress] are null, they are derived from the movement out
+   */
   fun tapMovementIn(
     date: LocalDateTime = LocalDateTime.now(),
     fromAgency: String? = null,
-    toPrison: String = "BXI",
+    toPrison: String? = null,
     movementReason: String = "C5",
     escort: String? = null,
     escortText: String? = null,
@@ -372,7 +430,7 @@ interface BookingDsl {
 
   fun courtScheduleOut(
     commentText: String? = "Court event comment",
-    fromPrison: String = "MDI",
+    court: String = "ABDRCT",
     courtEventType: String = "TRIAL",
     eventStatusCode: String = "SCH",
     eventDateTime: LocalDateTime = LocalDateTime.of(2023, 1, 1, 10, 30),
@@ -380,25 +438,28 @@ interface BookingDsl {
     dsl: CourtEventDsl.() -> Unit = {},
   ): CourtEvent
 
+  /** A null [fromPrison] is derived from the booking **/
   fun courtMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
-    fromPrison: String = "BXI",
+    fromPrison: String? = null,
     toCourt: String = "ABDRCT",
     movementReason: String = "CRT",
     comment: String? = null,
   ): OffenderCourtMovementOut
 
+  /** Null [toPrison] or [fromCourt] are derived from the booking */
   fun courtMovementIn(
     date: LocalDateTime = LocalDateTime.now(),
-    toPrison: String = "BXI",
-    fromCourt: String = "ABDRCT",
+    toPrison: String? = null,
+    fromCourt: String? = null,
     movementReason: String = "CRT",
     comment: String? = null,
   ): OffenderCourtMovementIn
 
+  /** A null [fromPrison] is derived from the booking **/
   fun transferMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
-    fromPrison: String = "BXI",
+    fromPrison: String? = null,
     toPrison: String? = "MDI",
     movementReason: String = "28",
     escort: String? = null,
@@ -703,7 +764,7 @@ class BookingBuilder(
             toPrison = agencyLocationCode,
             escort = null,
             comment = null,
-          ).also { movement -> it.externalMovements += movement }
+          )
       }
       .let { repository.save(it) }
       .also { offenderBooking = it }
@@ -933,7 +994,7 @@ class BookingBuilder(
 
   override fun courtEventOut(
     commentText: String?,
-    agencyId: String,
+    court: String,
     courtEventType: String,
     eventStatusCode: String,
     eventDateTime: LocalDateTime,
@@ -942,7 +1003,7 @@ class BookingBuilder(
   ) = courtEventBuilderFactory.builder().let { builder ->
     builder.build(
       commentText = commentText,
-      agencyId = agencyId,
+      court = court,
       courtEventType = courtEventType,
       eventStatusCode = eventStatusCode,
       outcomeReasonCode = null,
@@ -1134,18 +1195,79 @@ class BookingBuilder(
   }
 
   override fun prisonTransfer(
-    from: String,
+    from: String?,
     to: String,
     date: LocalDateTime,
+    arrivalDate: LocalDateTime,
   ): Pair<OffenderTransferMovementOut, OffenderAdmissionMovementIn> = transferMovementOut(
     date = date,
     fromPrison = from,
     toPrison = to,
-  ) to receive(
-    date = date.plusSeconds(1),
-    fromAgency = from,
-    toPrison = to,
-  )
+  ) to receive(date = arrivalDate)
+
+  override fun tapMovement(
+    prison: String?,
+    toAgency: String?,
+    toCity: String?,
+    toAddress: Address?,
+    movementReason: String,
+    escort: String?,
+    date: LocalDateTime,
+    returnDate: LocalDateTime,
+  ): Pair<OffenderTapMovementOut, OffenderTapMovementIn> = tapMovementOut(
+    date = date,
+    fromPrison = prison,
+    toAgency = toAgency,
+    toCity = toCity,
+    toAddress = toAddress,
+    movementReason = movementReason,
+    escort = escort,
+  ) to tapMovementIn(date = returnDate, movementReason = movementReason)
+
+  override fun courtMovement(
+    prison: String?,
+    court: String,
+    movementReason: String,
+    date: LocalDateTime,
+    returnDate: LocalDateTime,
+  ): Pair<OffenderCourtMovementOut, OffenderCourtMovementIn> = courtMovementOut(
+    date = date,
+    fromPrison = prison,
+    toCourt = court,
+    movementReason = movementReason,
+  ) to courtMovementIn(date = returnDate, movementReason = movementReason)
+
+  override fun tapTransfer(
+    fromPrison: String?,
+    toPrison: String,
+    toAgency: String?,
+    toCity: String?,
+    toAddress: Address?,
+    movementReason: String,
+    escort: String?,
+    date: LocalDateTime,
+    arrivalDate: LocalDateTime,
+  ): Pair<OffenderTapMovementOut, OffenderAdmissionMovementIn> = tapMovementOut(
+    date = date,
+    fromPrison = fromPrison,
+    toAgency = toAgency,
+    toCity = toCity,
+    toAddress = toAddress,
+    movementReason = movementReason,
+    escort = escort,
+  ) to receive(date = arrivalDate, toPrison = toPrison)
+
+  override fun courtTransfer(
+    fromPrison: String?,
+    toPrison: String,
+    court: String,
+    date: LocalDateTime,
+    arrivalDate: LocalDateTime,
+  ): Pair<OffenderCourtMovementOut, OffenderAdmissionMovementIn> = courtMovementOut(
+    date = date,
+    fromPrison = fromPrison,
+    toCourt = court,
+  ) to receive(date = arrivalDate, toPrison = toPrison)
 
   override fun release(
     date: LocalDateTime,
@@ -1163,42 +1285,41 @@ class BookingBuilder(
         escort = escort,
         comment = comment,
       )
-        .also { offenderBooking.externalMovements.forEach { it.active = false } }
-        .also { offenderBooking.externalMovements += it }
     }
 
   override fun receive(
     date: LocalDateTime,
     movementReason: String?,
-    fromAgency: String,
-    toPrison: String,
+    fromAgency: String?,
+    toPrison: String?,
     escort: String?,
     comment: String?,
   ): OffenderAdmissionMovementIn = offenderExternalMovementBuilderFactory.builder()
     .let { builder ->
+      val defaults = defaultAdmission()
       builder.buildAdmissionMovementIn(
         offenderBooking = offenderBooking,
         date = date,
-        movementReason = movementReason ?: defaultAdmissionReason(),
-        fromAgency = fromAgency,
-        toPrison = toPrison,
+        movementReason = movementReason ?: defaults.reason,
+        fromAgency = fromAgency ?: defaults.fromAgency,
+        toPrison = toPrison ?: defaults.toPrison,
         escort = escort,
         comment = comment,
       )
-        .also { offenderBooking.externalMovements.forEach { it.active = false } }
-        .also { offenderBooking.externalMovements += it }
     }
 
-  private fun defaultAdmissionReason() = when (offenderBooking.externalMovements.maxByOrNull { it.id.sequence }) {
-    is OffenderCourtMovementOut -> "TRNCRT"
-    is OffenderTransferMovementOut -> "INT"
-    is OffenderTapMovementOut -> "TRNTAP"
-    else -> "N"
+  private data class AdmissionDefaults(val reason: String, val fromAgency: String, val toPrison: String)
+
+  private fun defaultAdmission() = when (val previous = offenderBooking.externalMovements.maxByOrNull { it.id.sequence }) {
+    is OffenderCourtMovementOut -> AdmissionDefaults("TRNCRT", previous.toAgency?.id ?: "ABDRCT", "BXI")
+    is OffenderTransferMovementOut -> AdmissionDefaults("INT", previous.fromAgency?.id ?: "ABDRCT", previous.toAgency?.id ?: "BXI")
+    is OffenderTapMovementOut -> AdmissionDefaults("TRNTAP", previous.toAgency?.id ?: "ABDRCT", "BXI")
+    else -> AdmissionDefaults("N", "ABDRCT", "BXI")
   }
 
   override fun tapMovementOut(
     date: LocalDateTime,
-    fromPrison: String,
+    fromPrison: String?,
     toAgency: String?,
     movementReason: String,
     arrestAgency: String?,
@@ -1211,7 +1332,7 @@ class BookingBuilder(
     .buildTapMovementOut(
       offenderBooking = offenderBooking,
       date = date,
-      fromPrison = fromPrison,
+      fromPrison = fromPrison ?: offenderBooking.location.id,
       toAgency = toAgency,
       movementReason = movementReason,
       arrestAgency = arrestAgency,
@@ -1221,38 +1342,36 @@ class BookingBuilder(
       toCity = toCity,
       toAddress = toAddress,
     )
-    .also { offenderBooking.externalMovements.forEach { it.active = false } }
-    .also { offenderBooking.externalMovements += it }
 
   override fun tapMovementIn(
     date: LocalDateTime,
     fromAgency: String?,
-    toPrison: String,
+    toPrison: String?,
     movementReason: String,
     escort: String?,
     escortText: String?,
     comment: String?,
     fromCity: String?,
     fromAddress: Address?,
-  ): OffenderTapMovementIn = offenderExternalMovementBuilderFactory.builder()
-    .buildTapMovementIn(
+  ): OffenderTapMovementIn = offenderExternalMovementBuilderFactory.builder().let { builder ->
+    val previous = offenderBooking.externalMovements.maxByOrNull { it.id.sequence } as? OffenderTapMovementOut
+    builder.buildTapMovementIn(
       offenderBooking = offenderBooking,
       date = date,
-      fromAgency = fromAgency,
-      toPrison = toPrison,
+      fromAgency = fromAgency ?: previous?.toAgency?.id,
+      toPrison = toPrison ?: previous?.fromAgency?.id ?: "BXI",
       movementReason = movementReason,
       escort = escort,
       escortText = escortText,
       comment = comment,
-      fromCity = fromCity,
-      fromAddress = fromAddress,
+      fromCity = fromCity ?: previous?.fromCity?.code,
+      fromAddress = fromAddress ?: previous?.fromAddress,
     )
-    .also { offenderBooking.externalMovements.forEach { it.active = false } }
-    .also { offenderBooking.externalMovements += it }
+  }
 
   override fun courtScheduleOut(
     commentText: String?,
-    fromPrison: String,
+    court: String,
     courtEventType: String,
     eventStatusCode: String,
     eventDateTime: LocalDateTime,
@@ -1261,7 +1380,7 @@ class BookingBuilder(
   ) = courtEventBuilderFactory.builder().let { builder ->
     builder.build(
       commentText = commentText,
-      agencyId = fromPrison,
+      court = court,
       courtEventType = courtEventType,
       eventStatusCode = eventStatusCode,
       eventDateTime = eventDateTime,
@@ -1279,7 +1398,7 @@ class BookingBuilder(
 
   override fun courtMovementOut(
     date: LocalDateTime,
-    fromPrison: String,
+    fromPrison: String?,
     toCourt: String,
     movementReason: String,
     comment: String?,
@@ -1287,35 +1406,33 @@ class BookingBuilder(
     .buildCourtMovementOut(
       offenderBooking = offenderBooking,
       date = date,
-      fromPrison = fromPrison,
+      fromPrison = fromPrison ?: offenderBooking.location.id,
       toCourt = toCourt,
       movementReason = movementReason,
       comment = comment,
     )
-    .also { offenderBooking.externalMovements.forEach { it.active = false } }
-    .also { offenderBooking.externalMovements += it }
 
   override fun courtMovementIn(
     date: LocalDateTime,
-    toPrison: String,
-    fromCourt: String,
+    toPrison: String?,
+    fromCourt: String?,
     movementReason: String,
     comment: String?,
-  ): OffenderCourtMovementIn = offenderExternalMovementBuilderFactory.builder()
-    .buildCourtMovementIn(
+  ): OffenderCourtMovementIn = offenderExternalMovementBuilderFactory.builder().let { builder ->
+    val previous = offenderBooking.externalMovements.maxByOrNull { it.id.sequence } as? OffenderCourtMovementOut
+    builder.buildCourtMovementIn(
       offenderBooking = offenderBooking,
       date = date,
-      toPrison = toPrison,
-      fromCourt = fromCourt,
+      toPrison = toPrison ?: previous?.fromAgency?.id ?: "BXI",
+      fromCourt = fromCourt ?: previous?.toAgency?.id ?: "ABDRCT",
       movementReason = movementReason,
       comment = comment,
     )
-    .also { offenderBooking.externalMovements.forEach { it.active = false } }
-    .also { offenderBooking.externalMovements += it }
+  }
 
   override fun transferMovementOut(
     date: LocalDateTime,
-    fromPrison: String,
+    fromPrison: String?,
     toPrison: String?,
     movementReason: String,
     escort: String?,
@@ -1325,15 +1442,13 @@ class BookingBuilder(
     .buildTransferMovementOut(
       offenderBooking = offenderBooking,
       date = date.withNano(0),
-      fromPrison = fromPrison,
+      fromPrison = fromPrison ?: offenderBooking.location.id,
       toPrison = toPrison,
       movementReason = movementReason,
       escort = escort,
       comment = comment,
       transferScheduleOutId = transferScheduleOutId,
     )
-    .also { offenderBooking.externalMovements.forEach { it.active = false } }
-    .also { offenderBooking.externalMovements += it }
 
   override fun visitBalance(
     remainingVisitOrders: Int?,

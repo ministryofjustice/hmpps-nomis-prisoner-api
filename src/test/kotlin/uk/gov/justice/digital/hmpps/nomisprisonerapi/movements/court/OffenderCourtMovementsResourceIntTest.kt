@@ -478,7 +478,7 @@ class OffenderCourtMovementsResourceIntTest(
         nomisDataBuilder.build {
           offender = offender(nomsId = offenderNo) {
             booking = booking {
-              scheduleOut = courtEventOut(agencyId = "LEI") {
+              scheduleOut = courtEventOut(court = "LEI") {
                 movementOut = courtMovementOut(fromPrison = "LEEDYC", toCourt = "LEI")
                 movementIn = courtMovementIn(fromCourt = "LEI", toPrison = "LEEDYC")
               }

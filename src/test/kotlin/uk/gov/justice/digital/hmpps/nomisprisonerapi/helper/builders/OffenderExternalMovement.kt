@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdmissionMoveme
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderReleaseMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
@@ -83,6 +84,7 @@ class OffenderExternalMovementBuilder(
     escort = escort?.let { repository.lookupEscort(escort) },
     commentText = comment,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "OUT"
     // Even if we're going to a hospital, the booking location in NOMIS iS OUT
     offenderBooking.location = repository.lookupAgency("OUT")
@@ -114,6 +116,7 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     active = true,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "IN"
     offenderBooking.location = it.toAgency!!
     offenderBooking.active = true
@@ -152,6 +155,7 @@ class OffenderExternalMovementBuilder(
     toAddress = toAddress,
     tapScheduleOut = tapScheduleOut,
   ).also {
+    offenderBooking.add(it)
     // NOMIS keeps the prison as the booking location during a temporary absence
     offenderBooking.inOutStatus = "OUT"
   }
@@ -187,6 +191,7 @@ class OffenderExternalMovementBuilder(
     tapScheduleIn = tapScheduleIn,
     tapScheduleOut = tapScheduleIn?.tapScheduleOut,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "IN"
     offenderBooking.location = it.toAgency!!
   }
@@ -213,6 +218,7 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     courtScheduleOutId = courtScheduleOut?.id,
   ).also {
+    offenderBooking.add(it)
     // NOMIS keeps the prison as the booking location during a temporary absence
     offenderBooking.inOutStatus = "OUT"
   }
@@ -241,6 +247,7 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     transferScheduleOutId = transferScheduleOutId,
   ).also {
+    offenderBooking.add(it)
     // NOMIS marks a prisoner in transit as inactive at the TRN location
     offenderBooking.inOutStatus = "TRN"
     offenderBooking.location = repository.lookupAgency("TRN")
@@ -269,7 +276,14 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     courtScheduleOutId = courtScheduleOut?.id,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "IN"
     offenderBooking.location = it.toAgency!!
+  }
+
+  // In NOMIS only the latest movement on a booking is active
+  private fun OffenderBooking.add(movement: OffenderExternalMovement) {
+    externalMovements.forEach { it.active = false }
+    externalMovements += movement
   }
 }

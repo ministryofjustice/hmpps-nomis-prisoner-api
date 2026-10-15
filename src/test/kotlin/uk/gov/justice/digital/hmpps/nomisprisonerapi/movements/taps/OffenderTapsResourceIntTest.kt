@@ -1524,8 +1524,7 @@ class OffenderTapsResourceIntTest(
                   }
                 }
               }
-              tapMovementOut()
-              tapMovementIn()
+              tapMovement()
             }
           }
         }
@@ -1578,8 +1577,7 @@ class OffenderTapsResourceIntTest(
               }
             }
             booking {
-              tapMovementOut()
-              tapMovementIn()
+              tapMovement()
               tapMovementOut()
             }
             booking()

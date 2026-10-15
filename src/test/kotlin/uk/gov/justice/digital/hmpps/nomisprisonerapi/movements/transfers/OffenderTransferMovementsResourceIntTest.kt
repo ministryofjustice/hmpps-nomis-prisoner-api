@@ -195,10 +195,9 @@ class OffenderTransferMovementsResourceIntTest(
               transferScheduleOut {
                 transferMovementOut()
               }
-              receive(fromAgency = "BXI", toPrison = "MDI")
+              receive()
               transferScheduleOut(eventStatus = EventStatus.PENDING, startTime = null)
-              transferMovementOut(fromPrison = "MDI", toPrison = "BXI")
-              receive(fromAgency = "MDI", toPrison = "BXI")
+              prisonTransfer(from = "LEI", to = "BXI")
               release()
             }
           }
