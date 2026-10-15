@@ -1,17 +1,18 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.toCodeDescription
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.truncateToUtf8Length
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressPhone
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsage
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AddressUsageType
@@ -52,12 +53,12 @@ class CorePersonService(
   private val offenderAddressRepository: OffenderAddressRepository,
   private val addressPhoneRepository: AddressPhoneRepository,
   private val phoneUsageRepository: ReferenceCodeRepository<PhoneUsage>,
-  private val addressTypeRepository: ReferenceCodeRepository<AddressType>,
   private val addressUsageTypeRepository: ReferenceCodeRepository<AddressUsageType>,
   private val cityRepository: ReferenceCodeRepository<City>,
   private val countyRepository: ReferenceCodeRepository<County>,
   private val countryRepository: ReferenceCodeRepository<Country>,
   private val profileCodeRepository: ProfileCodeRepository,
+  private val telemetryClient: TelemetryClient,
 ) {
   fun getOffender(prisonNumber: String): CorePerson {
     val latestBooking = offenderBookingRepository.findLatestByOffenderNomsId(prisonNumber)
@@ -158,41 +159,52 @@ class CorePersonService(
     addressId = addressId,
   ).toOffenderAddress()
 
-  fun createOffenderAddress(prisonNumber: String, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse = offenderAddressRepository.saveAndFlush(
-    request.let {
-      JpaOffenderAddress(
-        offender = rootOffender(prisonNumber),
-        addressType = addressTypeOf(it.typeCode),
-        premise = it.premise,
-        street = it.street,
-        locality = it.locality,
-        flat = it.flat,
-        postalCode = it.postcode,
-        city = cityOf(it.cityCode),
-        county = countyOf(it.countyCode),
-        country = countryOf(it.countryCode),
-        validatedPAF = false,
-        noFixedAddress = it.noFixedAddress,
-        primaryAddress = it.primaryAddress,
-        mailAddress = it.mailAddress,
-        comment = it.comment,
-        startDate = it.startDate,
-        endDate = it.endDate,
+  fun createOffenderAddress(prisonNumber: String, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse {
+    val lookupFailures = mutableMapOf<String, String>()
+    val address = offenderAddressRepository.saveAndFlush(
+      request.let {
+        JpaOffenderAddress(
+          offender = rootOffender(prisonNumber),
+          premise = it.premise,
+          street = it.street,
+          locality = it.locality,
+          flat = it.flat,
+          postalCode = it.postcode,
+          city = cityOf(it.city, lookupFailures),
+          county = countyOf(it.county, lookupFailures),
+          country = countryOf(it.countryCode),
+          noFixedAddress = it.noFixedAddress,
+          primaryAddress = it.primaryAddress,
+          mailAddress = it.mailAddress,
+          comment = it.comment,
+          startDate = it.startDate,
+          endDate = it.endDate,
+        )
+      },
+    )
+    if (lookupFailures.isNotEmpty()) {
+      telemetryClient.trackEvent(
+        "offender-address-lookup-failed",
+        mapOf(
+          "prisonNumber" to prisonNumber,
+          "addressId" to address.addressId.toString(),
+        ) + lookupFailures,
       )
-    },
-  ).let { CreateOffenderAddressResponse(addressId = it.addressId) }
+    }
+    return CreateOffenderAddressResponse(addressId = address.addressId)
+  }
 
   fun updateOffenderAddress(prisonNumber: String, addressId: Long, request: UpdateOffenderAddressRequest) {
+    val lookupFailures = mutableMapOf<String, String>()
     offenderAddressOf(prisonNumber = prisonNumber, addressId = addressId).run {
       request.also {
-        addressType = addressTypeOf(it.typeCode)
         premise = it.premise
         street = it.street
         locality = it.locality
         flat = it.flat
         postalCode = it.postcode
-        city = cityOf(it.cityCode)
-        county = countyOf(it.countyCode)
+        city = cityOf(it.city, lookupFailures)
+        county = countyOf(it.county, lookupFailures)
         country = countryOf(it.countryCode)
         noFixedAddress = it.noFixedAddress
         primaryAddress = it.primaryAddress
@@ -200,10 +212,16 @@ class CorePersonService(
         comment = it.comment
         startDate = it.startDate
         endDate = it.endDate
-        it.validatedPAF?.also { validated ->
-          validatedPAF = validated
-        }
       }
+    }
+    if (lookupFailures.isNotEmpty()) {
+      telemetryClient.trackEvent(
+        "offender-address-lookup-failed",
+        mapOf(
+          "prisonNumber" to prisonNumber,
+          "addressId" to addressId.toString(),
+        ) + lookupFailures,
+      )
     }
   }
 
@@ -467,17 +485,14 @@ class CorePersonService(
   private fun addressUsageTypeOf(code: String): AddressUsageType = addressUsageTypeRepository.findByIdOrNull(AddressUsageType.pk(code))
     ?: throw BadDataException("Address usage with code $code does not exist")
 
-  private fun addressTypeOf(code: String?): AddressType? = code?.let {
-    addressTypeRepository.findByIdOrNull(AddressType.pk(code))
-      ?: throw BadDataException("AddressType with code $code does not exist")
+  private fun cityOf(description: String?, lookupFailures: MutableMap<String, String>, key: String = "cityLookupFailure"): City? = description?.let {
+    cityRepository.findByDomainAndDescriptionIgnoreCase(City.CITY, description)
+      .also { city -> if (city == null) lookupFailures[key] = description }
   }
 
-  private fun cityOf(code: String?): City? = code?.let {
-    cityRepository.findByIdOrNull(City.pk(code)) ?: throw BadDataException("City with code $code does not exist")
-  }
-
-  private fun countyOf(code: String?): County? = code?.let {
-    countyRepository.findByIdOrNull(County.pk(code)) ?: throw BadDataException("County with code $code does not exist")
+  private fun countyOf(description: String?, lookupFailures: MutableMap<String, String>, key: String = "countyLookupFailure"): County? = description?.let {
+    countyRepository.findByDomainAndDescriptionIgnoreCase(County.COUNTY, description)
+      .also { county -> if (county == null) lookupFailures[key] = description }
   }
 
   private fun countryOf(code: String?): Country? = code?.let {
