@@ -68,6 +68,16 @@ interface OffenderAdvanceRepository : JpaRepository<OffenderAdvance, Long> {
   @Query(
     ADVANCE_STATUS_SELECT +
       """
+      WHERE od.offender_deduction_id = :deductionId
+        AND $ADVANCE_BASE_CONDITIONS
+    """,
+    nativeQuery = true,
+  )
+  fun findByDeductionIdWithStatus(deductionId: Long): OffenderAdvanceWithStatus?
+
+  @Query(
+    ADVANCE_STATUS_SELECT +
+      """
       WHERE opp.offender_id = :offenderId
         AND $ADVANCE_BASE_CONDITIONS
       ORDER BY opp.offender_payment_profile_id

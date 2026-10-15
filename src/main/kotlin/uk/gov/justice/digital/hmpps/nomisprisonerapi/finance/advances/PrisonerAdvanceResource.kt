@@ -51,7 +51,7 @@ class PrisonerAdvanceResource(
     ],
   )
   fun getAdvance(
-    @Schema(description = "Id", example = "123456789")
+    @Schema(description = "Advance Id aka offender payment profile id", example = "123456789")
     @PathVariable
     advanceId: Long,
   ): PrisonerAdvanceDto = service.getAdvance(advanceId)
@@ -147,6 +147,36 @@ class PrisonerAdvanceResource(
     @RequestParam
     activeOnly: Boolean = false,
   ): List<PrisonerAdvanceDto> = service.getAdvances(rootOffenderId, activeOnly)
+
+  @GetMapping("/advances/deduction-id/{deductionId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner advance by offender deduction id",
+    description = "Retrieves a prisoner advance identified by an associated offender deduction id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Advance Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Advance does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getAdvanceByDeductionId(
+    @Schema(description = "Offender deduction Id", example = "123456789")
+    @PathVariable
+    deductionId: Long,
+  ): PrisonerAdvanceDto = service.getAdvanceByDeductionId(deductionId)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

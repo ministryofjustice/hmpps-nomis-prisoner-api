@@ -20,6 +20,10 @@ class PrisonerAdvanceService(
     ?.toDto()
     ?: throw NotFoundException("Offender advance with id $offenderAdvanceId not found")
 
+  fun getAdvanceByDeductionId(deductionId: Long): PrisonerAdvanceDto = repository.findByDeductionIdWithStatus(deductionId)
+    ?.toDto()
+    ?: throw NotFoundException("Offender advance with deduction id $deductionId not found")
+
   fun getAdvances(prisonNumber: String, activeOnly: Boolean): List<PrisonerAdvanceDto> {
     val offender = offenderRepository.findRootByNomsId(prisonNumber)
       ?: throw NotFoundException("Offender $prisonNumber not found")
