@@ -161,10 +161,12 @@ class CorePersonService(
 
   fun createOffenderAddress(prisonNumber: String, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse {
     val lookupFailures = mutableMapOf<String, String>()
+    val offender = rootOffender(prisonNumber)
+    clearOtherPrimaryAndMailFlags(rootOffenderId = offender.id, primary = request.primaryAddress, mail = request.mailAddress)
     val address = offenderAddressRepository.saveAndFlush(
       request.let {
         JpaOffenderAddress(
-          offender = rootOffender(prisonNumber),
+          offender = offender,
           premise = it.premise,
           street = it.street,
           locality = it.locality,
@@ -197,6 +199,7 @@ class CorePersonService(
   fun updateOffenderAddress(prisonNumber: String, addressId: Long, request: UpdateOffenderAddressRequest) {
     val lookupFailures = mutableMapOf<String, String>()
     offenderAddressOf(prisonNumber = prisonNumber, addressId = addressId).run {
+      clearOtherPrimaryAndMailFlags(rootOffenderId = offender.id, primary = request.primaryAddress, mail = request.mailAddress, excludeAddressId = addressId)
       request.also {
         premise = it.premise
         street = it.street
@@ -508,6 +511,16 @@ class CorePersonService(
       ?: throw NotFoundException("Address with id=$addressId does not exist")
     ).takeIf { it.offender.id == offenderId }
     ?: throw NotFoundException("Address with id=$addressId on Offender with id=$offenderId does not exist")
+
+  private fun clearOtherPrimaryAndMailFlags(rootOffenderId: Long, primary: Boolean, mail: Boolean, excludeAddressId: Long? = null) {
+    if (!primary && !mail) return
+    offenderAddressRepository.findByOffender_RootOffenderId(rootOffenderId)
+      .filter { it.addressId != excludeAddressId }
+      .forEach {
+        if (primary && it.primaryAddress) it.primaryAddress = false
+        if (mail && it.mailAddress) it.mailAddress = false
+      }
+  }
 
   private fun offenderAddressOf(
     prisonNumber: String,

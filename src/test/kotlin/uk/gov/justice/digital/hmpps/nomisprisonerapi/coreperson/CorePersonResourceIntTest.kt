@@ -3267,6 +3267,82 @@ class CorePersonResourceIntTest(
           isNull(),
         )
       }
+
+      @Test
+      fun `will unset primary and mail flags on other addresses when new address is primary and mail`() {
+        lateinit var offender: Offender
+        lateinit var otherAddress: OffenderAddressJpa
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "B1000AA") {
+            otherAddress = address(primaryAddress = true, mailAddress = true)
+          }
+        }
+
+        val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${offender.nomsId}/address")
+          .bodyValue(validAddressRequest.copy(primaryAddress = true, mailAddress = true))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody<CreateOffenderAddressResponse>()
+          .returnResult()
+          .responseBody!!
+
+        with(offenderAddressRepository.findByIdOrNull(otherAddress.addressId)!!) {
+          assertThat(primaryAddress).isFalse()
+          assertThat(mailAddress).isFalse()
+        }
+        with(offenderAddressRepository.findByIdOrNull(response.addressId)!!) {
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+        }
+      }
+
+      @Test
+      fun `will only unset the flags on other addresses that are set on the new address`() {
+        lateinit var offender: Offender
+        lateinit var otherAddress: OffenderAddressJpa
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "B1001AA") {
+            otherAddress = address(primaryAddress = true, mailAddress = true)
+          }
+        }
+
+        webTestClient.post().uri("/core-person/${offender.nomsId}/address")
+          .bodyValue(validAddressRequest.copy(primaryAddress = true, mailAddress = false))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        with(offenderAddressRepository.findByIdOrNull(otherAddress.addressId)!!) {
+          assertThat(primaryAddress).isFalse()
+          assertThat(mailAddress).isTrue()
+        }
+      }
+
+      @Test
+      fun `will not change flags on other addresses when new address is neither primary nor mail`() {
+        lateinit var offender: Offender
+        lateinit var otherAddress: OffenderAddressJpa
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "B1002AA") {
+            otherAddress = address(primaryAddress = true, mailAddress = true)
+          }
+        }
+
+        webTestClient.post().uri("/core-person/${offender.nomsId}/address")
+          .bodyValue(validAddressRequest.copy(primaryAddress = false, mailAddress = false))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+
+        with(offenderAddressRepository.findByIdOrNull(otherAddress.addressId)!!) {
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+        }
+      }
     }
   }
 
@@ -3440,6 +3516,60 @@ class CorePersonResourceIntTest(
           },
           isNull(),
         )
+      }
+
+      @Test
+      fun `will unset primary and mail flags on other addresses but not on the updated address`() {
+        lateinit var offender: Offender
+        lateinit var otherAddress: OffenderAddressJpa
+        lateinit var addressToUpdate: OffenderAddressJpa
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "B1003AA") {
+            otherAddress = address(primaryAddress = true, mailAddress = true)
+            addressToUpdate = address(primaryAddress = true, mailAddress = true)
+          }
+        }
+
+        webTestClient.put().uri("/core-person/${offender.nomsId}/address/${addressToUpdate.addressId}")
+          .bodyValue(validAddressRequest.copy(primaryAddress = true, mailAddress = true))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        with(offenderAddressRepository.findByIdOrNull(otherAddress.addressId)!!) {
+          assertThat(primaryAddress).isFalse()
+          assertThat(mailAddress).isFalse()
+        }
+        with(offenderAddressRepository.findByIdOrNull(addressToUpdate.addressId)!!) {
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+        }
+      }
+
+      @Test
+      fun `will only unset the flags on other addresses that are set on the updated address`() {
+        lateinit var offender: Offender
+        lateinit var otherAddress: OffenderAddressJpa
+        lateinit var addressToUpdate: OffenderAddressJpa
+        nomisDataBuilder.build {
+          offender = offender(nomsId = "B1004AA") {
+            otherAddress = address(primaryAddress = true, mailAddress = true)
+            addressToUpdate = address()
+          }
+        }
+
+        webTestClient.put().uri("/core-person/${offender.nomsId}/address/${addressToUpdate.addressId}")
+          .bodyValue(validAddressRequest.copy(primaryAddress = false, mailAddress = true))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        with(offenderAddressRepository.findByIdOrNull(otherAddress.addressId)!!) {
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isFalse()
+        }
       }
     }
   }
