@@ -164,6 +164,16 @@ class AgencyService(
     return agency.toAgencyLocationResponse()
   }
 
+  fun deleteAgency(agencyId: String) {
+    agencyLocationRepository.findByIdOrNull(agencyId)?.also {
+      agencyLocationRepository.deleteById(agencyId)
+      telemetryClient.trackEvent(
+        "agency-deleted",
+        mapOf("agencyId" to agencyId),
+      )
+    }
+  }
+
   // there is only ever at most one local authority in the request, so only the first is ever read
   private fun updateLocalAuthorities(agency: AgencyLocation, localAuthorityCodes: List<String>) {
     val requestedCode = localAuthorityCodes.firstOrNull()

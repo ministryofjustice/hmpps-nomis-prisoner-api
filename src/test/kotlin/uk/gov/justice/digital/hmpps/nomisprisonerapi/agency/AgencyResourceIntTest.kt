@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetA
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Area
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Region
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubArea
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AddressPhoneRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationInternetAddressRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationPhoneRepository
@@ -44,6 +45,9 @@ class AgencyResourceIntTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var agencyLocationAddressRepository: AgencyLocationAddressRepository
+
+  @Autowired
+  private lateinit var addressPhoneRepository: AddressPhoneRepository
 
   @Autowired
   private lateinit var areaRepository: AreaRepository
@@ -618,6 +622,120 @@ class AgencyResourceIntTest : IntegrationTestBase() {
             assertThat(localAuthorities).isEmpty()
           }
         }
+      }
+    }
+  }
+
+  @DisplayName("DELETE /agency/{agencyId}")
+  @Nested
+  inner class DeleteAgency {
+    private lateinit var existingAgency: AgencyLocation
+    private var existingAddressId: Long = 0
+    private var existingAddressPhoneId: Long = 0
+    private var existingPhoneId: Long = 0
+    private var existingEmailId: Long = 0
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        ) {
+          localAuthority(BRENT)
+          address(
+            type = "BUS",
+            noFixedAddress = null,
+            primaryAddress = false,
+            premise = null,
+            street = null,
+            locality = null,
+            city = null,
+            county = null,
+            country = null,
+          ) {
+            existingAddressPhoneId = phone(
+              phoneType = "BUS",
+              phoneNo = "0114 55 5555",
+            ).phoneId
+          }.also { existingAddressId = it.addressId }
+          existingPhoneId = phone(
+            phoneType = "BUS",
+            phoneNo = "0114 55 5555",
+          ).phoneId
+          existingEmailId = email(
+            address = "agency@gov.uk",
+          ).internetAddressId
+        }
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      if (agencyLocationRepository.existsById(existingAgency.id)) {
+        agencyLocationRepository.deleteById(existingAgency.id)
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.delete().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.delete().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.delete().uri("/agency/${existingAgency.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will delete an agency along with its addresses, phones, emails and local authority`() {
+        webTestClient.delete().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
+
+        assertThat(agencyLocationRepository.existsById(existingAgency.id)).isFalse()
+        assertThat(agencyLocationAddressRepository.existsById(existingAddressId)).isFalse()
+        assertThat(addressPhoneRepository.existsById(existingAddressPhoneId)).isFalse()
+        assertThat(agencyLocationPhoneRepository.existsById(existingPhoneId)).isFalse()
+        assertThat(agencyLocationInternetAddressRepository.existsById(existingEmailId)).isFalse()
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-deleted"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will return 204 when the agency does not exist`() {
+        webTestClient.delete().uri("/agency/DOES_NOT_EXIST")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isNoContent
       }
     }
   }
