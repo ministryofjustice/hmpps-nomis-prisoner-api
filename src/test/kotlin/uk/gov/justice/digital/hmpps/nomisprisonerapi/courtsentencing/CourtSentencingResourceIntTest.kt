@@ -4750,10 +4750,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .body(
               BodyInserters.fromValue(
                 createCourtAppearanceRequest(
-                  courtEventCharges = mutableListOf(
+                  courtEventCharges = [
                     CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code),
                     CourtEventChargeRequest(offenderCharge2.id, offenderCharge2.resultCode1?.code),
-                  ),
+                  ],
                 ),
               ),
             )
@@ -5374,13 +5374,13 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .bodyValue(
               createBreachAppearanceRequest().copy(
                 courtAppearance = createCourtAppearanceRequest(
-                  courtEventCharges = mutableListOf(CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code)),
+                  courtEventCharges = [CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code)],
                 ),
                 caseIdentifiers = CaseIdentifierRequest(
-                  mutableListOf(
+                  [
                     CaseIdentifier(reference = "ORIGINAL1", createdDate = LocalDateTime.now()),
                     CaseIdentifier(reference = "BREACH1", createdDate = LocalDateTime.now()),
-                  ),
+                  ],
                 ),
               ),
             )
@@ -5426,13 +5426,13 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .bodyValue(
               createBreachAppearanceRequest().copy(
                 courtAppearance = createCourtAppearanceRequest(
-                  courtEventCharges = mutableListOf(CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code)),
+                  courtEventCharges = [CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code)],
                 ),
                 caseIdentifiers = CaseIdentifierRequest(
-                  mutableListOf(
+                  [
                     CaseIdentifier(reference = "ORIGINAL1", createdDate = LocalDateTime.now()),
                     CaseIdentifier(reference = "BREACH1", createdDate = LocalDateTime.now()),
-                  ),
+                  ],
                 ),
               ),
             )
