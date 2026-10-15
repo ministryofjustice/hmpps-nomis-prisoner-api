@@ -380,6 +380,121 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
   }
 
   @Nested
+  @DisplayName("GET /finance/prisoners/advances/deduction-id/{deductionId}")
+  inner class GetAdvanceByDeductionIdTests {
+    val advanceId = advance.id
+    val deductionId = advance.deduction!!.deductionId
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/finance/prisoners/advances/deduction-id/$deductionId")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/finance/prisoners/advances/deduction-id/$deductionId")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/finance/prisoners/advances/deduction-id/$deductionId")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun getActiveAdvance() {
+      webTestClient.get().uri("/finance/prisoners/advances/deduction-id/$deductionId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(advanceId)
+        .jsonPath("prisonNumber").isEqualTo("A5194DY")
+        .jsonPath("caseloadId").isEqualTo("MDI")
+        .jsonPath("advanceAmount").isEqualTo(1000)
+        .jsonPath("advanceDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("repaymentAmount").isEqualTo(100)
+        .jsonPath("startDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createDatetime").value<String> {
+          assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        }
+        .jsonPath("informationNumber").isEqualTo("12341234-2")
+        .jsonPath("status").isEqualTo("ACTIVE")
+    }
+
+    @Test
+    fun getPaidOffAdvance() {
+      webTestClient.get().uri("/finance/prisoners/advances/deduction-id/${advance3.deduction!!.deductionId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(advance3.id)
+        .jsonPath("prisonNumber").isEqualTo("A6789CD")
+        .jsonPath("caseloadId").isEqualTo("MDI")
+        .jsonPath("advanceAmount").isEqualTo(200)
+        .jsonPath("advanceDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("repaymentAmount").isEqualTo(100)
+        .jsonPath("startDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createDatetime").value<String> {
+          assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        }
+        .jsonPath("informationNumber").isEqualTo("10002000-1")
+        .jsonPath("status").isEqualTo("REPAID")
+    }
+
+    @Test
+    fun getWrittenOffAdvance() {
+      webTestClient.get().uri("/finance/prisoners/advances/deduction-id/${advance4.deduction!!.deductionId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("id").isEqualTo(advance4.id)
+        .jsonPath("prisonNumber").isEqualTo("A6789CD")
+        .jsonPath("caseloadId").isEqualTo("MDI")
+        .jsonPath("advanceAmount").isEqualTo(1000)
+        .jsonPath("advanceDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("repaymentAmount").isEqualTo(100)
+        .jsonPath("startDate").isEqualTo(LocalDate.now().toString())
+        .jsonPath("createdBy").isEqualTo("SA")
+        .jsonPath("createDatetime").value<String> {
+          assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+        }
+        .jsonPath("informationNumber").isEqualTo("10002000-2")
+        .jsonPath("status").isEqualTo("WRITTEN_OFF")
+    }
+
+    @Test
+    fun getAdvanceDoesNotExist() {
+      webTestClient.get().uri("/finance/prisoners/advances/deduction-id/99999")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isNotFound
+        .expectBody()
+        .jsonPath("userMessage").value<String> {
+          assertThat(it).contains("Not Found: Offender advance with deduction id 99999 not found")
+        }
+    }
+  }
+
+  @Nested
   @DisplayName("GET /finance/prisoners/advances/active-count")
   inner class GetPrisonerAdvancesCountTests {
     @Nested
