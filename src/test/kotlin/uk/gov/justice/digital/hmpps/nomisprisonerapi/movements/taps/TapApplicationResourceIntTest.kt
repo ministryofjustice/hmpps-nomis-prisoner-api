@@ -367,6 +367,28 @@ class TapApplicationResourceIntTest(
       }
 
       @Test
+      fun `should not leave trailing blanks in long corporate name`() {
+        webTestClient.upsertApplicationOk(
+          request = anUpsertApplicationRequest(
+            toAddresses = listOf(
+              UpsertTapAddress(
+                name = "The Shrewsbury And Telford Hospital Nhs ",
+                addressText = "Hollinswood House, Stafford Court, Stafford Park, Telford, Telford And Wrekin",
+                postalCode = "TF3 3DD",
+              ),
+            ),
+          ),
+        )
+          .apply {
+            assertThat(bookingId).isEqualTo(booking.bookingId)
+            repository.runInTransaction {
+              assertThat(corporateRepository.findAllByCorporateName("The Shrewsbury And Telford Hospital Nhs ")).isEmpty()
+              assertThat(corporateRepository.findAllByCorporateName("The Shrewsbury And Telford Hospital Nhs").size).isEqualTo(1)
+            }
+          }
+      }
+
+      @Test
       fun `should not create corporate or address if already exists`() {
         nomisDataBuilder.build {
           corporate(corporateName = "Boots") {

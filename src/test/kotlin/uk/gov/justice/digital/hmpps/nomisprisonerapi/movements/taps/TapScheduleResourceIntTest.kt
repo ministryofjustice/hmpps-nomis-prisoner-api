@@ -1154,6 +1154,58 @@ class TapScheduleResourceIntTest(
     }
 
     @Nested
+    inner class CreateTapScheduleOutWithCorporateNameTruncated {
+      private lateinit var corporateAddress: CorporateAddress
+      private var tapApplicationId: Long = 0
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          // The corporate was saved in NOMIS with a trailing blank
+          corporate(corporateName = "The Shrewsbury And Telford Hospital Nhs ") {
+            corporateAddress = address(
+              premise = "Hollinswood House, Stafford Court, Stafford Park, Telford, Telford And Wrekin",
+              street = null,
+              locality = null,
+              postcode = "TF3 3DD",
+            )
+          }
+          offender = offender {
+            booking = booking()
+          }
+        }
+
+        tapApplicationId = webTestClient.upsertApplicationOk(
+          request = anUpsertApplicationRequest(
+            toAddresses = listOf(
+              UpsertTapAddress(
+                // The application is created with full corporate name from OS places
+                name = "The Shrewsbury And Telford Hospital Nhs Trust",
+                addressText = "Hollinswood House, Stafford Court, Stafford Park, Telford, Telford And Wrekin",
+                postalCode = "TF3 3DD",
+              ),
+            ),
+          ),
+        ).tapApplicationId
+      }
+
+      @Test
+      fun `should find address despite trailing blanks`() {
+        webTestClient.upsertTapScheduleOutOk(
+          request = anUpsertTapScheduleOut(
+            tapApplicationId = tapApplicationId,
+            toAddress = UpsertTapAddress(
+              // The schedule name has been truncated when the NOMIS movement was created
+              name = "The Shrewsbury And Telford Hospital Nhs ",
+              addressText = "Hollinswood House, Stafford Court, Stafford Park, Telford, Telford And Wrekin",
+              postalCode = "TF3 3DD",
+            ),
+          ),
+        )
+      }
+    }
+
+    @Nested
     inner class CreateTapScheduleOutAndIn {
       @BeforeEach
       fun setUp() {
