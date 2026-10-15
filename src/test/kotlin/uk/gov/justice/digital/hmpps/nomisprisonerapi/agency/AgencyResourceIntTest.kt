@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocat
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.AgencyLocationDsl.Companion.SHEFFIELD
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationInternetAddress
@@ -701,6 +702,38 @@ class AgencyResourceIntTest : IntegrationTestBase() {
         webTestClient.delete().uri("/agency/${existingAgency.id}")
           .exchange()
           .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      private lateinit var agencyInternalLocation: AgencyInternalLocation
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          agencyInternalLocation = agencyInternalLocation(
+            locationCode = "LOC",
+            locationType = "ROOM",
+            prisonId = existingAgency.id,
+          )
+        }
+      }
+
+      @AfterEach
+      fun tearDown() {
+        repository.deleteAgencyInternalLocationById(agencyInternalLocation.locationId)
+      }
+
+      @Test
+      fun `will return 409 when the agency is still referenced by other records`() {
+        webTestClient.delete().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isEqualTo(409)
+
+        assertThat(agencyLocationRepository.existsById(existingAgency.id)).isTrue()
       }
     }
 

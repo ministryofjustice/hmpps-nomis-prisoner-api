@@ -272,6 +272,16 @@ class AgencyResource(private val agencyService: AgencyService) {
           ),
         ],
       ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Agency can not be deleted as it is still referenced by other records, for example offender bookings, course activities or agency internal locations",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
   fun deleteAgency(
