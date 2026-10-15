@@ -11,6 +11,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.system.CapturedOutput
 import org.springframework.boot.test.system.OutputCaptureExtension
@@ -411,7 +416,6 @@ class CorePersonResourceIntTest(
               postcode = "S1 3GG",
             )
             address(
-              type = "HOME",
               flat = "3B",
               premise = "Brown Court",
               street = "Scotland Street",
@@ -420,7 +424,6 @@ class CorePersonResourceIntTest(
               city = SHEFFIELD,
               county = "S.YORKSHIRE",
               country = "ENG",
-              validatedPAF = true,
               noFixedAddress = false,
               primaryAddress = true,
               mailAddress = true,
@@ -1715,7 +1718,6 @@ class CorePersonResourceIntTest(
             postcode = "S1 3GG",
           )
           address(
-            type = "HOME",
             flat = "3B",
             premise = "Brown Court",
             street = "Scotland Street",
@@ -1724,7 +1726,6 @@ class CorePersonResourceIntTest(
             city = SHEFFIELD,
             county = "S.YORKSHIRE",
             country = "ENG",
-            validatedPAF = true,
             noFixedAddress = false,
             primaryAddress = true,
             mailAddress = true,
@@ -3142,36 +3143,9 @@ class CorePersonResourceIntTest(
       }
 
       @Test
-      fun `return 400 when city code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
-          .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `return 400 when county code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
-          .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
       fun `return 400 when country code does not exist`() {
         webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `return 400 when address type code does not exist`() {
-        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
-          .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -3185,13 +3159,12 @@ class CorePersonResourceIntTest(
         val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
           .bodyValue(
             validAddressRequest.copy(
-              typeCode = "HOME",
               flat = "1A",
               premise = "Bolden Court",
               street = "Fulwood Road",
               locality = "Broomhill",
-              cityCode = SHEFFIELD,
-              countyCode = "S.YORKSHIRE",
+              city = "Sheffield",
+              county = "South Yorkshire",
               countryCode = "GBR",
               postcode = "S10 2HH",
               primaryAddress = true,
@@ -3214,7 +3187,6 @@ class CorePersonResourceIntTest(
         with(address) {
           assertThat(addressId).isEqualTo(response.addressId)
           assertThat(offender.id).isEqualTo(existingOffender.id)
-          assertThat(addressType?.description).isEqualTo("Home Address")
           assertThat(flat).isEqualTo("1A")
           assertThat(premise).isEqualTo("Bolden Court")
           assertThat(street).isEqualTo("Fulwood Road")
@@ -3233,6 +3205,67 @@ class CorePersonResourceIntTest(
           val offender = repository.offenderRepository.findByIdOrNull(existingOffender.id)
           assertThat(offender?.addresses).anyMatch { it.addressId == address.addressId }
         }
+
+        verifyNoInteractions(telemetryClient)
+      }
+
+      @Test
+      fun `will match city and county descriptions case insensitively`() {
+        val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
+          .bodyValue(
+            validAddressRequest.copy(
+              city = "SHEFFIELD",
+              county = "south yorkshire",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody<CreateOffenderAddressResponse>()
+          .returnResult()
+          .responseBody!!
+
+        with(offenderAddressRepository.findByIdOrNull(response.addressId)!!) {
+          assertThat(city?.code).isEqualTo(SHEFFIELD)
+          assertThat(county?.code).isEqualTo("S.YORKSHIRE")
+        }
+
+        verifyNoInteractions(telemetryClient)
+      }
+
+      @Test
+      fun `will set city and county to null and record lookup failures in telemetry when descriptions do not match`() {
+        val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
+          .bodyValue(
+            validAddressRequest.copy(
+              city = "Rubbish City",
+              county = "Rubbish County",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody<CreateOffenderAddressResponse>()
+          .returnResult()
+          .responseBody!!
+
+        with(offenderAddressRepository.findByIdOrNull(response.addressId)!!) {
+          assertThat(city).isNull()
+          assertThat(county).isNull()
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("offender-address-lookup-failed"),
+          check {
+            assertThat(it).containsEntry("prisonNumber", existingOffender.nomsId)
+            assertThat(it).containsEntry("addressId", response.addressId.toString())
+            assertThat(it).containsEntry("cityLookupFailure", "Rubbish City")
+            assertThat(it).containsEntry("countyLookupFailure", "Rubbish County")
+          },
+          isNull(),
+        )
       }
     }
   }
@@ -3315,36 +3348,9 @@ class CorePersonResourceIntTest(
       }
 
       @Test
-      fun `return 400 when city code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
-          .bodyValue(validAddressRequest.copy(cityCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `return 400 when county code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
-          .bodyValue(validAddressRequest.copy(countyCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
       fun `return 400 when country code does not exist`() {
         webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(validAddressRequest.copy(countryCode = "ZZ"))
-          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-          .exchange()
-          .expectStatus().isBadRequest
-      }
-
-      @Test
-      fun `return 400 when address type code does not exist`() {
-        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
-          .bodyValue(validAddressRequest.copy(typeCode = "ZZ"))
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isBadRequest
@@ -3358,13 +3364,12 @@ class CorePersonResourceIntTest(
         webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
           .bodyValue(
             validAddressRequest.copy(
-              typeCode = "HOME",
               flat = "1A",
               premise = "Bolden Court",
               street = "Fulwood Road",
               locality = "Broomhill",
-              cityCode = SHEFFIELD,
-              countyCode = "S.YORKSHIRE",
+              city = "Sheffield",
+              county = "South Yorkshire",
               countryCode = "GBR",
               postcode = "S10 2HH",
               primaryAddress = true,
@@ -3372,7 +3377,6 @@ class CorePersonResourceIntTest(
               noFixedAddress = false,
               startDate = LocalDate.parse("2001-01-01"),
               endDate = LocalDate.parse("2032-12-31"),
-              validatedPAF = true,
             ),
           )
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -3385,7 +3389,6 @@ class CorePersonResourceIntTest(
         with(address) {
           assertThat(addressId).isEqualTo(existingAddress.addressId)
           assertThat(offender.id).isEqualTo(existingOffender.id)
-          assertThat(addressType?.description).isEqualTo("Home Address")
           assertThat(flat).isEqualTo("1A")
           assertThat(premise).isEqualTo("Bolden Court")
           assertThat(street).isEqualTo("Fulwood Road")
@@ -3398,13 +3401,45 @@ class CorePersonResourceIntTest(
           assertThat(noFixedAddress).isFalse()
           assertThat(startDate).isEqualTo(LocalDate.parse("2001-01-01"))
           assertThat(endDate).isEqualTo(LocalDate.parse("2032-12-31"))
-          assertThat(validatedPAF).isTrue()
         }
 
         nomisDataBuilder.runInTransaction {
           val offender = repository.offenderRepository.findByIdOrNull(existingOffender.id)
           assertThat(offender?.addresses).anyMatch { it.addressId == address.addressId }
         }
+
+        verifyNoInteractions(telemetryClient)
+      }
+
+      @Test
+      fun `will set city and county to null and record lookup failures in telemetry when descriptions do not match`() {
+        webTestClient.put().uri("/core-person/${existingOffender.nomsId}/address/${existingAddress.addressId}")
+          .bodyValue(
+            validAddressRequest.copy(
+              city = "Rubbish City",
+              county = "Rubbish County",
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        with(offenderAddressRepository.findByIdOrNull(existingAddress.addressId)!!) {
+          assertThat(city).isNull()
+          assertThat(county).isNull()
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("offender-address-lookup-failed"),
+          check {
+            assertThat(it).containsEntry("prisonNumber", existingOffender.nomsId)
+            assertThat(it).containsEntry("addressId", existingAddress.addressId.toString())
+            assertThat(it).containsEntry("cityLookupFailure", "Rubbish City")
+            assertThat(it).containsEntry("countyLookupFailure", "Rubbish County")
+          },
+          isNull(),
+        )
       }
     }
   }

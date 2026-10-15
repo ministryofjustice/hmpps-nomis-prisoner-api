@@ -1808,8 +1808,6 @@ data class UpdateOffenderAddressUsageRequest(
 )
 
 data class CreateOffenderAddressRequest(
-  @Schema(description = "Address reference code", example = "HOME")
-  val typeCode: String? = null,
   @Schema(description = "Flat name or number", example = "Apartment 3")
   val flat: String? = null,
   @Schema(description = "Premise", example = "22")
@@ -1820,10 +1818,10 @@ data class CreateOffenderAddressRequest(
   val locality: String? = null,
   @Schema(description = "Post code", example = "MK15 2ST")
   val postcode: String? = null,
-  @Schema(description = "City reference code", example = "25343")
-  val cityCode: String? = null,
-  @Schema(description = "County reference code", example = "S.YORKSHIRE")
-  val countyCode: String? = null,
+  @Schema(description = "City description, matched case insensitively. If not found the city will not be set", example = "Sheffield")
+  val city: String? = null,
+  @Schema(description = "County description, matched case insensitively. If not found the county will not be set", example = "South Yorkshire")
+  val county: String? = null,
   @Schema(description = "Country reference code", example = "ENG")
   val countryCode: String? = null,
   @Schema(description = "true if address not fixed. for example homeless")
@@ -1841,8 +1839,6 @@ data class CreateOffenderAddressRequest(
 )
 
 data class UpdateOffenderAddressRequest(
-  @Schema(description = "Address reference code", example = "HOME")
-  val typeCode: String? = null,
   @Schema(description = "Flat name or number", example = "Apartment 3")
   val flat: String? = null,
   @Schema(description = "Premise", example = "22")
@@ -1853,10 +1849,10 @@ data class UpdateOffenderAddressRequest(
   val locality: String? = null,
   @Schema(description = "Post code", example = "MK15 2ST")
   val postcode: String? = null,
-  @Schema(description = "City reference code", example = "25343")
-  val cityCode: String? = null,
-  @Schema(description = "County reference code", example = "S.YORKSHIRE")
-  val countyCode: String? = null,
+  @Schema(description = "City description, matched case insensitively. If not found the city will not be set", example = "Sheffield")
+  val city: String? = null,
+  @Schema(description = "County description, matched case insensitively. If not found the county will not be set", example = "South Yorkshire")
+  val county: String? = null,
   @Schema(description = "Country reference code", example = "ENG")
   val countryCode: String? = null,
   @Schema(description = "true if address not fixed. for example homeless")
@@ -1871,8 +1867,6 @@ data class UpdateOffenderAddressRequest(
   val startDate: LocalDate? = null,
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate? = null,
-  @Schema(description = "true if address validated by PAF")
-  val validatedPAF: Boolean? = null,
 )
 
 data class CreateOffenderAddressResponse(
