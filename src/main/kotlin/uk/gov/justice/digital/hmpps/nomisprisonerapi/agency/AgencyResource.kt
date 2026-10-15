@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -240,6 +241,54 @@ class AgencyResource(private val agencyService: AgencyService) {
     @RequestBody @Valid
     request: UpdateAgencyRequest,
   ) = agencyService.updateAgency(agencyId, request)
+
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @DeleteMapping("/agency/{agencyId}")
+  @Operation(
+    summary = "Deletes an agency",
+    description = "Deletes an agency along with its addresses, phone numbers, email addresses and local authority. For emergency use only - for a manual repair. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Agency deleted or did not exist",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "409",
+        description = "Agency can not be deleted as it is still referenced by other records, for example offender bookings, course activities or agency internal locations",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun deleteAgency(
+    @PathVariable
+    @Schema(description = "Agency id (aka agencyId)", example = "WWI")
+    agencyId: String,
+  ) = agencyService.deleteAgency(agencyId)
 
   @PostMapping("/agency/{agencyId}/emails")
   @ResponseStatus(HttpStatus.CREATED)

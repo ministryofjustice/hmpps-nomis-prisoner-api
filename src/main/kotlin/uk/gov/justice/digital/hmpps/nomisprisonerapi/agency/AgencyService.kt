@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.agency
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -162,6 +163,24 @@ class AgencyService(
     )
 
     return agency.toAgencyLocationResponse()
+  }
+
+  fun deleteAgency(agencyId: String) {
+    agencyLocationRepository.findByIdOrNull(agencyId)?.also {
+      try {
+        agencyLocationRepository.delete(it)
+        agencyLocationRepository.flush()
+      } catch (_: DataIntegrityViolationException) {
+        throw ConflictException(
+          "Agency $agencyId can not be deleted as it is referenced by other records, for example offender bookings, course activities or agency internal locations",
+          agencyId,
+        )
+      }
+      telemetryClient.trackEvent(
+        "agency-deleted",
+        mapOf("agencyId" to agencyId),
+      )
+    }
   }
 
   // there is only ever at most one local authority in the request, so only the first is ever read
