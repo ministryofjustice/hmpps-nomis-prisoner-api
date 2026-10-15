@@ -31,7 +31,7 @@ annotation class CourtCaseDslMarker
 interface CourtCaseDsl {
   fun courtEvent(
     commentText: String? = "Court event comment",
-    agencyId: String = "MDI",
+    court: String = "COURT1",
     courtEventType: String = "TRIAL",
     eventStatusCode: String = "SCH",
     outcomeReasonCode: String? = "3514",
@@ -290,7 +290,7 @@ class CourtCaseBuilder(
 
   override fun courtEvent(
     commentText: String?,
-    agencyId: String,
+    court: String,
     courtEventType: String,
     eventStatusCode: String,
     outcomeReasonCode: String?,
@@ -303,7 +303,7 @@ class CourtCaseBuilder(
   ) = courtEventBuilderFactory.builder().let { builder ->
     builder.build(
       commentText = commentText,
-      agencyId = agencyId,
+      court = court,
       courtEventType = courtEventType,
       eventStatusCode = eventStatusCode,
       outcomeReasonCode = outcomeReasonCode,

@@ -636,7 +636,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I)
               }
             }
-            booking(active = false, inOutStatus = "OUT") {
+            booking {
               assessment(sequence = 1, username = "BILLSTAFF") {
                 assessmentItem(1, RESPONSE_PREVIOUS_CONVICTIONS_D)
               }
@@ -644,6 +644,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 assessmentItem(1, RESPONSE_DAMAGE_TO_PROPERTY_S)
               }
               assessment(sequence = 3, username = "BILLSTAFF", assessmentType = AssessmentType.CATEGORY)
+              release()
             }
           }
           offender(nomsId = "OTHER") {

@@ -78,7 +78,8 @@ class OffenderTransferMovementsResourceIntTest(
             assertThat(offenderNo).isEqualTo(offender.nomsId)
             assertThat(rootOffenderId).isEqualTo(offender.rootOffenderId)
             assertThat(bookings[0].bookingId).isEqualTo(booking.bookingId)
-            assertThat(bookings[0].activeBooking).isTrue
+            // in transit
+            assertThat(bookings[0].activeBooking).isFalse
             assertThat(bookings[0].latestBooking).isTrue
           }
       }
@@ -178,7 +179,7 @@ class OffenderTransferMovementsResourceIntTest(
       fun setUp() {
         nomisDataBuilder.build {
           offender = offender(nomsId = "A1234BC") {
-            booking(active = true, bookingSequence = 1) {
+            booking(bookingSequence = 1) {
               transferScheduleOut()
               transferScheduleOut(eventStatus = EventStatus.CANCELLED.code)
               transferScheduleOut {
@@ -190,12 +191,14 @@ class OffenderTransferMovementsResourceIntTest(
               transferMovementOut()
               transferMovementOut()
             }
-            booking(active = false, bookingSequence = 2) {
+            booking(bookingSequence = 2) {
               transferScheduleOut {
                 transferMovementOut()
               }
+              receive()
               transferScheduleOut(eventStatus = EventStatus.PENDING, startTime = null)
-              transferMovementOut()
+              prisonTransfer(from = "LEI", to = "BXI")
+              release()
             }
           }
         }
@@ -451,7 +454,8 @@ class OffenderTransferMovementsResourceIntTest(
             assertThat(offenderNo).isEqualTo(offender.nomsId)
             assertThat(rootOffenderId).isEqualTo(offender.rootOffenderId)
             assertThat(bookings[0].bookingId).isEqualTo(booking.bookingId)
-            assertThat(bookings[0].activeBooking).isTrue
+            // in transit
+            assertThat(bookings[0].activeBooking).isFalse
             assertThat(bookings[0].latestBooking).isTrue
             with(bookings[0].transferSchedules[0].schedule) {
               assertThat(bookingId).isEqualTo(booking.bookingId)

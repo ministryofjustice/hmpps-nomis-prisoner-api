@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.CorporateAddressDsl.Companion.SHEFFIELD
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.roundToNearestSecond
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocationAddress
@@ -32,7 +33,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapScheduleOutRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import kotlin.isInitialized
 
 class TapRepositoryIntTest(
@@ -56,6 +56,8 @@ class TapRepositoryIntTest(
     lateinit var movementOut: OffenderTapMovementOut
     lateinit var movementIn: OffenderTapMovementIn
     lateinit var agencyLocation: AgencyLocation
+
+    val today = LocalDateTime.now().roundToNearestSecond()
 
     @AfterEach
     fun `reset data`() {
@@ -330,7 +332,7 @@ class TapRepositoryIntTest(
             application = tapApplication {
               scheduleOut = tapScheduleOut {
                 movementOut = tapMovementOut(
-                  date = LocalDateTime.now(),
+                  date = today,
                   fromPrison = "BXI",
                   toAgency = "HAZLWD",
                   movementReason = "C5",
@@ -348,8 +350,8 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
-        assertThat(movementDate).isEqualTo(LocalDate.now())
-        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+        assertThat(movementDate).isEqualTo(today.toLocalDate())
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(today.toLocalTime())
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
@@ -373,7 +375,7 @@ class TapRepositoryIntTest(
           offenderAddress = address()
           booking = booking {
             movementOut = tapMovementOut(
-              date = LocalDateTime.now(),
+              date = today,
               fromPrison = "BXI",
               toAgency = "HAZLWD",
               movementReason = "C5",
@@ -389,8 +391,8 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementOutRepository.findByIdOrNull(movementOut.id)!!) {
-        assertThat(movementDate).isEqualTo(LocalDate.now())
-        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("09:25:00"))
+        assertThat(movementDate).isEqualTo(today.toLocalDate())
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(today.toLocalTime())
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.OUT)
@@ -417,7 +419,7 @@ class TapRepositoryIntTest(
                 movementOut = tapMovementOut()
                 scheduleIn = tapScheduleIn {
                   movementIn = tapMovementIn(
-                    date = LocalDateTime.now().plusDays(1),
+                    date = today.plusDays(1),
                     fromAgency = "HAZLWD",
                     toPrison = "BXI",
                     movementReason = "C5",
@@ -439,8 +441,8 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
-        assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+        assertThat(movementDate).isEqualTo(today.plusDays(1).toLocalDate())
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(today.plusDays(1).toLocalTime())
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.IN)
@@ -468,7 +470,7 @@ class TapRepositoryIntTest(
           booking = booking {
             tapMovementOut()
             movementIn = tapMovementIn(
-              date = LocalDateTime.now().plusDays(1),
+              date = today.plusDays(1),
               fromAgency = "HAZLWD",
               toPrison = "BXI",
               movementReason = "C5",
@@ -483,8 +485,8 @@ class TapRepositoryIntTest(
       }
 
       with(tapMovementInRepository.findByIdOrNull(movementIn.id)!!) {
-        assertThat(movementDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(LocalTime.parse("10:25:02"))
+        assertThat(movementDate).isEqualTo(today.plusDays(1).toLocalDate())
+        assertThat(getMovementDateAndTime().toLocalTime()).isEqualTo(today.toLocalTime())
         assertThat(movementReason.id.type).isEqualTo("TAP")
         assertThat(movementReason.id.reasonCode).isEqualTo("C5")
         assertThat(movementDirection).isEqualTo(MovementDirection.IN)

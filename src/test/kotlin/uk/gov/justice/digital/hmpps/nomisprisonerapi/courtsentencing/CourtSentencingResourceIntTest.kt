@@ -287,7 +287,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").isEqualTo("Mike")
-          .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].courtId").isEqualTo("COURT1")
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("courtEvents[0].commentText").isEqualTo("Court event comment")
           .jsonPath("courtEvents[0].orderRequestedFlag").isEqualTo(false)
@@ -383,7 +383,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").doesNotExist()
-          .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].courtId").isEqualTo("COURT1")
           .jsonPath("courtEvents[0].outcomeReasonCode").doesNotExist()
           .jsonPath("courtEvents[0].commentText").doesNotExist()
           .jsonPath("courtEvents[0].orderRequestedFlag").doesNotExist()
@@ -632,7 +632,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEvents[0].eventStatus.description").isEqualTo("Scheduled (Approved)")
           .jsonPath("courtEvents[0].directionCode.code").isEqualTo("OUT")
           .jsonPath("courtEvents[0].judgeName").isEqualTo("Mike")
-          .jsonPath("courtEvents[0].courtId").isEqualTo("MDI")
+          .jsonPath("courtEvents[0].courtId").isEqualTo("COURT1")
           .jsonPath("courtEvents[0].outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("courtEvents[0].outcomeReasonCode.dispositionCode").isEqualTo("P")
           .jsonPath("courtEvents[0].outcomeReasonCode.conviction").isEqualTo("false")
@@ -2941,7 +2941,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   eventDateTime = LocalDateTime.parse("2022-01-01T10:00"),
                   outcomeReasonCode = "4506",
                   commentText = "Good date",
-                  agencyId = "LEEDYC",
+                  court = "LEEDYC",
                   courtEventType = "CRT",
                   eventStatusCode = "EXP",
                   nextEventDateTime = LocalDateTime.parse("2022-02-01T10:00"),
@@ -5374,13 +5374,13 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .bodyValue(
               createBreachAppearanceRequest().copy(
                 courtAppearance = createCourtAppearanceRequest(
-                  courtEventCharges = [CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code)],
+                  courtEventCharges = mutableListOf(CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code)),
                 ),
                 caseIdentifiers = CaseIdentifierRequest(
-                  [
+                  mutableListOf(
                     CaseIdentifier(reference = "ORIGINAL1", createdDate = LocalDateTime.now()),
                     CaseIdentifier(reference = "BREACH1", createdDate = LocalDateTime.now()),
-                  ],
+                  ),
                 ),
               ),
             )
@@ -5426,13 +5426,13 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             .bodyValue(
               createBreachAppearanceRequest().copy(
                 courtAppearance = createCourtAppearanceRequest(
-                  courtEventCharges = [CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code)],
+                  courtEventCharges = mutableListOf(CourtEventChargeRequest(previousBookingOffenderCharge1.id, previousBookingOffenderCharge1.resultCode1?.code)),
                 ),
                 caseIdentifiers = CaseIdentifierRequest(
-                  [
+                  mutableListOf(
                     CaseIdentifier(reference = "ORIGINAL1", createdDate = LocalDateTime.now()),
                     CaseIdentifier(reference = "BREACH1", createdDate = LocalDateTime.now()),
-                  ],
+                  ),
                 ),
               ),
             )
@@ -6146,7 +6146,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
               offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
               offenderCharge4 = offenderCharge(resultCode1 = "1067", offenceCode = "LO72002")
-              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30), agencyId = "COURT1") {
+              courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30), court = "COURT1") {
 // overrides from the parent offender charge fields
                 courtEventCharge(
                   offenderCharge = offenderCharge1,
@@ -7232,7 +7232,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("eventStatus.description").isEqualTo("Scheduled (Approved)")
           .jsonPath("directionCode.code").isEqualTo("OUT")
           .jsonPath("judgeName").isEqualTo("Mike")
-          .jsonPath("courtId").isEqualTo("MDI")
+          .jsonPath("courtId").isEqualTo("COURT1")
           .jsonPath("outcomeReasonCode.code").isEqualTo("3514")
           .jsonPath("commentText").isEqualTo("Court event comment")
           .jsonPath("orderRequestedFlag").isEqualTo(false)
@@ -7965,7 +7965,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
             assertThat(it).containsEntry("courtCaseId", courtCase.id.toString())
             assertThat(it).containsEntry("bookingId", latestBookingId.toString())
             assertThat(it).containsEntry("offenderNo", offenderNo)
-            assertThat(it).containsEntry("court", "MDI")
+            assertThat(it).containsEntry("court", "COURT1")
             assertThat(it).containsEntry("courtEventId", courtEvent2.id.toString())
             assertThat(it).containsEntry("courtOrderId", courtEvent2.courtOrders[0].id.toString())
           },
@@ -10199,10 +10199,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     lateinit var courtOrder: CourtOrder
                     offenderCharge1 = offenderCharge(offenceCode = "RT88074")
                     offenderCharge2 = offenderCharge(offenceCode = "RT88074")
-                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-01T10:00"), agencyId = "ABDRCT") {
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-01T10:00"), court = "ABDRCT") {
                       courtEventCharge(offenderCharge = offenderCharge1)
                     }
-                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-02T10:00"), agencyId = "LEEDYC") {
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-02T10:00"), court = "LEEDYC") {
                       courtEventCharge(offenderCharge = offenderCharge1)
                       courtEventCharge(offenderCharge = offenderCharge2)
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2023-01-01"))
@@ -10233,7 +10233,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   courtCase2 = courtCase(reportingStaff = staff, agencyId = "LEICYC", caseSequence = 2) {
                     lateinit var courtOrder: CourtOrder
                     offenderCharge3 = offenderCharge(offenceCode = "RT88074")
-                    courtEvent(eventDateTime = LocalDateTime.parse("2023-05-02T10:00"), agencyId = "LEICYC") {
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-05-02T10:00"), court = "LEICYC") {
                       courtEventCharge(offenderCharge = offenderCharge3)
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2023-05-02"))
                     }
@@ -10761,7 +10761,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     offenderCharge1 = offenderCharge(offenceCode = "RT88074")
                     offenderCharge2 = offenderCharge(offenceCode = "LG72004")
 
-                    courtEvent(eventDateTime = LocalDateTime.parse("2022-05-02T10:00"), agencyId = "LEICYC") {
+                    courtEvent(eventDateTime = LocalDateTime.parse("2022-05-02T10:00"), court = "LEICYC") {
                       courtEventCharge(offenderCharge = offenderCharge1)
                       courtEventCharge(offenderCharge = offenderCharge2)
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2022-05-02"))
@@ -11071,10 +11071,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                     lateinit var courtOrder: CourtOrder
                     offenderCharge1 = offenderCharge(offenceCode = HOUSE_DRAWN_VEHICLE_NOT_STOP.code, mostSeriousFlag = true)
                     offenderCharge2 = offenderCharge(offenceCode = HOUSE_DRAWN_VEHICLE_NOT_STOP.code, mostSeriousFlag = false)
-                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-01T10:00"), agencyId = "ABDRCT") {
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-01T10:00"), court = "ABDRCT") {
                       courtEventCharge(offenderCharge = offenderCharge1)
                     }
-                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-02T10:00"), agencyId = "LEEDYC") {
+                    courtEvent(eventDateTime = LocalDateTime.parse("2023-01-02T10:00"), court = "LEEDYC") {
                       courtEventCharge(offenderCharge = offenderCharge1)
                       courtEventCharge(offenderCharge = offenderCharge2)
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2023-01-01"))
@@ -11107,7 +11107,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                   courtCase2 = courtCase(reportingStaff = staff, agencyId = "LEICYC", caseSequence = 2) {
                     lateinit var courtOrder: CourtOrder
                     offenderCharge3 = offenderCharge(offenceCode = GENOCIDE.code, mostSeriousFlag = true)
-                    courtEvent(eventDateTime = LocalDateTime.parse("2022-05-02T10:00"), agencyId = "LEICYC") {
+                    courtEvent(eventDateTime = LocalDateTime.parse("2022-05-02T10:00"), court = "LEICYC") {
                       courtEventCharge(offenderCharge = offenderCharge3)
                       courtOrder = courtOrder(courtDate = LocalDate.parse("2022-05-02"))
                     }

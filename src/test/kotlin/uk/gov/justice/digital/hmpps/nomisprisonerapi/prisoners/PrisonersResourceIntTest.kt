@@ -43,11 +43,11 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
       nomisDataBuilder.build {
         rootOffender = offender(nomsId = "A1234TT") {
           activeBooking = booking {}
-          oldBooking = booking(active = false)
+          oldBooking = booking { release() }
 
           aliasOffender1 = alias(lastName = "ALIAS1") {
-            aliasBooking = booking(active = false)
-            oldAliasBooking = booking(active = false)
+            aliasBooking = booking { release() }
+            oldAliasBooking = booking { release() }
           }
           aliasOffender2 = alias(lastName = "ALIAS2")
         }
@@ -153,7 +153,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
 
       nomisDataBuilder.build {
         rootOffender = offender(nomsId = "A1234TT") {
-          oldBooking = booking(active = false, bookingSequence = 2)
+          oldBooking = booking(bookingSequence = 2) { release() }
           aliasOffender1 = alias(lastName = "ALIAS1") {
             activeBooking = booking(bookingSequence = 1)
           }
@@ -266,7 +266,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           }
 
           inactivePrisoner1 = offender(nomsId = "A1234WW") {
-            booking(active = false)
+            booking { release() }
           }
         }
       }
@@ -350,14 +350,15 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           }
 
           inactivePrisoner1 = offender(nomsId = "A1234WW") {
-            booking(active = false)
+            booking { release() }
           }
 
+          // active bookings with an end date are inconsistent, but exist in NOMIS due to data fixes
           offender(nomsId = "A1234XX") {
-            booking(bookingEndDate = LocalDate.now().minusDays(10), inOutStatus = "IN", active = true)
+            booking().bookingEndDate = LocalDate.now().minusDays(10).atStartOfDay()
           }
           offender(nomsId = "A1234YY") {
-            booking(bookingEndDate = LocalDate.now().minusDays(10), inOutStatus = "OUT", active = true)
+            booking { tapMovementOut() }.bookingEndDate = LocalDate.now().minusDays(10).atStartOfDay()
           }
         }
       }
@@ -702,10 +703,10 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           bookingBxi = booking(agencyLocationId = "BXI")
         }
         offender(nomsId = "A1234WW") {
-          bookingOut = booking(active = false, agencyLocationId = "OUT")
+          bookingOut = booking { release() }
         }
         offender(nomsId = "A1234XX") {
-          bookingTrn = booking(active = false, agencyLocationId = "TRN")
+          bookingTrn = booking { transferMovementOut() }
         }
       }
     }
@@ -804,7 +805,7 @@ class PrisonersResourceIntTest : IntegrationTestBase() {
           bookingBxi = booking(agencyLocationId = "BXI")
         }
         offenderOut = offender(nomsId = "A1234WW") {
-          bookingOut = booking(active = false, agencyLocationId = "OUT")
+          bookingOut = booking { release() }
         }
       }
     }

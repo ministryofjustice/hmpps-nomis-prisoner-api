@@ -35,10 +35,12 @@ interface OffenderTapScheduleOutDsl {
     dsl: OffenderTapScheduleInDsl.() -> Unit = {},
   ): OffenderTapScheduleIn
 
-  @OffenderExternalMovementDslMarker
+  /**
+   * Null [fromPrison] and [toAgency] are derived from the schedule
+   */
   fun tapMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
-    fromPrison: String = "BXI",
+    fromPrison: String? = null,
     toAgency: String? = null,
     movementReason: String = "C5",
     arrestAgency: String? = null,
@@ -148,7 +150,7 @@ class OffenderTapScheduleOutBuilder(
 
   override fun tapMovementOut(
     date: LocalDateTime,
-    fromPrison: String,
+    fromPrison: String?,
     toAgency: String?,
     movementReason: String,
     arrestAgency: String?,
@@ -161,8 +163,8 @@ class OffenderTapScheduleOutBuilder(
     .buildTapMovementOut(
       offenderBooking = tapScheduleOut.offenderBooking,
       date = date,
-      fromPrison = fromPrison,
-      toAgency = toAgency,
+      fromPrison = fromPrison ?: tapScheduleOut.fromAgency!!.id,
+      toAgency = toAgency ?: tapScheduleOut.toAgency?.id,
       movementReason = movementReason,
       arrestAgency = arrestAgency,
       escort = escort,
@@ -172,8 +174,5 @@ class OffenderTapScheduleOutBuilder(
       toAddress = toAddress,
       tapScheduleOut = tapScheduleOut,
     )
-    .also {
-      tapScheduleOut.tapMovementOut = it
-      tapScheduleOut.offenderBooking.externalMovements += it
-    }
+    .also { tapScheduleOut.tapMovementOut = it }
 }

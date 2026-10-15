@@ -466,7 +466,7 @@ class CorePersonResourceIntTest(
               premise = "Brown Court",
               postcode = "S1 3GG",
             )
-            booking(bookingSequence = 2, active = false) { }
+            booking(bookingSequence = 2) { release() }
             alias {
               booking(bookingSequence = 1) { }
             }
@@ -628,7 +628,7 @@ class CorePersonResourceIntTest(
             nomsId = "A1234BD",
           ) {
             phone(phoneType = "HOME", phoneNo = "01142561919")
-            booking(bookingSequence = 2, active = false) { }
+            booking(bookingSequence = 2) { release() }
             alias {
               booking(bookingSequence = 1) { }
             }
@@ -704,7 +704,7 @@ class CorePersonResourceIntTest(
             nomsId = "A1234BE",
           ) {
             email(emailAddress = "0114@2561919.com")
-            booking(bookingSequence = 2, active = false) { }
+            booking(bookingSequence = 2) { release() }
             alias {
               booking(bookingSequence = 1) { }
             }
@@ -777,13 +777,14 @@ class CorePersonResourceIntTest(
                 whenCreated = LocalDateTime.parse("2020-01-01T10:00"),
               )
             }
-            booking(active = false) {
+            booking {
               belief3 = belief(
                 beliefCode = "DRU",
                 startDate = LocalDate.parse("2023-01-01"),
                 changeReason = false,
                 verified = false,
               )
+              release()
             }
           }
           offender2 = offender(
@@ -791,13 +792,14 @@ class CorePersonResourceIntTest(
             lastName = "BOG",
             nomsId = "A1234BF",
           ) {
-            booking(active = false, bookingSequence = 2) {
+            booking(bookingSequence = 2) {
               belief(
                 beliefCode = "JAIN",
                 changeReason = true,
                 comments = "No longer believes in Zoroastrianism",
                 verified = true,
               )
+              release()
             }
             alias(
               firstName = "AJOHN",
@@ -1060,7 +1062,7 @@ class CorePersonResourceIntTest(
               street = "Root Street",
               locality = "Root Locality",
             )
-            booking(bookingSequence = 2, active = false) { }
+            booking(bookingSequence = 2) { release() }
             alias(
               firstName = "AJOHN",
               lastName = "ABARK",
@@ -1113,7 +1115,7 @@ class CorePersonResourceIntTest(
             issuedDate = LocalDate.parse("2020-01-01"),
             verified = true,
           )
-          booking(bookingSequence = 2, active = false) { }
+          booking(bookingSequence = 2) { release() }
           alias = alias(
             firstName = "AJOHN",
             lastName = "ABARK",
@@ -1454,13 +1456,14 @@ class CorePersonResourceIntTest(
                 whenCreated = LocalDateTime.parse("2021-01-01T10:00"),
               )
             }
-            booking(active = false) {
+            booking {
               belief3 = belief(
                 beliefCode = "DRU",
                 startDate = LocalDate.parse("2023-01-01"),
                 changeReason = false,
                 verified = false,
               )
+              release()
             }
           }
           offender2 = offender(
@@ -1468,13 +1471,14 @@ class CorePersonResourceIntTest(
             lastName = "BOG",
             nomsId = "A1234BF",
           ) {
-            booking(active = false, bookingSequence = 2) {
+            booking(bookingSequence = 2) {
               belief(
                 beliefCode = "JAIN",
                 changeReason = true,
                 comments = "No longer believes in Zoroastrianism",
                 verified = true,
               )
+              release()
             }
             alias(
               firstName = "AJOHN",
@@ -2092,9 +2096,9 @@ class CorePersonResourceIntTest(
           firstName = "JOHN",
           lastName = "BARK",
         ) {
-          booking(bookingSequence = 2, active = false) { }
+          booking(bookingSequence = 2) { release() }
           alias {
-            booking(bookingSequence = 1, active = true) { }
+            booking(bookingSequence = 1) { }
           }
         }
       }

@@ -36,10 +36,13 @@ interface OffenderTransferScheduleOutDsl {
     dsl: OffenderTransferScheduleWaitListDsl.() -> Unit = {},
   ): OffenderTransferScheduleWaitList
 
+  /**
+   * Null [fromPrison] and [toPrison] default from the schedule
+   */
   fun transferMovementOut(
     date: LocalDateTime = LocalDateTime.now(),
-    fromPrison: String = "BXI",
-    toPrison: String? = "MDI",
+    fromPrison: String? = null,
+    toPrison: String? = null,
     movementReason: String = "28",
     escort: String? = null,
     comment: String? = null,
@@ -139,7 +142,7 @@ class OffenderTransferScheduleOutBuilder(
 
   override fun transferMovementOut(
     date: LocalDateTime,
-    fromPrison: String,
+    fromPrison: String?,
     toPrison: String?,
     movementReason: String,
     escort: String?,
@@ -148,12 +151,11 @@ class OffenderTransferScheduleOutBuilder(
     .buildTransferMovementOut(
       offenderBooking = transferScheduleOut.offenderBooking,
       date = date.withNano(0),
-      fromPrison = fromPrison,
-      toPrison = toPrison,
+      fromPrison = fromPrison ?: transferScheduleOut.fromAgency!!.id,
+      toPrison = toPrison ?: transferScheduleOut.toAgency?.id,
       movementReason = movementReason,
       escort = escort,
       comment = comment,
       transferScheduleOutId = transferScheduleOut.eventId,
     )
-    .also { transferScheduleOut.offenderBooking.externalMovements += it }
 }

@@ -22,11 +22,13 @@ annotation class OffenderTapScheduleInDslMarker
 @NomisDataDslMarker
 interface OffenderTapScheduleInDsl {
 
-  @OffenderExternalMovementDslMarker
+  /**
+   * If [fromAgency] or [toPrison] are null they are derived from the TAP movement or schedule
+   */
   fun tapMovementIn(
     date: LocalDateTime = LocalDateTime.now(),
     fromAgency: String? = null,
-    toPrison: String = "BXI",
+    toPrison: String? = null,
     movementReason: String = "C5",
     escort: String? = null,
     escortText: String? = null,
@@ -92,19 +94,20 @@ class OffenderTapScheduleInBuilder(
   override fun tapMovementIn(
     date: LocalDateTime,
     fromAgency: String?,
-    toPrison: String,
+    toPrison: String?,
     movementReason: String,
     escort: String?,
     escortText: String?,
     comment: String?,
     fromCity: String?,
     fromAddress: Address?,
-  ): OffenderTapMovementIn = externalMovementBuilderFactory.builder()
-    .buildTapMovementIn(
+  ): OffenderTapMovementIn = externalMovementBuilderFactory.builder().let { builder ->
+    val movementOut = tapScheduleIn.tapScheduleOut.tapMovementOut
+    builder.buildTapMovementIn(
       offenderBooking = tapScheduleIn.offenderBooking,
       date = date,
-      fromAgency = fromAgency,
-      toPrison = toPrison,
+      fromAgency = fromAgency ?: movementOut?.toAgency?.id ?: tapScheduleIn.fromAgency?.id,
+      toPrison = toPrison ?: movementOut?.fromAgency?.id ?: tapScheduleIn.toAgency?.id ?: "BXI",
       movementReason = movementReason,
       escort = escort,
       escortText = escortText,
@@ -112,9 +115,6 @@ class OffenderTapScheduleInBuilder(
       fromCity = fromCity,
       fromAddress = fromAddress,
       tapScheduleIn = tapScheduleIn,
-    )
-    .also {
-      tapScheduleIn.tapMovementIn = it
-      tapScheduleIn.offenderBooking.externalMovements += it
-    }
+    ).also { tapScheduleIn.tapMovementIn = it }
+  }
 }

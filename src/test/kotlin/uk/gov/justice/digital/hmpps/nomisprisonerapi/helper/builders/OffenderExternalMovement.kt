@@ -8,15 +8,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ArrestAgency
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Escort
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementTypeAndReasonId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdmissionMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovementId
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderReleaseMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleIn
@@ -24,9 +24,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyLocationRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.MovementTypeAndReasonRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -47,80 +45,48 @@ class OffenderExternalMovementBuilderFactory(
 class OffenderExternalMovementBuilderRepository(
   val movementTypeAndReasonRepository: MovementTypeAndReasonRepository,
   val agencyLocationRepository: AgencyLocationRepository,
-  val offenderExternalMovementRepository: OffenderExternalMovementRepository,
   val arrestAgencyRepository: ReferenceCodeRepository<ArrestAgency>,
   val escortRepository: ReferenceCodeRepository<Escort>,
   val cityRepository: ReferenceCodeRepository<City>,
 ) {
   fun lookupMovementTypeAndReason(type: String, reason: String): MovementTypeAndReason = movementTypeAndReasonRepository.findByIdOrNull(MovementTypeAndReasonId(type, reason))!!
 
-  fun lookupAgency(prisonId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(prisonId)!!
+  fun lookupAgency(agencyCode: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(agencyCode)!!
 
   fun lookupArrestAgency(arrestAgencyId: String): ArrestAgency = arrestAgencyRepository.findByIdOrNull(ArrestAgency.pk(arrestAgencyId))!!
 
   fun lookupEscort(escortCode: String): Escort = escortRepository.findByIdOrNull(Escort.pk(escortCode))!!
 
   fun lookupCity(cityCode: String): City = cityRepository.findByIdOrNull(City.pk(cityCode))!!
-
-  fun save(movement: OffenderExternalMovement): OffenderExternalMovement = offenderExternalMovementRepository.save(movement)
 }
 
 class OffenderExternalMovementBuilder(
   private val repository: OffenderExternalMovementBuilderRepository,
 ) : OffenderExternalMovementDsl {
-  fun buildTransfer(
-    fromPrisonId: String,
-    toPrisonId: String,
+  fun buildReleaseMovementOut(
     date: LocalDateTime,
     offenderBooking: OffenderBooking,
-  ): Pair<OffenderExternalMovement, OffenderExternalMovement> = repository.save(
-    OffenderExternalMovement(
-      id = OffenderExternalMovementId(
-        offenderBooking,
-        offenderBooking.externalMovements.size + 1,
-      ),
-      movementDate = date.toLocalDate(),
-      movementTime = date,
-      movementDirection = OUT,
-      movementReason = repository.lookupMovementTypeAndReason("TRN", "28"),
-      fromAgency = repository.lookupAgency(fromPrisonId),
-      toAgency = repository.lookupAgency(toPrisonId),
-      active = false,
+    movementReason: String,
+    toAgency: String,
+    escort: String?,
+    comment: String?,
+  ): OffenderReleaseMovementOut = OffenderReleaseMovementOut(
+    id = OffenderExternalMovementId(
+      offenderBooking,
+      offenderBooking.externalMovements.size + 1,
     ),
-  ) to repository.save(
-    OffenderExternalMovement(
-      id = OffenderExternalMovementId(
-        offenderBooking,
-        offenderBooking.externalMovements.size + 2,
-      ),
-      movementDate = date.toLocalDate(),
-      movementTime = date.plusSeconds(1),
-      movementDirection = IN,
-      movementReason = repository.lookupMovementTypeAndReason("ADM", "INT"),
-      fromAgency = repository.lookupAgency(fromPrisonId),
-      toAgency = repository.lookupAgency(toPrisonId),
-      active = true,
-    ),
-  )
-  fun buildRelease(
-    date: LocalDateTime,
-    offenderBooking: OffenderBooking,
-  ): OffenderExternalMovement = repository.save(
-    OffenderExternalMovement(
-      id = OffenderExternalMovementId(
-        offenderBooking,
-        offenderBooking.externalMovements.size + 1,
-      ),
-      movementDate = date.toLocalDate(),
-      movementTime = LocalDate.parse("2023-01-02").atTime(date.toLocalTime()),
-      movementDirection = OUT,
-      movementReason = repository.lookupMovementTypeAndReason("REL", "CR"),
-      fromAgency = offenderBooking.location,
-      toAgency = null,
-      active = true,
-    ),
+    movementDate = date.toLocalDate(),
+    movementTime = date,
+    movementReason = repository.lookupMovementTypeAndReason("REL", movementReason),
+    fromPrison = offenderBooking.location,
+    toAgency = repository.lookupAgency(toAgency),
+    active = true,
+    escort = escort?.let { repository.lookupEscort(escort) },
+    commentText = comment,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "OUT"
+    // Even if we're going to a hospital, the booking location in NOMIS iS OUT
     offenderBooking.location = repository.lookupAgency("OUT")
     offenderBooking.active = false
     if (offenderBooking.bookingEndDate == null) {
@@ -128,26 +94,31 @@ class OffenderExternalMovementBuilder(
     }
   }
 
-  fun buildReceive(
+  fun buildAdmissionMovementIn(
     date: LocalDateTime,
     offenderBooking: OffenderBooking,
-  ): OffenderExternalMovement = repository.save(
-    OffenderExternalMovement(
-      id = OffenderExternalMovementId(
-        offenderBooking,
-        offenderBooking.externalMovements.size + 1,
-      ),
-      movementDate = date.toLocalDate(),
-      movementTime = LocalDate.parse("2023-01-02").atTime(date.toLocalTime()),
-      movementDirection = IN,
-      movementReason = repository.lookupMovementTypeAndReason("ADM", "N"),
-      toAgency = offenderBooking.location,
-      fromAgency = null,
-      active = false,
+    movementReason: String,
+    fromAgency: String,
+    toPrison: String,
+    escort: String?,
+    comment: String?,
+  ): OffenderAdmissionMovementIn = OffenderAdmissionMovementIn(
+    id = OffenderExternalMovementId(
+      offenderBooking,
+      offenderBooking.externalMovements.size + 1,
     ),
+    movementDate = date.toLocalDate(),
+    movementTime = date,
+    movementReason = repository.lookupMovementTypeAndReason("ADM", movementReason),
+    fromAgency = repository.lookupAgency(fromAgency),
+    toPrison = repository.lookupAgency(toPrison),
+    escort = escort?.let { repository.lookupEscort(escort) },
+    commentText = comment,
+    active = true,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "IN"
-    offenderBooking.location = offenderBooking.location
+    offenderBooking.location = it.toAgency!!
     offenderBooking.active = true
     offenderBooking.bookingEndDate = null
   }
@@ -171,7 +142,7 @@ class OffenderExternalMovementBuilder(
       offenderBooking.externalMovements.size + 1,
     ),
     movementDate = date.toLocalDate(),
-    movementTime = LocalDateTime.parse("2023-01-01T09:25:00"),
+    movementTime = date,
     movementReason = repository.lookupMovementTypeAndReason("TAP", movementReason),
     arrestAgency = arrestAgency?.let { repository.lookupArrestAgency(arrestAgency) },
     escort = escort?.let { repository.lookupEscort(escort) },
@@ -184,8 +155,9 @@ class OffenderExternalMovementBuilder(
     toAddress = toAddress,
     tapScheduleOut = tapScheduleOut,
   ).also {
+    offenderBooking.add(it)
+    // NOMIS keeps the prison as the booking location during a temporary absence
     offenderBooking.inOutStatus = "OUT"
-    offenderBooking.location = repository.lookupAgency("OUT")
   }
 
   fun buildTapMovementIn(
@@ -206,7 +178,7 @@ class OffenderExternalMovementBuilder(
       offenderBooking.externalMovements.size + 1,
     ),
     movementDate = date.toLocalDate(),
-    movementTime = LocalDateTime.parse("2023-01-01T10:25:02"),
+    movementTime = date,
     movementReason = repository.lookupMovementTypeAndReason("TAP", movementReason),
     escort = escort?.let { repository.lookupEscort(escort) },
     escortText = escortText,
@@ -219,6 +191,7 @@ class OffenderExternalMovementBuilder(
     tapScheduleIn = tapScheduleIn,
     tapScheduleOut = tapScheduleIn?.tapScheduleOut,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "IN"
     offenderBooking.location = it.toAgency!!
   }
@@ -237,7 +210,7 @@ class OffenderExternalMovementBuilder(
       offenderBooking.externalMovements.size + 1,
     ),
     movementDate = date.toLocalDate(),
-    movementTime = LocalDateTime.parse("2022-01-01T10:23:00"),
+    movementTime = date,
     movementReason = repository.lookupMovementTypeAndReason("CRT", movementReason),
     fromPrison = repository.lookupAgency(fromPrison),
     toCourt = repository.lookupAgency(toCourt),
@@ -245,8 +218,9 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     courtScheduleOutId = courtScheduleOut?.id,
   ).also {
+    offenderBooking.add(it)
+    // NOMIS keeps the prison as the booking location during a temporary absence
     offenderBooking.inOutStatus = "OUT"
-    offenderBooking.location = repository.lookupAgency("OUT")
   }
 
   fun buildTransferMovementOut(
@@ -273,8 +247,11 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     transferScheduleOutId = transferScheduleOutId,
   ).also {
-    offenderBooking.inOutStatus = "OUT"
-    offenderBooking.location = repository.lookupAgency("OUT")
+    offenderBooking.add(it)
+    // NOMIS marks a prisoner in transit as inactive at the TRN location
+    offenderBooking.inOutStatus = "TRN"
+    offenderBooking.location = repository.lookupAgency("TRN")
+    offenderBooking.active = false
   }
 
   fun buildCourtMovementIn(
@@ -291,7 +268,7 @@ class OffenderExternalMovementBuilder(
       offenderBooking.externalMovements.size + 1,
     ),
     movementDate = date.toLocalDate(),
-    movementTime = LocalDateTime.parse("2022-01-01T11:25:01"),
+    movementTime = date,
     movementReason = repository.lookupMovementTypeAndReason("CRT", movementReason),
     fromCourt = repository.lookupAgency(fromCourt),
     toPrison = repository.lookupAgency(toPrison),
@@ -299,30 +276,14 @@ class OffenderExternalMovementBuilder(
     commentText = comment,
     courtScheduleOutId = courtScheduleOut?.id,
   ).also {
+    offenderBooking.add(it)
     offenderBooking.inOutStatus = "IN"
     offenderBooking.location = it.toAgency!!
   }
 
-  fun build(
-    fromPrisonId: String,
-    toPrisonId: String,
-    date: LocalDateTime,
-    offenderBooking: OffenderBooking,
-    movementType: String,
-    movementReason: String,
-  ): OffenderExternalMovement = repository.save(
-    OffenderExternalMovement(
-      id = OffenderExternalMovementId(
-        offenderBooking,
-        offenderBooking.externalMovements.size + 1,
-      ),
-      movementDate = date.toLocalDate(),
-      movementTime = LocalDate.parse("2023-01-02").atTime(date.toLocalTime()),
-      movementDirection = IN,
-      movementReason = repository.lookupMovementTypeAndReason(movementType, movementReason),
-      fromAgency = repository.lookupAgency(fromPrisonId),
-      toAgency = repository.lookupAgency(toPrisonId),
-      active = true,
-    ),
-  )
+  // In NOMIS only the latest movement on a booking is active
+  private fun OffenderBooking.add(movement: OffenderExternalMovement) {
+    externalMovements.forEach { it.active = false }
+    externalMovements += movement
+  }
 }

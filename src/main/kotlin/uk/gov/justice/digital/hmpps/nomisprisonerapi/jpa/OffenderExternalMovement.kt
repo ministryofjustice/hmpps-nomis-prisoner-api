@@ -46,6 +46,8 @@ data class OffenderExternalMovementId(
         when MOVEMENT_TYPE = 'CRT' and DIRECTION_CODE = 'OUT' then 'OffenderCourtMovementOut'
         when MOVEMENT_TYPE = 'CRT' and DIRECTION_CODE = 'IN' then 'OffenderCourtMovementIn'
         when MOVEMENT_TYPE = 'TRN' and DIRECTION_CODE = 'OUT' and FROM_AGY_LOC_ID is not null then 'OffenderTransferMovementOut'
+        when MOVEMENT_TYPE = 'ADM' and DIRECTION_CODE = 'IN' then 'OffenderAdmissionMovementIn'
+        when MOVEMENT_TYPE = 'REL' and DIRECTION_CODE = 'OUT' then 'OffenderReleaseMovementOut'
         else 'OffenderExternalMovement'
     end
 """,
