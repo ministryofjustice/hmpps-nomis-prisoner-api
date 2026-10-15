@@ -1364,8 +1364,8 @@ class BookingBuilder(
       escort = escort,
       escortText = escortText,
       comment = comment,
-      fromCity = fromCity ?: previous?.fromCity?.code,
-      fromAddress = fromAddress ?: previous?.fromAddress,
+      fromCity = fromCity ?: previous?.toCity?.code,
+      fromAddress = fromAddress ?: previous?.toAddress,
     )
   }
 

@@ -31,7 +31,7 @@ annotation class CourtCaseDslMarker
 interface CourtCaseDsl {
   fun courtEvent(
     commentText: String? = "Court event comment",
-    court: String = "ABDRCT",
+    court: String = "COURT1",
     courtEventType: String = "TRIAL",
     eventStatusCode: String = "SCH",
     outcomeReasonCode: String? = "3514",

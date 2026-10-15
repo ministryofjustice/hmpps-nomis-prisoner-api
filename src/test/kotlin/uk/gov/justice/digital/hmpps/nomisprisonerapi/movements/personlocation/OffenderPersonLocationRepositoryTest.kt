@@ -60,7 +60,7 @@ class OffenderPersonLocationRepositoryTest(
             arrivalDate = LocalDateTime.parse("2026-01-06T18:00:00"),
           )
           release(
-            date = LocalDateTime.parse("2026-01-05T12:00:00"),
+            date = LocalDateTime.parse("2026-01-07T11:00:00"),
           )
         }
       }
@@ -117,27 +117,27 @@ class OffenderPersonLocationRepositoryTest(
           assertThat(fromAgency!!.id).isEqualTo("MDI")
           assertThat(toAgency!!.id).isEqualTo("LEEDYC")
         }
-        with(find { it.movementReason.id.type == "CRT" && it.toAgency!!.id == "MDI" }!!) {
+        with(find { it.movementReason.id.type == "ADM" && it.toAgency!!.id == "SYI" }!!) {
           assertThat(id.sequence).isEqualTo(9)
           assertThat(getMovementDateAndTime()).isEqualTo("2026-01-05T18:00:00")
-          assertThat(fromAgency!!.id).isEqualTo("LEEDMC")
+          assertThat(fromAgency!!.id).isEqualTo("LEEDYC")
+          assertThat(movementReason.id.reasonCode).isEqualTo("TRNCRT")
         }
-        with(find { it.movementReason.id.type == "TRN" && it.toAgency!!.id == "SYI" }!!) {
+        with(find { it.movementReason.id.type == "TAP" && it.toAgency!!.id == "ARNOLD" }!!) {
           assertThat(id.sequence).isEqualTo(10)
-          assertThat(getMovementDateAndTime()).isEqualTo("2026-01-05T12:00:00")
-          assertThat(fromAgency!!.id).isEqualTo("MDI")
-          assertThat(toAgency!!.id).isEqualTo("SYI")
+          assertThat(getMovementDateAndTime()).isEqualTo("2026-01-06T12:00:00")
+          assertThat(fromAgency!!.id).isEqualTo("SYI")
         }
-        with(find { it.movementReason.id.type == "ADM" && it.toAgency!!.id == "SYI" }!!) {
+        with(find { it.movementReason.id.type == "ADM" && it.toAgency!!.id == "RNI" }!!) {
           assertThat(id.sequence).isEqualTo(11)
-          assertThat(getMovementDateAndTime()).isEqualTo("2026-01-05T18:00:00")
-          assertThat(fromAgency!!.id).isEqualTo("MDI")
-          assertThat(toAgency!!.id).isEqualTo("SYI")
+          assertThat(getMovementDateAndTime()).isEqualTo("2026-01-06T18:00:00")
+          assertThat(fromAgency!!.id).isEqualTo("ARNOLD")
+          assertThat(movementReason.id.reasonCode).isEqualTo("TRNTAP")
         }
         with(find { it.movementReason.id.type == "REL" }!!) {
           assertThat(id.sequence).isEqualTo(12)
-          assertThat(getMovementDateAndTime()).isEqualTo("2026-01-05T12:00:00")
-          assertThat(fromAgency!!.id).isEqualTo("MDI")
+          assertThat(getMovementDateAndTime()).isEqualTo("2026-01-07T11:00:00")
+          assertThat(fromAgency!!.id).isEqualTo("RNI")
           assertThat(toAgency!!.id).isEqualTo("OUT")
         }
       }
