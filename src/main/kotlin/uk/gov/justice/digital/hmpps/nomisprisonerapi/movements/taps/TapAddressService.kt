@@ -219,7 +219,7 @@ internal fun Address.toFullAddress(description: String? = null): String {
     ?: ""
 }
 
-private fun String.toCorporateName() = substring(0..(minOf(this.length, 40) - 1))
+private fun String.toCorporateName() = substring(0..(minOf(this.length, 40) - 1)).trim()
 
 @Schema(description = "Upsert temporary absence address")
 data class UpsertTapAddress(
