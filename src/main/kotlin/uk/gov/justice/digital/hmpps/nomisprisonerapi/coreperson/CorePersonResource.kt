@@ -1836,6 +1836,8 @@ data class CreateOffenderAddressRequest(
   val startDate: LocalDate? = null,
   @Schema(description = "Date address was valid to")
   val endDate: LocalDate? = null,
+  @Schema(description = "List of address usages")
+  val addressUsages: List<CreateOffenderAddressUsageRequest>? = null,
 )
 
 data class UpdateOffenderAddressRequest(
