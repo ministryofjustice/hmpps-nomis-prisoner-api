@@ -181,7 +181,17 @@ class CorePersonService(
           comment = it.comment,
           startDate = it.startDate,
           endDate = it.endDate,
-        )
+        ).also { newAddress ->
+          newAddress.usages.addAll(
+            request.addressUsages?.map { usage ->
+              AddressUsage(
+                AddressUsageId(newAddress, usage.usageCode),
+                active = usage.active,
+                addressUsage = null,
+              )
+            } ?: emptyList(),
+          )
+        }
       },
     )
     if (lookupFailures.isNotEmpty()) {
