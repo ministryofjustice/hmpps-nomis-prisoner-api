@@ -62,7 +62,7 @@ class TapScheduleService(
     }
 
     val schedule = request.eventId
-      ?.let { scheduleOutRepository.findById(request.eventId).get() }
+      ?.let { scheduleOutRepository.findByEventIdOrNullWaitForLock(request.eventId) }
       ?.apply {
         this.setAppointmentStartDateAndTime(request.eventDate, request.startTime)
         this.eventSubType = eventSubType
