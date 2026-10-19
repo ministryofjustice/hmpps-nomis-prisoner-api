@@ -201,7 +201,7 @@ class VisitsConfigurationResource(private val visitsConfigurationService: Visits
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(
     summary = "Create a visit time slot",
-    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Creates the visit day if it does not already exist. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "201",

@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDay
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDayId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitSlot
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTime
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
@@ -64,6 +66,9 @@ class VisitsConfigurationService(
   @Audit(auditModule = "DPS_SYNCHRONISATION_OFFICIAL_VISITS")
   fun createVisitTimeSlot(prisonId: String, dayOfWeek: WeekDay, request: CreateVisitTimeSlotRequest): VisitTimeSlotResponse {
     val location = lookupAgency(prisonId)
+    val visitDayId = AgencyVisitDayId(location = location, weekDay = dayOfWeek)
+    agencyVisitDayRepository.findByIdOrNull(visitDayId)
+      ?: agencyVisitDayRepository.saveAndFlush(AgencyVisitDay(visitDayId))
     val nextSequence = agencyVisitTimeRepository.getNextTimeSlotSequence(prisonId, dayOfWeek.name)
     val agencyVisitTimesId = AgencyVisitTimeId(
       location = location,

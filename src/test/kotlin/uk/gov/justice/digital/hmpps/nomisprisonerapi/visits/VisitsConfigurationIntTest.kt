@@ -11,6 +11,7 @@ import org.springframework.data.repository.findByIdOrNull
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyInternalLocation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitDayId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyVisitTimeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.AgencyInternalLocationRepository
@@ -44,6 +45,7 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
     @AfterEach
     fun tearDown() {
       agencyVisitTimeRepository.deleteAll()
+      agencyVisitDayRepository.deleteAll()
     }
 
     @Nested
@@ -98,6 +100,37 @@ class VisitsConfigurationIntTest : IntegrationTestBase() {
 
     @Nested
     inner class HappyPath {
+      @Test
+      fun `will create visit day when creating time slot for a day that does not exist`() {
+        val visitDayId = AgencyVisitDayId(
+          location = agencyLocationRepository.findByIdOrNull("BXI")!!,
+          weekDay = WeekDay.MON,
+        )
+        assertThat(agencyVisitDayRepository.findByIdOrNull(visitDayId)).isNull()
+
+        webTestClient.post().uri("/visits/configuration/time-slots/prison-id/BXI/day-of-week/MON")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            CreateVisitTimeSlotRequest(
+              startTime = LocalTime.parse("10:00"),
+              endTime = LocalTime.parse("11:00"),
+              effectiveDate = LocalDate.parse("2022-09-01"),
+              expiryDate = null,
+            ),
+          )
+          .exchange()
+          .expectStatus().isCreated
+          .expectBody()
+          .jsonPath("$.prisonId").isEqualTo("BXI")
+          .jsonPath("$.dayOfWeek").isEqualTo("MON")
+          .jsonPath("$.timeSlotSequence").isEqualTo(1)
+          .jsonPath("$.startTime").isEqualTo("10:00")
+          .jsonPath("$.endTime").isEqualTo("11:00")
+          .jsonPath("$.effectiveDate").isEqualTo("2022-09-01")
+
+        assertThat(agencyVisitDayRepository.findByIdOrNull(visitDayId)).isNotNull
+      }
+
       @Test
       fun `will create time slot`() {
         nomisDataBuilder.build {
