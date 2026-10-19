@@ -23,6 +23,8 @@ class OffenderBookingDataBuilder(
     bookingSequence = bookingSequence,
     createLocation = agencyLocation,
     location = agencyLocation,
+    bookingStatus = "O",
+    bookNumber = "AA1234",
   ).apply {
     offender.getAllBookingsFromRoot()?.add(this)
   }

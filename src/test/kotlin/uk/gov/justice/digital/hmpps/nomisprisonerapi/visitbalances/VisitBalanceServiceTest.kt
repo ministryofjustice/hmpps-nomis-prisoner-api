@@ -640,4 +640,6 @@ private fun booking(bookingSequence: Int = 1): OffenderBooking = OffenderBooking
   bookingBeginDate = LocalDateTime.parse("2025-03-13T01:02:03"),
   offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),
   location = AgencyLocation(id = "MDI", description = "Moorland HMP"),
+  bookingStatus = "O",
+  bookNumber = "AA1234",
 )

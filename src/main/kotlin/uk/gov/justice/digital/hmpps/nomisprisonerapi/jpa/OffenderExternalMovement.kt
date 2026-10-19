@@ -152,6 +152,10 @@ class OffenderExternalMovement(
   @ManyToOne
   @JoinColumn(name = "TO_ADDRESS_ID")
   val toAddress: Address? = null,
+
+  // Read-only: subclasses own the writable mapping of EVENT_ID
+  @Column(name = "EVENT_ID", insertable = false, updatable = false)
+  val eventId: Long? = null,
 ) : NomisAuditableEntityWithStaff() {
 
   /**
@@ -162,6 +166,8 @@ class OffenderExternalMovement(
    * @return The combined LocalDateTime representing the movement date and time.
    */
   fun getMovementDateAndTime(): LocalDateTime = movementDate.atTime(movementTime.toLocalTime())
+
+  fun isTap() = this is OffenderTransferMovementOut || this is OffenderTapMovementOut
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
