@@ -167,7 +167,7 @@ class OffenderExternalMovement(
    */
   fun getMovementDateAndTime(): LocalDateTime = movementDate.atTime(movementTime.toLocalTime())
 
-  fun isTap() = this is OffenderTransferMovementOut || this is OffenderTapMovementOut
+  fun isTap() = this is OffenderTapMovementOut || this is OffenderTapMovementIn
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
