@@ -767,18 +767,25 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 sequence = 4,
                 assessmentDate = LocalDate.parse("2025-12-29"),
                 assessmentStatus = AssessmentStatusType.I,
-                reviewLevel = AssessmentLevel.LOW,
+                reviewLevel = AssessmentLevel.MED,
                 username = "BILLSTAFF",
               )
               assessment(
                 sequence = 5,
+                assessmentDate = LocalDate.parse("2025-12-29"),
+                assessmentStatus = AssessmentStatusType.I,
+                reviewLevel = AssessmentLevel.LOW,
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 6,
                 assessmentDate = LocalDate.parse("2025-12-30"),
-                assessmentType = AssessmentType.CATEGORY,
+                assessmentType = AssessmentType.CATEGORY, // ignored
                 assessmentStatus = AssessmentStatusType.A,
                 reviewLevel = AssessmentLevel.HI,
                 username = "BILLSTAFF",
               )
-            }
+            } // calc STANDARD, override MED, approved null
           }
         }
 
@@ -790,9 +797,9 @@ class CsraResourceIntTest : IntegrationTestBase() {
           .returnResult()
           .responseBody!!
           .apply {
-            assertThat(status).isEqualTo(AssessmentStatusType.A)
-            assertThat(assessmentDate).isEqualTo("2025-12-25")
-            assertThat(reviewLevel).isEqualTo(AssessmentLevel.STANDARD)
+            assertThat(status).isEqualTo(AssessmentStatusType.I)
+            assertThat(assessmentDate).isEqualTo("2025-12-29")
+            assertThat(reviewLevel).isEqualTo(AssessmentLevel.LOW)
           }
       }
     }
