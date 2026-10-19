@@ -80,7 +80,7 @@ enum class MovementType { ADM, CRT, TAP, TRN, REL }
 enum class MovementLocationType { PRISON, COURT, OTHER }
 
 data class MovementLocation(
-  val code: String?,
+  val code: String? = null,
   val type: MovementLocationType,
   val description: String,
 )

@@ -753,6 +753,8 @@ class BookingBuilder(
       bookingBeginDate = bookingBeginDate,
       youthAdultCode = youthAdultCode,
       assignedLivingUnit = repository.lookupAgencyInternalLocation(livingUnitId),
+      bookingStatus = "O",
+      bookNumber = "AA1234",
     )
       .also {
         offenderExternalMovementBuilderFactory.builder()

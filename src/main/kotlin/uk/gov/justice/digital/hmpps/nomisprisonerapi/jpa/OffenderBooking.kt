@@ -32,7 +32,7 @@ data class OffenderBooking(
   val bookingSequence: Int = 1,
 
   @Column(name = "BOOKING_NO")
-  val bookNumber: String? = null,
+  val bookNumber: String,
 
   @Column(name = "BOOKING_TYPE")
   val bookingType: String? = null,
@@ -71,7 +71,7 @@ data class OffenderBooking(
   var rootOffender: Offender? = null,
 
   @Column(name = "BOOKING_STATUS")
-  val bookingStatus: String? = null,
+  val bookingStatus: String,
 
   @Column(name = "STATUS_REASON")
   val statusReason: String? = null,
@@ -174,7 +174,7 @@ data class OffenderBooking(
 
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val imprisonmentStatuses: MutableList<OffenderImprisonmentStatus> = mutableListOf(),
-) {
+) : NomisAuditableEntityBasic() {
   fun getNextSequence(): Long = incentives.maxOfOrNull { it.id.sequence }?.let { it + 1 } ?: 1
 
   override fun equals(other: Any?): Boolean {
