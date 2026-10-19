@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.EntityGraph.EntityGraphType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAssessmentId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
@@ -20,5 +19,5 @@ interface OffenderAssessmentRepository : JpaRepository<OffenderAssessment, Offen
   fun findById_OffenderBooking_Offender_NomsIdAndAssessment_AssessmentIdIn(offenderNo: String, assessmentIds: List<Long>): List<OffenderAssessment>
 
   @Suppress("ktlint:standard:function-naming")
-  fun findFirstById_OffenderBooking_Offender_NomsIdAndAssessment_IsCellSharingAndAssessmentStatusOrderByAssessmentDateDescIdSequenceDesc(offenderNo: String, cellSharing: Boolean, status: AssessmentStatusType): OffenderAssessment?
+  fun findFirstById_OffenderBooking_Offender_NomsIdAndAssessment_IsCellSharing_TrueOrderByAssessmentDateDescIdSequenceDesc(offenderNo: String): OffenderAssessment?
 }
