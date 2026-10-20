@@ -167,8 +167,6 @@ class OffenderExternalMovement(
    */
   fun getMovementDateAndTime(): LocalDateTime = movementDate.atTime(movementTime.toLocalTime())
 
-  fun isTap() = this is OffenderTransferMovementOut || this is OffenderTapMovementOut
-
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
