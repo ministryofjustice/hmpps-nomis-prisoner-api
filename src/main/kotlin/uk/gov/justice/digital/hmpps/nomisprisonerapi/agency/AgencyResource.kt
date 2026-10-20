@@ -180,7 +180,7 @@ class AgencyResource(private val agencyService: AgencyService) {
   @PutMapping("/agency/{agencyId}")
   @Operation(
     summary = "Updates the core details of an agency",
-    description = "Replaces the core, non-collection details of an agency, for example its description or active status. Addresses, phone numbers and email addresses are managed via their own endpoints. The agency's type can not be changed. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    description = "Replaces the core, non-collection details of an agency, for example its description, type or active status. Addresses, phone numbers and email addresses are managed via their own endpoints. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -836,6 +836,9 @@ data class UpdateAgencyRequest(
   val description: String,
   @Schema(description = "Description of agency", example = "Blackburn YOT")
   val longDescription: String? = null,
+  @Schema(description = "Agency type code", example = "CRT")
+  @field:NotBlank
+  val typeCode: String,
   @Schema(description = "Indicates if still used", example = "true")
   val active: Boolean = true,
   @Schema(description = "Date no longer active", example = "2020-01-01")

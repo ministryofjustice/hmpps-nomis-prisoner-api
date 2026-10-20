@@ -142,6 +142,7 @@ class AgencyService(
 
     agency.description = request.description
     agency.longDescription = request.longDescription
+    agency.type = agencyTypeOf(request.typeCode)
     agency.active = request.active
     agency.deactivationDate = request.deactivationDate
     agency.contactName = request.contactName

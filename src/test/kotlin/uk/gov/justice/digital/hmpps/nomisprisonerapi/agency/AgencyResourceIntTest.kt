@@ -429,6 +429,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
   inner class UpdateAgency {
     private val validUpdateRequest = UpdateAgencyRequest(
       description = "HMP XXI",
+      typeCode = "INST",
     )
 
     private lateinit var existingAgency: AgencyLocation
@@ -516,6 +517,15 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `will return 400 if agency type does not exist`() {
+        webTestClient.put().uri("/agency/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validUpdateRequest.copy(typeCode = "BANANAS"))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+
+      @Test
       fun `will return 400 if court type does not exist`() {
         webTestClient.put().uri("/agency/${existingAgency.id}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -553,6 +563,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
             validUpdateRequest.copy(
               description = "Updated Description",
               longDescription = "Updated Long Description",
+              typeCode = "HOSPITAL",
               active = false,
               deactivationDate = LocalDate.parse("2023-01-01"),
               contactName = "John Smith",
@@ -575,6 +586,7 @@ class AgencyResourceIntTest : IntegrationTestBase() {
           with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
             assertThat(description).isEqualTo("Updated Description")
             assertThat(longDescription).isEqualTo("Updated Long Description")
+            assertThat(type.code).isEqualTo("HOSPITAL")
             assertThat(active).isFalse()
             assertThat(deactivationDate).isEqualTo(LocalDate.parse("2023-01-01"))
             assertThat(contactName).isEqualTo("John Smith")

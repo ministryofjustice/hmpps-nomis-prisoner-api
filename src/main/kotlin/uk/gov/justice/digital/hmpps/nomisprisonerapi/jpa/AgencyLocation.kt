@@ -54,7 +54,7 @@ class AgencyLocation(
       ),
     ],
   )
-  val type: AgencyLocationType = PRISON_TYPE,
+  var type: AgencyLocationType = PRISON_TYPE,
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)
