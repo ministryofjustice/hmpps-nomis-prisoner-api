@@ -800,8 +800,17 @@ class OffenderPersonLocationsResourceIntTest(
       private fun buildOffender(movementCount: Int) {
         nomisDataBuilder.build {
           offender = offender {
+            val addresses = (0 until movementCount).map { address(street = "Street $it", postcode = "S$it 1AA") }
             booking = booking(bookingBeginDate = twoDaysAgo) {
               repeat(movementCount) {
+                tapApplication(toAddress = addresses[it]) {
+                  tapScheduleOut(fromPrison = "BXI", toAddress = addresses[it], eventDate = twoDaysAgo.toLocalDate()) {
+                    tapMovementOut(date = twoDaysAgo.plusMinutes(it * 10L))
+                    tapScheduleIn(toPrison = "BXI") {
+                      tapMovementIn(date = twoDaysAgo.plusMinutes(it * 10L + 5))
+                    }
+                  }
+                }
                 tapMovement(toAgency = "HAZLWD", date = yesterday.plusMinutes(it * 10L), returnDate = yesterday.plusMinutes(it * 10L + 5))
                 courtMovement(date = yesterday.plusMinutes(it * 10L + 6), returnDate = yesterday.plusMinutes(it * 10L + 7))
               }

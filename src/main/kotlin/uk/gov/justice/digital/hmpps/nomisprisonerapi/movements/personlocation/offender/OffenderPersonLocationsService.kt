@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdmissionMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
@@ -19,23 +18,32 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.BookingStatus.CLOSED
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.BookingStatus.OPEN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.COURT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.OTHER
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.toFullAddress
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT as DIRECTION_OUT
 
 @Service
 @Transactional(readOnly = true)
 class OffenderPersonLocationsService(
   private val offenderBookingRepository: OffenderBookingRepository,
   private val offenderRepository: OffenderRepository,
+  private val tapMovementOutRepository: OffenderTapMovementOutRepository,
+  private val tapMovementInRepository: OffenderTapMovementInRepository,
 ) {
   fun getOffenderPersonLocations(offenderNo: String): OffenderPersonLocationsResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Offender with nomsId=$offenderNo not found")
     }
+    // Loads TAP movements with their schedules and addresses in one go (the entity associations are eager) so the
+    // booking's movements below are resolved from the persistence context rather than one query per movement
+    tapMovementOutRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
+    tapMovementInRepository.findAllByOffenderBooking_Offender_NomsId(offenderNo)
     return OffenderPersonLocationsResponse(
       bookings = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).map { booking ->
         BookingPersonLocations(
@@ -58,7 +66,7 @@ class OffenderPersonLocationsService(
 
   private fun OffenderExternalMovement.toPersonLocationMovement(): PersonLocationMovement {
     val movementType = toMovementType()
-    val unknownFrom = fromAgency == null && movementDirection == OUT && (movementType == MovementType.REL || movementType == MovementType.TRN)
+    val unknownFrom = fromAgency == null && movementDirection == DIRECTION_OUT && (movementType == MovementType.REL || movementType == MovementType.TRN)
     val scheduleOut = (this as? OffenderTapMovementOut)?.tapScheduleOut
     val parentScheduleOut = (this as? OffenderTapMovementIn)?.tapScheduleOut
     return PersonLocationMovement(
@@ -84,15 +92,18 @@ class OffenderPersonLocationsService(
     )
   }
 
-  private fun OffenderExternalMovement.toMovementType() = when {
-    this is OffenderAdmissionMovementIn -> MovementType.ADM
-    this is OffenderReleaseMovementOut -> MovementType.REL
-    this is OffenderTransferMovementOut -> MovementType.TRN
-    this is OffenderTapMovementOut || this is OffenderTapMovementIn -> MovementType.TAP
-    this is OffenderCourtMovementOut || this is OffenderCourtMovementIn -> MovementType.CRT
+  private fun OffenderExternalMovement.toMovementType() = when (this) {
+    is OffenderAdmissionMovementIn -> MovementType.ADM
+    is OffenderReleaseMovementOut -> MovementType.REL
+    is OffenderTransferMovementOut -> MovementType.TRN
+    is OffenderTapMovementOut, is OffenderTapMovementIn -> MovementType.TAP
+    is OffenderCourtMovementOut, is OffenderCourtMovementIn -> MovementType.CRT
     // Outbound transfers with no from location are excluded from the entity discriminator so arrive as the base class
-    movementDirection == OUT && movementReason.id.type == "TRN" -> MovementType.TRN
-    else -> throw IllegalStateException("Unknown movement type ${this::class} for movement $id")
+    else -> if (movementDirection == DIRECTION_OUT && movementReason.id.type == "TRN") {
+      MovementType.TRN
+    } else {
+      throw IllegalStateException("Unknown movement type ${this::class} for movement $id")
+    }
   }
 
   private fun AgencyLocation?.toMovementLocation(address: Address? = null, city: City? = null) = this?.let {
