@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.of
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.OTHER
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.toFullAddress
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT as DIRECTION_OUT
 
 @Service
 @Transactional(readOnly = true)
@@ -66,9 +65,8 @@ class OffenderPersonLocationsService(
 
   private fun OffenderExternalMovement.toPersonLocationMovement(): PersonLocationMovement {
     val movementType = toMovementType()
-    val unknownFrom = fromAgency == null && movementDirection == DIRECTION_OUT && (movementType == MovementType.REL || movementType == MovementType.TRN)
-    val scheduleOut = (this as? OffenderTapMovementOut)?.tapScheduleOut
-    val parentScheduleOut = (this as? OffenderTapMovementIn)?.tapScheduleOut
+    val scheduleTapOut = (this as? OffenderTapMovementOut)?.tapScheduleOut
+    val parentScheduleTapOut = (this as? OffenderTapMovementIn)?.tapScheduleOut
     return PersonLocationMovement(
       sequence = id.sequence,
       movementType = movementType,
@@ -76,14 +74,14 @@ class OffenderPersonLocationsService(
       movementTime = getMovementDateAndTime(),
       movementReason = CodeDescription(movementReason.id.reasonCode, movementReason.description),
       from = when {
-        unknownFrom -> MovementLocation("UNKNOWN", OTHER, "Unknown")
+        unknownFrom(movementType) -> MovementLocation("UNKNOWN", OTHER, "Unknown")
         else -> fromAgency.toMovementLocation(
-          address = if (isTap()) fromAddress ?: parentScheduleOut?.toAddress else null,
+          address = if (isTap()) fromAddress ?: parentScheduleTapOut?.toAddress else null,
           city = if (isTap()) fromCity else null,
         )
       },
       to = toAgency.toMovementLocation(
-        address = if (isTap()) toAddress ?: scheduleOut?.toAddress else null,
+        address = if (isTap()) toAddress ?: scheduleTapOut?.toAddress else null,
         city = if (isTap()) toCity else null,
       ),
       scheduleId = if (this is OffenderCourtMovementIn) courtScheduleOutId else eventId,
@@ -99,7 +97,7 @@ class OffenderPersonLocationsService(
     is OffenderTapMovementOut, is OffenderTapMovementIn -> MovementType.TAP
     is OffenderCourtMovementOut, is OffenderCourtMovementIn -> MovementType.CRT
     // Outbound transfers with no from location are excluded from the entity discriminator so arrive as the base class
-    else -> if (movementDirection == DIRECTION_OUT && movementReason.id.type == "TRN") {
+    else -> if (movementDirection.name == "OUT" && movementReason.id.type == "TRN") {
       MovementType.TRN
     } else {
       throw IllegalStateException("Unknown movement type ${this::class} for movement $id")
@@ -122,4 +120,8 @@ class OffenderPersonLocationsService(
     ?: city?.let { MovementLocation(description = it.description, type = OTHER) }
 
   private fun String.isOtherLocationType() = this == "OUT" || this == "TRN"
+
+  private fun OffenderExternalMovement.isTap() = this is OffenderTapMovementOut || this is OffenderTapMovementIn
+
+  private fun OffenderExternalMovement.unknownFrom(movementType: MovementType) = fromAgency == null && movementDirection.name == "OUT" && (movementType in [MovementType.REL, MovementType.TRN])
 }

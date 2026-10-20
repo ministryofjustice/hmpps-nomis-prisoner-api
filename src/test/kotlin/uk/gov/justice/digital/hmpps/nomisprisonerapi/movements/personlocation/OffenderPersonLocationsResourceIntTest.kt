@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.of
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.OffenderPersonLocationsResponse
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 class OffenderPersonLocationsResourceIntTest(
@@ -51,7 +52,7 @@ class OffenderPersonLocationsResourceIntTest(
   inner class GetOffenderPersonLocations {
 
     @Nested
-    inner class HappyPath {
+    inner class ReceiveAndRelease {
 
       @BeforeEach
       fun setUp() {
@@ -90,8 +91,7 @@ class OffenderPersonLocationsResourceIntTest(
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
             repository.runInTransaction {
-              with(bookings[0].movement(1)) {
-                assertThat(sequence).isEqualTo(1)
+              with(bookings[0].movementWithSeq(1)) {
                 assertThat(movementType).isEqualTo(MovementType.ADM)
                 assertThat(directionCode).isEqualTo(MovementDirection.IN)
                 assertThat(movementTime).isEqualTo(yesterday)
@@ -113,8 +113,7 @@ class OffenderPersonLocationsResourceIntTest(
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
             repository.runInTransaction {
-              with(bookings[0].movement(2)) {
-                assertThat(sequence).isEqualTo(2)
+              with(bookings[0].movementWithSeq(2)) {
                 assertThat(movementType).isEqualTo(MovementType.REL)
                 assertThat(directionCode).isEqualTo(MovementDirection.OUT)
                 assertThat(movementTime).isEqualTo(now)
@@ -152,7 +151,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get TAP out details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.TAP)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(movementTime).isEqualTo(yesterday)
@@ -169,7 +168,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get TAP in details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.TAP)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(movementTime).isEqualTo(now)
@@ -202,7 +201,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get court out details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.CRT)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(movementTime).isEqualTo(yesterday)
@@ -219,7 +218,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get court in details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.CRT)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(movementTime).isEqualTo(now)
@@ -251,7 +250,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get transfer out details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.TRN)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(movementTime).isEqualTo(yesterday)
@@ -267,7 +266,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get admission after transfer details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.ADM)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(movementTime).isEqualTo(now)
@@ -298,7 +297,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get court out details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.CRT)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(from).isEqualTo(MovementLocation("BXI", MovementLocationType.PRISON, "BRIXTON"))
@@ -311,7 +310,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get admission from court details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.ADM)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(movementTime).isEqualTo(now)
@@ -343,7 +342,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get TAP out details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.TAP)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(from).isEqualTo(MovementLocation("BXI", MovementLocationType.PRISON, "BRIXTON"))
@@ -356,7 +355,7 @@ class OffenderPersonLocationsResourceIntTest(
       fun `should get admission from TAP details`() {
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.ADM)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(movementTime).isEqualTo(now)
@@ -394,12 +393,12 @@ class OffenderPersonLocationsResourceIntTest(
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
             assertThat(bookings[0].movements).hasSize(3)
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.TAP)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(scheduleId).isEqualTo(scheduleOut.eventId)
             }
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.TAP)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(scheduleId).isEqualTo(scheduleIn.eventId)
@@ -424,12 +423,12 @@ class OffenderPersonLocationsResourceIntTest(
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
             assertThat(bookings[0].movements).hasSize(3)
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.CRT)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(scheduleId).isEqualTo(scheduleOut.id)
             }
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.CRT)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(scheduleId).isEqualTo(scheduleOut.id)
@@ -454,11 +453,11 @@ class OffenderPersonLocationsResourceIntTest(
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
             assertThat(bookings[0].movements).hasSize(3)
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.TRN)
               assertThat(scheduleId).isEqualTo(scheduleOut.eventId)
             }
-            with(bookings[0].movement(3)) {
+            with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.ADM)
               assertThat(scheduleId).isNull()
             }
@@ -492,8 +491,8 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movement(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
-            assertThat(bookings[0].movement(3).from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+            assertThat(bookings[0].movementWithSeq(3).from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
           }
       }
 
@@ -517,8 +516,8 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movement(2).to).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
-            assertThat(bookings[0].movement(3).from).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
+            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
+            assertThat(bookings[0].movementWithSeq(3).from).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
           }
       }
 
@@ -535,8 +534,8 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movement(2).to).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
-            assertThat(bookings[0].movement(3).from).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
+            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
+            assertThat(bookings[0].movementWithSeq(3).from).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "41 High Street, Sheffield"))
           }
       }
 
@@ -552,8 +551,8 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movement(2).to).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "Sheffield"))
-            assertThat(bookings[0].movement(3).from).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "Sheffield"))
+            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "Sheffield"))
+            assertThat(bookings[0].movementWithSeq(3).from).isEqualTo(MovementLocation(null, MovementLocationType.OTHER, "Sheffield"))
           }
       }
 
@@ -572,7 +571,7 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movement(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
           }
       }
 
@@ -598,7 +597,7 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movement(2).to).isNull()
+            assertThat(bookings[0].movementWithSeq(2).to).isNull()
           }
       }
     }
@@ -636,6 +635,47 @@ class OffenderPersonLocationsResourceIntTest(
     }
 
     @Nested
+    inner class BookingEndDateFormats {
+
+      @Test
+      fun `should handle booking end date with and without a time`() {
+        lateinit var firstBooking: OffenderBooking
+        val bookingReleaseWithTime = now.plusMinutes(1)
+        nomisDataBuilder.build {
+          offender = offender {
+            firstBooking = booking(bookingBeginDate = twoDaysAgo, bookingSequence = 2) {
+              release(date = yesterday)
+            }
+            booking = booking(bookingBeginDate = now, bookingSequence = 1) {
+              release(date = bookingReleaseWithTime)
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          // Add a time component to the second booking end time to match data found in NOMIS
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_BOOKINGS
+              set BOOKING_END_DATE = TIMESTAMP '${bookingReleaseWithTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}'
+              where OFFENDER_BOOK_ID = ${booking.bookingId}
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getOffenderPersonLocationsOk()
+          .apply {
+            with(bookings.single { it.bookingId == firstBooking.bookingId }) {
+              assertThat(bookingEndTime).isEqualTo(yesterday.truncatedTo(ChronoUnit.DAYS))
+            }
+            with(bookings.single { it.bookingId == booking.bookingId }) {
+              assertThat(bookingEndTime).isEqualTo(bookingReleaseWithTime)
+            }
+          }
+      }
+    }
+
+    @Nested
     inner class BadData {
 
       @Test
@@ -660,7 +700,7 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movement(2).to).isNull()
+            assertThat(bookings[0].movementWithSeq(2).to).isNull()
           }
       }
     }
@@ -691,12 +731,12 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings[0].movement(2)) {
+            with(bookings[0].movementWithSeq(2)) {
               assertThat(movementType).isEqualTo(MovementType.TRN)
               assertThat(from).isEqualTo(MovementLocation("UNKNOWN", MovementLocationType.OTHER, "Unknown"))
               assertThat(to!!.code).isEqualTo("MDI")
             }
-            with(bookings[0].movement(4)) {
+            with(bookings[0].movementWithSeq(4)) {
               assertThat(movementType).isEqualTo(MovementType.REL)
               assertThat(from).isEqualTo(MovementLocation("UNKNOWN", MovementLocationType.OTHER, "Unknown"))
               assertThat(to).isEqualTo(MovementLocation("OUT", MovementLocationType.OTHER, "OUTSIDE"))
@@ -861,8 +901,7 @@ class OffenderPersonLocationsResourceIntTest(
     }
   }
 
-  // Ordering is covered by its own test, so other tests look movements up by sequence
-  private fun BookingPersonLocations.movement(sequence: Int) = movements.single { it.sequence == sequence }
+  private fun BookingPersonLocations.movementWithSeq(sequence: Int) = movements.single { it.sequence == sequence }
 
   private fun WebTestClient.getOffenderPersonLocations(
     offenderNo: String = offender.nomsId,
