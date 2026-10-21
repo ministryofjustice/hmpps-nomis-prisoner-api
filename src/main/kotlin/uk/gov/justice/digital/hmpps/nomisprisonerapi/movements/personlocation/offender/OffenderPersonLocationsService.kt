@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdmissionMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
@@ -58,7 +59,7 @@ class OffenderPersonLocationsService(
           movements = booking.externalMovements
             .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
             .filterNot {
-              (it.movementDirection == IN && it.movementReason.id.type in ["REL", "TRN"])
+              it.isInvalidTypeAndDirection()
                 .also { filtered -> if (filtered) log.warn("Ignoring person location movement ${it.id} because its type/direction of ${it.movementReason.id.type}/${it.movementDirection} does not make sense.") }
             }
             .sortedBy { it.id.sequence }
@@ -68,6 +69,9 @@ class OffenderPersonLocationsService(
       },
     )
   }
+
+  private fun OffenderExternalMovement.isInvalidTypeAndDirection() = (movementDirection == IN && movementReason.id.type in ["REL", "TRN"]) ||
+    (movementDirection == OUT && movementReason.id.type == "ADM")
 
   private fun OffenderExternalMovement.toPersonLocationMovement(): PersonLocationMovement {
     val movementType = toMovementType()
