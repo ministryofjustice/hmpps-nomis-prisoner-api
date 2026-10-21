@@ -18,7 +18,7 @@ private const val ADVANCE_STATUS_SELECT = """
     opp.start_date AS startDate,
     opp.payment_amount AS paymentAmount,
     opp.reference_text AS reference,
-    opp.comment_text AS comment,
+    opp.comment_text AS commentText,
     opp.create_user_id AS createdBy,
     opp.create_datetime AS createDatetime,
     od.information_number AS informationNumber,
@@ -127,7 +127,7 @@ interface OffenderAdvanceWithStatus {
   val startDate: LocalDateTime
   val paymentAmount: BigDecimal
   val reference: String?
-  val comment: String?
+  val commentText: String?
   val createdBy: String
   val createDatetime: LocalDateTime
   val informationNumber: String
