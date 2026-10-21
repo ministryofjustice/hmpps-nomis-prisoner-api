@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CaseloadDeductionProfileId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
@@ -68,7 +69,7 @@ class OffenderPaymentProfileBuilder(
       informationNumber = informationNumber,
       maxTotalAmount = advanceAmount,
       adjustmentAmount = writeOffAdjustmentAmount,
-      adjustmentReasonCode = writeOffAdjustmentAmount?.let { "WRT" },
+      adjustmentReason = writeOffAdjustmentAmount?.let { AdjustmentReason.WRT },
     )
     return offenderDeductionBuilderRepository.save(
       OffenderAdvance(

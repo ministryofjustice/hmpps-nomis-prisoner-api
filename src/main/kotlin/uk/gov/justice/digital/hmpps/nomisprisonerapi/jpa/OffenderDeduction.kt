@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
@@ -94,7 +96,8 @@ data class OffenderDeduction(
   val deductionAmount: BigDecimal? = null,
 
   @Column(name = "ADJUSTMENT_REASON_CODE")
-  val adjustmentReasonCode: String? = null,
+  @Enumerated(EnumType.STRING)
+  val adjustmentReason: AdjustmentReason? = null,
 
   @Column(name = "ADJUSTMENT_AMOUNT")
   val adjustmentAmount: BigDecimal? = null,
@@ -170,3 +173,5 @@ data class OffenderDeduction(
   @Override
   override fun toString(): String = "${this::class.simpleName} (deductionId = $deductionId )"
 }
+
+enum class AdjustmentReason { P, WRT }

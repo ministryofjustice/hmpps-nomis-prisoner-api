@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjustmentReason
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -205,6 +206,14 @@ data class PrisonerAdvanceDto(
 
   @Schema(description = "The information number", example = "12345678-1")
   val informationNumber: String,
+
+  @Schema(description = "How much has been paid off so far, in pence", example = "1130")
+  val deductionAmount: Long? = null,
+
+  @Schema(description = "The reason code for the adjustment", enumAsRef = true)
+  val adjustmentReason: AdjustmentReason? = null,
+  @Schema(description = "How much has been written off so far, in pence", example = "1020")
+  val adjustmentAmount: Long? = null,
 
   @Schema(description = "The user who created the advance", example = "FRED_SMITH")
   val createdBy: String,

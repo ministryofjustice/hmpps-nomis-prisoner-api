@@ -42,7 +42,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         // paid off
         advance3 = advance(advanceAmount = BigDecimal.TWO, paymentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-1", deductionPriority = 2)
         // written off
-        advance4 = advance(writeOffAdjustmentAmount = BigDecimal.TWO, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-2", deductionPriority = 3)
+        advance4 = advance(writeOffAdjustmentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-2", deductionPriority = 3)
         scheduledPayment()
       }.id
     }
@@ -340,6 +340,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         }
         .jsonPath("informationNumber").isEqualTo("10002000-1")
         .jsonPath("status").isEqualTo("REPAID")
+        .jsonPath("deductionAmount").isEqualTo(200)
+        .jsonPath("adjustmentReason").doesNotExist()
+        .jsonPath("adjustmentAmount").doesNotExist()
     }
 
     @Test
@@ -363,6 +366,9 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         }
         .jsonPath("informationNumber").isEqualTo("10002000-2")
         .jsonPath("status").isEqualTo("WRITTEN_OFF")
+        .jsonPath("deductionAmount").isEqualTo(200)
+        .jsonPath("adjustmentReason").isEqualTo("WRT")
+        .jsonPath("adjustmentAmount").isEqualTo(100)
     }
 
     @Test
