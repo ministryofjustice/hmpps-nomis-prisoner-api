@@ -60,6 +60,9 @@ fun OffenderAdvance.toActiveDto() = PrisonerAdvanceDto(
   createdBy = createUsername,
   createDatetime = createDatetime,
   informationNumber = deduction?.informationNumber!!,
+  deductionAmount = deduction?.deductionAmount?.let { MoneySupport.poundsToPence(it) },
+  adjustmentReason = deduction?.adjustmentReason,
+  adjustmentAmount = deduction?.adjustmentAmount?.let { MoneySupport.poundsToPence(it) },
   status = AdvanceStatus.ACTIVE,
 )
 
@@ -76,5 +79,8 @@ fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
   createdBy = createdBy,
   createDatetime = createDatetime,
   informationNumber = informationNumber,
+  deductionAmount = deductionAmount?.let { MoneySupport.poundsToPence(it) },
+  adjustmentReason = adjustmentReason,
+  adjustmentAmount = adjustmentAmount?.let { MoneySupport.poundsToPence(it) },
   status = AdvanceStatus.valueOf(status),
 )
