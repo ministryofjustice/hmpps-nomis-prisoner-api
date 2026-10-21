@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender
 
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.CodeDescription
@@ -8,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AgencyLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdmissionMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
@@ -55,6 +57,10 @@ class OffenderPersonLocationsService(
           bookingEndTime = booking.bookingEndDate,
           movements = booking.externalMovements
             .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
+            .filterNot {
+              (it.movementDirection == IN && it.movementReason.id.type in ["REL", "TRN"])
+                .also { filtered -> if (filtered) log.warn("Ignoring person location movement ${it.id} because its type/direction of ${it.movementReason.id.type}/${it.movementDirection} does not make sense.") }
+            }
             .sortedBy { it.id.sequence }
             .map { it.toPersonLocationMovement() },
           audit = booking.toAudit(),
@@ -124,4 +130,8 @@ class OffenderPersonLocationsService(
   private fun OffenderExternalMovement.isTap() = this is OffenderTapMovementOut || this is OffenderTapMovementIn
 
   private fun OffenderExternalMovement.unknownFrom(movementType: MovementType) = fromAgency == null && movementDirection.name == "OUT" && (movementType in [MovementType.REL, MovementType.TRN])
+
+  companion object {
+    private val log = LoggerFactory.getLogger(OffenderExternalMovement::class.java)
+  }
 }
