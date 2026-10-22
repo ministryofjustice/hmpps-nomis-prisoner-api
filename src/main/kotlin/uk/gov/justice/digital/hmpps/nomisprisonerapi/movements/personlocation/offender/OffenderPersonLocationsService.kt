@@ -59,7 +59,7 @@ class OffenderPersonLocationsService(
           movements = booking.externalMovements
             .filterNot { it.createUsername == "SYS" && it.auditModuleName == "MERGE" }
             .filterNot {
-              it.isInvalidTypeAndDirection()
+              it.isInvalidMovement()
                 .also { filtered -> if (filtered) log.warn("Ignoring person location movement ${it.id} because its type/direction of ${it.movementReason.id.type}/${it.movementDirection} does not make sense.") }
             }
             .sortedBy { it.id.sequence }
@@ -70,8 +70,9 @@ class OffenderPersonLocationsService(
     )
   }
 
-  private fun OffenderExternalMovement.isInvalidTypeAndDirection() = (movementDirection == IN && movementReason.id.type in ["REL", "TRN"]) ||
-    (movementDirection == OUT && movementReason.id.type == "ADM")
+  private fun OffenderExternalMovement.isInvalidMovement() = (movementDirection == IN && movementReason.id.type in ["REL", "TRN"]) ||
+    (movementDirection == OUT && movementReason.id.type == "ADM") ||
+    (movementDirection == null)
 
   private fun OffenderExternalMovement.toPersonLocationMovement(): PersonLocationMovement {
     val movementType = toMovementType()
