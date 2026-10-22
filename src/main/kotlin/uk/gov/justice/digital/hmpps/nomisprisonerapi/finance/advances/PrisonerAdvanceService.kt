@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.MoneySupport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdvanceRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdvanceWithStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
@@ -65,11 +64,4 @@ fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
   adjustmentAmount = adjustmentAmount?.let { MoneySupport.poundsToPence(it) },
   status = AdvanceStatus.valueOf(status),
   advanceTransactionId = advanceCreateTransactionId,
-)
-
-fun OffenderAdvance.toDeductionDto() = PrisonerAdvanceDeductionDto(
-  deductionId = deduction!!.deductionId,
-  deductionAmount = MoneySupport.poundsToPence(deduction!!.adjustmentAmount!!),
-  lastUpdatedDateTime = deduction!!.modifyDatetime,
-  lastUpdatedByUsername = deduction!!.modifyUserId,
 )
