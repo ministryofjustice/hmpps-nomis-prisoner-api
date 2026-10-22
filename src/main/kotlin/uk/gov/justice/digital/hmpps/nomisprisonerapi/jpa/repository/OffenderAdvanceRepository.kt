@@ -25,6 +25,7 @@ private const val ADVANCE_STATUS_SELECT = """
     od.deduction_amount AS deductionAmount,
     od.adjustment_reason_code AS adjustmentReason,
     od.adjustment_amount AS adjustmentAmount,
+    ot.txn_id AS advanceCreateTransactionId,
     CASE
       WHEN od.adjustment_reason_code IN ('WRT', 'P')
         THEN 'WRITTEN_OFF'
@@ -39,7 +40,11 @@ private const val ADVANCE_STATUS_SELECT = """
   FROM offender_payment_profiles opp
   JOIN offender_deductions od ON opp.offender_payment_profile_id = od.offender_payment_profile_id
   JOIN offenders o ON opp.offender_id = o.offender_id
-"""
+  JOIN offender_transactions ot ON ot.offender_id = opp.offender_id
+    AND ot.txn_type = 'ADV'
+    AND ot.txn_posting_type = 'CR'
+    AND ot.txn_entry_amount = opp.advance_amount
+    AND ot.txn_entry_date = opp.advance_date"""
 
 private const val ADVANCE_BASE_CONDITIONS = """
   opp.payment_amount > 0
@@ -67,7 +72,7 @@ interface OffenderAdvanceRepository : JpaRepository<OffenderAdvance, Long> {
     """,
     nativeQuery = true,
   )
-  fun findByIdWithStatus(advanceId: Long): OffenderAdvanceWithStatus?
+  fun findByAdvanceId(advanceId: Long): OffenderAdvanceWithStatus?
 
   @Query(
     ADVANCE_STATUS_SELECT +
@@ -77,7 +82,7 @@ interface OffenderAdvanceRepository : JpaRepository<OffenderAdvance, Long> {
     """,
     nativeQuery = true,
   )
-  fun findByDeductionIdWithStatus(deductionId: Long): OffenderAdvanceWithStatus?
+  fun findByDeductionId(deductionId: Long): OffenderAdvanceWithStatus?
 
   @Query(
     ADVANCE_STATUS_SELECT +
@@ -88,21 +93,18 @@ interface OffenderAdvanceRepository : JpaRepository<OffenderAdvance, Long> {
     """,
     nativeQuery = true,
   )
-  fun findAdvancesByOffenderIdWithStatus(offenderId: Long): List<OffenderAdvanceWithStatus>
+  fun findAdvancesByOffenderId(offenderId: Long): List<OffenderAdvanceWithStatus>
 
   @Query(
-    """
-      SELECT opp.*
-      FROM offender_payment_profiles opp
-      JOIN offender_deductions od 
-        ON opp.offender_payment_profile_id = od.offender_payment_profile_id
-      WHERE opp.offender_id = :offenderId
+    ADVANCE_STATUS_SELECT +
+      """
+            WHERE opp.offender_id = :offenderId
         AND $ACTIVE_ADVANCE_CONDITIONS
       ORDER BY opp.offender_payment_profile_id
     """,
     nativeQuery = true,
   )
-  fun findActiveAdvancesByOffenderId(offenderId: Long): List<OffenderAdvance>
+  fun findActiveAdvancesByOffenderId(offenderId: Long): List<OffenderAdvanceWithStatus>
 
   @Query(
     """
@@ -135,4 +137,5 @@ interface OffenderAdvanceWithStatus {
   val adjustmentReason: AdjustmentReason?
   val adjustmentAmount: BigDecimal?
   val status: String
+  val advanceCreateTransactionId: Long
 }

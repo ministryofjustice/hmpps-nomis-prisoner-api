@@ -16,11 +16,11 @@ class PrisonerAdvanceService(
   private val offenderRepository: OffenderRepository,
   private val repository: OffenderAdvanceRepository,
 ) {
-  fun getAdvance(offenderAdvanceId: Long): PrisonerAdvanceDto = repository.findByIdWithStatus(offenderAdvanceId)
+  fun getAdvance(offenderAdvanceId: Long): PrisonerAdvanceDto = repository.findByAdvanceId(offenderAdvanceId)
     ?.toDto()
     ?: throw NotFoundException("Offender advance with id $offenderAdvanceId not found")
 
-  fun getAdvanceByDeductionId(deductionId: Long): PrisonerAdvanceDto = repository.findByDeductionIdWithStatus(deductionId)
+  fun getAdvanceByDeductionId(deductionId: Long): PrisonerAdvanceDto = repository.findByDeductionId(deductionId)
     ?.toDto()
     ?: throw NotFoundException("Offender advance with deduction id $deductionId not found")
 
@@ -39,32 +39,13 @@ class PrisonerAdvanceService(
   }
 
   private fun findAdvances(rootOffenderId: Long, activeOnly: Boolean): List<PrisonerAdvanceDto> = if (activeOnly) {
-    repository.findActiveAdvancesByOffenderId(rootOffenderId).map { it.toActiveDto() }
+    repository.findActiveAdvancesByOffenderId(rootOffenderId).map { it.toDto() }
   } else {
-    repository.findAdvancesByOffenderIdWithStatus(rootOffenderId).map { it.toDto() }
+    repository.findAdvancesByOffenderId(rootOffenderId).map { it.toDto() }
   }
 
   fun getActiveAdvancesCount(): AdvancesCount = AdvancesCount(repository.findActiveAdvancesCount())
 }
-
-fun OffenderAdvance.toActiveDto() = PrisonerAdvanceDto(
-  id = this.id,
-  prisonNumber = offender.nomsId,
-  caseloadId = caseloadId,
-  advanceAmount = MoneySupport.poundsToPence(advanceAmount),
-  advanceDate = advanceDate,
-  startDate = startDate,
-  repaymentAmount = MoneySupport.poundsToPence(paymentAmount),
-  reference = referenceText,
-  comment = commentText,
-  createdBy = createUsername,
-  createDatetime = createDatetime,
-  informationNumber = deduction?.informationNumber!!,
-  deductionAmount = deduction?.deductionAmount?.let { MoneySupport.poundsToPence(it) },
-  adjustmentReason = deduction?.adjustmentReason,
-  adjustmentAmount = deduction?.adjustmentAmount?.let { MoneySupport.poundsToPence(it) },
-  status = AdvanceStatus.ACTIVE,
-)
 
 fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
   id = id,
@@ -83,4 +64,12 @@ fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
   adjustmentReason = adjustmentReason,
   adjustmentAmount = adjustmentAmount?.let { MoneySupport.poundsToPence(it) },
   status = AdvanceStatus.valueOf(status),
+  advanceTransactionId = advanceCreateTransactionId,
+)
+
+fun OffenderAdvance.toDeductionDto() = PrisonerAdvanceDeductionDto(
+  deductionId = deduction!!.deductionId,
+  deductionAmount = MoneySupport.poundsToPence(deduction!!.adjustmentAmount!!),
+  lastUpdatedDateTime = deduction!!.modifyDatetime,
+  lastUpdatedByUsername = deduction!!.modifyUserId,
 )

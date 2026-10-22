@@ -222,6 +222,9 @@ data class PrisonerAdvanceDto(
 
   @Schema(description = "The status of the advance", example = "ACTIVE")
   val status: AdvanceStatus,
+
+  @Schema(description = "The transaction id for the advance creation", example = "123456789")
+  val advanceTransactionId: Long?,
 )
 
 data class AdvancesCount(
