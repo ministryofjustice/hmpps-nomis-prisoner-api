@@ -746,6 +746,36 @@ class OffenderPersonLocationsResourceIntTest(
     }
 
     @Nested
+    inner class BadDataNullDirection {
+
+      @Test
+      fun `should return OK and ignore bad movement with null direction`() {
+        nomisDataBuilder.build {
+          offender = offender {
+            booking = booking(bookingBeginDate = twoDaysAgo) {
+              release(date = now)
+            }
+          }
+        }
+
+        repository.runInTransaction {
+          entityManager.createNativeQuery(
+            """
+              update OFFENDER_EXTERNAL_MOVEMENTS
+              set DIRECTION_CODE = null
+              where OFFENDER_BOOK_ID = ${booking.bookingId} and MOVEMENT_TYPE = 'REL'
+            """.trimIndent(),
+          ).executeUpdate()
+        }
+
+        webTestClient.getOffenderPersonLocationsOk()
+          .apply {
+            assertThat(bookings[0].movements.size).isEqualTo(1)
+          }
+      }
+    }
+
+    @Nested
     inner class MergedMovements {
 
       @Test
