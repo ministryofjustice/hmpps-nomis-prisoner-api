@@ -133,7 +133,7 @@ interface OffenderDsl {
     advanceDate: LocalDate = LocalDate.now(),
     deductionAmount: BigDecimal = BigDecimal.ZERO,
     deductionPriority: Int,
-    informationNumber: String? = null,
+    informationNumber: String = "10001000",
     writeOffAdjustmentAmount: BigDecimal? = null,
     dsl: OffenderPaymentProfileDsl.() -> Unit = {},
   ): OffenderAdvance
@@ -433,7 +433,7 @@ class OffenderBuilder(
     advanceDate: LocalDate,
     deductionAmount: BigDecimal,
     deductionPriority: Int,
-    informationNumber: String?,
+    informationNumber: String,
     writeOffAdjustmentAmount: BigDecimal?,
     dsl: OffenderPaymentProfileDsl.() -> Unit,
   ): OffenderAdvance = offenderPaymentProfileBuilderFactory.builder().let { builder ->

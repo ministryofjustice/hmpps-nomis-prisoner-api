@@ -59,8 +59,9 @@ data class OffenderDeduction(
   @Column(name = "DEDUCTION_PRIORITY", nullable = false)
   val deductionPriority: Int,
 
-  @Column(name = "INFORMATION_NUMBER")
-  val informationNumber: String? = null,
+  @Column(name = "INFORMATION_NUMBER", nullable = false)
+  val informationNumber: String,
+  // nullable in db but no actual null values
 
   @Column(name = "DEDUCTION_PERCENTAGE")
   val deductionPercentage: Int? = null,

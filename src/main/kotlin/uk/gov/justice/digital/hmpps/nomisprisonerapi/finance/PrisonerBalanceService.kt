@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.toIdRanges
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.advances.PrisonerAdvanceService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccounWithTransactionDateTimeProjection
@@ -20,6 +21,7 @@ class PrisonerBalanceService(
   private val offenderRepository: OffenderRepository,
   private val offenderSubAccountRepository: OffenderSubAccountRepository,
   private val offenderTrustAccountRepository: OffenderTrustAccountRepository,
+  private val prisonerAdvanceService: PrisonerAdvanceService,
 ) {
   fun getAggregatedAccounts(prisonNumber: String): PrisonerAggregatedAccountsDto = offenderRepository.findRootByNomsId(prisonNumber)?.let {
     getAggregatedAccounts(it.rootOffenderId!!)
@@ -29,12 +31,14 @@ class PrisonerBalanceService(
   fun getAggregatedAccounts(rootOffenderId: Long): PrisonerAggregatedAccountsDto {
     val offender = offenderRepository.findByIdOrNull(rootOffenderId)
       ?: throw NotFoundException("Offender with id $rootOffenderId not found")
-    val agregatedAccounts = offenderSubAccountRepository.getAggregatedAccounts(rootOffenderId)
+    val aggregatedAccounts = offenderSubAccountRepository.getAggregatedAccounts(rootOffenderId)
+    val advances = prisonerAdvanceService.findAdvances(rootOffenderId, activeOnly = false)
 
     return PrisonerAggregatedAccountsDto(
       rootOffenderId = offender.rootOffenderId!!,
       prisonNumber = offender.nomsId,
-      accounts = agregatedAccounts,
+      accounts = aggregatedAccounts,
+      advances = advances,
     )
   }
 
