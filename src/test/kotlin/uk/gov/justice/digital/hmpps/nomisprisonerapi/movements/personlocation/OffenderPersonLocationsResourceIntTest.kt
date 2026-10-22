@@ -407,7 +407,7 @@ class OffenderPersonLocationsResourceIntTest(
       }
 
       @Test
-      fun `should get schedule ID for scheduled court movements`() {
+      fun `should get schedule ID for scheduled court movement OUT only`() {
         lateinit var scheduleOut: CourtEvent
         nomisDataBuilder.build {
           offender = offender {
@@ -431,7 +431,7 @@ class OffenderPersonLocationsResourceIntTest(
             with(bookings[0].movementWithSeq(3)) {
               assertThat(movementType).isEqualTo(MovementType.CRT)
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
-              assertThat(scheduleId).isEqualTo(scheduleOut.id)
+              assertThat(scheduleId).isNull()
             }
           }
       }

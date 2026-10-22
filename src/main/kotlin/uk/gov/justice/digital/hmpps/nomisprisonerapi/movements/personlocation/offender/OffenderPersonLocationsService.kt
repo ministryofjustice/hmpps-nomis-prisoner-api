@@ -95,7 +95,7 @@ class OffenderPersonLocationsService(
         address = if (isTap()) toAddress ?: scheduleTapOut?.toAddress else null,
         city = if (isTap()) toCity else null,
       ),
-      scheduleId = if (this is OffenderCourtMovementIn) courtScheduleOutId else eventId,
+      scheduleId = eventId,
       commentText = commentText,
       audit = toAudit(),
     )
