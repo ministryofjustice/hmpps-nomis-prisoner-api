@@ -127,7 +127,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         }
         .jsonPath("[0].informationNumber").isEqualTo("10002000-1")
         .jsonPath("[0].status").isEqualTo("ACTIVE")
-        .jsonPath("[0].advanceTransactionId").isEqualTo(21)
+        .jsonPath("[0].advanceCreateTransactionId").isEqualTo(21)
     }
 
     @Test
@@ -151,13 +151,13 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("size()").isEqualTo(3)
         .jsonPath("[0].id").isEqualTo(advance2.id)
-        .jsonPath("[0].advanceTransactionId").isEqualTo(22)
+        .jsonPath("[0].advanceCreateTransactionId").isEqualTo(22)
         .jsonPath("[0].status").isEqualTo("ACTIVE")
         .jsonPath("[1].id").isEqualTo(advance3.id)
-        .jsonPath("[1].advanceTransactionId").isEqualTo(23)
+        .jsonPath("[1].advanceCreateTransactionId").isEqualTo(23)
         .jsonPath("[1].status").isEqualTo("REPAID")
         .jsonPath("[2].id").isEqualTo(advance4.id)
-        .jsonPath("[2].advanceTransactionId").isEqualTo(24)
+        .jsonPath("[2].advanceCreateTransactionId").isEqualTo(24)
         .jsonPath("[2].status").isEqualTo("WRITTEN_OFF")
     }
 
@@ -182,7 +182,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("[0].informationNumber").isEqualTo("10002000-2")
-        .jsonPath("[0].advanceTransactionId").isEqualTo(22)
+        .jsonPath("[0].advanceCreateTransactionId").isEqualTo(22)
         .jsonPath("[0].status").isEqualTo("ACTIVE")
     }
   }
@@ -237,7 +237,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("[0].informationNumber").isEqualTo("10002000-1")
-        .jsonPath("[0].advanceTransactionId").isEqualTo(21)
+        .jsonPath("[0].advanceCreateTransactionId").isEqualTo(21)
         .jsonPath("[0].status").isEqualTo("ACTIVE")
     }
 
@@ -262,13 +262,13 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("size()").isEqualTo(3)
         .jsonPath("[0].id").isEqualTo(advance2.id)
-        .jsonPath("[0].advanceTransactionId").isEqualTo(22)
+        .jsonPath("[0].advanceCreateTransactionId").isEqualTo(22)
         .jsonPath("[0].status").isEqualTo("ACTIVE")
         .jsonPath("[1].id").isEqualTo(advance3.id)
-        .jsonPath("[1].advanceTransactionId").isEqualTo(23)
+        .jsonPath("[1].advanceCreateTransactionId").isEqualTo(23)
         .jsonPath("[1].status").isEqualTo("REPAID")
         .jsonPath("[2].id").isEqualTo(advance4.id)
-        .jsonPath("[2].advanceTransactionId").isEqualTo(24)
+        .jsonPath("[2].advanceCreateTransactionId").isEqualTo(24)
         .jsonPath("[2].status").isEqualTo("WRITTEN_OFF")
     }
 
@@ -293,7 +293,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("[0].informationNumber").isEqualTo("10002000-2")
-        .jsonPath("[0].advanceTransactionId").isEqualTo(22)
+        .jsonPath("[0].advanceCreateTransactionId").isEqualTo(22)
         .jsonPath("[0].status").isEqualTo("ACTIVE")
     }
   }
@@ -349,7 +349,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("informationNumber").isEqualTo("10002000-1")
-        .jsonPath("advanceTransactionId").isEqualTo(21)
+        .jsonPath("advanceCreateTransactionId").isEqualTo(21)
         .jsonPath("status").isEqualTo("ACTIVE")
     }
 
@@ -373,7 +373,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("informationNumber").isEqualTo("10002000-3")
-        .jsonPath("advanceTransactionId").isEqualTo(23)
+        .jsonPath("advanceCreateTransactionId").isEqualTo(23)
         .jsonPath("status").isEqualTo("REPAID")
         .jsonPath("deductionAmount").isEqualTo(200)
         .jsonPath("adjustmentReason").doesNotExist()
@@ -400,7 +400,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("informationNumber").isEqualTo("10002000-4")
-        .jsonPath("advanceTransactionId").isEqualTo(24)
+        .jsonPath("advanceCreateTransactionId").isEqualTo(24)
         .jsonPath("status").isEqualTo("WRITTEN_OFF")
         .jsonPath("deductionAmount").isEqualTo(0)
         .jsonPath("adjustmentReason").isEqualTo("WRT")
@@ -473,7 +473,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("informationNumber").isEqualTo("10002000-1")
-        .jsonPath("advanceTransactionId").isEqualTo(21)
+        .jsonPath("advanceCreateTransactionId").isEqualTo(21)
         .jsonPath("status").isEqualTo("ACTIVE")
     }
 
@@ -497,7 +497,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("informationNumber").isEqualTo("10002000-3")
-        .jsonPath("advanceTransactionId").isEqualTo(23)
+        .jsonPath("advanceCreateTransactionId").isEqualTo(23)
         .jsonPath("status").isEqualTo("REPAID")
     }
 
@@ -521,7 +521,7 @@ class PrisonerAdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(LocalDateTime.parse(it)).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
         }
         .jsonPath("informationNumber").isEqualTo("10002000-4")
-        .jsonPath("advanceTransactionId").isEqualTo(24)
+        .jsonPath("advanceCreateTransactionId").isEqualTo(24)
         .jsonPath("status").isEqualTo("WRITTEN_OFF")
     }
 

@@ -108,7 +108,7 @@ class PrisonerAdvanceResource(
     ],
   )
   fun getPrisonerAdvances(
-    @Schema(description = "prisonNumber", example = "A1234BC")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
     prisonNumber: String,
     @Schema(description = "whether to return just active advances", example = "true", defaultValue = "false")
@@ -141,10 +141,10 @@ class PrisonerAdvanceResource(
     ],
   )
   fun getPrisonerAdvancesById(
-    @Schema(description = "root offender id", example = "123456")
+    @Schema(description = "The root offender id", example = "123456")
     @PathVariable
     rootOffenderId: Long,
-    @Schema(description = "whether to return just active advances", example = "true", defaultValue = "false")
+    @Schema(description = "Whether to return just active advances", example = "true", defaultValue = "false")
     @RequestParam
     activeOnly: Boolean = false,
   ): List<PrisonerAdvanceDto> = service.getAdvances(rootOffenderId, activeOnly)
@@ -224,7 +224,7 @@ data class PrisonerAdvanceDto(
   val status: AdvanceStatus,
 
   @Schema(description = "The transaction id for the advance creation", example = "123456789")
-  val advanceTransactionId: Long?,
+  val advanceCreateTransactionId: Long,
 )
 
 data class AdvancesCount(
