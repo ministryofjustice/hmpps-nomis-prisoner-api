@@ -51,6 +51,7 @@ class OffenderPaymentProfileBuilder(
     transactionType: String,
     advanceAmount: BigDecimal,
     paymentAmount: BigDecimal,
+    advanceDate: LocalDate,
     deductionAmount: BigDecimal,
     deductionPriority: Int,
     informationNumber: String?,
@@ -78,6 +79,7 @@ class OffenderPaymentProfileBuilder(
         transactionType = transactionType,
         advanceAmount = advanceAmount,
         paymentAmount = paymentAmount,
+        advanceDate = advanceDate,
         deduction = od,
       ),
     ).also {
