@@ -56,7 +56,13 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
           subAccount(accountCode = 2102, balance = BigDecimal.valueOf(-1.50), holdBalance = BigDecimal.ZERO, lastTransactionId = 66666)
         }
 
-        advance(advanceAmount = BigDecimal.TEN, advanceDate = LocalDate.parse("2026-02-02"), writeOffAdjustmentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, deductionPriority = 1)
+        advance(
+          advanceAmount = BigDecimal.TEN,
+          advanceDate = LocalDate.parse("2026-02-02"),
+          writeOffAdjustmentAmount = null,
+          deductionAmount = BigDecimal.TWO,
+          deductionPriority = 1,
+        )
       }.id
       id2 = offender(nomsId = "B2345CD") {
         booking {
@@ -915,8 +921,8 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[1].accountCode).isEqualTo(2102)
         assertThat(advances[0].advanceAmount).isEqualTo(1000)
+        assertThat(advances[0].advanceDate).isEqualTo(LocalDate.parse("2026-02-02"))
         assertThat(advances[0].deductionAmount).isEqualTo(200)
-        assertThat(advances[0].adjustmentAmount).isEqualTo(100)
 
         // 11.25 - 1.5
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(9.75))

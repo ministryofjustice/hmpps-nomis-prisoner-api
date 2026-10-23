@@ -32,7 +32,7 @@ class PrisonerBalanceService(
     val offender = offenderRepository.findByIdOrNull(rootOffenderId)
       ?: throw NotFoundException("Offender with id $rootOffenderId not found")
     val aggregatedAccounts = offenderSubAccountRepository.getAggregatedAccounts(rootOffenderId)
-    val advances = prisonerAdvanceService.findAdvances(rootOffenderId, activeOnly = false)
+    val advances = prisonerAdvanceService.findAdvances(rootOffenderId, activeOnly = true)
 
     return PrisonerAggregatedAccountsDto(
       rootOffenderId = offender.rootOffenderId!!,
