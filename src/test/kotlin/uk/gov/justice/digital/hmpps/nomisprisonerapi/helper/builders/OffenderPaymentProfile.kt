@@ -54,7 +54,7 @@ class OffenderPaymentProfileBuilder(
     advanceDate: LocalDate,
     deductionAmount: BigDecimal,
     deductionPriority: Int,
-    informationNumber: String?,
+    informationNumber: String,
     writeOffAdjustmentAmount: BigDecimal?,
   ): OffenderAdvance {
     val caseloadDeductionProfile = offenderDeductionBuilderRepository.lookupCaseloadDeductionProfile(caseloadId, "ADV")
@@ -66,6 +66,8 @@ class OffenderPaymentProfileBuilder(
       deductionPriority = deductionPriority,
       effectiveDate = LocalDate.now(),
       deductionAmount = deductionAmount,
+      deductionStatus = "A",
+      deductionType = "ADV",
       deductionPercentage = 20,
       informationNumber = informationNumber,
       maxTotalAmount = advanceAmount,

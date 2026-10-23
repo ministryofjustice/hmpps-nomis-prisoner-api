@@ -37,7 +37,7 @@ class PrisonerAdvanceService(
     return findAdvances(rootOffenderId, activeOnly)
   }
 
-  private fun findAdvances(rootOffenderId: Long, activeOnly: Boolean): List<PrisonerAdvanceDto> = if (activeOnly) {
+  fun findAdvances(rootOffenderId: Long, activeOnly: Boolean): List<PrisonerAdvanceDto> = if (activeOnly) {
     repository.findActiveAdvancesByOffenderId(rootOffenderId).map { it.toDto() }
   } else {
     repository.findAdvancesByOffenderId(rootOffenderId).map { it.toDto() }
