@@ -43,6 +43,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
           transaction(transactionId = 66666, subAccountType = SubAccountType.SPND, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, entryTime = LocalTime.parse("09:20:01"))
           }
+          transaction(transactionId = 77777, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = LocalDate.parse("2026-02-02"))
         }
 
         trustAccount()
@@ -55,7 +56,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
           subAccount(accountCode = 2102, balance = BigDecimal.valueOf(-1.50), holdBalance = BigDecimal.ZERO, lastTransactionId = 66666)
         }
 
-        advance(advanceAmount = BigDecimal.TEN, writeOffAdjustmentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, deductionPriority = 1)
+        advance(advanceAmount = BigDecimal.TEN, advanceDate = LocalDate.parse("2026-02-02"), writeOffAdjustmentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, deductionPriority = 1)
       }.id
       id2 = offender(nomsId = "B2345CD") {
         booking {

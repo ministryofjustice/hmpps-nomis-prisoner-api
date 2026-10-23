@@ -66,6 +66,8 @@ class OffenderPaymentProfileBuilder(
       deductionPriority = deductionPriority,
       effectiveDate = LocalDate.now(),
       deductionAmount = deductionAmount,
+      deductionStatus = "A",
+      deductionType = "ADV",
       deductionPercentage = 20,
       informationNumber = informationNumber,
       maxTotalAmount = advanceAmount,
