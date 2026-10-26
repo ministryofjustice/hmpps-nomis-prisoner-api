@@ -220,6 +220,9 @@ data class GeneralLedgerTransactionDto(
   @Schema(description = "The transaction reference", example = "1423558449")
   val reference: String?,
 
+  @Schema(description = "The offender deduction id if this is an deduction transaction", example = "12345678")
+  val offenderDeductionId: Long?,
+
   val createdAt: LocalDateTime,
   val createdBy: String,
   val createdByDisplayName: String,

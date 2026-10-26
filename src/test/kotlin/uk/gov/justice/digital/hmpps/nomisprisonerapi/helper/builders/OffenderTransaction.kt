@@ -29,6 +29,8 @@ interface OffenderTransactionDsl {
     generalLedgerEntrySequence: Int,
     accountCode: Int,
     entryTime: LocalTime = LocalTime.NOON,
+    deductionId: Long? = null,
+    postingType: PostingType = PostingType.CR,
     dsl: GeneralLedgerTransactionDsl.() -> Unit = {},
   ): GeneralLedgerTransaction
 }
@@ -74,11 +76,13 @@ class OffenderTransactionBuilder(
     prisonId: String,
     transactionType: String,
     entryDate: LocalDate,
+    createDateTime: LocalDateTime,
     entryAmount: BigDecimal,
     subAccountType: SubAccountType,
     holdNumber: Long?,
     holdClearFlag: Boolean,
     clientUniqueRef: String,
+    postingType: PostingType,
   ): OffenderTransaction = OffenderTransaction(
     transactionId = transactionId,
     transactionEntrySequence = transactionEntrySequence,
@@ -92,13 +96,14 @@ class OffenderTransactionBuilder(
     entryAmount = entryAmount,
     entryDescription = "entryDescription",
     modifyDate = LocalDateTime.now(),
-    postingType = PostingType.CR,
+    postingType = postingType,
     holdNumber = holdNumber,
     holdClearFlag = holdClearFlag,
     deductionFlag = null,
     deductionType = null,
   )
     .let {
+      it.createDatetime = createDateTime
       transaction = repository.save(it)
       return transaction
     }
@@ -107,6 +112,8 @@ class OffenderTransactionBuilder(
     generalLedgerEntrySequence: Int,
     accountCode: Int,
     entryTime: LocalTime,
+    deductionId: Long?,
+    postingType: PostingType,
     dsl: GeneralLedgerTransactionDsl.() -> Unit,
   ): GeneralLedgerTransaction = generalLedgerTransactionBuilderFactory.builder().build(
     transaction.transactionId,
@@ -116,10 +123,11 @@ class OffenderTransactionBuilder(
     transaction.trustAccount.id.caseloadId,
     transaction.transactionType.type,
     accountCode,
-    transaction.postingType,
     transaction.entryDate.atTime(entryTime),
     transaction.transactionReferenceNumber,
     transaction.entryAmount,
+    postingType,
+    deductionId,
   )
 
   private fun lookupOrCreateTrustAccount(

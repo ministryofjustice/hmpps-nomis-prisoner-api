@@ -56,10 +56,11 @@ class GeneralLedgerTransactionBuilder(
     caseloadId: String,
     transactionType: String,
     accountCode: Int,
-    postUsage: PostingType,
     entryDateTime: LocalDateTime,
     transactionReferenceNumber: String?,
     entryAmount: BigDecimal,
+    postUsage: PostingType,
+    deductionId: Long?,
   ): GeneralLedgerTransaction = GeneralLedgerTransaction(
     transactionId = transactionId,
     transactionEntrySequence = transactionEntrySequence,
@@ -75,6 +76,7 @@ class GeneralLedgerTransactionBuilder(
     entryAmount = entryAmount,
     accountCode = repository.lookupAccountCode(accountCode),
     postUsage = postUsage,
+    deductionId = deductionId,
     createDate = LocalDate.now(),
   )
     .let { repository.save(it) }
