@@ -570,7 +570,9 @@ interface BookingDsl {
     assessmentDate: LocalDate = LocalDate.now(),
     assessmentType: AssessmentType = AssessmentType.CSR,
     assessmentStatus: AssessmentStatusType = AssessmentStatusType.I,
-    reviewLevel: AssessmentLevel = AssessmentLevel.PEND,
+    calculatedLevel: AssessmentLevel? = AssessmentLevel.STANDARD,
+    overrideLevel: AssessmentLevel? = AssessmentLevel.MED,
+    reviewLevel: AssessmentLevel? = AssessmentLevel.PEND,
     placementAgency: String? = null,
     dsl: OffenderAssessmentDsl.() -> Unit = {},
   ): OffenderAssessment
@@ -1789,7 +1791,9 @@ class BookingBuilder(
     assessmentDate: LocalDate,
     assessmentType: AssessmentType,
     assessmentStatus: AssessmentStatusType,
-    reviewLevel: AssessmentLevel,
+    calculatedLevel: AssessmentLevel?,
+    overrideLevel: AssessmentLevel?,
+    reviewLevel: AssessmentLevel?,
     placementAgency: String?,
     dsl: OffenderAssessmentDsl.() -> Unit,
   ): OffenderAssessment = offenderAssessmentBuilderFactory.builder().let { builder ->
@@ -1800,6 +1804,8 @@ class BookingBuilder(
       assessmentDate,
       assessmentType,
       assessmentStatus,
+      calculatedLevel,
+      overrideLevel,
       reviewLevel,
       placementAgency,
     )
