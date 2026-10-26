@@ -166,6 +166,7 @@ private fun mapGL(gl: GeneralLedgerTransaction): GeneralLedgerTransactionDto = G
   description = gl.entryDescription ?: "",
   transactionTimestamp = gl.getTransactionEntryDateAndTime(),
   reference = gl.transactionReferenceNumber,
+  offenderDeductionId = gl.deductionId,
   createdAt = gl.createDatetime,
   createdBy = gl.createUsername,
   createdByDisplayName = getDisplayName(gl.createStaffUserAccount),

@@ -617,6 +617,7 @@ class NomisData(
     postUsage: PostingType,
     entryDateTime: LocalDateTime,
     entryAmount: BigDecimal,
+    deductionId: Long?,
     dsl: GeneralLedgerTransactionDsl.() -> Unit,
   ): GeneralLedgerTransaction = generalLedgerTransactionBuilderFactory!!.builder().build(
     transactionId = transactionId,
@@ -628,6 +629,7 @@ class NomisData(
     accountCode = accountCode,
     postUsage = postUsage,
     entryDateTime = entryDateTime,
+    deductionId = deductionId,
     transactionReferenceNumber = null,
     entryAmount = entryAmount,
   )
@@ -903,6 +905,7 @@ interface NomisDataDsl {
     postUsage: PostingType = PostingType.CR,
     entryDateTime: LocalDateTime = LocalDateTime.parse("2025-08-08T12:13:14"),
     entryAmount: BigDecimal = BigDecimal.TWO,
+    deductionId: Long? = null,
     dsl: GeneralLedgerTransactionDsl.() -> Unit = {},
   ): GeneralLedgerTransaction
 
