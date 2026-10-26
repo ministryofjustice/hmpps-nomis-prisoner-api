@@ -19,13 +19,13 @@ data class PersonLocationBooking(
   @Schema(description = "Whether this is the latest booking")
   val latestBooking: Boolean,
 
-  @Schema(description = "The open/closed flag ")
+  @Schema(description = "The open/closed flag")
   val bookingStatus: BookingStatus,
 
-  @Schema(description = "The booking begin date ")
+  @Schema(description = "The booking begin date")
   val bookingBeginTime: LocalDateTime,
 
-  @Schema(description = "The booking end date ")
+  @Schema(description = "The booking end date")
   val bookingEndTime: LocalDateTime?,
 
   @Schema(description = "Audit data associated with the records")
