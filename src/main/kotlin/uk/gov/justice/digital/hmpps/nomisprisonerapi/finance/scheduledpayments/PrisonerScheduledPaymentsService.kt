@@ -1,9 +1,10 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.MoneySupport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledPaymentRepository
@@ -19,12 +20,19 @@ class PrisonerScheduledPaymentsService(
     ?.toDto()
     ?: throw NotFoundException("Offender scheduled payment with id $scheduledPaymentId not found")
 
-  fun getScheduledPayments(prisonNumber: String): List<PrisonerScheduledPaymentDto> = offenderRepository.findRootByNomsId(prisonNumber)
-    ?.let {
-      offenderScheduledPaymentRepository.findByOffenderId(it.rootOffenderId!!)
-        .map { it.toDto() }
-    }
-    ?: throw NotFoundException("Offender $prisonNumber not found")
+  fun getScheduledPayments(prisonNumber: String): List<PrisonerScheduledPaymentDto> {
+    val offender = offenderRepository.findRootByNomsId(prisonNumber)
+      ?: throw NotFoundException("Offender $prisonNumber not found")
+    return (getScheduledPayments(offender.id))
+  }
+
+  fun getScheduledPayments(rootOffenderId: Long): List<PrisonerScheduledPaymentDto> {
+    offenderRepository.findByIdOrNull(rootOffenderId)
+      ?: throw NotFoundException("Offender with id $rootOffenderId not found")
+
+    return offenderScheduledPaymentRepository.findByOffenderId(rootOffenderId)
+      .map { it.toDto() }
+  }
 }
 
 fun OffenderScheduledPayment.toDto() = PrisonerScheduledPaymentDto(

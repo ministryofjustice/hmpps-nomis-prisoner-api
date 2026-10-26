@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
+package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.Operation
@@ -49,7 +49,7 @@ class PrisonerScheduledPaymentsResource(
     ],
   )
   fun getScheduledPayment(
-    @Schema(description = "Id", example = "123456789")
+    @Schema(description = "Scheduled Payment Id aka offender payment profile id", example = "123456789")
     @PathVariable
     scheduledPaymentId: Long,
   ): PrisonerScheduledPaymentDto = service.getScheduledPayment(scheduledPaymentId)
@@ -79,10 +79,40 @@ class PrisonerScheduledPaymentsResource(
     ],
   )
   fun getPrisonerScheduledPayments(
-    @Schema(description = "prisonNumber", example = "A1234BC")
+    @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
     prisonNumber: String,
   ): List<PrisonerScheduledPaymentDto> = service.getScheduledPayments(prisonNumber)
+
+  @GetMapping("/root-offender-id/{rootOffenderId}/scheduled-payments")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Get a prisoner's scheduled payments by their root offender id",
+    description = "Retrieves a prisoner's scheduled payments by root offender id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(responseCode = "200", description = "Scheduled Payment Information Returned"),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoner does not exist",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getPrisonerScheduledPaymentsById(
+    @Schema(description = "The root offender id", example = "A1234BC")
+    @PathVariable
+    rootOffenderId: Long,
+  ): List<PrisonerScheduledPaymentDto> = service.getScheduledPayments(rootOffenderId)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
