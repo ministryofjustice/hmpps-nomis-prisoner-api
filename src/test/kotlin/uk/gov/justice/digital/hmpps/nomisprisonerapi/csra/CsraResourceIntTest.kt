@@ -725,18 +725,22 @@ class CsraResourceIntTest : IntegrationTestBase() {
             assertThat(it).contains("Prisoner A1234ZZ not found")
           }
       }
-    }
 
-    @Nested
-    inner class HappyPath {
       @Test
       fun `prisoner has no CSRAs`() {
         webTestClient.get().uri("/prisoners/A1111AA/csras/current")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("No CSRA found for prisoner A1111AA")
+          }
       }
+    }
 
+    @Nested
+    inner class HappyPath {
       @Test
       fun `can get correct current CSRA`() {
         nomisDataBuilder.build {
@@ -785,7 +789,34 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 reviewLevel = AssessmentLevel.HI,
                 username = "BILLSTAFF",
               )
-            } // calc STANDARD, override MED, approved null
+              assessment(
+                sequence = 7,
+                assessmentDate = LocalDate.parse("2025-12-31"),
+                assessmentStatus = AssessmentStatusType.A,
+                calculatedLevel = AssessmentLevel.PEND,
+                overrideLevel = null,
+                reviewLevel = null, // ignored
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 8,
+                assessmentDate = LocalDate.parse("2025-12-31"),
+                assessmentStatus = AssessmentStatusType.A,
+                calculatedLevel = null,
+                overrideLevel = AssessmentLevel.PEND,
+                reviewLevel = null, // ignored
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 9,
+                assessmentDate = LocalDate.parse("2025-12-31"),
+                assessmentStatus = AssessmentStatusType.A,
+                calculatedLevel = null,
+                overrideLevel = null,
+                reviewLevel = AssessmentLevel.PEND, // ignored
+                username = "BILLSTAFF",
+              )
+            } // Defaults: calc STANDARD, override MED, review PEND, approved null
           }
         }
 

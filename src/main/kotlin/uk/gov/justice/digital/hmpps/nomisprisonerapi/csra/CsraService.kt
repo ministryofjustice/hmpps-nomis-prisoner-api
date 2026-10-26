@@ -213,11 +213,9 @@ class CsraService(
     if (!offenderRepository.existsByNomsId(offenderNo)) {
       throw NotFoundException("Prisoner $offenderNo not found")
     }
-    val currentCsra = offenderAssessmentRepository
-      .findFirstById_OffenderBooking_Offender_NomsIdAndAssessment_IsCellSharing_TrueOrderByAssessmentDateDescIdSequenceDesc(
-        offenderNo,
-      )
-    return currentCsra?.toDto() ?: throw NotFoundException("No CSRA found for prisoner $offenderNo")
+    return offenderAssessmentRepository.findCurrent(offenderNo)
+      ?.toDto()
+      ?: throw NotFoundException("No CSRA found for prisoner $offenderNo")
   }
 }
 
