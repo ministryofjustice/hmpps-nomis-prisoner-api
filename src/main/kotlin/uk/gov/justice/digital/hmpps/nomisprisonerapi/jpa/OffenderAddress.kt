@@ -30,6 +30,7 @@ class OffenderAddress(
   primaryAddress: Boolean = false,
   mailAddress: Boolean = false,
   comment: String? = null,
+  usages: MutableList<AddressUsage> = mutableListOf(),
 ) : Address(
   addressType = addressType,
   premise = premise,
@@ -48,6 +49,7 @@ class OffenderAddress(
   primaryAddress = primaryAddress,
   mailAddress = mailAddress,
   comment = comment,
+  usages = usages,
 ) {
   companion object {
     const val ADDR_TYPE = "OFF"

@@ -3154,6 +3154,21 @@ class CorePersonResourceIntTest(
           .exchange()
           .expectStatus().isBadRequest
       }
+
+      @Test
+      fun `return 400 when address usage code does not exist`() {
+        val addressCountBefore = offenderAddressRepository.count()
+
+        webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
+          .bodyValue(validAddressRequest.copy(addressUsages = setOf("DAP", "ZZZZ")))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Address usage with code ZZZZ does not exist")
+
+        assertThat(offenderAddressRepository.count()).isEqualTo(addressCountBefore)
+      }
     }
 
     @Nested
@@ -3211,6 +3226,55 @@ class CorePersonResourceIntTest(
         }
 
         verifyNoInteractions(telemetryClient)
+      }
+
+      @Test
+      fun `will create address usages when supplied`() {
+        val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
+          .bodyValue(
+            validAddressRequest.copy(
+              addressUsages = setOf("DAP", "CURFEW"),
+            ),
+          )
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody<CreateOffenderAddressResponse>()
+          .returnResult()
+          .responseBody!!
+
+        nomisDataBuilder.runInTransaction {
+          val address = offenderAddressRepository.findByIdOrNull(response.addressId)!!
+          assertThat(address.usages).hasSize(2)
+          with(address.usages.single { it.id.usageCode == "DAP" }) {
+            assertThat(active).isTrue()
+            assertThat(id.address.addressId).isEqualTo(response.addressId)
+            assertThat(addressUsage?.description).isNotNull()
+          }
+          with(address.usages.single { it.id.usageCode == "CURFEW" }) {
+            assertThat(active).isTrue()
+            assertThat(id.address.addressId).isEqualTo(response.addressId)
+          }
+        }
+      }
+
+      @Test
+      fun `will create address with no usages when none supplied`() {
+        val response: CreateOffenderAddressResponse = webTestClient.post().uri("/core-person/${existingOffender.nomsId}/address")
+          .bodyValue(validAddressRequest.copy(addressUsages = null))
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isCreated
+          .expectBody<CreateOffenderAddressResponse>()
+          .returnResult()
+          .responseBody!!
+
+        nomisDataBuilder.runInTransaction {
+          val address = offenderAddressRepository.findByIdOrNull(response.addressId)!!
+          assertThat(address.usages).isEmpty()
+        }
       }
 
       @Test
