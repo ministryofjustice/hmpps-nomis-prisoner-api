@@ -56,5 +56,5 @@ class PersonLocationMovementResource(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
     @Schema(description = "Booking ID", example = "123") @PathVariable bookingId: Long,
     @Schema(description = "Movement Sequence", example = "1") @PathVariable movementSeq: Int,
-  ): PersonLocationMovementDetail = service.getPersonLocationMovement(offenderNo, bookingId, movementSeq)
+  ): PersonLocationMovement = service.getPersonLocationMovement(offenderNo, bookingId, movementSeq)
 }

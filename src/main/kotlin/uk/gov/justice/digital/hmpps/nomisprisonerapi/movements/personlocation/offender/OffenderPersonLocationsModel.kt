@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.o
 
 import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.booking.PersonLocationBooking
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.movement.PersonLocationMovementDetail
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.movement.PersonLocationMovement
 
 @Schema(description = "Offender person locations, with bookings and movements")
 data class OffenderPersonLocationsResponse(
@@ -16,7 +16,7 @@ data class BookingPersonLocations(
   val booking: PersonLocationBooking,
 
   @Schema(description = "Movements related to the booking")
-  val movements: List<PersonLocationMovementDetail>,
+  val movements: List<PersonLocationMovement>,
 )
 
 enum class BookingStatus { CLOSED, OPEN }

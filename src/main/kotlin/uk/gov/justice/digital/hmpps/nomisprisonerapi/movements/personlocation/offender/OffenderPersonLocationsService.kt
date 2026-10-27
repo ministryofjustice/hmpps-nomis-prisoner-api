@@ -7,7 +7,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBook
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.PersonLocationMovementMapper
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.isIgnored
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.toPersonLocationBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.toPersonLocationMovement
 
 @Service
 @Transactional(readOnly = true)
@@ -16,7 +18,6 @@ class OffenderPersonLocationsService(
   private val offenderRepository: OffenderRepository,
   private val tapMovementOutRepository: OffenderTapMovementOutRepository,
   private val tapMovementInRepository: OffenderTapMovementInRepository,
-  private val mapper: PersonLocationMovementMapper,
 ) {
   fun getOffenderPersonLocations(offenderNo: String): OffenderPersonLocationsResponse {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -29,11 +30,11 @@ class OffenderPersonLocationsService(
     return OffenderPersonLocationsResponse(
       bookings = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).map { booking ->
         BookingPersonLocations(
-          booking = mapper.toPersonLocationBooking(booking),
+          booking = booking.toPersonLocationBooking(),
           movements = booking.externalMovements
-            .filterNot { mapper.isIgnored(it) }
+            .filterNot { it.isIgnored() }
             .sortedBy { it.id.sequence }
-            .map { mapper.toPersonLocationMovement(it) },
+            .map { it.toPersonLocationMovement() },
         )
       },
     )

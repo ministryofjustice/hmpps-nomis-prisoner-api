@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapScheduleOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferScheduleOut
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.movement.PersonLocationMovementDetail
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.movement.PersonLocationMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementDirection
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType
@@ -307,5 +307,5 @@ class PersonLocationMovementResourceIntTest(
 
   private fun WebTestClient.getPersonLocationMovementOk(sequence: Int) = getPersonLocationMovement(sequence = sequence)
     .expectStatus().isOk
-    .expectBodyResponse<PersonLocationMovementDetail>()
+    .expectBodyResponse<PersonLocationMovement>()
 }

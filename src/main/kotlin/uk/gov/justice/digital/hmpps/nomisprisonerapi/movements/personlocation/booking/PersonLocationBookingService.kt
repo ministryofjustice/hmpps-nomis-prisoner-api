@@ -6,14 +6,13 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.PersonLocationMovementMapper
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.toPersonLocationBooking
 
 @Service
 @Transactional(readOnly = true)
 class PersonLocationBookingService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
-  private val mapper: PersonLocationMovementMapper,
 ) {
   fun getPersonLocationBooking(offenderNo: String, bookingId: Long): PersonLocationBooking {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -22,7 +21,7 @@ class PersonLocationBookingService(
 
     return offenderBookingRepository.findByIdOrNull(bookingId)
       ?.takeIf { it.offender.nomsId == offenderNo }
-      ?.let { mapper.toPersonLocationBooking(it) }
+      ?.toPersonLocationBooking()
       ?: throw NotFoundException("Offender booking with bookingId=$bookingId not found for offender with nomsId=$offenderNo")
   }
 }

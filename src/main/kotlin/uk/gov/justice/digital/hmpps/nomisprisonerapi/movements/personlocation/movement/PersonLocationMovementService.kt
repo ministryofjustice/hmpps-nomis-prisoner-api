@@ -9,7 +9,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovemen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderExternalMovementRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.PersonLocationMovementMapper
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.isIgnored
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.toPersonLocationMovement
 
 @Service
 @Transactional(readOnly = true)
@@ -17,14 +18,13 @@ class PersonLocationMovementService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
   private val movementRepository: OffenderExternalMovementRepository,
-  private val mapper: PersonLocationMovementMapper,
 ) {
-  fun getPersonLocationMovement(offenderNo: String, bookingId: Long, sequence: Int): PersonLocationMovementDetail {
+  fun getPersonLocationMovement(offenderNo: String, bookingId: Long, sequence: Int): PersonLocationMovement {
     val booking = findOffenderBookingOrThrow(offenderNo, bookingId)
 
     return movementRepository.findByIdOrNull(OffenderExternalMovementId(booking, sequence))
-      ?.takeUnless { mapper.isIgnored(it) }
-      ?.let { mapper.toPersonLocationMovement(it) }
+      ?.takeUnless { it.isIgnored() }
+      ?.toPersonLocationMovement()
       ?: throw NotFoundException("Movement with bookingId=$bookingId and sequence=$sequence not found for offender with nomsId=$offenderNo")
   }
 
