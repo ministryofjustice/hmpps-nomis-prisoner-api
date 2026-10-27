@@ -12,7 +12,7 @@ import kotlin.collections.map
 
 @Service
 @Transactional(readOnly = true)
-class PrisonerScheduledPaymentsService(
+class ScheduledPaymentsService(
   private val offenderRepository: OffenderRepository,
   private val repository: OffenderScheduledPaymentRepository,
 ) {

@@ -22,8 +22,8 @@ import java.time.LocalDate
 @Validated
 @RequestMapping(value = ["/finance"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class PrisonerScheduledPaymentsResource(
-  private val service: PrisonerScheduledPaymentsService,
+class ScheduledPaymentsResource(
+  private val service: ScheduledPaymentsService,
 ) {
   @GetMapping("/scheduled-payments/{scheduledPaymentId}")
   @ResponseStatus(HttpStatus.OK)
