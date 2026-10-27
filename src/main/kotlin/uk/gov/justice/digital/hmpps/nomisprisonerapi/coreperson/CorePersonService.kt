@@ -6,6 +6,7 @@ import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.audit.Audit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.BadDataException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -159,6 +160,7 @@ class CorePersonService(
     addressId = addressId,
   ).toOffenderAddress()
 
+  @Audit("DPS_SYNCHRONISATION_CORE_PERSON")
   fun createOffenderAddress(prisonNumber: String, request: CreateOffenderAddressRequest): CreateOffenderAddressResponse {
     val lookupFailures = mutableMapOf<String, String>()
     val offender = rootOffender(prisonNumber)
@@ -206,6 +208,7 @@ class CorePersonService(
     return CreateOffenderAddressResponse(addressId = address.addressId)
   }
 
+  @Audit("DPS_SYNCHRONISATION_CORE_PERSON")
   fun updateOffenderAddress(prisonNumber: String, addressId: Long, request: UpdateOffenderAddressRequest) {
     val lookupFailures = mutableMapOf<String, String>()
     offenderAddressOf(prisonNumber = prisonNumber, addressId = addressId).run {
@@ -238,6 +241,7 @@ class CorePersonService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_CORE_PERSON")
   fun deleteOffenderAddress(prisonNumber: String, addressId: Long) {
     val rootOffenderId = rootOffender(prisonNumber).id
     offenderAddressRepository.findByIdOrNull(addressId)?.also {
@@ -294,6 +298,7 @@ class CorePersonService(
 
   fun getOffenderAddressUsage(offenderId: Long, addressId: Long, usageCode: String): OffenderAddressUsage = addressUsageOf(offenderId, addressId, usageCode).toOffenderAddressUsage()
 
+  @Audit("DPS_SYNCHRONISATION_CORE_PERSON")
   fun createOffenderAddressUsage(
     prisonNumber: String,
     addressId: Long,
@@ -315,6 +320,7 @@ class CorePersonService(
       .toOffenderAddressUsage()
   }
 
+  @Audit("DPS_SYNCHRONISATION_CORE_PERSON")
   fun updateOffenderAddressUsage(
     prisonNumber: String,
     addressId: Long,
@@ -327,6 +333,7 @@ class CorePersonService(
     }
   }
 
+  @Audit("DPS_SYNCHRONISATION_CORE_PERSON")
   fun deleteOffenderAddressUsage(prisonNumber: String, addressId: Long, usageCode: String) {
     val address = offenderAddressOf(prisonNumber, addressId)
     if (!address.usages.removeIf { it.id.usageCode == usageCode }) {
