@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.of
 import java.time.LocalDateTime
 
 @Schema(description = "A single person location movement")
-data class PersonLocationMovementDetail(
+data class PersonLocationMovement(
   @Schema(description = "Booking ID")
   val bookingId: Long,
 

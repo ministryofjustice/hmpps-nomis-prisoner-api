@@ -70,7 +70,7 @@ class OffenderPersonLocationsResourceIntTest(
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
             repository.runInTransaction {
-              with(bookings[0]) {
+              with(bookings[0].booking) {
                 assertThat(bookingId).isEqualTo(booking.bookingId)
                 assertThat(bookingNumber).isEqualTo(booking.bookNumber)
                 assertThat(activeBooking).isFalse
@@ -78,10 +78,10 @@ class OffenderPersonLocationsResourceIntTest(
                 assertThat(bookingStatus).isEqualTo(BookingStatus.OPEN)
                 assertThat(bookingBeginTime).isEqualTo(yesterday)
                 assertThat(bookingEndTime).isEqualTo(now.truncatedTo(ChronoUnit.DAYS))
-                assertThat(movements).hasSize(2)
                 assertThat(audit.createDatetime).isCloseTo(now, within(50, ChronoUnit.MINUTES))
                 assertThat(audit.createUsername).isEqualTo("SA")
               }
+              assertThat(bookings[0].movements).hasSize(2)
             }
           }
       }
@@ -622,12 +622,12 @@ class OffenderPersonLocationsResourceIntTest(
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
             assertThat(bookings).hasSize(2)
-            with(bookings.single { it.bookingId == firstBooking.bookingId }) {
-              assertThat(latestBooking).isFalse
+            with(bookings.single { it.booking.bookingId == firstBooking.bookingId }) {
+              assertThat(booking.latestBooking).isFalse
               assertThat(movements.map { it.movementType }).containsExactly(MovementType.ADM, MovementType.REL)
             }
-            with(bookings.single { it.bookingId == booking.bookingId }) {
-              assertThat(latestBooking).isTrue
+            with(bookings.single { it.booking.bookingId == booking.bookingId }) {
+              assertThat(booking.latestBooking).isTrue
               assertThat(movements.map { it.movementType }).containsExactly(MovementType.ADM, MovementType.CRT)
             }
           }
@@ -665,11 +665,11 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            with(bookings.single { it.bookingId == firstBooking.bookingId }) {
-              assertThat(bookingEndTime).isEqualTo(yesterday.truncatedTo(ChronoUnit.DAYS))
+            with(bookings.single { it.booking.bookingId == firstBooking.bookingId }) {
+              assertThat(booking.bookingEndTime).isEqualTo(yesterday.truncatedTo(ChronoUnit.DAYS))
             }
-            with(bookings.single { it.bookingId == booking.bookingId }) {
-              assertThat(bookingEndTime).isEqualTo(bookingReleaseWithTime)
+            with(bookings.single { it.booking.bookingId == booking.bookingId }) {
+              assertThat(booking.bookingEndTime).isEqualTo(bookingReleaseWithTime)
             }
           }
       }
