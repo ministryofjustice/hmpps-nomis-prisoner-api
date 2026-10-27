@@ -124,7 +124,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getActivePrisonerScheduledPayments() {
-      val payments = webTestClient.get().uri("/finance/prisoners/A6789CD/scheduled-payments")
+      val payments = webTestClient.get().uri("/finance/prisoners/A6789CD/scheduled-payments?activeOnly=true")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
