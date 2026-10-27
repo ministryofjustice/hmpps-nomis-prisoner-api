@@ -22,15 +22,15 @@ import java.time.LocalDateTime
 
 @RestController
 @Validated
-@RequestMapping(value = ["/finance/prisoners"], produces = [MediaType.APPLICATION_JSON_VALUE])
+@RequestMapping(value = ["/finance"], produces = [MediaType.APPLICATION_JSON_VALUE])
 @PreAuthorize("hasAnyRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
-class PrisonerAdvanceResource(
-  private val service: PrisonerAdvanceService,
+class AdvancesResource(
+  private val service: AdvancesService,
 ) {
   @GetMapping("/advances/{advanceId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
-    summary = "Get a prisoner advance by id",
+    summary = "Get an advance by id",
     description = "Retrieves a prisoner advance identified by id. Requires NOMIS_PRISONER_API__SYNCHRONISATION__RW",
     responses = [
       ApiResponse(responseCode = "200", description = "Advance Information Returned"),
@@ -83,7 +83,7 @@ class PrisonerAdvanceResource(
   )
   fun getActiveAdvancesCount(): AdvancesCount = service.getActiveAdvancesCount()
 
-  @GetMapping("/{prisonNumber}/advances")
+  @GetMapping("/prisoners/{prisonNumber}/advances")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's advances by their prison number",
@@ -116,7 +116,7 @@ class PrisonerAdvanceResource(
     activeOnly: Boolean = false,
   ): List<PrisonerAdvanceDto> = service.getAdvances(prisonNumber, activeOnly)
 
-  @GetMapping("/root-offender-id/{rootOffenderId}/advances")
+  @GetMapping("/prisoners/root-offender-id/{rootOffenderId}/advances")
   @ResponseStatus(HttpStatus.OK)
   @Operation(
     summary = "Get a prisoner's advances by their root offender id",
@@ -193,6 +193,8 @@ data class PrisonerAdvanceDto(
   val advanceAmount: Long,
   @Schema(description = "The date of the advance given to the prisoner", example = "2024-06-01")
   val advanceDate: LocalDate?,
+  @Schema(description = "The amount the prisoner still owes, in pence", example = "125")
+  val outstandingBalance: Long,
 
   @Schema(description = "The amount to be taken from the prisoner as a weekly repayment, in pence", example = "150")
   val repaymentAmount: Long,
