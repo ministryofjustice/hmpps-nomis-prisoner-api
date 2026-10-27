@@ -142,6 +142,7 @@ interface OffenderDsl {
   fun scheduledPayment(
     caseloadId: String = "MDI",
     transactionType: String = "TELE",
+    startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
     reference: String? = null,
     comment: String? = null,
@@ -455,6 +456,7 @@ class OffenderBuilder(
   override fun scheduledPayment(
     caseloadId: String,
     transactionType: String,
+    startDate: LocalDate,
     endDate: LocalDate?,
     reference: String?,
     comment: String?,
@@ -464,6 +466,7 @@ class OffenderBuilder(
       offender = rootOffender,
       caseloadId = caseloadId,
       transactionType = transactionType,
+      startDate = startDate,
       endDate = endDate,
       reference = reference,
       comment = comment,
