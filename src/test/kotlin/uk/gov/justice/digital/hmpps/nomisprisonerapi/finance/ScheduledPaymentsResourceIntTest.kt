@@ -18,13 +18,15 @@ import java.time.LocalDate
 
 @WithMockAuthUser
 @TestInstance(PER_CLASS)
-class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
+class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
   private lateinit var schedPay: OffenderScheduledPayment
   private lateinit var schedPay2: OffenderScheduledPayment
   private lateinit var schedPay3: OffenderScheduledPayment
   private var offender1Id: Long = 0
   private var offender2Id: Long = 0
   private var offender3Id: Long = 0
+  private val yesterday = LocalDate.now().minusDays(1)
+  private val twoMonthsAgo = LocalDate.now().minusMonths(2)
 
   @BeforeAll
   fun setUp() {
@@ -37,7 +39,7 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
       offender3Id = offender(nomsId = "A6789CD") {
         trustAccount()
         schedPay2 = scheduledPayment()
-        schedPay3 = scheduledPayment()
+        schedPay3 = scheduledPayment(startDate = twoMonthsAgo, endDate = yesterday)
         advance(informationNumber = "12341234-1", deductionPriority = 1)
       }.id
     }
@@ -89,7 +91,7 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .responseBody!!
 
       assertThat(payments).hasSize(1)
-      assertScheduledPayment(payments.single(), schedPay, "A5194DY")
+      assertScheduledPayment(payments.single(), schedPay)
     }
 
     @Test
@@ -114,9 +116,25 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
+      assertThat(payments.size).isEqualTo(2)
       assertThat(payments.map { it.id }).containsExactlyInAnyOrder(schedPay2.id, schedPay3.id)
-      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2, "A6789CD")
-      assertScheduledPayment(payments.single { it.id == schedPay3.id }, schedPay3, "A6789CD")
+      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
+      assertScheduledPayment(payments.single { it.id == schedPay3.id }, schedPay3)
+    }
+
+    @Test
+    fun getActivePrisonerScheduledPayments() {
+      val payments = webTestClient.get().uri("/finance/prisoners/A6789CD/scheduled-payments")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(payments).hasSize(1)
+      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
     }
   }
 
@@ -161,7 +179,7 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .responseBody!!
 
       assertThat(payments).hasSize(1)
-      assertScheduledPayment(payments.single(), schedPay, "A5194DY")
+      assertScheduledPayment(payments.single(), schedPay)
     }
 
     @Test
@@ -186,20 +204,36 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
+      assertThat(payments).hasSize(2)
       assertThat(payments.map { it.id }).containsExactlyInAnyOrder(schedPay2.id, schedPay3.id)
-      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2, "A6789CD")
-      assertScheduledPayment(payments.single { it.id == schedPay3.id }, schedPay3, "A6789CD")
+      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
+      assertScheduledPayment(payments.single { it.id == schedPay3.id }, schedPay3)
+    }
+
+    @Test
+    fun getActivePrisonerScheduledPayments() {
+      val payments = webTestClient.get().uri("/finance/prisoners/root-offender-id/$offender3Id/scheduled-payments?activeOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(payments).hasSize(1)
+      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
     }
   }
 
   @Nested
-  @DisplayName("GET /finance/prisoners/scheduled-payments/{scheduledPaymentId}")
-  inner class GetPrisonerScheduledPaymentTests {
+  @DisplayName("GET /finance/scheduled-payments/{scheduledPaymentId}")
+  inner class GetScheduledPaymentTests {
     @Nested
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/finance/prisoners/scheduled-payments/${schedPay.id}")
+        webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -207,7 +241,7 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/finance/prisoners/scheduled-payments/${schedPay.id}")
+        webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -215,15 +249,15 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/finance/prisoners/scheduled-payments/${schedPay.id}")
+        webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
     }
 
     @Test
-    fun getPrisonerScheduledPayments() {
-      val payment = webTestClient.get().uri("/finance/prisoners/scheduled-payments/${schedPay.id}")
+    fun getScheduledPayment() {
+      val payment = webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -232,12 +266,12 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertScheduledPayment(payment, schedPay, "A5194DY")
+      assertScheduledPayment(payment, schedPay)
     }
 
     @Test
-    fun getPrisonerScheduledPaymentDoesNotExist() {
-      webTestClient.get().uri("/finance/prisoners/scheduled-payments/99999")
+    fun getScheduledPaymentDoesNotExist() {
+      webTestClient.get().uri("/finance/scheduled-payments/99999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -249,21 +283,60 @@ class PrisonerScheduledPaymentsResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @Nested
+  @DisplayName("GET /finance/scheduled-payments/active-count")
+  inner class GetActiveScheduledPaymentsCountTests {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/finance/scheduled-payments/active-count")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/finance/scheduled-payments/active-count")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/finance/scheduled-payments/active-count")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Test
+    fun getActiveScheduledPaymentsCount() {
+      webTestClient.get().uri("/finance/scheduled-payments/active-count")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody()
+        .jsonPath("activeCount").isEqualTo(2)
+    }
+  }
+
   private fun assertScheduledPayment(
     payment: PrisonerScheduledPaymentDto,
     expected: OffenderScheduledPayment,
-    prisonNumber: String,
   ) {
     assertThat(payment.id).isEqualTo(expected.id)
-    assertThat(payment.prisonNumber).isEqualTo(prisonNumber)
+    assertThat(payment.prisonNumber).isEqualTo(expected.offender.nomsId)
     assertThat(payment.caseloadId).isEqualTo("MDI")
     assertThat(payment.transactionType).isEqualTo("TELE")
-    assertThat(payment.amount).isEqualTo(245L)
+    assertThat(payment.paymentAmount).isEqualTo(245L)
     assertThat(payment.startDate).isEqualTo(expected.startDate)
     assertThat(payment.endDate).isEqualTo(expected.endDate)
     assertThat(payment.reference).isEqualTo(expected.referenceText)
     assertThat(payment.comment).isEqualTo(expected.commentText)
     assertThat(payment.createdBy).isEqualTo("SA")
-    assertThat(payment.status).isEqualTo("TODO")
   }
 }

@@ -11,7 +11,7 @@ class OffenderScheduledPayment(
   offender: Offender,
   caseloadId: String,
   transactionType: String,
-  startDate: LocalDate = LocalDate.now(),
+  startDate: LocalDate,
   endDate: LocalDate? = null,
   paymentAmount: BigDecimal,
   referenceText: String? = null,
