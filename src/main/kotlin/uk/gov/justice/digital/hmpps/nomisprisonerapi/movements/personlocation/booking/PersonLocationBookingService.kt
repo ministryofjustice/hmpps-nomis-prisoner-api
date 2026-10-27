@@ -4,17 +4,16 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.BookingStatus
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.PersonLocationMovementMapper
 
 @Service
 @Transactional(readOnly = true)
 class PersonLocationBookingService(
   private val offenderRepository: OffenderRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
+  private val mapper: PersonLocationMovementMapper,
 ) {
   fun getPersonLocationBooking(offenderNo: String, bookingId: Long): PersonLocationBooking {
     if (!offenderRepository.existsByNomsId(offenderNo)) {
@@ -23,18 +22,7 @@ class PersonLocationBookingService(
 
     return offenderBookingRepository.findByIdOrNull(bookingId)
       ?.takeIf { it.offender.nomsId == offenderNo }
-      ?.toPersonLocationBooking()
+      ?.let { mapper.toPersonLocationBooking(it) }
       ?: throw NotFoundException("Offender booking with bookingId=$bookingId not found for offender with nomsId=$offenderNo")
   }
-
-  private fun OffenderBooking.toPersonLocationBooking() = PersonLocationBooking(
-    bookingId = bookingId,
-    bookingNumber = bookNumber,
-    activeBooking = active,
-    latestBooking = bookingSequence == 1,
-    bookingStatus = if (bookingStatus == "O") BookingStatus.OPEN else BookingStatus.CLOSED,
-    bookingBeginTime = bookingBeginDate,
-    bookingEndTime = bookingEndDate,
-    audit = toAudit(),
-  )
 }

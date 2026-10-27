@@ -3,14 +3,11 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.o
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.helpers.toAudit
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderBookingRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementInRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderTapMovementOutRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.PersonLocationMovementMapper
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.BookingStatus.CLOSED
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.BookingStatus.OPEN
 
 @Service
 @Transactional(readOnly = true)
@@ -32,18 +29,11 @@ class OffenderPersonLocationsService(
     return OffenderPersonLocationsResponse(
       bookings = offenderBookingRepository.findAllByOffenderNomsId(offenderNo).map { booking ->
         BookingPersonLocations(
-          bookingId = booking.bookingId,
-          bookingNumber = booking.bookNumber,
-          activeBooking = booking.active,
-          latestBooking = booking.bookingSequence == 1,
-          bookingStatus = if (booking.bookingStatus == "O") OPEN else CLOSED,
-          bookingBeginTime = booking.bookingBeginDate,
-          bookingEndTime = booking.bookingEndDate,
+          booking = mapper.toPersonLocationBooking(booking),
           movements = booking.externalMovements
             .filterNot { mapper.isIgnored(it) }
             .sortedBy { it.id.sequence }
             .map { mapper.toPersonLocationMovement(it) },
-          audit = booking.toAudit(),
         )
       },
     )

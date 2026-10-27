@@ -24,23 +24,7 @@ class PersonLocationMovementService(
 
     return movementRepository.findByIdOrNull(OffenderExternalMovementId(booking, sequence))
       ?.takeUnless { mapper.isIgnored(it) }
-      ?.let { movement ->
-        with(mapper.toPersonLocationMovement(movement)) {
-          PersonLocationMovementDetail(
-            bookingId = bookingId,
-            sequence = this.sequence,
-            movementType = movementType,
-            directionCode = directionCode,
-            movementTime = movementTime,
-            movementReason = movementReason,
-            from = from,
-            to = to,
-            scheduleId = scheduleId,
-            commentText = commentText,
-            audit = audit,
-          )
-        }
-      }
+      ?.let { mapper.toPersonLocationMovement(it) }
       ?: throw NotFoundException("Movement with bookingId=$bookingId and sequence=$sequence not found for offender with nomsId=$offenderNo")
   }
 

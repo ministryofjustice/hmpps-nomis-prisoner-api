@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.City
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.IN
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementDirection.OUT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdmissionMovementIn
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderCourtMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderExternalMovement
@@ -17,13 +18,15 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderReleaseMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementIn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTapMovementOut
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTransferMovementOut
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.booking.PersonLocationBooking
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.movement.PersonLocationMovementDetail
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.BookingStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementDirection
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.COURT
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.OTHER
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementType
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.PersonLocationMovement
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.taps.toFullAddress
 
 @Component
@@ -39,13 +42,25 @@ class PersonLocationMovementMapper {
     (movementDirection == OUT && movementReason.id.type == "ADM") ||
     (movementDirection == null)
 
-  fun toPersonLocationMovement(movement: OffenderExternalMovement): PersonLocationMovement = movement.toPersonLocationMovementInternal()
+  fun toPersonLocationBooking(booking: OffenderBooking) = PersonLocationBooking(
+    bookingId = booking.bookingId,
+    bookingNumber = booking.bookNumber,
+    activeBooking = booking.active,
+    latestBooking = booking.bookingSequence == 1,
+    bookingStatus = if (booking.bookingStatus == "O") BookingStatus.OPEN else BookingStatus.CLOSED,
+    bookingBeginTime = booking.bookingBeginDate,
+    bookingEndTime = booking.bookingEndDate,
+    audit = booking.toAudit(),
+  )
 
-  private fun OffenderExternalMovement.toPersonLocationMovementInternal(): PersonLocationMovement {
+  fun toPersonLocationMovement(movement: OffenderExternalMovement): PersonLocationMovementDetail = movement.toResponse()
+
+  private fun OffenderExternalMovement.toResponse(): PersonLocationMovementDetail {
     val movementType = toMovementType()
     val scheduleTapOut = (this as? OffenderTapMovementOut)?.tapScheduleOut
     val parentScheduleTapOut = (this as? OffenderTapMovementIn)?.tapScheduleOut
-    return PersonLocationMovement(
+    return PersonLocationMovementDetail(
+      bookingId = id.offenderBooking.bookingId,
       sequence = id.sequence,
       movementType = movementType,
       directionCode = MovementDirection.valueOf(movementDirection.name),
