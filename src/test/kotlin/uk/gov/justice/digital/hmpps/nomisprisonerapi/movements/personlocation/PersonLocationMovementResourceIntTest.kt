@@ -99,14 +99,14 @@ class PersonLocationMovementResourceIntTest(
           assertThat(directionCode).isEqualTo(MovementDirection.OUT)
           assertThat(movementReason.code).isEqualTo("C5")
           assertThat(from).isEqualTo(MovementLocation("BXI", MovementLocationType.PRISON, "BRIXTON"))
-          assertThat(to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+          assertThat(to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
           assertThat(scheduleId).isNull()
           assertThat(commentText).isEqualTo("Tap out comment")
         }
         with(webTestClient.getPersonLocationMovementOk(sequence = 3)) {
           assertThat(movementType).isEqualTo(MovementType.TAP)
           assertThat(directionCode).isEqualTo(MovementDirection.IN)
-          assertThat(from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+          assertThat(from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
           assertThat(to).isEqualTo(MovementLocation("BXI", MovementLocationType.PRISON, "BRIXTON"))
           assertThat(commentText).isEqualTo("Tap in comment")
         }

@@ -157,7 +157,7 @@ class OffenderPersonLocationsResourceIntTest(
               assertThat(movementTime).isEqualTo(yesterday)
               assertThat(movementReason.code).isEqualTo("C5")
               assertThat(from).isEqualTo(MovementLocation("BXI", MovementLocationType.PRISON, "BRIXTON"))
-              assertThat(to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+              assertThat(to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
               assertThat(scheduleId).isNull()
               assertThat(commentText).isEqualTo("Tap out comment")
             }
@@ -173,11 +173,36 @@ class OffenderPersonLocationsResourceIntTest(
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(movementTime).isEqualTo(now)
               assertThat(movementReason.code).isEqualTo("C5")
-              assertThat(from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+              assertThat(from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
               assertThat(to).isEqualTo(MovementLocation("BXI", MovementLocationType.PRISON, "BRIXTON"))
               assertThat(scheduleId).isNull()
               assertThat(commentText).isEqualTo("Tap in comment")
             }
+          }
+      }
+    }
+
+    @Nested
+    inner class OtherLocationTypes {
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          agencyLocation(agencyLocationId = "SHEFPO", description = "Sheffield Probation Office", type = "COMM")
+          offender = offender {
+            booking = booking(bookingBeginDate = twoDaysAgo) {
+              tapMovementOut(date = yesterday, toAgency = "SHEFPO")
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should map agency locations that are not prison, court or hospital as OTHER`() {
+        webTestClient.getOffenderPersonLocationsOk()
+          .apply {
+            assertThat(bookings[0].movementWithSeq(2).to)
+              .isEqualTo(MovementLocation("SHEFPO", MovementLocationType.OTHER, "Sheffield Probation Office"))
           }
       }
     }
@@ -346,7 +371,7 @@ class OffenderPersonLocationsResourceIntTest(
               assertThat(movementType).isEqualTo(MovementType.TAP)
               assertThat(directionCode).isEqualTo(MovementDirection.OUT)
               assertThat(from).isEqualTo(MovementLocation("BXI", MovementLocationType.PRISON, "BRIXTON"))
-              assertThat(to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+              assertThat(to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
             }
           }
       }
@@ -360,7 +385,7 @@ class OffenderPersonLocationsResourceIntTest(
               assertThat(directionCode).isEqualTo(MovementDirection.IN)
               assertThat(movementTime).isEqualTo(now)
               assertThat(movementReason.code).isEqualTo("TRNTAP")
-              assertThat(from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+              assertThat(from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
               assertThat(to).isEqualTo(MovementLocation("MDI", MovementLocationType.PRISON, "MOORLAND"))
               assertThat(scheduleId).isNull()
             }
@@ -491,8 +516,8 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
-            assertThat(bookings[0].movementWithSeq(3).from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
+            assertThat(bookings[0].movementWithSeq(3).from).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
           }
       }
 
@@ -571,7 +596,7 @@ class OffenderPersonLocationsResourceIntTest(
 
         webTestClient.getOffenderPersonLocationsOk()
           .apply {
-            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.OTHER, "Northern General Hospital"))
+            assertThat(bookings[0].movementWithSeq(2).to).isEqualTo(MovementLocation("NGENHO", MovementLocationType.HOSPITAL, "Northern General Hospital"))
           }
       }
 

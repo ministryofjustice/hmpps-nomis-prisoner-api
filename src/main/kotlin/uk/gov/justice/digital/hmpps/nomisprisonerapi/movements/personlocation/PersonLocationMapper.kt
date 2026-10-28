@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.of
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementDirection
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocation
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.COURT
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.HOSPITAL
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.OTHER
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementLocationType.PRISON
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender.MovementType
@@ -102,6 +103,7 @@ private fun AgencyLocation?.toMovementLocation(address: Address? = null, city: C
       it.id.isOtherLocationType() -> OTHER
       it.type.isPrison -> PRISON
       it.type.isCourt -> COURT
+      it.type.isHospital -> HOSPITAL
       else -> OTHER
     },
   )
