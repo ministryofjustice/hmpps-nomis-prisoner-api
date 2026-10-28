@@ -22,7 +22,7 @@ data class BookingPersonLocations(
 enum class BookingStatus { CLOSED, OPEN }
 enum class MovementDirection { IN, OUT }
 enum class MovementType { ADM, CRT, TAP, TRN, REL }
-enum class MovementLocationType { PRISON, COURT, OTHER }
+enum class MovementLocationType { PRISON, COURT, HOSPITAL, OTHER }
 
 data class MovementLocation(
   val code: String? = null,
