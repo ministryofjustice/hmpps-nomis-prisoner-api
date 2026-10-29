@@ -10,9 +10,11 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.PrisonerScheduledPaymentDto
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.BasicScheduledPaymentDto
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.ScheduledPaymentDto
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 
@@ -86,7 +88,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
@@ -101,7 +103,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .hasSize(0)
     }
 
@@ -112,7 +114,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
@@ -129,7 +131,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
@@ -174,7 +176,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
@@ -189,7 +191,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .hasSize(0)
     }
 
@@ -200,7 +202,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
@@ -217,7 +219,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBodyList<PrisonerScheduledPaymentDto>()
+        .expectBodyList<ScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
@@ -262,11 +264,11 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBody<PrisonerScheduledPaymentDto>()
+        .expectBody<BasicScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
-      assertScheduledPayment(payment, schedPay)
+      assertBasicScheduledPayment(payment, schedPay)
     }
 
     @Test
@@ -324,19 +326,37 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun assertScheduledPayment(
-    payment: PrisonerScheduledPaymentDto,
+  private fun assertBasicScheduledPayment(
+    payment: BasicScheduledPaymentDto,
     expected: OffenderScheduledPayment,
   ) {
     assertThat(payment.id).isEqualTo(expected.id)
     assertThat(payment.prisonNumber).isEqualTo(expected.offender.nomsId)
     assertThat(payment.caseloadId).isEqualTo("MDI")
     assertThat(payment.transactionType).isEqualTo("TELE")
-    assertThat(payment.paymentAmount).isEqualTo(245L)
+    assertThat(payment.amount).isEqualTo(245L)
     assertThat(payment.startDate).isEqualTo(expected.startDate)
     assertThat(payment.endDate).isEqualTo(expected.endDate)
     assertThat(payment.reference).isEqualTo(expected.referenceText)
     assertThat(payment.comment).isEqualTo(expected.commentText)
     assertThat(payment.createdBy).isEqualTo("SA")
+  }
+
+  private fun assertScheduledPayment(
+    payment: ScheduledPaymentDto,
+    expected: OffenderScheduledPayment,
+  ) {
+    assertThat(payment.id).isEqualTo(expected.id)
+    assertThat(payment.prisonNumber).isEqualTo(expected.offender.nomsId)
+    assertThat(payment.caseloadId).isEqualTo("MDI")
+    assertThat(payment.transactionType).isEqualTo("TELE")
+    assertThat(payment.amount).isEqualTo(245L)
+    assertThat(payment.startDate).isEqualTo(expected.startDate)
+    assertThat(payment.endDate).isEqualTo(expected.endDate)
+    assertThat(payment.reference).isEqualTo(expected.referenceText)
+    assertThat(payment.comment).isEqualTo(expected.commentText)
+    assertThat(payment.createdBy).isEqualTo("SA")
+    assertThat(payment.dayOfWeek).isEqualTo(WeekDay.MON)
+    assertThat(payment.subAccountCode).isEqualTo(2102)
   }
 }
