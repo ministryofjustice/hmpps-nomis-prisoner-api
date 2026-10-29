@@ -145,6 +145,9 @@ data class OffenderBooking(
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val transferScheduleOuts: MutableList<OffenderTransferScheduleOut> = mutableListOf(),
 
+  @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val bedAssignmentHistories: MutableList<BedAssignmentHistory> = mutableListOf(),
+
   @OneToMany(mappedBy = "id.offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
   val alerts: MutableList<OffenderAlert> = mutableListOf(),
 
