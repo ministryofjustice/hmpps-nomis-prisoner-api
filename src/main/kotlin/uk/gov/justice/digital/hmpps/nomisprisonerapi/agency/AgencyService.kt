@@ -65,10 +65,16 @@ class AgencyService(
       agencyLocationRepository.findByType_CodeNotIn(it)
     } ?: agencyLocationRepository.findAll()
 
+    return agencies.toAgencyIdsResponse()
+  }
+
+  fun getAllAgenciesByType(agencyType: String): AgencyIdsResponse = agencyLocationRepository.findByType_Code(agencyType).toAgencyIdsResponse()
+
+  private fun List<AgencyLocation>.toAgencyIdsResponse(): AgencyIdsResponse {
     // Filter out the "AUHSA;" agency ID can not be used since it has semi-colon and has been replaced by "AUHSA" in NOMIS.
     // All references have also been replaced by "AUHSA" but "AUHSA;" has not been deleted. So just ignore it
     return AgencyIdsResponse(
-      agencyIds = agencies.filter { it.id != "AUHSA;" }.map { AgencyId(it.id) },
+      agencyIds = filter { it.id != "AUHSA;" }.map { AgencyId(it.id) },
     )
   }
 

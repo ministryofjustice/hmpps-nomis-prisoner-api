@@ -18,4 +18,7 @@ interface AgencyLocationRepository :
 
   @Suppress("ktlint:standard:function-naming")
   fun findByType_CodeNotIn(excludeType: List<String>): List<AgencyLocation>
+
+  @Suppress("ktlint:standard:function-naming")
+  fun findByType_Code(agencyType: String): List<AgencyLocation>
 }
