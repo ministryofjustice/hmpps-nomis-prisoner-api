@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AlertStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentLevel
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentStatusType
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AssessmentType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.BedAssignmentHistory
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CSIPReport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourseActivity
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
@@ -272,6 +273,14 @@ interface BookingDsl {
     cancellationReasonCode: String? = null,
     dsl: OffenderTransferScheduleOutDsl.() -> Unit = {},
   ): OffenderTransferScheduleOut
+
+  fun bedAssignmentHistory(
+    sequence: Int = 1,
+    livingUnitId: Long = -3009,
+    assignmentDateTime: LocalDateTime = LocalDateTime.now(),
+    assignmentReasonCode: String? = "ADM",
+    assignmentEndDateTime: LocalDateTime? = null,
+  ): BedAssignmentHistory
 
   fun fixedTermRecall(
     returnToCustodyDate: LocalDate = LocalDate.now(),
@@ -665,6 +674,7 @@ class BookingBuilderFactory(
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
   private val courtEventBuilderFactory: CourtEventBuilderFactory,
   private val offenderTransferScheduleOutBuilderFactory: OffenderTransferScheduleOutBuilderFactory,
+  private val bedAssignmentHistoryBuilderFactory: BedAssignmentHistoryBuilderFactory,
   private val offenderImprisonmentStatusBuilderFactory: OffenderImprisonmentStatusBuilderFactory,
 ) {
   fun builder() = BookingBuilder(
@@ -699,6 +709,7 @@ class BookingBuilderFactory(
     offenderTapApplicationBuilderFactory,
     linkCaseTxnBuilderFactory,
     offenderTransferScheduleOutBuilderFactory,
+    bedAssignmentHistoryBuilderFactory,
     offenderImprisonmentStatusBuilderFactory,
   )
 }
@@ -735,6 +746,7 @@ class BookingBuilder(
   private val offenderTapApplicationBuilderFactory: OffenderTapApplicationBuilderFactory,
   private val linkCaseTxnBuilderFactory: LinkCaseTxnBuilderFactory,
   private val offenderTransferScheduleOutBuilderFactory: OffenderTransferScheduleOutBuilderFactory,
+  private val bedAssignmentHistoryBuilderFactory: BedAssignmentHistoryBuilderFactory,
   private val offenderImprisonmentStatusBuilderFactory: OffenderImprisonmentStatusBuilderFactory,
 ) : BookingDsl {
 
@@ -1067,6 +1079,23 @@ class BookingBuilder(
       .also { offenderBooking.transferScheduleOuts += it }
       .also { builder.apply(dsl) }
   }
+
+  override fun bedAssignmentHistory(
+    sequence: Int,
+    livingUnitId: Long,
+    assignmentDateTime: LocalDateTime,
+    assignmentReasonCode: String?,
+    assignmentEndDateTime: LocalDateTime?,
+  ): BedAssignmentHistory = bedAssignmentHistoryBuilderFactory.builder()
+    .build(
+      offenderBooking = offenderBooking,
+      sequence = sequence,
+      livingUnitId = livingUnitId,
+      assignmentDateTime = assignmentDateTime,
+      assignmentReasonCode = assignmentReasonCode,
+      assignmentEndDateTime = assignmentEndDateTime,
+    )
+    .also { offenderBooking.bedAssignmentHistories += it }
 
   override fun fixedTermRecall(
     returnToCustodyDate: LocalDate,
