@@ -269,6 +269,88 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /agency/ids/{agencyType}/all")
+  @Nested
+  inner class GetAllAgenciesByType {
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        prison(agencyLocationId = "AAI", description = "HMP AAI")
+        agencyLocation(agencyLocationId = "SHEFCC", description = "Sheffield Crown Court", type = "CRT")
+        agencyLocation(
+          agencyLocationId = "THA029",
+          description = "Approved Premises",
+          type = "APPR",
+          active = false,
+          deactivationDate = LocalDate.parse("2022-01-01"),
+        )
+        agencyLocation(agencyLocationId = "AUHSA;", description = "Augustus House AP", type = "APPR")
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      agencyLocationRepository.deleteAllById(listOf("AAI", "SHEFCC", "THA029", "AUHSA;"))
+    }
+
+    @Test
+    fun `access forbidden when no role`() {
+      webTestClient.get().uri("/agency/ids/INST/all")
+        .headers(setAuthorisation(roles = listOf()))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access forbidden with wrong role`() {
+      webTestClient.get().uri("/agency/ids/INST/all")
+        .headers(setAuthorisation(roles = listOf("BANANAS")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `access unauthorised with no auth token`() {
+      webTestClient.get().uri("/agency/ids/INST/all")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `returns prisons without agencies of other types`() {
+      val response: AgencyIdsResponse = webTestClient.get().uri("/agency/ids/INST/all")
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectBodyResponse()
+
+      assertThat(response.agencyIds.map { it.agencyId })
+        .contains("AAI")
+        .doesNotContain("SHEFCC", "THA029", "AUHSA;")
+    }
+
+    @Test
+    fun `includes inactive agencies but excludes the agency with semi-colon in ID`() {
+      val response: AgencyIdsResponse = webTestClient.get().uri("/agency/ids/APPR/all")
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectBodyResponse()
+
+      assertThat(response.agencyIds.map { it.agencyId })
+        .contains("THA029")
+        .doesNotContain("AAI", "SHEFCC", "AUHSA;")
+    }
+
+    @Test
+    fun `returns an empty list when no agencies match the type`() {
+      val response: AgencyIdsResponse = webTestClient.get().uri("/agency/ids/UNKNOWN/all")
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectBodyResponse()
+
+      assertThat(response.agencyIds).isEmpty()
+    }
+  }
+
   @DisplayName("POST /agency")
   @Nested
   inner class CreateAgency {
