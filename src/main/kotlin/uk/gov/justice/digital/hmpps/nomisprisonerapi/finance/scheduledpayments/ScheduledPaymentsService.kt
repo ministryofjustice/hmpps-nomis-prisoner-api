@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPaymen
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledPaymentRepository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ScheduledPaymentProjection
 import kotlin.collections.map
 
 @Service
@@ -67,21 +66,6 @@ fun OffenderScheduledPayment.toFullDto() = ScheduledPaymentDto(
   amount = MoneySupport.poundsToPence(paymentAmount),
   // TODO move to ScheduledPaymentProjection
   dayOfWeek = WeekDay.MON,
-  reference = referenceText,
-  comment = commentText,
-  createdBy = createUsername,
-)
-
-fun ScheduledPaymentProjection.toDto() = ScheduledPaymentDto(
-  id = id,
-  prisonNumber = prisonNumber,
-  caseloadId = caseloadId,
-  transactionType = transactionType,
-  startDate = startDate,
-  endDate = endDate,
-  subAccountCode = drAccountCode,
-  amount = MoneySupport.poundsToPence(paymentAmount),
-  dayOfWeek = WeekDay.valueOf(weekDay),
   reference = referenceText,
   comment = commentText,
   createdBy = createUsername,
