@@ -2362,6 +2362,77 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   ): CourtEventChargeResponse = courtSentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, offenderNo = offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/court-event-charges/{eventId}/charges/{chargeId}")
+  @Operation(
+    summary = "get the court event charge, without offenderNo validation",
+    description = "Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW. Retrieves the court event charge ",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "the court appearance details",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court event charge not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender charge not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Court Appearance not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtEventChargeForMigration(
+    @Schema(description = "Offender Charge id", example = "12345")
+    @PathVariable
+    chargeId: Long,
+    @Schema(description = "Event id", example = "12345")
+    @PathVariable
+    eventId: Long,
+  ): CourtEventChargeResponse = courtSentencingService.getCourtEventChargeForMigration(chargeId = chargeId, eventId = eventId)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/court-event-charges/ids")
   @Operation(
     summary = "get court event charge IDs that have a property value",

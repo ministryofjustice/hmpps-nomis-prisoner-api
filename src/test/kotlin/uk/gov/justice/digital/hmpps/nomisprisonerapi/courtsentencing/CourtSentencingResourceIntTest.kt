@@ -7813,6 +7813,138 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /court-event-charges/{eventId}/charges/{chargeId}")
+  @Nested
+  inner class GetCourtEventChargeForMigration {
+    private lateinit var courtCase: CourtCase
+    private lateinit var courtAppearance: CourtEvent
+    private lateinit var offenderCharge1: OffenderCharge
+    private lateinit var offenderCharge2: OffenderCharge
+    private lateinit var offenderCharge3: OffenderCharge
+
+    @BeforeEach
+    internal fun createPrisonerAndCourtCase() {
+      nomisDataBuilder.build {
+        staff = staff {
+          account {}
+        }
+        prisonerAtMoorland =
+          offender(nomsId = "A1234AB") {
+            booking(agencyLocationId = "MDI") {
+              courtCase = courtCase(reportingStaff = staff) {
+                offenderCharge1 = offenderCharge(offenceCode = "RT88074", plea = "G")
+                offenderCharge2 = offenderCharge(offenceCode = "RI64007")
+                offenderCharge3 = offenderCharge(offenceCode = "RI64009")
+                courtAppearance = courtEvent {
+                  courtEventCharge(
+                    offenderCharge = offenderCharge1,
+                    plea = "NG",
+                  )
+                }
+              }
+            }
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get()
+          .uri("/court-event-charges/${courtAppearance.id}/charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get()
+          .uri("/court-event-charges/${courtAppearance.id}/charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get()
+          .uri("/court-event-charges/${courtAppearance.id}/charges/${offenderCharge1.id}")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get()
+          .uri("/court-event-charges/${courtAppearance.id}/charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if no court event charge is found - offender charge and appearance do exist seperately`() {
+        webTestClient.get()
+          .uri("/court-event-charges/${courtAppearance.id}/charges/${offenderCharge3.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage")
+          .isEqualTo("Court event charge with offenderChargeId ${offenderCharge3.id} not found")
+      }
+
+      @Test
+      fun `will return 404 if charge not found`() {
+        webTestClient.get()
+          .uri("/court-event-charges/${courtAppearance.id}/charges/111")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Offender Charge 111 not found")
+      }
+
+      @Test
+      fun `will return 404 if court appearance not found`() {
+        webTestClient.get()
+          .uri("/court-event-charges/111/charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("developerMessage").isEqualTo("Court appearance 111 not found")
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return the court event charge without requiring an offenderNo`() {
+        val response: CourtEventChargeResponse = webTestClient.get()
+          .uri("/court-event-charges/${courtAppearance.id}/charges/${offenderCharge1.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyResponse()
+
+        assertThat(response.offenderCharge.id).isEqualTo(offenderCharge1.id)
+      }
+    }
+
+    @AfterEach
+    internal fun deletePrisoner() {
+      repository.delete(courtAppearance)
+      repository.delete(prisonerAtMoorland)
+      repository.delete(staff)
+    }
+  }
+
   @Nested
   @DisplayName("PUT /prisoners/{offenderNo}/sentencing/court-cases/{id}/court-appearances/{id}")
   inner class UpdateCourtAppearanceDeleteCourtEventCharges {
