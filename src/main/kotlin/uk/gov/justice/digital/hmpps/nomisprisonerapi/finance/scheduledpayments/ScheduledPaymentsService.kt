@@ -17,7 +17,7 @@ class ScheduledPaymentsService(
   private val offenderRepository: OffenderRepository,
   private val repository: OffenderScheduledPaymentRepository,
 ) {
-  fun getScheduledPayment(scheduledPaymentId: Long): BasicScheduledPaymentDto = repository.findByIdOrNull(scheduledPaymentId)
+  fun getScheduledPayment(scheduledPaymentId: Long): ScheduledPaymentDto = repository.findByIdOrNull(scheduledPaymentId)
     ?.toDto()
     ?: throw NotFoundException("Offender scheduled payment with id $scheduledPaymentId not found")
 
@@ -36,25 +36,12 @@ class ScheduledPaymentsService(
     return findScheduledPayments(rootOffenderId, activeOnly)
   }
 
-  fun findScheduledPayments(rootOffenderId: Long, activeOnly: Boolean): List<ScheduledPaymentDto> = repository.findScheduledPayments(rootOffenderId, activeOnly).map { it.toFullDto() }
+  fun findScheduledPayments(rootOffenderId: Long, activeOnly: Boolean): List<ScheduledPaymentDto> = repository.findScheduledPayments(rootOffenderId, activeOnly).map { it.toDto() }
 
   fun getActiveScheduledPaymentsCount(): ScheduledPaymentsCount = ScheduledPaymentsCount(repository.getActiveScheduledPaymentsCount())
 }
 
-fun OffenderScheduledPayment.toDto() = BasicScheduledPaymentDto(
-  id = this.id,
-  prisonNumber = offender.nomsId,
-  caseloadId = caseloadId,
-  transactionType = transactionType,
-  startDate = startDate,
-  endDate = endDate,
-  amount = MoneySupport.poundsToPence(paymentAmount),
-  reference = referenceText,
-  comment = commentText,
-  createdBy = createUsername,
-)
-
-fun OffenderScheduledPayment.toFullDto() = ScheduledPaymentDto(
+fun OffenderScheduledPayment.toDto() = ScheduledPaymentDto(
   id = this.id,
   prisonNumber = offender.nomsId,
   caseloadId = caseloadId,

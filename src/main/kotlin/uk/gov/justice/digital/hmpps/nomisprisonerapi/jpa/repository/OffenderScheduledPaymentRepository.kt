@@ -7,8 +7,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPaymen
 
 @Repository
 interface OffenderScheduledPaymentRepository : JpaRepository<OffenderScheduledPayment, Long> {
-  fun findByOffenderId(offenderId: Long): List<OffenderScheduledPayment>
-
   @Query(
     """
       from OffenderScheduledPayment

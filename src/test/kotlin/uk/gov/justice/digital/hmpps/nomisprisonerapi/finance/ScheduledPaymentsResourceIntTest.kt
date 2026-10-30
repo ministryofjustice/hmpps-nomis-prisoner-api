@@ -10,7 +10,6 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.BasicScheduledPaymentDto
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.ScheduledPaymentDto
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
@@ -264,11 +263,11 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .exchange()
         .expectStatus()
         .isOk
-        .expectBody<BasicScheduledPaymentDto>()
+        .expectBody<ScheduledPaymentDto>()
         .returnResult()
         .responseBody!!
 
-      assertBasicScheduledPayment(payment, schedPay)
+      assertScheduledPayment(payment, schedPay)
     }
 
     @Test
@@ -324,22 +323,6 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("activeCount").isEqualTo(2)
     }
-  }
-
-  private fun assertBasicScheduledPayment(
-    payment: BasicScheduledPaymentDto,
-    expected: OffenderScheduledPayment,
-  ) {
-    assertThat(payment.id).isEqualTo(expected.id)
-    assertThat(payment.prisonNumber).isEqualTo(expected.offender.nomsId)
-    assertThat(payment.caseloadId).isEqualTo("MDI")
-    assertThat(payment.transactionType).isEqualTo("TELE")
-    assertThat(payment.amount).isEqualTo(245L)
-    assertThat(payment.startDate).isEqualTo(expected.startDate)
-    assertThat(payment.endDate).isEqualTo(expected.endDate)
-    assertThat(payment.reference).isEqualTo(expected.referenceText)
-    assertThat(payment.comment).isEqualTo(expected.commentText)
-    assertThat(payment.createdBy).isEqualTo("SA")
   }
 
   private fun assertScheduledPayment(

@@ -59,7 +59,7 @@ class ScheduledPaymentsResource(
     @Schema(description = "Scheduled Payment Id aka offender payment profile id", example = "123456789")
     @PathVariable
     scheduledPaymentId: Long,
-  ): BasicScheduledPaymentDto = service.getScheduledPayment(scheduledPaymentId)
+  ): ScheduledPaymentDto = service.getScheduledPayment(scheduledPaymentId)
 
   @GetMapping("/scheduled-payments/active-count")
   @ResponseStatus(HttpStatus.OK)
@@ -123,36 +123,6 @@ class ScheduledPaymentsResource(
     activeOnly: Boolean = false,
   ): List<ScheduledPaymentDto> = service.getScheduledPayments(rootOffenderId, activeOnly)
 }
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class BasicScheduledPaymentDto(
-  @Schema(description = "The scheduled payment id", example = "123456")
-  val id: Long,
-
-  @Schema(description = "The prisonNumber", example = "A1234BC")
-  val prisonNumber: String,
-
-  @Schema(description = "The caseload", example = "MDI")
-  val caseloadId: String,
-
-  @Schema(description = "transaction type", example = "TELE")
-  val transactionType: String,
-
-  @Schema(description = "The payment amount in pence, to be paid each time, to the prison, so £1.50 returned as 150", example = "150")
-  val amount: Long,
-
-  @Schema(description = "The start date of the scheduled payment", example = "2024-06-01")
-  val startDate: LocalDate,
-  @Schema(description = "The date the scheduled payment ends or null if it does not end", example = "2024-06-01")
-  val endDate: LocalDate?,
-
-  @Schema(description = "The reference for the scheduled payment", example = "REF12345")
-  val reference: String?,
-  @Schema(description = "The comment for the scheduled payment", example = "Sched payment for personal expenses")
-  val comment: String?,
-  @Schema(description = "The user who created the scheduled payment", example = "FRED_SMITH")
-  val createdBy: String,
-)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ScheduledPaymentDto(
