@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdva
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdvanceWithStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 @Service
 @Transactional(readOnly = true)
@@ -67,6 +68,8 @@ fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
   adjustmentAmount = adjustmentAmount?.let { MoneySupport.poundsToPence(it) },
   status = AdvanceStatus.valueOf(status),
   advanceCreateTransactionId = advanceCreateTransactionId,
+  // TODO
+  lastTransactionTimestamp = LocalDateTime.parse("2025-12-20T01:02:03"),
   createdBy = createdBy,
   createDatetime = createDatetime,
 )

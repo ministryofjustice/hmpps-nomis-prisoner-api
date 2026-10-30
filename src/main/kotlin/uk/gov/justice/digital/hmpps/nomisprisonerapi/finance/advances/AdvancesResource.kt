@@ -227,6 +227,8 @@ data class PrisonerAdvanceDto(
 
   @Schema(description = "The transaction id for the advance creation", example = "123456789")
   val advanceCreateTransactionId: Long,
+  @Schema(description = "The date time of the last transaction for the advance", example = "2025-07-14T12:13:14")
+  val lastTransactionTimestamp: LocalDateTime,
 )
 
 data class AdvancesCount(
