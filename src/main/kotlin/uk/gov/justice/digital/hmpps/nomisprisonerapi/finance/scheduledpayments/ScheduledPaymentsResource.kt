@@ -139,7 +139,7 @@ data class ScheduledPaymentDto(
   val transactionType: String,
 
   @Schema(description = "The sub account code the payment will be taken from", example = "2101")
-  val subAccountCode: Long,
+  val subAccountCode: Int,
   @Schema(description = "The payment amount in pence, to be paid each time, to the prison, so £1.50 returned as 150", example = "150")
   val amount: Long,
   @Schema(description = "Day of the week the scheduled payment is paid", example = "MON")
