@@ -906,6 +906,183 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /court-event-charges/ids")
+  @Nested
+  inner class GetCourtEventChargeIdsWithPropertyValue {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/court-event-charges/ids")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/court-event-charges/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/court-event-charges/ids")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `access allowed with correct role`() {
+        webTestClient.get().uri("/court-event-charges/ids")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      private lateinit var prisoner: Offender
+      private lateinit var chargeWithPropertyValue: OffenderCharge
+      private lateinit var chargeWithoutPropertyValue: OffenderCharge
+      private val extraChargesNumberRange = 1..24
+      private val extraChargesWithPropertyValue: MutableList<OffenderCharge> = mutableListOf()
+
+      @BeforeEach
+      internal fun createPrisonerAndCourtEventCharges() {
+        nomisDataBuilder.build {
+          staff = staff {
+            account {}
+          }
+          prisoner = offender(nomsId = "A1234AD") {
+            booking(agencyLocationId = "MDI") {
+              courtCase(reportingStaff = staff) {
+                chargeWithPropertyValue = offenderCharge(offenceCode = "RT88074", resultCode1 = IMPRISONMENT.code)
+                chargeWithoutPropertyValue = offenderCharge(offenceCode = "LG72004", resultCode1 = DISMISSED.code)
+                courtEvent(eventDateTime = LocalDateTime.parse("2021-01-02T10:00"), outcomeReasonCode = "2006") {
+                  courtEventCharge(
+                    resultCode1 = "2006",
+                    offenderCharge = chargeWithPropertyValue,
+                    propertyValue = BigDecimal.TEN,
+                  )
+                  courtEventCharge(
+                    resultCode1 = "2006",
+                    offenderCharge = chargeWithoutPropertyValue,
+                  )
+                }
+              }
+              // additional charges so there are enough court event charges with a property value to exercise paging
+              extraChargesNumberRange.forEach {
+                courtCase(reportingStaff = staff, caseSequence = it + 1) {
+                  val extraCharge = offenderCharge(offenceCode = "RT88074", resultCode1 = IMPRISONMENT.code)
+                  extraChargesWithPropertyValue.add(extraCharge)
+                  courtEvent(eventDateTime = LocalDateTime.parse("2021-01-02T10:00"), outcomeReasonCode = "2006") {
+                    courtEventCharge(
+                      resultCode1 = "2006",
+                      offenderCharge = extraCharge,
+                      propertyValue = BigDecimal.ONE,
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `will only return ids for court event charges with a property value`() {
+        webTestClient.get().uri {
+          it.path("/court-event-charges/ids")
+            .queryParam("size", "200")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(25)
+      }
+
+      @Test
+      fun `will return total count when size is 1`() {
+        webTestClient.get().uri {
+          it.path("/court-event-charges/ids")
+            .queryParam("size", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(25)
+          .jsonPath("numberOfElements").isEqualTo(1)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(25)
+          .jsonPath("size").isEqualTo(1)
+      }
+
+      @Test
+      fun `by default there will be a page size of 20`() {
+        webTestClient.get().uri {
+          it.path("/court-event-charges/ids")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(25)
+          .jsonPath("numberOfElements").isEqualTo(20)
+          .jsonPath("number").isEqualTo(0)
+          .jsonPath("totalPages").isEqualTo(2)
+          .jsonPath("size").isEqualTo(20)
+      }
+
+      @Test
+      fun `can retrieve the second page`() {
+        webTestClient.get().uri {
+          it.path("/court-event-charges/ids")
+            .queryParam("size", "20")
+            .queryParam("page", "1")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("totalElements").isEqualTo(25)
+          .jsonPath("numberOfElements").isEqualTo(5)
+          .jsonPath("number").isEqualTo(1)
+          .jsonPath("totalPages").isEqualTo(2)
+      }
+
+      @Test
+      fun `will order by offender charge id ascending`() {
+        webTestClient.get().uri {
+          it.path("/court-event-charges/ids")
+            .queryParam("size", "200")
+            .build()
+        }
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody()
+          .jsonPath("content[0].offenderChargeId").isEqualTo(chargeWithPropertyValue.id)
+          .jsonPath("content[24].offenderChargeId").isEqualTo(extraChargesWithPropertyValue.last().id)
+      }
+
+      @AfterEach
+      internal fun deletePrisoner() {
+        repository.deleteOffenders()
+        repository.delete(staff)
+      }
+    }
+  }
+
   @DisplayName("GET /prisoners/{offenderNo}/sentencing/court-cases/ids")
   @Nested
   inner class GetCourtCaseIdsForByOffenderForReconciliation {
