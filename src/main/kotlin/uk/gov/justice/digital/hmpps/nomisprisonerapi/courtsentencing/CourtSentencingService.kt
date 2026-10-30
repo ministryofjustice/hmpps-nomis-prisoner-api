@@ -1428,6 +1428,14 @@ class CourtSentencingService(
     ).toCourtEventCharge()
   }
 
+  fun getCourtEventChargeForMigration(chargeId: Long, eventId: Long): CourtEventChargeResponse {
+    val charge = getOffenderCharge(chargeId)
+    val appearance = findCourtAppearance(id = eventId)
+    return findCourtEventCharge(
+      CourtEventChargeId(offenderCharge = charge, courtEvent = appearance),
+    ).toCourtEventCharge()
+  }
+
   fun refreshCaseIdentifiers(offenderNo: String, caseId: Long, request: CaseIdentifierRequest) {
     val courtCase = courtCaseRepository.findByIdOrNull(caseId)
       ?: throw NotFoundException("Court case $caseId not found")
@@ -1732,6 +1740,9 @@ class CourtSentencingService(
   private fun findCourtAppearance(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
+  private fun findCourtAppearance(id: Long): CourtEvent = courtEventRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court appearance $id not found")
+
   private fun findCourtAppearanceWithLock(id: Long, offenderNo: String): CourtEvent = courtEventRepository.findByIdOrNullWaitForLock(id)
     ?: throw NotFoundException("Court appearance $id for $offenderNo not found")
 
@@ -1787,6 +1798,9 @@ class CourtSentencingService(
 
   private fun findCourtEventCharge(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNull(id)
     ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
+
+  private fun findCourtEventCharge(id: CourtEventChargeId): CourtEventCharge = courtEventChargeRepository.findByIdOrNull(id)
+    ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} not found")
 
   private fun findCourtEventChargeWithLock(id: CourtEventChargeId, offenderNo: String): CourtEventCharge = courtEventChargeRepository.findByIdOrNullWaitForLock(id)
     ?: throw NotFoundException("Court event charge with offenderChargeId ${id.offenderCharge.id} for $offenderNo not found")
