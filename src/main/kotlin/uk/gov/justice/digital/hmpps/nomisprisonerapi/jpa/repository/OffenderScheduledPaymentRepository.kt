@@ -7,18 +7,16 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPaymen
 
 @Repository
 interface OffenderScheduledPaymentRepository : JpaRepository<OffenderScheduledPayment, Long> {
-  fun findByOffenderId(offenderId: Long): List<OffenderScheduledPayment>
-
   @Query(
     """
       from OffenderScheduledPayment
       where 
         offender.id = :offenderId
-        and (endDate is null or endDate > current_date)  
+        and (:activeOnly = false or endDate is null or endDate > current_date)  
       order by id
     """,
   )
-  fun findActiveScheduledPayments(offenderId: Long): List<OffenderScheduledPayment>
+  fun findScheduledPayments(offenderId: Long, activeOnly: Boolean): List<OffenderScheduledPayment>
 
   @Query(
     """

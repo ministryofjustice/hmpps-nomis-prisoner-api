@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.MoneySupport
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledPaymentRepository
 import kotlin.collections.map
@@ -16,18 +17,18 @@ class ScheduledPaymentsService(
   private val offenderRepository: OffenderRepository,
   private val repository: OffenderScheduledPaymentRepository,
 ) {
-  fun getScheduledPayment(scheduledPaymentId: Long): PrisonerScheduledPaymentDto = repository.findByIdOrNull(scheduledPaymentId)
+  fun getScheduledPayment(scheduledPaymentId: Long): ScheduledPaymentDto = repository.findByIdOrNull(scheduledPaymentId)
     ?.toDto()
     ?: throw NotFoundException("Offender scheduled payment with id $scheduledPaymentId not found")
 
-  fun getScheduledPayments(prisonNumber: String, activeOnly: Boolean): List<PrisonerScheduledPaymentDto> {
+  fun getScheduledPayments(prisonNumber: String, activeOnly: Boolean): List<ScheduledPaymentDto> {
     val offender = offenderRepository.findRootByNomsId(prisonNumber)
       ?: throw NotFoundException("Offender $prisonNumber not found")
 
     return findScheduledPayments(offender.id, activeOnly)
   }
 
-  fun getScheduledPayments(rootOffenderId: Long, activeOnly: Boolean): List<PrisonerScheduledPaymentDto> {
+  fun getScheduledPayments(rootOffenderId: Long, activeOnly: Boolean): List<ScheduledPaymentDto> {
     if (!offenderRepository.existsById(rootOffenderId)) {
       throw NotFoundException("Offender with id $rootOffenderId not found")
     }
@@ -35,23 +36,23 @@ class ScheduledPaymentsService(
     return findScheduledPayments(rootOffenderId, activeOnly)
   }
 
-  fun findScheduledPayments(rootOffenderId: Long, activeOnly: Boolean): List<PrisonerScheduledPaymentDto> = if (activeOnly) {
-    repository.findActiveScheduledPayments(rootOffenderId).map { it.toDto() }
-  } else {
-    repository.findByOffenderId(rootOffenderId).map { it.toDto() }
-  }
+  fun findScheduledPayments(rootOffenderId: Long, activeOnly: Boolean): List<ScheduledPaymentDto> = repository.findScheduledPayments(rootOffenderId, activeOnly).map { it.toDto() }
 
   fun getActiveScheduledPaymentsCount(): ScheduledPaymentsCount = ScheduledPaymentsCount(repository.getActiveScheduledPaymentsCount())
 }
 
-fun OffenderScheduledPayment.toDto() = PrisonerScheduledPaymentDto(
+fun OffenderScheduledPayment.toDto() = ScheduledPaymentDto(
   id = this.id,
   prisonNumber = offender.nomsId,
   caseloadId = caseloadId,
   transactionType = transactionType,
   startDate = startDate,
   endDate = endDate,
-  paymentAmount = MoneySupport.poundsToPence(paymentAmount),
+  // TODO move to ScheduledPaymentProjection
+  subAccountCode = 2102,
+  amount = MoneySupport.poundsToPence(paymentAmount),
+  // TODO move to ScheduledPaymentProjection
+  dayOfWeek = WeekDay.MON,
   reference = referenceText,
   comment = commentText,
   createdBy = createUsername,
