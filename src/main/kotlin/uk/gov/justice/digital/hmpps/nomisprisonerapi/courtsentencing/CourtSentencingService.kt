@@ -342,6 +342,9 @@ class CourtSentencingService(
     ).map { CourtCaseIdResponse(it) }
   }
 
+  fun findCourtEventChargeIdsWithPropertyValue(pageRequest: Pageable): Page<CourtEventChargeIdResponse> = courtEventChargeRepository.findAllIdsWithPropertyValue(pageable = pageRequest)
+    .map { CourtEventChargeIdResponse(offenderChargeId = it.getOffenderChargeId(), eventId = it.getEventId()) }
+
   fun findCourtCaseIdsByOffender(offenderNo: String): List<Long> = courtCaseRepository.findCourtCaseIdsForOffender(
     offenderNo = offenderNo,
   )

@@ -2362,6 +2362,44 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   ): CourtEventChargeResponse = courtSentencingService.getCourtEventCharge(chargeId = chargeId, eventId = eventId, offenderNo = offenderNo)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/court-event-charges/ids")
+  @Operation(
+    summary = "get court event charge IDs that have a property value",
+    description = "Retrieves a paged list of court event charge ids where the property value is not null. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Pageable list of ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtEventChargeIdsWithPropertyValue(
+    @PageableDefault(size = 20)
+    @ParameterObject
+    pageRequest: Pageable,
+  ): Page<CourtEventChargeIdResponse> = courtSentencingService.findCourtEventChargeIdsWithPropertyValue(pageRequest = pageRequest)
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/court-cases/ids")
   @Operation(
     summary = "get court case IDs by filter",
@@ -2898,6 +2936,14 @@ data class CourtCaseRepairResponse(
 data class CourtCaseIdResponse(
   @Schema(description = "Court case Id")
   val caseId: Long,
+)
+
+@Schema(description = "court event charge id")
+data class CourtEventChargeIdResponse(
+  @Schema(description = "Offender Charge Id")
+  val offenderChargeId: Long,
+  @Schema(description = "Event Id")
+  val eventId: Long,
 )
 
 @Schema(description = "Create sentence response")
