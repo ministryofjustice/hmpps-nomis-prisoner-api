@@ -1,14 +1,13 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments
 
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.MoneySupport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledPaymentRepository
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ScheduledPaymentProjection
 import kotlin.collections.map
 
 @Service
@@ -17,7 +16,7 @@ class ScheduledPaymentsService(
   private val offenderRepository: OffenderRepository,
   private val repository: OffenderScheduledPaymentRepository,
 ) {
-  fun getScheduledPayment(scheduledPaymentId: Long): ScheduledPaymentDto = repository.findByIdOrNull(scheduledPaymentId)
+  fun getScheduledPayment(scheduledPaymentId: Long): ScheduledPaymentDto = repository.findScheduledPaymentById(scheduledPaymentId)
     ?.toDto()
     ?: throw NotFoundException("Offender scheduled payment with id $scheduledPaymentId not found")
 
@@ -41,18 +40,17 @@ class ScheduledPaymentsService(
   fun getActiveScheduledPaymentsCount(): ScheduledPaymentsCount = ScheduledPaymentsCount(repository.getActiveScheduledPaymentsCount())
 }
 
-fun OffenderScheduledPayment.toDto() = ScheduledPaymentDto(
+fun ScheduledPaymentProjection.toDto() = ScheduledPaymentDto(
   id = this.id,
-  prisonNumber = offender.nomsId,
+  prisonNumber = prisonNumber,
   caseloadId = caseloadId,
   transactionType = transactionType,
   startDate = startDate,
   endDate = endDate,
-  // TODO move to ScheduledPaymentProjection
+  // TODO get from transactionOperations - if possible
   subAccountCode = 2102,
   amount = MoneySupport.poundsToPence(paymentAmount),
-  // TODO move to ScheduledPaymentProjection
-  dayOfWeek = WeekDay.MON,
+  dayOfWeek = WeekDay.valueOf(weekDay),
   reference = referenceText,
   comment = commentText,
   createdBy = createUsername,

@@ -20,9 +20,10 @@ import java.time.LocalDate
 @WithMockAuthUser
 @TestInstance(PER_CLASS)
 class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
-  private lateinit var schedPay: OffenderScheduledPayment
+  private lateinit var schedPay1: OffenderScheduledPayment
   private lateinit var schedPay2: OffenderScheduledPayment
   private lateinit var schedPay3: OffenderScheduledPayment
+  private lateinit var schedPay4: OffenderScheduledPayment
   private var offender1Id: Long = 0
   private var offender2Id: Long = 0
   private var offender3Id: Long = 0
@@ -34,13 +35,15 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender1Id = offender {
         trustAccount()
-        schedPay = scheduledPayment(reference = "REF1", comment = "COMMENT1", endDate = LocalDate.now().plusMonths(2))
+        schedPay1 = scheduledPayment(reference = "REF1", comment = "COMMENT1", endDate = LocalDate.now().plusMonths(2))
       }.id
       offender2Id = offender(nomsId = "A1234BC").id
       offender3Id = offender(nomsId = "A6789CD") {
         trustAccount()
-        schedPay2 = scheduledPayment()
-        schedPay3 = scheduledPayment(startDate = twoMonthsAgo, endDate = yesterday)
+        schedPay2 = scheduledPayment(transactionType = "NEWS")
+        schedPay3 = scheduledPayment(caseloadId = "BXI", transactionType = "NEWS", startDate = LocalDate.now())
+        // Inactive
+        schedPay4 = scheduledPayment(caseloadId = "BXI", transactionType = "NEWS", startDate = twoMonthsAgo, endDate = yesterday)
         advance(informationNumber = "12341234-1", deductionPriority = 1)
       }.id
     }
@@ -92,7 +95,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .responseBody!!
 
       assertThat(payments).hasSize(1)
-      assertScheduledPayment(payments.single(), schedPay)
+      assertScheduledPayment1(payments)
     }
 
     @Test
@@ -117,10 +120,11 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(payments.size).isEqualTo(2)
-      assertThat(payments.map { it.id }).containsExactlyInAnyOrder(schedPay2.id, schedPay3.id)
-      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
-      assertScheduledPayment(payments.single { it.id == schedPay3.id }, schedPay3)
+      assertThat(payments.size).isEqualTo(3)
+      assertThat(payments.map { it.id }).containsExactlyInAnyOrder(schedPay2.id, schedPay3.id, schedPay4.id)
+      assertScheduledPayment2(payments)
+      assertScheduledPayment3(payments)
+      assertScheduledPayment4(payments)
     }
 
     @Test
@@ -134,8 +138,9 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(payments).hasSize(1)
-      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
+      assertThat(payments).hasSize(2)
+      assertScheduledPayment2(payments)
+      assertScheduledPayment3(payments)
     }
   }
 
@@ -180,7 +185,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .responseBody!!
 
       assertThat(payments).hasSize(1)
-      assertScheduledPayment(payments.single(), schedPay)
+      assertScheduledPayment1(payments)
     }
 
     @Test
@@ -205,10 +210,11 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(payments).hasSize(2)
-      assertThat(payments.map { it.id }).containsExactlyInAnyOrder(schedPay2.id, schedPay3.id)
-      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
-      assertScheduledPayment(payments.single { it.id == schedPay3.id }, schedPay3)
+      assertThat(payments).hasSize(3)
+      assertThat(payments.map { it.id }).containsExactlyInAnyOrder(schedPay2.id, schedPay3.id, schedPay4.id)
+      assertScheduledPayment2(payments)
+      assertScheduledPayment3(payments)
+      assertScheduledPayment4(payments)
     }
 
     @Test
@@ -222,8 +228,9 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(payments).hasSize(1)
-      assertScheduledPayment(payments.single { it.id == schedPay2.id }, schedPay2)
+      assertThat(payments).hasSize(2)
+      assertScheduledPayment2(payments)
+      assertScheduledPayment3(payments)
     }
   }
 
@@ -234,7 +241,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
     inner class Security {
       @Test
       fun `access forbidden when no role`() {
-        webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
+        webTestClient.get().uri("/finance/scheduled-payments/${schedPay1.id}")
           .headers(setAuthorisation(roles = listOf()))
           .exchange()
           .expectStatus().isForbidden
@@ -242,7 +249,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access forbidden with wrong role`() {
-        webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
+        webTestClient.get().uri("/finance/scheduled-payments/${schedPay1.id}")
           .headers(setAuthorisation(roles = listOf("ROLE_BANANAS")))
           .exchange()
           .expectStatus().isForbidden
@@ -250,7 +257,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
 
       @Test
       fun `access unauthorised with no auth token`() {
-        webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
+        webTestClient.get().uri("/finance/scheduled-payments/${schedPay1.id}")
           .exchange()
           .expectStatus().isUnauthorized
       }
@@ -258,7 +265,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
 
     @Test
     fun getScheduledPayment() {
-      val payment = webTestClient.get().uri("/finance/scheduled-payments/${schedPay.id}")
+      val payment = webTestClient.get().uri("/finance/scheduled-payments/${schedPay1.id}")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
         .exchange()
         .expectStatus()
@@ -267,7 +274,7 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertScheduledPayment(payment, schedPay)
+      assertScheduledPayment1(listOf(payment))
     }
 
     @Test
@@ -321,25 +328,55 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("activeCount").isEqualTo(2)
+        .jsonPath("activeCount").isEqualTo(3)
     }
   }
+
+  private fun assertScheduledPayment1(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
+    payment = payments.single { it.id == schedPay1.id },
+    expected = schedPay1,
+    accountCode = 2102,
+    dayOfWeek = WeekDay.TUE,
+  )
+
+  private fun assertScheduledPayment2(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
+    payment = payments.single { it.id == schedPay2.id },
+    expected = schedPay2,
+    accountCode = 2102,
+    dayOfWeek = WeekDay.MON,
+  )
+
+  private fun assertScheduledPayment3(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
+    payment = payments.single { it.id == schedPay3.id },
+    expected = schedPay3,
+    accountCode = 2102,
+    dayOfWeek = WeekDay.FRI,
+  )
+
+  private fun assertScheduledPayment4(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
+    payment = payments.single { it.id == schedPay4.id },
+    expected = schedPay4,
+    accountCode = 2102,
+    dayOfWeek = WeekDay.FRI,
+  )
 
   private fun assertScheduledPayment(
     payment: ScheduledPaymentDto,
     expected: OffenderScheduledPayment,
+    accountCode: Int,
+    dayOfWeek: WeekDay,
   ) {
     assertThat(payment.id).isEqualTo(expected.id)
     assertThat(payment.prisonNumber).isEqualTo(expected.offender.nomsId)
-    assertThat(payment.caseloadId).isEqualTo("MDI")
-    assertThat(payment.transactionType).isEqualTo("TELE")
-    assertThat(payment.amount).isEqualTo(245L)
+    assertThat(payment.caseloadId).isEqualTo(expected.caseloadId)
+    assertThat(payment.transactionType).isEqualTo(expected.transactionType)
+    assertThat(payment.amount).isEqualTo(MoneySupport.poundsToPence(expected.paymentAmount))
     assertThat(payment.startDate).isEqualTo(expected.startDate)
     assertThat(payment.endDate).isEqualTo(expected.endDate)
     assertThat(payment.reference).isEqualTo(expected.referenceText)
     assertThat(payment.comment).isEqualTo(expected.commentText)
     assertThat(payment.createdBy).isEqualTo("SA")
-    assertThat(payment.dayOfWeek).isEqualTo(WeekDay.MON)
-    assertThat(payment.subAccountCode).isEqualTo(2102)
+    assertThat(payment.dayOfWeek).isEqualTo(dayOfWeek)
+    assertThat(payment.subAccountCode).isEqualTo(accountCode)
   }
 }
