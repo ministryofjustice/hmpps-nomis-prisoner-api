@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 private const val SCHEDULED_PAYMENT_SELECT = """
       select
@@ -71,18 +70,4 @@ interface ScheduledPaymentProjection {
   val commentText: String?
   val createUsername: String
   val weekDay: String
-}
-interface ScheduledPaymentProjection2 {
-  val id: Long
-  val prisonNumber: String
-  val caseloadId: String
-  val transactionType: String
-  val startDate: LocalDateTime
-  val endDate: LocalDateTime?
-  val paymentAmount: BigDecimal
-  val referenceText: String?
-  val commentText: String?
-  val createUsername: String
-  val weekDay: String
-  val drAccountCode: Int
 }
