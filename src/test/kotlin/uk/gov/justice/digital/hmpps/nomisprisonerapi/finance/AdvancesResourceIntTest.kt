@@ -35,6 +35,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
   private lateinit var advance2: OffenderAdvance
   private lateinit var advance3: OffenderAdvance
   private lateinit var advance4: OffenderAdvance
+  private lateinit var advance12: OffenderAdvance
   private var offender1Id: Long = 0
   private var offender2Id: Long = 0
   private var offender3Id: Long = 0
@@ -48,27 +49,52 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender1Id = offender {
         trustAccount()
-        advance1 = advance(informationNumber = "10002000-1", deductionPriority = 1, advanceDate = advance1Date)
+        advance1 = advance(informationNumber = "10002000-10", deductionPriority = 1, advanceDate = advance1Date)
+        // Multiple advances with same amount and date - this tests to ensure we don't return duplicate
+        val advance11 = advance(informationNumber = "10002000-11", deductionPriority = 2, advanceDate = advance1Date)
+        // Partial write off
+        advance12 = advance(
+          informationNumber = "10002000-12",
+          deductionPriority = 3,
+          advanceDate = advance1Date,
+          writeOffAdjustmentAmount = BigDecimal.TWO,
+          deductionAmount = BigDecimal.ZERO,
+        )
+
         booking {
-          transaction(transactionId = 21, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance1Date)
+          transaction(transactionId = 21, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance1Date) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance1.deduction!!.deductionId)
+          }
+          transaction(transactionId = 25, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance1Date) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance11.deduction!!.deductionId)
+          }
+          transaction(transactionId = 26, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance1Date) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance12.deduction!!.deductionId)
+          }
         }
       }.id
       offender2Id = offender(nomsId = "A1234BC").id
       offender3Id = offender(nomsId = "A6789CD") {
         trustAccount()
-        advance2 = advance(informationNumber = "10002000-2", deductionPriority = 1, advanceDate = advance2Date)
+        advance2 = advance(informationNumber = "10002000-21", deductionPriority = 1, advanceDate = advance2Date)
         booking {
-          transaction(transactionId = 22, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance2Date)
+          transaction(transactionId = 22, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance2Date) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance2.deduction!!.deductionId)
+          }
         }
         // paid off
-        advance3 = advance(advanceAmount = BigDecimal.TWO, paymentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-3", deductionPriority = 2, advanceDate = advance3Date)
+        advance3 = advance(advanceAmount = BigDecimal.TWO, paymentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-31", deductionPriority = 2, advanceDate = advance3Date)
         booking {
-          transaction(transactionId = 23, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TWO, entryDate = advance3Date)
+          transaction(transactionId = 23, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TWO, entryDate = advance3Date) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance3.deduction!!.deductionId)
+          }
         }
         // written off
-        advance4 = advance(advanceAmount = BigDecimal.TWO, writeOffAdjustmentAmount = BigDecimal.TWO, deductionAmount = BigDecimal.ZERO, informationNumber = "10002000-4", deductionPriority = 3, advanceDate = advance4Date)
+        advance4 = advance(advanceAmount = BigDecimal.TWO, writeOffAdjustmentAmount = BigDecimal.TWO, deductionAmount = BigDecimal.ZERO, informationNumber = "10002000-41", deductionPriority = 3, advanceDate = advance4Date)
         booking {
-          transaction(transactionId = 24, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TWO, entryDate = advance4Date)
+          transaction(transactionId = 24, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TWO, entryDate = advance4Date) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance4.deduction!!.deductionId)
+          }
         }
         scheduledPayment()
       }.id
@@ -80,9 +106,6 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     repository.deleteAllTransactions()
     deleteOffenders()
   }
-
-  // TODO test for advances with same amount on same date (different createDatetime)
-  // TODO ensure return partial write offs (needed for migration - what status?)
 
   @Nested
   @DisplayName("GET /finance/prisoners/{prisonNumber}/advances")
@@ -124,8 +147,8 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(advances).hasSize(1)
-      advances.single().assertAdvance1()
+      assertThat(advances).hasSize(3)
+      advances.first().assertAdvance1()
     }
 
     @Test
@@ -212,8 +235,8 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(advances).hasSize(1)
-      advances.single().assertAdvance1()
+      assertThat(advances).hasSize(3)
+      advances.first().assertAdvance1()
     }
 
     @Test
@@ -334,6 +357,20 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun getPartialWriteOffAdvance() {
+      val advance = webTestClient.get().uri("/finance/advances/${advance12.id}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PrisonerAdvanceDto>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(advance.status).isEqualTo(AdvanceStatus.ACTIVE)
+    }
+
+    @Test
     fun getAdvanceDoesNotExist() {
       webTestClient.get().uri("/finance/advances/99999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -421,6 +458,20 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     }
 
     @Test
+    fun getPartialWriteOffAdvance() {
+      val advance = webTestClient.get().uri("/finance/advances/deduction-id/${advance12.deduction!!.deductionId}")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PrisonerAdvanceDto>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(advance.status).isEqualTo(AdvanceStatus.ACTIVE)
+    }
+
+    @Test
     fun getAdvanceDoesNotExist() {
       webTestClient.get().uri("/finance/advances/deduction-id/99999")
         .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -471,7 +522,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("activeCount").isEqualTo(2)
+        .jsonPath("activeCount").isEqualTo(3)
     }
   }
 
@@ -483,7 +534,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(advanceDate).isEqualTo(advance1Date)
     assertThat(repaymentAmount).isEqualTo(100L)
     assertThat(startDate).isEqualTo(LocalDate.now())
-    assertThat(informationNumber).isEqualTo("10002000-1")
+    assertThat(informationNumber).isEqualTo("10002000-10")
     assertThat(advanceCreateTransactionId).isEqualTo(21L)
     assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
     assertThat(outstandingBalance).isEqualTo(1000L)
@@ -503,7 +554,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(advanceDate).isEqualTo(advance2Date)
     assertThat(repaymentAmount).isEqualTo(100L)
     assertThat(startDate).isEqualTo(LocalDate.now())
-    assertThat(informationNumber).isEqualTo("10002000-2")
+    assertThat(informationNumber).isEqualTo("10002000-21")
     assertThat(advanceCreateTransactionId).isEqualTo(22L)
     assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
     assertThat(outstandingBalance).isEqualTo(1000L)
@@ -523,7 +574,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(advanceDate).isEqualTo(advance3Date)
     assertThat(repaymentAmount).isEqualTo(100L)
     assertThat(startDate).isEqualTo(LocalDate.now())
-    assertThat(informationNumber).isEqualTo("10002000-3")
+    assertThat(informationNumber).isEqualTo("10002000-31")
     assertThat(advanceCreateTransactionId).isEqualTo(23L)
     assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
     assertThat(outstandingBalance).isEqualTo(0L)
@@ -543,7 +594,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(advanceDate).isEqualTo(advance4Date)
     assertThat(repaymentAmount).isEqualTo(100L)
     assertThat(startDate).isEqualTo(LocalDate.now())
-    assertThat(informationNumber).isEqualTo("10002000-4")
+    assertThat(informationNumber).isEqualTo("10002000-41")
     assertThat(advanceCreateTransactionId).isEqualTo(24L)
     assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
     assertThat(outstandingBalance).isEqualTo(0L)

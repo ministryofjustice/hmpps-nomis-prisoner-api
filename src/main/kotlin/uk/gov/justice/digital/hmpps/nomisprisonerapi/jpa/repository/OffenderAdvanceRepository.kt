@@ -28,12 +28,12 @@ private const val ADVANCE_STATUS_SELECT = """
     ot.txn_id AS advanceCreateTransactionId,
     CASE
       WHEN od.adjustment_reason_code IN ('WRT', 'P')
+        AND od.max_total_amount <= NVL(od.deduction_amount, 0) + NVL(od.adjustment_amount, 0)
         THEN 'WRITTEN_OFF'
       WHEN od.max_total_amount = NVL(od.deduction_amount, 0)
         AND NVL(od.adjustment_amount, 0) = 0
         THEN 'REPAID'
-      WHEN od.max_total_amount >
-        NVL(od.deduction_amount, 0) + NVL(od.adjustment_amount, 0)
+      WHEN od.max_total_amount > NVL(od.deduction_amount, 0) + NVL(od.adjustment_amount, 0)
         THEN 'ACTIVE'
       ELSE 'OTHER'
     END AS status
@@ -44,7 +44,11 @@ private const val ADVANCE_STATUS_SELECT = """
     AND ot.txn_type = 'ADV'
     AND ot.txn_posting_type = 'CR'
     AND ot.txn_entry_amount = opp.advance_amount
-    AND ot.txn_entry_date = opp.advance_date"""
+    AND ot.txn_entry_date = opp.advance_date
+  JOIN gl_transactions gl on gl.txn_id = ot.txn_id
+    AND gl.txn_post_usage = 'CR'
+    AND gl.deduction_id = od.offender_deduction_id
+"""
 
 private const val ADVANCE_BASE_CONDITIONS = """
   opp.payment_amount > 0
