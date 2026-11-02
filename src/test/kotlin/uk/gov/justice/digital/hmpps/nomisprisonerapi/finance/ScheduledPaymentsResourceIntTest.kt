@@ -335,14 +335,14 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
   private fun assertScheduledPayment1(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay1.id },
     expected = schedPay1,
-    accountCode = 2102,
+    accountCode = 2101,
     dayOfWeek = WeekDay.TUE,
   )
 
   private fun assertScheduledPayment2(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay2.id },
     expected = schedPay2,
-    accountCode = 2102,
+    accountCode = 2103,
     dayOfWeek = WeekDay.MON,
   )
 
