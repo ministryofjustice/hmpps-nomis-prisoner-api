@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.movements.personlocation.offender
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
@@ -37,6 +38,24 @@ class OffenderPersonLocationsService(
             .map { it.toPersonLocationMovement() },
         )
       },
+    )
+  }
+
+  fun getBookingPersonLocations(bookingId: Long): BookingPersonLocations {
+    val booking = offenderBookingRepository.findByIdOrNull(bookingId)
+      ?: throw NotFoundException("Offender booking $bookingId not found")
+
+    // Loads TAP movements with their schedules and addresses in one go (the entity associations are eager) so the
+    // booking's movements below are resolved from the persistence context rather than one query per movement
+    tapMovementOutRepository.findAllByOffenderBooking_BookingId(bookingId)
+    tapMovementInRepository.findAllByOffenderBooking_BookingId(bookingId)
+
+    return BookingPersonLocations(
+      booking = booking.toPersonLocationBooking(),
+      movements = booking.externalMovements
+        .filterNot { it.isIgnored() }
+        .sortedBy { it.id.sequence }
+        .map { it.toPersonLocationMovement() },
     )
   }
 }

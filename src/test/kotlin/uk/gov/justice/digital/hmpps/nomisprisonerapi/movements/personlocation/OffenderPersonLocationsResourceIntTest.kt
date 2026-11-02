@@ -956,6 +956,151 @@ class OffenderPersonLocationsResourceIntTest(
     }
   }
 
+  @Nested
+  inner class GetBookingPersonLocations {
+
+    @Nested
+    inner class HappyPath {
+      private lateinit var firstBooking: OffenderBooking
+      private lateinit var secondBooking: OffenderBooking
+
+      @BeforeEach
+      fun setUp() {
+        nomisDataBuilder.build {
+          offender = offender {
+            firstBooking = booking(bookingBeginDate = twoDaysAgo, bookingSequence = 2) {
+              release(date = yesterday)
+            }
+            secondBooking = booking(bookingBeginDate = now, bookingSequence = 1) {
+              courtMovementOut(date = now.plusMinutes(1))
+            }
+          }
+        }
+      }
+
+      @Test
+      fun `should return the first booking`() {
+        webTestClient.getBookingPersonLocationsOk(firstBooking.bookingId)
+          .apply {
+            assertThat(booking.latestBooking).isFalse
+            assertThat(booking.activeBooking).isFalse
+            assertThat(booking.bookingBeginTime).isEqualTo("$twoDaysAgo")
+            assertThat(booking.bookingEndTime).isEqualTo("${yesterday.truncatedTo(ChronoUnit.DAYS)}")
+            assertThat(movements.map { it.movementType }).containsExactly(MovementType.ADM, MovementType.REL)
+            assertThat(movements.map { it.movementTime }).containsExactly(twoDaysAgo, yesterday)
+          }
+      }
+
+      @Test
+      fun `should return the second booking`() {
+        webTestClient.getBookingPersonLocationsOk(secondBooking.bookingId)
+          .apply {
+            assertThat(booking.latestBooking).isTrue
+            assertThat(booking.activeBooking).isTrue
+            assertThat(booking.bookingBeginTime).isEqualTo("$now")
+            assertThat(booking.bookingEndTime).isNull()
+            assertThat(movements.map { it.movementType }).containsExactly(MovementType.ADM, MovementType.CRT)
+            assertThat(movements.map { it.movementTime }).containsExactly(now, now.plusMinutes(1))
+          }
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `should return not found for unknown booking ID`() {
+        webTestClient.getBookingPersonLocations(bookingId = 99999)
+          .expectStatus().isNotFound
+          .expectBody().jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Offender booking 99999 not found")
+          }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `should return unauthorised for missing token`() {
+        webTestClient.get()
+          .uri("/movements/booking/12345/person-locations")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+
+      @Test
+      fun `should return forbidden for missing role`() {
+        webTestClient.get()
+          .uri("/movements/booking/12345/person-locations")
+          .headers(setAuthorisation())
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `should return forbidden for wrong role`() {
+        webTestClient.get()
+          .uri("/movements/booking/12345/person-locations")
+          .headers(setAuthorisation("ROLE_INVALID"))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+    }
+
+    @Nested
+    inner class QueryPerformance {
+
+      @Test
+      fun `should not run additional queries for multiple movements (no N+1 queries)`() {
+        buildOffender(movementCount = 1)
+        val statementsForOneMovement = getPreparedStatements()
+        repository.deleteOffenders()
+
+        buildOffender(movementCount = 10)
+        val statementsForTenMovements = getPreparedStatements()
+
+        assertThat(statementsForTenMovements - statementsForOneMovement)
+          .withFailMessage(
+            "Expected the query count to stay roughly constant as the number of movements grows " +
+              "(1 took $statementsForOneMovement queries, 10 took $statementsForTenMovements queries) - " +
+              "this looks like an N+1 query problem.",
+          )
+          .isLessThanOrEqualTo(2)
+      }
+
+      private fun buildOffender(movementCount: Int) {
+        nomisDataBuilder.build {
+          offender = offender {
+            val addresses = (0 until movementCount).map { address(street = "Street $it", postcode = "S$it 1AA") }
+            booking = booking(bookingBeginDate = twoDaysAgo) {
+              repeat(movementCount) {
+                tapApplication(toAddress = addresses[it]) {
+                  tapScheduleOut(fromPrison = "BXI", toAddress = addresses[it], eventDate = twoDaysAgo.toLocalDate()) {
+                    tapMovementOut(date = twoDaysAgo.plusMinutes(it * 10L))
+                    tapScheduleIn(toPrison = "BXI") {
+                      tapMovementIn(date = twoDaysAgo.plusMinutes(it * 10L + 5))
+                    }
+                  }
+                }
+                tapMovement(toAgency = "HAZLWD", date = yesterday.plusMinutes(it * 10L), returnDate = yesterday.plusMinutes(it * 10L + 5))
+                courtMovement(date = yesterday.plusMinutes(it * 10L + 6), returnDate = yesterday.plusMinutes(it * 10L + 7))
+              }
+            }
+          }
+        }
+      }
+
+      private fun getPreparedStatements(): Long {
+        val statistics = entityManager.entityManagerFactory.unwrap(SessionFactory::class.java).statistics
+        statistics.isStatisticsEnabled = true
+        statistics.clear()
+
+        webTestClient.getBookingPersonLocationsOk()
+
+        return statistics.prepareStatementCount
+      }
+    }
+  }
+
   private fun BookingPersonLocations.movementWithSeq(sequence: Int) = movements.single { it.sequence == sequence }
 
   private fun WebTestClient.getOffenderPersonLocations(
@@ -970,4 +1115,17 @@ class OffenderPersonLocationsResourceIntTest(
   ) = getOffenderPersonLocations(offenderNo)
     .expectStatus().isOk
     .expectBodyResponse<OffenderPersonLocationsResponse>()
+
+  private fun WebTestClient.getBookingPersonLocations(
+    bookingId: Long = booking.bookingId,
+  ) = get()
+    .uri("/movements/booking/$bookingId/person-locations")
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+    .exchange()
+
+  private fun WebTestClient.getBookingPersonLocationsOk(
+    bookingId: Long = booking.bookingId,
+  ) = getBookingPersonLocations(bookingId)
+    .expectStatus().isOk
+    .expectBodyResponse<BookingPersonLocations>()
 }
