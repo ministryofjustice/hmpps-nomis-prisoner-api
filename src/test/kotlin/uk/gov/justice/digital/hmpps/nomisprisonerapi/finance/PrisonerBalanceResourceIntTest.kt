@@ -29,6 +29,14 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender()
       id1 = offender(nomsId = "A1234BC") {
+        trustAccount()
+        val prisonerAdvance = advance(
+          advanceAmount = BigDecimal.TEN,
+          advanceDate = LocalDate.parse("2026-02-02"),
+          writeOffAdjustmentAmount = null,
+          deductionAmount = BigDecimal.TWO,
+          deductionPriority = 1,
+        )
         booking {
           transaction(transactionId = 45678, subAccountType = SubAccountType.SAV, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-01")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 3, accountCode = 2103, entryTime = LocalTime.parse("11:23:54"))
@@ -43,10 +51,14 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
           transaction(transactionId = 66666, subAccountType = SubAccountType.SPND, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-02")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, entryTime = LocalTime.parse("09:20:01"))
           }
-          transaction(transactionId = 77777, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = LocalDate.parse("2026-02-02"))
+          transaction(transactionId = 77777, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = LocalDate.parse("2026-02-02")) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = prisonerAdvance.deduction!!.deductionId)
+          }
+          transaction(transactionId = 77778, subAccountType = SubAccountType.SPND, transactionType = "DED", entryAmount = BigDecimal.TWO, entryDate = LocalDate.parse("2026-02-03")) {
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = prisonerAdvance.deduction!!.deductionId)
+          }
         }
 
-        trustAccount()
         trustAccount(caseloadId = "LEI", currentBalance = BigDecimal.valueOf(12.50)) {
           subAccount(accountCode = 2102, balance = BigDecimal.valueOf(11.25), lastTransactionId = 45678)
           subAccount(accountCode = 2103, balance = BigDecimal.valueOf(1.25), lastTransactionId = 45678)
@@ -55,14 +67,6 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
           subAccount(accountCode = 2101, balance = BigDecimal.ZERO, lastTransactionId = 55555)
           subAccount(accountCode = 2102, balance = BigDecimal.valueOf(-1.50), holdBalance = BigDecimal.ZERO, lastTransactionId = 66666)
         }
-
-        advance(
-          advanceAmount = BigDecimal.TEN,
-          advanceDate = LocalDate.parse("2026-02-02"),
-          writeOffAdjustmentAmount = null,
-          deductionAmount = BigDecimal.TWO,
-          deductionPriority = 1,
-        )
       }.id
       id2 = offender(nomsId = "B2345CD") {
         booking {
@@ -920,9 +924,11 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[0].balance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[0].holdBalance).isEqualTo(BigDecimal.ZERO)
         assertThat(accounts[1].accountCode).isEqualTo(2102)
+        assertThat(advances).hasSize(1)
         assertThat(advances[0].advanceAmount).isEqualTo(1000)
         assertThat(advances[0].advanceDate).isEqualTo(LocalDate.parse("2026-02-02"))
         assertThat(advances[0].deductionAmount).isEqualTo(200)
+        assertThat(advances[0].advanceCreateTransactionId).isEqualTo(77777L)
 
         // 11.25 - 1.5
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(9.75))
