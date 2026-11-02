@@ -30,7 +30,7 @@ data class TransactionOperationId(
 @Immutable
 @Table(name = "TRANSACTION_OPERATIONS")
 class TransactionOperation(
-  // There is no primary key on this table so have used the data to determine the primary key.
+  // There is no primary key on this table so have used the data to determine a unique primary key.
   @EmbeddedId
   val id: TransactionOperationId,
 
