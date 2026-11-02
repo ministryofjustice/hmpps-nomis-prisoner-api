@@ -95,7 +95,7 @@ class ScheduledPaymentsResource(
     @Schema(description = "Prison number aka noms id / offender id display", example = "A1234BC")
     @PathVariable
     prisonNumber: String,
-    @Schema(description = "whether to return just active advances", example = "true", defaultValue = "false")
+    @Schema(description = "whether to return just active scheduled payments", example = "true", defaultValue = "false")
     @RequestParam
     activeOnly: Boolean = false,
   ): List<ScheduledPaymentDto> = service.getScheduledPayments(prisonNumber, activeOnly)
@@ -118,7 +118,7 @@ class ScheduledPaymentsResource(
     @Schema(description = "The root offender id", example = "A1234BC")
     @PathVariable
     rootOffenderId: Long,
-    @Schema(description = "whether to return just active advances", example = "true", defaultValue = "false")
+    @Schema(description = "whether to return just active scheduled payments", example = "true", defaultValue = "false")
     @RequestParam
     activeOnly: Boolean = false,
   ): List<ScheduledPaymentDto> = service.getScheduledPayments(rootOffenderId, activeOnly)

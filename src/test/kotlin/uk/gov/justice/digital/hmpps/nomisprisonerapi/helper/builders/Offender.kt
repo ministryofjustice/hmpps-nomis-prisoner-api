@@ -140,7 +140,7 @@ interface OffenderDsl {
 
   @OffenderPaymentProfileDslMarker
   fun scheduledPayment(
-    caseloadId: String = "MDI",
+    caseloadId: String = "LEI",
     transactionType: String = "TELE",
     startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
