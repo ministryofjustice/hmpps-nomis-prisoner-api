@@ -55,4 +55,40 @@ class OffenderPersonLocationsResource(
   fun getOffenderPersonLocations(
     @Schema(description = "Offender number (NOMS ID)", example = "A1234BC") @PathVariable offenderNo: String,
   ): OffenderPersonLocationsResponse? = service.getOffenderPersonLocations(offenderNo)
+
+  @GetMapping("/movements/booking/{bookingId}/person-locations")
+  @Operation(
+    summary = "Get booking and movements for a single booking",
+    description = "Get booking and movements for a single booking. This is used for reconciliation. Requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Person locations returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires role NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Booking not found",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getBookingPersonLocations(
+    @Schema(description = "Booking ID", example = "12345") @PathVariable bookingId: Long,
+  ): BookingPersonLocations? = service.getBookingPersonLocations(bookingId)
 }
