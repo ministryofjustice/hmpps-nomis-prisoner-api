@@ -47,8 +47,7 @@ fun ScheduledPaymentProjection.toDto() = ScheduledPaymentDto(
   transactionType = transactionType,
   startDate = startDate,
   endDate = endDate,
-  // TODO get from transactionOperations - if possible
-  subAccountCode = 2102,
+  subAccountCode = drAccountCode,
   amount = MoneySupport.poundsToPence(paymentAmount),
   dayOfWeek = WeekDay.valueOf(weekDay),
   reference = referenceText,

@@ -19,14 +19,20 @@ private const val SCHEDULED_PAYMENT_SELECT = """
         osc.referenceText as referenceText,
         osc.commentText as commentText,
         osc.createUsername as createUsername,
-        cpp.weekDay as weekDay
+        cpp.weekDay as weekDay,
+        trp.id.drAccountCode as drAccountCode
       from OffenderScheduledPayment osc
       join CaseloadPaymentProfile cpp
         on osc.caseloadId = cpp.caseloadId
         and cpp.paymentMode = 'SCHEDPAY'
         and osc.transactionType = cpp.transactionType
         and cpp.active = true
+      join TransactionOperation trp
+        on trp.id.caseloadId = osc.caseloadId
+        and trp.id.transactionType = osc.transactionType
+        and trp.id.moduleName = 'OTDRDTFU'
 """
+// Note. OTDRDTFU is the module name used in the batch job for the scheduled payments
 
 @Repository
 interface OffenderScheduledPaymentRepository : JpaRepository<OffenderScheduledPayment, Long> {
@@ -70,4 +76,5 @@ interface ScheduledPaymentProjection {
   val commentText: String?
   val createUsername: String
   val weekDay: String
+  val drAccountCode: Int
 }
