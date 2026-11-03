@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -23,7 +22,6 @@ private const val ADVANCE_STATUS_SELECT = """
     opp.create_datetime AS createDatetime,
     od.information_number AS informationNumber,
     od.deduction_amount AS deductionAmount,
-    od.adjustment_reason_code AS adjustmentReason,
     od.adjustment_amount AS adjustmentAmount,
     ot.txn_id AS advanceCreateTransactionId,
     (
@@ -145,7 +143,6 @@ interface OffenderAdvanceWithStatus {
   val createDatetime: LocalDateTime
   val informationNumber: String
   val deductionAmount: BigDecimal?
-  val adjustmentReason: AdjustmentReason?
   val adjustmentAmount: BigDecimal?
   val status: String
   val advanceCreateTransactionId: Long
