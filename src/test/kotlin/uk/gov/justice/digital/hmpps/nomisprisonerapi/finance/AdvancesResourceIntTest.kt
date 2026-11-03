@@ -15,7 +15,6 @@ import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.advances.AdvanceStatus
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.advances.PrisonerAdvanceDto
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjustmentReason
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
@@ -538,7 +537,6 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(outstandingBalance).isEqualTo(1000L)
     assertThat(status).isEqualTo(AdvanceStatus.ACTIVE)
     assertThat(deductionAmount).isEqualTo(0L)
-    assertThat(adjustmentReason).isNull()
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance1.createDatetime)
@@ -558,7 +556,6 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(outstandingBalance).isEqualTo(1000L)
     assertThat(status).isEqualTo(AdvanceStatus.ACTIVE)
     assertThat(deductionAmount).isEqualTo(0L)
-    assertThat(adjustmentReason).isNull()
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance2.createDatetime)
@@ -578,7 +575,6 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(outstandingBalance).isEqualTo(0L)
     assertThat(status).isEqualTo(AdvanceStatus.REPAID)
     assertThat(deductionAmount).isEqualTo(200L)
-    assertThat(adjustmentReason).isNull()
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance3.createDatetime)
@@ -598,7 +594,6 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(outstandingBalance).isEqualTo(0L)
     assertThat(status).isEqualTo(AdvanceStatus.WRITTEN_OFF)
     assertThat(deductionAmount).isEqualTo(0L)
-    assertThat(adjustmentReason).isEqualTo(AdjustmentReason.WRT)
     assertThat(adjustmentAmount).isEqualTo(200L)
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance4.createDatetime)
