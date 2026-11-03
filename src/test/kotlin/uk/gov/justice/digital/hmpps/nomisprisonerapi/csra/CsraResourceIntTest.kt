@@ -631,12 +631,12 @@ class CsraResourceIntTest : IntegrationTestBase() {
       fun `can get multiple CSRAs for a prisoner`() {
         nomisDataBuilder.build {
           offender(nomsId = "A2222BB") {
-            booking(bookingSequence = 2) {
+            booking(bookingSequence = 1) {
               assessment(username = "BILLSTAFF") {
                 assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I)
               }
             }
-            booking(bookingSequence = 1) {
+            booking(bookingSequence = 2) {
               assessment(sequence = 1, username = "BILLSTAFF") {
                 assessmentItem(1, RESPONSE_PREVIOUS_CONVICTIONS_D)
               }
@@ -666,17 +666,17 @@ class CsraResourceIntTest : IntegrationTestBase() {
             with(csras[0]) {
               assertThat(assessmentStaffId).isEqualTo(staff.id)
               assertThat(comment).isEqualTo("a-comment")
-              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("S")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("I")
             }
             with(csras[1]) {
               assertThat(assessmentStaffId).isEqualTo(staff.id)
               assertThat(comment).isEqualTo("a-comment")
-              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("D")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("S")
             }
             with(csras[2]) {
               assertThat(assessmentStaffId).isEqualTo(staff.id)
               assertThat(comment).isEqualTo("a-comment")
-              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("I")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("D")
             }
           }
       }
@@ -748,7 +748,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
             booking(bookingSequence = 2) {
               assessment(
                 sequence = 99,
-                assessmentDate = LocalDate.parse("2026-12-20"),
+                assessmentDate = LocalDate.parse("2025-12-29"),
                 assessmentStatus = AssessmentStatusType.A,
                 reviewLevel = AssessmentLevel.HI,
                 username = "BILLSTAFF",

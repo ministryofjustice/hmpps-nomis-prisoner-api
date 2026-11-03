@@ -22,7 +22,7 @@ interface OffenderAssessmentRepository : JpaRepository<OffenderAssessment, Offen
       join oa.id.offenderBooking ob
       where ob.offender.nomsId = :offenderNo
         and oa.assessment.isCellSharing = true
-      order by ob.bookingSequence asc, oa.assessmentDate desc, oa.id.sequence desc
+      order by oa.assessmentDate desc, ob.bookingSequence asc, oa.id.sequence desc
   """,
   )
   @EntityGraph(type = EntityGraphType.FETCH, value = "offender-csra")
@@ -39,7 +39,7 @@ interface OffenderAssessmentRepository : JpaRepository<OffenderAssessment, Offen
           (oa.overrideLevel is null or oa.overrideLevel = 'PEND') and
           (oa.reviewLevel is null or oa.reviewLevel = 'PEND')
         )
-      order by ob.bookingSequence asc, oa.assessmentDate desc, oa.id.sequence desc
+      order by oa.assessmentDate desc, ob.bookingSequence asc, oa.id.sequence desc
   """,
   )
   fun findValidCsras(offenderNo: String, limit: Limit): List<OffenderAssessment>
