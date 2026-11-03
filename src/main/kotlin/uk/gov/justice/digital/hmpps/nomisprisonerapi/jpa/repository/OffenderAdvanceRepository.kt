@@ -32,7 +32,7 @@ private const val ADVANCE_STATUS_SELECT = """
     WHERE dedgl.offender_id = opp.offender_id
       AND dedgl.txn_type in ('ADV', 'DED')
       AND dedgl.deduction_id = od.offender_deduction_id
-  ) AS lastDeductionTransactionDateTime,
+  ) AS lastDeductionTxnDateTime,
     CASE
       WHEN od.adjustment_reason_code IN ('WRT', 'P')
         AND od.max_total_amount <= NVL(od.deduction_amount, 0) + NVL(od.adjustment_amount, 0)
@@ -149,5 +149,5 @@ interface OffenderAdvanceWithStatus {
   val adjustmentAmount: BigDecimal?
   val status: String
   val advanceCreateTransactionId: Long
-  val lastDeductionTransactionDateTime: LocalDateTime
+  val lastDeductionTxnDateTime: LocalDateTime
 }

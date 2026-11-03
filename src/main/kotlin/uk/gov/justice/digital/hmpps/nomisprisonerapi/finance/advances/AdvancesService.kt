@@ -67,7 +67,7 @@ fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
   adjustmentAmount = adjustmentAmount?.let { MoneySupport.poundsToPence(it) },
   status = AdvanceStatus.valueOf(status),
   advanceCreateTransactionId = advanceCreateTransactionId,
-  lastTransactionTimestamp = lastDeductionTransactionDateTime,
+  lastTransactionTimestamp = lastDeductionTxnDateTime,
   createdBy = createdBy,
   createDatetime = createDatetime,
 )
