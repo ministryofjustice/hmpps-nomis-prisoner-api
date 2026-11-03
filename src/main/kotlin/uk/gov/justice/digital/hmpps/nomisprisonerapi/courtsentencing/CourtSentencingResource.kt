@@ -2471,6 +2471,59 @@ class CourtSentencingResource(private val courtSentencingService: CourtSentencin
   ): Page<CourtEventChargeIdResponse> = courtSentencingService.findCourtEventChargeIdsWithPropertyValue(pageRequest = pageRequest)
 
   @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
+  @GetMapping("/court-event-charges/ids/all-from-id")
+  @Operation(
+    summary = "get court event charge IDs that have a property value, using keyset pagination",
+    description = """Gets the specified number of court event charge ids (that have a property value) starting after the given offenderChargeId/eventId.
+      Clients can iterate through all ids by calling this endpoint using the offenderChargeId/eventId from the last call (omit for first call).
+      Iteration ends when the returned courtEventChargeIds list has size less than the requested page size.
+      This is far more performant than the equivalent offset-paged /court-event-charges/ids endpoint for large tables since it avoids
+      a COUNT query and the cost of skipping rows via OFFSET grows with each page.
+      Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW.""",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "list of court event charge ids are returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint when role ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW not present",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getCourtEventChargeIdsWithPropertyValueFromId(
+    @Schema(description = "If supplied get court event charges starting after this offender charge id", required = false, example = "1555999")
+    @RequestParam(value = "offenderChargeId", defaultValue = "0")
+    offenderChargeId: Long,
+    @Schema(description = "If supplied get court event charges starting after this event id (only used in conjunction with offenderChargeId)", required = false, example = "1555999")
+    @RequestParam(value = "eventId", defaultValue = "0")
+    eventId: Long,
+    @Schema(description = "Number of court event charges to get", required = false, defaultValue = "20")
+    @RequestParam(value = "pageSize", defaultValue = "20")
+    pageSize: Int,
+  ): CourtEventChargeIdsWithLast = courtSentencingService.findCourtEventChargeIdsWithPropertyValueFromId(
+    offenderChargeId = offenderChargeId,
+    eventId = eventId,
+    pageSize = pageSize,
+  )
+
+  @PreAuthorize("hasRole('ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW')")
   @GetMapping("/court-cases/ids")
   @Operation(
     summary = "get court case IDs by filter",
@@ -3015,6 +3068,16 @@ data class CourtEventChargeIdResponse(
   val offenderChargeId: Long,
   @Schema(description = "Event Id")
   val eventId: Long,
+)
+
+@Schema(description = "court event charge ids retrieved using keyset pagination, with the last ids seen")
+data class CourtEventChargeIdsWithLast(
+  @Schema(description = "The court event charge ids found, in ascending offenderChargeId/eventId order")
+  val courtEventChargeIds: List<CourtEventChargeIdResponse>,
+  @Schema(description = "The last offenderChargeId seen - pass this back in on the next call")
+  val lastOffenderChargeId: Long,
+  @Schema(description = "The last eventId seen - pass this back in on the next call")
+  val lastEventId: Long,
 )
 
 @Schema(description = "Create sentence response")
