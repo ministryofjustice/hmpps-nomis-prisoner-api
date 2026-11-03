@@ -38,6 +38,30 @@ interface CourtEventChargeRepository : JpaRepository<CourtEventCharge, CourtEven
     """,
   )
   fun findAllIdsWithPropertyValue(pageable: Pageable): Page<CourtEventChargeIdProjection>
+
+  // keyset (seek) pagination - avoids the expensive COUNT query and increasingly slow OFFSET scans
+  // that findAllIdsWithPropertyValue incurs on a large table. Callers should iterate by passing
+  // the last offenderChargeId/eventId seen (0, 0 for the first call) until fewer than pageSize rows
+  // are returned.
+  @Query(
+    """
+      select * from (
+        select
+          OFFENDER_CHARGE_ID as offenderChargeId,
+          EVENT_ID as eventId
+        from COURT_EVENT_CHARGES
+        where PROPERTY_VALUE is not null
+          and (
+            OFFENDER_CHARGE_ID > :offenderChargeId
+            or (OFFENDER_CHARGE_ID = :offenderChargeId and EVENT_ID > :eventId)
+          )
+        order by OFFENDER_CHARGE_ID, EVENT_ID
+      )
+      where rownum <= :pageSize
+    """,
+    nativeQuery = true,
+  )
+  fun findAllIdsWithPropertyValueFromId(offenderChargeId: Long, eventId: Long, pageSize: Int): List<CourtEventChargeIdProjection>
 }
 
 interface CourtEventChargeIdProjection {

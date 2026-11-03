@@ -345,6 +345,19 @@ class CourtSentencingService(
   fun findCourtEventChargeIdsWithPropertyValue(pageRequest: Pageable): Page<CourtEventChargeIdResponse> = courtEventChargeRepository.findAllIdsWithPropertyValue(pageable = pageRequest)
     .map { CourtEventChargeIdResponse(offenderChargeId = it.getOffenderChargeId(), eventId = it.getEventId()) }
 
+  fun findCourtEventChargeIdsWithPropertyValueFromId(offenderChargeId: Long, eventId: Long, pageSize: Int): CourtEventChargeIdsWithLast = courtEventChargeRepository.findAllIdsWithPropertyValueFromId(
+    offenderChargeId = offenderChargeId,
+    eventId = eventId,
+    pageSize = pageSize,
+  ).map { CourtEventChargeIdResponse(offenderChargeId = it.getOffenderChargeId(), eventId = it.getEventId()) }
+    .let { ids ->
+      CourtEventChargeIdsWithLast(
+        courtEventChargeIds = ids,
+        lastOffenderChargeId = ids.lastOrNull()?.offenderChargeId ?: offenderChargeId,
+        lastEventId = ids.lastOrNull()?.eventId ?: eventId,
+      )
+    }
+
   fun findCourtCaseIdsByOffender(offenderNo: String): List<Long> = courtCaseRepository.findCourtCaseIdsForOffender(
     offenderNo = offenderNo,
   )
