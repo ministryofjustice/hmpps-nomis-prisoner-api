@@ -12,25 +12,34 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 
 @Repository
 interface OffenderAssessmentRepository : JpaRepository<OffenderAssessment, OffenderAssessmentId> {
+
   @Query("select coalesce(max(id.sequence), 0) + 1 from OffenderAssessment where id.offenderBooking = :offenderBooking")
   fun getNextSequence(offenderBooking: OffenderBooking): Int
 
-  @Suppress("ktlint:standard:function-naming")
-  @EntityGraph(type = EntityGraphType.FETCH, value = "offender-csra")
-  fun findById_OffenderBooking_Offender_NomsIdAndAssessment_AssessmentIdIn(offenderNo: String, assessmentIds: List<Long>): List<OffenderAssessment>
-
-  @Suppress("ktlint:standard:function-naming")
   @Query(
     """
     select oa from OffenderAssessment oa
-      where oa.id.offenderBooking.offender.nomsId = :offenderNo
+      join oa.id.offenderBooking ob
+      where ob.offender.nomsId = :offenderNo
+        and oa.assessment.isCellSharing = true
+      order by oa.assessmentDate desc, ob.bookingSequence asc, oa.id.sequence desc
+  """,
+  )
+  @EntityGraph(type = EntityGraphType.FETCH, value = "offender-csra")
+  fun findCsras(offenderNo: String): List<OffenderAssessment>
+
+  @Query(
+    """
+    select oa from OffenderAssessment oa
+      join oa.id.offenderBooking ob
+      where ob.offender.nomsId = :offenderNo
         and oa.assessment.isCellSharing = true
         and not (
           (oa.calculatedLevel is null or oa.calculatedLevel = 'PEND') and
           (oa.overrideLevel is null or oa.overrideLevel = 'PEND') and
           (oa.reviewLevel is null or oa.reviewLevel = 'PEND')
         )
-    order by oa.assessmentDate desc, oa.id.sequence desc
+      order by oa.assessmentDate desc, ob.bookingSequence asc, oa.id.sequence desc
   """,
   )
   fun findValidCsras(offenderNo: String, limit: Limit): List<OffenderAssessment>
