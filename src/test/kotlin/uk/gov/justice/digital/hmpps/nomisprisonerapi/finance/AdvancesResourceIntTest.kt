@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
@@ -22,8 +21,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit.SECONDS
+import java.time.LocalTime
 
 @WithMockAuthUser
 @TestInstance(PER_CLASS)
@@ -63,7 +61,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
 
         booking {
           transaction(transactionId = 21, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance1Date) {
-            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance1.deduction!!.deductionId)
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance1.deduction!!.deductionId, entryTime = LocalTime.parse("09:15:30"))
           }
           transaction(transactionId = 25, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance1Date) {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance11.deduction!!.deductionId)
@@ -79,21 +77,21 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
         advance2 = advance(informationNumber = "10002000-21", deductionPriority = 1, advanceDate = advance2Date)
         booking {
           transaction(transactionId = 22, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TEN, entryDate = advance2Date) {
-            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance2.deduction!!.deductionId)
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance2.deduction!!.deductionId, entryTime = LocalTime.parse("10:15:30"))
           }
         }
         // paid off
         advance3 = advance(advanceAmount = BigDecimal.TWO, paymentAmount = BigDecimal.ONE, deductionAmount = BigDecimal.TWO, informationNumber = "10002000-31", deductionPriority = 2, advanceDate = advance3Date)
         booking {
           transaction(transactionId = 23, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TWO, entryDate = advance3Date) {
-            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance3.deduction!!.deductionId)
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance3.deduction!!.deductionId, entryTime = LocalTime.parse("10:15:30"))
           }
         }
         // written off
         advance4 = advance(advanceAmount = BigDecimal.TWO, writeOffAdjustmentAmount = BigDecimal.TWO, deductionAmount = BigDecimal.ZERO, informationNumber = "10002000-41", deductionPriority = 3, advanceDate = advance4Date)
         booking {
           transaction(transactionId = 24, subAccountType = SubAccountType.SPND, transactionType = "ADV", entryAmount = BigDecimal.TWO, entryDate = advance4Date) {
-            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance4.deduction!!.deductionId)
+            generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance4.deduction!!.deductionId, entryTime = LocalTime.parse("11:15:30"))
           }
         }
         scheduledPayment()
@@ -536,14 +534,14 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(startDate).isEqualTo(LocalDate.now())
     assertThat(informationNumber).isEqualTo("10002000-10")
     assertThat(advanceCreateTransactionId).isEqualTo(21L)
-    assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
+    assertThat(lastTransactionTimestamp).isEqualTo(advance1Date.atTime(9, 15, 30))
     assertThat(outstandingBalance).isEqualTo(1000L)
     assertThat(status).isEqualTo(AdvanceStatus.ACTIVE)
     assertThat(deductionAmount).isEqualTo(0L)
     assertThat(adjustmentReason).isNull()
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
-    assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+    assertThat(createDatetime).isEqualTo(advance1.createDatetime)
   }
 
   private fun PrisonerAdvanceDto.assertAdvance2() {
@@ -556,14 +554,14 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(startDate).isEqualTo(LocalDate.now())
     assertThat(informationNumber).isEqualTo("10002000-21")
     assertThat(advanceCreateTransactionId).isEqualTo(22L)
-    assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
+    assertThat(lastTransactionTimestamp).isEqualTo(advance2Date.atTime(10, 15, 30))
     assertThat(outstandingBalance).isEqualTo(1000L)
     assertThat(status).isEqualTo(AdvanceStatus.ACTIVE)
     assertThat(deductionAmount).isEqualTo(0L)
     assertThat(adjustmentReason).isNull()
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
-    assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+    assertThat(createDatetime).isEqualTo(advance2.createDatetime)
   }
 
   private fun PrisonerAdvanceDto.assertAdvance3() {
@@ -576,14 +574,14 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(startDate).isEqualTo(LocalDate.now())
     assertThat(informationNumber).isEqualTo("10002000-31")
     assertThat(advanceCreateTransactionId).isEqualTo(23L)
-    assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
+    assertThat(lastTransactionTimestamp).isEqualTo(advance3Date.atTime(10, 15, 30))
     assertThat(outstandingBalance).isEqualTo(0L)
     assertThat(status).isEqualTo(AdvanceStatus.REPAID)
     assertThat(deductionAmount).isEqualTo(200L)
     assertThat(adjustmentReason).isNull()
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
-    assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+    assertThat(createDatetime).isEqualTo(advance3.createDatetime)
   }
 
   private fun PrisonerAdvanceDto.assertAdvance4() {
@@ -596,13 +594,13 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(startDate).isEqualTo(LocalDate.now())
     assertThat(informationNumber).isEqualTo("10002000-41")
     assertThat(advanceCreateTransactionId).isEqualTo(24L)
-    assertThat(lastTransactionTimestamp).isEqualTo(LocalDateTime.parse("2025-12-20T01:02:03"))
+    assertThat(lastTransactionTimestamp).isEqualTo(advance4Date.atTime(11, 15, 30))
     assertThat(outstandingBalance).isEqualTo(0L)
     assertThat(status).isEqualTo(AdvanceStatus.WRITTEN_OFF)
     assertThat(deductionAmount).isEqualTo(0L)
     assertThat(adjustmentReason).isEqualTo(AdjustmentReason.WRT)
     assertThat(adjustmentAmount).isEqualTo(200L)
     assertThat(createdBy).isEqualTo("SA")
-    assertThat(createDatetime).isCloseTo(LocalDateTime.now(), within(10, SECONDS))
+    assertThat(createDatetime).isEqualTo(advance4.createDatetime)
   }
 }
