@@ -157,7 +157,7 @@ data class OffenderAssessment(
   val overrideUserId: String? = null,
 
   @Column(name = "OVERRIDE_REASON")
-  val overrideReasonCode: String? = null, // 'PREVIOUS' or 'SECURITY', not sure if used
+  val overrideReasonCode: String? = null, // 'PREVIOUS' or 'SECURITY'
 
   @OneToMany(fetch = LAZY, mappedBy = "offenderAssessment", cascade = [CascadeType.ALL], orphanRemoval = true)
   val offenderAssessmentItems: MutableList<OffenderAssessmentItem> = mutableListOf(),

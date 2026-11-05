@@ -496,6 +496,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 assessmentDate = LocalDate.parse("2025-12-29"),
                 placementAgency = "BXI",
                 assessmentType = AssessmentType.CSR1,
+                overrideReasonCode = "SECURITY",
               ) {
                 assessmentItem(1, RESPONSE_CURRENT_OFFENCE_I)
                 assessmentItem(2, RESPONSE_PREVIOUS_CONVICTIONS_D)
@@ -519,6 +520,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           assertThat(type).isEqualTo(AssessmentType.CSR1)
           assertThat(calculatedLevel).isEqualTo(AssessmentLevel.STANDARD)
           assertThat(overrideLevel).isEqualTo(AssessmentLevel.MED)
+          assertThat(overrideReasonCode).isEqualTo("SECURITY")
           assertThat(score.toString()).isEqualTo("1000")
           assertThat(status).isEqualTo(AssessmentStatusType.I)
           assertThat(assessmentStaffId).isEqualTo(staff.id)

@@ -585,6 +585,7 @@ interface BookingDsl {
     overrideLevel: AssessmentLevel? = AssessmentLevel.MED,
     reviewLevel: AssessmentLevel? = AssessmentLevel.PEND,
     placementAgency: String? = null,
+    overrideReasonCode: String? = null,
     dsl: OffenderAssessmentDsl.() -> Unit = {},
   ): OffenderAssessment
 
@@ -1829,6 +1830,7 @@ class BookingBuilder(
     overrideLevel: AssessmentLevel?,
     reviewLevel: AssessmentLevel?,
     placementAgency: String?,
+    overrideReasonCode: String?,
     dsl: OffenderAssessmentDsl.() -> Unit,
   ): OffenderAssessment = offenderAssessmentBuilderFactory.builder().let { builder ->
     builder.build(
@@ -1842,6 +1844,7 @@ class BookingBuilder(
       overrideLevel,
       reviewLevel,
       placementAgency,
+      overrideReasonCode,
     )
       .also { builder.apply(dsl) }
   }

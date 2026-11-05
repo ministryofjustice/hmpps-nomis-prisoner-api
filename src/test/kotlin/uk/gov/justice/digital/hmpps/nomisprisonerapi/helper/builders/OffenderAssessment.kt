@@ -81,6 +81,7 @@ class OffenderAssessmentBuilder(
     overrideLevel: AssessmentLevel?,
     reviewLevel: AssessmentLevel?,
     placementAgency: String? = null,
+    overrideReasonCode: String? = null,
   ): OffenderAssessment = OffenderAssessment(
     id = OffenderAssessmentId(booking, sequence),
     assessmentDate = assessmentDate,
@@ -110,7 +111,7 @@ class OffenderAssessmentBuilder(
     creationUser = username,
     overrideReasonComment = "overrideReasonComment",
     overrideUserId = null,
-    overrideReasonCode = null,
+    overrideReasonCode = overrideReasonCode,
   )
     .let {
       assessment = repository.save(it)

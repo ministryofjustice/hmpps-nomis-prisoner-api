@@ -47,6 +47,9 @@ data class CsraGetDto(
   @Schema(description = "The override CSRA level", example = "STANDARD", enumAsRef = true)
   val overrideLevel: AssessmentLevel? = null,
 
+  @Schema(description = "The override reason code (reference code in domain 'OVERRIDE_RSN')", example = "SECURITY")
+  val overrideReasonCode: String? = null,
+
   @Schema(description = "Score", example = "1000")
   val score: BigDecimal? = null,
 
