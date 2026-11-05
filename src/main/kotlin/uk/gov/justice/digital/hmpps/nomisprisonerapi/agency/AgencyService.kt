@@ -276,6 +276,40 @@ class AgencyService(
     return CreateAgencyAddressResponse(id = address.addressId)
   }
 
+  fun createPrisonAddress(agencyId: String, request: CreateAgencyAddressRequest): CreateAgencyAddressResponse {
+    val lookupFailures = mutableMapOf<String, String>()
+    val agency = getAgency(agencyId)
+    val address = agencyLocationAddressRepository.saveAndFlush(
+      AgencyLocationAddress(
+        agencyLocation = agency,
+        addressType = defaultAddressType(),
+        flat = request.flat,
+        premise = agency.longDescription,
+        street = request.street,
+        locality = request.locality,
+        postalCode = request.postcode,
+        city = cityOf(request.city, lookupFailures),
+        county = countyOf(request.county, lookupFailures),
+        country = countryOf(request.country, lookupFailures),
+        validatedPAF = false,
+        noFixedAddress = false,
+        primaryAddress = false,
+        mailAddress = false,
+        comment = null,
+        startDate = LocalDate.now(),
+        endDate = null,
+      ),
+    )
+    telemetryClient.trackEvent(
+      "agency-address-inserted",
+      mapOf(
+        "agencyId" to agencyId,
+        "addressId" to address.addressId.toString(),
+      ) + lookupFailures,
+    )
+    return CreateAgencyAddressResponse(id = address.addressId)
+  }
+
   private fun defaultAddressType(): AddressType = addressTypeRepository.findByIdOrNull(AddressType.pk("BUS"))
     ?: throw BadDataException("AddressType with code BUS does not exist")
 
@@ -358,6 +392,61 @@ class AgencyService(
 
     return updatedAddresses.toAgencyAddressesResponse()
   }
+
+  fun updatePrisonAddresses(agencyId: String, request: UpdateAgencyAddressesRequest): AgencyAddressesResponse {
+    val agency = getAgency(agencyId)
+    val requestedAddresses = request.addresses
+    val existingAddresses = agency.addresses
+
+    val lookupFailures = mutableMapOf<String, String>()
+    val indexKeySuffix = if (requestedAddresses.size > 1) "[%d]" else ""
+
+    // the common case is a single existing address being replaced with a single new one
+    val updatedAddresses = if (existingAddresses.size == 1 && requestedAddresses.size == 1) {
+      listOf(updateAddress(existingAddresses[0], requestedAddresses[0], lookupFailures, indexKeySuffix.format(0)).withPremise(agency.longDescription))
+    } else {
+      // with more than one address there is still no id to correlate by, so existing and requested addresses are
+      // instead matched up explicitly by postcode.
+      // where more than one existing or requested address shares the same postcode they are matched in the order
+      // the existing addresses were created (by id).
+      val unmatchedExistingByPostcode = existingAddresses
+        .filterNot { it.postalCode.isNullOrBlank() }
+        .sortedBy { it.addressId }
+        .groupByTo(mutableMapOf()) { it.postalCode!! }
+        .mapValuesTo(mutableMapOf()) { (_, addresses) -> ArrayDeque(addresses) }
+
+      val matchedExistingIds = mutableSetOf<Long>()
+
+      val result = requestedAddresses.mapIndexed { index, address ->
+        val suffix = indexKeySuffix.format(index)
+        val matchingExisting = address.postcode
+          ?.takeIf { it.isNotBlank() }
+          ?.let { unmatchedExistingByPostcode[it]?.removeFirstOrNull() }
+
+        matchingExisting
+          ?.also { matchedExistingIds.add(it.addressId) }
+          ?.let { updateAddress(it, address, lookupFailures, suffix).withPremise(agency.longDescription) }
+          ?: createAddress(agency, address, lookupFailures, suffix).withPremise(agency.longDescription)
+      }
+
+      val addressesToRemove = existingAddresses.filterNot { it.addressId in matchedExistingIds }
+      agency.addresses.removeAll(addressesToRemove)
+
+      result
+    }
+
+    telemetryClient.trackEvent(
+      "agency.address.updated",
+      mapOf(
+        "agencyId" to agencyId,
+        "addressIds" to updatedAddresses.joinToString(",") { it.addressId.toString() },
+      ) + lookupFailures,
+    )
+
+    return updatedAddresses.toAgencyAddressesResponse()
+  }
+
+  private fun AgencyLocationAddress.withPremise(premise: String?): AgencyLocationAddress = this.also { it.premise = premise }
 
   private fun updateAddress(existing: AgencyLocationAddress, address: UpdateAgencyAddress, lookupFailures: MutableMap<String, String>, telemetryKeySuffix: String): AgencyLocationAddress = existing.also {
     it.flat = address.flat

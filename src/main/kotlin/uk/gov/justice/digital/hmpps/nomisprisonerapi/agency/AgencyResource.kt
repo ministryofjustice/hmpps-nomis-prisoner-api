@@ -350,6 +350,52 @@ class AgencyResource(private val agencyService: AgencyService) {
     request: CreateAgencyAddressRequest,
   ) = agencyService.createAgencyAddress(agencyId, request)
 
+  @PostMapping("/prison/{agencyId}/addresses")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+    summary = "Create an prison address",
+    description = "Creates a new address for a prison. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Prison address created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = CreateAgencyAddressResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example the default BUS address type reference data is missing",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun createPrisonAddress(
+    @PathVariable
+    @Schema(description = "Prison id", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: CreateAgencyAddressRequest,
+  ) = agencyService.createPrisonAddress(agencyId, request)
+
   @PutMapping("/agency/{agencyId}/emails")
   @Operation(
     summary = "Refreshes the list of agency email addresses",
@@ -474,6 +520,51 @@ class AgencyResource(private val agencyService: AgencyService) {
     @RequestBody @Valid
     request: UpdateAgencyAddressesRequest,
   ) = agencyService.updateAgencyAddresses(agencyId, request)
+
+  @PutMapping("/prison/{agencyId}/addresses")
+  @Operation(
+    summary = "Refreshes the list of prison addresses",
+    description = "Replaces the existing list of addresses for a prison with the list supplied. Where there is a single existing address and a single requested address they are matched directly and updated in place so the id is preserved. Where there is more than one address, there is no id in the request to correlate addresses with, so existing and requested addresses are instead matched by exact postcode; where more than one address shares the same postcode they are matched in the order the existing addresses were created. A null or blank postcode never matches anything, even another null postcode, to avoid silently reassigning the identity of an unrelated address. Any requested address that cannot be matched to an existing one results in a new address being created, defaulting its address type to BUS; any existing address that is not matched by a requested one is removed. City, county and country are looked up by description, matched case insensitively; if a description does not match any reference data the value is left unset on the address and the lookup failure is recorded in the response telemetry. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prison addresses updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AgencyAddressesResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example the default BUS address type reference data is missing",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prison not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePrisonAddresses(
+    @PathVariable
+    @Schema(description = "Prison id", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: UpdateAgencyAddressesRequest,
+  ) = agencyService.updatePrisonAddresses(agencyId, request)
 }
 
 @Schema(description = "A response to get an agency that is not a prison")
