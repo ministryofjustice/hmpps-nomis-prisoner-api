@@ -62,12 +62,7 @@ private const val ADVANCE_BASE_CONDITIONS = """
 
 private const val ACTIVE_ADVANCE_CONDITIONS = """
   $ADVANCE_BASE_CONDITIONS
-  AND od.max_total_amount >
-    NVL(od.deduction_amount, 0) + NVL(od.adjustment_amount, 0)
-  AND (
-    od.adjustment_reason_code IS NULL
-    OR od.adjustment_reason_code NOT IN ('WRT', 'P')
-  )
+  AND od.max_total_amount > NVL(od.deduction_amount, 0) + NVL(od.adjustment_amount, 0)
 """
 
 @Repository

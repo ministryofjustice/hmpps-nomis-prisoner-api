@@ -190,6 +190,20 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
       assertThat(advances).hasSize(1)
       advances.single().assertAdvance2()
     }
+
+    @Test
+    fun getActivePrisonerAdvancesIncludesPartialWriteOff() {
+      val advances = webTestClient.get().uri("/finance/prisoners/A5194DY/advances?activeOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyList<PrisonerAdvanceDto>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(advances).hasSize(3)
+    }
   }
 
   @Nested
@@ -277,6 +291,20 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
 
       assertThat(advances).hasSize(1)
       advances.single().assertAdvance2()
+    }
+
+    @Test
+    fun getActivePrisonerAdvancesIncludesPartialWriteOff() {
+      val advances = webTestClient.get().uri("/finance/prisoners/root-offender-id/$offender1Id/advances?activeOnly=true")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBodyList<PrisonerAdvanceDto>()
+        .returnResult()
+        .responseBody!!
+
+      assertThat(advances).hasSize(3)
     }
   }
 
@@ -519,7 +547,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
         .expectStatus()
         .isOk
         .expectBody()
-        .jsonPath("activeCount").isEqualTo(3)
+        .jsonPath("activeCount").isEqualTo(4)
     }
   }
 
