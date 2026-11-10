@@ -569,6 +569,25 @@ class AgencyService(
 
   private fun getAgency(agencyId: String): AgencyLocation = agencyLocationRepository.findByIdOrNull(agencyId)
     ?: throw NotFoundException("Agency $agencyId does not exist")
+
+  fun updatePrisonArea(agencyId: String, request: UpdatePrisonAreaRequest): AgencyResponse {
+    val agency = getAgency(agencyId)
+
+    agency.area = request.areaCode?.let { areaOf(it) }
+    agency.region = request.regionCode?.let { areaOf(it) }
+    agency.nomsRegion = request.nomsRegionCode?.let { regionOf(it) }
+    agency.cjitCode = request.cjitCode
+    agency.payrollRegion = request.payrollRegionCode?.let { payrollRegionOf(it) }
+
+    updateLocalAuthorities(agency, request.localAuthorityCodes)
+
+    telemetryClient.trackEvent(
+      "agency-updated",
+      mapOf("agencyId" to agencyId),
+    )
+
+    return agency.toAgencyLocationResponse()
+  }
 }
 
 fun AgencyLocation.toAgencyLocationResponse() = AgencyResponse(

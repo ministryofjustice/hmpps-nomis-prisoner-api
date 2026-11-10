@@ -565,6 +565,51 @@ class AgencyResource(private val agencyService: AgencyService) {
     @RequestBody @Valid
     request: UpdateAgencyAddressesRequest,
   ) = agencyService.updatePrisonAddresses(agencyId, request)
+
+  @PutMapping("/prison/{agencyId}")
+  @Operation(
+    summary = "Updates the area details of a prison",
+    description = "Replaces the area details, these are the only details synchronised with NOMIS. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prison updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AgencyResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "The request contains bad data, for example a reference data code that does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun updatePrisonArea(
+    @PathVariable
+    @Schema(description = "Prison id (aka agencyId)", example = "WWI")
+    agencyId: String,
+    @RequestBody @Valid
+    request: UpdatePrisonAreaRequest,
+  ) = agencyService.updatePrisonArea(agencyId, request)
 }
 
 @Schema(description = "A response to get an agency that is not a prison")
@@ -760,6 +805,22 @@ data class UpdateAgencyRequest(
   val regionCode: String? = null,
   @Schema(description = "Geographic district code", example = "LOND")
   val districtCode: String? = null,
+  @Schema(description = "NOMS region code", example = "LOND")
+  val nomsRegionCode: String? = null,
+  @Schema(description = "CJIT code", example = "D62L087")
+  val cjitCode: String? = null,
+  @Schema(description = "Payroll region code", example = "LOND")
+  val payrollRegionCode: String? = null,
+  @Schema(description = "Local authority codes, with a maximum of one allowed", example = "[\"BRENT\"]")
+  val localAuthorityCodes: List<String> = emptyList(),
+)
+
+@Schema(description = "A request to update the area details of a prison")
+data class UpdatePrisonAreaRequest(
+  @Schema(description = "Area code", example = "LOND")
+  val areaCode: String? = null,
+  @Schema(description = "Geographic region code", example = "LOND")
+  val regionCode: String? = null,
   @Schema(description = "NOMS region code", example = "LOND")
   val nomsRegionCode: String? = null,
   @Schema(description = "CJIT code", example = "D62L087")
