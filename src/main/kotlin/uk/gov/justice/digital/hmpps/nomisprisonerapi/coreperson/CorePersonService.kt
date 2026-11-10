@@ -600,6 +600,10 @@ class CorePersonService(
     issuedAuthority = issuedAuthority,
     issuedDate = issuedDate,
     verified = verified ?: false,
+    createdDateTime = createDatetime,
+    createdByUsername = createUsername,
+    lastUpdatedDateTime = modifyDatetime,
+    lastUpdatedByUsername = modifyUserId,
   )
 
   private fun Offender.toCoreOffender(currentAliasId: Long, includeIdentifiers: Boolean = true): CoreOffender = CoreOffender(
@@ -618,20 +622,14 @@ class CorePersonService(
     createDate = createDate,
     workingName = id == currentAliasId,
     identifiers = if (includeIdentifiers) {
-      identifiers.map { id ->
-        Identifier(
-          offenderId = id.id.offender.id,
-          sequence = id.id.sequence,
-          type = id.identifierType.toCodeDescription(),
-          identifier = id.identifier,
-          issuedAuthority = id.issuedAuthority,
-          issuedDate = id.issuedDate,
-          verified = id.verified ?: false,
-        )
-      }
+      identifiers.map { it.toIdentifier() }
     } else {
       emptyList()
     },
+    createdDateTime = createDatetime,
+    createdByUsername = createUsername,
+    lastUpdatedDateTime = modifyDatetime,
+    lastUpdatedByUsername = modifyUserId,
   )
 
   companion object {
