@@ -1614,6 +1614,8 @@ data class CoreOffender(
   val middleName2: String?,
   @Schema(description = "Surname name of this offender record")
   val lastName: String,
+  @Schema(description = "Suffix of this offender record, e.g. Junior")
+  val suffix: CodeDescription?,
   @Schema(description = "Date of birth of this offender record")
   val dateOfBirth: LocalDate?,
   @Schema(description = "Birth place of this offender record")

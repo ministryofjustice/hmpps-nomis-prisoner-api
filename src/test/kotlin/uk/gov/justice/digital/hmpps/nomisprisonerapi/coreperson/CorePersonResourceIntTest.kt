@@ -116,6 +116,7 @@ class CorePersonResourceIntTest(
           offenderFull = offender(
             nomsId = "B1234CD",
             titleCode = "MRS",
+            suffixCode = "SR",
             firstName = "JANE",
             middleName = "Mary",
             middleName2 = "Ann",
@@ -147,6 +148,7 @@ class CorePersonResourceIntTest(
           .jsonPath("prisonNumber").isEqualTo(offenderMinimal.nomsId)
           .jsonPath("offenders[0].offenderId").isEqualTo(offenderMinimal.id)
           .jsonPath("offenders[0].title").doesNotExist()
+          .jsonPath("offenders[0].suffix").doesNotExist()
           .jsonPath("offenders[0].firstName").isEqualTo("JOHN")
           .jsonPath("offenders[0].middleName1").doesNotExist()
           .jsonPath("offenders[0].middleName2").doesNotExist()
@@ -197,6 +199,8 @@ class CorePersonResourceIntTest(
           .jsonPath("offenders[0].offenderId").isEqualTo(offenderFull.id)
           .jsonPath("offenders[0].title.code").isEqualTo("MRS")
           .jsonPath("offenders[0].title.description").isEqualTo("Mrs")
+          .jsonPath("offenders[0].suffix.code").isEqualTo("SR")
+          .jsonPath("offenders[0].suffix.description").isEqualTo("Senior")
           .jsonPath("offenders[0].firstName").isEqualTo("JANE")
           .jsonPath("offenders[0].middleName1").isEqualTo("Mary")
           .jsonPath("offenders[0].middleName2").isEqualTo("Ann")
@@ -239,6 +243,7 @@ class CorePersonResourceIntTest(
             alias = alias(
               titleCode = "MR",
               lastName = "NTHANDA",
+              suffixCode = "JR",
               firstName = "LEKAN",
               middleName = "Fred",
               middleName2 = "Johas",
@@ -290,6 +295,8 @@ class CorePersonResourceIntTest(
           .jsonPath("offenders[1].offenderId").isEqualTo(alias.id)
           .jsonPath("offenders[1].title.code").isEqualTo("MR")
           .jsonPath("offenders[1].title.description").isEqualTo("Mr")
+          .jsonPath("offenders[1].suffix.code").isEqualTo("JR")
+          .jsonPath("offenders[1].suffix.description").isEqualTo("Junior")
           .jsonPath("offenders[1].firstName").isEqualTo("LEKAN")
           .jsonPath("offenders[1].middleName1").isEqualTo("Fred")
           .jsonPath("offenders[1].middleName2").isEqualTo("Johas")

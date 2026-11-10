@@ -20,6 +20,7 @@ import org.springframework.data.annotation.CreatedDate
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Ethnicity.Companion.ETHNICITY
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Gender.Companion.SEX
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.NameType.Companion.NAME_TYPE
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Suffix.Companion.SUFFIX
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title.Companion.TITLE
 import java.time.LocalDate
 
@@ -55,6 +56,15 @@ data class Offender(
     ],
   )
   val title: Title? = null,
+
+  @ManyToOne(fetch = LAZY)
+  @JoinColumnsOrFormulas(
+    value = [
+      JoinColumnOrFormula(formula = JoinFormula(value = "'$SUFFIX'", referencedColumnName = "domain")),
+      JoinColumnOrFormula(column = JoinColumn(name = "SUFFIX", referencedColumnName = "code", nullable = true)),
+    ],
+  )
+  val suffix: Suffix? = null,
 
   @ManyToOne(fetch = LAZY)
   @JoinColumnsOrFormulas(

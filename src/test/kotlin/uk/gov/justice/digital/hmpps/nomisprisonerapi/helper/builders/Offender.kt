@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderPhone
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderTrustAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Suffix
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -52,6 +53,7 @@ interface OffenderDsl {
   fun alias(
     titleCode: String? = null,
     lastName: String = "NTHANDA",
+    suffixCode: String? = null,
     firstName: String = "LEKAN",
     middleName: String? = null,
     middleName2: String? = null,
@@ -156,6 +158,7 @@ class OffenderBuilderRepository(
   private val ethnicityRepository: ReferenceCodeRepository<Ethnicity>,
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
+  private val suffixRepository: ReferenceCodeRepository<Suffix>,
   private val countryRepository: ReferenceCodeRepository<Country>,
   private val nameTypeRepository: ReferenceCodeRepository<NameType>,
   private val jdbcTemplate: JdbcTemplate,
@@ -164,6 +167,7 @@ class OffenderBuilderRepository(
   fun ethnicity(ethnicityCode: String): Ethnicity = ethnicityRepository.findByIdOrNull(ReferenceCode.Pk(Ethnicity.ETHNICITY, ethnicityCode))!!
   fun gender(genderCode: String): Gender = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
   fun title(titleCode: String): Title = titleRepository.findByIdOrNull(ReferenceCode.Pk(Title.TITLE, titleCode))!!
+  fun suffix(suffixCode: String): Suffix = suffixRepository.findByIdOrNull(ReferenceCode.Pk(Suffix.SUFFIX, suffixCode))!!
   fun country(birthCountryCode: String): Country = countryRepository.findByIdOrNull(ReferenceCode.Pk(Country.COUNTRY, birthCountryCode))!!
   fun nameType(nameTypeCode: String): NameType = nameTypeRepository.findByIdOrNull(ReferenceCode.Pk(NameType.NAME_TYPE, nameTypeCode))!!
   fun updateCreateDatetime(offender: Offender, whenCreated: LocalDateTime) = jdbcTemplate.update("update OFFENDERS set CREATE_DATETIME = ? where OFFENDER_ID = ?", whenCreated, offender.id)
@@ -213,6 +217,7 @@ class OffenderBuilder(
     nomsId: String,
     titleCode: String?,
     lastName: String,
+    suffixCode: String?,
     firstName: String,
     middleName: String?,
     middleName2: String?,
@@ -229,6 +234,7 @@ class OffenderBuilder(
     nomsId = nomsId,
     title = titleCode?.let { repository.title(titleCode) },
     lastName = lastName,
+    suffix = suffixCode?.let { repository.suffix(suffixCode) },
     firstName = firstName,
     middleName = middleName,
     middleName2 = middleName2,
@@ -278,6 +284,7 @@ class OffenderBuilder(
   override fun alias(
     titleCode: String?,
     lastName: String,
+    suffixCode: String?,
     firstName: String,
     middleName: String?,
     middleName2: String?,
@@ -292,6 +299,7 @@ class OffenderBuilder(
       builder.build(
         titleCode = titleCode,
         lastName = lastName,
+        suffixCode = suffixCode,
         firstName = firstName,
         middleName = middleName,
         middleName2 = middleName2,
