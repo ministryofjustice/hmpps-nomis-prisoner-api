@@ -126,7 +126,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     ) @PathVariable prisonNumber: String,
   ): CorePerson = corePersonService.getOffenderForReconciliation(prisonNumber)
 
-  @GetMapping("{offenderId}/identifier/{sequenceNumber}")
+  @GetMapping("/{offenderId}/identifier/{sequenceNumber}")
   @Operation(
     summary = "Get an identifier by offender id and sequence number",
     description = "Retrieves an offender identifier. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -174,7 +174,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable sequenceNumber: Int,
   ) = corePersonService.getIdentifier(offenderId, sequenceNumber)
 
-  @GetMapping("alias/{offenderId}")
+  @GetMapping("/{offenderId}/alias")
   @Operation(
     summary = "Get an alias by offender id",
     description = "Retrieves an alias. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -220,7 +220,7 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable offenderId: Long,
   ): CoreOffender = corePersonService.getAlias(offenderId)
 
-  @GetMapping("{prisonNumber}/aliases-identifiers")
+  @GetMapping("/{prisonNumber}/aliases-identifiers")
   @Operation(
     summary = "Get the aliases and identifiers for an offender by prison number",
     description = "Retrieves the aliases and offenders for an offender. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
@@ -1630,6 +1630,14 @@ data class CoreOffender(
   val createDate: LocalDate?,
   @Schema(description = "The offender record associated with the current booking")
   val workingName: Boolean,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+  @Schema(description = "Date time when the record was last updated the record in NOMIS", required = true)
+  val lastUpdatedDateTime: LocalDateTime?,
+  @Schema(description = "Username of person who last updated the record in NOMIS", required = true)
+  val lastUpdatedByUsername: String?,
   @Schema(description = "List of identifiers for the offender")
   val identifiers: List<Identifier>,
 )
@@ -1651,6 +1659,14 @@ data class Identifier(
   val issuedDate: LocalDate?,
   @Schema(description = "Verified")
   val verified: Boolean,
+  @Schema(description = "Date time when the record was created the record in NOMIS", required = true)
+  val createdDateTime: LocalDateTime,
+  @Schema(description = "Username of person who created the record in NOMIS", required = true)
+  val createdByUsername: String,
+  @Schema(description = "Date time when the record was last updated the record in NOMIS", required = true)
+  val lastUpdatedDateTime: LocalDateTime?,
+  @Schema(description = "Username of person who last updated the record in NOMIS", required = true)
+  val lastUpdatedByUsername: String?,
 )
 
 @Schema(description = "The data held in NOMIS about an address")
