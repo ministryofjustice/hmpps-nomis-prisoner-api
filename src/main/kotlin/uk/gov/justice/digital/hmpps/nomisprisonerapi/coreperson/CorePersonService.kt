@@ -613,6 +613,7 @@ class CorePersonService(
     middleName1 = middleName,
     middleName2 = middleName2,
     lastName = lastName,
+    suffix = suffix?.toCodeDescription(),
     dateOfBirth = birthDate,
     birthPlace = birthPlace,
     birthCountry = birthCountry?.toCodeDescription(),

@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Offender
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderIdentifier
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.ReferenceCode
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Suffix
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Title
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ReferenceCodeRepository
@@ -47,12 +48,14 @@ class AliasBuilderRepository(
   private val ethnicityRepository: ReferenceCodeRepository<Ethnicity>,
   private val genderRepository: ReferenceCodeRepository<Gender>,
   private val titleRepository: ReferenceCodeRepository<Title>,
+  private val suffixRepository: ReferenceCodeRepository<Suffix>,
   private val jdbcTemplate: JdbcTemplate,
 ) {
   fun save(offender: Offender): Offender = offenderRepository.saveAndFlush(offender)
   fun ethnicity(ethnicityCode: String): Ethnicity = ethnicityRepository.findByIdOrNull(ReferenceCode.Pk(Ethnicity.ETHNICITY, ethnicityCode))!!
   fun gender(genderCode: String): Gender = genderRepository.findByIdOrNull(ReferenceCode.Pk(Gender.SEX, genderCode))!!
   fun title(titleCode: String): Title = titleRepository.findByIdOrNull(ReferenceCode.Pk(Title.TITLE, titleCode))!!
+  fun suffix(suffixCode: String): Suffix = suffixRepository.findByIdOrNull(ReferenceCode.Pk(Suffix.SUFFIX, suffixCode))!!
   fun updateCreateDatetime(offender: Offender, whenCreated: LocalDateTime) = jdbcTemplate.update("update OFFENDERS set CREATE_DATETIME = ? where OFFENDER_ID = ?", whenCreated, offender.id)
   fun updateCreateUsername(offender: Offender, whoCreated: String) = jdbcTemplate.update("update OFFENDERS set CREATE_USER_ID = ? where OFFENDER_ID = ?", whoCreated, offender.id)
 }
@@ -77,6 +80,7 @@ class AliasBuilder(
   fun build(
     titleCode: String?,
     lastName: String,
+    suffixCode: String?,
     firstName: String,
     middleName: String?,
     middleName2: String?,
@@ -89,6 +93,7 @@ class AliasBuilder(
     nomsId = offenderBuilder.rootOffender.nomsId,
     title = titleCode?.let { repository.title(titleCode) },
     lastName = lastName,
+    suffix = suffixCode?.let { repository.suffix(suffixCode) },
     firstName = firstName,
     middleName = middleName,
     middleName2 = middleName2,
