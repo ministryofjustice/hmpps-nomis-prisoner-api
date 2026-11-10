@@ -2841,4 +2841,172 @@ class AgencyResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("PUT /prison/{agencyId}")
+  @Nested
+  inner class UpdatePrisonArea {
+    private val validUpdateRequest = UpdatePrisonAreaRequest(
+      cjitCode = "ABC1234",
+    )
+
+    private lateinit var existingAgency: AgencyLocation
+    private var agencyWithLocalAuthority: AgencyLocation? = null
+    private var londonRegion: Region? = null
+    private var londonArea: Area? = null
+    private var southEastArea: Area? = null
+    private var eastLondon: SubArea? = null
+
+    @BeforeEach
+    fun setUp() {
+      nomisDataBuilder.build {
+        existingAgency = agencyLocation(
+          agencyLocationId = "XXI",
+          description = "HMP XXI",
+          type = "INST",
+        )
+      }
+    }
+
+    @AfterEach
+    fun tearDown() {
+      if (agencyLocationRepository.existsById(existingAgency.id)) {
+        agencyLocationRepository.deleteById(existingAgency.id)
+      }
+      agencyWithLocalAuthority?.let {
+        if (agencyLocationRepository.existsById(it.id)) {
+          agencyLocationRepository.deleteById(it.id)
+        }
+      }
+      eastLondon?.let { subAreaRepository.delete(it) }
+      londonArea?.let { areaRepository.delete(it) }
+      londonRegion?.let { regionRepository.delete(it) }
+      southEastArea?.let { areaRepository.delete(it) }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.put().uri("/prison/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf()))
+          .bodyValue(validUpdateRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.put().uri("/prison/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .bodyValue(validUpdateRequest)
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.put().uri("/prison/${existingAgency.id}")
+          .bodyValue(validUpdateRequest)
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+
+      @Test
+      fun `will return 404 if agency does not exist`() {
+        webTestClient.put().uri("/prison/ZZI")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validUpdateRequest)
+          .exchange()
+          .expectStatus().isNotFound
+      }
+
+      @Test
+      fun `will return 400 if local authority code does not exist`() {
+        webTestClient.put().uri("/prison/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validUpdateRequest.copy(localAuthorityCodes = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isBadRequest
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will update the core details, reference data and local authority held against an agency`() {
+        nomisDataBuilder.build {
+          southEastArea = area(code = "LONDON", "London")
+          londonRegion = region(code = "LON", "London Region") {
+            londonArea = area(code = "62", "London Area", areaTypeCode = "COMM")
+          }
+        }
+
+        webTestClient.put().uri("/prison/${existingAgency.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(
+            validUpdateRequest.copy(
+              cjitCode = "D62L087",
+              areaCode = londonArea!!.areaCode,
+              regionCode = southEastArea!!.areaCode,
+              nomsRegionCode = londonRegion!!.areaCode,
+              payrollRegionCode = "LTV",
+              localAuthorityCodes = listOf(BRENT),
+            ),
+          )
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(existingAgency.id)!!) {
+            assertThat(description).isEqualTo("HMP XXI")
+            assertThat(cjitCode).isEqualTo("D62L087")
+            assertThat(area?.description).isEqualTo("London Area")
+            assertThat(region?.description).isEqualTo("London")
+            assertThat(nomsRegion?.description).isEqualTo("London Region")
+            assertThat(payrollRegion?.code).isEqualTo("LTV")
+            assertThat(localAuthorities).extracting("authority.code").containsExactly(BRENT)
+          }
+        }
+
+        verify(telemetryClient).trackEvent(
+          eq("agency-updated"),
+          check {
+            assertThat(it).containsEntry("agencyId", existingAgency.id)
+          },
+          isNull(),
+        )
+      }
+
+      @Test
+      fun `will remove an existing local authority when not included in the request`() {
+        nomisDataBuilder.build {
+          agencyWithLocalAuthority = agencyLocation(
+            agencyLocationId = "YYI",
+            description = "HMP YYI",
+            type = "INST",
+          ) {
+            localAuthority(BRENT)
+          }
+        }
+
+        webTestClient.put().uri("/prison/${agencyWithLocalAuthority!!.id}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .bodyValue(validUpdateRequest.copy(localAuthorityCodes = listOf()))
+          .exchange()
+          .expectStatus()
+          .isOk
+
+        nomisDataBuilder.runInTransaction {
+          with(agencyLocationRepository.findByIdOrNull(agencyWithLocalAuthority!!.id)!!) {
+            assertThat(localAuthorities).isEmpty()
+          }
+        }
+      }
+    }
+  }
 }
