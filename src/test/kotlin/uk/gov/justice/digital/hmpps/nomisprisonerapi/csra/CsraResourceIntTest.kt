@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
@@ -258,6 +260,45 @@ class CsraResourceIntTest : IntegrationTestBase() {
         }
       }
 
+      @ParameterizedTest
+      @EnumSource(value = AssessmentLevel::class, names = ["HI_GEN", "HI_SPFC"])
+      fun `can create a CSRA with a High General or High Specific level`(level: AssessmentLevel) {
+        val created = webTestClient.post().uri("/prisoners/A1111AA/csra")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue(
+            """
+            {
+              "assessmentDate": "2025-12-14",
+              "calculatedLevel": "$level",
+              "reviewLevel": "$level",
+              "approvedLevel": "$level",
+              "type": "CSR",
+              "status": "A",
+              "createdBy": "BILLSTAFF",
+              "createdDateTime": "2025-12-04T12:34:56"
+            }
+            """.trimIndent(),
+          )
+          .exchange()
+          .expectStatus().isOk
+          .expectBody<CsraCreateResponse>()
+          .returnResult()
+          .responseBody!!
+
+        nomisDataBuilder.runInTransaction {
+          val data = offenderAssessmentRepository.findByIdOrNull(
+            OffenderAssessmentId(booking1, created.sequence),
+          )
+
+          with(data!!) {
+            assertThat(calculatedLevel).isEqualTo(level)
+            assertThat(reviewLevel).isEqualTo(level)
+            assertThat(approvedLevel).isEqualTo(level)
+          }
+        }
+      }
+
       @Test
       fun `can create a CSRA with minimal data`() {
         val created = webTestClient.post().uri("/prisoners/A1111AA/csra")
@@ -425,6 +466,28 @@ class CsraResourceIntTest : IntegrationTestBase() {
           }
         }
       }
+
+      @ParameterizedTest
+      @EnumSource(value = AssessmentLevel::class, names = ["HI_GEN", "HI_SPFC"])
+      fun `can update a CSRA to a High General or High Specific level`(level: AssessmentLevel) {
+        webTestClient.put().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .bodyValue("""{ "status": "A", "reviewLevel": "$level", "approvedLevel": "$level" }""")
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          val data = offenderAssessmentRepository.findByIdOrNull(
+            OffenderAssessmentId(booking2, 1),
+          )
+
+          with(data!!) {
+            assertThat(reviewLevel).isEqualTo(level)
+            assertThat(approvedLevel).isEqualTo(level)
+          }
+        }
+      }
     }
   }
 
@@ -579,6 +642,36 @@ class CsraResourceIntTest : IntegrationTestBase() {
             }
           }
         }
+      }
+
+      @Test
+      fun `can get a CSRA with High General and High Specific levels`() {
+        nomisDataBuilder.build {
+          offender(nomsId = "A2222BB") {
+            booking2 = booking {
+              assessment(
+                username = "BILLSTAFF",
+                assessmentType = AssessmentType.CSRREV,
+                calculatedLevel = AssessmentLevel.HI,
+                overrideLevel = AssessmentLevel.HI_GEN,
+                reviewLevel = AssessmentLevel.HI_SPFC,
+              )
+            }
+          }
+        }
+
+        webTestClient.get().uri("/prisoners/booking-id/${booking2.bookingId}/csra/1")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBody<CsraGetDto>()
+          .returnResult()
+          .responseBody!!
+          .apply {
+            assertThat(calculatedLevel).isEqualTo(AssessmentLevel.HI)
+            assertThat(overrideLevel).isEqualTo(AssessmentLevel.HI_GEN)
+            assertThat(reviewLevel).isEqualTo(AssessmentLevel.HI_SPFC)
+          }
       }
     }
   }
