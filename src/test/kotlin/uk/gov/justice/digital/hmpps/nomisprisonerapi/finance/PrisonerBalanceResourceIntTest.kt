@@ -22,6 +22,7 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
   private var id1: Long = 0
   private var id2: Long = 0
   private var id3: Long = 0
+  private val twoMonthsAgo = LocalDate.now().minusMonths(2)
 
   // 2101 = 'REG'; 2102 = 'SPND'; 2103 = 'SAV'
   @BeforeEach
@@ -37,6 +38,9 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
           deductionAmount = BigDecimal.TWO,
           deductionPriority = 1,
         )
+        scheduledPayment(reference = "REF1", comment = "COMMENT1", endDate = LocalDate.now().plusMonths(2))
+        scheduledPayment(reference = "REF2", comment = "COMMENT2", weeklyPaymentAmount = BigDecimal("1.20"), startDate = twoMonthsAgo, endDate = twoMonthsAgo.plusMonths(1))
+        scheduledPayment(reference = "REF3", comment = "COMMENT2", weeklyPaymentAmount = BigDecimal("0.75"), startDate = twoMonthsAgo)
         booking {
           transaction(transactionId = 45678, subAccountType = SubAccountType.SAV, transactionType = "DPST", entryDate = LocalDate.parse("2026-02-01")) {
             generalLedgerTransaction(generalLedgerEntrySequence = 3, accountCode = 2103, entryTime = LocalTime.parse("11:23:54"))
@@ -929,6 +933,8 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(advances[0].advanceDate).isEqualTo(LocalDate.parse("2026-02-02"))
         assertThat(advances[0].deductionAmount).isEqualTo(200)
         assertThat(advances[0].advanceCreateTransactionId).isEqualTo(77777L)
+        assertThat(scheduledPayments.count).isEqualTo(2)
+        assertThat(scheduledPayments.totalWeeklyPayment).isEqualTo(320)
 
         // 11.25 - 1.5
         assertThat(accounts[1].balance).isEqualTo(BigDecimal(9.75))
@@ -961,6 +967,8 @@ class PrisonerBalanceResourceIntTest : IntegrationTestBase() {
         assertThat(accounts[2].accountCode).isEqualTo(2103)
         assertThat(accounts[2].balance).isEqualTo(BigDecimal("21.25"))
         assertThat(accounts[2].holdBalance).isEqualTo(BigDecimal("2.5"))
+        assertThat(scheduledPayments.count).isEqualTo(0)
+        assertThat(scheduledPayments.totalWeeklyPayment).isEqualTo(0)
       }
     }
 

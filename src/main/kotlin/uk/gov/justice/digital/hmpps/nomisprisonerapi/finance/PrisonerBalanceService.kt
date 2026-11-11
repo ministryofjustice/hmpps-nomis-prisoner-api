@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.IdRange
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.core.toIdRanges
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.advances.AdvancesService
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.ScheduledPaymentsService
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSubAccount
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSubAccounWithTransactionDateTimeProjection
@@ -22,6 +23,7 @@ class PrisonerBalanceService(
   private val offenderSubAccountRepository: OffenderSubAccountRepository,
   private val offenderTrustAccountRepository: OffenderTrustAccountRepository,
   private val advanceService: AdvancesService,
+  private val scheduledPaymentsService: ScheduledPaymentsService,
 ) {
   fun getAggregatedAccounts(prisonNumber: String): PrisonerAggregatedAccountsDto = offenderRepository.findRootByNomsId(prisonNumber)?.let {
     getAggregatedAccounts(it.rootOffenderId!!)
@@ -33,12 +35,17 @@ class PrisonerBalanceService(
       ?: throw NotFoundException("Offender with id $rootOffenderId not found")
     val aggregatedAccounts = offenderSubAccountRepository.getAggregatedAccounts(rootOffenderId)
     val advances = advanceService.findAdvances(rootOffenderId, activeOnly = true)
+    val scheduledPayments = scheduledPaymentsService.getScheduledPayments(rootOffenderId, activeOnly = true)
 
     return PrisonerAggregatedAccountsDto(
       rootOffenderId = offender.rootOffenderId!!,
       prisonNumber = offender.nomsId,
       accounts = aggregatedAccounts,
       advances = advances,
+      scheduledPayments = ScheduledPaymentSummary(
+        count = scheduledPayments.size.toLong(),
+        totalWeeklyPayment = scheduledPayments.sumOf { it.amount },
+      ),
     )
   }
 

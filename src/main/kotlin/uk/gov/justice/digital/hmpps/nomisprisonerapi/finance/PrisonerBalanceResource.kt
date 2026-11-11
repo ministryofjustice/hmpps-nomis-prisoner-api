@@ -466,6 +466,18 @@ data class PrisonerAggregatedAccountsDto(
 
   @Schema(description = "Active advance details for the prisoner, if any")
   val advances: List<PrisonerAdvanceDto>,
+
+  @Schema(description = "Active scheduled payments for the prisoner, if any")
+  val scheduledPayments: ScheduledPaymentSummary,
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ScheduledPaymentSummary(
+  @Schema(description = "The count of the number of active scheduled payments for the prisoner", example = "4")
+  val count: Long,
+
+  @Schema(description = "The weekly total paid by the prisoner for active scheduled payments in pence", example = "1250")
+  val totalWeeklyPayment: Long,
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

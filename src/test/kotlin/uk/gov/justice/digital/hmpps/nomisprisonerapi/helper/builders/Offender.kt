@@ -147,6 +147,7 @@ interface OffenderDsl {
     startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
     reference: String? = null,
+    weeklyPaymentAmount: BigDecimal = BigDecimal.valueOf(2.45),
     comment: String? = null,
     dsl: OffenderPaymentProfileDsl.() -> Unit = {},
   ): OffenderScheduledPayment
@@ -467,6 +468,7 @@ class OffenderBuilder(
     startDate: LocalDate,
     endDate: LocalDate?,
     reference: String?,
+    weeklyPaymentAmount: BigDecimal,
     comment: String?,
     dsl: OffenderPaymentProfileDsl.() -> Unit,
   ): OffenderScheduledPayment = offenderPaymentProfileBuilderFactory.builder().let { builder ->
@@ -477,6 +479,7 @@ class OffenderBuilder(
       startDate = startDate,
       endDate = endDate,
       reference = reference,
+      weeklyPaymentAmount = weeklyPaymentAmount,
       comment = comment,
     ).also { rootOffender.scheduledPayments += it }
       .also { builder.apply(dsl) }
