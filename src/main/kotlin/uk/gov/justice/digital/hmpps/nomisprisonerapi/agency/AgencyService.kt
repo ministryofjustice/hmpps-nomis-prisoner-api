@@ -81,6 +81,8 @@ class AgencyService(
   fun getAgencyLocation(agencyId: String): AgencyResponse = agencyLocationRepository.findByIdOrNull(agencyId)
     ?.toAgencyLocationResponse() ?: throw NotFoundException("Agency $agencyId does not exist")
 
+  fun getAgencyPhoneNumber(agencyId: String): AgencyPhoneNumber? = getAgency(agencyId).toAgencyPhoneNumberResponse()
+
   fun createAgency(request: CreateAgencyRequest): AgencyResponse {
     if (agencyLocationRepository.existsById(request.agencyId)) {
       throw ConflictException("Agency with id ${request.agencyId} already exists")
@@ -613,6 +615,20 @@ fun AgencyLocation.toAgencyLocationResponse() = AgencyResponse(
   district = this.district?.toCodeDescription(),
   courtType = this.courtType?.toCodeDescription(),
 )
+
+fun AgencyLocation.toAgencyPhoneNumberResponse(): AgencyPhoneNumber? {
+  // find first business phone number, either at the agency level or in any of the addresses
+  // for prisons there will only be one
+  val allPhones = addresses.flatMap { it.phones } + phones
+  return allPhones.firstOrNull { it.phoneType.code == "BUS" }?.let { phone ->
+    AgencyPhoneNumber(
+      id = phone.phoneId,
+      number = phone.phoneNo,
+      extension = phone.extNo,
+      type = phone.phoneType.toCodeDescription(),
+    )
+  }
+}
 
 fun AgencyLocation.toEmailAddresses(): List<AgencyEmailAddress> = emailAddresses.map { email ->
   AgencyEmailAddress(

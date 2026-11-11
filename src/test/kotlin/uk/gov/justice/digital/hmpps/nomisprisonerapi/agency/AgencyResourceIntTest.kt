@@ -867,6 +867,129 @@ class AgencyResourceIntTest : IntegrationTestBase() {
     }
   }
 
+  @DisplayName("GET /agency/{agencyId}/phone-number")
+  @Nested
+  inner class GetAgencyPhoneNumber {
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/agency/AAI/phone-number")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/agency/AAI/phone-number")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/agency/AAI/phone-number")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `will return 404 if prison does not exist`() {
+        webTestClient.get().uri("/agency/ZZI/phone-number")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @AfterEach
+      fun tearDown() {
+        agencyLocationRepository.deleteById("AAI")
+      }
+
+      @Test
+      fun `can return AgencyPhoneResponse with no phone if none exist`() {
+        nomisDataBuilder.build {
+          prison(agencyLocationId = "AAI", description = "HMP AAI")
+        }
+
+        assertThat(getPhoneNumber().phone).isNull()
+      }
+
+      @Test
+      fun `can return phone if it is on an address`() {
+        var phoneId = 0L
+        nomisDataBuilder.build {
+          prison(agencyLocationId = "AAI", description = "HMP AAI") {
+            address {
+              phoneId = phone(phoneType = "BUS", phoneNo = "0114 55 5555", extNo = "123").phoneId
+            }
+          }
+        }
+
+        val response = getPhoneNumber()
+
+        assertThat(response.phone?.id).isEqualTo(phoneId)
+        assertThat(response.phone?.number).isEqualTo("0114 55 5555")
+        assertThat(response.phone?.extension).isEqualTo("123")
+        assertThat(response.phone?.type?.code).isEqualTo("BUS")
+        assertThat(response.phone?.type?.description).isEqualTo("Business")
+      }
+
+      @Test
+      fun `can return phone if it is on agency directly`() {
+        var phoneId = 0L
+        nomisDataBuilder.build {
+          prison(agencyLocationId = "AAI", description = "HMP AAI") {
+            phoneId = phone(phoneType = "BUS", phoneNo = "0114 66 6666", extNo = "456").phoneId
+          }
+        }
+
+        val response = getPhoneNumber()
+
+        assertThat(response.phone?.id).isEqualTo(phoneId)
+        assertThat(response.phone?.number).isEqualTo("0114 66 6666")
+        assertThat(response.phone?.extension).isEqualTo("456")
+        assertThat(response.phone?.type?.code).isEqualTo("BUS")
+        assertThat(response.phone?.type?.description).isEqualTo("Business")
+      }
+
+      @Test
+      fun `will return just the first business phone from the list if multiple exist`() {
+        var firstPhoneId = 0L
+        nomisDataBuilder.build {
+          prison(agencyLocationId = "AAI", description = "HMP AAI") {
+            address {
+              phone(phoneType = "FAX", phoneNo = "0114 44 4444")
+              firstPhoneId = phone(phoneType = "BUS", phoneNo = "0114 55 5555").phoneId
+              phone(phoneType = "BUS", phoneNo = "0114 66 6666")
+            }
+            phone(phoneType = "BUS", phoneNo = "0114 77 7777")
+          }
+        }
+
+        val response = getPhoneNumber()
+
+        assertThat(response.phone?.id).isEqualTo(firstPhoneId)
+        assertThat(response.phone?.number).isEqualTo("0114 55 5555")
+        assertThat(response.phone?.extension).isNull()
+        assertThat(response.phone?.type?.code).isEqualTo("BUS")
+      }
+
+      private fun getPhoneNumber(): AgencyPhoneResponse = webTestClient.get().uri("/agency/AAI/phone-number")
+        .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectBodyResponse()
+    }
+  }
+
   @DisplayName("GET /agency/{agencyId}")
   @Nested
   inner class GetAgency {

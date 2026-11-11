@@ -73,6 +73,33 @@ class AgencyResource(private val agencyService: AgencyService) {
     agencyId: String,
   ) = agencyService.getAgencyLocation(agencyId)
 
+  @GetMapping("/agency/{agencyId}/phone-number")
+  @Operation(
+    summary = "Gets the phone number of an agency",
+    description = "Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Phone number details",
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Agency not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getAgencyPhoneNumber(
+    @PathVariable
+    @Schema(description = "Agency id (aka agencyId)", example = "WWI")
+    agencyId: String,
+  ) = AgencyPhoneResponse(agencyService.getAgencyPhoneNumber(agencyId))
+
   @GetMapping("/agency/ids/all")
   @Operation(
     summary = "Gets a list of all agency ids",
@@ -658,6 +685,13 @@ data class AgencyResponse(
   val phones: List<AgencyPhoneNumber>,
   @Schema(description = "Email addresses")
   val emailAddresses: List<AgencyEmailAddress>,
+)
+
+@Schema(description = "A response to get prison phone main number")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class AgencyPhoneResponse(
+  @Schema(description = "Phone number")
+  val phone: AgencyPhoneNumber?,
 )
 
 @Schema(description = "The data held in NOMIS about a phone number")
