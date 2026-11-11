@@ -192,7 +192,14 @@ enum class AssessmentType(val id: Long, val isCellSharing: Boolean = true) {
   CATEGORY(9688, false), // Categorisation
 }
 
-enum class AssessmentLevel { STANDARD, PEND, LOW, MED, HI }
+/**
+ * SUP_LVL_TYPE reference codes used as CSRA levels. The enum name must match the stored code exactly
+ * (see [CsraLevelConverter]).
+ *
+ * HI_GEN (High General) and HI_SPFC (High Specific) replace HI for new CSRAs under the new CSRA policy.
+ * HI stays valid for existing assessments.
+ */
+enum class AssessmentLevel { STANDARD, PEND, LOW, MED, HI, HI_GEN, HI_SPFC }
 
 enum class AssessmentCommittee {
   GOV, // Governor
