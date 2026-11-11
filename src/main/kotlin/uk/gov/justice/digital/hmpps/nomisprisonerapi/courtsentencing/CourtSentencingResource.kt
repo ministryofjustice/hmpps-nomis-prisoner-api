@@ -3028,6 +3028,7 @@ data class OffenderChargeRepairRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
+  val propertyValue: BigDecimal? = null,
 )
 
 @Schema(description = "Court event charge repair")
@@ -3037,6 +3038,7 @@ data class CourtEventChargeRepairRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
+  val propertyValue: BigDecimal? = null,
 )
 
 @Schema(description = "Create court case response")
@@ -3154,6 +3156,7 @@ data class OffenderChargeRequest(
   val futureAppearance: Boolean? = false,
   @Schema(description = "Indicates if the charge is related to a breach supervision (or imprisonable offence)")
   val isBreach: Boolean = false,
+  val propertyValue: BigDecimal? = null,
 
   /*
   val plea: String?,
@@ -3188,6 +3191,7 @@ data class ExistingOffenderChargeRequest(
   val offenceDate: LocalDate?,
   val offenceEndDate: LocalDate?,
   val resultCode1: String?,
+  val propertyValue: BigDecimal? = null,
 )
 
 @Schema(description = "Sentence request")
