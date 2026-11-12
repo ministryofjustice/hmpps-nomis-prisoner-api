@@ -78,7 +78,7 @@ class OffenderCharge(
   )
   var plea: PleaStatusType? = null,
 
-  val propertyValue: BigDecimal? = null,
+  var propertyValue: BigDecimal? = null,
 
   val totalPropertyValue: BigDecimal? = null,
 
