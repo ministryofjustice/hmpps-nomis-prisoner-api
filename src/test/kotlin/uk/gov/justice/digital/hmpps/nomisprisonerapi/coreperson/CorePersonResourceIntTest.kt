@@ -2083,6 +2083,155 @@ class CorePersonResourceIntTest(
     }
   }
 
+  @DisplayName("GET /core-person/{offenderId}/identifiers")
+  @Nested
+  @TestInstance(PER_CLASS)
+  inner class GetIdentifiers {
+    private lateinit var offender: Offender
+    private lateinit var alias: Offender
+    private lateinit var aliasWithoutIdentifiers: Offender
+
+    @BeforeAll
+    fun setUp() {
+      nomisDataBuilder.build {
+        staff(firstName = "KOFE", lastName = "ADDY") {
+          account(username = "KOFEADDY", type = "GENERAL")
+        }
+        offender = offender(
+          nomsId = "D5678EF",
+          firstName = "JANE",
+          lastName = "NARK",
+          birthDate = LocalDate.parse("1999-12-22"),
+        ) {
+          identifier(
+            type = "PNC",
+            identifier = "20/0071818T",
+            issuedAuthority = "Met Police",
+            issuedDate = LocalDate.parse("2020-01-01"),
+            verified = true,
+          )
+          identifier(type = "STAFF", identifier = "123")
+          alias = alias {
+            identifier(type = "DL", identifier = "NARK991222")
+          }
+          aliasWithoutIdentifiers = alias()
+        }
+      }
+    }
+
+    @AfterAll
+    fun tearDown(): Unit = deleteAll()
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifiers")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifiers")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifiers")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `return 404 when offender not found`() {
+        webTestClient.get().uri("/core-person/999999/identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `will return all identifiers for offender in sequence order`() {
+        webTestClient.get().uri("/core-person/${offender.id}/identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(2)
+          .jsonPath("[0].offenderId").isEqualTo(offender.id)
+          .jsonPath("[0].sequence").isEqualTo(1)
+          .jsonPath("[0].identifier").isEqualTo("20/0071818T")
+          .jsonPath("[0].type.code").isEqualTo("PNC")
+          .jsonPath("[0].type.description").isEqualTo("PNC Number")
+          .jsonPath("[0].issuedAuthority").isEqualTo("Met Police")
+          .jsonPath("[0].issuedDate").isEqualTo("2020-01-01")
+          .jsonPath("[0].verified").isEqualTo(true)
+          .jsonPath("[1].offenderId").isEqualTo(offender.id)
+          .jsonPath("[1].sequence").isEqualTo(2)
+          .jsonPath("[1].identifier").isEqualTo("123")
+          .jsonPath("[1].type.code").isEqualTo("STAFF")
+          .jsonPath("[1].type.description").isEqualTo("Staff Pass/ Identity Card")
+          .jsonPath("[1].issuedAuthority").doesNotExist()
+          .jsonPath("[1].issuedDate").doesNotExist()
+          .jsonPath("[1].verified").isEqualTo(false)
+      }
+
+      @Test
+      fun `will return only identifiers for the alias`() {
+        webTestClient.get().uri("/core-person/${alias.id}/identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(1)
+          .jsonPath("[0].offenderId").isEqualTo(alias.id)
+          .jsonPath("[0].sequence").isEqualTo(1)
+          .jsonPath("[0].identifier").isEqualTo("NARK991222")
+          .jsonPath("[0].type.code").isEqualTo("DL")
+      }
+
+      @Test
+      fun `will return empty list when offender has no identifiers`() {
+        webTestClient.get().uri("/core-person/${aliasWithoutIdentifiers.id}/identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody()
+          .jsonPath("$.length()").isEqualTo(0)
+      }
+
+      @Test
+      fun `is able to re-hydrate the identifiers`() {
+        val identifiers = webTestClient.get().uri("/core-person/${offender.id}/identifiers")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBodyList(Identifier::class.java)
+          .returnResult().responseBody!!
+
+        assertThat(identifiers).hasSize(2)
+        assertThat(identifiers.map { it.sequence }).containsExactly(1, 2)
+        assertThat(identifiers[0].type).isEqualTo(CodeDescription(code = "PNC", description = "PNC Number"))
+        assertThat(identifiers[1].type).isEqualTo(CodeDescription(code = "STAFF", description = "Staff Pass/ Identity Card"))
+      }
+    }
+  }
+
   @DisplayName("GET /core-person/{offenderId}/alias")
   @Nested
   @TestInstance(PER_CLASS)
