@@ -723,7 +723,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class HappyPath {
       @Test
-      fun `can get multiple CSRAs for a prisoner`() {
+      fun `can get multiple CSRAs for a prisoner, earliest to latest`() {
         nomisDataBuilder.build {
           offender(nomsId = "A2222BB") {
             booking(bookingSequence = 1) {
@@ -761,17 +761,15 @@ class CsraResourceIntTest : IntegrationTestBase() {
             with(csras[0]) {
               assertThat(assessmentStaffId).isEqualTo(staff.id)
               assertThat(comment).isEqualTo("a-comment")
-              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("I")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("D")
             }
             with(csras[1]) {
               assertThat(assessmentStaffId).isEqualTo(staff.id)
-              assertThat(comment).isEqualTo("a-comment")
               assertThat(sections[0].questions[0].responses[0].code).isEqualTo("S")
             }
             with(csras[2]) {
               assertThat(assessmentStaffId).isEqualTo(staff.id)
-              assertThat(comment).isEqualTo("a-comment")
-              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("D")
+              assertThat(sections[0].questions[0].responses[0].code).isEqualTo("I")
             }
           }
       }

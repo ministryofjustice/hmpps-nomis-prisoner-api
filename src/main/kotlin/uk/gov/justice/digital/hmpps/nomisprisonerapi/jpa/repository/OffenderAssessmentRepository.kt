@@ -22,7 +22,7 @@ interface OffenderAssessmentRepository : JpaRepository<OffenderAssessment, Offen
       join oa.id.offenderBooking ob
       where ob.offender.nomsId = :offenderNo
         and oa.assessment.isCellSharing = true
-      order by oa.assessmentDate desc, ob.bookingSequence asc, oa.id.sequence desc
+      order by oa.assessmentDate asc, ob.bookingSequence desc, oa.id.sequence asc
   """,
   )
   @EntityGraph(type = EntityGraphType.FETCH, value = "offender-csra")
