@@ -6251,7 +6251,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .contentType(MediaType.APPLICATION_JSON)
           .body(
             BodyInserters.fromValue(
-              createOffenderChargeRequest(resultCode1 = "2060"),
+              createOffenderChargeRequest(resultCode1 = "2060", propertyValue = BigDecimal("123.45")),
             ),
           )
           .exchange()
@@ -6268,6 +6268,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("resultCode1.code").isEqualTo("2060")
           .jsonPath("offenceDate").isEqualTo("2023-01-01")
           .jsonPath("offenceEndDate").isEqualTo("2023-01-02")
+          .jsonPath("propertyValue").isEqualTo(123.45)
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${courtEvent.id}")
@@ -6280,6 +6281,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEventCharges[0].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2023-01-01")
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2023-01-02")
+          .jsonPath("courtEventCharges[0].propertyValue").isEqualTo(123.45)
           // confirm other CEC is not updated
           .jsonPath("courtEventCharges[1].resultCode1.code").isEqualTo("1067")
           .jsonPath("courtEventCharges[0].resultCode1.dispositionCode").isEqualTo("F")
@@ -6311,6 +6313,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 resultCode1 = "1101",
                 offenceDate = LocalDate.parse("2024-03-01"),
                 offenceEndDate = LocalDate.parse("2024-03-02"),
+                propertyValue = BigDecimal("123.45"),
               ),
             ),
           )
@@ -6330,6 +6333,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           // dates on the offender charge are updated
           .jsonPath("offenceDate").isEqualTo("2024-03-01")
           .jsonPath("offenceEndDate").isEqualTo("2024-03-02")
+          .jsonPath("propertyValue").isEqualTo(123.45)
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${earlierCourtEvent.id}")
@@ -6341,6 +6345,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEventCharges[0].resultCode1.dispositionCode").isEqualTo("F")
           .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2024-03-01")
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2024-03-02")
+          .jsonPath("courtEventCharges[0].propertyValue").isEqualTo(123.45)
           .jsonPath("courtOrders[0].id").exists()
       }
 
@@ -6357,6 +6362,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 offenceDate = LocalDate.parse("2024-03-01"),
                 offenceEndDate = LocalDate.parse("2024-03-05"),
                 futureAppearance = true,
+                propertyValue = BigDecimal("123.45"),
               ),
             ),
           )
@@ -6376,6 +6382,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           // updated
           .jsonPath("offenceDate").isEqualTo("2024-03-01")
           .jsonPath("offenceEndDate").isEqualTo("2024-03-05")
+          .jsonPath("propertyValue").isEqualTo(123.45)
 
         webTestClient.get()
           .uri("/prisoners/${prisonerAtMoorland.nomsId}/sentencing/court-appearances/${futureCourtEvent.id}")
@@ -6386,6 +6393,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .jsonPath("courtEventCharges[0].resultCode1.code").doesNotExist()
           .jsonPath("courtEventCharges[0].offenceDate").isEqualTo("2024-03-01")
           .jsonPath("courtEventCharges[0].offenceEndDate").isEqualTo("2024-03-05")
+          .jsonPath("courtEventCharges[0].propertyValue").isEqualTo(123.45)
           .jsonPath("courtOrders[0].id").doesNotExist()
       }
 
@@ -6401,6 +6409,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
                 resultCode1 = "1019",
                 offenceDate = LocalDate.parse("2024-03-01"),
                 offenceEndDate = LocalDate.parse("2024-03-02"),
+                propertyValue = BigDecimal("123.45"),
               ),
             ),
           )
@@ -6414,6 +6423,9 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectStatus().isOk
           .expectBody()
           .jsonPath("resultCode1.code").isEqualTo("1019")
+          .jsonPath("offenceDate").isEqualTo("2024-03-01")
+          .jsonPath("offenceEndDate").isEqualTo("2024-03-02")
+          .jsonPath("propertyValue").isEqualTo(123.45)
       }
 
       @Test
@@ -6488,7 +6500,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
               offenderCharge1 = offenderCharge(resultCode1 = "1002", offenceCode = "RT88074", plea = "G")
               offenderCharge2 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84700")
               offenderCharge3 = offenderCharge(resultCode1 = "1067", offenceCode = "RR84009")
-              offenderCharge4 = offenderCharge(resultCode1 = "1067", offenceCode = "LO72002")
+              offenderCharge4 = offenderCharge(resultCode1 = "1067", offenceCode = "LO72002", propertyValue = BigDecimal("123.45"))
               courtEvent = courtEvent(eventDateTime = LocalDateTime.of(2023, 1, 1, 10, 30), court = "COURT1") {
 // overrides from the parent offender charge fields
                 courtEventCharge(
@@ -6799,6 +6811,10 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
           .expectBody()
           .jsonPath("courtEvents[0].courtEventCharges.size()").isEqualTo(4)
           .jsonPath("courtEvents[0].courtOrders[0].courtDate").isEqualTo("2023-01-05")
+          // the new court event charge copies the dates and property value from the offender charge
+          .jsonPath("courtEvents[0].courtEventCharges[?(@.offenderCharge.id == ${offenderCharge4.id})].offenceDate").isEqualTo("2023-01-01")
+          .jsonPath("courtEvents[0].courtEventCharges[?(@.offenderCharge.id == ${offenderCharge4.id})].offenceEndDate").isEqualTo("2023-01-05")
+          .jsonPath("courtEvents[0].courtEventCharges[?(@.offenderCharge.id == ${offenderCharge4.id})].propertyValue").isEqualTo(123.45)
 
         assertThat(courtAppearanceResponse.deletedOffenderChargesIds.size).isEqualTo(0)
       }
@@ -10371,6 +10387,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     resultCode1: String? = "1067",
     futureAppearance: Boolean? = false,
     isBreach: Boolean = false,
+    propertyValue: BigDecimal? = null,
   ) = OffenderChargeRequest(
     offenceCode = offenceCode,
     offenceDate = offenceDate,
@@ -10378,6 +10395,7 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
     resultCode1 = resultCode1,
     futureAppearance = futureAppearance,
     isBreach = isBreach,
+    propertyValue = propertyValue,
   )
 
   private fun createCourtAppearanceRequest(

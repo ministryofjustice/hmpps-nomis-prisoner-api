@@ -63,7 +63,7 @@ class CourtEventCharge(
   )
   val plea: PleaStatusType? = null,
 
-  val propertyValue: BigDecimal? = null,
+  var propertyValue: BigDecimal? = null,
 
   // offences taken into consideration button on OCDCCASE
   val totalPropertyValue: BigDecimal? = null,

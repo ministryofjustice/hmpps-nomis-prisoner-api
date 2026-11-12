@@ -534,6 +534,7 @@ class CourtSentencingService(
         offenderBooking = courtCase.offenderBooking,
         offence = lookupOffence(offenderChargeRequest.offenceCode),
         offenceDate = offenderChargeRequest.offenceDate,
+        propertyValue = offenderChargeRequest.propertyValue,
         offenceEndDate = offenderChargeRequest.offenceEndDate,
         resultCode1 = resultCode,
         resultCode1Indicator = resultCode?.dispositionCode,
@@ -610,6 +611,7 @@ class CourtSentencingService(
               ),
               offenceDate = offenderCharge.offenceDate,
               offenceEndDate = offenderCharge.offenceEndDate,
+              propertyValue = offenderCharge.propertyValue,
               mostSeriousFlag = offenderCharge.mostSeriousFlag,
               resultCode1 = resultCode,
               resultCode1Indicator = resultCode?.dispositionCode,
@@ -653,6 +655,7 @@ class CourtSentencingService(
             ),
             offenceDate = offenderCharge.offenceDate,
             offenceEndDate = offenderCharge.offenceEndDate,
+            propertyValue = offenderCharge.propertyValue,
             mostSeriousFlag = offenderCharge.mostSeriousFlag,
             resultCode1 = resultCode,
             resultCode1Indicator = resultCode?.dispositionCode,
@@ -856,6 +859,7 @@ class CourtSentencingService(
           val resultCode = request.resultCode1?.let { lookupOffenceResultCode(it) }
           courtEventCharge.offenceDate = request.offenceDate
           courtEventCharge.offenceEndDate = request.offenceEndDate
+          courtEventCharge.propertyValue = request.propertyValue
           courtEventCharge.resultCode1 = resultCode
           courtEventCharge.resultCode1Indicator = resultCode?.dispositionCode
           log.info("updateCourtCharge: court_event_charge updated for charge ${offenderCharge.id} on appearance ${courtAppearance.id} with result code ${resultCode?.code}")
@@ -1283,6 +1287,7 @@ class CourtSentencingService(
     with(courtEventCharge.id.offenderCharge) {
       offenceDate = offenderChargeRequest.offenceDate
       offenceEndDate = offenderChargeRequest.offenceEndDate
+      propertyValue = offenderChargeRequest.propertyValue
       if (shouldUpdateOutcome) {
         resultCode1 = resultCode
         resultCode1Indicator = resultCode?.dispositionCode
@@ -2283,6 +2288,7 @@ private fun OffenderChargeRequest.toExistingOffenderChargeRequest(chargeId: Long
   offenceDate = this.offenceDate,
   offenceEndDate = this.offenceEndDate,
   resultCode1 = this.resultCode1,
+  propertyValue = this.propertyValue,
   offenderChargeId = chargeId,
 )
 
