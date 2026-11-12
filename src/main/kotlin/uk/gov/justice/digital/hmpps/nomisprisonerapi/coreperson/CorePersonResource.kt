@@ -174,6 +174,52 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable sequenceNumber: Int,
   ) = corePersonService.getIdentifier(offenderId, sequenceNumber)
 
+  @GetMapping("/{offenderId}/identifiers")
+  @Operation(
+    summary = "Get all identifiers for an offender id",
+    description = "Retrieves all identifiers for the offender id, ordered by sequence number. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Identifiers returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getIdentifiers(
+    @Schema(description = "The offender id", example = "1234567")
+    @PathVariable offenderId: Long,
+  ): List<Identifier> = corePersonService.getIdentifiers(offenderId)
+
   @GetMapping("/{offenderId}/alias")
   @Operation(
     summary = "Get an alias by offender id",

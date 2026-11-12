@@ -379,6 +379,10 @@ class CorePersonService(
     .orElseThrow { NotFoundException("Identifier not found for offender $offenderId and sequence $sequenceNumber") }
     .toIdentifier()
 
+  fun getIdentifiers(offenderId: Long): List<Identifier> = offenderOf(offenderId).identifiers
+    .sortedBy { it.id.sequence }
+    .map { it.toIdentifier() }
+
   fun getAlias(offenderId: Long): CoreOffender {
     val offender = offenderOf(offenderId)
     val prisonNumber = offender.nomsId
