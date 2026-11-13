@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.coreperson
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
@@ -138,39 +139,39 @@ class CorePersonResourceIntTest(
       @AfterAll
       fun tearDown(): Unit = deleteAll()
 
+      @Test
       fun `will return basic offender data`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("prisonNumber").isEqualTo(offenderMinimal.nomsId)
-          .jsonPath("offenders[0].offenderId").isEqualTo(offenderMinimal.id)
-          .jsonPath("offenders[0].title").doesNotExist()
-          .jsonPath("offenders[0].suffix").doesNotExist()
-          .jsonPath("offenders[0].firstName").isEqualTo("JOHN")
-          .jsonPath("offenders[0].middleName1").doesNotExist()
-          .jsonPath("offenders[0].middleName2").doesNotExist()
-          .jsonPath("offenders[0].lastName").isEqualTo("BOG")
-          .jsonPath("offenders[0].dateOfBirth").doesNotExist()
-          .jsonPath("offenders[0].birthPlace").doesNotExist()
-          .jsonPath("offenders[0].birthCountry").doesNotExist()
-          .jsonPath("offenders[0].ethnicity").doesNotExist()
-          .jsonPath("offenders[0].sex.code").isEqualTo("M")
-          .jsonPath("offenders[0].sex.description").isEqualTo("Male")
-          .jsonPath("offenders[0].nameType").doesNotExist()
-          .jsonPath("offenders[0].workingName").isEqualTo(true)
-          .jsonPath("inOutStatus").isEqualTo("OUT")
-          .jsonPath("activeFlag").isEqualTo("false")
-          .jsonPath("identifiers").doesNotExist()
-          .jsonPath("sentenceStartDates").doesNotExist()
-          .jsonPath("addresses").doesNotExist()
-          .jsonPath("phoneNumbers").doesNotExist()
-          .jsonPath("emailAddresses").doesNotExist()
-          .jsonPath("nationalities").doesNotExist()
-          .jsonPath("nationalityDetails").doesNotExist()
-          .jsonPath("beliefs").doesNotExist()
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.prisonNumber).isEqualTo(offenderMinimal.nomsId)
+        with(result.offenders!![0]) {
+          assertThat(offenderId).isEqualTo(offenderMinimal.id)
+          assertThat(title).isNull()
+          assertThat(suffix).isNull()
+          assertThat(firstName).isEqualTo("JOHN")
+          assertThat(middleName1).isNull()
+          assertThat(middleName2).isNull()
+          assertThat(lastName).isEqualTo("BOG")
+          assertThat(dateOfBirth).isNull()
+          assertThat(birthPlace).isNull()
+          assertThat(birthCountry).isNull()
+          assertThat(ethnicity).isNull()
+          assertThat(sex).isEqualTo(CodeDescription("M", "Male"))
+          assertThat(nameType).isNull()
+          assertThat(workingName).isTrue()
+        }
+        assertThat(result.inOutStatus).isEqualTo("OUT")
+        assertThat(result.activeFlag).isFalse()
+        assertThat(result.addresses).isNull()
+        assertThat(result.phoneNumbers).isNull()
+        assertThat(result.emailAddresses).isNull()
+        assertThat(result.beliefs).isNull()
       }
 
       @Test
@@ -187,36 +188,34 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return full offender data`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offenderFull.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("prisonNumber").isEqualTo(offenderFull.nomsId)
-          .jsonPath("inOutStatus").isEqualTo("IN")
-          .jsonPath("activeFlag").isEqualTo("true")
-          .jsonPath("offenders[0].offenderId").isEqualTo(offenderFull.id)
-          .jsonPath("offenders[0].title.code").isEqualTo("MRS")
-          .jsonPath("offenders[0].title.description").isEqualTo("Mrs")
-          .jsonPath("offenders[0].suffix.code").isEqualTo("SR")
-          .jsonPath("offenders[0].suffix.description").isEqualTo("Senior")
-          .jsonPath("offenders[0].firstName").isEqualTo("JANE")
-          .jsonPath("offenders[0].middleName1").isEqualTo("Mary")
-          .jsonPath("offenders[0].middleName2").isEqualTo("Ann")
-          .jsonPath("offenders[0].lastName").isEqualTo("NARK")
-          .jsonPath("offenders[0].dateOfBirth").isEqualTo("1999-12-22")
-          .jsonPath("offenders[0].birthPlace").isEqualTo("LONDON")
-          .jsonPath("offenders[0].birthCountry.code").isEqualTo("ATA")
-          .jsonPath("offenders[0].birthCountry.description").isEqualTo("Antarctica")
-          .jsonPath("offenders[0].ethnicity.code").isEqualTo("M3")
-          .jsonPath("offenders[0].ethnicity.description").isEqualTo("Mixed: White and Asian")
-          .jsonPath("offenders[0].sex.code").isEqualTo("F")
-          .jsonPath("offenders[0].sex.description").isEqualTo("Female")
-          .jsonPath("offenders[0].nameType.code").isEqualTo("MAID")
-          .jsonPath("offenders[0].nameType.description").isEqualTo("Maiden")
-          .jsonPath("offenders[0].createDate").isEqualTo("2020-03-20")
-          .jsonPath("offenders[0].workingName").isEqualTo(true)
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.prisonNumber).isEqualTo(offenderFull.nomsId)
+        assertThat(result.inOutStatus).isEqualTo("IN")
+        assertThat(result.activeFlag).isTrue()
+        with(result.offenders!![0]) {
+          assertThat(offenderId).isEqualTo(offenderFull.id)
+          assertThat(title).isEqualTo(CodeDescription("MRS", "Mrs"))
+          assertThat(suffix).isEqualTo(CodeDescription("SR", "Senior"))
+          assertThat(firstName).isEqualTo("JANE")
+          assertThat(middleName1).isEqualTo("Mary")
+          assertThat(middleName2).isEqualTo("Ann")
+          assertThat(lastName).isEqualTo("NARK")
+          assertThat(dateOfBirth).isEqualTo(LocalDate.parse("1999-12-22"))
+          assertThat(birthPlace).isEqualTo("LONDON")
+          assertThat(birthCountry).isEqualTo(CodeDescription("ATA", "Antarctica"))
+          assertThat(ethnicity).isEqualTo(CodeDescription("M3", "Mixed: White and Asian"))
+          assertThat(sex).isEqualTo(CodeDescription("F", "Female"))
+          assertThat(nameType).isEqualTo(CodeDescription("MAID", "Maiden"))
+          assertThat(createDate).isEqualTo(LocalDate.parse("2020-03-20"))
+          assertThat(workingName).isTrue()
+        }
       }
     }
 
@@ -280,53 +279,49 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return aliases`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("prisonNumber").isEqualTo(offender.nomsId)
-          .jsonPath("offenders.length()").isEqualTo(2)
-          .jsonPath("offenders[0].offenderId").isEqualTo(offender.id)
-          .jsonPath("offenders[0].firstName").isEqualTo("JANE")
-          .jsonPath("offenders[0].lastName").isEqualTo("NARK")
-          .jsonPath("offenders[0].workingName").isEqualTo(true)
-          .jsonPath("offenders[1].offenderId").isEqualTo(alias.id)
-          .jsonPath("offenders[1].title.code").isEqualTo("MR")
-          .jsonPath("offenders[1].title.description").isEqualTo("Mr")
-          .jsonPath("offenders[1].suffix.code").isEqualTo("JR")
-          .jsonPath("offenders[1].suffix.description").isEqualTo("Junior")
-          .jsonPath("offenders[1].firstName").isEqualTo("LEKAN")
-          .jsonPath("offenders[1].middleName1").isEqualTo("Fred")
-          .jsonPath("offenders[1].middleName2").isEqualTo("Johas")
-          .jsonPath("offenders[1].lastName").isEqualTo("NTHANDA")
-          .jsonPath("offenders[1].dateOfBirth").isEqualTo("1965-07-19")
-          .jsonPath("offenders[1].ethnicity.code").isEqualTo("M1")
-          .jsonPath("offenders[1].ethnicity.description").isEqualTo("Mixed: White and Black Caribbean")
-          .jsonPath("offenders[1].sex.code").isEqualTo("M")
-          .jsonPath("offenders[1].sex.description").isEqualTo("Male")
-          .jsonPath("offenders[1].workingName").isEqualTo(false)
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.prisonNumber).isEqualTo(offender.nomsId)
+        assertThat(result.offenders)
+          .extracting("offenderId", "firstName", "lastName", "workingName")
+          .containsExactly(
+            tuple(offender.id, "JANE", "NARK", true),
+            tuple(alias.id, "LEKAN", "NTHANDA", false),
+          )
+        with(result.offenders!![1]) {
+          assertThat(title).isEqualTo(CodeDescription("MR", "Mr"))
+          assertThat(suffix).isEqualTo(CodeDescription("JR", "Junior"))
+          assertThat(middleName1).isEqualTo("Fred")
+          assertThat(middleName2).isEqualTo("Johas")
+          assertThat(dateOfBirth).isEqualTo(LocalDate.parse("1965-07-19"))
+          assertThat(ethnicity).isEqualTo(CodeDescription("M1", "Mixed: White and Black Caribbean"))
+          assertThat(sex).isEqualTo(CodeDescription("M", "Male"))
+        }
       }
 
       @Test
       fun `will set working name to offender record linked to active booking`() {
-        webTestClient.get().uri("/core-person/${offender2.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender2.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("prisonNumber").isEqualTo(offender2.nomsId)
-          .jsonPath("offenders.length()").isEqualTo(2)
-          .jsonPath("offenders[0].offenderId").isEqualTo(offender2.id)
-          .jsonPath("offenders[0].firstName").isEqualTo("JOHN")
-          .jsonPath("offenders[0].lastName").isEqualTo("BARK")
-          .jsonPath("offenders[0].workingName").isEqualTo(false)
-          .jsonPath("offenders[1].offenderId").isEqualTo(alias2.id)
-          .jsonPath("offenders[1].firstName").isEqualTo("AJOHN")
-          .jsonPath("offenders[1].lastName").isEqualTo("ABARK")
-          .jsonPath("offenders[1].workingName").isEqualTo(true)
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.prisonNumber).isEqualTo(offender2.nomsId)
+        assertThat(result.offenders)
+          .extracting("offenderId", "firstName", "lastName", "workingName")
+          .containsExactly(
+            tuple(offender2.id, "JOHN", "BARK", false),
+            tuple(alias2.id, "AJOHN", "ABARK", true),
+          )
       }
     }
 
@@ -368,38 +363,24 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return identifiers`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW"))).exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("offenders[0].identifiers.length()").isEqualTo(2)
-          .jsonPath("offenders[0].identifiers[0].offenderId").isEqualTo(offender.id)
-          .jsonPath("offenders[0].identifiers[0].sequence").isEqualTo(1)
-          .jsonPath("offenders[0].identifiers[0].identifier").isEqualTo("20/0071818T")
-          .jsonPath("offenders[0].identifiers[0].type.code").isEqualTo("PNC")
-          .jsonPath("offenders[0].identifiers[0].type.description").isEqualTo("PNC Number")
-          .jsonPath("offenders[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
-          .jsonPath("offenders[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
-          .jsonPath("offenders[0].identifiers[0].verified").isEqualTo(true)
-          .jsonPath("offenders[0].identifiers[0].offenderId").isEqualTo(offender.id)
-          .jsonPath("offenders[0].identifiers[1].sequence").isEqualTo(2)
-          .jsonPath("offenders[0].identifiers[1].offenderId").isEqualTo(offender.id)
-          .jsonPath("offenders[0].identifiers[1].identifier").isEqualTo("123")
-          .jsonPath("offenders[0].identifiers[1].type.code").isEqualTo("STAFF")
-          .jsonPath("offenders[0].identifiers[1].type.description").isEqualTo("Staff Pass/ Identity Card")
-          .jsonPath("offenders[0].identifiers[1].issuedAuthority").doesNotExist()
-          .jsonPath("offenders[0].identifiers[1].issuedDate").doesNotExist()
-          .jsonPath("offenders[0].identifiers[1].verified").isEqualTo(false)
-          .jsonPath("offenders[1].identifiers.length()").isEqualTo(1)
-          .jsonPath("offenders[1].identifiers[0].offenderId").isEqualTo(alias.id)
-          .jsonPath("offenders[1].identifiers[0].sequence").isEqualTo(1)
-          .jsonPath("offenders[1].identifiers[0].identifier").isEqualTo("456")
-          .jsonPath("offenders[1].identifiers[0].type.code").isEqualTo("STAFF")
-          .jsonPath("offenders[1].identifiers[0].type.description").isEqualTo("Staff Pass/ Identity Card")
-          .jsonPath("offenders[1].identifiers[0].issuedAuthority").doesNotExist()
-          .jsonPath("offenders[1].identifiers[0].issuedDate").doesNotExist()
-          .jsonPath("offenders[1].identifiers[0].verified").isEqualTo(false)
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.offenders!![0].identifiers)
+          .extracting("offenderId", "sequence", "identifier", "type", "issuedAuthority", "issuedDate", "verified")
+          .containsExactly(
+            tuple(offender.id, 1L, "20/0071818T", CodeDescription("PNC", "PNC Number"), "Met Police", LocalDate.parse("2020-01-01"), true),
+            tuple(offender.id, 2L, "123", CodeDescription("STAFF", "Staff Pass/ Identity Card"), null, null, false),
+          )
+        assertThat(result.offenders!![1].identifiers)
+          .extracting("offenderId", "sequence", "identifier", "type", "issuedAuthority", "issuedDate", "verified")
+          .containsExactly(
+            tuple(alias.id, 1L, "456", CodeDescription("STAFF", "Staff Pass/ Identity Card"), null, null, false),
+          )
       }
     }
 
@@ -486,111 +467,130 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return addresses`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("addresses[0].addressId").isEqualTo(offender.addresses[0].addressId)
-          .jsonPath("addresses[0].flat").doesNotExist()
-          .jsonPath("addresses[0].premise").doesNotExist()
-          .jsonPath("addresses[0].street").doesNotExist()
-          .jsonPath("addresses[0].locality").doesNotExist()
-          .jsonPath("addresses[0].city").doesNotExist()
-          .jsonPath("addresses[0].county").doesNotExist()
-          .jsonPath("addresses[0].country").doesNotExist()
-          .jsonPath("addresses[0].noFixedAddress").doesNotExist()
-          .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
-          .jsonPath("addresses[0].mailAddress").isEqualTo(false)
-          .jsonPath("addresses[0].comment").doesNotExist()
-          .jsonPath("addresses[0].startDate").doesNotExist()
-          .jsonPath("addresses[0].endDate").doesNotExist()
-          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
-          .jsonPath("addresses[1].addressId").isEqualTo(offender.addresses[1].addressId)
-          .jsonPath("addresses[1].flat").isEqualTo("3B")
-          .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
-          .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
-          .jsonPath("addresses[1].locality").isEqualTo("Hunters Bar")
-          .jsonPath("addresses[1].postcode").isEqualTo("S1 3GG")
-          .jsonPath("addresses[1].city.code").isEqualTo("25343")
-          .jsonPath("addresses[1].city.description").isEqualTo("Sheffield")
-          .jsonPath("addresses[1].county.code").isEqualTo("S.YORKSHIRE")
-          .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
-          .jsonPath("addresses[1].country.code").isEqualTo("ENG")
-          .jsonPath("addresses[1].country.description").isEqualTo("England")
-          .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
-          .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
-          .jsonPath("addresses[1].mailAddress").isEqualTo(true)
-          .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
-          .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
-          .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
-          .jsonPath("addresses[1].createdDateTime").isEqualTo("2020-01-01T10:00:00")
-          .jsonPath("addresses[1].createdByUsername").isEqualTo("KOFEADDY")
-          .jsonPath("addresses[1].lastUpdatedDateTime").isEqualTo("2021-02-02T11:00:00")
-          .jsonPath("addresses[1].lastUpdatedByUsername").isEqualTo("MODIFIER")
-          .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        with(result.addresses!![0]) {
+          assertThat(addressId).isEqualTo(offender.addresses[0].addressId)
+          assertThat(flat).isNull()
+          assertThat(premise).isNull()
+          assertThat(street).isNull()
+          assertThat(locality).isNull()
+          assertThat(city).isNull()
+          assertThat(county).isNull()
+          assertThat(country).isNull()
+          assertThat(noFixedAddress).isNull()
+          assertThat(primaryAddress).isFalse()
+          assertThat(mailAddress).isFalse()
+          assertThat(comment).isNull()
+          assertThat(startDate).isNull()
+          assertThat(endDate).isNull()
+          assertThat(phoneNumbers).isNull()
+        }
+        with(result.addresses!![1]) {
+          assertThat(addressId).isEqualTo(offender.addresses[1].addressId)
+          assertThat(flat).isEqualTo("3B")
+          assertThat(premise).isEqualTo("Brown Court")
+          assertThat(street).isEqualTo("Scotland Street")
+          assertThat(locality).isEqualTo("Hunters Bar")
+          assertThat(postcode).isEqualTo("S1 3GG")
+          assertThat(city).isEqualTo(CodeDescription("25343", "Sheffield"))
+          assertThat(county).isEqualTo(CodeDescription("S.YORKSHIRE", "South Yorkshire"))
+          assertThat(country).isEqualTo(CodeDescription("ENG", "England"))
+          assertThat(noFixedAddress).isFalse()
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+          assertThat(comment).isEqualTo("Not to be used")
+          assertThat(startDate).isEqualTo(LocalDate.parse("2024-10-01"))
+          assertThat(endDate).isEqualTo(LocalDate.parse("2024-11-01"))
+          assertThat(createdDateTime).isEqualTo(LocalDateTime.parse("2020-01-01T10:00:00"))
+          assertThat(createdByUsername).isEqualTo("KOFEADDY")
+          assertThat(lastUpdatedDateTime).isEqualTo(LocalDateTime.parse("2021-02-02T11:00:00"))
+          assertThat(lastUpdatedByUsername).isEqualTo("MODIFIER")
+        }
+        assertThat(result.addresses!![2].noFixedAddress).isTrue()
       }
 
       @Test
       fun `will return addresses for offender with active alias`() {
-        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("addresses[0].addressId").isEqualTo(offenderWithActiveAlias.addresses[0].addressId)
-          .jsonPath("addresses[0].flat").isEqualTo("3B")
-          .jsonPath("addresses[0].premise").isEqualTo("Brown Court")
-          .jsonPath("addresses[0].postcode").isEqualTo("S1 3GG")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        with(result.addresses!![0]) {
+          assertThat(addressId).isEqualTo(offenderWithActiveAlias.addresses[0].addressId)
+          assertThat(flat).isEqualTo("3B")
+          assertThat(premise).isEqualTo("Brown Court")
+          assertThat(postcode).isEqualTo("S1 3GG")
+        }
       }
 
       @Test
       fun `will return phone numbers associated with addresses`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
-          .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(offender.addresses[1].phones[0].phoneId)
-          .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
-          .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
-          .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
-          .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
-          .jsonPath("addresses[1].phoneNumbers[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
-          .jsonPath("addresses[1].phoneNumbers[0].createdByUsername").isEqualTo("KOFEADDY")
-          .jsonPath("addresses[1].phoneNumbers[0].lastUpdatedDateTime").doesNotExist()
-          .jsonPath("addresses[1].phoneNumbers[0].lastUpdatedByUsername").doesNotExist()
-          .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(offender.addresses[1].phones[1].phoneId)
-          .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
-          .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
-          .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
-          .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.addresses!![0].phoneNumbers).isNull()
+        val phoneNumbers = result.addresses!![1].phoneNumbers!!
+        with(phoneNumbers[0]) {
+          assertThat(phoneId).isEqualTo(offender.addresses[1].phones[0].phoneId)
+          assertThat(type).isEqualTo(CodeDescription("MOB", "Mobile"))
+          assertThat(number).isEqualTo("07399999999")
+          assertThat(extension).isNull()
+          assertThat(createdDateTime).isEqualTo(LocalDateTime.parse("2020-01-01T10:00:00"))
+          assertThat(createdByUsername).isEqualTo("KOFEADDY")
+          assertThat(lastUpdatedDateTime).isNull()
+          assertThat(lastUpdatedByUsername).isNull()
+        }
+        with(phoneNumbers[1]) {
+          assertThat(phoneId).isEqualTo(offender.addresses[1].phones[1].phoneId)
+          assertThat(type).isEqualTo(CodeDescription("HOME", "Home"))
+          assertThat(number).isEqualTo("01142561919")
+          assertThat(extension).isEqualTo("123")
+        }
       }
 
       @Test
       fun `will return address usages associated with addresses`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("addresses[0].usages").doesNotExist()
-          .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offender.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[0].usage").isEqualTo("CURFEW")
-          .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
-          .jsonPath("addresses[1].usages[0].createdDateTime").isNotEmpty
-          .jsonPath("addresses[1].usages[0].createdByUsername").isNotEmpty
-          .jsonPath("addresses[1].usages[0].lastUpdatedDateTime").doesNotExist()
-          .jsonPath("addresses[1].usages[0].lastUpdatedByUsername").doesNotExist()
-          .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offender.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[1].usage").isEqualTo("DAP")
-          .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
-          .jsonPath("addresses[1].usages[2].usage").isEqualTo("NOT_FOUND")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.addresses!![0].usages).isNull()
+        val usages = result.addresses!![1].usages!!
+        with(usages[0]) {
+          assertThat(addressId).isEqualTo(offender.addresses[1].addressId)
+          assertThat(usage).isEqualTo("CURFEW")
+          assertThat(active).isFalse()
+          assertThat(createdDateTime).isNotNull()
+          assertThat(createdByUsername).isNotEmpty()
+          assertThat(lastUpdatedDateTime).isNull()
+          assertThat(lastUpdatedByUsername).isNull()
+        }
+        with(usages[1]) {
+          assertThat(addressId).isEqualTo(offender.addresses[1].addressId)
+          assertThat(usage).isEqualTo("DAP")
+          assertThat(active).isTrue()
+        }
+        assertThat(usages[2].usage).isEqualTo("NOT_FOUND")
       }
 
       @Test
@@ -648,40 +648,47 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return phone numbers`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offender.phones[0].phoneId)
-          .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
-          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Mobile")
-          .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
-          .jsonPath("phoneNumbers[0].extension").doesNotExist()
-          .jsonPath("phoneNumbers[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
-          .jsonPath("phoneNumbers[0].createdByUsername").isEqualTo("KOFEADDY")
-          .jsonPath("phoneNumbers[0].lastUpdatedDateTime").doesNotExist()
-          .jsonPath("phoneNumbers[0].lastUpdatedByUsername").doesNotExist()
-          .jsonPath("phoneNumbers[1].phoneId").isEqualTo(offender.phones[1].phoneId)
-          .jsonPath("phoneNumbers[1].type.code").isEqualTo("HOME")
-          .jsonPath("phoneNumbers[1].type.description").isEqualTo("Home")
-          .jsonPath("phoneNumbers[1].number").isEqualTo("01142561919")
-          .jsonPath("phoneNumbers[1].extension").isEqualTo("123")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        with(result.phoneNumbers!![0]) {
+          assertThat(phoneId).isEqualTo(offender.phones[0].phoneId)
+          assertThat(type).isEqualTo(CodeDescription("MOB", "Mobile"))
+          assertThat(number).isEqualTo("07399999999")
+          assertThat(extension).isNull()
+          assertThat(createdDateTime).isEqualTo(LocalDateTime.parse("2020-01-01T10:00:00"))
+          assertThat(createdByUsername).isEqualTo("KOFEADDY")
+          assertThat(lastUpdatedDateTime).isNull()
+          assertThat(lastUpdatedByUsername).isNull()
+        }
+        with(result.phoneNumbers!![1]) {
+          assertThat(phoneId).isEqualTo(offender.phones[1].phoneId)
+          assertThat(type).isEqualTo(CodeDescription("HOME", "Home"))
+          assertThat(number).isEqualTo("01142561919")
+          assertThat(extension).isEqualTo("123")
+        }
       }
 
       @Test
       fun `will return phone numbers for offender with active alias`() {
-        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderWithActiveAlias.phones[0].phoneId)
-          .jsonPath("phoneNumbers[0].type.code").isEqualTo("HOME")
-          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Home")
-          .jsonPath("phoneNumbers[0].number").isEqualTo("01142561919")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        with(result.phoneNumbers!![0]) {
+          assertThat(phoneId).isEqualTo(offenderWithActiveAlias.phones[0].phoneId)
+          assertThat(type).isEqualTo(CodeDescription("HOME", "Home"))
+          assertThat(number).isEqualTo("01142561919")
+        }
       }
     }
 
@@ -724,32 +731,42 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return email address`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offender.internetAddresses[0].internetAddressId)
-          .jsonPath("emailAddresses[0].email").isEqualTo("john.bog@justice.gov.uk")
-          .jsonPath("emailAddresses[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
-          .jsonPath("emailAddresses[0].createdByUsername").isEqualTo("KOFEADDY")
-          .jsonPath("emailAddresses[0].lastUpdatedDateTime").doesNotExist()
-          .jsonPath("emailAddresses[0].lastUpdatedByUsername").doesNotExist()
-          .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(offender.internetAddresses[1].internetAddressId)
-          .jsonPath("emailAddresses[1].email").isEqualTo("john.bog@gmail.com")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        with(result.emailAddresses!![0]) {
+          assertThat(emailAddressId).isEqualTo(offender.internetAddresses[0].internetAddressId)
+          assertThat(email).isEqualTo("john.bog@justice.gov.uk")
+          assertThat(createdDateTime).isEqualTo(LocalDateTime.parse("2020-01-01T10:00:00"))
+          assertThat(createdByUsername).isEqualTo("KOFEADDY")
+          assertThat(lastUpdatedDateTime).isNull()
+          assertThat(lastUpdatedByUsername).isNull()
+        }
+        with(result.emailAddresses!![1]) {
+          assertThat(emailAddressId).isEqualTo(offender.internetAddresses[1].internetAddressId)
+          assertThat(email).isEqualTo("john.bog@gmail.com")
+        }
       }
 
       @Test
       fun `will return email address for offender with active alias`() {
-        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offenderWithActiveAlias.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offenderWithActiveAlias.internetAddresses[0].internetAddressId)
-          .jsonPath("emailAddresses[0].email").isEqualTo("0114@2561919.com")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        with(result.emailAddresses!![0]) {
+          assertThat(emailAddressId).isEqualTo(offenderWithActiveAlias.internetAddresses[0].internetAddressId)
+          assertThat(email).isEqualTo("0114@2561919.com")
+        }
       }
     }
 
@@ -822,54 +839,48 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return beliefs`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("beliefs.length()").isEqualTo(3)
-          .jsonPath("beliefs[0].beliefId").isEqualTo(belief3.beliefId)
-          .jsonPath("beliefs[0].belief.code").isEqualTo("DRU")
-          .jsonPath("beliefs[0].belief.description").isEqualTo("Druid")
-          .jsonPath("beliefs[0].startDate").isEqualTo("2023-01-01")
-          .jsonPath("beliefs[0].changeReason").isEqualTo(false)
-          .jsonPath("beliefs[0].comments").doesNotExist()
-          .jsonPath("beliefs[1].beliefId").isEqualTo(belief2.beliefId)
-          .jsonPath("beliefs[1].belief.code").isEqualTo("JAIN")
-          .jsonPath("beliefs[1].belief.description").isEqualTo("Jain")
-          .jsonPath("beliefs[1].startDate").isEqualTo("2021-01-01")
-          .jsonPath("beliefs[1].endDate").doesNotExist()
-          .jsonPath("beliefs[1].changeReason").isEqualTo(true)
-          .jsonPath("beliefs[1].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("beliefs[1].audit.createUsername").isNotEmpty
-          .jsonPath("beliefs[1].audit.createDatetime").isNotEmpty
-          .jsonPath("beliefs[2].beliefId").isEqualTo(belief1.beliefId)
-          .jsonPath("beliefs[2].belief.code").isEqualTo("ZORO")
-          .jsonPath("beliefs[2].belief.description").isEqualTo("Zoroastrian")
-          .jsonPath("beliefs[2].startDate").isEqualTo("2018-01-01")
-          .jsonPath("beliefs[2].endDate").isEqualTo("2019-02-03")
-          .jsonPath("beliefs[2].changeReason").doesNotExist()
-          .jsonPath("beliefs[2].comments").doesNotExist()
-          .jsonPath("beliefs[2].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("beliefs[2].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.beliefs)
+          .extracting("beliefId", "belief", "startDate", "changeReason", "comments")
+          .containsExactly(
+            tuple(belief3.beliefId, CodeDescription("DRU", "Druid"), LocalDate.parse("2023-01-01"), false, null),
+            tuple(belief2.beliefId, CodeDescription("JAIN", "Jain"), LocalDate.parse("2021-01-01"), true, "No longer believes in Zoroastrianism"),
+            tuple(belief1.beliefId, CodeDescription("ZORO", "Zoroastrian"), LocalDate.parse("2018-01-01"), null, null),
+          )
+        with(result.beliefs!![1]) {
+          assertThat(endDate).isNull()
+          assertThat(audit.createUsername).isNotEmpty()
+          assertThat(audit.createDatetime).isNotNull()
+        }
+        with(result.beliefs!![2]) {
+          assertThat(endDate).isEqualTo(LocalDate.parse("2019-02-03"))
+          assertThat(audit.createUsername).isEqualTo("KOFEADDY")
+          assertThat(audit.createDatetime).isEqualTo(LocalDateTime.parse("2020-01-01T10:00:00"))
+        }
       }
 
       @Test
       fun `will return beliefs when current alias is different from root offender`() {
-        webTestClient.get().uri("/core-person/${offender2.nomsId}")
+        val result = webTestClient.get().uri("/core-person/${offender2.nomsId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("beliefs.length()").isEqualTo(1)
-          .jsonPath("beliefs[0].belief.code").isEqualTo("JAIN")
-          .jsonPath("beliefs[0].belief.description").isEqualTo("Jain")
-          .jsonPath("beliefs[0].startDate").isEqualTo("2021-01-01")
-          .jsonPath("beliefs[0].endDate").doesNotExist()
-          .jsonPath("beliefs[0].changeReason").isEqualTo(true)
-          .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.beliefs)
+          .extracting("belief", "startDate", "endDate", "changeReason", "comments")
+          .containsExactly(
+            tuple(CodeDescription("JAIN", "Jain"), LocalDate.parse("2021-01-01"), null, true, "No longer believes in Zoroastrianism"),
+          )
       }
     }
   }
@@ -988,47 +999,58 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return addresses, phone numbers, email addresses and beliefs`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/reconciliation")
+        val result = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/reconciliation")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("prisonNumber").isEqualTo(offenderFull.nomsId)
-          .jsonPath("inOutStatus").doesNotExist()
-          .jsonPath("activeFlag").isEqualTo(false)
-          .jsonPath("offenders").doesNotExist()
-          .jsonPath("addresses[0].addressId").isEqualTo(offenderFull.addresses[0].addressId)
-          .jsonPath("addresses[0].flat").isEqualTo("3B")
-          .jsonPath("addresses[0].premise").isEqualTo("Brown Court")
-          .jsonPath("addresses[0].street").isEqualTo("Scotland Street")
-          .jsonPath("addresses[0].locality").isEqualTo("Hunters Bar")
-          .jsonPath("addresses[0].postcode").isEqualTo("S1 3GG")
-          .jsonPath("addresses[0].primaryAddress").isEqualTo(true)
-          .jsonPath("addresses[0].mailAddress").isEqualTo(true)
-          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderFull.phones[0].phoneId)
-          .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
-          .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
-          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offenderFull.internetAddresses[0].internetAddressId)
-          .jsonPath("emailAddresses[0].email").isEqualTo("jane.nark@justice.gov.uk")
-          .jsonPath("beliefs.length()").isEqualTo(1)
-          .jsonPath("beliefs[0].beliefId").isEqualTo(belief.beliefId)
-          .jsonPath("beliefs[0].belief.code").isEqualTo("JAIN")
-          .jsonPath("beliefs[0].belief.description").isEqualTo("Jain")
-          .jsonPath("beliefs[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.prisonNumber).isEqualTo(offenderFull.nomsId)
+        assertThat(result.inOutStatus).isNull()
+        assertThat(result.activeFlag).isFalse()
+        assertThat(result.offenders).isNull()
+        with(result.addresses!![0]) {
+          assertThat(addressId).isEqualTo(offenderFull.addresses[0].addressId)
+          assertThat(flat).isEqualTo("3B")
+          assertThat(premise).isEqualTo("Brown Court")
+          assertThat(street).isEqualTo("Scotland Street")
+          assertThat(locality).isEqualTo("Hunters Bar")
+          assertThat(postcode).isEqualTo("S1 3GG")
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+        }
+        with(result.phoneNumbers!![0]) {
+          assertThat(phoneId).isEqualTo(offenderFull.phones[0].phoneId)
+          assertThat(type.code).isEqualTo("MOB")
+          assertThat(number).isEqualTo("07399999999")
+        }
+        with(result.emailAddresses!![0]) {
+          assertThat(emailAddressId).isEqualTo(offenderFull.internetAddresses[0].internetAddressId)
+          assertThat(email).isEqualTo("jane.nark@justice.gov.uk")
+        }
+        assertThat(result.beliefs)
+          .extracting("beliefId", "belief", "comments")
+          .containsExactly(
+            tuple(belief.beliefId, CodeDescription("JAIN", "Jain"), "No longer believes in Zoroastrianism"),
+          )
       }
 
       @Test
       fun `will not return DISC address usages`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/reconciliation")
+        val result = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/reconciliation")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("addresses[0].usages.length()").isEqualTo(1)
-          .jsonPath("addresses[0].usages[0].usage").isEqualTo("DAP")
-          .jsonPath("addresses[0].usages[?(@.usage == 'DISC')]").doesNotExist()
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.addresses!![0].usages)
+          .extracting("usage")
+          .containsExactly("DAP")
+          .doesNotContain("DISC")
       }
 
       @Test
@@ -1085,16 +1107,20 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return addresses from the root offender even when current alias is different`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}/reconciliation")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}/reconciliation")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("prisonNumber").isEqualTo(offender.nomsId)
-          .jsonPath("addresses[0].addressId").isEqualTo(offender.addresses[0].addressId)
-          .jsonPath("addresses[0].premise").isEqualTo("Root House")
-          .jsonPath("offenders").doesNotExist()
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.prisonNumber).isEqualTo(offender.nomsId)
+        with(result.addresses!![0]) {
+          assertThat(addressId).isEqualTo(offender.addresses[0].addressId)
+          assertThat(premise).isEqualTo("Root House")
+        }
+        assertThat(result.offenders).isNull()
       }
     }
   }
@@ -1179,38 +1205,30 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return aliases and identifiers`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}/aliases-identifiers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(2)
-          .jsonPath("[0].offenderId").isEqualTo(offender.id)
-          .jsonPath("[0].firstName").isEqualTo("JANE")
-          .jsonPath("[0].lastName").isEqualTo("NARK")
-          .jsonPath("[0].workingName").isEqualTo(false)
-          .jsonPath("[0].identifiers.length()").isEqualTo(1)
-          .jsonPath("[0].identifiers[0].sequence").isEqualTo(1)
-          .jsonPath("[0].identifiers[0].identifier").isEqualTo("20/0071818T")
-          .jsonPath("[0].identifiers[0].type.code").isEqualTo("PNC")
-          .jsonPath("[0].identifiers[0].type.description").isEqualTo("PNC Number")
-          .jsonPath("[0].identifiers[0].issuedAuthority").isEqualTo("Met Police")
-          .jsonPath("[0].identifiers[0].issuedDate").isEqualTo("2020-01-01")
-          .jsonPath("[0].identifiers[0].verified").isEqualTo(true)
-          .jsonPath("[1].offenderId").isEqualTo(alias.id)
-          .jsonPath("[1].firstName").isEqualTo("AJOHN")
-          .jsonPath("[1].lastName").isEqualTo("ABARK")
-          .jsonPath("[1].workingName").isEqualTo(true)
-          .jsonPath("[1].identifiers.length()").isEqualTo(1)
-          .jsonPath("[1].identifiers[0].offenderId").isEqualTo(alias.id)
-          .jsonPath("[1].identifiers[0].sequence").isEqualTo(1)
-          .jsonPath("[1].identifiers[0].identifier").isEqualTo("123")
-          .jsonPath("[1].identifiers[0].type.code").isEqualTo("STAFF")
-          .jsonPath("[1].identifiers[0].type.description").isEqualTo("Staff Pass/ Identity Card")
-          .jsonPath("[1].identifiers[0].issuedAuthority").doesNotExist()
-          .jsonPath("[1].identifiers[0].issuedDate").doesNotExist()
-          .jsonPath("[1].identifiers[0].verified").isEqualTo(false)
+          .expectBody<List<CoreOffender>>()
+          .returnResult().responseBody!!
+
+        assertThat(result)
+          .extracting("offenderId", "firstName", "lastName", "workingName")
+          .containsExactly(
+            tuple(offender.id, "JANE", "NARK", false),
+            tuple(alias.id, "AJOHN", "ABARK", true),
+          )
+        assertThat(result[0].identifiers)
+          .extracting("sequence", "identifier", "type", "issuedAuthority", "issuedDate", "verified")
+          .containsExactly(
+            tuple(1L, "20/0071818T", CodeDescription("PNC", "PNC Number"), "Met Police", LocalDate.parse("2020-01-01"), true),
+          )
+        assertThat(result[1].identifiers)
+          .extracting("offenderId", "sequence", "identifier", "type", "issuedAuthority", "issuedDate", "verified")
+          .containsExactly(
+            tuple(alias.id, 1L, "123", CodeDescription("STAFF", "Staff Pass/ Identity Card"), null, null, false),
+          )
       }
     }
   }
@@ -1397,13 +1415,15 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will return empty list if no data`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religions")
+        val result = webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/religions")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(0)
+          .expectBody<List<OffenderBeliefCorePerson>>()
+          .returnResult().responseBody!!
+
+        assertThat(result).isEmpty()
       }
 
       @Test
@@ -1501,59 +1521,60 @@ class CorePersonResourceIntTest(
 
       @Test
       fun `will return beliefs`() {
-        webTestClient.get().uri("/core-person/${offender.nomsId}/religions")
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}/religions")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(4)
-          .jsonPath("[0].beliefId").isEqualTo(belief3.beliefId)
-          .jsonPath("[0].belief.code").isEqualTo("DRU")
-          .jsonPath("[0].belief.description").isEqualTo("Druid")
-          .jsonPath("[0].startDate").isEqualTo("2023-01-01")
-          .jsonPath("[0].changeReason").isEqualTo(false)
-          .jsonPath("[0].comments").doesNotExist()
-          .jsonPath("[1].beliefId").isEqualTo(belief2.beliefId)
-          .jsonPath("[1].belief.code").isEqualTo("JAIN")
-          .jsonPath("[1].belief.description").isEqualTo("Jain")
-          .jsonPath("[1].startDate").isEqualTo("2018-01-01")
-          .jsonPath("[1].endDate").doesNotExist()
-          .jsonPath("[1].changeReason").isEqualTo(true)
-          .jsonPath("[1].comments").isEqualTo("No longer believes in Zoroastrianism")
-          .jsonPath("[1].audit.createDatetime").isEqualTo("2022-01-01T10:00:00")
-          .jsonPath("[2].beliefId").isEqualTo(belief4.beliefId)
-          .jsonPath("[2].belief.code").isEqualTo("SATN")
-          .jsonPath("[2].belief.description").isEqualTo("Satanism")
-          .jsonPath("[2].startDate").isEqualTo("2018-01-01")
-          .jsonPath("[2].endDate").isEqualTo("2018-01-01")
-          .jsonPath("[2].audit.createDatetime").isEqualTo("2021-01-01T10:00:00")
-          .jsonPath("[3].beliefId").isEqualTo(belief1.beliefId)
-          .jsonPath("[3].belief.code").isEqualTo("ZORO")
-          .jsonPath("[3].belief.description").isEqualTo("Zoroastrian")
-          .jsonPath("[3].startDate").isEqualTo("2018-01-01")
-          .jsonPath("[3].endDate").isEqualTo("2019-02-03")
-          .jsonPath("[3].changeReason").doesNotExist()
-          .jsonPath("[3].comments").doesNotExist()
-          .jsonPath("[3].audit.createUsername").isEqualTo("KOFEADDY")
-          .jsonPath("[3].audit.createDatetime").isEqualTo("2020-01-01T10:00:00")
+          .expectBody<List<OffenderBeliefCorePerson>>()
+          .returnResult().responseBody!!
+
+        assertThat(result)
+          .extracting("beliefId", "belief", "startDate")
+          .containsExactly(
+            tuple(belief3.beliefId, CodeDescription("DRU", "Druid"), LocalDate.parse("2023-01-01")),
+            tuple(belief2.beliefId, CodeDescription("JAIN", "Jain"), LocalDate.parse("2018-01-01")),
+            tuple(belief4.beliefId, CodeDescription("SATN", "Satanism"), LocalDate.parse("2018-01-01")),
+            tuple(belief1.beliefId, CodeDescription("ZORO", "Zoroastrian"), LocalDate.parse("2018-01-01")),
+          )
+        with(result[0]) {
+          assertThat(changeReason).isFalse()
+          assertThat(comments).isNull()
+        }
+        with(result[1]) {
+          assertThat(endDate).isNull()
+          assertThat(changeReason).isTrue()
+          assertThat(comments).isEqualTo("No longer believes in Zoroastrianism")
+          assertThat(audit.createDatetime).isEqualTo(LocalDateTime.parse("2022-01-01T10:00:00"))
+        }
+        with(result[2]) {
+          assertThat(endDate).isEqualTo(LocalDate.parse("2018-01-01"))
+          assertThat(audit.createDatetime).isEqualTo(LocalDateTime.parse("2021-01-01T10:00:00"))
+        }
+        with(result[3]) {
+          assertThat(endDate).isEqualTo(LocalDate.parse("2019-02-03"))
+          assertThat(changeReason).isNull()
+          assertThat(comments).isNull()
+          assertThat(audit.createUsername).isEqualTo("KOFEADDY")
+          assertThat(audit.createDatetime).isEqualTo(LocalDateTime.parse("2020-01-01T10:00:00"))
+        }
       }
 
       @Test
       fun `will return beliefs when current alias is different from root offender`() {
-        webTestClient.get().uri("/core-person/${offender2.nomsId}/religions")
+        val result = webTestClient.get().uri("/core-person/${offender2.nomsId}/religions")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(1)
-          .jsonPath("[0].belief.code").isEqualTo("JAIN")
-          .jsonPath("[0].belief.description").isEqualTo("Jain")
-          .jsonPath("[0].startDate").isEqualTo("2021-01-01")
-          .jsonPath("[0].endDate").doesNotExist()
-          .jsonPath("[0].changeReason").isEqualTo(true)
-          .jsonPath("[0].comments").isEqualTo("No longer believes in Zoroastrianism")
+          .expectBody<List<OffenderBeliefCorePerson>>()
+          .returnResult().responseBody!!
+
+        assertThat(result)
+          .extracting("belief", "startDate", "endDate", "changeReason", "comments")
+          .containsExactly(
+            tuple(CodeDescription("JAIN", "Jain"), LocalDate.parse("2021-01-01"), null, true, "No longer believes in Zoroastrianism"),
+          )
       }
     }
   }
@@ -1807,102 +1828,111 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will return empty list if no data`() {
-        webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses-contacts")
+        val result = webTestClient.get().uri("/core-person/${offenderMinimal.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(0)
+          .expectBody<CorePersonAddressContact>()
+          .returnResult().responseBody!!
+
+        assertThat(result.addresses).isNull()
+        assertThat(result.phoneNumbers).isNull()
+        assertThat(result.emailAddresses).isNull()
       }
 
       @Test
       fun `will return addresses`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses-contacts")
+        val result = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("addresses[0].addressId").isEqualTo(offenderFull.addresses[0].addressId)
-          .jsonPath("addresses[0].flat").doesNotExist()
-          .jsonPath("addresses[0].premise").doesNotExist()
-          .jsonPath("addresses[0].street").doesNotExist()
-          .jsonPath("addresses[0].locality").doesNotExist()
-          .jsonPath("addresses[0].city").doesNotExist()
-          .jsonPath("addresses[0].county").doesNotExist()
-          .jsonPath("addresses[0].country").doesNotExist()
-          .jsonPath("addresses[0].noFixedAddress").doesNotExist()
-          .jsonPath("addresses[0].primaryAddress").isEqualTo(false)
-          .jsonPath("addresses[0].mailAddress").isEqualTo(false)
-          .jsonPath("addresses[0].comment").doesNotExist()
-          .jsonPath("addresses[0].startDate").doesNotExist()
-          .jsonPath("addresses[0].endDate").doesNotExist()
-          .jsonPath("addresses[0].phoneNumbers").doesNotExist()
-          .jsonPath("addresses[1].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("addresses[1].flat").isEqualTo("3B")
-          .jsonPath("addresses[1].premise").isEqualTo("Brown Court")
-          .jsonPath("addresses[1].street").isEqualTo("Scotland Street")
-          .jsonPath("addresses[1].locality").isEqualTo("Hunters Bar")
-          .jsonPath("addresses[1].postcode").isEqualTo("S1 3GG")
-          .jsonPath("addresses[1].city.code").isEqualTo("25343")
-          .jsonPath("addresses[1].city.description").isEqualTo("Sheffield")
-          .jsonPath("addresses[1].county.code").isEqualTo("S.YORKSHIRE")
-          .jsonPath("addresses[1].county.description").isEqualTo("South Yorkshire")
-          .jsonPath("addresses[1].country.code").isEqualTo("ENG")
-          .jsonPath("addresses[1].country.description").isEqualTo("England")
-          .jsonPath("addresses[1].noFixedAddress").isEqualTo(false)
-          .jsonPath("addresses[1].primaryAddress").isEqualTo(true)
-          .jsonPath("addresses[1].mailAddress").isEqualTo(true)
-          .jsonPath("addresses[1].comment").isEqualTo("Not to be used")
-          .jsonPath("addresses[1].startDate").isEqualTo("2024-10-01")
-          .jsonPath("addresses[1].endDate").isEqualTo("2024-11-01")
-          .jsonPath("addresses[1].phoneNumbers[0].phoneId").isEqualTo(offenderFull.addresses[1].phones[0].phoneId)
-          .jsonPath("addresses[1].phoneNumbers[0].type.code").isEqualTo("MOB")
-          .jsonPath("addresses[1].phoneNumbers[0].type.description").isEqualTo("Mobile")
-          .jsonPath("addresses[1].phoneNumbers[0].number").isEqualTo("07399999999")
-          .jsonPath("addresses[1].phoneNumbers[0].extension").doesNotExist()
-          .jsonPath("addresses[1].phoneNumbers[1].phoneId").isEqualTo(offenderFull.addresses[1].phones[1].phoneId)
-          .jsonPath("addresses[1].phoneNumbers[1].type.code").isEqualTo("HOME")
-          .jsonPath("addresses[1].phoneNumbers[1].type.description").isEqualTo("Home")
-          .jsonPath("addresses[1].phoneNumbers[1].number").isEqualTo("01142561919")
-          .jsonPath("addresses[1].phoneNumbers[1].extension").isEqualTo("123")
-          .jsonPath("addresses[1].usages[0].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[0].usage").isEqualTo("CURFEW")
-          .jsonPath("addresses[1].usages[0].active").isEqualTo(false)
-          .jsonPath("addresses[1].usages[1].addressId").isEqualTo(offenderFull.addresses[1].addressId)
-          .jsonPath("addresses[1].usages[1].usage").isEqualTo("DAP")
-          .jsonPath("addresses[1].usages[1].active").isEqualTo(true)
-          .jsonPath("addresses[1].usages[2].usage").isEqualTo("NOT_FOUND")
-          .jsonPath("addresses[2].noFixedAddress").isEqualTo(true)
-          .jsonPath("phoneNumbers[0].phoneId").isEqualTo(offenderFull.phones[0].phoneId)
-          .jsonPath("phoneNumbers[0].type.code").isEqualTo("MOB")
-          .jsonPath("phoneNumbers[0].type.description").isEqualTo("Mobile")
-          .jsonPath("phoneNumbers[0].number").isEqualTo("07399999999")
-          .jsonPath("phoneNumbers[0].extension").doesNotExist()
-          .jsonPath("emailAddresses[0].emailAddressId").isEqualTo(offenderFull.internetAddresses[0].internetAddressId)
-          .jsonPath("emailAddresses[0].email").isEqualTo("jane.nark@justice.gov.uk")
-          .jsonPath("emailAddresses[0].createdDateTime").isEqualTo("2020-01-01T10:00:00")
-          .jsonPath("emailAddresses[0].createdByUsername").isEqualTo("KOFEADDY")
-          .jsonPath("emailAddresses[0].lastUpdatedDateTime").doesNotExist()
-          .jsonPath("emailAddresses[0].lastUpdatedByUsername").doesNotExist()
-          .jsonPath("emailAddresses[1].emailAddressId").isEqualTo(offenderFull.internetAddresses[1].internetAddressId)
-          .jsonPath("emailAddresses[1].email").isEqualTo("jane.nark@gmail.com")
+          .expectBody<CorePersonAddressContact>()
+          .returnResult().responseBody!!
+
+        with(result.addresses!![0]) {
+          assertThat(addressId).isEqualTo(offenderFull.addresses[0].addressId)
+          assertThat(flat).isNull()
+          assertThat(premise).isNull()
+          assertThat(street).isNull()
+          assertThat(locality).isNull()
+          assertThat(city).isNull()
+          assertThat(county).isNull()
+          assertThat(country).isNull()
+          assertThat(noFixedAddress).isNull()
+          assertThat(primaryAddress).isFalse()
+          assertThat(mailAddress).isFalse()
+          assertThat(comment).isNull()
+          assertThat(startDate).isNull()
+          assertThat(endDate).isNull()
+          assertThat(phoneNumbers).isNull()
+        }
+        with(result.addresses!![1]) {
+          assertThat(addressId).isEqualTo(offenderFull.addresses[1].addressId)
+          assertThat(flat).isEqualTo("3B")
+          assertThat(premise).isEqualTo("Brown Court")
+          assertThat(street).isEqualTo("Scotland Street")
+          assertThat(locality).isEqualTo("Hunters Bar")
+          assertThat(postcode).isEqualTo("S1 3GG")
+          assertThat(city).isEqualTo(CodeDescription("25343", "Sheffield"))
+          assertThat(county).isEqualTo(CodeDescription("S.YORKSHIRE", "South Yorkshire"))
+          assertThat(country).isEqualTo(CodeDescription("ENG", "England"))
+          assertThat(noFixedAddress).isFalse()
+          assertThat(primaryAddress).isTrue()
+          assertThat(mailAddress).isTrue()
+          assertThat(comment).isEqualTo("Not to be used")
+          assertThat(startDate).isEqualTo(LocalDate.parse("2024-10-01"))
+          assertThat(endDate).isEqualTo(LocalDate.parse("2024-11-01"))
+          assertThat(phoneNumbers)
+            .extracting("phoneId", "type", "number", "extension")
+            .containsExactly(
+              tuple(offenderFull.addresses[1].phones[0].phoneId, CodeDescription("MOB", "Mobile"), "07399999999", null),
+              tuple(offenderFull.addresses[1].phones[1].phoneId, CodeDescription("HOME", "Home"), "01142561919", "123"),
+            )
+          assertThat(usages!!.take(2))
+            .extracting("addressId", "usage", "active")
+            .containsExactly(
+              tuple(offenderFull.addresses[1].addressId, "CURFEW", false),
+              tuple(offenderFull.addresses[1].addressId, "DAP", true),
+            )
+          assertThat(usages!![2].usage).isEqualTo("NOT_FOUND")
+        }
+        assertThat(result.addresses!![2].noFixedAddress).isTrue()
+        with(result.phoneNumbers!![0]) {
+          assertThat(phoneId).isEqualTo(offenderFull.phones[0].phoneId)
+          assertThat(type).isEqualTo(CodeDescription("MOB", "Mobile"))
+          assertThat(number).isEqualTo("07399999999")
+          assertThat(extension).isNull()
+        }
+        with(result.emailAddresses!![0]) {
+          assertThat(emailAddressId).isEqualTo(offenderFull.internetAddresses[0].internetAddressId)
+          assertThat(email).isEqualTo("jane.nark@justice.gov.uk")
+          assertThat(createdDateTime).isEqualTo(LocalDateTime.parse("2020-01-01T10:00:00"))
+          assertThat(createdByUsername).isEqualTo("KOFEADDY")
+          assertThat(lastUpdatedDateTime).isNull()
+          assertThat(lastUpdatedByUsername).isNull()
+        }
+        with(result.emailAddresses!![1]) {
+          assertThat(emailAddressId).isEqualTo(offenderFull.internetAddresses[1].internetAddressId)
+          assertThat(email).isEqualTo("jane.nark@gmail.com")
+        }
       }
 
       @Test
       fun `will not return DISC address usages`() {
-        webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses-contacts")
+        val result = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/addresses-contacts")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("addresses[1].usages.length()").isEqualTo(3)
-          .jsonPath("addresses[1].usages[0].usage").isEqualTo("CURFEW")
-          .jsonPath("addresses[1].usages[1].usage").isEqualTo("DAP")
-          .jsonPath("addresses[1].usages[2].usage").isEqualTo("NOT_FOUND")
-          .jsonPath("addresses[1].usages[?(@.usage == 'DISC')]").doesNotExist()
+          .expectBody<CorePersonAddressContact>()
+          .returnResult().responseBody!!
+
+        assertThat(result.addresses!![1].usages)
+          .extracting("usage")
+          .containsExactly("CURFEW", "DAP", "NOT_FOUND")
+          .doesNotContain("DISC")
       }
 
       @Test
@@ -2163,55 +2193,50 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `will return all identifiers for offender in sequence order`() {
-        webTestClient.get().uri("/core-person/${offender.id}/identifiers")
+        val result = webTestClient.get().uri("/core-person/${offender.id}/identifiers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(2)
-          .jsonPath("[0].offenderId").isEqualTo(offender.id)
-          .jsonPath("[0].sequence").isEqualTo(1)
-          .jsonPath("[0].identifier").isEqualTo("20/0071818T")
-          .jsonPath("[0].type.code").isEqualTo("PNC")
-          .jsonPath("[0].type.description").isEqualTo("PNC Number")
-          .jsonPath("[0].issuedAuthority").isEqualTo("Met Police")
-          .jsonPath("[0].issuedDate").isEqualTo("2020-01-01")
-          .jsonPath("[0].verified").isEqualTo(true)
-          .jsonPath("[1].offenderId").isEqualTo(offender.id)
-          .jsonPath("[1].sequence").isEqualTo(2)
-          .jsonPath("[1].identifier").isEqualTo("123")
-          .jsonPath("[1].type.code").isEqualTo("STAFF")
-          .jsonPath("[1].type.description").isEqualTo("Staff Pass/ Identity Card")
-          .jsonPath("[1].issuedAuthority").doesNotExist()
-          .jsonPath("[1].issuedDate").doesNotExist()
-          .jsonPath("[1].verified").isEqualTo(false)
+          .expectBody<List<Identifier>>()
+          .returnResult().responseBody!!
+
+        assertThat(result)
+          .extracting("offenderId", "sequence", "identifier", "type", "issuedAuthority", "issuedDate", "verified")
+          .containsExactly(
+            tuple(offender.id, 1L, "20/0071818T", CodeDescription("PNC", "PNC Number"), "Met Police", LocalDate.parse("2020-01-01"), true),
+            tuple(offender.id, 2L, "123", CodeDescription("STAFF", "Staff Pass/ Identity Card"), null, null, false),
+          )
       }
 
       @Test
       fun `will return only identifiers for the alias`() {
-        webTestClient.get().uri("/core-person/${alias.id}/identifiers")
+        val result = webTestClient.get().uri("/core-person/${alias.id}/identifiers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(1)
-          .jsonPath("[0].offenderId").isEqualTo(alias.id)
-          .jsonPath("[0].sequence").isEqualTo(1)
-          .jsonPath("[0].identifier").isEqualTo("NARK991222")
-          .jsonPath("[0].type.code").isEqualTo("DL")
+          .expectBody<List<Identifier>>()
+          .returnResult().responseBody!!
+
+        assertThat(result)
+          .extracting("offenderId", "sequence", "identifier", "type.code")
+          .containsExactly(
+            tuple(alias.id, 1L, "NARK991222", "DL"),
+          )
       }
 
       @Test
       fun `will return empty list when offender has no identifiers`() {
-        webTestClient.get().uri("/core-person/${aliasWithoutIdentifiers.id}/identifiers")
+        val result = webTestClient.get().uri("/core-person/${aliasWithoutIdentifiers.id}/identifiers")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("$.length()").isEqualTo(0)
+          .expectBody<List<Identifier>>()
+          .returnResult().responseBody!!
+
+        assertThat(result).isEmpty()
       }
 
       @Test
@@ -2304,32 +2329,36 @@ class CorePersonResourceIntTest(
     inner class HappyPath {
       @Test
       fun `returns the alias when there is no booking`() {
-        webTestClient.get().uri("/core-person/${offenderWithoutBooking.id}/alias")
+        val result = webTestClient.get().uri("/core-person/${offenderWithoutBooking.id}/alias")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("offenderId").isEqualTo(offenderWithoutBooking.id)
-          .jsonPath("firstName").isEqualTo("JANE")
-          .jsonPath("lastName").isEqualTo("NARK")
-          .jsonPath("workingName").isEqualTo(true)
-          .jsonPath("identifiers.length()").isEqualTo(0)
+          .expectBody<CoreOffender>()
+          .returnResult().responseBody!!
+
+        assertThat(result.offenderId).isEqualTo(offenderWithoutBooking.id)
+        assertThat(result.firstName).isEqualTo("JANE")
+        assertThat(result.lastName).isEqualTo("NARK")
+        assertThat(result.workingName).isTrue()
+        assertThat(result.identifiers).isEmpty()
       }
 
       @Test
       fun `marks the alias as not working name (not active) when a different alias is current`() {
-        webTestClient.get().uri("/core-person/${offenderWithActiveAlias.id}/alias")
+        val result = webTestClient.get().uri("/core-person/${offenderWithActiveAlias.id}/alias")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
           .expectStatus()
           .isOk
-          .expectBody()
-          .jsonPath("offenderId").isEqualTo(offenderWithActiveAlias.id)
-          .jsonPath("firstName").isEqualTo("JOHN")
-          .jsonPath("lastName").isEqualTo("BARK")
-          .jsonPath("workingName").isEqualTo(false)
-          .jsonPath("identifiers.length()").isEqualTo(0)
+          .expectBody<CoreOffender>()
+          .returnResult().responseBody!!
+
+        assertThat(result.offenderId).isEqualTo(offenderWithActiveAlias.id)
+        assertThat(result.firstName).isEqualTo("JOHN")
+        assertThat(result.lastName).isEqualTo("BARK")
+        assertThat(result.workingName).isFalse()
+        assertThat(result.identifiers).isEmpty()
       }
 
       @Test
