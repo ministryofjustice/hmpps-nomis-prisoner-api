@@ -641,5 +641,6 @@ private fun booking(bookingSequence: Int = 1): OffenderBooking = OffenderBooking
   offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),
   location = AgencyLocation(id = "MDI", description = "Moorland HMP"),
   bookingStatus = "O",
+  inOutStatus = "IN",
   bookNumber = "AA1234",
 )

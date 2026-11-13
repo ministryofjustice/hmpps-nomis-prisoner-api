@@ -519,6 +519,7 @@ fun caseNote(
     bookingBeginDate = LocalDateTime.now(),
     location = AgencyLocation(id = "MDI", description = "Moorland"),
     bookingStatus = "O",
+    inOutStatus = "IN",
     bookNumber = "AA1234",
   ),
   occurrenceDate = LocalDate.parse("2024-03-04"),

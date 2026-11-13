@@ -113,6 +113,7 @@ internal class VisitServiceTest {
     bookingBeginDate = LocalDateTime.now(),
     location = AgencyLocation("MKI", "Millsike Prison"),
     bookingStatus = "O",
+    inOutStatus = "IN",
     bookNumber = "AA1234",
   ).apply {
     // add circular reference
@@ -412,6 +413,7 @@ internal class VisitServiceTest {
             offender = defaultOffender,
             location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
             bookingStatus = "O",
+            inOutStatus = "IN",
             bookNumber = "AA1234",
           ),
         )
@@ -451,6 +453,7 @@ internal class VisitServiceTest {
             offender = defaultOffender,
             location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
             bookingStatus = "O",
+            inOutStatus = "IN",
             bookNumber = "AA1234",
           ),
         )
@@ -490,6 +493,7 @@ internal class VisitServiceTest {
             offender = defaultOffender,
             location = AgencyLocation(id = PRISON_ID, description = PRISON_ID),
             bookingStatus = "O",
+            inOutStatus = "IN",
             bookNumber = "AA1234",
           ),
         )
