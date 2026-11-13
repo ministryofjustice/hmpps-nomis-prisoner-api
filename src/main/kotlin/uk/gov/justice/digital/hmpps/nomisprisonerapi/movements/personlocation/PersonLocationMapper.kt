@@ -50,6 +50,8 @@ internal fun OffenderBooking.toPersonLocationBooking() = PersonLocationBooking(
   bookingStatus = if (bookingStatus == "O") BookingStatus.OPEN else BookingStatus.CLOSED,
   bookingBeginTime = bookingBeginDate,
   bookingEndTime = bookingEndDate,
+  prison = location.id,
+  inOutStatus = inOutStatus,
   audit = toAudit(),
 )
 

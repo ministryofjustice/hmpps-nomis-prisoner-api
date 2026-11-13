@@ -78,6 +78,8 @@ class OffenderPersonLocationsResourceIntTest(
                 assertThat(bookingStatus).isEqualTo(BookingStatus.OPEN)
                 assertThat(bookingBeginTime).isEqualTo(yesterday)
                 assertThat(bookingEndTime).isEqualTo(now.truncatedTo(ChronoUnit.DAYS))
+                assertThat(inOutStatus).isEqualTo("OUT")
+                assertThat(prison).isEqualTo("OUT")
                 assertThat(audit.createDatetime).isCloseTo(now, within(50, ChronoUnit.MINUTES))
                 assertThat(audit.createUsername).isEqualTo("SA")
               }
