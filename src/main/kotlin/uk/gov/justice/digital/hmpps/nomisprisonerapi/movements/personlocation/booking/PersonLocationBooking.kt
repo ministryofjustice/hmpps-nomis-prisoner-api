@@ -28,6 +28,12 @@ data class PersonLocationBooking(
   @Schema(description = "The booking end date")
   val bookingEndTime: LocalDateTime?,
 
+  @Schema(description = "The prison the booking is currently at, or OUT or TRN when released or in transit")
+  val prison: String,
+
+  @Schema(description = "The booking in/out status: IN, OUT or TRN")
+  val inOutStatus: String,
+
   @Schema(description = "Audit data associated with the records")
   val audit: NomisAudit,
 )

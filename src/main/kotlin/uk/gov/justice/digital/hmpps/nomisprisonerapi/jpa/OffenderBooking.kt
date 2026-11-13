@@ -92,7 +92,7 @@ data class OffenderBooking(
   var bookingEndDate: LocalDateTime? = null,
 
   @Column(name = "IN_OUT_STATUS", nullable = false)
-  var inOutStatus: String? = null,
+  var inOutStatus: String,
 
   @Column(name = "ADMISSION_REASON")
   val admissionReason: String? = null,

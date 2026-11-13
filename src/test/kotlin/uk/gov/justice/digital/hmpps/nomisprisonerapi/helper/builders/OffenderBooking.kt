@@ -772,6 +772,7 @@ class BookingBuilder(
       youthAdultCode = youthAdultCode,
       assignedLivingUnit = repository.lookupAgencyInternalLocation(livingUnitId),
       bookingStatus = "O",
+      inOutStatus = "IN",
       bookNumber = "AA1234",
     )
       .also {

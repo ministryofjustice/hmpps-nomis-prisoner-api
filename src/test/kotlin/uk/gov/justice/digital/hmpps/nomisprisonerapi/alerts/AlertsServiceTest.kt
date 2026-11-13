@@ -124,6 +124,7 @@ class AlertsServiceTest {
 private fun booking(bookingSequence: Int = 1): OffenderBooking = OffenderBooking(
   bookingSequence = bookingSequence,
   bookingStatus = "O",
+  inOutStatus = "IN",
   bookNumber = "AA1234",
   bookingBeginDate = LocalDateTime.now(),
   offender = Offender(nomsId = "A1234KT", gender = Gender("M", "MALE"), lastName = "SMITH", firstName = "JOHN"),

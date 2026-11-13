@@ -39,7 +39,7 @@ class PersonLocationBookingResourceIntTest : IntegrationTestBase() {
     fun setUp() {
       nomisDataBuilder.build {
         offender = offender(nomsId = offenderNo) {
-          booking = booking(bookingBeginDate = now.minusDays(2))
+          booking = booking(bookingBeginDate = now.minusDays(2), agencyLocationId = "LEI")
           oldBooking = booking(bookingBeginDate = now.minusDays(10)) {
             release(date = now.minusDays(5))
           }
@@ -59,6 +59,8 @@ class PersonLocationBookingResourceIntTest : IntegrationTestBase() {
           assertThat(bookingStatus).isEqualTo(BookingStatus.OPEN)
           assertThat(bookingBeginTime).isEqualTo(now.minusDays(2))
           assertThat(bookingEndTime).isNull()
+          assertThat(inOutStatus).isEqualTo("IN")
+          assertThat(prison).isEqualTo("LEI")
           assertThat(audit.createUsername).isEqualTo("SA")
           assertThat(audit.createDatetime).isCloseTo(now, within(50, ChronoUnit.MINUTES))
         }
@@ -72,6 +74,8 @@ class PersonLocationBookingResourceIntTest : IntegrationTestBase() {
           assertThat(latestBooking).isFalse
           assertThat(bookingBeginTime).isEqualTo(now.minusDays(10))
           assertThat(bookingEndTime).isEqualTo(now.minusDays(5).truncatedTo(ChronoUnit.DAYS))
+          assertThat(inOutStatus).isEqualTo("OUT")
+          assertThat(prison).isEqualTo("OUT")
         }
       }
     }

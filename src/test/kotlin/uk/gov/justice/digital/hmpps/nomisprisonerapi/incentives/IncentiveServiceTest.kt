@@ -73,6 +73,7 @@ internal class IncentiveServiceTest {
     bookingBeginDate = LocalDateTime.now(),
     location = AgencyLocation(PRISON_ID, PRISON_DESCRIPTION),
     bookingStatus = "O",
+    inOutStatus = "IN",
     bookNumber = "AA1234",
   )
 
