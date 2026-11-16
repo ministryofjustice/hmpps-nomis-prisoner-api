@@ -266,6 +266,54 @@ class CorePersonResource(private val corePersonService: CorePersonService) {
     @PathVariable offenderId: Long,
   ): CoreOffender = corePersonService.getAlias(offenderId)
 
+  @GetMapping("/{prisonNumber}/working-name")
+  @Operation(
+    summary = "Get the working name offender id for a prisoner by prison number",
+    description = "Retrieves the offender id of the current alias (working name), i.e. the offender record linked to the latest booking, or the root offender if there are no bookings. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Working name returned",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden to access this endpoint. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender does not exist",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getWorkingName(
+    @Schema(
+      description = "Prison number aka noms id / offender id display",
+      example = "A1234BC",
+    ) @PathVariable prisonNumber: String,
+  ): WorkingName = corePersonService.getWorkingName(prisonNumber)
+
   @GetMapping("/{prisonNumber}/aliases-identifiers")
   @Operation(
     summary = "Get the aliases and identifiers for an offender by prison number",
@@ -1688,6 +1736,12 @@ data class CoreOffender(
   val lastUpdatedByUsername: String?,
   @Schema(description = "List of identifiers for the offender")
   val identifiers: List<Identifier>,
+)
+
+@Schema(description = "The working name (current alias) for a prisoner")
+data class WorkingName(
+  @Schema(description = "The offender id of the offender record linked to the latest booking", example = "1234567")
+  val offenderId: Long,
 )
 
 @Schema(description = "The data held in NOMIS for an offender's identifiers")

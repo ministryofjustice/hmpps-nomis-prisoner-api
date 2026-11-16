@@ -390,6 +390,8 @@ class CorePersonService(
     return offender.toCoreOffender(currentAliasId = currentAlias.id, includeIdentifiers = false)
   }
 
+  fun getWorkingName(prisonNumber: String): WorkingName = WorkingName(offenderId = currentAliasAndRootOffender(prisonNumber).currentAlias.id)
+
   fun getOffenderAliasesAndIdentifiers(prisonNumber: String): List<CoreOffender> {
     val (currentAlias, _) = currentAliasAndRootOffender(prisonNumber)
     return offenderRepository.findByNomsId(prisonNumber).sortedBy { it.id }.map {
