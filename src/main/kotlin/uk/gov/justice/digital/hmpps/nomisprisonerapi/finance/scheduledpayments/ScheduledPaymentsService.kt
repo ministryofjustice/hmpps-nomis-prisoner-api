@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.MoneySupport
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledPaymentRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.ScheduledPaymentProjection
@@ -49,7 +48,7 @@ fun ScheduledPaymentProjection.toDto() = ScheduledPaymentDto(
   endDate = endDate,
   subAccountCode = drAccountCode,
   amount = MoneySupport.poundsToPence(paymentAmount),
-  dayOfWeek = WeekDay.valueOf(weekDay),
+  dayOfWeek = if (weekDay == "MON-FRI") ScheduledPaymentDay.MON_FRI else ScheduledPaymentDay.valueOf(weekDay),
   reference = referenceText,
   comment = commentText,
   createdBy = createUsername,
