@@ -10,10 +10,10 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.ScheduledPaymentDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.ScheduledPaymentDto
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
 
@@ -336,35 +336,35 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
     payment = payments.single { it.id == schedPay1.id },
     expected = schedPay1,
     accountCode = 2101,
-    dayOfWeek = WeekDay.TUE,
+    dayOfWeek = ScheduledPaymentDay.TUE,
   )
 
   private fun assertScheduledPayment2(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay2.id },
     expected = schedPay2,
     accountCode = 2103,
-    dayOfWeek = WeekDay.MON,
+    dayOfWeek = ScheduledPaymentDay.MON_FRI,
   )
 
   private fun assertScheduledPayment3(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay3.id },
     expected = schedPay3,
     accountCode = 2102,
-    dayOfWeek = WeekDay.FRI,
+    dayOfWeek = ScheduledPaymentDay.FRI,
   )
 
   private fun assertScheduledPayment4(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay4.id },
     expected = schedPay4,
     accountCode = 2102,
-    dayOfWeek = WeekDay.FRI,
+    dayOfWeek = ScheduledPaymentDay.FRI,
   )
 
   private fun assertScheduledPayment(
     payment: ScheduledPaymentDto,
     expected: OffenderScheduledPayment,
     accountCode: Int,
-    dayOfWeek: WeekDay,
+    dayOfWeek: ScheduledPaymentDay,
   ) {
     assertThat(payment.id).isEqualTo(expected.id)
     assertThat(payment.prisonNumber).isEqualTo(expected.offender.nomsId)

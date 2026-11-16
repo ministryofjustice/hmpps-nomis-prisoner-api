@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.WeekDay
 import java.time.LocalDate
 
 @RestController
@@ -142,8 +141,8 @@ data class ScheduledPaymentDto(
   val subAccountCode: Int,
   @Schema(description = "The payment amount in pence, to be paid each time, to the prison, so £1.50 returned as 150", example = "150")
   val amount: Long,
-  @Schema(description = "Day of the week the scheduled payment is paid", example = "MON")
-  val dayOfWeek: WeekDay,
+  @Schema(description = "Day of the week the scheduled payment is paid, This can also be MON-FRI.", example = "MON")
+  val dayOfWeek: ScheduledPaymentDay,
 
   @Schema(description = "The start date of the scheduled payment", example = "2024-06-01")
   val startDate: LocalDate,
@@ -157,6 +156,17 @@ data class ScheduledPaymentDto(
   @Schema(description = "The user who created the scheduled payment", example = "FRED_SMITH")
   val createdBy: String,
 )
+
+enum class ScheduledPaymentDay {
+  MON,
+  TUE,
+  WED,
+  THU,
+  FRI,
+  SAT,
+  SUN,
+  MON_FRI,
+}
 
 data class ScheduledPaymentsCount(
   @Schema(description = "The count of active scheduled payments", example = "3")
