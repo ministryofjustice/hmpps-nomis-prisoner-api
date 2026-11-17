@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.finance
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
@@ -20,7 +21,9 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit.SECONDS
 
 @WithMockAuthUser
 @TestInstance(PER_CLASS)
@@ -32,6 +35,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
   private lateinit var advance2: OffenderAdvance
   private lateinit var advance3: OffenderAdvance
   private lateinit var advance4: OffenderAdvance
+  private lateinit var advance5: OffenderAdvance
   private lateinit var advance12: OffenderAdvance
   private var offender1Id: Long = 0
   private var offender2Id: Long = 0
@@ -40,6 +44,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
   val advance2Date: LocalDate = LocalDate.parse("2023-02-02")
   val advance3Date: LocalDate = LocalDate.parse("2023-03-03")
   val advance4Date: LocalDate = LocalDate.parse("2023-04-04")
+  val advance5Date: LocalDate = LocalDate.parse("2023-05-05")
 
   @BeforeAll
   fun setUp() {
@@ -93,6 +98,8 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
             generalLedgerTransaction(generalLedgerEntrySequence = 1, accountCode = 2102, deductionId = advance4.deduction!!.deductionId, entryTime = LocalTime.parse("11:15:30"))
           }
         }
+        // advance with no associated transaction (to emulate live)
+        advance5 = advance(advanceAmount = BigDecimal.TWO, writeOffAdjustmentAmount = BigDecimal.TWO, deductionAmount = BigDecimal.ZERO, informationNumber = "10002000-42", deductionPriority = 4, advanceDate = advance5Date)
         scheduledPayment()
       }.id
     }
@@ -170,10 +177,11 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(advances).hasSize(3)
+      assertThat(advances).hasSize(4)
       advances[0].assertAdvance2()
       advances[1].assertAdvance3()
       advances[2].assertAdvance4()
+      advances[3].assertAdvance5()
     }
 
     @Test
@@ -272,10 +280,11 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
         .returnResult()
         .responseBody!!
 
-      assertThat(advances).hasSize(3)
+      assertThat(advances).hasSize(4)
       advances[0].assertAdvance2()
       advances[1].assertAdvance3()
       advances[2].assertAdvance4()
+      advances[3].assertAdvance5()
     }
 
     @Test
@@ -625,5 +634,24 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(adjustmentAmount).isEqualTo(200L)
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance4.createDatetime)
+  }
+
+  private fun PrisonerAdvanceDto.assertAdvance5() {
+    assertThat(id).isEqualTo(advance5.id)
+    assertThat(prisonNumber).isEqualTo("A6789CD")
+    assertThat(caseloadId).isEqualTo("MDI")
+    assertThat(advanceAmount).isEqualTo(200L)
+    assertThat(advanceDate).isEqualTo(advance5Date)
+    assertThat(repaymentAmount).isEqualTo(100L)
+    assertThat(startDate).isEqualTo(LocalDate.now())
+    assertThat(informationNumber).isEqualTo("10002000-42")
+    assertThat(advanceCreateTransactionId).isNull()
+    assertThat(lastTransactionTimestamp).isCloseTo(LocalDateTime.now(), within(20, SECONDS))
+    assertThat(outstandingBalance).isEqualTo(0L)
+    assertThat(status).isEqualTo(AdvanceStatus.WRITTEN_OFF)
+    assertThat(deductionAmount).isEqualTo(0L)
+    assertThat(adjustmentAmount).isEqualTo(200L)
+    assertThat(createdBy).isEqualTo("SA")
+    assertThat(createDatetime).isEqualTo(advance5.createDatetime)
   }
 }

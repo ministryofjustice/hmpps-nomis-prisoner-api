@@ -23,9 +23,24 @@ private const val ADVANCE_STATUS_SELECT = """
     od.information_number AS informationNumber,
     od.deduction_amount AS deductionAmount,
     od.adjustment_amount AS adjustmentAmount,
-    ot.txn_id AS advanceCreateTransactionId,
     (
-    SELECT MAX(dedgl.txn_entry_time)
+    SELECT MAX(ot.txn_id)
+    FROM offender_transactions ot
+    WHERE ot.offender_id = opp.offender_id
+      AND ot.txn_type = 'ADV'
+      AND ot.txn_posting_type = 'CR'
+      AND ot.txn_entry_amount = opp.advance_amount
+      AND ot.txn_entry_date = opp.advance_date
+      AND EXISTS (
+        SELECT 1
+        FROM gl_transactions gl
+        WHERE gl.txn_id = ot.txn_id
+          AND gl.txn_post_usage = 'CR'
+          AND gl.deduction_id = od.offender_deduction_id
+      )
+    ) AS advanceCreateTransactionId,
+    (
+    SELECT coalesce(MAX(dedgl.txn_entry_time), od.create_datetime)
     FROM gl_transactions dedgl
     WHERE dedgl.offender_id = opp.offender_id
       AND dedgl.txn_type in ('ADV', 'DED')
@@ -45,14 +60,6 @@ private const val ADVANCE_STATUS_SELECT = """
   FROM offender_payment_profiles opp
   JOIN offender_deductions od ON opp.offender_payment_profile_id = od.offender_payment_profile_id
   JOIN offenders o ON opp.offender_id = o.offender_id
-  JOIN offender_transactions ot ON ot.offender_id = opp.offender_id
-    AND ot.txn_type = 'ADV'
-    AND ot.txn_posting_type = 'CR'
-    AND ot.txn_entry_amount = opp.advance_amount
-    AND ot.txn_entry_date = opp.advance_date
-  JOIN gl_transactions gl on gl.txn_id = ot.txn_id
-    AND gl.txn_post_usage = 'CR'
-    AND gl.deduction_id = od.offender_deduction_id
 """
 
 private const val ADVANCE_BASE_CONDITIONS = """
@@ -140,6 +147,6 @@ interface OffenderAdvanceWithStatus {
   val deductionAmount: BigDecimal?
   val adjustmentAmount: BigDecimal?
   val status: String
-  val advanceCreateTransactionId: Long
+  val advanceCreateTransactionId: Long?
   val lastDeductionTxnDateTime: LocalDateTime
 }
