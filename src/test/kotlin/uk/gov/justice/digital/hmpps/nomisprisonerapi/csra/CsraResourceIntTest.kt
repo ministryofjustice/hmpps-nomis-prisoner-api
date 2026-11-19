@@ -595,7 +595,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           assertThat(createdBy).isEqualTo("BILLSTAFF")
           assertThat(reviewLevel).isEqualTo(AssessmentLevel.PEND)
           assertThat(evaluationDate).isEqualTo("2025-12-28")
-          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.REJ)
+          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
           assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.MED)
           assertThat(reviewCommitteeComment).isEqualTo("a-reviewCommitteeComment")
           assertThat(reviewPlacementAgencyId).isNull()
