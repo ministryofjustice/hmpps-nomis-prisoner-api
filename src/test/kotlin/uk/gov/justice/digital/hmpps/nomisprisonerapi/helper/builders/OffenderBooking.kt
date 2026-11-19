@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.csra.EvaluationResultCode
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.helper.builders.PartyRole.WITNESS
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.Address
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.AdjudicationIncident
@@ -586,6 +587,7 @@ interface BookingDsl {
     reviewLevel: AssessmentLevel? = AssessmentLevel.PEND,
     placementAgency: String? = null,
     overrideReasonCode: String? = null,
+    evaluationResultCode: EvaluationResultCode? = EvaluationResultCode.APP,
     dsl: OffenderAssessmentDsl.() -> Unit = {},
   ): OffenderAssessment
 
@@ -1314,16 +1316,14 @@ class BookingBuilder(
     escort: String?,
     comment: String?,
   ): OffenderReleaseMovementOut = offenderExternalMovementBuilderFactory.builder()
-    .let { builder ->
-      builder.buildReleaseMovementOut(
-        offenderBooking = offenderBooking,
-        date = date,
-        movementReason = movementReason,
-        toAgency = toAgency,
-        escort = escort,
-        comment = comment,
-      )
-    }
+    .buildReleaseMovementOut(
+      offenderBooking = offenderBooking,
+      date = date,
+      movementReason = movementReason,
+      toAgency = toAgency,
+      escort = escort,
+      comment = comment,
+    )
 
   override fun receive(
     date: LocalDateTime,
@@ -1832,6 +1832,7 @@ class BookingBuilder(
     reviewLevel: AssessmentLevel?,
     placementAgency: String?,
     overrideReasonCode: String?,
+    evaluationResultCode: EvaluationResultCode?,
     dsl: OffenderAssessmentDsl.() -> Unit,
   ): OffenderAssessment = offenderAssessmentBuilderFactory.builder().let { builder ->
     builder.build(
@@ -1846,6 +1847,7 @@ class BookingBuilder(
       reviewLevel,
       placementAgency,
       overrideReasonCode,
+      evaluationResultCode,
     )
       .also { builder.apply(dsl) }
   }

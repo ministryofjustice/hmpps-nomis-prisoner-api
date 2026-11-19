@@ -34,6 +34,7 @@ interface OffenderAssessmentRepository : JpaRepository<OffenderAssessment, Offen
       join oa.id.offenderBooking ob
       where ob.offender.nomsId = :offenderNo
         and oa.assessment.isCellSharing = true
+        and coalesce(oa.evaluationResultCode, 'null') <> 'REJ'
         and not (
           (oa.calculatedLevel is null or oa.calculatedLevel = 'PEND') and
           (oa.overrideLevel is null or oa.overrideLevel = 'PEND') and

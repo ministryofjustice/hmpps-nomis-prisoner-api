@@ -28,7 +28,6 @@ annotation class OffenderAssessmentDslMarker
 
 @OffenderAssessmentDslMarker
 interface OffenderAssessmentDsl {
-  @OffenderAssessmentItemDslMarker
   fun assessmentItem(
     itemSequence: Int,
     assessmentId: Long,
@@ -82,6 +81,7 @@ class OffenderAssessmentBuilder(
     reviewLevel: AssessmentLevel?,
     placementAgency: String? = null,
     overrideReasonCode: String? = null,
+    evaluationResultCode: EvaluationResultCode? = null,
   ): OffenderAssessment = OffenderAssessment(
     id = OffenderAssessmentId(booking, sequence),
     assessmentDate = assessmentDate,
@@ -99,7 +99,7 @@ class OffenderAssessmentBuilder(
     overrideStaff = repository.lookupStaff(username).staff,
     evaluationDate = LocalDate.parse("2025-12-28"),
     nextReviewDate = LocalDate.parse("2026-12-15"),
-    evaluationResultCode = EvaluationResultCode.REJ,
+    evaluationResultCode = evaluationResultCode,
     reviewLevel = reviewLevel,
     reviewPlacementComment = null,
     reviewCommitteeCode = AssessmentCommittee.MED,

@@ -9,9 +9,6 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderBooking
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAssessmentItemRepository
 import java.math.BigDecimal
 
-@DslMarker
-annotation class OffenderAssessmentItemDslMarker
-
 @NomisDataDslMarker
 interface OffenderAssessmentItemDsl
 

@@ -918,6 +918,14 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 reviewLevel = AssessmentLevel.PEND, // ignored
                 username = "BILLSTAFF",
               )
+              assessment(
+                sequence = 10,
+                assessmentDate = LocalDate.parse("2025-12-31"),
+                assessmentStatus = AssessmentStatusType.A,
+                reviewLevel = AssessmentLevel.HI,
+                evaluationResultCode = EvaluationResultCode.REJ, // ignored
+                username = "BILLSTAFF",
+              )
             } // Defaults: calc STANDARD, override MED, review PEND, approved null
           }
         }
