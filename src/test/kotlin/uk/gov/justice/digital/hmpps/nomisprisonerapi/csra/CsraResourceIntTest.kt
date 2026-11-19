@@ -595,7 +595,7 @@ class CsraResourceIntTest : IntegrationTestBase() {
           assertThat(createdBy).isEqualTo("BILLSTAFF")
           assertThat(reviewLevel).isEqualTo(AssessmentLevel.PEND)
           assertThat(evaluationDate).isEqualTo("2025-12-28")
-          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.REJ)
+          assertThat(evaluationResultCode).isEqualTo(EvaluationResultCode.APP)
           assertThat(reviewCommitteeCode).isEqualTo(AssessmentCommittee.MED)
           assertThat(reviewCommitteeComment).isEqualTo("a-reviewCommitteeComment")
           assertThat(reviewPlacementAgencyId).isNull()
@@ -916,6 +916,14 @@ class CsraResourceIntTest : IntegrationTestBase() {
                 calculatedLevel = null,
                 overrideLevel = null,
                 reviewLevel = AssessmentLevel.PEND, // ignored
+                username = "BILLSTAFF",
+              )
+              assessment(
+                sequence = 10,
+                assessmentDate = LocalDate.parse("2025-12-31"),
+                assessmentStatus = AssessmentStatusType.A,
+                reviewLevel = AssessmentLevel.HI,
+                evaluationResultCode = EvaluationResultCode.REJ, // ignored
                 username = "BILLSTAFF",
               )
             } // Defaults: calc STANDARD, override MED, review PEND, approved null
