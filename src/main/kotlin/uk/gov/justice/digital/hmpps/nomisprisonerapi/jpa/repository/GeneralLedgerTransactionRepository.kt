@@ -26,12 +26,9 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
    """,
     nativeQuery = true,
   )
-  fun findMinAndMaxTxnIdsByPrisonAndEntryDateBigDecimals(prisonId: String, entryDate: LocalDate): Pair<BigDecimal?, BigDecimal?>
+  fun findMinAndMaxTxnIdsByPrisonAndEntryDateProjection(prisonId: String, entryDate: LocalDate): MinMaxTxnIds
 
-  fun findMinAndMaxTxnIdsByPrisonAndEntryDate(prisonId: String, entryDate: LocalDate): Pair<Long?, Long?> {
-    val (minTxn, maxTxn) = findMinAndMaxTxnIdsByPrisonAndEntryDateBigDecimals(prisonId, entryDate)
-    return minTxn?.toLong() to maxTxn?.toLong()
-  }
+  fun findMinAndMaxTxnIdsByPrisonAndEntryDate(prisonId: String, entryDate: LocalDate): Pair<Long?, Long?> = findMinAndMaxTxnIdsByPrisonAndEntryDateProjection(prisonId, entryDate).toPair()
 
   @Query(
     """
@@ -44,12 +41,9 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
    """,
     nativeQuery = true,
   )
-  fun findMinAndMaxTxnIdsForEntryDateBigDecimals(entryDate: LocalDate): Pair<BigDecimal?, BigDecimal?>
+  fun findMinAndMaxTxnIdsForEntryDateProjection(entryDate: LocalDate): MinMaxTxnIds
 
-  fun findMinAndMaxTxnIdsForEntryDate(entryDate: LocalDate): Pair<Long?, Long?> {
-    val (minTxn, maxTxn) = findMinAndMaxTxnIdsForEntryDateBigDecimals(entryDate)
-    return minTxn?.toLong() to maxTxn?.toLong()
-  }
+  fun findMinAndMaxTxnIdsForEntryDate(entryDate: LocalDate): Pair<Long?, Long?> = findMinAndMaxTxnIdsForEntryDateProjection(entryDate).toPair()
 
   @Query(
     """
@@ -83,4 +77,11 @@ interface GeneralLedgerTransactionRepository : JpaRepository<GeneralLedgerTransa
     generalLedgerEntrySequence: Int,
     limit: Limit,
   ): List<GeneralLedgerTransaction>
+}
+
+interface MinMaxTxnIds {
+  val minTxnId: BigDecimal?
+  val maxTxnId: BigDecimal?
+
+  fun toPair(): Pair<Long?, Long?> = minTxnId?.toLong() to maxTxnId?.toLong()
 }
