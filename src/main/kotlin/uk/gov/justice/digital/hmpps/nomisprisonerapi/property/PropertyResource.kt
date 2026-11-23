@@ -63,12 +63,13 @@ class PropertyResource(private val propertyService: PropertyService) {
   @Operation(
     summary = "Updates a prisoner property container record",
     description = """Replaces the container's mutable details (type, seal, location, proposed disposal date).
+      The prison is unchanged when omitted; the box location must belong to the resulting prison.
       Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW""",
     responses = [
       ApiResponse(responseCode = "200", content = [Content(mediaType = "application/json")]),
       ApiResponse(
         responseCode = "400",
-        description = "Invalid location",
+        description = "Invalid prison or location, or location does not belong to the prison",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(

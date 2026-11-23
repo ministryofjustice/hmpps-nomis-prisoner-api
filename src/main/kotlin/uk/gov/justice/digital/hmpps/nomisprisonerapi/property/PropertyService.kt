@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.nomisprisonerapi.property
 
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
@@ -25,10 +24,6 @@ class PropertyService(
   private val agencyLocationRepository: AgencyLocationRepository,
   private val offenderBookingRepository: OffenderBookingRepository,
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
-
   fun createProperty(propertyContainerCreateRequest: PropertyContainerCreateRequest): CreatePropertyResponse {
     val container = propertyContainerCreateRequest.toModel()
     return CreatePropertyResponse(
@@ -39,10 +34,20 @@ class PropertyService(
 
   fun updateProperty(id: Long, propertyContainerUpdateRequest: PropertyContainerUpdateRequest) {
     val container = offenderPropertyContainerRepository.findById(id).get()
+    val agency = propertyContainerUpdateRequest.prisonId?.let {
+      agencyLocationRepository.findByIdOrNull(it)
+        ?: throw BadDataException("Prison $it not found")
+    } ?: container.agencyLocation
+    val location = findLocation(propertyContainerUpdateRequest.internalLocationId)
+    if (location != null && location.agency.id != agency.id) {
+      throw BadDataException("Location ${location.locationId} is not at prison ${agency.id}")
+    }
+
     container.apply {
       containerCode = propertyContainerUpdateRequest.containerCode
       sealMark = propertyContainerUpdateRequest.sealMark
-      agencyInternalLocation = findLocation(propertyContainerUpdateRequest.internalLocationId)
+      agencyLocation = agency
+      agencyInternalLocation = location
       proposedDisposalDate = propertyContainerUpdateRequest.proposedDisposalDate
       active = propertyContainerUpdateRequest.active
       expiryDate = propertyContainerUpdateRequest.expiryDate

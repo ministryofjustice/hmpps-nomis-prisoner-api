@@ -35,7 +35,7 @@ data class OffenderPropertyContainer(
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "AGY_LOC_ID")
-  val agencyLocation: AgencyLocation,
+  var agencyLocation: AgencyLocation,
 
   @Column(name = "ACTIVE_FLAG")
   @Convert(converter = YesNoConverter::class)

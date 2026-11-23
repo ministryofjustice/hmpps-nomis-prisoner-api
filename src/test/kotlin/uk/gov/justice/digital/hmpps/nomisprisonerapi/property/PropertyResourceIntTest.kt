@@ -217,6 +217,8 @@ class PropertyResourceIntTest : IntegrationTestBase() {
   @DisplayName("PUT /property-containers/{id}")
   @Nested
   inner class UpdatePropertyContainer {
+    private lateinit var locationAtMdi: AgencyInternalLocation
+
     @BeforeEach
     fun init() {
       nomisDataBuilder.build {
@@ -225,9 +227,14 @@ class PropertyResourceIntTest : IntegrationTestBase() {
           locationType = "BOX",
           prisonId = "SYI",
         )
+        locationAtMdi = agencyInternalLocation(
+          locationCode = "MDI-001",
+          locationType = "BOX",
+          prisonId = "MDI",
+        )
         offender(nomsId = OFFENDER_NO) {
           booking = booking {
-            container1 = property()
+            container1 = property(prisonId = "SYI", internalLocationId = location1.locationId)
           }
         }
       }
@@ -235,7 +242,9 @@ class PropertyResourceIntTest : IntegrationTestBase() {
 
     @AfterEach
     fun deleteData() {
+      repository.deleteAllPrisonerProperty()
       repository.deleteAgencyInternalLocationById(location2.locationId)
+      repository.deleteAgencyInternalLocationById(locationAtMdi.locationId)
     }
 
     @Nested
@@ -273,6 +282,48 @@ class PropertyResourceIntTest : IntegrationTestBase() {
     @Nested
     inner class Validation {
       @Test
+      fun `prison not found`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(location2.locationId, prisonId = "DUFF")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Prison DUFF not found")
+
+        assertContainerUnchanged()
+      }
+
+      @Test
+      fun `location must belong to current prison when prison is omitted`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(locationAtMdi.locationId)))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Location ${locationAtMdi.locationId} is not at prison SYI")
+
+        assertContainerUnchanged()
+      }
+
+      @Test
+      fun `location must belong to new prison when prison changes`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(location2.locationId, prisonId = "MDI")))
+          .exchange()
+          .expectStatus().isBadRequest
+          .expectBody()
+          .jsonPath("userMessage").isEqualTo("Bad request: Location ${location2.locationId} is not at prison MDI")
+
+        assertContainerUnchanged()
+      }
+
+      @Test
       fun `location not found`() {
         webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
@@ -301,6 +352,17 @@ class PropertyResourceIntTest : IntegrationTestBase() {
             )
           }
       }
+
+      private fun assertContainerUnchanged() {
+        nomisDataBuilder.runInTransaction {
+          offenderPropertyContainerRepository.findByIdOrNull(container1.propertyContainerId)!!.apply {
+            assertThat(agencyLocation.id).isEqualTo("SYI")
+            assertThat(agencyInternalLocation?.locationId).isEqualTo(location1.locationId)
+            assertThat(sealMark).isEqualTo("SEAL1234")
+            assertThat(active).isTrue()
+          }
+        }
+      }
     }
 
     @Nested
@@ -317,6 +379,7 @@ class PropertyResourceIntTest : IntegrationTestBase() {
         nomisDataBuilder.runInTransaction {
           offenderPropertyContainerRepository.findByIdOrNull(container1.propertyContainerId)!!
             .apply {
+              assertThat(agencyLocation.id).isEqualTo("SYI")
               assertThat(agencyInternalLocation?.locationId).isEqualTo(location2.locationId)
               assertThat(sealMark).isEqualTo("SEAL4567")
               assertThat(containerCode).isEqualTo(PropertyContainerCode.BRA)
@@ -324,6 +387,41 @@ class PropertyResourceIntTest : IntegrationTestBase() {
               assertThat(active).isFalse()
               assertThat(expiryDate).isEqualTo("2026-07-02")
             }
+        }
+      }
+
+      @Test
+      fun `can change prison and box location`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(locationAtMdi.locationId, prisonId = "MDI")))
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          offenderPropertyContainerRepository.findByIdOrNull(container1.propertyContainerId)!!.apply {
+            assertThat(agencyLocation.id).isEqualTo("MDI")
+            assertThat(agencyInternalLocation?.locationId).isEqualTo(locationAtMdi.locationId)
+            assertThat(sealMark).isEqualTo("SEAL4567")
+          }
+        }
+      }
+
+      @Test
+      fun `can change prison and clear box location`() {
+        webTestClient.put().uri("/property-containers/${container1.propertyContainerId}")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(fromValue(validUpdateJsonRequest(null, prisonId = "MDI")))
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          offenderPropertyContainerRepository.findByIdOrNull(container1.propertyContainerId)!!.apply {
+            assertThat(agencyLocation.id).isEqualTo("MDI")
+            assertThat(agencyInternalLocation).isNull()
+          }
         }
       }
     }
@@ -700,10 +798,11 @@ fun validFullCreateJsonRequest(offenderNo: String, internalLocationId: Long): St
    }
   """.trimIndent()
 
-fun validUpdateJsonRequest(internalLocationId: Long): String =
+fun validUpdateJsonRequest(internalLocationId: Long?, prisonId: String? = null): String =
   """
    {
      "internalLocationId": $internalLocationId,
+     ${prisonId?.let { "\"prisonId\": \"$it\"," } ?: ""}
      "proposedDisposalDate": "2027-11-02",
      "sealMark": "SEAL4567",
      "containerCode": "BRA",

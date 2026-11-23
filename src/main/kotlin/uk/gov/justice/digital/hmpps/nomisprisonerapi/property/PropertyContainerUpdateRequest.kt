@@ -11,6 +11,9 @@ data class PropertyContainerUpdateRequest(
   @Schema(description = "The property box location id for the container", example = "1234567")
   val internalLocationId: Long? = null,
 
+  @Schema(description = "The prison ID for the container; unchanged when omitted", example = "MDI")
+  val prisonId: String? = null,
+
   @Schema(description = "The container's seal number", example = "1234")
   val sealMark: String? = null,
 
