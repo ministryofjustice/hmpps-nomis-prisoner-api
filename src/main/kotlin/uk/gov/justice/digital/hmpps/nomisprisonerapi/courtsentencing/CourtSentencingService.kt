@@ -770,6 +770,7 @@ class CourtSentencingService(
           offenderChargesRemovedFromAppearance = offenderCharges,
         )
         telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
+        refreshOffenderChargesFromLatestCourtEventCharge(case, offenderCharges - deletedOffenderCharges.toSet())
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = case.offenderBooking.bookingId,
           reason = DELETE,
@@ -785,6 +786,31 @@ class CourtSentencingService(
           telemetry,
           null,
         )
+    }
+  }
+
+  // like updateCourtCharge: fields follow the latest remaining court event charge but the outcome only if it has one
+  private fun refreshOffenderChargesFromLatestCourtEventCharge(courtCase: CourtCase, offenderCharges: List<OffenderCharge>) {
+    offenderCharges.forEach { offenderCharge ->
+      courtCase.courtEvents
+        .flatMap { it.courtEventCharges }
+        .filter { it.id.offenderCharge == offenderCharge }
+        .maxByOrNull { it.id.courtEvent.getEventDateAndTime() }
+        ?.let { latest ->
+          refreshOffenderCharge(
+            courtEventCharge = latest,
+            offenderChargeRequest = ExistingOffenderChargeRequest(
+              offenderChargeId = offenderCharge.id,
+              offenceCode = offenderCharge.offence.id.offenceCode,
+              offenceDate = latest.offenceDate,
+              offenceEndDate = latest.offenceEndDate,
+              resultCode1 = latest.resultCode1?.code,
+              propertyValue = latest.propertyValue,
+            ),
+            resultCode = latest.resultCode1,
+            shouldUpdateOutcome = isLatestCourtEventChargeWithAResultCode(latest),
+          )
+        }
     }
   }
 
