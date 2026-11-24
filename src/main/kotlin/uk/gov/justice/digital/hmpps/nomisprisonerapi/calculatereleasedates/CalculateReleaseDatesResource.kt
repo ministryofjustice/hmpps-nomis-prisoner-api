@@ -6,20 +6,14 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCalculation
-import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceCalculationRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -51,12 +45,6 @@ class CalculateReleaseDatesResource(private val service: CalculateReleaseDatesSe
       ApiResponse(
         responseCode = "200",
         description = "Offender sentence calculation",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = OffenderSentenceCalculationResponse::class),
-          ),
-        ],
       ),
       ApiResponse(
         responseCode = "404",
@@ -71,70 +59,6 @@ class CalculateReleaseDatesResource(private val service: CalculateReleaseDatesSe
     offenderSentenceCalculationId: Long,
   ): OffenderSentenceCalculationResponse = service.getOffenderSentenceCalculation(offenderSentenceCalculationId)
 }
-
-@Service
-@Transactional(readOnly = true)
-class CalculateReleaseDatesService(
-  private val offenderSentenceCalculationRepository: OffenderSentenceCalculationRepository,
-) {
-  fun getOffenderSentenceCalculation(offenderSentenceCalculationId: Long): OffenderSentenceCalculationResponse = offenderSentenceCalculationRepository.findByIdOrNull(offenderSentenceCalculationId)?.toResponse()
-    ?: throw NotFoundException("Offender sentence calculation with id $offenderSentenceCalculationId not found")
-}
-
-private fun OffenderSentenceCalculation.toResponse() = OffenderSentenceCalculationResponse(
-  id = id,
-  bookingId = offenderBooking.bookingId,
-  offenderNo = offenderBooking.offender.nomsId,
-  calculationDate = calculationDate,
-  staffId = staff?.id,
-  calculationReasonCode = calculationReasonCode,
-  commentText = commentText,
-  effectiveSentenceEndDate = effectiveSentenceEndDate,
-  effectiveSentenceLength = effectiveSentenceLength,
-  judiciallyImposedSentenceLength = judiciallyImposedSentenceLength,
-  workflowHistoryId = workflowHistoryId,
-  hdcedCalculatedDate = hdcedCalculatedDate,
-  hdcedOverridedDate = hdcedOverridedDate,
-  hdcadCalculatedDate = hdcadCalculatedDate,
-  hdcadOverridedDate = hdcadOverridedDate,
-  etdCalculatedDate = etdCalculatedDate,
-  etdOverridedDate = etdOverridedDate,
-  mtdCalculatedDate = mtdCalculatedDate,
-  mtdOverridedDate = mtdOverridedDate,
-  ltdCalculatedDate = ltdCalculatedDate,
-  ltdOverridedDate = ltdOverridedDate,
-  ardCalculatedDate = ardCalculatedDate,
-  ardOverridedDate = ardOverridedDate,
-  crdCalculatedDate = crdCalculatedDate,
-  crdOverridedDate = crdOverridedDate,
-  pedCalculatedDate = pedCalculatedDate,
-  pedOverridedDate = pedOverridedDate,
-  apdCalculatedDate = apdCalculatedDate,
-  apdOverridedDate = apdOverridedDate,
-  npdCalculatedDate = npdCalculatedDate,
-  npdOverridedDate = npdOverridedDate,
-  ledCalculatedDate = ledCalculatedDate,
-  ledOverridedDate = ledOverridedDate,
-  sedCalculatedDate = sedCalculatedDate,
-  sedOverridedDate = sedOverridedDate,
-  prrdCalculatedDate = prrdCalculatedDate,
-  prrdOverridedDate = prrdOverridedDate,
-  tariffCalculatedDate = tariffCalculatedDate,
-  tariffOverridedDate = tariffOverridedDate,
-  dprrdCalculatedDate = dprrdCalculatedDate,
-  dprrdOverridedDate = dprrdOverridedDate,
-  ersedOverridedDate = ersedOverridedDate,
-  tersedOverridedDate = tersedOverridedDate,
-  rotlOverridedDate = rotlOverridedDate,
-  tusedCalculatedDate = tusedCalculatedDate,
-  tusedOverridedDate = tusedOverridedDate,
-  recordDatetime = recordDatetime,
-  recordUserId = recordUserId,
-  createDatetime = createDatetime,
-  createUsername = createUsername,
-  modifyDatetime = modifyDatetime,
-  modifyUserId = modifyUserId,
-)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "An offender sentence calculation (release dates calculation) for a booking")
