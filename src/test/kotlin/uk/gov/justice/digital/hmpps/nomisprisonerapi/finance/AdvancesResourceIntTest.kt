@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.advances.AdvanceStatus
@@ -18,6 +17,7 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.advances.PrisonerAd
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderAdvance
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.SubAccountType
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderAdvanceRepository
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -28,8 +28,9 @@ import java.time.temporal.ChronoUnit.SECONDS
 @WithMockAuthUser
 @TestInstance(PER_CLASS)
 class AdvancesResourceIntTest : IntegrationTestBase() {
+
   @Autowired
-  private lateinit var jdbcTemplate: JdbcTemplate
+  private lateinit var offenderAdvanceRepository: OffenderAdvanceRepository
 
   private lateinit var advance1: OffenderAdvance
   private lateinit var advance2: OffenderAdvance
@@ -416,6 +417,21 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(it).contains("Not Found: Offender advance with id 99999 not found")
         }
     }
+
+    @Test
+    fun getAdvanceWithLastModified() {
+      offenderAdvanceRepository.save(advance1)
+      val advance = webTestClient.get().uri("/finance/advances/$advanceId")
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+        .exchange()
+        .expectStatus()
+        .isOk
+        .expectBody<PrisonerAdvanceDto>()
+        .returnResult()
+        .responseBody!!
+
+      advance.assertAdvance1("SA")
+    }
   }
 
   @Nested
@@ -560,7 +576,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun PrisonerAdvanceDto.assertAdvance1() {
+  private fun PrisonerAdvanceDto.assertAdvance1(lastModifiedBy: String? = null) {
     assertThat(id).isEqualTo(advance1.id)
     assertThat(prisonNumber).isEqualTo("A5194DY")
     assertThat(caseloadId).isEqualTo("MDI")
@@ -577,6 +593,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance1.createDatetime)
+    assertThat(lastModifiedBy).isEqualTo(lastModifiedBy)
   }
 
   private fun PrisonerAdvanceDto.assertAdvance2() {
@@ -596,6 +613,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance2.createDatetime)
+    assertThat(lastModifiedBy).isNull()
   }
 
   private fun PrisonerAdvanceDto.assertAdvance3() {
@@ -615,6 +633,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance3.createDatetime)
+    assertThat(lastModifiedBy).isNull()
   }
 
   private fun PrisonerAdvanceDto.assertAdvance4() {
@@ -634,6 +653,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(adjustmentAmount).isEqualTo(200L)
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance4.createDatetime)
+    assertThat(lastModifiedBy).isNull()
   }
 
   private fun PrisonerAdvanceDto.assertAdvance5() {
@@ -653,5 +673,6 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(adjustmentAmount).isEqualTo(200L)
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance5.createDatetime)
+    assertThat(lastModifiedBy).isNull()
   }
 }
