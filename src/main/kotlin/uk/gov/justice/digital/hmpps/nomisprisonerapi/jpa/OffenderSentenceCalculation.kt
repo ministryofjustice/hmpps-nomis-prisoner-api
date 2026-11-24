@@ -164,6 +164,8 @@ class OffenderSentenceCalculation(
   @Column(name = "TUSED_OVERRIDED_DATE")
   var tusedOverridedDate: LocalDate? = null,
 
+  // The schema allows nulls for RECORD_DATETIME and RECORD_USER_ID (and CALCULATION_DATE, CALC_REASON_CODE),
+  // but a check of NOMIS PREPROD (13.5M rows) found no null values, so they are mapped as non-null.
   @Column(name = "RECORD_DATETIME")
   var recordDatetime: LocalDateTime = LocalDateTime.now(),
 
