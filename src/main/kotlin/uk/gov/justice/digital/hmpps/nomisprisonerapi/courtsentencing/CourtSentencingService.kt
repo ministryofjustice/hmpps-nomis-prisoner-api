@@ -702,6 +702,7 @@ class CourtSentencingService(
           offenderChargesRemovedFromAppearance = offenderChargesRemoved,
         )
 
+        refreshOffenderChargesAfterCourtEventChargeDeletion(courtCase, offenderChargesRemoved - deletedOffenderCharges.toSet())
         refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = courtCase.offenderBooking.bookingId,
@@ -770,7 +771,7 @@ class CourtSentencingService(
           offenderChargesRemovedFromAppearance = offenderCharges,
         )
         telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
-        refreshOffenderChargesFromLatestCourtEventCharge(case, offenderCharges - deletedOffenderCharges.toSet())
+        refreshOffenderChargesAfterCourtEventChargeDeletion(case, offenderCharges - deletedOffenderCharges.toSet())
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = case.offenderBooking.bookingId,
           reason = DELETE,
@@ -789,28 +790,31 @@ class CourtSentencingService(
     }
   }
 
-  // like updateCourtCharge: fields follow the latest remaining court event charge but the outcome only if it has one
-  private fun refreshOffenderChargesFromLatestCourtEventCharge(courtCase: CourtCase, offenderCharges: List<OffenderCharge>) {
+  // fields and outcome follow the latest remaining court event charge with an outcome, or the latest one if none has an outcome
+  private fun refreshOffenderChargesAfterCourtEventChargeDeletion(courtCase: CourtCase, offenderCharges: List<OffenderCharge>) {
     offenderCharges.forEach { offenderCharge ->
-      courtCase.courtEvents
+      val courtEventCharges = courtCase.courtEvents
         .flatMap { it.courtEventCharges }
         .filter { it.id.offenderCharge == offenderCharge }
-        .maxByOrNull { it.id.courtEvent.getEventDateAndTime() }
-        ?.let { latest ->
-          refreshOffenderCharge(
-            courtEventCharge = latest,
-            offenderChargeRequest = ExistingOffenderChargeRequest(
-              offenderChargeId = offenderCharge.id,
-              offenceCode = offenderCharge.offence.id.offenceCode,
-              offenceDate = latest.offenceDate,
-              offenceEndDate = latest.offenceEndDate,
-              resultCode1 = latest.resultCode1?.code,
-              propertyValue = latest.propertyValue,
-            ),
-            resultCode = latest.resultCode1,
-            shouldUpdateOutcome = isLatestCourtEventChargeWithAResultCode(latest),
-          )
-        }
+        .filter { !it.id.courtEvent.eventDate.isAfter(LocalDate.now()) }
+      // future dated court event charges are ignored; prefer the latest with an outcome, falling back to the latest without one
+      val latest = courtEventCharges.filter { it.resultCode1 != null }.maxByOrNull { it.id.courtEvent.getEventDateAndTime() }
+        ?: courtEventCharges.maxByOrNull { it.id.courtEvent.getEventDateAndTime() }
+      latest?.let {
+        refreshOffenderCharge(
+          courtEventCharge = it,
+          offenderChargeRequest = ExistingOffenderChargeRequest(
+            offenderChargeId = offenderCharge.id,
+            offenceCode = offenderCharge.offence.id.offenceCode,
+            offenceDate = it.offenceDate,
+            offenceEndDate = it.offenceEndDate,
+            resultCode1 = it.resultCode1?.code,
+            propertyValue = it.propertyValue,
+          ),
+          resultCode = it.resultCode1,
+          shouldUpdateOutcome = true,
+        )
+      }
     }
   }
 
