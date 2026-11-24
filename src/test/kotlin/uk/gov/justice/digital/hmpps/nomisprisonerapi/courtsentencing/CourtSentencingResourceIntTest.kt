@@ -31,6 +31,8 @@ import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTest
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.expectBodyResponse
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtCase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEvent
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventCharge
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtEventChargeId
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.CourtOrder
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.LinkCaseTxn
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.MovementReason.Companion.RECALL_BREACH_HEARING
@@ -7268,6 +7270,158 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
       }
 
       @Test
+      fun `offender charges are refreshed from the latest remaining court event charge`() {
+        // the earlier appearance differs from the offender charge (which reflects the latest appearance being deleted)
+        nomisDataBuilder.runInTransaction {
+          val earlierCharge = courtEventRepository.findByIdOrNull(courtEvent.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge1.id }
+          earlierCharge.resultCode1 = earlierCharge.id.courtEvent.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge2.id }
+            .id.offenderCharge.resultCode1
+          earlierCharge.offenceDate = LocalDate.of(2022, 12, 1)
+          earlierCharge.offenceEndDate = LocalDate.of(2022, 12, 5)
+          earlierCharge.propertyValue = BigDecimal("500.00")
+          with(earlierCharge.id.offenderCharge) {
+            offenceDate = LocalDate.of(2023, 1, 10)
+            offenceEndDate = LocalDate.of(2023, 1, 15)
+            propertyValue = BigDecimal("100.00")
+            chargeStatus = null
+          }
+        }
+
+        deleteAppearance(courtEvent2.id)
+
+        nomisDataBuilder.runInTransaction {
+          val earlierCharge = courtEventRepository.findByIdOrNull(courtEvent.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge1.id }
+          val updatedCharge = courtCaseRepository.findByIdOrNull(courtCase.id)!!
+            .offenderCharges.first { it.id == offenderCharge1.id }
+          assertThat(earlierCharge.resultCode1?.code).isEqualTo("4560")
+          with(updatedCharge) {
+            assertThat(resultCode1?.code).isEqualTo("4560")
+            assertThat(resultCode1Indicator).isEqualTo(earlierCharge.resultCode1?.dispositionCode)
+            assertThat(chargeStatus?.code).isEqualTo(earlierCharge.resultCode1?.chargeStatus)
+            assertThat(offenceDate).isEqualTo(LocalDate.of(2022, 12, 1))
+            assertThat(offenceEndDate).isEqualTo(LocalDate.of(2022, 12, 5))
+            assertThat(propertyValue).isEqualByComparingTo(BigDecimal("500.00"))
+          }
+        }
+      }
+
+      @Test
+      fun `offender charge fields are refreshed and outcome removed when the remaining court event charge has no outcome`() {
+        nomisDataBuilder.runInTransaction {
+          val earlierCharge = courtEventRepository.findByIdOrNull(courtEvent.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge1.id }
+          earlierCharge.resultCode1 = null
+          earlierCharge.offenceDate = LocalDate.of(2022, 12, 1)
+          earlierCharge.offenceEndDate = LocalDate.of(2022, 12, 5)
+          earlierCharge.propertyValue = BigDecimal("500.00")
+        }
+
+        deleteAppearance(courtEvent2.id)
+
+        nomisDataBuilder.runInTransaction {
+          val updatedCharge = courtCaseRepository.findByIdOrNull(courtCase.id)!!
+            .offenderCharges.first { it.id == offenderCharge1.id }
+          with(updatedCharge) {
+            assertThat(resultCode1).isNull()
+            assertThat(resultCode1Indicator).isNull()
+            assertThat(chargeStatus).isNull()
+            assertThat(offenceDate).isEqualTo(LocalDate.of(2022, 12, 1))
+            assertThat(offenceEndDate).isEqualTo(LocalDate.of(2022, 12, 5))
+            assertThat(propertyValue).isEqualByComparingTo(BigDecimal("500.00"))
+          }
+        }
+      }
+
+      @Test
+      fun `offender charge uses the latest court event charge with an outcome in preference to a later one without`() {
+        val latestEventId = createLatestAppearanceWithoutOutcome()
+        nomisDataBuilder.runInTransaction {
+          val withOutcome = courtEventRepository.findByIdOrNull(courtEvent.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge1.id }
+          withOutcome.offenceDate = LocalDate.of(2022, 12, 1)
+          withOutcome.resultCode1 = withOutcome.id.courtEvent.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge2.id }
+            .id.offenderCharge.resultCode1
+          val laterWithoutOutcome = courtEventRepository.findByIdOrNull(courtEvent2.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge1.id }
+          laterWithoutOutcome.resultCode1 = null
+          laterWithoutOutcome.offenceDate = LocalDate.of(2022, 12, 9)
+        }
+
+        deleteAppearance(latestEventId)
+
+        nomisDataBuilder.runInTransaction {
+          with(courtCaseRepository.findByIdOrNull(courtCase.id)!!.offenderCharges.first { it.id == offenderCharge1.id }) {
+            assertThat(resultCode1?.code).isEqualTo("4560")
+            assertThat(offenceDate).isEqualTo(LocalDate.of(2022, 12, 1))
+          }
+        }
+      }
+
+      @Test
+      fun `offender charge uses the latest court event charge when none of the remaining ones have an outcome`() {
+        val latestEventId = createLatestAppearanceWithoutOutcome()
+        nomisDataBuilder.runInTransaction {
+          courtEventRepository.findByIdOrNull(courtEvent.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge1.id }
+            .apply {
+              resultCode1 = null
+              offenceDate = LocalDate.of(2022, 12, 1)
+            }
+          courtEventRepository.findByIdOrNull(courtEvent2.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge1.id }
+            .apply {
+              resultCode1 = null
+              offenceDate = LocalDate.of(2022, 12, 9)
+            }
+        }
+
+        deleteAppearance(latestEventId)
+
+        nomisDataBuilder.runInTransaction {
+          with(courtCaseRepository.findByIdOrNull(courtCase.id)!!.offenderCharges.first { it.id == offenderCharge1.id }) {
+            assertThat(resultCode1).isNull()
+            assertThat(chargeStatus).isNull()
+            assertThat(offenceDate).isEqualTo(LocalDate.of(2022, 12, 9))
+          }
+        }
+      }
+
+      private fun createLatestAppearanceWithoutOutcome(): Long = nomisDataBuilder.runInTransaction {
+        val existing = courtEventRepository.findByIdOrNull(courtEvent2.id)!!
+        val latest = courtEventRepository.saveAndFlush(
+          CourtEvent(
+            offenderBooking = existing.offenderBooking,
+            courtCase = existing.courtCase,
+            eventDate = LocalDate.of(2023, 3, 1),
+            startTime = LocalDateTime.of(2023, 3, 1, 10, 30),
+            courtEventType = existing.courtEventType,
+            eventStatus = existing.eventStatus,
+            court = existing.court,
+            directionCode = existing.directionCode,
+          ),
+        )
+        latest.courtEventCharges.add(
+          CourtEventCharge(
+            id = CourtEventChargeId(courtEvent = latest, offenderCharge = existing.courtEventCharges.first().id.offenderCharge),
+            offenceDate = LocalDate.of(2022, 12, 20),
+          ),
+        )
+        courtEventRepository.saveAndFlush(latest).id
+      }
+
+      private fun deleteAppearance(eventId: Long) {
+        webTestClient.delete()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/$eventId")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+      }
+
+      @Test
       fun `will track telemetry for the delete`() {
         webTestClient.delete()
           .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent.id}")
@@ -8275,6 +8429,40 @@ class CourtSentencingResourceIntTest : IntegrationTestBase() {
 // 1 remaining offender charge
           .jsonPath("offenderCharges[0].id").isEqualTo(offenderCharge1.id)
           .jsonPath("offenderCharges[1]").doesNotExist()
+      }
+
+      @Test
+      fun `will refresh underlying offender charge from the remaining court event charge when removed from an appearance`() {
+        nomisDataBuilder.runInTransaction {
+          courtEventRepository.findByIdOrNull(courtEvent1.id)!!.courtEventCharges
+            .first { it.id.offenderCharge.id == offenderCharge2.id }
+            .apply {
+              offenceDate = LocalDate.of(2022, 12, 1)
+              resultCode1 = null
+            }
+        }
+
+        webTestClient.put()
+          .uri("/prisoners/$offenderNo/sentencing/court-cases/${courtCase.id}/court-appearances/${courtEvent2.id}")
+          .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(
+            BodyInserters.fromValue(
+              createCourtAppearanceRequest(
+                courtEventCharges = mutableListOf(CourtEventChargeRequest(offenderCharge1.id, offenderCharge1.resultCode1?.code)),
+              ),
+            ),
+          )
+          .exchange()
+          .expectStatus().isOk
+
+        nomisDataBuilder.runInTransaction {
+          with(courtCaseRepository.findByIdOrNull(courtCase.id)!!.offenderCharges.first { it.id == offenderCharge2.id }) {
+            assertThat(offenceDate).isEqualTo(LocalDate.of(2022, 12, 1))
+            assertThat(resultCode1).isNull()
+            assertThat(chargeStatus).isNull()
+          }
+        }
       }
     }
 

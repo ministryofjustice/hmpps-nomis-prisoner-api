@@ -702,6 +702,7 @@ class CourtSentencingService(
           offenderChargesRemovedFromAppearance = offenderChargesRemoved,
         )
 
+        refreshOffenderChargesAfterCourtEventChargeDeletion(courtCase, offenderChargesRemoved - deletedOffenderCharges.toSet())
         refreshCourtOrder(courtEvent = courtAppearance, offenderNo = offenderNo)
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = courtCase.offenderBooking.bookingId,
@@ -770,6 +771,7 @@ class CourtSentencingService(
           offenderChargesRemovedFromAppearance = offenderCharges,
         )
         telemetry["deletedOffenderCharges"] = deletedOffenderCharges.map { it.id }.toString()
+        refreshOffenderChargesAfterCourtEventChargeDeletion(case, offenderCharges - deletedOffenderCharges.toSet())
         imprisonmentStatusService.recalculateImprisonmentStatusAndMainOffence(
           bookingId = case.offenderBooking.bookingId,
           reason = DELETE,
@@ -785,6 +787,34 @@ class CourtSentencingService(
           telemetry,
           null,
         )
+    }
+  }
+
+  // fields and outcome follow the latest remaining court event charge with an outcome, or the latest one if none has an outcome
+  private fun refreshOffenderChargesAfterCourtEventChargeDeletion(courtCase: CourtCase, offenderCharges: List<OffenderCharge>) {
+    offenderCharges.forEach { offenderCharge ->
+      val courtEventCharges = courtCase.courtEvents
+        .flatMap { it.courtEventCharges }
+        .filter { it.id.offenderCharge == offenderCharge }
+        .filter { !it.id.courtEvent.eventDate.isAfter(LocalDate.now()) }
+      // future dated court event charges are ignored; prefer the latest with an outcome, falling back to the latest without one
+      val latest = courtEventCharges.filter { it.resultCode1 != null }.maxByOrNull { it.id.courtEvent.getEventDateAndTime() }
+        ?: courtEventCharges.maxByOrNull { it.id.courtEvent.getEventDateAndTime() }
+      latest?.let {
+        refreshOffenderCharge(
+          courtEventCharge = it,
+          offenderChargeRequest = ExistingOffenderChargeRequest(
+            offenderChargeId = offenderCharge.id,
+            offenceCode = offenderCharge.offence.id.offenceCode,
+            offenceDate = it.offenceDate,
+            offenceEndDate = it.offenceEndDate,
+            resultCode1 = it.resultCode1?.code,
+            propertyValue = it.propertyValue,
+          ),
+          resultCode = it.resultCode1,
+          shouldUpdateOutcome = true,
+        )
+      }
     }
   }
 
