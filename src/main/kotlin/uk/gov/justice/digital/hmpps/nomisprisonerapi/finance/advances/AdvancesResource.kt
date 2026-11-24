@@ -179,11 +179,6 @@ data class PrisonerAdvanceDto(
   @Schema(description = "How much has been written off so far, in pence", example = "1020")
   val adjustmentAmount: Long? = null,
 
-  @Schema(description = "The user who created the advance", example = "FRED_SMITH")
-  val createdBy: String,
-  @Schema(description = "The date time when the advance was created", example = "2024-06-01T12:00:00")
-  val createDatetime: LocalDateTime,
-
   @Schema(description = "The status of the advance", example = "ACTIVE")
   val status: AdvanceStatus,
 
@@ -191,6 +186,13 @@ data class PrisonerAdvanceDto(
   val advanceCreateTransactionId: Long?,
   @Schema(description = "The date time of the last transaction for the advance", example = "2025-07-14T12:13:14")
   val lastTransactionTimestamp: LocalDateTime,
+
+  @Schema(description = "The user who created the advance", example = "FRED_SMITH")
+  val createdBy: String,
+  @Schema(description = "The date time when the advance was created", example = "2024-06-01T12:00:00")
+  val createDatetime: LocalDateTime,
+  @Schema(description = "The user who last modified the advance", example = "FRED_SMITH")
+  val lastModifiedBy: String?,
 )
 
 data class AdvancesCount(

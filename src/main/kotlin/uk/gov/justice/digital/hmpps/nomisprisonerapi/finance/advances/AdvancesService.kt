@@ -69,4 +69,5 @@ fun OffenderAdvanceWithStatus.toDto() = PrisonerAdvanceDto(
   lastTransactionTimestamp = lastDeductionTxnDateTime,
   createdBy = createdBy,
   createDatetime = createDatetime,
+  lastModifiedBy = lastModifiedBy,
 )
