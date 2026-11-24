@@ -58,6 +58,28 @@ class CalculateReleaseDatesResource(private val service: CalculateReleaseDatesSe
     @Schema(description = "The offender sentence calculation id", example = "1234567")
     offenderSentenceCalculationId: Long,
   ): OffenderSentenceCalculationResponse = service.getOffenderSentenceCalculation(offenderSentenceCalculationId)
+
+  @GetMapping("/prisoners/{offenderNo}/sentence-calculations")
+  @Operation(
+    summary = "Gets all offender sentence calculations for a prisoner across all of their bookings",
+    description = "Results are ordered by calculation id, oldest first. Requires ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Offender sentence calculations, empty if the prisoner has none",
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Offender not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun getOffenderSentenceCalculations(
+    @PathVariable
+    @Schema(description = "The NOMIS id of the offender", example = "A1234AA")
+    offenderNo: String,
+  ): List<OffenderSentenceCalculationResponse> = service.getOffenderSentenceCalculations(offenderNo)
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
