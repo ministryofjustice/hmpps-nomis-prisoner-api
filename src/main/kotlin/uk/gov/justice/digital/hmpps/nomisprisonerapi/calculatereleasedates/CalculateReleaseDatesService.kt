@@ -5,15 +5,22 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.data.NotFoundException
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderSentenceCalculation
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderRepository
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderSentenceCalculationRepository
 
 @Service
 @Transactional(readOnly = true)
 class CalculateReleaseDatesService(
   private val offenderSentenceCalculationRepository: OffenderSentenceCalculationRepository,
+  private val offenderRepository: OffenderRepository,
 ) {
   fun getOffenderSentenceCalculation(offenderSentenceCalculationId: Long): OffenderSentenceCalculationResponse = offenderSentenceCalculationRepository.findByIdOrNull(offenderSentenceCalculationId)?.toResponse()
     ?: throw NotFoundException("Offender sentence calculation with id $offenderSentenceCalculationId not found")
+
+  fun getOffenderSentenceCalculations(offenderNo: String): List<OffenderSentenceCalculationResponse> {
+    offenderRepository.findRootByNomsId(offenderNo) ?: throw NotFoundException("Offender not found $offenderNo")
+    return offenderSentenceCalculationRepository.findAllByOffenderNo(offenderNo).map { it.toResponse() }
+  }
 }
 
 private fun OffenderSentenceCalculation.toResponse() = OffenderSentenceCalculationResponse(

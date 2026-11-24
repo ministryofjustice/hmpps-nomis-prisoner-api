@@ -210,4 +210,137 @@ class CalculateReleaseDatesResourceIntTest : IntegrationTestBase() {
       }
     }
   }
+
+  @DisplayName("GET /prisoners/{offenderNo}/sentence-calculations")
+  @Nested
+  inner class GetOffenderSentenceCalculationsForPrisoner {
+    private lateinit var latestBookingCalculation: OffenderSentenceCalculation
+    private lateinit var olderBookingCalculation1: OffenderSentenceCalculation
+    private lateinit var olderBookingCalculation2: OffenderSentenceCalculation
+    private lateinit var oldestBookingCalculation: OffenderSentenceCalculation
+    private lateinit var otherPrisonerCalculation: OffenderSentenceCalculation
+    private lateinit var thirdPrisonerCalculation: OffenderSentenceCalculation
+
+    @BeforeEach
+    fun setUpMultiple() {
+      nomisDataBuilder.build {
+        offender(nomsId = "A5678TT") {
+          // latest booking created first so it gets booking sequence 1
+          booking(bookingBeginDate = LocalDateTime.parse("2024-01-01T10:00:00")) {
+            latestBookingCalculation = sentenceCalculation(calculationDate = LocalDateTime.parse("2024-03-01T10:00:00"))
+          }
+          booking(bookingBeginDate = LocalDateTime.parse("2022-01-01T10:00:00")) {
+            olderBookingCalculation1 = sentenceCalculation(calculationDate = LocalDateTime.parse("2022-03-01T10:00:00"))
+            olderBookingCalculation2 = sentenceCalculation(calculationDate = LocalDateTime.parse("2022-06-01T10:00:00"))
+          }
+          booking(bookingBeginDate = LocalDateTime.parse("2020-01-01T10:00:00")) {
+            oldestBookingCalculation = sentenceCalculation(calculationDate = LocalDateTime.parse("2020-03-01T10:00:00"))
+          }
+        }
+        offender(nomsId = "A9999TT") {
+          booking {
+            otherPrisonerCalculation = sentenceCalculation()
+          }
+        }
+        offender(nomsId = "A1111TT") {
+          booking {
+            thirdPrisonerCalculation = sentenceCalculation()
+          }
+        }
+        offender(nomsId = "A2222TT") {
+          booking()
+        }
+      }
+    }
+
+    @Nested
+    inner class Security {
+      @Test
+      fun `access forbidden when no role`() {
+        webTestClient.get().uri("/prisoners/A5678TT/sentence-calculations")
+          .headers(setAuthorisation(roles = listOf()))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access forbidden with wrong role`() {
+        webTestClient.get().uri("/prisoners/A5678TT/sentence-calculations")
+          .headers(setAuthorisation(roles = listOf("BANANAS")))
+          .exchange()
+          .expectStatus().isForbidden
+      }
+
+      @Test
+      fun `access unauthorised with no auth token`() {
+        webTestClient.get().uri("/prisoners/A5678TT/sentence-calculations")
+          .exchange()
+          .expectStatus().isUnauthorized
+      }
+    }
+
+    @Nested
+    inner class Validation {
+      @Test
+      fun `returns 404 when offender does not exist`() {
+        webTestClient.get().uri("/prisoners/Z9999ZZ/sentence-calculations")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isNotFound
+          .expectBody()
+          .jsonPath("userMessage").value<String> {
+            assertThat(it).contains("Offender not found Z9999ZZ")
+          }
+      }
+    }
+
+    @Nested
+    inner class HappyPath {
+      @Test
+      fun `returns only the calculations for the requested prisoner`() {
+        webTestClient.get().uri("/prisoners/A9999TT/sentence-calculations")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyList(OffenderSentenceCalculationResponse::class.java)
+          .returnResult().responseBody!!
+          .apply {
+            assertThat(map { it.id }).containsExactly(otherPrisonerCalculation.id)
+            assertThat(map { it.offenderNo }).containsOnly("A9999TT")
+            assertThat(map { it.id }).doesNotContain(thirdPrisonerCalculation.id, latestBookingCalculation.id, calculation.id)
+          }
+      }
+
+      @Test
+      fun `returns calculations across all bookings ordered by calculation id`() {
+        webTestClient.get().uri("/prisoners/A5678TT/sentence-calculations")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyList(OffenderSentenceCalculationResponse::class.java)
+          .returnResult().responseBody!!
+          .apply {
+            assertThat(map { it.id }).containsExactly(
+              latestBookingCalculation.id,
+              olderBookingCalculation1.id,
+              olderBookingCalculation2.id,
+              oldestBookingCalculation.id,
+            )
+            assertThat(map { it.id }).isSorted
+            assertThat(map { it.bookingId }.distinct()).hasSize(3)
+            assertThat(map { it.offenderNo }).containsOnly("A5678TT")
+          }
+      }
+
+      @Test
+      fun `returns empty list when prisoner has no calculations`() {
+        webTestClient.get().uri("/prisoners/A2222TT/sentence-calculations")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus().isOk
+          .expectBodyList(OffenderSentenceCalculationResponse::class.java)
+          .hasSize(0)
+      }
+    }
+  }
 }
