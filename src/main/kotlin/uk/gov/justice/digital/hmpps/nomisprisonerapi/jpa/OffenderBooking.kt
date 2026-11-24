@@ -130,6 +130,9 @@ data class OffenderBooking(
   val keyDateAdjustments: MutableList<OffenderKeyDateAdjustment> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+  val sentenceCalculations: MutableList<OffenderSentenceCalculation> = mutableListOf(),
+
+  @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
   val offenderAppointments: MutableList<OffenderAppointment> = mutableListOf(),
 
   @OneToMany(mappedBy = "offenderBooking", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
