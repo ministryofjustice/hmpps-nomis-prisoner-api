@@ -19,6 +19,7 @@ private const val SCHEDULED_PAYMENT_SELECT = """
         osc.referenceText as referenceText,
         osc.commentText as commentText,
         osc.createUsername as createUsername,
+        osc.modifyUserId as lastModifiedBy,
         cpp.weekDay as weekDay,
         trp.id.drAccountCode as drAccountCode
       from OffenderScheduledPayment osc
@@ -74,7 +75,8 @@ interface ScheduledPaymentProjection {
   val paymentAmount: BigDecimal
   val referenceText: String?
   val commentText: String?
-  val createUsername: String
   val weekDay: String
   val drAccountCode: Int
+  val createUsername: String
+  val lastModifiedBy: String?
 }

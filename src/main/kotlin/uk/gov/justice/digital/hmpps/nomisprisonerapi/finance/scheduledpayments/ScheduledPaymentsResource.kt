@@ -155,6 +155,8 @@ data class ScheduledPaymentDto(
   val comment: String?,
   @Schema(description = "The user who created the scheduled payment", example = "FRED_SMITH")
   val createdBy: String,
+  @Schema(description = "The user who last modified the scheduled payment", example = "FRED_SMITH")
+  val lastModifiedBy: String?,
 )
 
 enum class ScheduledPaymentDay {

@@ -52,4 +52,5 @@ fun ScheduledPaymentProjection.toDto() = ScheduledPaymentDto(
   reference = referenceText,
   comment = commentText,
   createdBy = createUsername,
+  lastModifiedBy = lastModifiedBy,
 )
