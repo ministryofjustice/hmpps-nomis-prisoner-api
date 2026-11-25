@@ -52,7 +52,13 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender1Id = offender {
         trustAccount()
-        advance1 = advance(informationNumber = "10002000-10", deductionPriority = 1, advanceDate = advance1Date)
+        advance1 = advance(
+          informationNumber = "10002000-10",
+          deductionPriority = 1,
+          advanceDate = advance1Date,
+          whoModified = "TESTUSER",
+          whenModified = LocalDateTime.now().plusDays(1),
+        )
         // Multiple advances with same amount and date - this tests to ensure we don't return duplicate
         val advance11 = advance(informationNumber = "10002000-11", deductionPriority = 2, advanceDate = advance1Date)
         // Partial write off
@@ -417,21 +423,6 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
           assertThat(it).contains("Not Found: Offender advance with id 99999 not found")
         }
     }
-
-    @Test
-    fun getAdvanceWithLastModified() {
-      offenderAdvanceRepository.save(advance1)
-      val advance = webTestClient.get().uri("/finance/advances/$advanceId")
-        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
-        .exchange()
-        .expectStatus()
-        .isOk
-        .expectBody<PrisonerAdvanceDto>()
-        .returnResult()
-        .responseBody!!
-
-      advance.assertAdvance1("SA")
-    }
   }
 
   @Nested
@@ -576,7 +567,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     }
   }
 
-  private fun PrisonerAdvanceDto.assertAdvance1(lastModifiedBy: String? = null) {
+  private fun PrisonerAdvanceDto.assertAdvance1() {
     assertThat(id).isEqualTo(advance1.id)
     assertThat(prisonNumber).isEqualTo("A5194DY")
     assertThat(caseloadId).isEqualTo("MDI")
@@ -593,7 +584,7 @@ class AdvancesResourceIntTest : IntegrationTestBase() {
     assertThat(adjustmentAmount).isNull()
     assertThat(createdBy).isEqualTo("SA")
     assertThat(createDatetime).isEqualTo(advance1.createDatetime)
-    assertThat(lastModifiedBy).isEqualTo(lastModifiedBy)
+    assertThat(lastModifiedBy).isEqualTo("TESTUSER")
   }
 
   private fun PrisonerAdvanceDto.assertAdvance2() {

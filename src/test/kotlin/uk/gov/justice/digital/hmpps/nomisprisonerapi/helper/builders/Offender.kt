@@ -137,6 +137,8 @@ interface OffenderDsl {
     deductionPriority: Int,
     informationNumber: String = "10001000",
     writeOffAdjustmentAmount: BigDecimal? = null,
+    whenModified: LocalDateTime? = null,
+    whoModified: String? = null,
     dsl: OffenderPaymentProfileDsl.() -> Unit = {},
   ): OffenderAdvance
 
@@ -149,6 +151,8 @@ interface OffenderDsl {
     reference: String? = null,
     weeklyPaymentAmount: BigDecimal = BigDecimal.valueOf(2.45),
     comment: String? = null,
+    whenModified: LocalDateTime? = null,
+    whoModified: String? = null,
     dsl: OffenderPaymentProfileDsl.() -> Unit = {},
   ): OffenderScheduledPayment
 }
@@ -445,6 +449,8 @@ class OffenderBuilder(
     deductionPriority: Int,
     informationNumber: String,
     writeOffAdjustmentAmount: BigDecimal?,
+    whenModified: LocalDateTime?,
+    whoModified: String?,
     dsl: OffenderPaymentProfileDsl.() -> Unit,
   ): OffenderAdvance = offenderPaymentProfileBuilderFactory.builder().let { builder ->
     builder.buildAdvance(
@@ -458,6 +464,8 @@ class OffenderBuilder(
       deductionPriority = deductionPriority,
       informationNumber = informationNumber,
       writeOffAdjustmentAmount = writeOffAdjustmentAmount,
+      whenModified = whenModified,
+      whoModified = whoModified,
     ).also { rootOffender.advances += it }
       .also { builder.apply(dsl) }
   }
@@ -470,6 +478,8 @@ class OffenderBuilder(
     reference: String?,
     weeklyPaymentAmount: BigDecimal,
     comment: String?,
+    whenModified: LocalDateTime?,
+    whoModified: String?,
     dsl: OffenderPaymentProfileDsl.() -> Unit,
   ): OffenderScheduledPayment = offenderPaymentProfileBuilderFactory.builder().let { builder ->
     builder.buildScheduledPayment(
@@ -481,6 +491,8 @@ class OffenderBuilder(
       reference = reference,
       weeklyPaymentAmount = weeklyPaymentAmount,
       comment = comment,
+      whenModified = whenModified,
+      whoModified = whoModified,
     ).also { rootOffender.scheduledPayments += it }
       .also { builder.apply(dsl) }
   }

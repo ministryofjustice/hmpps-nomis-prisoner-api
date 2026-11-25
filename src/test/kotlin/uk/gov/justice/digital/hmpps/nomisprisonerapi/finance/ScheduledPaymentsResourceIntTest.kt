@@ -8,18 +8,24 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.test.web.reactive.server.expectBodyList
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.ScheduledPaymentDay
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.finance.scheduledpayments.ScheduledPaymentDto
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.OffenderScheduledPayment
+import uk.gov.justice.digital.hmpps.nomisprisonerapi.jpa.repository.OffenderScheduledPaymentRepository
 import uk.gov.justice.hmpps.test.kotlin.auth.WithMockAuthUser
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @WithMockAuthUser
 @TestInstance(PER_CLASS)
 class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
+  @Autowired
+  private lateinit var offenderScheduledPaymentRepository: OffenderScheduledPaymentRepository
+
   private lateinit var schedPay1: OffenderScheduledPayment
   private lateinit var schedPay2: OffenderScheduledPayment
   private lateinit var schedPay3: OffenderScheduledPayment
@@ -35,7 +41,13 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
     nomisDataBuilder.build {
       offender1Id = offender {
         trustAccount()
-        schedPay1 = scheduledPayment(reference = "REF1", comment = "COMMENT1", endDate = LocalDate.now().plusMonths(2))
+        schedPay1 = scheduledPayment(
+          reference = "REF1",
+          comment = "COMMENT1",
+          endDate = LocalDate.now().plusMonths(2),
+          whoModified = "TESTUSER",
+          whenModified = LocalDateTime.now().plusDays(1),
+        )
       }.id
       offender2Id = offender(nomsId = "A1234BC").id
       offender3Id = offender(nomsId = "A6789CD") {
@@ -336,47 +348,50 @@ class ScheduledPaymentsResourceIntTest : IntegrationTestBase() {
     payment = payments.single { it.id == schedPay1.id },
     expected = schedPay1,
     accountCode = 2101,
-    dayOfWeek = ScheduledPaymentDay.TUE,
+    paymentDay = ScheduledPaymentDay.TUE,
   )
 
   private fun assertScheduledPayment2(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay2.id },
     expected = schedPay2,
     accountCode = 2103,
-    dayOfWeek = ScheduledPaymentDay.MON_FRI,
+    paymentDay = ScheduledPaymentDay.MON_FRI,
   )
 
   private fun assertScheduledPayment3(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay3.id },
     expected = schedPay3,
     accountCode = 2102,
-    dayOfWeek = ScheduledPaymentDay.FRI,
+    paymentDay = ScheduledPaymentDay.FRI,
   )
 
   private fun assertScheduledPayment4(payments: List<ScheduledPaymentDto>) = assertScheduledPayment(
     payment = payments.single { it.id == schedPay4.id },
     expected = schedPay4,
     accountCode = 2102,
-    dayOfWeek = ScheduledPaymentDay.FRI,
+    paymentDay = ScheduledPaymentDay.FRI,
   )
 
   private fun assertScheduledPayment(
     payment: ScheduledPaymentDto,
     expected: OffenderScheduledPayment,
     accountCode: Int,
-    dayOfWeek: ScheduledPaymentDay,
+    paymentDay: ScheduledPaymentDay,
   ) {
-    assertThat(payment.id).isEqualTo(expected.id)
-    assertThat(payment.prisonNumber).isEqualTo(expected.offender.nomsId)
-    assertThat(payment.caseloadId).isEqualTo(expected.caseloadId)
-    assertThat(payment.transactionType).isEqualTo(expected.transactionType)
-    assertThat(payment.amount).isEqualTo(MoneySupport.poundsToPence(expected.paymentAmount))
-    assertThat(payment.startDate).isEqualTo(expected.startDate)
-    assertThat(payment.endDate).isEqualTo(expected.endDate)
-    assertThat(payment.reference).isEqualTo(expected.referenceText)
-    assertThat(payment.comment).isEqualTo(expected.commentText)
-    assertThat(payment.createdBy).isEqualTo("SA")
-    assertThat(payment.dayOfWeek).isEqualTo(dayOfWeek)
-    assertThat(payment.subAccountCode).isEqualTo(accountCode)
+    with(payment) {
+      assertThat(id).isEqualTo(expected.id)
+      assertThat(prisonNumber).isEqualTo(expected.offender.nomsId)
+      assertThat(caseloadId).isEqualTo(expected.caseloadId)
+      assertThat(transactionType).isEqualTo(expected.transactionType)
+      assertThat(amount).isEqualTo(MoneySupport.poundsToPence(expected.paymentAmount))
+      assertThat(startDate).isEqualTo(expected.startDate)
+      assertThat(endDate).isEqualTo(expected.endDate)
+      assertThat(reference).isEqualTo(expected.referenceText)
+      assertThat(comment).isEqualTo(expected.commentText)
+      assertThat(dayOfWeek).isEqualTo(paymentDay)
+      assertThat(subAccountCode).isEqualTo(accountCode)
+      assertThat(createdBy).isEqualTo("SA")
+      assertThat(lastModifiedBy).isEqualTo(expected.modifyUserId)
+    }
   }
 }
