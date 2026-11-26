@@ -909,6 +909,13 @@ class CorePersonResourceIntTest(
           firstName = "JANE",
           lastName = "NARK",
         ) {
+          identifier(
+            type = "PNC",
+            identifier = "20/0071818T",
+            issuedAuthority = "Met Police",
+            issuedDate = LocalDate.parse("2020-01-01"),
+            verified = true,
+          )
           booking {
             belief = belief(
               beliefCode = "JAIN",
@@ -990,7 +997,12 @@ class CorePersonResourceIntTest(
           .jsonPath("prisonNumber").isEqualTo(offenderMinimal.nomsId)
           .jsonPath("inOutStatus").doesNotExist()
           .jsonPath("activeFlag").isEqualTo(false)
-          .jsonPath("offenders").doesNotExist()
+          .jsonPath("offenders.length()").isEqualTo(1)
+          .jsonPath("offenders[0].offenderId").isEqualTo(offenderMinimal.id)
+          .jsonPath("offenders[0].firstName").isEqualTo("JOHN")
+          .jsonPath("offenders[0].lastName").isEqualTo("BOG")
+          .jsonPath("offenders[0].workingName").isEqualTo(true)
+          .jsonPath("offenders[0].identifiers").isEmpty()
           .jsonPath("addresses").doesNotExist()
           .jsonPath("phoneNumbers").doesNotExist()
           .jsonPath("emailAddresses").doesNotExist()
@@ -998,7 +1010,7 @@ class CorePersonResourceIntTest(
       }
 
       @Test
-      fun `will return addresses, phone numbers, email addresses and beliefs`() {
+      fun `will return offenders, identifiers, addresses, phone numbers, email addresses and beliefs`() {
         val result = webTestClient.get().uri("/core-person/${offenderFull.nomsId}/reconciliation")
           .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
           .exchange()
@@ -1010,7 +1022,14 @@ class CorePersonResourceIntTest(
         assertThat(result.prisonNumber).isEqualTo(offenderFull.nomsId)
         assertThat(result.inOutStatus).isNull()
         assertThat(result.activeFlag).isFalse()
-        assertThat(result.offenders).isNull()
+        assertThat(result.offenders)
+          .extracting("offenderId", "firstName", "lastName", "workingName")
+          .containsExactly(tuple(offenderFull.id, "JANE", "NARK", true))
+        assertThat(result.offenders!![0].identifiers)
+          .extracting("offenderId", "sequence", "identifier", "type", "issuedAuthority", "issuedDate", "verified")
+          .containsExactly(
+            tuple(offenderFull.id, 1L, "20/0071818T", CodeDescription("PNC", "PNC Number"), "Met Police", LocalDate.parse("2020-01-01"), true),
+          )
         with(result.addresses!![0]) {
           assertThat(addressId).isEqualTo(offenderFull.addresses[0].addressId)
           assertThat(flat).isEqualTo("3B")
@@ -1065,7 +1084,8 @@ class CorePersonResourceIntTest(
         assertThat(person.prisonNumber).isEqualTo(offenderFull.nomsId)
         assertThat(person.inOutStatus).isNull()
         assertThat(person.activeFlag).isFalse()
-        assertThat(person.offenders).isNull()
+        assertThat(person.offenders).hasSize(1)
+        assertThat(person.offenders!![0].identifiers).hasSize(1)
         assertThat(person.addresses).hasSize(1)
         assertThat(person.phoneNumbers).hasSize(1)
         assertThat(person.emailAddresses).hasSize(1)
@@ -1077,6 +1097,7 @@ class CorePersonResourceIntTest(
     @TestInstance(PER_CLASS)
     inner class WithAlias {
       private lateinit var offender: Offender
+      private lateinit var alias: Offender
 
       @BeforeAll
       fun setUp() {
@@ -1086,16 +1107,18 @@ class CorePersonResourceIntTest(
             firstName = "JOHN",
             lastName = "BOG",
           ) {
+            identifier(type = "PNC", identifier = "21/0071818T")
             address(
               premise = "Root House",
               street = "Root Street",
               locality = "Root Locality",
             )
             booking(bookingSequence = 2) { release() }
-            alias(
+            alias = alias(
               firstName = "AJOHN",
               lastName = "ABARK",
             ) {
+              identifier(type = "STAFF", identifier = "123")
               booking(bookingSequence = 1) { }
             }
           }
@@ -1120,7 +1143,30 @@ class CorePersonResourceIntTest(
           assertThat(addressId).isEqualTo(offender.addresses[0].addressId)
           assertThat(premise).isEqualTo("Root House")
         }
-        assertThat(result.offenders).isNull()
+      }
+
+      @Test
+      fun `will return all aliases with their identifiers and the working name flagged`() {
+        val result = webTestClient.get().uri("/core-person/${offender.nomsId}/reconciliation")
+          .headers(setAuthorisation(roles = listOf("NOMIS_PRISONER_API__SYNCHRONISATION__RW")))
+          .exchange()
+          .expectStatus()
+          .isOk
+          .expectBody<CorePerson>()
+          .returnResult().responseBody!!
+
+        assertThat(result.offenders)
+          .extracting("offenderId", "firstName", "lastName", "workingName")
+          .containsExactly(
+            tuple(offender.id, "JOHN", "BOG", false),
+            tuple(alias.id, "AJOHN", "ABARK", true),
+          )
+        assertThat(result.offenders!![0].identifiers)
+          .extracting("offenderId", "identifier")
+          .containsExactly(tuple(offender.id, "21/0071818T"))
+        assertThat(result.offenders!![1].identifiers)
+          .extracting("offenderId", "identifier")
+          .containsExactly(tuple(alias.id, "123"))
       }
     }
   }
