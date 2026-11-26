@@ -80,16 +80,19 @@ class CorePersonService(
     )
   }
 
-  fun getOffenderForReconciliation(prisonNumber: String): CorePerson = with(rootOffender(prisonNumber)) {
-    CorePerson(
+  fun getOffenderForReconciliation(prisonNumber: String): CorePerson {
+    val (currentAlias, rootOffender) = currentAliasAndRootOffender(prisonNumber)
+    return CorePerson(
       prisonNumber = prisonNumber,
       inOutStatus = null,
       activeFlag = false,
-      offenders = null,
-      addresses = getAddresses(this),
-      phoneNumbers = getPhoneNumbers(this),
-      emailAddresses = getEmailAddresses(this),
-      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(this.id).map { it.toBelief() },
+      offenders = offenderRepository.findByNomsId(prisonNumber).sortedBy { it.id }.map {
+        it.toCoreOffender(currentAliasId = currentAlias.id, includeIdentifiers = true)
+      },
+      addresses = getAddresses(rootOffender),
+      phoneNumbers = getPhoneNumbers(rootOffender),
+      emailAddresses = getEmailAddresses(rootOffender),
+      beliefs = offenderBeliefRepository.findBeliefsByRootOffenderId(rootOffender.id).map { it.toBelief() },
     )
   }
 
